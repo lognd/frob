@@ -38,14 +38,14 @@ from frob.tickets._unlanded import _unlanded_branch_work
 _log = get_logger(__name__)
 
 
-# frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
 # frob:waive AFFECT001 reason="T-1934 adds a fourth anomaly class \
 # (unlanded_branch_work) to this already-documented model; docs/modules/tickets.md is \
 # held by T-1720's LIVE cross-worktree lease at land time, so the doc cannot be \
 # re-touched here without fighting that lease -- remove this waiver and add a real doc \
-# section once T-1720 lands (see also T-1949-adjacent residue: the earlier \
-# T-1929 lease on this same file already forced/lifted this waiver once during this \
-# ticket's own work)"
+# section once T-1720 lands (see also T-1949-adjacent residue: the earlier T-1929 \
+# lease on this same file already forced/lifted this waiver once during this ticket's \
+# own work)"
 class ReconcileReport(BaseModel):
     """The anomalies `reconcile` found (and, if `applied`, healed) --
     (T-0476) `requeued_tickets` (stale holds) and `orphan_worktrees` (live
@@ -194,7 +194,7 @@ def _remove_orphan_worktrees(root: Path, orphans: tuple[Path, ...]) -> tuple[str
     return tuple(removed)
 
 
-# frob:doc docs/modules/tickets.md#frob-ticket-reconcile-t-0476
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape kind="unit"  # noqa: E501

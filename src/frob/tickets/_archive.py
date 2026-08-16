@@ -200,7 +200,7 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
 
 
 # frob:ticket T-1750
-# frob:doc docs/modules/tickets.md#archive-the-live-worktree-guard-t-1750
+# frob:doc docs/modules/tickets-data-storage.md#archive-the-live-worktree-guard-t-1750
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally kind="unit"  # noqa: E501

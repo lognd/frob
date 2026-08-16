@@ -289,7 +289,7 @@ def _get_verify_worker(root: Path) -> CoalescingWorker:
         return worker
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 # frob:tests \
 # tests/test_serve_daemon.py::TestPollVerifyWorker.test_head_moved_notifies_the_worker \
 # kind="unit"

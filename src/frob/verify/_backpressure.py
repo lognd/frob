@@ -91,7 +91,7 @@ _DEFAULT_POLL_INTERVAL_S = 5.0
 _DEFAULT_BLOCK_TIMEOUT_S = 1800.0
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:ticket T-1756
 class BackpressureError(ErrorSet):
     """Fallible outcomes of this module's status/block operations."""
@@ -104,7 +104,7 @@ class BackpressureError(ErrorSet):
     )
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 class BackpressureCeilings(BaseModel):
     """The two independent ceilings a profile enforces. `None` on either
     field means that axis is UNBOUNDED (never trips) -- `rapid`'s own
@@ -118,7 +118,7 @@ class BackpressureCeilings(BaseModel):
     max_age_s: float | None
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 class BackpressureStatus(BaseModel):
     """One `current_status` reading: the queue's current depth and the
     age of its oldest entry, the watermark commit (if any) being waited
@@ -155,7 +155,7 @@ def _read_frob_toml_profile_table(root: Path) -> dict:
     return table if isinstance(table, dict) else {}
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_fortress_is_zero_depth_zero_age  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_rapid_is_unbounded  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCeilingsForProfile.test_standard_default  # noqa: E501
@@ -201,7 +201,7 @@ def _parse_enqueued_at(raw: str) -> float | None:
         return None
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_empty_queue_is_never_tripped  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_depth_ceiling_trips  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_age_ceiling_trips  # noqa: E501
@@ -272,7 +272,7 @@ def current_status(
     return Ok(status)
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_not_tripped_returns_immediately_without_draining  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_tripped_drains_and_unblocks  # noqa: E501
 # frob:tests tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances.test_persistently_red_batch_times_out  # noqa: E501

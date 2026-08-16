@@ -237,7 +237,7 @@ def _reconcile_stale_in_flight_marker(root: Path) -> None:
     _clear_in_flight_marker(root)
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: Trailing-edge debounce window (T-1686: "a burst of five lands in ninety
 #: seconds produces one verification, not five") -- each `notify()` call
 #: pushes the deadline forward by this many seconds from the time of that
@@ -245,7 +245,7 @@ def _reconcile_stale_in_flight_marker(root: Path) -> None:
 #: quiet period this long actually triggers one.
 DEFAULT_DEBOUNCE_WINDOW_S = 90.0
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: Periodic floor (T-1686: "so a stalled watcher cannot leave the window
 #: open indefinitely") -- if work has been pending this long with no
 #: verification run at all (e.g. the FS-watch signal that would normally
@@ -254,7 +254,7 @@ DEFAULT_DEBOUNCE_WINDOW_S = 90.0
 #: force a run regardless of how recently the last notify was.
 DEFAULT_PERIODIC_FLOOR_S = 300.0
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: Foreground-agent lease ceiling (T-1695): `tick()` yields (skips this
 #: run, retries next poll) while at least this many cross-worktree ticket
 #: leases are currently recorded -- the same "3-4 concurrent agents"
@@ -263,7 +263,7 @@ DEFAULT_PERIODIC_FLOOR_S = 300.0
 #: inventing a second notion of "how busy is this repo".
 DEFAULT_LEASE_CEILING = 3
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: Minimum available memory, in MiB, required to start a verification
 #: pass (T-1695) -- below this floor `tick()` yields rather than risk the
 #: OOM killer choosing between this worker and a foreground agent.
@@ -271,13 +271,13 @@ DEFAULT_LEASE_CEILING = 3
 #: `_default_available_memory_mb`'s own docstring.
 DEFAULT_MIN_AVAILABLE_MEMORY_MB = 1024
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: `lease_count_fn(root)` -> the current cross-worktree lease count.
 #: Injectable so tests can assert the yield decision without a real
 #: multi-worktree lease file on disk.
 LeaseCountFn = Callable[[Path], int]
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 #: `available_memory_fn()` -> available memory in MiB, or `None` if it
 #: cannot be measured on this platform. Injectable for the same reason as
 #: `LeaseCountFn`.
@@ -307,7 +307,9 @@ def _default_available_memory_mb() -> int | None:
     return _available_memory_mb()
 
 
-# frob:doc docs/modules/tickets.md#resource-budget-never-starve-foreground-agents-t-1695
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t\
+# -1695
 # frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_yields_at_lease_ceiling
 # frob:tests \
@@ -358,7 +360,9 @@ _PRIORITY_LOCK = threading.Lock()
 _PRIORITY_REDUCED = False
 
 
-# frob:doc docs/modules/tickets.md#resource-budget-never-starve-foreground-agents-t-1695
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#resource-budget-never-starve-foreground-agents-t\
+# -1695
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
 def _ensure_reduced_priority() -> None:
@@ -418,7 +422,7 @@ def _lower_io_priority() -> None:
         _log.warning("verify worker: could not set ionice priority: %s", exc)
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 class WorkerError(ErrorSet):
     """Fallible outcomes of `run_coalesced_verification`."""
 
@@ -429,7 +433,7 @@ class WorkerError(ErrorSet):
     WatermarkWriteFailed = "advancing the watermark failed after a green verification"
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 class WorkerOutcome(BaseModel):
     """One `run_coalesced_verification` call's result, for logging and
     tests -- never persisted (the durable facts it summarizes already
@@ -489,7 +493,7 @@ def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 # frob:ticket T-1694
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_empty_queue_is_a_noop  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_five_queued_entries_call_verify_exactly_once  # noqa: E501
@@ -684,7 +688,7 @@ def _advance_on_green(
     )
 
 
-# frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+# frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
 # frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_notify_then_tick_before_deadline_does_not_run  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_notify_then_tick_after_deadline_runs_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestCoalescingWorker.test_repeated_notify_pushes_the_deadline_out  # noqa: E501
@@ -741,7 +745,7 @@ class CoalescingWorker:
         self._last_notify_at: float | None = None
         self._last_run_at: float | None = None
 
-    # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+    # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
     def notify(self) -> None:
         """Record that a wake condition fired. Cheap and safe to call from
         any thread (an FS-watch callback, the daemon's own poll loop) --
@@ -754,7 +758,7 @@ class CoalescingWorker:
             self._last_notify_at = now
         _log.debug("verify worker: notify() at %s for %s", now, self._root)
 
-    # frob:doc docs/modules/tickets.md#coalescing-verify-worker-t-1688
+    # frob:doc docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688
     def tick(self) -> Result[WorkerOutcome, WorkerError] | None:
         """Called on every daemon poll cycle. Returns `None` (nothing ran)
         unless there is pending work AND either the debounce window has

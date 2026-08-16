@@ -1,6 +1,6 @@
 """`frob ticket land` -- post-merge claim/evidence reverification.
 
-See docs/modules/tickets.md#frob-ticket-land.
+See docs/modules/tickets-landing.md#frob-ticket-land.
 
 Split out of `frob.tickets._land` (T-1186, following the verbatim-move
 pattern `_evidence.py`/`_reporting.py` set at T-1171): the family of

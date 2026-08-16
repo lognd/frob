@@ -65,7 +65,7 @@ def _autofix_manifest_path(root: Path) -> Path:
 
 
 # frob:ticket T-1348
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
 def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
     """Record `applied`'s distinct file paths, atomically, as the T-1348
@@ -89,9 +89,9 @@ def write_autofix_manifest(root: Path, applied: list[FixApplied]) -> None:
 
 
 # frob:ticket T-1348
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # frob:tests tests/test_gates.py::TestAutofixManifest.test_write_then_clear_roundtrip
-# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented breadcrumb-removal behavior is unchanged, so docs/modules/tickets.md#frob-ticket-land needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:waive AFFECT001 reason="T-1371 only widens internal exception handling; the documented breadcrumb-removal behavior is unchanged, so docs/modules/tickets-landing.md#frob-ticket-land needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def clear_autofix_manifest(root: Path) -> None:
     """Remove the T-1348 recovery breadcrumb (`write_autofix_manifest`)
     after a Tier-A auto-fix pass finishes SUCCESSFULLY -- a completed pass

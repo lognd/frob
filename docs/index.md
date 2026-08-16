@@ -82,7 +82,17 @@ The four components that make up the enforcement layer:
   DSL (`frob:ticket`, `frob:tests`, `frob:doc`, `frob:invariant`,
   `frob:waive`, ...), digests, the lock file, and drift.
 - `docs/modules/tickets.md` -- `frob.tickets`: the ticket/feature queue, its state
-  machine, attachments, and clipboard capture.
+  machine, attachments, and clipboard capture; overview and public API
+  index, split by subject (T-1780) into
+  [`tickets-lifecycle.md`](modules/tickets-lifecycle.md) (filing, review,
+  scope/lease, organization), [`tickets-landing.md`](modules/tickets-landing.md)
+  (`frob ticket land` and its whole critical path),
+  [`tickets-verify-sweep.md`](modules/tickets-verify-sweep.md) (verification
+  watermark, backpressure, quarantine, rapid profile),
+  [`tickets-merge-driver.md`](modules/tickets-merge-driver.md) (the git
+  merge driver), and [`tickets-data-storage.md`](modules/tickets-data-storage.md)
+  (data models and storage internals) -- so a ticket touching one subject's
+  lease no longer blocks every ticket touching another.
 - `docs/modules/gates.md` -- `frob.gates`: the drift, coverage, scope, pre-work,
   invariant, test, and policy gates; the rule catalog; invariants; and
   `frob check` integration.

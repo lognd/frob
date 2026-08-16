@@ -274,7 +274,7 @@ def _scope_add_queue_conflict(
 
 # frob:ticket T-1868
 # frob:ticket T-1909
-# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
 # frob:tests \
@@ -798,7 +798,7 @@ def _write_scope_mutation(
 
 
 # frob:ticket T-1944
-# frob:doc docs/modules/tickets.md#evidence-only-scope-t-1944
+# frob:doc docs/modules/tickets-landing.md#evidence-only-scope-t-1944
 # frob:tests \
 # tests/unit/test_tickets_evidence_only_scope.py::TestDemoteToEvidenceOnly.test_demote_\
 # releases_the_lease_and_keeps_evidence_covered

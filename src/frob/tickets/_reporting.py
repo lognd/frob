@@ -151,7 +151,7 @@ def mutate_labels(
 
 # frob:ticket T-0568
 # frob:ticket T-1347
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief-t-0568
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
@@ -187,7 +187,7 @@ def brief_ticket(root: Path, ticket_id: str) -> Result[str, TicketError]:
 
 
 # frob:ticket T-1243
-# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
 # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
 def brief_cluster(root: Path, cluster_id: str) -> Result[str, TicketError]:
     """`frob ticket brief --cluster <id>` (T-1243): compose one briefing
@@ -632,7 +632,7 @@ def _resolve_review_commit(root: Path, commit: str) -> Result[str, TicketError]:
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
+# frob:doc docs/modules/tickets-lifecycle.md#structured-review-channel-t-0571
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_appends_approve_entry
 # frob:tests tests/test_tickets_review.py::TestRecordReview.test_blank_findings_rejected
 # frob:tests \
@@ -833,7 +833,8 @@ _TICKET_ID_RE = re.compile(r"T-\d+")
 
 # frob:ticket T-1648
 # frob:doc \
-# docs/modules/tickets.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648
+# docs/modules/tickets-data-storage.md#disclosed-remainder-requires-follow-up-guard-at-\
+# close-t-1648
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
@@ -858,7 +859,8 @@ def disclosure_shaped_language(text: str) -> str | None:
 
 # frob:ticket T-1648
 # frob:doc \
-# docs/modules/tickets.md#disclosed-remainder-requires-follow-up-guard-at-close-t-1648
+# docs/modules/tickets-data-storage.md#disclosed-remainder-requires-follow-up-guard-at-\
+# close-t-1648
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_parses_ids_from_filed_line  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets.test_no_filed_line_returns_empty  # noqa: E501
 def filed_followup_tickets(body: str) -> list[str]:

@@ -82,18 +82,18 @@ _SWEEP_LOCK_REL = Path(".frob") / "mutation-sweep-queue.lock"
 #: which also includes `bug`) because T-1518's own text narrows blocking
 #: to `security` specifically: "keep it synchronous+blocking only for
 #: kind=security tickets".
-# frob:doc docs/modules/tickets.md#batch-mutation-evidence-sweep-test016-t-1518
+# frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
 SYNC_BLOCKING_KINDS = frozenset({TicketKind.SECURITY})
 
 
-# frob:doc docs/modules/tickets.md#batch-mutation-evidence-sweep-test016-t-1518
+# frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
 class SweepQueueError(ErrorSet):
     """Fallible outcomes of this module's queue operations."""
 
     StoreCorrupt = "the mutation-sweep queue file exists but failed to parse"
 
 
-# frob:doc docs/modules/tickets.md#batch-mutation-evidence-sweep-test016-t-1518
+# frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
 class SweepEntry(BaseModel):
     """One `.frob/mutation-sweep-queue.json` record: a landed (or landing)
     ticket whose TEST016 obligation was deferred off the land critical
@@ -190,7 +190,7 @@ def _save_sweep_queue(root: Path, entries: tuple[SweepEntry, ...]) -> None:
     path.write_text(payload, encoding="utf-8")
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:tests tests/unit/test_mutation_sweep_queue.py::TestEnqueuePendingSweep.test_enqueue_persists_entry  # noqa: E501
 def enqueue_pending_sweep(
     root: Path, ticket_id: str, base_ref: str, kind: TicketKind
@@ -222,7 +222,7 @@ def enqueue_pending_sweep(
         return Ok(entry)
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_empty_queue_is_noop  # noqa: E501
 # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_clean_finding_marks_swept_no_ticket_filed  # noqa: E501
 # frob:tests tests/unit/test_mutation_sweep_queue.py::TestRunPendingSweep.test_bug_kind_confirmatory_finding_files_ticket  # noqa: E501
@@ -419,7 +419,7 @@ def _file_confirmatory_only_ticket(
     return Ok(new_id)
 
 
-# frob:doc docs/modules/tickets.md#batch-mutation-evidence-sweep-test016-t-1518
+# frob:doc docs/modules/tickets-landing.md#batch-mutation-evidence-sweep-test016-t-1518
 # frob:tests tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount.test_counts_only_pending_entries  # noqa: E501
 def pending_sweep_count(root: Path) -> Result[int, SweepQueueError]:
     """How many entries are currently `pending` in `root`'s mutation-sweep

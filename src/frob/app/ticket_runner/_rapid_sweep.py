@@ -159,7 +159,8 @@ _REVALIDATION_CACHE_REL = Path(".frob") / "doable-revalidation-cache.json"
 _REVALIDATION_CACHE_TTL_S = 300.0
 
 
-# frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:ticket T-1684
 class RapidSweepError(ErrorSet):
     """Fallible outcomes of the deferred-sweep spawn and run."""
@@ -483,7 +484,8 @@ def _detached_sweep_env(root: Path) -> dict[str, str]:
     return env
 
 
-# frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepSpawn.test_exec_disabled_records_debt_and_refuses  # noqa: E501
 # frob:ticket T-1684
 def spawn_deferred_post_land_sweep(
@@ -559,7 +561,7 @@ def spawn_deferred_post_land_sweep(
     return Ok(proc.pid)
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
@@ -605,7 +607,7 @@ def _attribute_new_findings(
     return {(a.rule_id, a.file): a for a in attributed.danger_ok}
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:tests tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_open_ticket_is_open
 # frob:tests \
@@ -631,7 +633,7 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool:
     return ticket.state not in (TicketState.DONE, TicketState.DROPPED)
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:ticket T-1791
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
@@ -711,7 +713,7 @@ def _partition_findings_by_attribution(
 _NATIVE_EXTENSION_ADJACENT_RULE_IDS = frozenset({"unresolved-import"})
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1847
 def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
     """T-1847: `True` when `(rule, attr)` matches the cold-worktree
@@ -751,7 +753,7 @@ def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> 
     return True
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1791
 # frob:ticket T-1847
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
@@ -1243,7 +1245,7 @@ def _build_regression_body(
     return "\n".join(body_lines)
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:ticket T-1791
 # frob:ticket T-2077
@@ -1866,7 +1868,8 @@ def _close_resolved_sweep_tickets(
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_still_reproducing_candidate_is_left_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_unmeasurable_recheck_drops_nothing  # noqa: E501
 # frob:doc \
-# docs/modules/tickets.md#doable-time-revalidation-of-sweep-filed-tickets-t-2006
+# docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-\
+# t-2006
 def revalidate_dispatchable_sweep_tickets(
     root: Path, tickets: Sequence  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
 ) -> tuple[str, ...]:
@@ -2053,7 +2056,8 @@ def _resolve_regression_attribution(
     return land_ids
 
 
-# frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:ticket T-2077
 # frob:ticket T-1952
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501

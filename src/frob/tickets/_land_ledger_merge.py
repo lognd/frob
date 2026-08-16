@@ -1,6 +1,6 @@
 """`frob ticket land` -- ledger-merge/newest-wins family.
 
-See docs/modules/tickets.md#frob-ticket-land.
+See docs/modules/tickets-landing.md#frob-ticket-land.
 
 Split out of `frob.tickets._land_merge` (T-1194, continuing the one-family-
 per-land discipline T-1186/T-1187/T-1188/T-1189/T-1192 established): the
@@ -36,7 +36,7 @@ from frob.tickets._store import (
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # frob:waive COV007 reason="T-1024: the land ordering rule this table is genuinely \
 # documented at the public frob:doc anchor (frob ticket land's own section) -- no \
 # separate public caller worth re-anchoring onto, same disposition as this module's \
@@ -226,7 +226,7 @@ def _union_acceptance(winner: Ticket, a: Ticket, b: Ticket) -> Ticket:
     return winner.model_copy(update={"acceptance": tuple(merged_criteria)})
 
 
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # `archived_ids` (from main's `tickets-archive.md`, the only authoritative
 # archive) is excluded from the merged result unconditionally, from
 # EITHER side -- without this, a ticket main already archived reappears

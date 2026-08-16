@@ -283,7 +283,7 @@ the `frob serve` process. Three jobs per cycle:
    unless the debounce window has gone quiet or the periodic floor has
    elapsed, so the real coalescing decision lives inside
    `frob.verify._worker`, not here. See
-   `docs/modules/tickets.md#coalescing-verify-worker-t-1688` for the full
+   `docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688` for the full
    design (why it coalesces rather than iterates, why `None` can never
    advance the watermark, and the disclosed FS-watch wiring gap).
 
@@ -528,7 +528,8 @@ polls from its separate background-daemon loop. A watch tick observing a
 real on-disk change now resets that worker's debounce window immediately
 instead of only via `_poll_verify_worker`'s own `main`-HEAD-moved check or
 its periodic floor; see "Coalescing verify worker" in
-`docs/modules/tickets.md` for the debounce/floor mechanics this wakes.
+`docs/modules/tickets-verify-sweep.md#coalescing-verify-worker-t-1688` for
+the debounce/floor mechanics this wakes.
 
 ## Subscribe/push events (T-1096)
 

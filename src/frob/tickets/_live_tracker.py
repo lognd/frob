@@ -272,7 +272,7 @@ def _content_key(line: str) -> str:
     return f"{parts[0]}:{parts[2]}"
 
 
-# frob:doc docs/modules/tickets.md#live-tracker-citation-preflight-t-0854
+# frob:doc docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_registry_deferred_disposition  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_finds_comment_waiver_ticket_attribute  # noqa: E501
 # frob:tests tests/test_tickets_live_tracker.py::TestLiveTrackerCitations.test_own_scope_citation_excluded  # noqa: E501

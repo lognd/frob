@@ -54,7 +54,7 @@ _log = get_logger(__name__)
 _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:enforces CHK-GATE-TEST016
 # frob:enforces CHK-THEME-EXISTENCE-NOT-PROOF
 # frob:enforces CHK-SUBSYS-TICKETS-TESTING
@@ -67,9 +67,9 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_evidence_changes_never_produces_test018  # noqa: E501
 # frob:waive AFFECT001 reason="T-1733: mutation_evidence_violations's \
 # affects()-closure doc \
-# (docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755) genuinely \
-# needs a TEST018 paragraph -- but docs/modules/tickets.md is leased by another \
-# in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
+# (docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755) \
+# genuinely needs a TEST018 paragraph -- but docs/modules/tickets.md is leased by \
+# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
 # touching it here would collide with that lease. TEST018 is documented in full in \
 # this ticket's own docs home instead (docs/modules/gates.md's new 'TEST018 (T-1733)' \
 # section); remove this waiver once the tickets.md lease clears and its own paragraph \

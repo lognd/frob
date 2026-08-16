@@ -685,7 +685,7 @@ def _render_unlanded_branch_work_summary(root: Path | None) -> None:
 
 # frob:ticket T-0976
 # frob:ticket T-1876
-# frob:doc docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473
+# frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_dead_holder_flagged_with_reason  # noqa: E501
 # frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501
 def _stale_lease_reasons(root: Path | None) -> dict[str, str]:

@@ -288,7 +288,8 @@ node security : trusted {
 // frob:ticket T-1693
 // frob:ticket T-1694
 // frob:doc \
-// docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+// docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the\
+// -t-1686-epic
 node verify : trusted {
     attr interface=[
         AttributionError, BackpressureCeilings, BackpressureError, BatchSelectionError, CoalescingWorker, QuarantinedFinding,

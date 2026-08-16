@@ -190,7 +190,7 @@ def _lock_path(root: Path) -> Path:
     return root / _LOCK_REL
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests tests/unit/test_ticket_store.py::TestLedgerLock.test_two_threads_serialize
 # frob:ticket T-0601
 @contextmanager
@@ -406,32 +406,32 @@ def allocator_lock(root: Path) -> Iterator[None]:
         yield
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def slugify(title: str) -> str:
     """Lowercase, hyphenate, and strip non-alnum runs from a title for a filename."""
     slug = _SLUG_RE.sub("-", title.strip().lower()).strip("-")
     return slug or "untitled"
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def tickets_dir(root: Path) -> Path:
     """The legacy tickets/ directory (also holds attachments in single mode)."""
     return root / "tickets"
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def ledger_path(root: Path) -> Path:
     """The single-file `tickets.md` ledger path at the repo root."""
     return root / _LEDGER_NAME
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def archive_path(root: Path) -> Path:
     """The `tickets-archive.md` path at the repo root (same ledger format)."""
     return root / _ARCHIVE_NAME
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def attachments_dir(root: Path, ticket_id: str) -> Path:
     """The tickets/attachments/<id>/ directory for a given ticket (both modes)."""
     return tickets_dir(root) / "attachments" / ticket_id
@@ -496,7 +496,7 @@ def _v2_archive_glob(root: Path) -> list[Path]:
     return sorted(p for p in d.glob(_V2_TICKET_GLOB) if p.is_file())
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
@@ -549,7 +549,7 @@ def _frontmatter_yaml(ticket: Ticket) -> str:
     return yaml.safe_dump(payload, sort_keys=False, default_flow_style=False)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
@@ -576,7 +576,7 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 # ---------------------------------------------------------------------------
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper"
@@ -929,7 +929,7 @@ def _prune_stale_v2_dirs(root: Path, keep_dirs: set[Path]) -> None:
 
 
 # frob:ticket T-1132
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests \
 # tests/test_tickets.py::TestIterRawLedgerFrontmatter.test_returns_raw_dict_per_ticket \
 # kind="unit"
@@ -1121,7 +1121,7 @@ _MISSING_LEDGER_DIGEST = ""
 
 
 # frob:ticket T-0889
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests \
 # tests/test_ticket_store_stale_snapshot.py::TestLedgerDigest.test_digest_stable_for_un\
 # changed_content  # noqa: E501
@@ -1330,7 +1330,7 @@ def _write_index_cache(
         _log.warning("tickets: failed to write v2 index cache, skipping (%s)", exc)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:doc docs/design/ledger-v2.md#1-file-per-ticket-layout
 # frob:doc docs/design/ledger-v2.md#6-greppability
 def load_all(root: Path) -> Result[dict[str, Ticket], TicketError]:
@@ -1509,7 +1509,7 @@ def _write_archive_cache(
         _log.warning("tickets: failed to write archive cache, skipping (%s)", exc)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:ticket T-1206
 def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
     """Every ticket in `tickets-archive.md` as an id -> Ticket map (empty if
@@ -1563,7 +1563,7 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]:
     return parsed
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:ticket T-0458
 # frob:ticket T-0601
 # frob:ticket T-0889
@@ -1676,7 +1676,7 @@ def _write_archive_v2(
     return Ok(None)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:doc docs/design/ledger-v2.md#3-lock-model
 # frob:ticket T-0458
 # frob:ticket T-1254
@@ -1977,7 +1977,7 @@ def _post_splice_integrity_check(
 
 
 # frob:ticket T-1561
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_mode_writes_under_ar\
 # chive_dir kind="unit"
@@ -2034,7 +2034,7 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
         return _splice_single_ticket(archive_path(root), _ARCHIVE_HEADER, ticket)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:ticket T-0458
 # frob:ticket T-0601
 # frob:ticket T-0889
@@ -2181,7 +2181,7 @@ def _prune_stale_files(root: Path, keep_files: set[Path]) -> None:
             path.unlink(missing_ok=True)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
     """Collapse a legacy tickets/*.md layout into a single tickets.md ledger.
 
@@ -2212,7 +2212,8 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 
 # frob:ticket T-1259
 # frob:doc \
-# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
+# tion-7
 def _split_done_report(body: str) -> tuple[str, str | None]:
     """Split a v1-mode ticket `body` into (body_without_done_report,
     done_report_text_or_None), the mechanical inverse of `_models.
@@ -2242,7 +2243,8 @@ def _split_done_report(body: str) -> tuple[str, str | None]:
 
 # frob:ticket T-1259
 # frob:doc \
-# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
+# tion-7
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_migrates_one_active_ticket_with_done_report  # noqa: E501
 def _migrate_one_v2(
     root: Path, ticket: Ticket, dest_dir: Path
@@ -2274,8 +2276,9 @@ def _migrate_one_v2(
 
 # frob:ticket T-1259
 # frob:doc \
-# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
-# frob:doc docs/modules/tickets.md#storage-internals
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
+# tion-7
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_golden_round_trip_semantic_equality  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_idempotent_no_v1_state_is_a_no_op  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestMigrateV1ToV2.test_draft_id_ticket_migrates_like_any_other  # noqa: E501
@@ -2330,7 +2333,7 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
     return Ok(total)
 
 
-# frob:doc docs/modules/tickets.md#storage-internals
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestAtomicWrite.test_fsyncs_file_before_replace
 # frob:tests \

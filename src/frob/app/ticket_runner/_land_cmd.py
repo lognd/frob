@@ -459,7 +459,7 @@ _POST_LAND_SWEEP_BUDGET_S = 300
 _UNSCOPED_NO_TICKET_STRUCTURAL_NOISE_RULE_IDS = frozenset({"PRE001", "SCOPE001"})
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1535
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
@@ -587,7 +587,7 @@ def _unscoped_error_findings(
     )
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1513
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
@@ -654,7 +654,7 @@ def _worktree_touched_paths(root: Path) -> set[str]:
     }
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1513
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_fixed_by_tier_a_lands_with_a_followup_commit  # noqa: E501
@@ -727,7 +727,7 @@ def _sweep_apply_tier_a_and_commit(
     return fixed_count
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestPostLandUnscopedSweep.test_new_error_absent_before_land_refuses_and_reverts  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
@@ -771,7 +771,7 @@ def _sweep_revert_land(
         )
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1456
 # frob:ticket T-1463
 # frob:waive AFFECT001 reason="T-1463 only skips a guaranteed-redundant second scan \
@@ -880,7 +880,7 @@ def _post_land_unscoped_error_sweep(
     return False
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
 # sweep section (T-1456/T-1514) is a deliberate architecture doc walking through this \
@@ -993,7 +993,7 @@ def _drop_checkpoint_exempt_findings(
 _LAND_PARITY_BUDGET_S = _POST_LAND_SWEEP_BUDGET_S
 
 
-# frob:doc docs/modules/tickets.md#frob-check---land-parity-t-1535
+# frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
 # frob:ticket T-1535
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_none_when_unmeasurable kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_gate_cache_env_on_the_spawn kind="unit"  # noqa: E501
@@ -1037,7 +1037,7 @@ def land_parity_findings(
     )
 
 
-# frob:doc docs/modules/tickets.md#post-land-unscoped-error-sweep-t-1456
+# frob:doc docs/modules/tickets-landing.md#post-land-unscoped-error-sweep-t-1456
 # frob:ticket T-1514
 # frob:ticket T-1524
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's Post-land unscoped error \
@@ -1939,8 +1939,8 @@ def _finish_land_after_success(
 # frob:ticket T-1720
 # frob:ticket T-2173
 # frob:doc \
-# docs/modules/tickets.md#auto-sync-after-a-successful-land-t-1720-rebase-replaced-by-m\
-# erge-in-t-2173
+# docs/modules/tickets-landing.md#auto-sync-after-a-successful-land-t-1720-rebase-repla\
+# ced-by-merge-in-t-2173
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_merges_the_worktree_onto_the_new_main_tip  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land  # noqa: E501
 # frob:tests tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain.test_dirty_worktree_is_skipped_rather_than_merged_into  # noqa: E501
@@ -3449,7 +3449,7 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     return root, rapid_land
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1693
 # frob:ticket T-2049
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings.test_not_quarantined_is_unchanged  # noqa: E501
@@ -3530,7 +3530,7 @@ def _quarantine_undisposed_summary(root: Path) -> str:
 
 
 # frob:ticket T-1693
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_no_quarantine_is_a_noop  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_real_attributed_finding_never_auto_clears  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestAutoClearSyntheticQuarantine.test_synthetic_finding_clears_once_status_is_untripped  # noqa: E501
@@ -3592,7 +3592,7 @@ def _auto_clear_synthetic_quarantine(root: Path, ceilings) -> None:  # noqa: ANN
         )
 
 
-# frob:doc docs/modules/tickets.md#backpressure-t-1692
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:ticket T-1692
 # frob:ticket T-1693
 # frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_dry_run_skips_the_check  # noqa: E501
@@ -3652,7 +3652,7 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
 
 
 # frob:ticket T-1693
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_raises_with_a_synthetic_finding  # noqa: E501
 # frob:tests tests/unit/test_land_cmd_quarantine.py::TestRaiseQuarantineOnPersistentBlockTimeout.test_already_quarantined_is_a_noop  # noqa: E501
 def _raise_quarantine_on_persistent_block_timeout(
@@ -4213,7 +4213,7 @@ def _require_merge_driver_args(cfg: AppConfig) -> None:
 # frob:ticket T-0323
 def _merge_driver(root: Path, cfg: AppConfig) -> None:
     """`frob ticket merge-driver %O %A %B`: git's merge-driver entry point
-    for `tickets.md` (docs/modules/tickets.md#git-merge-driver). Reads the
+    for `tickets.md` (docs/modules/tickets-merge-driver.md#git-merge-driver). Reads the
     `ours` (%A) and `theirs` (%B) temp files git hands it, splices them via
     the SAME `splice_ledger` `frob ticket land` uses (never a duplicate
     reimplementation), and overwrites `ours` in place with the result --

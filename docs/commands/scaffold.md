@@ -110,7 +110,7 @@ def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...]
     # loudly whenever FROB_AGENT is set non-empty -- catches a stray raw
     # `git commit`/`git merge` an agent shell ran directly against the
     # wrong checkout, independent of frob.tickets' own worktree-lease
-    # guard (docs/modules/tickets.md#worktree-lease-guard-t-0431). Refuses
+    # guard (docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431). Refuses
     # to overwrite an existing hook file without force=True.
 ```
 

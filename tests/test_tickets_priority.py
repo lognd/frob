@@ -1,6 +1,6 @@
 """Tests for T-0411's priority model: PRIORITY_RANK, doable's priority-first
 ordering, set_priority, and the TICK004 queue-rot gate
-(docs/modules/tickets.md#data-models)."""
+(docs/modules/tickets-data-storage.md#data-models)."""
 
 from __future__ import annotations
 

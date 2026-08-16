@@ -1,6 +1,6 @@
 """Tests for T-0715's ticket organization model foundation: the `tier`
 (epic|story|ticket) field, structural doable/close rules built on it, and
-the `sprint` field it ships alongside (docs/modules/tickets.md#data-models).
+the `sprint` field it ships alongside (docs/modules/tickets-data-storage.md#data-models).
 """
 
 from __future__ import annotations

@@ -55,7 +55,7 @@ from frob.verify._watermark import VerifyQueueEntry
 _log = get_logger(__name__)
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 class BatchSelectionError(ErrorSet):
     """Fallible outcomes of `select_batch_tests`/`run_batch_selected_tests`."""
 
@@ -65,7 +65,7 @@ class BatchSelectionError(ErrorSet):
     RunnersUnavailable = "test.runner config could not be loaded"
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 class BatchSelection(BaseModel):
     """The union-touched-set selection for one batch of `VerifyQueueEntry`
     records -- `report` is the same `SelectionReport` shape a single-entry
@@ -89,7 +89,7 @@ def _union_touched_symbols(entries: Sequence[VerifyQueueEntry]) -> frozenset[str
     return frozenset(union)
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 def _synthetic_diff_for_touched_symbols(
     snapshot: GraphSnapshot, touched_symbols: frozenset[str]
 ) -> Diff:
@@ -119,7 +119,7 @@ def _synthetic_diff_for_touched_symbols(
     return Diff(base="", hunks=tuple(hunks))
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_union_of_two_entries_selects_once  # noqa: E501
 # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_empty_batch_selects_nothing  # noqa: E501
 # frob:tests tests/unit/verify/test_selection.py::TestSelectBatchTests.test_unresolvable_symbol_is_skipped_not_fatal  # noqa: E501
@@ -146,7 +146,7 @@ def select_batch_tests(
     )
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 # frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
 # frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_selects_and_runs_once  # noqa: E501
 def run_batch_selected_tests(

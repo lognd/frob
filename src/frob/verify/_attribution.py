@@ -88,14 +88,14 @@ _DEFAULT_MAX_NODES = 4000
 _GRAPH_CACHE_REL = Path(".frob") / "cache.db"
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 class AttributionError(ErrorSet):
     """Fallible outcomes of `attribute_batch`."""
 
     GraphUnavailable = "the reference graph could not be built/loaded for attribution"
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 class Attribution(BaseModel):
     """One finding's attribution outcome: either `status="attributed"`
     (exactly one batch commit's touched symbols reach the finding's
@@ -274,7 +274,7 @@ def load_attribution_context(
     return Ok(loaded)
 
 
-# frob:doc docs/modules/tickets.md#symbolic-attribution-t-1690
+# frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_caller_break_attributes_to_the_caller_commit  # noqa: E501
 # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_two_reaching_commits_is_unattributed  # noqa: E501
 # frob:tests tests/unit/verify/test_attribution.py::TestAttributeBatch.test_zero_reaching_commits_is_unattributed  # noqa: E501

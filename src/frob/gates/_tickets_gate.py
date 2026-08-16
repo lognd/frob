@@ -48,7 +48,7 @@ _log = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # TICK001 / TICK002: ticket-id collision invariant (T-0162, decision record
-# in docs/modules/tickets.md#decision-record-t-0162)
+# in docs/modules/tickets-lifecycle.md#decision-record-t-0162)
 # ---------------------------------------------------------------------------
 
 
@@ -1129,8 +1129,9 @@ _LEDGERV1_SUNSET = "2027-02-02"
 
 
 # frob:doc \
-# docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7
-# frob:doc docs/modules/tickets.md#storage-internals
+# docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-sec\
+# tion-7
+# frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper, same precedent as \
@@ -1187,7 +1188,7 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     )
 
 
-# frob:doc docs/modules/tickets.md#decision-record-t-0162
+# frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
     TICK009/TICK010/TICK011: the T-0162 ticket-id collision invariant

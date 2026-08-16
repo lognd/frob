@@ -4,7 +4,7 @@ agent-playbook's own hard-rule sections (parsed from its headings, not
 hardcoded), best-effort targeted verify commands inferred from scope,
 a gate-baseline summary, and the REL/land rules -- so a dispatch prompt
 collapses to two lines instead of ~400 hand-typed words
-(docs/modules/tickets.md#frob-ticket-brief-t-0568)."""
+(docs/modules/tickets-lifecycle.md#frob-ticket-brief-t-0568)."""
 
 from __future__ import annotations
 
@@ -258,7 +258,7 @@ def _playbook_hard_rules_section(root: Path) -> tuple[str, ...]:
 
 # frob:ticket T-0568
 # frob:ticket T-1347
-# frob:doc docs/modules/tickets.md#frob-ticket-brief-t-0568
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief-t-0568
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_composes_full_briefing
 # frob:tests tests/test_tickets_brief.py::TestBriefTicket.test_concurrent_leases
 # frob:ticket T-0601
@@ -399,7 +399,7 @@ def _cluster_open_blockers_of(t: Ticket, by_id: dict) -> tuple[str, ...]:
 
 
 # frob:ticket T-1243
-# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_dependency_order_respects_intra_cluster_blocked_by  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_excludes_leaf_blocked_from_outside_the_cluster  # noqa: E501
 # frob:tests tests/test_tickets_brief.py::TestClusterDescendants.test_unknown_cluster_returns_empty  # noqa: E501
@@ -437,7 +437,7 @@ def cluster_descendants(queue: TicketQueue, cluster_id: str) -> tuple[Ticket, ..
 
 
 # frob:ticket T-1243
-# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
 # frob:tests tests/test_tickets_brief.py::TestClusterUnionScope.test_deduplicates_and_preserves_first_seen_order  # noqa: E501
 def cluster_union_scope(members: tuple[Ticket, ...]) -> tuple[str, ...]:
     """The deduplicated, order-preserving union of every member ticket's
@@ -455,7 +455,7 @@ def cluster_union_scope(members: tuple[Ticket, ...]) -> tuple[str, ...]:
 
 
 # frob:ticket T-1243
-# frob:doc docs/modules/tickets.md#frob-ticket-brief---cluster-t-1243
+# frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-brief---cluster-t-1243
 # frob:tests tests/test_tickets_brief.py::TestClusterBrief.test_composes_one_briefing_for_the_whole_cluster  # noqa: E501
 def compose_cluster_brief(
     root: Path,

@@ -12,9 +12,26 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- docs/modules/tickets.md
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: 'T-1780: docs/modules/tickets.md was split by subject; this ticket''s own
+    touched code lives in the lifecycle cluster (filing, review, scope/lease), so
+    its scope now names docs/modules/tickets-lifecycle.md instead of the monofile
+    every other unrelated ticket also held a lease on'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'T-1780: docs/modules/tickets.md was split by subject; this ticket''s own
+    touched code lives in the lifecycle cluster (filing, review, scope/lease), so
+    its scope now names docs/modules/tickets-lifecycle.md instead of the monofile
+    every other unrelated ticket also held a lease on'
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null

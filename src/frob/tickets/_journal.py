@@ -34,7 +34,7 @@ from frob.tickets._store import atomic_write
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/tickets.md#intent-journal-t-0456
+# frob:doc docs/modules/tickets-lifecycle.md#intent-journal-t-0456
 JOURNAL_DIRNAME = "journal"
 
 

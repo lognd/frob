@@ -922,7 +922,7 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1866
-# frob:doc docs/modules/tickets.md#mega-glob-scope-refused-at-start-t-1866
+# frob:doc docs/modules/tickets-data-storage.md#mega-glob-scope-refused-at-start-t-1866
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_over_broad_scope  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
 def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN001
@@ -976,11 +976,11 @@ def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN0
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disjoint_scope  # noqa: E501
 # frob:waive AFFECT001 reason="T-1894: fix is a pure type-correctness change (wrap the \
 # queue Mapping in dict() before calling scope_lease_conflict, no behavior change) -- \
-# docs/modules/tickets.md#cross-worktree-lease-side-channel-t-0473 already describes \
-# scope_lease_conflict's queue param generically and needs no content update, but \
-# re-acking requires writing frob.lock, which T-1883 holds a live lease on for the \
-# duration of its own DUP001 work in this same file cluster; remove this waiver and \
-# ack normally once that lease clears"
+# docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473 already \
+# describes scope_lease_conflict's queue param generically and needs no content \
+# update, but re-acking requires writing frob.lock, which T-1883 holds a live lease on \
+# for the duration of its own DUP001 work in this same file cluster; remove this \
+# waiver and ack normally once that lease clears"
 # frob:waive DRIFT001 reason="T-1894: same dict()-wrap type-only fix as the AFFECT001 \
 # waiver above; frob.lock is leased by T-1883 for the duration of this ticket, so the \
 # body digest cannot be re-acked here without fighting that lease; remove this waiver \

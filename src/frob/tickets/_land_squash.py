@@ -1,6 +1,6 @@
 """`frob ticket land` -- squash-apply/close stage.
 
-See docs/modules/tickets.md#frob-ticket-land.
+See docs/modules/tickets-landing.md#frob-ticket-land.
 
 Split out of `frob.tickets._land_finalize` (T-1334, continuing the
 verbatim-move discipline T-1186/T-1189/T-1192/T-1194/T-1251 established):

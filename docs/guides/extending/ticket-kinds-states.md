@@ -18,7 +18,7 @@ governing the epic -> story -> ticket hierarchy: `epic`, `story`,
 `ticket` (default). The remaining four (`Priority`, `Origin`,
 `ScopeChangeOp`, `ReviewVerdict`) are out of this guide's scope. The
 full state machine diagram and transition rules live in
-`docs/modules/tickets.md#state-machine` -- this guide covers only how to
+`docs/modules/tickets-lifecycle.md#state-machine` -- this guide covers only how to
 add a new enum member; that doc is the reference for the machine itself.
 
 ## Add-an-entry recipe (new kind or state)
@@ -32,7 +32,7 @@ add a new enum member; that doc is the reference for the machine itself.
 3. If the new state changes the state machine's legal-transition graph
    (adding a state is almost always a state-machine change, not just an
    enum change), update the transition table in `_store.py` and the
-   diagram in `docs/modules/tickets.md#state-machine`.
+   diagram in `docs/modules/tickets-lifecycle.md#state-machine`.
 4. If the new kind needs kind-specific fields (the way `security` tickets
    carry a `Stride` category), add the field to `Ticket` as
    `<field> | None = None` and validate it is set exactly when
@@ -49,7 +49,7 @@ add a new enum member; that doc is the reference for the machine itself.
 - **COV001/TEST00x** apply normally to the new enum member and any new
   field.
 - **DOC001/DOC002** applies normally for the `frob:doc` edge into
-  `docs/modules/tickets.md#data-models`.
+  `docs/modules/tickets-data-storage.md#data-models`.
 
 ## Worked example
 
@@ -57,7 +57,7 @@ add a new enum member; that doc is the reference for the machine itself.
 codebase: it was added as a `security`-kind-only field, required exactly
 when `TicketKind.SECURITY` is set, validated in `Ticket`'s pydantic model
 via a `model_validator`, and documented in
-`docs/modules/tickets.md#data-models` alongside `TicketKind`/`TicketState`.
+`docs/modules/tickets-data-storage.md#data-models` alongside `TicketKind`/`TicketState`.
 
 ## Common mistakes
 
@@ -68,12 +68,12 @@ via a `model_validator`, and documented in
   end no ticket can ever reach or leave.
 - Reusing `dropped` semantics for a new "cut but might resume" state
   instead of adding a real new state -- `dropped` is terminal by design
-  (`docs/modules/tickets.md#state-machine`); a resumable cut needs its own
+  (`docs/modules/tickets-lifecycle.md#state-machine`); a resumable cut needs its own
   state, not an overload of an existing terminal one.
 
 ## See also
 
-- `docs/modules/tickets.md#state-machine` -- the full transition diagram
+- `docs/modules/tickets-lifecycle.md#state-machine` -- the full transition diagram
   and per-state semantics.
-- `docs/modules/tickets.md#data-models` -- `Ticket`, `TicketKind`,
+- `docs/modules/tickets-data-storage.md#data-models` -- `Ticket`, `TicketKind`,
   `TicketState`, `Stride` field-level reference.

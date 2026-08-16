@@ -14,7 +14,7 @@ mutant of the touched code makes the evidence-test command fail, the
 evidence proved it distinguishes the change (a real kill). If EVERY mutant
 of a touched file still passes the evidence tests, those tests are
 confirmatory-only for that file -- `frob.gates` surfaces this as TEST016
-(see `docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755`).
+(see `docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755`).
 
 Deliberately narrow in v1, matching `frob.mutate`'s own Python-only v1
 scope (docs/modules/mutate.md): non-Python touched files are silently
@@ -102,14 +102,14 @@ def _sweep_budget_s() -> float:
         return _DEFAULT_SWEEP_BUDGET_S
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 class MutationEvidenceError(ErrorSet):
     """Fallible outcomes of the diff-scoped evidence-quality check."""
 
     ExecDisabled = "exec capability disabled -- mutation check aborted, no verdict"
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 class ConfirmatoryFinding(BaseModel):
     """One touched file whose ticket-bound evidence tests killed ZERO of
     its bounded mutant set -- every recorded evidence test for this ticket
@@ -286,7 +286,7 @@ def _is_test_file(path: str) -> bool:
     return name.startswith("test_") or name.endswith("_test.py") or "tests" in parts
 
 
-# frob:doc docs/modules/tickets.md#mutation-evidence-obligation-test016-t-0755
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:invariant INV-017
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_confirmatory_test_flagged  # noqa: E501
 # frob:tests tests/test_tickets_mutation_evidence.py::TestCheckTicketMutationEvidence.test_adversarial_test_not_flagged  # noqa: E501

@@ -37,7 +37,7 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
-# frob:doc docs/modules/tickets.md#batch-test-selection-t-1689
+# frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 # frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
 def _run_select_batch_tests(root: Path) -> None:
     """`frob graph select-batch-tests` (T-1689): read the current verify

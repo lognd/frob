@@ -646,7 +646,7 @@ the parser that motivated it:
   grep`-based citation scan, unrelated to this module's own parser) --
   `_drop_escaped_mentions` re-runs each hit's matched pattern against
   the masked text and drops the hit if the match existed only inside
-  the escape (docs/modules/tickets.md#live-tracker-citation-preflight-t-0854).
+  the escape (docs/modules/tickets-landing.md#live-tracker-citation-preflight-t-0854).
 
 An UNESCAPED real directive elsewhere on the same physical line is
 unaffected -- masking only touches the wrapped span, never the whole

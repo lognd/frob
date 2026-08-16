@@ -1,5 +1,5 @@
 """T-0323: `frob ticket merge-driver %O %A %B` -- the git merge-driver entry
-point for `tickets.md` (docs/modules/tickets.md#git-merge-driver).
+point for `tickets.md` (docs/modules/tickets-merge-driver.md#git-merge-driver).
 
 Two layers, matching this repo's `test_ticket_land.py` style:
 

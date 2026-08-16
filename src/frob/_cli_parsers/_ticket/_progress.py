@@ -163,7 +163,7 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
 # frob:ticket T-0323
 def _add_ticket_merge_driver_parser(ticket_sub):
     """Register `frob ticket merge-driver %O %A %B`, the git merge-driver
-    entry point (docs/modules/tickets.md#git-merge-driver): git invokes
+    entry point (docs/modules/tickets-merge-driver.md#git-merge-driver): git invokes
     this with base/ours/theirs temp file paths and expects the splice
     result written back into `ours` (%A)."""
     ticket_merge_driver_p = ticket_sub.add_parser(

@@ -276,7 +276,7 @@ a one-shot, reversible migrator that writes a monofile-mode ledger's
 tickets into per-ticket `tickets/T-####/ticket.md` (+ `done-report.md`,
 + moved attachments) WITHOUT deleting `tickets.md`/`tickets-archive.md`
 in the same call. See `docs/design/ledger-v2.md` section 7 for the full
-migration design and `docs/modules/tickets.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7`
+migration design and `docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7`
 for the storage-internals writeup.
 
 ## Generated command reference (T-1011)

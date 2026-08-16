@@ -1,5 +1,5 @@
 """Provisional (draft) ticket ids -- the T-0162 collision-proofing mechanism
-(docs/modules/tickets.md#decision-record-t-0162).
+(docs/modules/tickets-lifecycle.md#decision-record-t-0162).
 
 `frob ticket new` off the repo's default branch mints a `T-draft-<hex>` id
 instead of the next sequential `T-####`. Final sequential ids are only ever
@@ -20,18 +20,18 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 DRAFT_PREFIX = "T-draft-"
 _DRAFT_HEX_LEN = 8
 
 
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 def is_draft_id(ticket_id: str) -> bool:
     """Whether `ticket_id` is a provisional draft id, never a final T-####."""
     return ticket_id.startswith(DRAFT_PREFIX)
 
 
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 def mint_draft_id() -> str:
     """A fresh content-nonce draft id: `T-draft-<8 hex chars>` -- collision
     probability across two independently-filing checkouts is astronomically
@@ -69,7 +69,7 @@ def _default_branch(root: Path) -> str:
     return "main"
 
 
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 def on_default_branch(root: Path) -> bool:
     """Whether `root`'s checkout is currently on the repo's default branch.
 

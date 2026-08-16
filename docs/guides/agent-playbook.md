@@ -321,7 +321,7 @@ verbatim from a path instead, structurally avoiding the shell entirely:
 - `frob ticket new --body-file PATH` (instead of inline `--body TEXT`)
 - `frob ticket new --acceptance-file PATH` (instead of repeated
   `--acceptance TEXT`; blank-line-separated blocks, one criterion each --
-  see docs/modules/tickets.md#--body-file--acceptance-file-t-0737)
+  see docs/modules/tickets-data-storage.md#--body-file--acceptance-file-t-0737)
 - `frob ticket scope <id> --reason-file PATH` (instead of inline `--reason
   TEXT`)
 - `frob ticket done-report <id> --why-file PATH` (T-0458, the original
@@ -943,7 +943,7 @@ proceeding -- do not commit through it.
 
 `tickets.md` is a shared, append-mostly ledger; concurrent worktrees can
 produce a merge conflict on it. Register the `frob ticket merge-driver`
-git merge driver once per clone (`docs/modules/tickets.md#git-merge-driver`)
+git merge driver once per clone (`docs/modules/tickets-merge-driver.md#git-merge-driver`)
 and any `git merge`/`pull`/`rebase` touching `tickets.md` auto-
 splices via `splice_ledger` instead of conflicting -- do this before
 touching a worktree, not after hitting the first conflict.

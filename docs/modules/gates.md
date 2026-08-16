@@ -962,7 +962,7 @@ parseable `reason=` is treated as ABSENT, same as the waiver.
 **Kind changes after evidence exists are recorded and surfaced, not
 silent (T-1616).** `frob ticket kind <id> <kind>` (`set_kind`,
 `src/frob/tickets/_setters.py`) appends a `kind_history` entry
-(`Ticket.kind_history`, docs/modules/tickets.md#data-models) whenever the
+(`Ticket.kind_history`, docs/modules/tickets-data-storage.md#data-models) whenever the
 new kind differs from the old AND the ticket already carries bound
 evidence and/or a substantive Done report -- i.e. a change that could
 plausibly be relaxing an already-earned evidence obligation, exactly the
@@ -3542,9 +3542,9 @@ is untouched.
 Why not the alternative (git as a hard requirement, erroring loudly with
 ONE message before any gate runs)? `frob check <path>` and `frob ticket
 new --path <path>` are both documented to accept a bare filesystem path
-with no git precondition (`docs/modules/tickets.md`'s "ambiguous: no git
-repo, detached HEAD, git unavailable" ticket-id-minting fallback is the
-same call already made for a sibling concern) -- a git-less target is a
+with no git precondition (`docs/modules/tickets-lifecycle.md#provisional-ids`'s
+"ambiguous: no git repo, detached HEAD, git unavailable" ticket-id-minting
+fallback is the same call already made for a sibling concern) -- a git-less target is a
 supported, if degraded, scan surface, not a usage error. Gates that
 inherently need a diff against a base branch (`COV002`/`SCOPE001`/
 `TODO001`) are a distinct, ALREADY-deliberate mechanism (T-0550, in
@@ -4697,7 +4697,7 @@ its finding message, so the handler just calls that existing remedy:
   scope nor named in its Done report
   (`frob.tickets._land._check_uncommitted_waive_deletions`,
   `LandError.OutOfScopeWaiveDeletion`) -- see
-  docs/modules/tickets.md#frob-ticket-land.
+  docs/modules/tickets-landing.md#frob-ticket-land.
 
 **`fix_suppress001_paired_suppression`** (T-1341, phase 2 of T-1339's
 suppression-dialect-portability epic): a SUPPRESS001 finding (`frob.
@@ -4802,7 +4802,7 @@ what WAS auto-fixed rather than only what was left alone.
 
 **Crash-safety and recovery breadcrumb (T-1348).** `_absorb_pre_land_fixes`
 calls `apply_tier_a_fixes` BEFORE `frob ticket land`'s own pre-merge
-wip-commit (docs/modules/tickets.md#frob-ticket-land) ever runs -- a
+wip-commit (docs/modules/tickets-landing.md#frob-ticket-land) ever runs -- a
 process killed anywhere in this window used to leave the tree in a state
 that was neither the pre-fix nor the post-fix original (T-1338: a killed
 land left `src/frob/gates/_debt_deprecated.py` GARBLED, and the obvious
@@ -4824,7 +4824,7 @@ entirely inside this module:
   agent diffs `git status` against it instead of a blanket `git checkout
   --` that cannot tell "Tier-A rewrote this" from "my own uncommitted work
   is in this other file" -- the exact ambiguity T-1338 turned into data
-  loss. See docs/modules/tickets.md#frob-ticket-land for how this sits
+  loss. See docs/modules/tickets-landing.md#frob-ticket-land for how this sits
   relative to `land()`'s own wip-commit step.
 
 **Scope boundary (T-1138, updated T-1261):** this module is the fix

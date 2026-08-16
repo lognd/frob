@@ -98,7 +98,8 @@ _THRESHOLD_TICKET_COUNT = 200
 _THRESHOLD_LEASE_COUNT = 5
 
 
-# frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
 class ProfileName(StrEnum):
     """`frob.toml`'s `[profile] profile = "..."` value -- `standard` is
     the default (today's unchanged behavior) whenever `[profile]` is
@@ -111,7 +112,8 @@ class ProfileName(StrEnum):
     FORTRESS = "fortress"
 
 
-# frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
 class ProfileError(ErrorSet):
     """Fallible outcomes of this module's config/ratchet operations."""
 
@@ -131,7 +133,8 @@ class _RatchetState(BaseModel):
     at: str
 
 
-# frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
 # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_absent_frob_toml_is_standard  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_explicit_rapid_parses  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestConfiguredProfile.test_unknown_value_errors  # noqa: E501
@@ -170,7 +173,8 @@ def configured_profile(root: Path) -> Result[ProfileName, ProfileError]:
         return Err(ProfileError.BadConfig)
 
 
-# frob:doc docs/modules/tickets.md#rapid-debt-and-the-ratchet-override-t-1681
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#rapid-debt-and-the-ratchet-override-t-1681
 # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_frob_toml_is_not_overridden  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_absent_key_is_not_overridden  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestRatchetOverride.test_explicit_true_overrides  # noqa: E501
@@ -290,7 +294,8 @@ def _ratchet_thresholds_tripped(root: Path) -> str | None:
     return None
 
 
-# frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
 # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_standard_is_unaffected_by_ratchet  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_rapid_below_threshold_stays_rapid  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestEffectiveProfile.test_rapid_above_threshold_ratchets_to_standard  # noqa: E501
@@ -353,7 +358,8 @@ def effective_profile(root: Path) -> Result[ProfileName, ProfileError]:
 
 
 # frob:ticket T-1584
-# frob:doc docs/modules/tickets.md#development-profiles-frobtoml-profile-t-1575
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#development-profiles-frobtoml-profile-t-1575
 # frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_clears_persisted_ratchet  # noqa: E501
 # frob:tests tests/unit/test_profile.py::TestDowngrade.test_downgrade_is_noop_when_nothing_ratcheted  # noqa: E501
 # frob:tests tests/unit/test_profile_runner.py::TestProfileRunnerDowngrade.test_downgrade_clears_a_real_ratchet  # noqa: E501

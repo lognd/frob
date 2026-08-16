@@ -1038,7 +1038,7 @@ def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
 
 
 # frob:ticket T-1535
-# frob:doc docs/modules/tickets.md#frob-check---land-parity-t-1535
+# frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
 # frob:waive COV007 reason="T-1636: docs/modules/tickets.md's --land-parity section \
 # (T-1535) is a deliberate architecture doc describing this exact private CLI \

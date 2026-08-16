@@ -131,7 +131,7 @@ not be. `undisposed_count` is the number of findings whose
 
 T-2049's own reason for existing: a raised quarantine forces every land
 onto fully-synchronous verification (`_quarantine_override_ceilings`,
-`docs/modules/tickets.md#quarantine-circuit-breaker-t-1693`), and prior
+`docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693`), and prior
 to this the ONLY signal was one ERROR line buried inside `frob ticket
 land`'s own several-hundred-line output -- read past across four
 separate land attempts in a real incident that cost roughly an hour of

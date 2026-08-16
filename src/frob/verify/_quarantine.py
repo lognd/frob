@@ -56,7 +56,7 @@ from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 #: Bumped whenever `QuarantineRecord`'s shape changes in a way an OLDER
 #: reader could not safely interpret -- same convention `frob.verify.
 #: _watermark.SCHEMA_VERSION` already establishes for this package.
@@ -97,7 +97,7 @@ _QUARANTINE_LOCK_REL = Path(".frob") / "quarantine.lock"
 _NATURALLY_UNATTRIBUTABLE_RULES: frozenset[str] = frozenset({"TICK004"})
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 class QuarantineError(ErrorSet):
     """Fallible outcomes of this module's raise/clear/status operations."""
 
@@ -109,7 +109,7 @@ class QuarantineError(ErrorSet):
     EmptyFindings = "raise_quarantine requires at least one finding"
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 class QuarantinedFinding(BaseModel):
     """One finding the raising batch recorded (T-1690's own `Attribution`
     shape, narrowed to what this module persists/acts on) -- `rule_id`
@@ -138,7 +138,7 @@ class QuarantinedFinding(BaseModel):
     disposition_reason: str | None = None
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 class QuarantineRecord(BaseModel):
     """`.frob/quarantine.json`'s single current record: whether quarantine
     is raised right now, the batch/findings that raised it, and (once
@@ -182,7 +182,7 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat()
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests \
 # tests/unit/verify/test_quarantine.py::TestLoadQuarantine.test_missing_file_is_none \
 # kind="unit"
@@ -220,7 +220,7 @@ def _save_quarantine(root: Path, record: QuarantineRecord) -> None:
     path.write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests \
 # tests/unit/verify/test_quarantine.py::TestIsQuarantined.test_false_when_never_raised \
 # kind="unit"
@@ -244,7 +244,7 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
     return Ok(record is not None and record.cleared_at is None)
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests \
 # tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_raises_and_persists \
 # kind="unit"
@@ -336,7 +336,7 @@ def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
     return all(f.disposition in ("filed", "dismissed") for f in findings)
 
 
-# frob:doc docs/modules/tickets.md#quarantine-circuit-breaker-t-1693
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_not_raised kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_a_finding_is_undisposed kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_clears_when_every_finding_disposed kind="unit"  # noqa: E501

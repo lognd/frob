@@ -83,7 +83,8 @@ from frob.tickets._land_queue import file_lock, write_json_records
 _log = get_logger(__name__)
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 #: Bumped whenever `VerifyQueueEntry`/`Watermark`'s own field shape
 #: changes -- persisted alongside each record (T-1687's own "versioned,
 #: forward-compatible on read" constraint) so a future reader can tell an
@@ -98,7 +99,8 @@ _WATERMARK_LOCK_REL = Path(".frob") / "verify-watermark.lock"
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 class WatermarkError(ErrorSet):
     """Fallible outcomes of this module's queue/watermark operations."""
 
@@ -109,7 +111,8 @@ class WatermarkError(ErrorSet):
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 class VerifyQueueEntry(BaseModel):
     """One `.frob/verify-queue.json` record: a land's own intent to be
     verified -- the commit it produced, the ticket responsible, and the
@@ -138,7 +141,8 @@ class VerifyQueueEntry(BaseModel):
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 class Watermark(BaseModel):
     """`.frob/verify-watermark.json`'s single current record: "main is
     verified through commit X, as of time T, by run R, against baseline
@@ -210,7 +214,8 @@ def _save_queue(root: Path, entries: tuple[VerifyQueueEntry, ...]) -> None:
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests \
 # tests/unit/verify/test_watermark.py::TestQueueStatus.test_empty_queue_is_empty_tuple
 # frob:tests \
@@ -224,7 +229,8 @@ def queue_status(root: Path) -> Result[tuple[VerifyQueueEntry, ...], WatermarkEr
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_appends_one_entry_with_resolvable_symbols  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_persists_across_calls_in_order  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestRecordIntent.test_empty_touched_symbols_refused  # noqa: E501
@@ -285,7 +291,8 @@ def record_intent(
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests \
 # tests/unit/verify/test_watermark.py::TestLoadWatermark.test_missing_file_is_none
 # frob:tests tests/unit/verify/test_watermark.py::TestLoadWatermark.test_round_trips
@@ -324,7 +331,8 @@ def load_watermark(root: Path) -> Result[Watermark | None, WatermarkError]:
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_then_load_round_trips  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestAdvanceWatermark.test_advance_overwrites_prior_watermark  # noqa: E501
 def advance_watermark(
@@ -364,7 +372,8 @@ def advance_watermark(
 
 
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_drops_entries_at_or_before_watermark  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_keeps_entries_after_watermark  # noqa: E501
 # frob:tests tests/unit/verify/test_watermark.py::TestCompactQueue.test_watermark_commit_absent_from_queue_is_a_noop  # noqa: E501

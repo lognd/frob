@@ -27,10 +27,10 @@ from frob.tickets._models import TicketError
 
 _log = get_logger(__name__)
 
-# frob:doc docs/modules/tickets.md#worktree-lease-guard-t-0431
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 FROB_WORKTREE_ENV = "FROB_WORKTREE"
 
-# frob:doc docs/modules/tickets.md#worktree-lease-guard-t-0431
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 #: T-0574: the flag `frob agent env` also exports, and the same flag
 #: `frob.gates`/`release_gate`/the scaffold-managed hooks already read to
 #: tell a dispatched worktree agent's shell apart from a coordinator's
@@ -39,7 +39,7 @@ FROB_WORKTREE_ENV = "FROB_WORKTREE"
 FROB_AGENT_ENV = "FROB_AGENT"
 
 
-# frob:doc docs/modules/tickets.md#worktree-lease-guard-t-0431
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_no_env_var_is_unrestricted  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_matching_worktree_passes  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestEnforceWorktreeLease.test_mismatched_worktree_refuses  # noqa: E501
@@ -89,7 +89,7 @@ def enforce_worktree_lease(root: Path) -> Result[None, TicketError]:
     return Ok(None)
 
 
-# frob:doc docs/modules/tickets.md#worktree-lease-guard-t-0431
+# frob:doc docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431
 # frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_resolves_worktree_root  # noqa: E501
 # frob:tests tests/test_worktree_guard.py::TestAgentEnvExports.test_non_repo_root_errs  # noqa: E501
 def agent_env_exports(root: Path) -> Result[dict[str, str], GitError]:

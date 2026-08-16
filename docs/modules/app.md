@@ -44,7 +44,7 @@ shape IS the dispatcher's one documented job above, not a separable
 concern.
 
 T-1697 added `Subcommand.verify` (`frob verify status|now|explain|
-dispose`, docs/modules/tickets.md#frob-verify-cli-t-1697) to
+dispose`, docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697) to
 `_SUBCOMMAND_RUNNER_NAMES`/`_RUNNER_MODULE_NAMES` alongside every other
 uniform `run(AppConfig)` runner -- no special-casing in `App.__call__`
 itself, same as any other subcommand that is not `bind`.
@@ -182,8 +182,9 @@ T-1029: `ticket_accept_criterion` (`list[str]`, default `[]`, repeatable
 default `None`, `--criterion-file PATH`) are `frob ticket accept <id>`'s
 fields -- collected via the ordinary multi-value-list-field / Path-field
 loops in `from_external`, same shape as `ticket_label_add`/
-`ticket_scope_reason_file`'s precedents. See docs/modules/tickets.md#frob-
-ticket-accept-t-1029 for the command itself.
+`ticket_scope_reason_file`'s precedents. See
+docs/modules/tickets-data-storage.md#frob-ticket-accept-t-1029 for the
+command itself.
 
 T-2004 ("tested is not reached"): `from_external`'s six `_apply_*_fields`
 type-group tuples (`_STRING_FIELDS`/`_PATH_FIELDS`/`_INT_FIELDS`/
@@ -347,7 +348,7 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   defaults). `select-batch-tests` (T-1689) reads the current verify queue
   and runs its union touched-set in ONE pytest process per language via
   `frob.verify._selection.run_batch_selected_tests` -- see
-  docs/modules/tickets.md#batch-test-selection-t-1689.
+  docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689.
 - `bind_runner.run` -- verifies BIND declarations against source signatures
   (docs/modules/bind.md); parses its own argv rather than taking `AppConfig`.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over

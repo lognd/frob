@@ -60,7 +60,7 @@ class TestTick003StaleArchive:
         # T-1750: default error moved 60 -> 400 -- far above anything a
         # real drive organically reaches, so TICK003 can no longer force
         # `frob ticket archive` to run at an unsafe, non-quiet moment
-        # (docs/modules/tickets.md#archive-the-live-worktree-guard-t-1750).
+        # (docs/modules/tickets-data-storage.md#archive-the-live-worktree-guard-t-1750).
         # The hard ERROR tier still exists as a backstop for a genuinely
         # neglected ledger.
         _seed_closed(tmp_path, 401)

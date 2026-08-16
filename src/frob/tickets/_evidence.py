@@ -254,7 +254,8 @@ def _head_commit_or_unknown(root: Path) -> str:
 # frob:tests \
 # tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_is_tracked_not_under_dot_frob
 # frob:tests tests/unit/test_rapid_debt.py::TestRecordRapidDebt.test_an_unwritable_path_never_raises  # noqa: E501
-# frob:doc docs/modules/tickets.md#rapid-debt-and-the-ratchet-override-t-1681
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#rapid-debt-and-the-ratchet-override-t-1681
 # frob:ticket T-1681
 def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
     """Append one line to `rapid-debt.jsonl` naming a check that `rapid`
@@ -1322,17 +1323,17 @@ def _current_actor() -> str:
 
 # frob:ticket T-1537
 # frob:ticket T-1733
-# frob:doc docs/modules/tickets.md#frob-ticket-evidence---replace-t-1537
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-evidence---replace-t-1537
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_replaces_flat_evidence_and_acceptance_binding_atomically  # noqa: E501
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_old_node_absent_is_a_hard_refusal  # noqa: E501
 # frob:waive AFFECT001 reason="T-1733: replace_evidence's affects()-closure doc \
-# (docs/modules/tickets.md#frob-ticket-evidence---replace-t-1537) genuinely needs the \
-# required-reason/evidence_changes update -- but docs/modules/tickets.md is leased by \
-# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
-# touching it here would collide with that lease. The full behavior change is \
-# documented in this ticket's own docs home instead (docs/modules/gates.md's new \
-# 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears and \
-# its own paragraph can be updated"
+# (docs/modules/tickets-landing.md#frob-ticket-evidence---replace-t-1537) genuinely \
+# needs the required-reason/evidence_changes update -- but docs/modules/tickets.md is \
+# leased by another in-progress agent (T-1715/T-1739) for the duration of this \
+# ticket's work, so touching it here would collide with that lease. The full behavior \
+# change is documented in this ticket's own docs home instead (docs/modules/gates.md's \
+# new 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears \
+# and its own paragraph can be updated"
 def replace_evidence(
     root: Path,
     ticket_id: str,

@@ -65,7 +65,7 @@ _log = get_logger("frob.tickets")
 
 
 # frob:ticket T-0162
-# frob:doc docs/modules/tickets.md#decision-record-t-0162
+# frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 # frob:waive COV007 reason="the decision-record anchor documents THIS private \
 # function's own allocation algorithm/design rationale (why provisional ids vs \
 # branch-tip scanning vs content-nonce were compared, T-0162), not the public API \

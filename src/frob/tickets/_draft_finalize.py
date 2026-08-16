@@ -45,16 +45,17 @@ _log = get_logger("frob.tickets")
 # frob:ticket T-0162
 # frob:ticket T-1090
 # frob:ticket T-1669
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestFinalizeDraftAllocationRace.test_two_concurrent_finalize_draft_calls_get_distinct_ids  # noqa: E501
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
 # frob:waive AFFECT001 reason="T-1669 adds an internal lock (allocator_lock) around \
 # this function's existing critical section -- the public contract \
-# docs/modules/tickets.md#provisional-ids and #public-api describe (assign a draft its \
-# final id, atomically, no manual handling) is unchanged; docs/modules/tickets.md is a \
-# large repo-wide hub file, out of this ticket's narrowed scope (T-2076 holds a live \
-# lease on src/frob/tickets/_land.py, the other file this ticket originally scoped, so \
-# scope was narrowed rather than widened into an unrelated hub doc)"
+# docs/modules/tickets-lifecycle.md#provisional-ids and #public-api describe (assign a \
+# draft its final id, atomically, no manual handling) is unchanged; \
+# docs/modules/tickets.md is a large repo-wide hub file, out of this ticket's narrowed \
+# scope (T-2076 holds a live lease on src/frob/tickets/_land.py, the other file this \
+# ticket originally scoped, so scope was narrowed rather than widened into an \
+# unrelated hub doc)"
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     """Assign `draft_id` its final sequential `T-####` id against the CURRENT
     merged (active+archive) view and rewrite the ledger plus every code
@@ -154,13 +155,13 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
 
 # frob:ticket T-1179
 # frob:ticket T-1669
-# frob:doc docs/modules/tickets.md#provisional-ids
+# frob:doc docs/modules/tickets-lifecycle.md#provisional-ids
 # frob:tests tests/test_tickets_collision.py::TestFinalizeDraftForLandMainFreshCeiling.test_id_ceiling_reads_current_main_not_stale_worktree_view  # noqa: E501
 # frob:tests tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace.test_promote_and_land_finalize_never_allocate_the_same_id  # noqa: E501
 # frob:waive AFFECT001 reason="T-1669 adds allocator_lock around this function's \
 # existing critical section -- the public contract \
-# docs/modules/tickets.md#provisional-ids describes (finalize a draft's id fresh \
-# against main, atomically) is unchanged; docs/modules/tickets.md is out of this \
+# docs/modules/tickets-lifecycle.md#provisional-ids describes (finalize a draft's id \
+# fresh against main, atomically) is unchanged; docs/modules/tickets.md is out of this \
 # ticket's narrowed scope, see finalize_draft's identical waiver above"
 def finalize_draft_for_land(
     worktree: Path, draft_id: str, main_root: Path

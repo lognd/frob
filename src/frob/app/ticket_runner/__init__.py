@@ -615,11 +615,12 @@ def _resolve_ticket_root(cfg: AppConfig) -> Path:
 
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
-# frob:doc docs/modules/tickets.md#frob-ticket-land
-# frob:doc docs/modules/tickets.md#structured-review-channel-t-0571
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
+# frob:doc docs/modules/tickets-lifecycle.md#structured-review-channel-t-0571
 # frob:doc \
-# docs/modules/tickets.md#every-ledger-writing-verb-auto-commits-uniformly-t-1615
-# frob:doc docs/modules/tickets.md#root-checkout-write-guard-t-1779
+# docs/modules/tickets-lifecycle.md#every-ledger-writing-verb-auto-commits-uniformly-t-\
+# 1615
+# frob:doc docs/modules/tickets-landing.md#root-checkout-write-guard-t-1779
 # frob:ticket T-0588
 # frob:ticket T-1029
 # frob:ticket T-1100

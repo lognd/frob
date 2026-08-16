@@ -102,7 +102,7 @@ _QUEUE_REL = Path(".frob") / "land-queue.json"
 _QUEUE_LOCK_REL = Path(".frob") / "land-queue.lock"
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 class QueueError(ErrorSet):
     """Fallible outcomes of this module's queue operations -- deliberately
     a SEPARATE `ErrorSet` from `LandError` (a queue-bookkeeping failure and
@@ -116,7 +116,7 @@ class QueueError(ErrorSet):
     StoreCorrupt = "the merge-queue file exists but failed to parse"
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 class QueueEntry(BaseModel):
     """One `.frob/land-queue.json` record: a ticket's branch, waiting for
     (or having gone through) the drainer's serial `land()` call."""
@@ -154,7 +154,7 @@ def _queue_lock_path(root: Path) -> Path:
     return root / _QUEUE_LOCK_REL
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:ticket T-1687
 @contextmanager
 def file_lock(lock_path: Path, *, label: str) -> Iterator[None]:
@@ -225,7 +225,7 @@ def _load_queue(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
         return Err(QueueError.StoreCorrupt)
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:ticket T-1687
 def write_json_records(path: Path, records: tuple[BaseModel, ...]) -> None:
     """Write `records` to `path` as one `write_text` call (T-1687): the ONE
@@ -256,7 +256,7 @@ def _save_queue(root: Path, entries: tuple[QueueEntry, ...]) -> None:
     write_json_records(_queue_path(root), entries)
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:tests tests/unit/test_land_queue.py::TestQueueStatus.test_empty_queue_is_empty_tuple  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestStoreCorrupt.test_corrupt_queue_file_errors  # noqa: E501
 def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
@@ -266,7 +266,7 @@ def queue_status(root: Path) -> Result[tuple[QueueEntry, ...], QueueError]:
     return _load_queue(root)
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_returns_queued_entry  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_enqueue_persists_across_calls  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestEnqueue.test_duplicate_enqueue_refused  # noqa: E501
@@ -311,7 +311,7 @@ def enqueue(
         return Ok(entry)
 
 
-# frob:doc docs/modules/tickets.md#merge-queue-t-1345-first-portion
+# frob:doc docs/modules/tickets-verify-sweep.md#merge-queue-t-1345-first-portion
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_empty_queue_returns_none  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_drains_fifo_order  # noqa: E501
 # frob:tests tests/unit/test_land_queue.py::TestDrainNext.test_successful_land_marks_entry_landed  # noqa: E501

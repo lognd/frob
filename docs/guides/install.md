@@ -464,7 +464,7 @@ ever ideally find, since new writes are refused going forward). The scan
 deliberately reads RAW frontmatter dicts (`frob.tickets._store.
 iter_raw_ledger_frontmatter`), never the strict `Ticket` loader `load_all`
 uses -- `Ticket.model_validate` does NOT reject a malformed edge (see that
-model's own docstring in `docs/modules/tickets.md#data-models`), specifically
+model's own docstring in `docs/modules/tickets-data-storage.md#data-models`), specifically
 so this scan can find one WITHOUT every OTHER `frob` command built on
 `load_all` being at risk of a single bad edge hard-failing the entire
 shared (1000+-ticket) ledger's load.
@@ -482,7 +482,7 @@ hand-dropped it. `frob ticket fail` itself now requeues automatically
 (T-1131, see `docs/modules/tickets.md#public-api`'s `record_failure`/
 `_fail` note) -- this scan is the safety net for every OTHER way a ticket
 can end up stuck this way (a lease-stamp ledger sync, a crashed agent that
-never ran `fail` at all, `docs/modules/tickets.md#frob-ticket-reconcile-t-0476`'s
+never ran `fail` at all, `docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476`'s
 own "stale hold" anomaly class).
 
 Reuses `frob.tickets._reconcile.reconcile(root, apply=False)` -- the SAME
@@ -502,7 +502,7 @@ frob doctor
 `frob doctor` never requeues anything itself -- it only reports; the fix
 is `frob ticket requeue <id>` (one ticket) or `frob ticket reconcile
 --apply` (every stale hold at once, see
-`docs/modules/tickets.md#frob-ticket-reconcile-t-0476` for the full reconcile design).
+`docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476` for the full reconcile design).
 
 ## Scaffold managed-block conformance (T-0736)
 

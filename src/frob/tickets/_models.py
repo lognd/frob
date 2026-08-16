@@ -103,7 +103,7 @@ def _validate_parent(value: str | None) -> str | None:
     return _validate_ticket_id_ref(value, field="parent")
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:doc docs/guides/extending/ticket-kinds-states.md#ticket-kinds-and-states
 class TicketState(StrEnum):
     """The six states a ticket can occupy in the queue state machine."""
@@ -116,7 +116,7 @@ class TicketState(StrEnum):
     DROPPED = "dropped"
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class TicketKind(StrEnum):
     """What kind of work a ticket represents."""
 
@@ -130,7 +130,7 @@ class TicketKind(StrEnum):
 
 
 # frob:ticket T-0715
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_tiers.py::TestTierField.test_default_tier_is_ticket
 # frob:tests tests/test_tickets_tiers.py::TestTierField.test_serialize_parse_round_trip
 class TicketTier(StrEnum):
@@ -1055,7 +1055,7 @@ def replace_done_report_section(body: str, new_section: str) -> str:
     return "\n".join(result) + "\n"
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class Stride(StrEnum):
     """STRIDE threat categories for kind=security tickets (T-0007)."""
 
@@ -1068,7 +1068,7 @@ class Stride(StrEnum):
 
 
 # frob:ticket T-0411
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class Priority(StrEnum):
     """How important a ticket is, independent of age (T-0411): `doable`
     orders on this first so a high-value ticket never rots invisibly
@@ -1083,7 +1083,7 @@ class Priority(StrEnum):
 
 
 # frob:ticket T-0411
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_priority.py::TestPriorityRank.test_critical_outranks_low
 PRIORITY_RANK: dict[Priority, int] = {
     Priority.LOW: 0,
@@ -1093,7 +1093,7 @@ PRIORITY_RANK: dict[Priority, int] = {
 }
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class Origin(StrEnum):
     """Who filed a ticket."""
 
@@ -1102,7 +1102,7 @@ class Origin(StrEnum):
     AUDITOR = "auditor"
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class Attachment(BaseModel):
     """One image/file attached to a ticket, with integrity hash."""
 
@@ -1113,7 +1113,7 @@ class Attachment(BaseModel):
     sha256: str
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class FailureEntry(BaseModel):
     """One line of append-only cross-session failure memory for a ticket."""
 
@@ -1125,7 +1125,7 @@ class FailureEntry(BaseModel):
 
 
 # frob:ticket T-0455
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ScopeChangeOp(StrEnum):
     """Whether a `scope_changes` audit entry expanded or reduced a ticket's
     declared scope (T-0455)."""
@@ -1135,7 +1135,7 @@ class ScopeChangeOp(StrEnum):
 
 
 # frob:ticket T-0572
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class AcceptanceCriterion(BaseModel):
     """One given/when/then acceptance item bound to the evidence id(s) that
     demonstrate it (T-0572): `evidence` empty means the criterion is not
@@ -1179,7 +1179,7 @@ def _coerce_acceptance(value: Sequence[object]) -> list[dict | object]:
 
 
 # frob:ticket T-0455
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ScopeChangeEntry(BaseModel):
     """One append-only audit line for a `frob ticket scope --add/--remove`
     mutation (T-0455): what glob moved, which direction, why, who did it,
@@ -1196,7 +1196,7 @@ class ScopeChangeEntry(BaseModel):
 
 
 # frob:ticket T-1422
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class AcceptanceAmendmentOp(StrEnum):
     """Whether an `acceptance_amendments` audit entry replaced a criterion's
     text (T-1422) or removed it outright."""
@@ -1206,7 +1206,7 @@ class AcceptanceAmendmentOp(StrEnum):
 
 
 # frob:ticket T-1422
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class AcceptanceAmendmentEntry(BaseModel):
     """One append-only audit line for a `frob ticket accept --amend/--remove`
     mutation (T-1422): the `frob ticket scope`/`ScopeChangeEntry` discipline
@@ -1306,7 +1306,7 @@ class DesignatedReproChangeEntry(BaseModel):
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ReviewVerdict(StrEnum):
     """The outcome an adversarial reviewer records for one review pass
     (T-0571): `approve` or `reject`, never a silent third option."""
@@ -1316,7 +1316,7 @@ class ReviewVerdict(StrEnum):
 
 
 # frob:ticket T-0571
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ReviewEntry(BaseModel):
     """One append-only structured review record (T-0571): who reviewed,
     what they decided, a findings summary, the commit they reviewed, and
@@ -1358,16 +1358,16 @@ def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
     }
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:ticket T-1733
 # frob:waive AFFECT001 reason="T-1733: Ticket's affects()-closure doc \
-# (docs/modules/tickets.md#data-models) genuinely needs the new evidence_changes field \
-# documented -- but docs/modules/tickets.md is leased by another in-progress agent \
-# (T-1715/T-1739) for the duration of this ticket's work, so touching it here would \
-# collide with that lease. EvidenceChangeEntry/evidence_changes are documented in full \
-# in this ticket's own docs home instead (docs/modules/gates.md's new 'TEST018 \
-# (T-1733)' section); remove this waiver once the tickets.md lease clears and its own \
-# data-models entry can be added"
+# (docs/modules/tickets-data-storage.md#data-models) genuinely needs the new \
+# evidence_changes field documented -- but docs/modules/tickets.md is leased by \
+# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
+# touching it here would collide with that lease. EvidenceChangeEntry/evidence_changes \
+# are documented in full in this ticket's own docs home instead \
+# (docs/modules/gates.md's new 'TEST018 (T-1733)' section); remove this waiver once \
+# the tickets.md lease clears and its own data-models entry can be added"
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body.
 
@@ -1641,7 +1641,7 @@ class Ticket(BaseModel):
         return _omit_empty_collections(data)
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class TicketSpec(BaseModel):
     """Input to new_ticket; id/created/state are assigned by the library."""
 
@@ -1712,7 +1712,7 @@ class TicketSpec(BaseModel):
         return _validate_parent(value)
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:ticket T-0162
 class RenumberReport(BaseModel):
     """Outcome of `renumber_one`/`finalize_draft`: what changed (or would
@@ -1728,7 +1728,7 @@ class RenumberReport(BaseModel):
     dry_run: bool
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class TicketQueue(BaseModel):
     """The full set of tickets loaded from tickets/, keyed by id."""
 
@@ -1737,7 +1737,7 @@ class TicketQueue(BaseModel):
     tickets: Mapping[str, Ticket]
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class AttachmentSource(BaseModel):
     """Where attach() should read image bytes from; None path means clipboard."""
 
@@ -1746,12 +1746,12 @@ class AttachmentSource(BaseModel):
     path: Path | None = None
 
 
-# frob:doc docs/modules/tickets.md#error-types
+# frob:doc docs/modules/tickets-data-storage.md#error-types
 # frob:ticket T-0579
 # frob:ticket T-0889
 # frob:ticket T-1733
 # frob:waive AFFECT001 reason="T-1733: TicketError's affects()-closure doc \
-# (docs/modules/tickets.md#error-types) genuinely needs the new \
+# (docs/modules/tickets-data-storage.md#error-types) genuinely needs the new \
 # EvidenceReplaceReasonMissing variant documented -- but docs/modules/tickets.md is \
 # leased by another in-progress agent (T-1715/T-1739) for the duration of this \
 # ticket's work, so touching it here would collide with that lease. The new variant is \
@@ -2054,7 +2054,7 @@ class TicketError(ErrorSet):
 
 
 # frob:ticket T-0176
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 class LandError(ErrorSet):
     """Fallible outcomes of `frob.tickets.land` (`frob ticket land`); every
     variant corresponds to an abort path that names its own manual remedy
@@ -2202,7 +2202,7 @@ class LandError(ErrorSet):
 
 
 # frob:ticket T-0176
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 class LandReport(BaseModel):
     """Outcome of one `land()` call: what happened (or, under `dry_run`,
     what WOULD happen) landing `ticket_id` from a worktree onto main."""
@@ -2236,7 +2236,7 @@ class LandReport(BaseModel):
 
 
 # frob:ticket T-1269
-# frob:doc docs/modules/tickets.md#frob-ticket-land---plan-t-1269
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269
 class LandPlanReport(BaseModel):
     """Outcome of one `land_plan()` call (`frob ticket land --plan`): a
     design-phase worktree (docs + ledger changes, no closeable worked
@@ -2306,7 +2306,7 @@ class EpicRollup(BaseModel):
 
 
 # frob:ticket T-0715
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class SprintReport(BaseModel):
     """`frob ticket sprint show <label>`'s commitment summary (T-0715):
     every ticket carrying this `sprint` label, a `TicketState -> count`
@@ -2323,7 +2323,7 @@ class SprintReport(BaseModel):
 
 
 # frob:ticket T-0938
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class SprintTransition(BaseModel):
     """One mined `state: done` transition (T-0938) for a single ticket,
     read from `tickets.md`'s own git history: `sprint_velocity` walks
@@ -2342,7 +2342,7 @@ class SprintTransition(BaseModel):
 
 
 # frob:ticket T-0938
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class SprintVelocityReport(BaseModel):
     """`frob ticket sprint velocity <label>`'s history-derived summary
     (T-0938): every mined `SprintTransition` into `done` for tickets

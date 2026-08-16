@@ -1051,7 +1051,7 @@ def known_gate_rule_ids() -> frozenset[str]:
 # the "finalize step got skipped" failure this whole mechanism exists to
 # catch -- a `frob:waive TICK002 reason="..."` sitting in the tree would
 # let a live collision risk sit there quietly forever. See the decision
-# record in docs/modules/tickets.md#decision-record-t-0162.
+# record in docs/modules/tickets-lifecycle.md#decision-record-t-0162.
 # T-0465: EXCL001 joins the same unwaivable set -- a `frob:waive` comment
 # lives in a source file, but the violation's own "file" is
 # `.git/info/exclude` itself; there is nowhere honest to attach a waiver,

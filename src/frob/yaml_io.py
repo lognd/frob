@@ -47,7 +47,7 @@ def _coverage_tracer_active() -> bool:
 
 
 # frob:ticket T-1204
-# frob:doc docs/modules/tickets.md#shared-yaml-loader-selection-frobyaml_io
+# frob:doc docs/modules/tickets-data-storage.md#shared-yaml-loader-selection-frobyaml_io
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_prefers_csafeloader_when_libyam\
 # l_present  # noqa: E501

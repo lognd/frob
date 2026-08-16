@@ -1,6 +1,6 @@
 """`frob ticket land` -- git-plumbing/wip-commit machinery.
 
-See docs/modules/tickets.md#frob-ticket-land.
+See docs/modules/tickets-landing.md#frob-ticket-land.
 
 Split out of `frob.tickets._land_merge` (T-1251, continuing the verbatim-
 move discipline T-1186/T-1189/T-1192/T-1194 established): the git-plumbing
@@ -1983,7 +1983,8 @@ def _likely_sweep_authored(paths: tuple[str, ...]) -> bool:
     return bool(paths) and all(p in _SWEEP_OWNED_DIRTY_PATHS for p in paths)
 
 
-# frob:doc docs/modules/tickets.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_names_a_real_dirty_file
 # frob:tests tests/unit/test_rapid_sweep.py::TestDescribeRootDirt.test_unavailable_status_is_not_reported_as_clean  # noqa: E501

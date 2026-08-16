@@ -1,4 +1,5 @@
-"""`frob ticket land` -- one-command landing (docs/modules/tickets.md#frob-ticket-land).
+"""`frob ticket land` -- one-command landing
+(docs/modules/tickets-landing.md#frob-ticket-land).
 
 The landing procedure used to be manual coordinator surgery repeated per
 ticket: wip-commit in the worktree, merge main into it, a deletion-filter
@@ -779,7 +780,7 @@ def _stale_post_land_verify_markers(root: Path) -> tuple[tuple[str, str], ...]:
 # frob:ticket T-0176
 # frob:ticket T-1355
 # frob:ticket T-1410
-# frob:doc docs/modules/tickets.md#frob-ticket-land
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land
 # `dry_run` runs every check and every git mutation the real run would
 # (merge, splice, deletion-check) then unwinds it via
 # `merge --abort`/`reset --hard`, so a clean dry run is a real guarantee,
@@ -1064,7 +1065,7 @@ def land(
 
 
 # frob:ticket T-1269
-# frob:doc docs/modules/tickets.md#frob-ticket-land---plan-t-1269
+# frob:doc docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_dry_run_unwinds_the_merge
 # frob:tests \
@@ -1156,7 +1157,7 @@ def _land_plan_merge_worktree(root: Path, worktree: Path) -> Result[str, LandErr
     (T-1269): a plain `git merge --no-ff` (never a squash -- there is no
     single worked ticket to squash under, unlike `land`'s own per-ticket
     path), relying on the registered `tickets.md` git merge driver
-    (docs/modules/tickets.md#git-merge-driver) for any ledger conflict the
+    (docs/modules/tickets-merge-driver.md#git-merge-driver) for any ledger conflict the
     same way an ordinary `git merge`/`pull` already would. `Err
     (MergeConflict)` (after `git merge --abort`, since nothing is
     committed yet) on a real conflict; `Err(GitFailed)` on any other git
@@ -1182,7 +1183,7 @@ def _land_plan_merge_worktree(root: Path, worktree: Path) -> Result[str, LandErr
         _log.error(
             "land --plan: merging %s (%s) into %s produced a real "
             "conflict -- register the tickets.md merge driver "
-            "(docs/modules/tickets.md#git-merge-driver) if this is a "
+            "(docs/modules/tickets-merge-driver.md#git-merge-driver) if this is a "
             "ledger-only conflict, or resolve by hand and retry",
             worktree,
             worktree_sha,
@@ -1802,7 +1803,8 @@ def _land_locked(
 
 # frob:ticket T-1736
 # frob:doc \
-# docs/modules/tickets.md#verification-watermark-t-1687-foundation-of-the-t-1686-epic
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
 # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_dry_run_is_a_noop  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_real_land_records_an_intent_entry  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordVerifyIntentForLandedCommit.test_no_resolvable_symbols_records_nothing  # noqa: E501
@@ -2531,7 +2533,7 @@ def _check_committed_waive_deletions(
 
 
 # frob:ticket T-1922
-# frob:doc docs/modules/tickets.md#outofscopewaivedeletion-false-refusal-on-a-stale-worktree-t-1922  # noqa: E501
+# frob:doc docs/modules/tickets-landing.md#outofscopewaivedeletion-false-refusal-on-a-stale-worktree-t-1922  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_unrelated_upstream_waiver_reword_on_a_file_this_branch_never_touched_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestCommittedWaiveDeletionRefusal.test_a_genuine_committed_deletion_the_branch_made_itself_still_refuses  # noqa: E501
 def _restrict_to_branch_own_files(
@@ -3288,8 +3290,8 @@ def _leaked_hits_for_candidate(
 # frob:ticket T-1639
 # frob:ticket T-1967
 # frob:doc \
-# docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
-# -1639
+# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-s\
+# ibling-t-1639
 def _find_leaked_tickets(
     root: Path,
     worktree: Path,
@@ -3421,12 +3423,12 @@ def _find_leaked_tickets(
 
 
 # frob:ticket T-1618
-# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+# frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 _DIRECTIVE_TICKET_ID_RE = re.compile(r"frob:ticket\s+(T-[A-Za-z0-9_-]+)")
 
 
 # frob:ticket T-2082
-# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+# frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 def _passenger_ids_from_line_buckets(
     added_lines: dict[str, list[str]], removed_lines: dict[str, list[str]]
 ) -> frozenset[str]:
@@ -3464,7 +3466,7 @@ def _passenger_ids_from_line_buckets(
 
 # frob:ticket T-1618
 # frob:ticket T-2082
-# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+# frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[str]:
     """Every ticket id named by a `frob:ticket <id>` directive that is a
     GENUINE passenger of `worktree`'s full committed diff against
@@ -3518,7 +3520,7 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
 
 
 # frob:ticket T-1618
-# frob:doc docs/modules/tickets.md#passenger-ticket-disclosure-t-1618
+# frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_refuses_and_lists_every_passenger_by_id  # noqa: E501
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_allow_cross_ticket_logs_and_proceeds  # noqa: E501
 # frob:tests tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets.test_no_op_when_only_the_landing_tickets_own_directives_are_present  # noqa: E501
@@ -3580,7 +3582,8 @@ def _check_passenger_tickets(
 # frob:ticket T-1618
 # frob:ticket T-1675
 # frob:ticket T-1950
-# frob:doc docs/modules/tickets.md#already-landed-on-main-first-class-outcome-t-1618
+# frob:doc \
+# docs/modules/tickets-landing.md#already-landed-on-main-first-class-outcome-t-1618
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_has_real_changes_in_its_own_scope  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_ticket_declares_no_scope_at_all  # noqa: E501
@@ -3715,8 +3718,8 @@ def _refuse_already_landed(
 # frob:ticket T-1639
 # frob:ticket T-1855
 # frob:doc \
-# docs/modules/tickets.md#cross-ticket-leakage-only-refuses-on-an-in_progress-sibling-t\
-# -1639
+# docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-s\
+# ibling-t-1639
 # frob:waive AFFECT001 reason="T-1855 added per-path reason disclosure (declared vs \
 # implicit-cli-wiring) to this function's refusal; docs/modules/tickets.md was leased \
 # to in-progress T-1686 and could not be edited here -- follow-up draft filed to \
@@ -3856,7 +3859,7 @@ def _check_cross_ticket_leakage(
 
 # frob:ticket T-1932
 # frob:ticket T-1931
-# frob:doc docs/modules/tickets.md#post-mutation-reverification-t-1932
+# frob:doc docs/modules/tickets-landing.md#post-mutation-reverification-t-1932
 # frob:tests tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_guard_refusal_survives_an_uncommitted_reintroduction  # noqa: E501
 # frob:tests tests/unit/test_land_step_ordering.py::TestCrossTicketLeakagePostMutationRecheck.test_clean_land_is_unaffected  # noqa: E501
 def _reverify_cross_ticket_leakage_post_mutation(
@@ -3911,7 +3914,7 @@ def _reverify_cross_ticket_leakage_post_mutation(
     point in the sequence where its answer cannot go stale again before
     the commit that actually reaches main. See
     `docs/guides/agent-playbook.md`'s land-path ordering note and
-    `docs/modules/tickets.md#post-mutation-reverification-t-1932` for how
+    `docs/modules/tickets-landing.md#post-mutation-reverification-t-1932` for how
     a FUTURE guard or auto-fix handler added to the land path is expected
     to reason about this same hazard (T-1932 acceptance criterion 4)."""
     return _check_cross_ticket_leakage(
@@ -4047,7 +4050,7 @@ _COMMITTED_DIFF_GUARDS: tuple[_CommittedDiffGuard, ...] = (
 # frob:ticket T-1946
 # frob:ticket T-1979
 # frob:ticket T-2017
-# frob:doc docs/modules/tickets.md#orphaned-evidence-deletion-t-1946
+# frob:doc docs/modules/tickets-landing.md#orphaned-evidence-deletion-t-1946
 def _check_orphaned_evidence_deletion(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:

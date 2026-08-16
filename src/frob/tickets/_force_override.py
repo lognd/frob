@@ -37,7 +37,7 @@ _FORCE_OVERRIDES_REL = "force-overrides.jsonl"
 
 
 # frob:ticket T-1762
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ForceOverrideEntry(BaseModel):
     """One append-only audit line for a `--force` bypass of a tracked
     safety guard (T-1762): which command, which guard, why, who, when,
@@ -54,7 +54,7 @@ class ForceOverrideEntry(BaseModel):
     at: date
 
 
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 class ForceOverrideError(ErrorSet):
     """Failure values `record_force_override` can return."""
 
@@ -76,7 +76,7 @@ def _current_actor() -> str:
 
 
 # frob:ticket T-1762
-# frob:doc docs/modules/tickets.md#data-models
+# frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_organization.py::TestForceOverrideAudit.test_record_force_override_requires_reason  # noqa: E501
 # frob:tests tests/test_tickets_organization.py::TestForceOverrideAudit.test_record_force_override_appends_a_line  # noqa: E501
 # frob:waive SELFAUDIT001 reason="T-1762: an append-only audit-trail write into this \

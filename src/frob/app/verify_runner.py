@@ -35,7 +35,7 @@ from frob.render import Renderer
 _log = get_logger(__name__)
 
 
-# frob:doc docs/modules/tickets.md#frob-verify-cli-t-1697
+# frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 class VerifyQuarantineFindingView(BaseModel):
     """One quarantined finding, as `frob verify status` renders it --
     narrowed from `frob.verify._quarantine.QuarantinedFinding` to exactly
@@ -54,7 +54,7 @@ class VerifyQuarantineFindingView(BaseModel):
     disposition: str
 
 
-# frob:doc docs/modules/tickets.md#frob-verify-cli-t-1697
+# frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 class VerifyStatus(BaseModel):
     """`frob verify status`'s whole payload -- the unverified window in
     one snapshot: watermark age, queue depth/age, and quarantine state
@@ -126,7 +126,7 @@ def _load_status_inputs(root: Path):  # noqa: ANN201
     return queue.danger_ok, watermark.danger_ok, quarantine.danger_ok
 
 
-# frob:doc docs/modules/tickets.md#frob-verify-cli-t-1697
+# frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_depth_age_and_quarantine kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_clean_when_nothing_queued_and_no_quarantine kind="unit"  # noqa: E501
 def build_status(root: Path) -> VerifyStatus | None:
@@ -467,7 +467,7 @@ def _run_dispose(cfg: AppConfig) -> None:
         r.line(f"quarantine cleared by {actor}: {cfg.verify_dispose_reason}")
 
 
-# frob:doc docs/modules/tickets.md#frob-verify-cli-t-1697
+# frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 # frob:ticket T-1697
 def run(cfg: AppConfig) -> None:
     """`frob verify status|now|explain|dispose` dispatch -- see this

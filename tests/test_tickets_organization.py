@@ -1,6 +1,6 @@
 """Tests for T-0454's ticket organization model: component/labels fields,
 set_component, mutate_labels, board_view, epic_rollup
-(docs/modules/tickets.md#data-models)."""
+(docs/modules/tickets-data-storage.md#data-models)."""
 
 from __future__ import annotations
 
@@ -292,7 +292,7 @@ class TestForceOverrideAudit:
     """T-1762: `--force` bypasses of a tracked safety guard now cost a
     required reason plus an append-only `force-overrides.jsonl` record --
     the T-1733 escape-hatch-accountability principle applied to `--force`
-    (docs/modules/tickets.md#data-models)."""
+    (docs/modules/tickets-data-storage.md#data-models)."""
 
     def test_record_force_override_requires_reason(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_force_override.py::record_force_override
