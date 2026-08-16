@@ -17,9 +17,68 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- docs/**
+- docs/guides/agent-playbook.md
+- docs/index.md
+- docs/rework.md
+- docs/commands/sync-skills.md
+- docs/commands/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/index.md
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/rework.md
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/commands/sync-skills.md
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/commands/release.md
+  reason: narrow epic-breadth docs/** to the specific pages this leaf actually rewrites
+    (playbook + top-level index/rework pages + the two new command doc pages T-2241/T-2242
+    create); a repo-wide docs/** lease would block every other in-flight docs-touching
+    ticket for no reason since the audit half of this leaf is read-only measurement,
+    not a doc edit
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: GIVEN docs/ and docs/guides/agent-playbook.md WHEN a migrated workflow (coverage,
