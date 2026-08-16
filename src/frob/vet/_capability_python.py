@@ -1092,6 +1092,132 @@ def _python_binding_capabilities(
     return found
 
 
+# frob:ticket T-2223
+def _top_level_function_by_name(module_node, name: str):  # noqa: ANN001, ANN201
+    """The top-level (module-scope) `function_definition` node named
+    `name` directly under `module_node`, or `None` (T-2223) --
+    `_wrapper_function_capabilities`'s own narrow lookup. A nested/class-
+    method function of the same name is deliberately NOT matched: the
+    one-hop resolution this feeds only ever follows a bare top-level
+    `from a import run`-style import, which can only bind a module-level
+    name in the first place."""
+    for child in module_node.children:
+        if child.type == "function_definition":
+            name_node = child.child_by_field_name("name")
+            if name_node is not None and node_text(name_node) == name:
+                return child
+    return None
+
+
+# frob:ticket T-2223
+def _wrapper_function_capabilities(
+    sibling: Path, function_name: str, table: dict[str, tuple[str, ...]]
+) -> set[str]:
+    """The registry capabilities `function_name`'s OWN body resolves to
+    inside `sibling` (T-2223) -- `_python_local_wrapper_capabilities`'s
+    one-hop lookup. Reuses the EXACT same import-table/alias-table/
+    candidate-collection machinery `_python_resolved_candidates` builds
+    for ordinary intra-file resolution (`_py_import_table`, `_build_py_
+    alias_table`, `_collect_py_candidates`), just scoped to walk only
+    `function_name`'s own subtree in `sibling` rather than the whole
+    file -- the hop stops here by construction: nothing inside `sibling`
+    that ISN'T textually inside this one function's body is ever visited,
+    so a further wrapper this function itself calls is not followed."""
+    parsed = raw_tree(sibling)
+    if parsed.is_err:
+        return set()
+    tree, _source, language_label = parsed.danger_ok
+    if language_label != "python":
+        return set()
+    func_node = _top_level_function_by_name(tree.root_node, function_name)
+    if func_node is None:
+        return set()
+    import_table = _py_import_table(tree.root_node)
+    scope_cache: dict[int, dict[str, int]] = {}
+    alias_table = _build_py_alias_table(tree.root_node, import_table, scope_cache)
+    candidates: list[tuple[str, int, int]] = []
+    _collect_py_candidates(
+        func_node, import_table, scope_cache, candidates, alias_table
+    )
+    comment_spans = _non_executable_byte_spans(sibling)
+    patterns = _compiled_capability_patterns(table)
+    found: set[str] = set()
+    for resolved, start, end in candidates:
+        if _fully_in_any_span(start, end, comment_spans):
+            continue
+        haystack = f"{resolved}("
+        for capability, pattern in patterns:
+            if capability in found:
+                continue
+            if pattern.search(haystack):
+                found.add(capability)
+    return found
+
+
+# frob:ticket T-2223
+# frob:doc docs/modules/vet.md#one-hop-public-cross-file-wrapper-resolution-t-2223
+def _python_local_wrapper_capabilities(
+    path: Path, table: dict[str, tuple[str, ...]]
+) -> set[str]:
+    """One-hop cross-file wrapper resolution for capability scanning
+    (T-2223): when `path` calls a symbol imported from a SAME-DIRECTORY
+    sibling python module (`from a import run; run(x)`) and that
+    import's own resolved target (`"a.run"`) does not itself match any
+    registry needle -- the ordinary case, since `a.run` is a project-
+    local helper name, not a known dangerous library call -- look up
+    `run`'s OWN function body in `a.py` and check whether IT resolves to
+    a dangerous call, via `_wrapper_function_capabilities` (the exact
+    same import/binding machinery `_python_resolved_candidates` already
+    builds for ordinary intra-file resolution, just re-run against the
+    callee file's one function).
+
+    THE GAP THIS CLOSES: `frob.vet._capability_python._python_wrapper_
+    capabilities` (T-1752) already attributes a cross-file capability
+    through the real call graph (`frob.graph.callgraph`) -- but that
+    graph only records an edge for a PRIVATE (underscore-prefixed)
+    callee (`build_call_graph`'s own T-0841 rule), by design, since a
+    public symbol's callers cannot be enumerated exhaustively the way a
+    private one's can. A PUBLIC wrapper (`def run(cmd): os.system(cmd)`,
+    imported and called directly as `from a import run; run(x)`) is
+    exactly the case T-1752's own docstring names as "a disclosed
+    remaining gap, not a false accusation" -- no call-graph edge is ever
+    recorded for it, so `path`'s own resolved capability set stays empty
+    even though it genuinely execs through `a.run`. This function does
+    NOT touch or widen T-1752's call-graph attribution; it is a second,
+    narrower resolver aimed specifically at the public-wrapper shape
+    that one cannot reach.
+
+    HONEST LIMIT (matching this module's T-0209/T-0244 gap-disclosure
+    style): exactly ONE hop, and only a bare top-level import name
+    resolved to a file in the SAME DIRECTORY as `path` (`from a import
+    run` where `a.py` sits next to the importing file) -- never `frob.
+    lang.resolve_local_import`'s full package-root-aware resolution,
+    never a chain of wrappers (B imports from A, A imports from C), and
+    never a dotted/relative import specifier. A wrapper reached through
+    more than one file hop, or via a package-qualified import, is a
+    disclosed remaining gap, same posture as every other honest-limit
+    note in this module -- not something this function claims to catch."""
+    found: set[str] = set()
+    seen: set[str] = set()
+    for resolved, _start, _end in _python_resolved_candidates(path):
+        if resolved in seen or "." not in resolved:
+            continue
+        seen.add(resolved)
+        module_part, symbol_part = resolved.rsplit(".", 1)
+        if "." in module_part:
+            # Only a bare top-level import name is followed -- see the
+            # HONEST LIMIT note above.
+            continue
+        sibling = path.parent / f"{module_part}.py"
+        try:
+            if not sibling.is_file() or sibling.resolve() == path.resolve():
+                continue
+        except OSError:
+            continue
+        found |= _wrapper_function_capabilities(sibling, symbol_part, table)
+    return found
+
+
 def _python_binding_operations(
     path: Path, comment_spans: tuple[ByteSpan, ...]
 ) -> tuple[_DangerousOperation, ...]:

@@ -2,7 +2,7 @@
 id: T-2223
 title: Capability scan misses cross-file call indirection (wrapper laundering across
   node boundary)
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-16'
@@ -16,6 +16,10 @@ scope:
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability_core.py
 - docs/modules/vet.md
+- src/frob/vet/_capability_python.py
+- tests/test_vet.py
+evidence_scope:
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -25,7 +29,27 @@ scope_changes:
     lives here'
   actor: logan
   at: '2026-08-16'
-designated_repro_test: null
+- op: add
+  glob: src/frob/vet/_capability_python.py
+  reason: 'MEASURED: _python_resolved_candidates (the binding machinery the ticket
+    names for extension) is defined in _capability_python.py, not in the three files
+    originally scoped -- _capability.py/_capability_scan.py/_capability_core.py only
+    call it, they do not define per-language binding candidate resolution'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_vet.py
+  reason: test evidence for T-2223's public cross-file wrapper capability fix
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
+- tests/test_vet.py::TestCapabilityScan::test_wrapper_with_no_dangerous_body_resolves_nothing
+- tests/test_vet.py::TestCapabilityScan::test_wrapper_two_hops_away_is_not_followed
+- tests/test_vet.py::TestCapabilityScan::test_sibling_in_a_different_directory_is_not_followed
+- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_resolve_cross_file_via_call_graph
+- tests/test_vet.py::TestCapabilityScan::test_wrapper_capabilities_ignore_unrelated_cross_file_calls
+designated_repro_test: tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
 threat: null
 component: null
 anchor: false

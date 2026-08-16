@@ -160,6 +160,7 @@ from ._capability_kotlin import _extra_kt_binding_operations, _kt_binding_capabi
 from ._capability_python import (
     _python_binding_capabilities,
     _python_binding_operations,
+    _python_local_wrapper_capabilities,
     _python_resolved_candidates,
 )
 from ._capability_registry import DANGEROUS_OPERATIONS, _DangerousOperation
@@ -287,6 +288,13 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
         # cannot (`import subprocess as sp; sp.run(x)`), without touching
         # the lexical path's own behavior at all.
         found |= _python_binding_capabilities(path, table, comment_spans)
+        # T-2223: one-hop cross-file wrapper resolution -- catches a
+        # PUBLIC same-directory sibling wrapper (`from a import run;
+        # run(x)` where `a.run` itself execs) that T-1752's own call-
+        # graph attribution structurally cannot reach (private-callee-
+        # only edges) and that neither binding pass above can see (both
+        # only ever resolve within THIS file's own text).
+        found |= _python_local_wrapper_capabilities(path, table)
         # T-0244: embedded HTML/JS string literals are invisible to the
         # lexical/binding passes above (both scan the file's OWN python
         # grammar text); this always adds `embedded_code` (fail-closed

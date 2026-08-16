@@ -713,6 +713,92 @@ class TestCapabilityScan:
         )
         assert found == set()
 
+    # frob:ticket T-2223
+    def test_public_sibling_wrapper_exec_is_resolved_one_hop(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities \
+        # kind="unit"
+        # MUST FAIL on current main: run() is PUBLIC (no leading
+        # underscore), so T-1752's call graph never records an edge for
+        # it (build_call_graph's own private-callee-only rule) and
+        # scan_file_capabilities(b.py) returns frozenset().
+        from frob.vet._capability import scan_file_capabilities
+
+        (tmp_path / "a.py").write_text(
+            "import os\n\n\ndef run(cmd):\n    os.system(cmd)\n"
+        )
+        (tmp_path / "b.py").write_text(
+            "from a import run\n\n\ndef entry(x):\n    run(x)\n"
+        )
+        assert "exec" in scan_file_capabilities(tmp_path / "b.py")
+
+    # frob:ticket T-2223
+    def test_wrapper_with_no_dangerous_body_resolves_nothing(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities \
+        # kind="unit"
+        # Must-still-pass control: an ordinary public helper with no
+        # dangerous call in its own body must not be falsely attributed
+        # a capability just because it is imported and called.
+        from frob.vet._capability import scan_file_capabilities
+
+        (tmp_path / "helper.py").write_text("def add(a, b):\n    return a + b\n")
+        (tmp_path / "caller.py").write_text(
+            "from helper import add\n\n\ndef entry(a, b):\n    return add(a, b)\n"
+        )
+        assert scan_file_capabilities(tmp_path / "caller.py") == frozenset()
+
+    # frob:ticket T-2223
+    def test_wrapper_two_hops_away_is_not_followed(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities \
+        # kind="unit"
+        # Honest limit, asserted directly: C imports from B, B imports
+        # (and re-calls) from A where the real exec lives -- two hops
+        # from C's own perspective. The one-hop resolver must not follow
+        # this chain; this is the disclosed gap, not a false negative in
+        # the one-hop case it DOES claim to cover.
+        from frob.vet._capability import scan_file_capabilities
+
+        (tmp_path / "a.py").write_text(
+            "import os\n\n\ndef run(cmd):\n    os.system(cmd)\n"
+        )
+        (tmp_path / "b.py").write_text(
+            "from a import run\n\n\ndef forward(cmd):\n    run(cmd)\n"
+        )
+        (tmp_path / "c.py").write_text(
+            "from b import forward\n\n\ndef entry(x):\n    forward(x)\n"
+        )
+        assert scan_file_capabilities(tmp_path / "c.py") == frozenset()
+
+    # frob:ticket T-2223
+    def test_sibling_in_a_different_directory_is_not_followed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities \
+        # kind="unit"
+        # Honest limit, asserted directly: the one-hop resolver only
+        # follows a SAME-DIRECTORY sibling, not frob.lang.resolve_local_
+        # import's full package-root-aware resolution -- a package-
+        # qualified import to a subdirectory module is a disclosed
+        # remaining gap.
+        from frob.vet._capability import scan_file_capabilities
+
+        pkg = tmp_path / "pkg"
+        pkg.mkdir()
+        (pkg / "a.py").write_text(
+            "import os\n\n\ndef run(cmd):\n    os.system(cmd)\n"
+        )
+        (tmp_path / "b.py").write_text(
+            "from pkg.a import run\n\n\ndef entry(x):\n    run(x)\n"
+        )
+        assert scan_file_capabilities(tmp_path / "b.py") == frozenset()
+
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
         # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
         # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`

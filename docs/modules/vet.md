@@ -567,6 +567,52 @@ advisory output), version-escalation diffs as the primary signal,
 cross-language capability sets via one grammar stack, offline-first, and
 gate enforcement.
 
+### One-hop public cross-file wrapper resolution (T-2223)
+
+<!-- frob:describes src/frob/vet/_capability_python.py::_python_local_wrapper_capabilities -->
+
+T-1752 already closed one cross-file laundering shape: a wrapper defined
+in another file, reached only through a real call-graph edge
+(`frob.graph.callgraph`), attributes its capability back to the caller
+that reaches it. That call graph, by design (T-0841), only ever records
+an edge for a PRIVATE (underscore-prefixed) callee -- a public symbol's
+callers cannot be enumerated exhaustively the way a private one's can,
+so following a public callee risks false attribution across the whole
+tree rather than a bounded, sound one.
+
+T-2223 found the resulting gap live, with a positive control: file `a.py`
+defines `def run(cmd): os.system(cmd)` (a PUBLIC wrapper, scans as `exec`
+correctly on its own); file `b.py` does `from a import run; run(x)` and
+calls nothing else dangerous directly. `scan_file_capabilities(b.py)`
+returned `frozenset()` on main -- a node whose `code=` binds only `b.py`
+showed a CLEAN capability surface while its code genuinely executes a
+shell command through `a.run`. T-1752's own docstring already named this
+exact shape as "a disclosed remaining gap, not a false accusation" for
+the call-graph path; it does not close it.
+
+`_python_local_wrapper_capabilities` closes it with a SECOND, narrower
+resolver, not by widening T-1752's call graph: it reuses the identical
+import/binding machinery `_python_resolved_candidates` already builds
+for ordinary intra-file resolution (`_py_import_table`, `_build_py_
+alias_table`, `_collect_py_candidates`) and re-runs it against the
+callee's OWN function body, one hop out. The scope is narrow and
+disclosed on purpose, matching this section's own "documented, not
+hidden" posture:
+
+- Exactly ONE hop -- a wrapper that itself forwards to a second wrapper
+  in a third file is not followed (a chain, not a single indirection).
+- Same-directory sibling only -- `frob.lang.resolve_local_import`'s full
+  package-root-aware resolution is NOT used here; a package-qualified
+  import (`from pkg.a import run`) is a disclosed remaining gap.
+- A bare (non-dotted) top-level import name only (`from a import run`);
+  a relative import's dotted specifier is not resolved to a local file
+  by this pass.
+
+Each of these three limits has its own regression test
+(`tests/test_vet.py::TestCapabilityScan`) asserting the gap is real, not
+merely undocumented -- the same "prove the limit, don't just state it"
+posture as the corpus-verification note above.
+
 ## Closed-world import accounting (T-0180)
 
 T-0158 shipped the single-source `DANGEROUS_OPERATIONS` registry, the
