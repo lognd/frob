@@ -114,10 +114,15 @@
     "scripts/fleet_status.py::QUARANTINE": "1eee56fa83cdf28b39310ff24f92a7536204af6f3469e16585007531dda9ac3d",
     "scripts/fleet_status.py::REPO": "359d18a5db6144166af75a63b53d2e02ae00dca50ebfa5f2a85b28394be220ff",
     "scripts/fleet_status.py::WORKTREES": "a09a94d31378912f65e88d59cde886b238b023ccf5711f7db55fb506237d694d",
+    "scripts/fleet_status.py::host_load": "b696f119d02df46d7140617f2cab72fb17fcb877d468507e94be930a05efd835",
+    "scripts/fleet_status.py::land_invocations": "f5b4744b924325a8d546977ff238b26bfc909d6d43080c4d56ae5534ed400a1d",
+    "scripts/fleet_status.py::land_lock_holder_pids": "7100394000219b61dfe5628ad7fbb50a9ca78b481d9cea2e352a3cc4b4b92528",
+    "scripts/fleet_status.py::land_process_rows": "2adb84815ae24044d67c01cae590a1b708bb1ac3353edee5b13ad0a6df562ce1",
     "scripts/fleet_status.py::leases": "37d17c7eccb22b1aa2078e0fcfe9b1e670fd0cc7b89af4c3b2379fecbfa93544",
     "scripts/fleet_status.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "scripts/fleet_status.py::quarantine_state": "b83fb4a44381d70b72cd11ecbbfd2d76f8e32212b093b7380eb4d12a55e5c72d",
     "scripts/fleet_status.py::root_dirt": "37e0dbca57009139c2690e28bab8a4bc1c437b07db4940bc0499574dc0cb4ba7",
+    "scripts/fleet_status.py::scope_intersections": "b67295878c63f31d1541203ccd147ea07628ba5a0711883f5c35ecfb3427f188",
     "scripts/fleet_status.py::ticket_frontmatter_on_main": "a280cbebdf84c3b5d08f81f5b83f21a6ed7a403610ff2c3912bc1568e8e10c59",
     "scripts/fleet_status.py::ticket_lease": "6861440ab371976e550714539def51efe3af5c2cda725a130af33f2f7aef805c",
     "scripts/fleet_status.py::ticket_readiness": "a539235080a45e2c5aafaf68a25bbd2c3646a15404684c94330cc6c2cfe18f7c",
@@ -2268,5 +2273,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.465.0"
+  "version": "0.466.0"
 }

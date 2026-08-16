@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import json
+import re
 import subprocess
 import time
 from collections.abc import Sequence
@@ -214,12 +215,13 @@ def _matches_any_scope_glob(path: str, scope_globs: Sequence[str]) -> bool:
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_ledger_only_\
 # churn_is_not_reported
 def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
-    """Names of live worktrees whose branch carries an unlanded commit that
-    BOTH (a) touches `tickets/<id>/` (correlates the commit to this ticket
-    at all) AND (b) touches at least one file matching `scope_globs` (the
-    ticket's own declared scope) somewhere in the branch's full `main...
-    HEAD` diff -- genuine implementation evidence, not merely a ledger
-    edit.
+    """Names of live worktrees whose branch carries an unlanded commit
+    that, in that SAME commit's own diff, BOTH (a) touches
+    `tickets/<id>/` (correlates the commit to this ticket at all) AND (b)
+    touches at least one file matching `scope_globs` (the ticket's own
+    declared scope) -- genuine implementation evidence, not merely a
+    ledger edit that happens to share a branch history with unrelated
+    scope-touching commits.
 
     T-2172 follow-up (the coordinator's own incident): the original
     version reported ANY worktree with a `tickets/<id>/`-touching commit
@@ -229,16 +231,25 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
     different ticket id before being renumbered to T-2140, so every one of
     those branches had touched `tickets/T-2114/ticket.md` purely as
     collision-recovery renumbering churn -- never the ticket's own scope.
-    A coordinator trusting that line would skip real, undone work believing
-    it already existed -- worse than printing nothing, since a false
-    "already implemented" is exactly the kind of wrong answer that gets
-    trusted without a second look. Requiring BOTH conditions -- still
-    correlated to this specific id (condition a keeps an unrelated
-    ticket's own scope-glob collision from producing a false positive too)
-    AND touching real declared-scope files (condition b) -- makes the
-    T-2114 case correctly report nothing, since none of those branches'
-    diffs touch `src/frob/app/ticket_runner/_land_cmd.py` (T-2114's own
-    scope).
+    T-2179 narrowed this from "any commit touches the ticket dir" AND
+    "the WHOLE branch diff touches scope" to the same two conditions
+    checked at the WHOLE-BRANCH level, which fixed the T-2114 case but
+    left a second false-positive shape open (T-2181, this ticket's own
+    residue): whole-branch correlation still credits a branch whose
+    ticket-dir-touching commit and its scope-touching commit are two
+    DIFFERENT commits for two DIFFERENT tickets that merely happen to
+    share a branch -- measured for real, `--ticket T-2114` reported
+    `t-2107` and `t2049-series`, which each touched
+    `src/frob/app/ticket_runner/_land_cmd.py` for their OWN ticket
+    (T-2108, T-2049) in a commit that never touches `tickets/T-2114/` at
+    all, alongside a SEPARATE bookkeeping commit that touches
+    `tickets/T-2114/` (e.g. a `blocked_by`/renumbering edit) and never
+    touches `_land_cmd.py`. Whole-branch overlap of the two conditions is
+    exactly file-overlap reasoning at branch granularity -- correlation
+    now happens PER COMMIT (`git show --name-only` on each commit that
+    itself touches `tickets/<id>/`) so a commit must carry BOTH signals
+    together to count as evidence, never two unrelated commits stitched
+    together by sharing a branch.
 
     An empty `scope_globs` (ticket not on `main` yet, or `main` records no
     scope at all) can never satisfy condition (b), so it always reports
@@ -250,14 +261,18 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
     hits = []
     for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
         ticket_touch = _git(
-            ["log", "main..HEAD", "--oneline", "--", f"tickets/{ticket_id}/"], path
+            ["log", "main..HEAD", "--format=%H", "--", f"tickets/{ticket_id}/"],
+            path,
         )
-        if not ticket_touch.strip():
-            continue
-        full_diff = _git(["diff", "--name-only", "main...HEAD"], path)
-        touched_files = full_diff.splitlines()
-        if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
-            hits.append(path.name)
+        commit_shas = [
+            line.strip() for line in ticket_touch.splitlines() if line.strip()
+        ]
+        for sha in commit_shas:
+            commit_diff = _git(["show", "--name-only", "--format=", sha], path)
+            touched_files = commit_diff.splitlines()
+            if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
+                hits.append(path.name)
+                break
     return hits
 
 
@@ -337,6 +352,366 @@ def ticket_readiness(ticket_id: str) -> dict:
         "worktrees_with_commits": worktrees_with_commits,
         "dispatchable": dispatchable,
     }
+
+
+# frob:doc docs/guides/coordinator-scripts.md#effective_scope
+# frob:ticket T-2180
+def _effective_scope(readiness: dict) -> list[str]:
+    """The scope glob list a ticket is ACTUALLY working under right now:
+    its live lease's `scope` if a lease is held (mirrors `ticket_
+    readiness`'s own "trust the lease, not the ticket file" rule), else
+    `main`'s declared scope, else `[]` when the ticket does not exist on
+    `main` at all. Shared by `scope_intersections` below so a pairwise
+    comparison never accidentally compares a stale `main`-only scope
+    against a sibling's live, narrowed-in-worktree one."""
+    lease = readiness["lease"]
+    if lease is not None:
+        return list(lease.get("scope", []))
+    main_info = readiness["main"]
+    if main_info is not None:
+        return list(main_info["scope"])
+    return []
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_globs_overlap
+# frob:ticket T-2180
+def _globs_overlap(a: str, b: str) -> bool:
+    """Whether two scope globs can ever match the same path -- exact
+    equality, or one side being a LITERAL path (no `*`/`?`/`[` wildcard
+    character) that the other side's glob matches via `fnmatch.fnmatch`.
+    Not a general glob-intersection solver (two genuinely different
+    wildcard patterns with no literal side are reported as non-
+    overlapping even if some path could satisfy both) -- deliberately
+    conservative, matching the shapes `frob ticket scope` actually writes
+    (mostly literal paths, occasionally a `dir/*` prefix): never CLAIMS
+    an overlap it cannot demonstrate, so a report from this function is
+    always real evidence, never a guess."""
+    if a == b:
+        return True
+    wildcard_chars = set("*?[")
+    if not (set(a) & wildcard_chars) and fnmatch.fnmatch(a, b):
+        return True
+    if not (set(b) & wildcard_chars) and fnmatch.fnmatch(b, a):
+        return True
+    return False
+
+
+# frob:doc docs/guides/coordinator-scripts.md#scope_intersections
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeIntersections.test_reports_overlappi\
+# ng_pair
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeIntersections.test_no_overlap_report\
+# s_empty
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeIntersections.test_checks_against_a_\
+# held_lease_outside_the_requested_set
+def scope_intersections(ticket_ids: Sequence[str]) -> list[dict]:
+    """PAIRWISE scope-glob intersection across every id in `ticket_ids`,
+    using each ticket's EFFECTIVE scope (`_effective_scope`) -- compared
+    as resolved glob patterns via `_globs_overlap`, never ticket titles
+    or file-name similarity, which is exactly the reasoning `worktrees_
+    touching_ticket`'s own T-2181 fix just rejected at the file level.
+    Also checks each requested id's effective scope against every
+    currently held lease NOT already in `ticket_ids`, so a coordinator
+    vetting a wave for internal contention sees external contention
+    against an already in-flight lease too.
+
+    Measured need: a five-ticket docs series all scoped to
+    `docs/modules/tickets.md`, then T-1748 and T-1780 both claiming that
+    same file -- the second collision hard-refused T-1780 at `start` via
+    `_refuse_on_scope_lease_collision`, with no `--steal` override, after
+    the dispatch had already happened. This function exists to make that
+    check BEFORE dispatch, not after a wasted `ticket start`.
+
+    Returns one dict per colliding pair: `{"a": id, "b": id,
+    "overlapping_globs": [(glob_a, glob_b), ...]}` -- an empty list means
+    no pairwise or lease-external contention was found."""
+    readiness = {tid: ticket_readiness(tid) for tid in ticket_ids}
+    scopes = {tid: _effective_scope(r) for tid, r in readiness.items()}
+
+    collisions: list[dict] = []
+    ids = list(ticket_ids)
+    requested_ids = set(ids)  # O(1) membership below, not a per-lease linear scan
+    for i, a in enumerate(ids):
+        for b in ids[i + 1 :]:
+            overlaps = [
+                (ga, gb)
+                for ga in scopes[a]
+                for gb in scopes[b]
+                if _globs_overlap(ga, gb)
+            ]
+            if overlaps:
+                collisions.append({"a": a, "b": b, "overlapping_globs": overlaps})
+
+    held = leases()
+    for tid in ids:
+        for record in held:
+            other_id = record.get("ticket_id")
+            # frob:waive PERF003 reason="bounded by the number of ids passed on the \
+            # CLI (a wave dispatch, single digits) times the number of currently held \
+            # leases (this repo's own fleet size, never scale-sensitive) -- not a \
+            # cross join over a large or growing collection"
+            if other_id is None or other_id == tid or other_id in requested_ids:
+                continue
+            overlaps = [
+                (ga, gb)
+                for ga in scopes[tid]
+                for gb in record.get("scope", [])
+                if _globs_overlap(ga, gb)
+            ]
+            if overlaps:
+                collisions.append(
+                    {"a": tid, "b": other_id, "overlapping_globs": overlaps}
+                )
+    return collisions
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_parse_ps_cpu_time
+# frob:ticket T-2180
+def _parse_ps_cpu_time(value: str) -> int:
+    """Parse `ps`'s own TIME column (`[[dd-]hh:]mm:ss`) into total whole
+    seconds. Returns 0 on anything unparseable rather than raising --
+    this feeds a best-effort fleet report, not a gate."""
+    try:
+        days = 0
+        rest = value
+        if "-" in value:
+            days_s, rest = value.split("-", 1)
+            days = int(days_s)
+        parts = [int(p) for p in rest.split(":")]
+        while len(parts) < 3:
+            parts.insert(0, 0)
+        hours, minutes, seconds = parts[-3:]
+        return days * 86400 + hours * 3600 + minutes * 60 + seconds
+    except (ValueError, IndexError):
+        return 0
+
+
+#: Matches a `--ticket T-####`/`--ticket=T-####` argv fragment, however
+#: `frob ticket land` was invoked (space or `=` separated).
+_LAND_ARGV_TICKET_RE = re.compile(r"--ticket[= ]+([A-Za-z]+-\d+)")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandProcessRows.test_parses_matching_rows\
+# _and_skips_others
+def land_process_rows() -> list[dict]:
+    """Every live process whose argv contains a `ticket land` invocation,
+    parsed from `ps -eo pid,etimes,time,args`'s own structured columns:
+    pid, elapsed seconds, cumulative CPU time (raw `ps` TIME string), and
+    the full argv. This is the raw per-PROCESS table a single real `frob
+    ticket land` fans out across -- the bash wrapper, `timeout`, `uv
+    run`, and the actual python process, section 13 of the agent
+    playbook's own T-1344 measurement puts this at roughly 4 rows per
+    land. `land_invocations` below collapses these rows to distinct
+    invocations; counting ROWS here as invocations is exactly the
+    overcounting bug this ticket exists to fix (two agents independently
+    reported '15-16 concurrent lands' when there were 4).
+
+    Known residual limitation (playbook section 13): a plain argv
+    substring match cannot distinguish a REAL `frob ticket land`
+    invocation from another process whose command line merely CONTAINS
+    that text -- e.g. a coordinator's own wait-loop shell running
+    `pgrep -f "frob ticket land T-..."`. Such a row parses no `--ticket`
+    fragment (`land_invocations` reports it honestly as its own
+    `ticket_id=None` entry rather than folding it into a real ticket's
+    group), so it cannot corrupt a real invocation's own count -- but it
+    can still inflate `LANDS IN FLIGHT` by one. Read the printed argv
+    for any `ticket_id=None` row before treating it as a real land."""
+    try:
+        done = subprocess.run(
+            ["ps", "-eo", "pid,etimes,time,args"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if done.returncode != 0:
+        return []
+    rows = []
+    for line in done.stdout.splitlines()[1:]:
+        parts = line.split(None, 3)
+        if len(parts) < 4:
+            continue
+        pid_s, etimes_s, cputime_s, argv = parts
+        if not re.search(r"\bticket\s+land\b", argv):
+            continue
+        try:
+            pid = int(pid_s)
+            etimes = int(etimes_s)
+        except ValueError:
+            continue
+        rows.append({"pid": pid, "etimes": etimes, "cputime": cputime_s, "argv": argv})
+    return rows
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_invocations
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandInvocations.test_collapses_process_fa\
+# n_out_by_ticket_id
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandInvocations.test_rows_with_no_ticket_\
+# id_are_never_merged_together
+def land_invocations() -> list[dict]:
+    """Distinct `frob ticket land` INVOCATIONS, keyed on the ticket id
+    parsed from each process row's own argv `--ticket T-####` field --
+    collapsing `land_process_rows`'s ~4-rows-per-land fan-out down to one
+    entry per real land. `ps aux | grep -c "frob ticket land"` returns
+    roughly 4 per land; this is the fix: distinct invocations keyed on
+    ticket id from the process table's own structured fields, never a
+    line count.
+
+    Each entry: `ticket_id` (`None` if no `--ticket` fragment was found
+    in ANY matched row -- reported honestly as its own single-row
+    invocation rather than silently merged into an unrelated group, since
+    rows with no ticket id cannot be correlated to each other at all),
+    `pids` (every pid in the row group), `elapsed_s` (the MAX `etimes`
+    across the group -- the longest-lived row is the one that actually
+    started the invocation), and `cpu_s` (the MAX parsed CPU time across
+    the group). CPU time is reported precisely because content alone
+    cannot distinguish a live land from a dead attempt's residue -- a
+    killed land's staged diff is byte-identical across retries because it
+    is the same work -- but CPU time discriminates immediately: a
+    wedged/dead process stops accumulating CPU while a live one keeps
+    climbing."""
+    rows = land_process_rows()
+    groups: dict[str | None, list[dict]] = {}
+    for row in rows:
+        match = _LAND_ARGV_TICKET_RE.search(row["argv"])
+        key = match.group(1) if match else None
+        groups.setdefault(key, []).append(row)
+
+    invocations: list[dict] = []
+    for ticket_id, group_rows in groups.items():
+        if ticket_id is None:
+            for row in group_rows:
+                invocations.append(
+                    {
+                        "ticket_id": None,
+                        "pids": [row["pid"]],
+                        "elapsed_s": row["etimes"],
+                        "cpu_s": _parse_ps_cpu_time(row["cputime"]),
+                    }
+                )
+            continue
+        invocations.append(
+            {
+                "ticket_id": ticket_id,
+                "pids": [r["pid"] for r in group_rows],
+                "elapsed_s": max(r["etimes"] for r in group_rows),
+                "cpu_s": max(_parse_ps_cpu_time(r["cputime"]) for r in group_rows),
+            }
+        )
+    invocations.sort(key=lambda inv: (inv["ticket_id"] is None, inv["ticket_id"] or ""))
+    return invocations
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandLockHolderPids.test_finds_a_pid_holdi\
+# ng_the_lock_open
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandLockHolderPids.test_no_live_holder_re\
+# turns_empty
+def land_lock_holder_pids(root: Path, proc: Path = Path("/proc")) -> list[int]:
+    """Live pids that currently hold `root`'s `.frob/land.lock` file OPEN,
+    found by scanning `<proc>/<pid>/fd/*` for a symlink that resolves to
+    the lock's own absolute path -- NOT the pid recorded inside the lock
+    file's own JSON (pids are reused, so a stale recorded pid can name a
+    live but unrelated process) and NOT the lock file's modification age
+    (a legitimate land genuinely exceeds 1500s under load, so age alone
+    cannot tell a stuck lock from a slow one). `flock` is released by the
+    kernel the instant its holder process dies -- so "is any live pid's
+    fd table still pointing at the lock file" is a live, race-free
+    liveness check, not an inference. `proc` is injectable for tests
+    (`/proc` by default); an unreadable-or-absent `proc` returns `[]`
+    rather than raising, matching this script's fail-quiet-not-fail-loud
+    posture for a best-effort report."""
+    lock_path = (root / ".frob" / "land.lock").resolve()
+    if not proc.is_dir():
+        return []
+    holders: list[int] = []
+    try:
+        pid_dirs = list(proc.iterdir())
+    except OSError:
+        return []
+    for pid_dir in pid_dirs:
+        if not pid_dir.name.isdigit():
+            continue
+        fd_dir = pid_dir / "fd"
+        try:
+            fds = list(fd_dir.iterdir())
+        except OSError:
+            continue
+        for fd in fds:
+            try:
+                target = fd.resolve()
+            except OSError:
+                continue
+            if target == lock_path:
+                holders.append(int(pid_dir.name))
+                break
+    return holders
+
+
+#: Below this many concurrent agents, host load is not this repo's own
+#: recorded operational constraint -- see `host_load` for the incident.
+_AGENT_CAP_GUIDANCE = "3-4 agent"
+
+
+# frob:doc docs/guides/coordinator-scripts.md#host_load
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestHostLoad.test_reads_loadavg_and_mem_avail\
+# able
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestHostLoad.test_missing_proc_files_return_n\
+# one
+def host_load(proc: Path = Path("/proc")) -> tuple[float, int] | None:
+    """`(one_minute_load_average, mem_available_kb)` read from `<proc>/
+    loadavg` and `<proc>/meminfo`'s own STRUCTURED fields -- never by
+    parsing `free`/`uptime`'s rendered output, whose column layout varies
+    by version and locale. Returns `None` if either file is missing or
+    unparseable (a non-Linux host, or a sandboxed `/proc`), which the
+    caller must treat as "unknown", not "0 load / plenty of memory".
+
+    `meminfo`'s `MemAvailable` field, not `MemFree`, is deliberately what
+    gets read: a busy-but-healthy Linux host commonly shows `MemFree`
+    near 0 with most memory held as reclaimable page cache --
+    `MemAvailable` is the kernel's own estimate of what a new process can
+    actually get, and reading `MemFree` instead raises a false alarm on
+    every busy host, which teaches an operator to ignore the alarm even
+    when it is real. This mirrors a real incident: six concurrent agents
+    on a host with a documented 3-4 agent operational cap (an OOM killer
+    has terminated a session here before) went unnoticed until someone
+    went looking by hand -- the same 'a real constraint measured
+    somewhere nobody reads at decision time' shape as the pre-T-2049
+    quarantine and the pre-T-2182 ticket-rot gap."""
+    loadavg_path = proc / "loadavg"
+    meminfo_path = proc / "meminfo"
+    try:
+        load_1min = float(loadavg_path.read_text(encoding="utf-8").split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+    mem_available_kb = None
+    try:
+        for line in meminfo_path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("MemAvailable:"):
+                mem_available_kb = int(line.split()[1])
+                break
+    except (OSError, ValueError, IndexError):
+        return None
+    if mem_available_kb is None:
+        return None
+    return load_1min, mem_available_kb
 
 
 # frob:doc docs/guides/coordinator-scripts.md#quarantine
@@ -456,22 +831,114 @@ def _print_ticket_readiness(readiness: dict) -> bool:
     return readiness["dispatchable"]
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_land_status_lines
+# frob:ticket T-2180
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_invocations_a\
+# nd_live_lock_holder
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_stale_lock_wh\
+# en_no_live_holder
+def _land_status_lines(
+    invocations: list[dict],
+    holder_pids: list[int],
+    lock_exists: bool,
+    load: tuple[float, int] | None,
+    held_lease_count: int,
+) -> list[str]:
+    """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
+    already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
+    (mirrors `_ticket_readiness_lines`'s own precedent, T-2172): no
+    `print` call, no I/O, so `_print_land_status` below stays I/O-only.
+    `invocations` are `land_invocations`'s own dicts (ticket id, pids,
+    elapsed, cpu). `holder_pids`/`lock_exists` distinguish a live-held
+    lock from a stale one from a free one. `load` is `host_load`'s
+    `(1-minute load average, MemAvailable kb)`, or `None` when unknown."""
+    lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
+    for inv in invocations:
+        ticket_label = inv["ticket_id"] or "<no --ticket parsed>"
+        pids = ",".join(str(p) for p in inv["pids"])
+        lines.append(
+            f"  {ticket_label} pids={pids} elapsed={inv['elapsed_s']}s "
+            f"cpu={inv['cpu_s']}s"
+        )
+
+    if holder_pids:
+        lines.append(f"LAND LOCK: held, live holder pid(s)={holder_pids}")
+    elif lock_exists:
+        lines.append(
+            "LAND LOCK: file exists but NO live process holds it open -- "
+            "stale (recorded pid may be reused; do not trust it or lock age)"
+        )
+    else:
+        lines.append("LAND LOCK: free")
+
+    if load is None:
+        lines.append("LOAD: unknown (/proc/loadavg or /proc/meminfo unreadable)")
+    else:
+        load_1min, mem_available_kb = load
+        mem_available_gb = mem_available_kb / (1024 * 1024)
+        lines.append(
+            f"LOAD {load_1min:.1f}  MEM {mem_available_gb:.1f}GB avail  "
+            f"{held_lease_count} lease(s) -- guidance is "
+            f"{_AGENT_CAP_GUIDANCE} concurrent"
+        )
+    return lines
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_land_status
+# frob:ticket T-2180
+def _print_land_status() -> None:
+    """Print the LANDS section: distinct `land_invocations` (T-2180's own
+    fix for the ~4x process-line overcount), each with its pids, elapsed
+    time, and CPU time, followed by `land.lock` holder liveness from
+    `land_lock_holder_pids`'s `/proc` scan, followed by a LOAD line
+    (`host_load`'s 1-minute load average and `MemAvailable`, alongside
+    the held-lease count) against this host's recorded 3-4 concurrent
+    agent operational guidance. Printed unconditionally inside
+    `_print_fleet_report`, in the standing report a coordinator already
+    runs before every dispatch and every land -- acceptance [4]'s own
+    'automatic over commands' requirement: `frob ticket wave --agents N`
+    already computes this kind of thing and gets skipped because it is a
+    separate command a coordinator has to remember to run. The LOAD line
+    was added alongside the other two because it reads the same process-
+    table-adjacent state and answers the same standing question this
+    section already exists to answer ('is it safe to dispatch another
+    agent right now') -- six concurrent agents against a documented 3-4
+    agent cap went unnoticed on this host until someone checked by
+    hand. ARCH103 (T-2172 precedent): all formatting/branching lives in
+    `_land_status_lines`; this function only gathers inputs and prints."""
+    invocations = land_invocations()
+    holder_pids = land_lock_holder_pids(REPO)
+    lock_path = REPO / ".frob" / "land.lock"
+    load = host_load()
+    for line in _land_status_lines(
+        invocations, holder_pids, lock_path.exists(), load, len(leases())
+    ):
+        print(line)
+
+
 # frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report
 # frob:ticket T-2172
+# frob:ticket T-2180
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_prints_all_four_sec\
 # tions
 def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
-    """Print the ROOT/QUARANTINE/LEASES/WORKTREES sections `main` used to
-    print inline -- split out (ARCH001/ARCH103, T-2172) as the
+    """Print the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main`
+    used to print inline -- split out (ARCH001/ARCH103, T-2172) as the
     other half of `main`'s decomposition, alongside
     `_print_ticket_readiness` above. `dirt` is passed in rather than
     recomputed so `main` (the caller) stays the single place that calls
     `root_dirt()` and can reuse the result for its own exit-code
-    decision."""
+    decision. T-2180 added the LANDS section between ROOT and QUARANTINE
+    -- "which lands are in flight" is exactly the kind of fleet-wide,
+    always-relevant state the other four sections already are."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
+
+    _print_land_status()
 
     state, undisposed = quarantine_state()
     if state == "raised":
@@ -498,6 +965,37 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     for name, age, idle in worktrees(idle_seconds):
         mins = "unknown" if age < 0 else f"{age // 60}m"
         print(f"  {name:28} last-commit {mins:>9}{'  IDLE?' if idle else ''}")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_all_ticket_readiness
+# frob:ticket T-2180
+def _print_all_ticket_readiness(tickets: list[str]) -> bool:
+    """Print `_print_ticket_readiness` for every id in `tickets`, in
+    order, returning `True` only if ALL of them are dispatchable --
+    `main`'s own multi-`--ticket` loop, pulled out (ARCH103, same
+    precedent as `_print_fleet_report`'s own T-2172 split) so `main`
+    stays a thin sequence of calls rather than mixing this loop's own
+    branching into its already-multi-concern body."""
+    ticket_ok = True
+    for ticket_id in tickets:
+        ticket_ok = _print_ticket_readiness(ticket_readiness(ticket_id)) and ticket_ok
+    return ticket_ok
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_scope_intersections
+# frob:ticket T-2180
+def _print_scope_intersections(tickets: list[str]) -> None:
+    """Print `scope_intersections(tickets)`'s own `SCOPE INTERSECTIONS:
+    N` count and each colliding pair -- `main`'s own 2+-`--ticket`
+    branch, pulled out (ARCH103) alongside `_print_all_ticket_readiness`
+    above."""
+    collisions = scope_intersections(tickets)
+    print(f"SCOPE INTERSECTIONS: {len(collisions)}")
+    for collision in collisions:
+        globs = ", ".join(
+            f"{ga!r}<->{gb!r}" for ga, gb in collision["overlapping_globs"]
+        )
+        print(f"  {collision['a']} x {collision['b']}: {globs}")
 
 
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-main
@@ -532,22 +1030,33 @@ def main() -> int:
     `root_dirt()` once, and delegates the two print blocks to
     `_print_ticket_readiness` and `_print_fleet_report`, keeping the
     ordering/exit-code decision (the actual logic worth reading in one
-    place) as the only thing left here."""
+    place) as the only thing left here.
+
+    T-2180: `--ticket` now accepts MULTIPLE ids (repeatable flag) --
+    each is printed via `_print_ticket_readiness` in turn, and when 2+
+    are given, `scope_intersections` prints every pairwise (and
+    lease-external) scope collision across the whole set, so a
+    coordinator can vet a wave for contention before dispatching it, in
+    the same standing report rather than a separate command."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--idle-minutes", type=int, default=20)
     parser.add_argument(
         "--ticket",
+        action="append",
         default=None,
         help="T-2133: also print per-ticket readiness (lease, main scope/"
         "state divergence, sibling-branch commits) FIRST, ahead of the "
         "general report, and gate the exit code on "
-        "ticket_readiness()['dispatchable'], not just root cleanliness.",
+        "ticket_readiness()['dispatchable'], not just root cleanliness. "
+        "Repeatable (T-2180): passing --ticket more than once also "
+        "prints every pairwise scope intersection across the given ids.",
     )
     args = parser.parse_args()
 
-    ticket_ok = True
-    if args.ticket is not None:
-        ticket_ok = _print_ticket_readiness(ticket_readiness(args.ticket))
+    tickets: list[str] = args.ticket or []
+    ticket_ok = _print_all_ticket_readiness(tickets)
+    if len(tickets) > 1:
+        _print_scope_intersections(tickets)
 
     dirt = root_dirt()
     _print_fleet_report(dirt, args.idle_minutes * 60)
