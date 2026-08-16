@@ -1331,7 +1331,17 @@ class TestLandProofAndFinish:
             rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
         ]
         assert len(proof_lines) == 1
-        assert "verified=True" in proof_lines[0]
+        # T-2091: this fixture's Done report carries no "### Captured
+        # claims" section, so claims re-verification is legitimately
+        # SKIPPED-UNMEASURED (not PASSED) -- and T-2091 deliberately makes
+        # a skip print the literal `verified=SKIPPED-UNMEASURED`, never
+        # `True`, so a skip can never be mistaken for a real pass on the
+        # one line the fleet trusts to confirm a land. The property this
+        # test actually guards -- `is_ancestor_of_main=True` even when
+        # `root == worktree` -- is unaffected by T-2091 and still checked
+        # below.
+        assert "verified=SKIPPED-UNMEASURED" in proof_lines[0]
+        assert "claims_reverify=skipped-unmeasured" in proof_lines[0]
         assert "is_ancestor_of_main=True" in proof_lines[0]
 
     def test_proof_verifies_a_real_land(self, repo: Path) -> None:
@@ -1367,7 +1377,7 @@ class TestLandProofAndFinish:
         _commit_all(repo, "anchor ticket, still queued")
         commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
-        fake_report = SimpleNamespace(final_id=tid, commit_sha=commit_sha)
+        fake_report = SimpleNamespace(ticket_id=tid, final_id=tid, commit_sha=commit_sha)
         assert _print_land_proof(repo, fake_report) is True
 
     # frob:ticket T-1884
@@ -1386,7 +1396,7 @@ class TestLandProofAndFinish:
         _commit_all(repo, "ordinary ticket, still queued")
         commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
-        fake_report = SimpleNamespace(final_id=tid, commit_sha=commit_sha)
+        fake_report = SimpleNamespace(ticket_id=tid, final_id=tid, commit_sha=commit_sha)
         assert _print_land_proof(repo, fake_report) is False
 
     # frob:ticket T-2129
@@ -1505,6 +1515,7 @@ class TestLandProofAndFinish:
         branch_list_before = _run(["git", "branch", "--list"], repo).stdout
 
         fake_report = SimpleNamespace(
+            ticket_id=tid,
             dry_run=False,
             final_id=real_report.final_id,
             commit_sha="0" * 40,  # never an ancestor of anything real
@@ -1548,6 +1559,7 @@ class TestLandProofAndFinish:
         tid, worktree, real_report = self._land_a_real_ticket(repo)
 
         fake_report = SimpleNamespace(
+            ticket_id=tid,
             dry_run=False,
             final_id=real_report.final_id,
             commit_sha="0" * 40,  # a real-looking sha, never an ancestor of main
@@ -1566,7 +1578,19 @@ class TestLandProofAndFinish:
             rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
         ]
         assert len(proof_lines) == 1
-        assert "verified=False" in proof_lines[0]
+        # T-2091: `_land_a_real_ticket`'s earlier real `land()` call left
+        # `_LAST_CLAIMS_OUTCOME[tid]` as SKIPPED_UNMEASURED (that fixture's
+        # Done report also carries no "### Captured claims" section), and
+        # `_print_land_proof` reads it back for this SAME `ticket_id` --
+        # so the PRINTED token is the literal `SKIPPED-UNMEASURED`, never
+        # `False`, even though the fake commit is not really an ancestor
+        # of main. This is deliberate: a skip must never be spelled as
+        # either boolean (see `_print_land_proof`'s own docstring). The
+        # property this test actually guards -- the RETURNED verified
+        # bool (unaffected by the skip) still refuses via nonzero exit
+        # even without `--finish` -- is asserted above via `exc_info`.
+        assert "is_ancestor_of_main=False" in proof_lines[0]
+        assert "verified=SKIPPED-UNMEASURED" in proof_lines[0]
 
 
 # frob:ticket T-1913

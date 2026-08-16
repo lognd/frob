@@ -2,7 +2,7 @@
 id: T-2167
 title: 5 TestLandProofAndFinish fixtures raise AttributeError on report.ticket_id
   (T-2091 regression)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'
@@ -15,6 +15,12 @@ scope:
 - tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_cli_land_invoked_with_root_equal_to_worktree_still_verifies
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_verifies_an_anchor_ticket_left_queued_on_main
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_proof_still_refuses_a_non_anchor_ticket_left_queued
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_retire_on_proof_refuses_and_touches_nothing_when_unverified
+- tests/test_ticket_work_and_land_finish.py::TestLandProofAndFinish::test_unverified_land_exits_nonzero_even_without_finish
 designated_repro_test: null
 threat: null
 component: null
