@@ -2,7 +2,7 @@
 id: T-2176
 title: 'post-land sweep regression from T-2156: 1 new (rule, file) identit(ies), 1
   finding(s) (TEST001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -34,3 +34,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TEST001  src/frob/graph/callgraph.py  -> attributed to T-2156 (commit 7589f5a1f22d, already closed/dropped -- filed below) via src/frob/graph/callgraph.py::_local_imports_by_path
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-16: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (TEST001 src/frob/graph/callgraph.py) is absent from the fresh unscoped measurement at T-1748's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
