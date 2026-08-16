@@ -40,7 +40,8 @@ acceptance:
     almost certainly wrong in both magnitude and direction. Report the new per-gate
     delta and JUDGE each appearing/disappearing finding; a count with no per-finding
     judgement is not evidence.
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 - text: Wire consumers ONE AT A TIME with its own measurement, do not flip all three
     together. DEAD001's failure direction is reporting LIVE symbols as dead, which
     is silent and destructive; COV006's is marking uncovered code covered. Preserve
@@ -48,7 +49,8 @@ acceptance:
     -- it keys on directory co-location, not import reachability). And per the epic's
     own item 3, fail CLOSED (report UNRESOLVED, T-1664) where import resolution genuinely
     cannot decide, rather than guessing in either direction.
-  evidence: []
+  evidence:
+  - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
 threat: null
 component: null
 anchor: false
