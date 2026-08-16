@@ -309,15 +309,47 @@ cannot be extracted just contributes no cross-file edges). A same-named
 collision between two files with no import relationship now resolves to
 NO edge instead of a fabricated one.
 
-`build_reference_graph` itself is UNCHANGED and still used directly by
-T-0422's dead-symbol gate, which needs its broader recall -- narrowing
-the shared graph globally would risk resurrecting dead-symbol false
-positives repo-wide to fix an attribution-only problem. Two consumers
-with genuinely different correctness requirements getting two
+`build_reference_graph` itself is UNCHANGED BY DEFAULT and still used
+directly by T-0422's dead-symbol gate, which needs its broader recall --
+narrowing the shared graph globally would risk resurrecting dead-symbol
+false positives repo-wide to fix an attribution-only problem. Two
+consumers with genuinely different correctness requirements getting two
 resolutions here is deliberate, not the T-1966 "one rule, two homes"
 defect -- the difference is documented, in one shared module, not
 independently reinvented. See `tests/unit/test_callgraph_module_scoped.py`
 for the reproduction of the fixed shape.
+
+**T-2188 update, and an open BLOCKER.** T-2156's own mechanism (import-
+verified cross-file resolution, `_local_imports_by_path`) is now shared,
+opt-in, by `build_call_graph`, `build_reference_graph`, and
+`build_ordered_call_graph` too, via a `verify_imports: bool = False`
+parameter on each -- the same "resolve a cross-file candidate only when
+the caller's file imports it" check `build_reference_graph_module_
+scoped` pioneered, generalized rather than reimplemented a second time
+(the T-2156 incident -- `_run`/`_commit_all` collisions -- is not unique
+to attribution; COV006, DEAD001, and PROTO001-005 read the SAME shared
+`by_name` index and were equally exposed). Defaults to `False` on every
+function -- NONE of COV006/DEAD001/PROTO001-005 have been switched to
+`verify_imports=True` yet, and must not be until a BLOCKER clears:
+`frob.lang._nodes.resolve_local_import`'s python branch does not
+resolve this repo's own real import forms (absolute src-layout, e.g.
+`frob.tickets._land`, AND relative, e.g. `._land`/`..lang._nodes`) --
+see the tracking ticket for the measured blast radius (DEAD001 46 -> 241,
+COV006 30 -> 622 findings on this repo's own tree when trialed) and the
+independently-reproduced discovery that this ALSO makes `frob cycle`
+report "no cycles found" on a byte-identical import cycle that a
+top-level (non-`src/`) layout correctly detects. This additionally
+means `build_reference_graph_module_scoped`'s own T-2156 fix has never
+been verified against a genuine cross-file attribution on this repo's
+own tree -- every certifying check to date is equally consistent with
+"cross-file resolution is silently disabled" as with "cross-file
+resolution is accurate"; re-verifying that with a real positive control,
+once the primitive is fixed, is part of the same follow-up. The
+`scope_private_helper_gaps` (T-0998/T-1012) consumer passes `verify_
+imports=False` explicitly (matching the default, kept for documentation
+clarity) -- it has a permanent, different correctness requirement (same-
+directory co-location, not import reachability) unrelated to this
+blocker.
 
 ## Import graph
 

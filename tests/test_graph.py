@@ -2313,7 +2313,18 @@ class TestResolveCallEdgesNative:
     whichever is available, so these tests call BOTH explicitly, over
     real repo package inputs, to prove they return identical results
     rather than trusting the dispatch to only ever exercise one path in
-    CI."""
+    CI.
+
+    T-2188: `_resolve_edges_python` gained a cross-file import-
+    verification layer (`caller_paths`/`imports_by_path`) that
+    `resolve_call_edges_native` (Rust, `_core.py`) does NOT implement --
+    `_core.py` is outside this ticket's own declared scope. Both tests
+    below pass a fully PERMISSIVE `imports_by_path` (every caller's file
+    treated as importing every candidate file in the input), which makes
+    `_resolve_edges_python`'s new filter a no-op and restores exact
+    parity with native's still-unfiltered behavior -- this isolates the
+    matching-loop parity these tests exist to prove from the newer,
+    Python-only import check, rather than conflating the two."""
 
     # frob:tests src/frob/graph/_core.py::resolve_call_edges_native
     def test_native_matches_python_fallback_on_a_real_package(self) -> None:
@@ -2344,15 +2355,21 @@ class TestResolveCallEdgesNative:
         by_name = _short_name_index(parsed_by_path)
 
         callers: list[str] = []
+        caller_paths: list[str] = []
         names_per_caller: list[list[str]] = []
         exempt_per_caller: list[list[str]] = []
         for path, symbols in parsed_by_path.items():
             for sym in symbols:
                 callers.append(f"{path}::{sym.qualname}")
+                caller_paths.append(path)
                 names_per_caller.append(list(_called_names_from_sym(sym)))
                 exempt_per_caller.append(
                     list(_unresolved_exempt_names(sym.body_tokens))
                 )
+        # T-2188: permissive -- every path "imports" every other path, so
+        # the new cross-file filter never drops a candidate here.
+        all_paths = frozenset(parsed_by_path)
+        permissive_imports = {path: all_paths for path in parsed_by_path}
 
         for mark_unresolved in (False, True):
             native = resolve_call_edges_native(
@@ -2365,9 +2382,11 @@ class TestResolveCallEdgesNative:
             )
             python = _resolve_edges_python(
                 callers,
+                caller_paths,
                 names_per_caller,
                 exempt_per_caller,
                 by_name,
+                permissive_imports,
                 mark_unresolved=mark_unresolved,
             )
             assert native is not None
@@ -2390,8 +2409,10 @@ class TestResolveCallEdgesNative:
             "public_fn": [("a.py::public_fn", "a.py", False)],
         }
         callers = ["a.py::caller", "a.py::caller2"]
+        caller_paths = ["a.py", "a.py"]
         names_per_caller = [["helper", "public_fn"], ["_missing"]]
         exempt_per_caller: list[list[str]] = [[], []]
+        permissive_imports = {"a.py": frozenset({"a.py"})}
 
         native = resolve_call_edges_native(
             callers,
@@ -2403,9 +2424,11 @@ class TestResolveCallEdgesNative:
         )
         python = _resolve_edges_python(
             callers,
+            caller_paths,
             names_per_caller,
             exempt_per_caller,
             by_name,
+            permissive_imports,
             mark_unresolved=True,
         )
         assert native == python
@@ -2489,6 +2512,70 @@ class TestLedgerNotDoc:
         assert "README.md" in names
         assert "tickets.md" not in names
         assert "tickets-archive.md" not in names
+
+
+# frob:ticket T-2188
+class TestBuildCallGraphVerifyImports:
+    """`verify_imports=True` (T-2188, opt-in, default `False` -- see
+    `build_call_graph`'s own docstring for the BLOCKER on making this the
+    default: `resolve_local_import` does not resolve this repo's own
+    real import forms, so a positive fixture here uses same-directory,
+    no-package-prefix imports the primitive CAN resolve today, matching
+    the coordinator's own repro). Covers both directions: a genuine
+    cross-file import still resolves (the positive case), and an
+    unrelated same-named private helper in a NON-importing file no
+    longer fabricates an edge (the T-2156 incident shape, generalized
+    beyond attribution)."""
+
+    def test_cross_file_candidate_resolves_when_caller_imports_it(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        _write(tmp_path, "pkg/_helper.py", "def _shared():\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/entry.py",
+            "from pkg._helper import _shared\n\n\ndef public_fn():\n    _shared()\n",
+        )
+        graph = build_call_graph(
+            tmp_path, ("pkg/entry.py", "pkg/_helper.py"), verify_imports=True
+        )
+        assert graph.calls == {"pkg/entry.py::public_fn": ("pkg/_helper.py::_shared",)}
+
+    def test_cross_file_candidate_dropped_when_caller_does_not_import_it(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        # T-2156's own incident shape: two unrelated files each define a
+        # same-named private helper, no import between them.
+        _write(tmp_path, "pkg/a.py", "def entry():\n    _run()\n\n\ndef _run():\n    pass\n")
+        _write(tmp_path, "pkg/b.py", "def _run():\n    pass\n")
+        graph = build_call_graph(tmp_path, ("pkg/a.py", "pkg/b.py"), verify_imports=True)
+        # Only the SAME-FILE `_run` resolves; `pkg/b.py::_run` never does,
+        # because `pkg/a.py` never imports `pkg/b.py`.
+        assert graph.calls == {"pkg/a.py::entry": ("pkg/a.py::_run",)}
+
+    def test_default_is_unverified_bare_short_name_match(self, tmp_path: Path) -> None:
+        """T-2188 BLOCKER disclosure: `verify_imports` defaults to `False`
+        -- the SAME two-file fixture as the dropped-candidate test above
+        still fabricates the cross-file edge when the caller does not
+        opt in, because no consumer in this repo is wired to opt in yet
+        (blocked on `resolve_local_import`'s own defect, see this
+        ticket's Done report)."""
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        _write(tmp_path, "pkg/a.py", "def entry():\n    _run()\n\n\ndef _run():\n    pass\n")
+        _write(tmp_path, "pkg/b.py", "def _run():\n    pass\n")
+        graph = build_call_graph(tmp_path, ("pkg/a.py", "pkg/b.py"))
+        assert graph.calls["pkg/a.py::entry"] == (
+            "pkg/a.py::_run",
+            "pkg/b.py::_run",
+        )
 
 
 # frob:ticket T-0998

@@ -3,11 +3,13 @@ id: T-2188
 title: callgraph.py's build_call_graph/build_reference_graph/build_ordered_call_graph
   resolve cross-file private candidates by bare short name, unverified against imports
   -- same T-2156 mechanism, three unfixed consumers (COV006, DEAD001, PROTO001-005)
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-16'
 priority: high
+blocked_by:
+- T-2195
 parent: T-1662
 tier: ticket
 sprint: null
@@ -21,6 +23,13 @@ scope:
 - tests/test_graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_graph.py::TestBuildCallGraphVerifyImports::test_cross_file_candidate_resolves_when_caller_imports_it
+- tests/test_graph.py::TestBuildCallGraphVerifyImports::test_cross_file_candidate_dropped_when_caller_does_not_import_it
+- tests/test_graph.py::TestBuildCallGraphVerifyImports::test_default_is_unverified_bare_short_name_match
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flags_scoped_caller_of_unscoped_private_helper
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_only_used_by_scope_true_when_no_external_caller
+- tests/test_graph.py::TestScopePrivateHelperGaps::test_flat_dir_genuine_cross_file_helper_still_fires
 designated_repro_test: null
 threat: null
 component: null

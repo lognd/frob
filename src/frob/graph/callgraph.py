@@ -328,7 +328,11 @@ def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_resolved_private_callee_is_not_also_unresolved  # noqa: E501
 # invariant spec: [INV-014](invariants/INV-014.md)
 def build_call_graph(
-    root: Path, paths: Sequence[str], *, mark_unresolved: bool = False
+    root: Path,
+    paths: Sequence[str],
+    *,
+    mark_unresolved: bool = False,
+    verify_imports: bool = False,
 ) -> CallGraph:
     """Build the intra-file + intra-package call graph over `paths`.
 
@@ -346,6 +350,62 @@ def build_call_graph(
     (see `CallGraph`'s docstring). Ambiguous same-name matches within the
     allowed candidate set all get an edge (best-effort; `closure`
     node-caps the fan-out).
+
+    T-2188: a CROSS-FILE candidate (`cand_path != caller_path`) only
+    resolves when the caller's file actually IMPORTS the candidate's
+    file, verified via `_local_imports_by_path`
+    (`frob.lang.extract_imports`/`resolve_local_import`) -- the same
+    mechanism T-2156/T-2174 proved out for
+    `build_reference_graph_module_scoped`, now shared by every general-
+    purpose builder in this module instead of living only in that one
+    attribution-specific function. A SAME-FILE candidate never needs an
+    import check (a symbol always "imports" its own file). Fail-closed
+    per this ticket's own epic item 3: whenever a file's local import set
+    cannot be determined at all (a parse failure, or a grammar
+    `resolve_local_import` does not support -- see
+    `_local_imports_by_path`'s own docstring), that file's cross-file
+    candidates are simply DROPPED, never silently guessed via the old
+    bare-short-name match -- the identical degrade-to-narrower posture
+    `_local_imports_by_path` already had for `build_reference_graph_
+    module_scoped`, just reused here rather than re-invented. Before
+    T-2188, this function (and `build_reference_graph`/`build_ordered_
+    call_graph`) resolved any same-named private candidate ANYWHERE in
+    `paths`, which is what let two unrelated files each defining `_run`/
+    `_commit_all` (18 files in this repo alone) fabricate an edge
+    between them purely from name coincidence -- see
+    docs/modules/graph.md#call-graph for the T-2156 incident this closes
+    for every consumer that opts in (see `verify_imports` below) -- NOT
+    yet the default, see the BLOCKER disclosure there.
+
+    `verify_imports` (default `False` -- see BLOCKER below) is opt-in:
+    when `True`, a candidate outside the caller's own file resolves
+    only when the caller's file locally imports the candidate's file
+    (`_local_imports_by_path`, the same mechanism T-2156/T-2174 proved
+    out for `build_reference_graph_module_scoped`). BLOCKER (T-2188's
+    own Done report): `frob.lang._nodes.resolve_local_import`'s python
+    branch resolves an absolute specifier (`frob.gates._models`) only
+    against `root` itself, never a src-layout `root/src` -- on THIS
+    repo (and any other src-layout project) that makes `_local_imports_
+    by_path` return an EMPTY set for nearly every python file's real
+    imports, which does not "narrow" cross-file resolution, it nearly
+    ELIMINATES it. Measured on this repo's own tree with `verify_
+    imports=True` wired to `build_reference_graph`'s DEAD001 consumer:
+    46 -> 241 DEAD001 findings, 30 -> 622 COV006 findings (T-2188's own
+    Done report has the full before/after and the root-cause probe).
+    That is a much larger, wrong-direction blast radius than the bare-
+    short-name-collision defect this ticket set out to fix, so
+    `verify_imports=True` must not become any consumer's default until
+    the blocking ticket (filed alongside this Done report) resolves
+    `resolve_local_import`'s src-layout gap. The mechanism itself is
+    implemented, tested, and correct in isolation (see `tests/test_
+    graph.py`'s cross-file-import-verification cases) -- it is
+    deliberately NOT wired into any of `build_call_graph`'s three named
+    consumers (COV006, DEAD001, PROTO001-005) yet. The one caller that
+    DOES pass `verify_imports=False` explicitly (redundant with the
+    default, kept for documentation clarity) is `scope_private_helper_
+    gaps` (T-0998/T-1012), which has a genuinely different, permanent
+    correctness requirement independent of this blocker -- see its own
+    call site for why.
 
     T-0809: when `mark_unresolved` (default `False`), a call target that
     LOOKS like it should resolve under Python's leading-underscore naming
@@ -384,10 +444,16 @@ def build_call_graph(
     """
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
+    imports_by_path = (
+        _local_imports_by_path(root, parsed_by_path)
+        if verify_imports
+        else _permissive_imports_by_path(parsed_by_path)
+    )
     calls = _resolve_edges(
         parsed_by_path,
         by_name,
         _called_names_from_sym,
+        imports_by_path,
         mark_unresolved=mark_unresolved,
         # T-0813: only `build_call_graph`'s call-token extraction has the
         # attribute-call context `_unresolved_exempt_names` needs (a
@@ -418,14 +484,25 @@ def build_ordered_call_graph(root: Path, paths: Sequence[str]) -> OrderedCallGra
     callee-summary information for anything AFTER it (see
     `frob.gates._protocol_summary._ordered_call_sites`'s poisoning-halts-
     the-walk posture), so no sentinel edge is needed in the ordered shape
-    itself."""
+    itself.
+
+    T-2188: same cross-file import verification as `build_call_graph`/
+    `build_reference_graph` now share -- a candidate outside the
+    caller's own file only counts when that file imports the
+    candidate's file (`_local_imports_by_path`); see `build_call_graph`'s
+    own docstring for the full rationale and the fail-closed disposition
+    on an undeterminable import set."""
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
+    imports_by_path = _local_imports_by_path(root, parsed_by_path)
     calls: dict[str, tuple[str, ...]] = {}
     for path, symbols in parsed_by_path.items():
+        importable = imports_by_path.get(path, frozenset())
         for sym in symbols:
             caller_symref = f"{path}::{sym.qualname}"
-            callees = _ordered_private_callees(sym.body_tokens, caller_symref, by_name)
+            callees = _ordered_private_callees(
+                sym.body_tokens, caller_symref, path, importable, by_name
+            )
             if callees:
                 calls[caller_symref] = tuple(callees)
     return OrderedCallGraph(calls=calls)
@@ -434,15 +511,24 @@ def build_ordered_call_graph(root: Path, paths: Sequence[str]) -> OrderedCallGra
 def _ordered_private_callees(
     body_tokens: tuple[str, ...],
     caller_symref: str,
+    caller_path: str,
+    importable: frozenset[str],
     by_name: Mapping[str, list[tuple[str, str, bool]]],
 ) -> list[str]:
     """Source-order private-callee symrefs `body_tokens` resolves to via
     `by_name`, excluding self-calls and any non-private candidate
-    (extracted from `build_ordered_call_graph` to cut nesting, T-0394)."""
+    (extracted from `build_ordered_call_graph` to cut nesting, T-0394).
+
+    T-2188: `caller_path`/`importable` add the same cross-file import
+    check `build_call_graph`/`build_reference_graph` now apply -- a
+    candidate outside `caller_path` is dropped unless `caller_path`
+    imports its file."""
     callees: list[str] = []
     for name in _ordered_called_names(body_tokens):
-        for symref, _cand_path, is_private in by_name.get(name, ()):
+        for symref, cand_path, is_private in by_name.get(name, ()):
             if symref == caller_symref or not is_private:
+                continue
+            if cand_path != caller_path and cand_path not in importable:
                 continue
             callees.append(symref)
     return callees
@@ -451,7 +537,9 @@ def _ordered_private_callees(
 # frob:doc docs/modules/graph.md#call-graph
 # frob:ticket T-0422
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_reference_graph_catches_dispatch_table_entry  # noqa: E501
-def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
+def build_reference_graph(
+    root: Path, paths: Sequence[str], *, verify_imports: bool = False
+) -> CallGraph:
     """Like `build_call_graph`, but records a private symbol as REFERENCED
     the moment another symbol's body names it at all -- a dispatch-table
     entry (`COMMANDS = {"new": _new}`) or decorator target, not only a
@@ -460,9 +548,26 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     model) -- T-0422's dead-symbol gate needs "is this symbol referenced
     anywhere", not strictly "called", since a symbol wired only via a
     dispatch table would otherwise look identical to genuinely dead code
-    under `build_call_graph` alone."""
+    under `build_call_graph` alone.
+
+    T-2188: `verify_imports` (default `False`, same opt-in flag and same
+    BLOCKER as `build_call_graph` -- see its docstring for the full
+    `resolve_local_import` src-layout disclosure and the measured
+    46 -> 241 DEAD001 blast radius on this repo's own tree with it
+    force-enabled) is intended to close the DEAD001 false-NEGATIVE
+    direction the epic's own finding named: a genuinely dead private
+    symbol whose short name coincides with an actually-referenced
+    same-package helper in an unrelated, non-importing file reads as
+    "referenced" purely from the name collision today, and is never
+    flagged. NOT wired into T-0422's dead-symbol gate yet -- blocked on
+    the same `resolve_local_import` fix."""
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
+    imports_by_path = (
+        _local_imports_by_path(root, parsed_by_path)
+        if verify_imports
+        else _permissive_imports_by_path(parsed_by_path)
+    )
     # T-0809: `mark_unresolved=False` here, deliberately -- "referenced but
     # unbound" is a much weaker/noisier signal than "called but unbound"
     # (`_referenced_names` includes every bare identifier, not just call
@@ -470,7 +575,11 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     # symbol gate) has no poisoning semantics to feed; widening it would
     # just be unused edges, not a real gap this ticket's scope covers.
     refs = _resolve_edges(
-        parsed_by_path, by_name, _referenced_names, mark_unresolved=False
+        parsed_by_path,
+        by_name,
+        _referenced_names,
+        imports_by_path,
+        mark_unresolved=False,
     )
     return CallGraph(calls=refs)
 
@@ -513,6 +622,22 @@ def build_reference_graph_module_scoped(root: Path, paths: Sequence[str]) -> Cal
             if callees:
                 calls[caller_symref] = tuple(callees)
     return CallGraph(calls=calls)
+
+
+# frob:ticket T-2188
+def _permissive_imports_by_path(
+    parsed_by_path: Mapping[str, list],
+) -> dict[str, frozenset[str]]:
+    """`verify_imports=False`'s escape hatch: every path mapped to the
+    frozenset of every OTHER path in `parsed_by_path`, which makes the
+    cross-file import filter in `_resolve_edges_python`/`_ordered_
+    private_callees` a no-op -- restores the exact pre-T-2188 "any
+    same-named private candidate, any file under `paths`" behavior for
+    the one documented caller that genuinely needs it
+    (`scope_private_helper_gaps`, see `build_call_graph`'s own
+    `verify_imports` docstring for why)."""
+    all_paths = frozenset(parsed_by_path)
+    return {path: all_paths for path in parsed_by_path}
 
 
 # frob:ticket T-2156
@@ -612,6 +737,7 @@ def _resolve_edges(
     parsed_by_path: dict[str, list],
     by_name: dict[str, list[tuple[str, str, bool]]],
     name_extractor,
+    imports_by_path: Mapping[str, frozenset[str]],
     *,
     mark_unresolved: bool = False,
     exempt_extractor=None,  # noqa: ANN001
@@ -665,13 +791,20 @@ def _resolve_edges(
     tests/test_graph.py::TestResolveCallEdgesNative) for a future caller
     with a genuinely large single-batch input (e.g. a whole-repo call
     graph in one call, not once per small package) where the fixed
-    marshaling cost amortizes over enough matching work to win."""
+    marshaling cost amortizes over enough matching work to win.
+
+    T-2188: `imports_by_path` is threaded through to
+    `_resolve_edges_python` so cross-file candidates can be import-
+    verified per caller -- see `build_call_graph`'s docstring for the
+    full rationale and the fail-closed disposition."""
     callers: list[str] = []
+    caller_paths: list[str] = []
     names_per_caller: list[list[str]] = []
     exempt_per_caller: list[list[str]] = []
     for path, symbols in parsed_by_path.items():
         for sym in symbols:
             callers.append(f"{path}::{sym.qualname}")
+            caller_paths.append(path)
             names_per_caller.append(list(name_extractor(sym)))
             exempt_per_caller.append(
                 list(exempt_extractor(sym)) if exempt_extractor is not None else []
@@ -679,58 +812,119 @@ def _resolve_edges(
 
     return _resolve_edges_python(
         callers,
+        caller_paths,
         names_per_caller,
         exempt_per_caller,
         by_name,
+        imports_by_path,
         mark_unresolved=mark_unresolved,
     )
 
 
 # frob:ticket T-0930
 # frob:ticket T-0972
+# frob:ticket T-2188
 def _resolve_edges_python(
     callers: list[str],
+    caller_paths: list[str],
     names_per_caller: list[list[str]],
     exempt_per_caller: list[list[str]],
     by_name: dict[str, list[tuple[str, str, bool]]],
+    imports_by_path: Mapping[str, frozenset[str]],
     *,
     mark_unresolved: bool = False,
 ) -> dict[str, tuple[str, ...]]:
-    """Pure-Python fallback for `_resolve_edges`'s matching loop -- kept
-    byte-identical to the pre-T-0930 implementation (same double loop over
-    parallel per-caller name/exempt lists against the shared `by_name`
-    index), used whenever `frob_core` is unavailable
-    (`frob.graph._core.core_available` is `False`). Never called directly
-    outside `_resolve_edges` and its own golden-parity test."""
+    """Pure-Python fallback for `_resolve_edges`'s matching loop -- the
+    same double loop over parallel per-caller name/exempt lists against
+    the shared `by_name` index this has always been, used whenever
+    `frob_core` is unavailable (`frob.graph._core.core_available` is
+    `False`). Never called directly outside `_resolve_edges` and its own
+    golden-parity test.
+
+    T-2188: `caller_paths` (parallel to `callers`) and `imports_by_path`
+    (`_local_imports_by_path`) add the cross-file import check --  a
+    candidate whose own file differs from the caller's file is dropped
+    UNLESS the caller's file is recorded as importing it
+    (`cand_path in imports_by_path.get(caller_path, frozenset())`). A
+    same-file candidate is never filtered (no import check needed for a
+    symbol referencing its own file). This is a strict NARROWING of the
+    pre-T-2188 candidate set -- every dropped candidate was, before this
+    ticket, matched purely because its short name happened to coincide
+    with the caller's, with no verification the two files were ever
+    related; see `build_call_graph`'s docstring for the full incident
+    this closes and the fail-closed posture on an undeterminable import
+    set (`imports_by_path.get(path, frozenset())` on a path this
+    function never saw a real import set for is empty, which drops
+    every cross-file candidate for that caller -- never a silent
+    fallback to the old unverified match). `frob.graph._core.
+    resolve_call_edges_native` (the Rust fallback this function has a
+    golden-parity test against) does NOT implement this check -- see
+    that test's own docstring for why the parity comparison still holds
+    (it is scoped to a permissive `imports_by_path`, isolating the
+    matching-loop's own native/python parity from this newer,
+    Python-only import-verification layer; `_core.py` is out of this
+    ticket's own declared scope)."""
     calls: dict[str, tuple[str, ...]] = {}
-    for caller_symref, names, exempt in zip(
-        callers, names_per_caller, exempt_per_caller
+    for caller_symref, caller_path, names, exempt in zip(
+        callers, caller_paths, names_per_caller, exempt_per_caller
     ):
-        callees: list[str] = []
-        saw_unresolved = False
-        for name in names:
-            candidates = by_name.get(name, ())
-            matched_private = False
-            # frob:waive PERF003 reason="candidates are already partitioned per name via by_name; total work across all names is O(total candidates), not a cross join"  # noqa: E501
-            for symref, _cand_path, is_private in candidates:
-                if symref == caller_symref:
-                    continue
-                if is_private:
-                    callees.append(symref)
-                    matched_private = True
-            if (
-                mark_unresolved
-                and not matched_private
-                and not candidates
-                and name.startswith("_")
-                and name not in exempt
-            ):
-                saw_unresolved = True
-        if saw_unresolved:
-            callees.append(UNRESOLVED_CALLEE)
+        importable = imports_by_path.get(caller_path, frozenset())
+        callees = _one_caller_edges(
+            caller_symref,
+            caller_path,
+            names,
+            exempt,
+            by_name,
+            importable,
+            mark_unresolved,
+        )
         if callees:
             calls[caller_symref] = tuple(callees)
     return calls
+
+
+# frob:ticket T-2188
+def _one_caller_edges(
+    caller_symref: str,
+    caller_path: str,
+    names: list[str],
+    exempt: list[str],
+    by_name: dict[str, list[tuple[str, str, bool]]],
+    importable: frozenset[str],
+    mark_unresolved: bool,
+) -> list[str]:
+    """One caller's resolved-callee list -- `_resolve_edges_python`'s
+    inner per-caller loop, split out to keep that function under
+    ARCH001's line budget (T-2188 added the import-filter step). A
+    candidate's own file must equal `caller_path` or sit in `importable`
+    to count; see `_resolve_edges_python`'s own docstring for the full
+    rationale."""
+    callees: list[str] = []
+    saw_unresolved = False
+    for name in names:
+        raw_candidates = by_name.get(name, ())
+        # frob:waive PERF003 reason="candidates are already partitioned per name via by_name; total work across all names is O(total candidates), not a cross join"  # noqa: E501
+        candidates = tuple(
+            c for c in raw_candidates if c[1] == caller_path or c[1] in importable
+        )
+        matched_private = False
+        for symref, _cand_path, is_private in candidates:
+            if symref == caller_symref:
+                continue
+            if is_private:
+                callees.append(symref)
+                matched_private = True
+        if (
+            mark_unresolved
+            and not matched_private
+            and not candidates
+            and name.startswith("_")
+            and name not in exempt
+        ):
+            saw_unresolved = True
+    if saw_unresolved:
+        callees.append(UNRESOLVED_CALLEE)
+    return callees
 
 
 # frob:doc docs/modules/graph.md#call-graph
@@ -847,7 +1041,10 @@ def scope_private_helper_gaps(
     scope_files = {f for f in all_files if scope_matches(f, scope)}
     if not scope_files:
         return ()
-    graph = build_call_graph(root, _scope_candidate_paths(all_files, scope_files))
+    # T-2188: verify_imports=False -- see this function's own docstring.
+    graph = build_call_graph(
+        root, _scope_candidate_paths(all_files, scope_files), verify_imports=False
+    )
 
     callers_of: dict[str, set[str]] = {}
     for caller, callees in graph.calls.items():
