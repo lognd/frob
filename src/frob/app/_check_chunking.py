@@ -431,16 +431,33 @@ def _run_budget_chunk(
 
 # frob:ticket T-1004
 # frob:ticket T-1195
-def _budget_deferred_result(deferred: list[str], budget_s: int) -> ToolResult:
+def _budget_deferred_result(
+    deferred: list[str], budget_s: int, *, persisted: bool = True
+) -> ToolResult:
     """A visible (WARNING-severity, never silent) `ToolResult` naming every
     stage group `--budget` did NOT get to this run (T-1004) -- deferring
     work is fine, deferring it quietly is the exact stall class this
-    ticket exists to remove."""
+    ticket exists to remove.
+
+    T-2250: `persisted=False` for an `--only`-scoped call, whose deferred
+    group(s) are never written to the shared resume-state file (see
+    `_run_budgeted_check`'s docstring) -- the message must not claim a
+    resume it did not perform, or promise a plain re-run will "continue"
+    from state that was never saved."""
     names = ", ".join(deferred)
+    if persisted:
+        resume_note = (
+            "Resume state persisted -- run `frob check --budget <seconds>` "
+            "again to continue."
+        )
+    else:
+        resume_note = (
+            "--only-scoped: NOT persisted to the shared resume state -- "
+            "re-run the same --only <group(s)> --budget <seconds> to retry."
+        )
     message = (
         f"BUDGET001: --budget {budget_s} deferred {len(deferred)} stage "
-        f"group(s) to a later run: {names}. Resume state persisted -- "
-        "run `frob check --budget <seconds>` again to continue."
+        f"group(s) to a later run: {names}. {resume_note}"
     )
     return ToolResult(
         tool="budget",
@@ -451,27 +468,32 @@ def _budget_deferred_result(deferred: list[str], budget_s: int) -> ToolResult:
 
 
 # frob:ticket T-2235
+# frob:ticket T-2250
 def _budget_coverage_report(
     budget_s: int, all_groups: list[str], executed_groups: list[str]
 ) -> dict:
     """The `--budget` completeness record `_run_budgeted_check` reports every
     invocation (T-2235): `executed_groups` in the order this call actually
-    ran them, `skipped_groups` as the full stage-group universe
-    (`available_stages()`, passed in as `all_groups`) minus what THIS call
+    ran them, `skipped_groups` as `all_groups` minus what THIS call
     executed, and `complete` as a positive `skipped_groups == []` flag so a
     consumer can distinguish "nothing skipped" from "this build does not
     report skips" (the whole dict is absent on every non-budgeted call --
     see `_report_check_result`).
 
-    Deliberately computed against the FULL universe, not against this
-    call's local `deferred` list: `deferred` is only the tail of whatever
+    Deliberately computed against `all_groups`, not against this call's
+    local `deferred` list: `deferred` is only the tail of whatever
     `remaining` this call started from, and `remaining` can itself already
     be a narrow leftover of an EARLIER invocation's resume state (T-2235's
     own measured incident -- a budgeted run that inherited a resume file
     already trimmed down to one stage group reported zero deferred and
     exited clean, having silently never executed the other four). Reporting
-    against the full universe is the only way a single invocation's JSON
-    stays honest about what IT ran, independent of resume-state history."""
+    against `all_groups` is the only way a single invocation's JSON stays
+    honest about what IT ran, independent of resume-state history.
+
+    T-2250: `all_groups` is `available_stages()` (the full universe) for an
+    unrestricted `--budget` call, but the caller's own `--only` selection
+    for an `--only <group> --budget N` call -- the report must never claim
+    a group the caller never asked for was "skipped"."""
     skipped = sorted(set(all_groups) - set(executed_groups))
     return {
         "requested_seconds": budget_s,
@@ -479,6 +501,78 @@ def _budget_coverage_report(
         "skipped_groups": skipped,
         "complete": not skipped,
     }
+
+
+# frob:ticket T-2250
+class _BudgetOnlyUnplannable(Exception):
+    """Raised by `_resolve_budget_only_scope` (T-2250) when `--only`,
+    combined with `--budget`, names something `_run_budgeted_check` cannot
+    plan at stage-group granularity (a bare gate/tool name, e.g. `--only
+    ruff --budget 60`, rather than a whole `_STAGE_GROUPS` alias like
+    `lint`) -- carries the offending names so the caller can refuse
+    loudly, by name, instead of silently discarding `--only` (T-2235's own
+    incident, reintroduced from the other direction) or silently widening
+    it to every group."""
+
+    def __init__(self, unknown: list[str]) -> None:
+        """Record the `--only` value(s) not plannable as stage-group aliases."""
+        self.unknown = unknown
+        super().__init__(f"unplannable --only value(s) for --budget: {unknown}")
+
+
+# frob:ticket T-2250
+def _resolve_budget_only_scope(
+    only: list[str] | None, universe: list[str]
+) -> list[str] | None:
+    """`_run_budgeted_check`'s own `--only` combination policy (T-2250):
+    `None` means `--only` was not given (or resolves to nothing), so the
+    caller plans over the full `universe` and the shared resume state as
+    before T-2250 -- the unrestricted-run MUST-STILL-PASS control.
+    Otherwise returns `only` itself (already validated against `universe`)
+    as the exact, ordered candidate list `--budget` must plan over --
+    `--only lint --budget N` may only ever run/report `lint`, never a
+    different group, and never claim a group the caller did not ask for
+    is "skipped" (T-2235's `budget` key must stay accurate under the
+    combination).
+
+    Raises `_BudgetOnlyUnplannable` if any `only` value is not itself a
+    whole stage-group alias `universe` (`available_stages()`) recognizes
+    -- `_run_budgeted_check` only ever plans at stage-group granularity,
+    so a bare gate/tool name cannot be honored there; per this ticket's
+    explicit "do not silently widen" constraint, that is a REFUSAL, not a
+    fallback to planning over everything."""
+    if not only:
+        return None
+    known = set(universe)
+    unknown = [g for g in only if g not in known]
+    if unknown:
+        raise _BudgetOnlyUnplannable(unknown)
+    return list(only)
+
+
+# frob:ticket T-2250
+def _budget_only_unplannable_result(
+    unknown: list[str], universe: list[str]
+) -> ToolResult:
+    """The loud, explicit refusal `_run_budgeted_check` reports (T-2250)
+    when `--only` names something it cannot plan at stage-group
+    granularity -- mirrors `frob.check._unknown_only_result`'s existing
+    "loud config error, never a silent vacuous pass" convention, scoped to
+    this function's own narrower vocabulary (whole stage-group aliases
+    only, not every tool/gate name the unrestricted `--only` accepts)."""
+    message = (
+        f"--budget cannot plan {unknown} at stage-group granularity -- "
+        f"--only combined with --budget must name whole stage-group "
+        f"alias(es) ({sorted(universe)}), not an individual gate/tool "
+        "name. Drop --budget for a bare --only run, or name one of the "
+        "listed groups."
+    )
+    return ToolResult(
+        tool="config",
+        exit_code=2,
+        summary=f"--budget cannot plan --only {unknown}",
+        diagnostics=[Diagnostic(severity="error", code=None, message=message)],
+    )
 
 
 # frob:ticket T-2235
@@ -508,8 +602,108 @@ def _warn_budget_skipped(budget_s: int, budget_report: dict) -> None:
     )
 
 
+# frob:ticket T-2250
+def _log_budget_plan(
+    cfg: AppConfig, budget_s: int, selected: list[str], deferred: list[str]
+) -> None:
+    """`_run_budgeted_check`'s progress-log line, split out to keep it
+    under ARCH001's ceiling. T-1703: this is one of the ONLY two output
+    lines `_run_budgeted_check` prints outside `_run_budget_chunk`'s own
+    `_run_all_stages` call (the other is per-chunk, in the caller's own
+    loop) -- unguarded, it printed straight to stdout ahead of the
+    eventual JSON payload `_report_check_result` emits, corrupting it for
+    any `json.loads` consumer (the exact leak `_unscoped_error_findings`'s
+    own `--budget ... --json` spawn, `frob.app.ticket_runner._land_cmd`,
+    hit in practice). `_log.info` at its own default level would
+    otherwise reach stdout even under `--json`'s later `quiet_stdout_
+    logs` wrap in `run` -- that wrap only covers the SETUP calls before
+    `_handle_early_exit_modes` dispatches here, not this function's own
+    body -- so this stays gated on `not cfg.check_json`."""
+    if cfg.check_json:
+        return
+    _log.info(
+        "check --budget %d: running %d stage group(s) (%s), deferring %d (%s)",
+        budget_s,
+        len(selected),
+        ", ".join(selected),
+        len(deferred),
+        ", ".join(deferred) if deferred else "none",
+    )
+
+
+# frob:ticket T-2250
+def _finalize_budget_run(
+    root: Path,
+    budget_s: int,
+    universe_for_report: list[str],
+    scoped: bool,
+    selected: list[str],
+    deferred: list[str],
+    all_results: list[ToolResult],
+) -> dict:
+    """`_run_budgeted_check`'s tail: build+warn the T-2235 coverage report,
+    append `BUDGET001` for anything deferred, and persist resume state --
+    split out to keep the caller under ARCH001's ceiling.
+
+    T-2250: `scoped=True` (an `--only`-scoped call) never touches the
+    shared resume-state file, in either direction -- see `_resolve_
+    budget_remaining`'s docstring for why persisting here would let a
+    later UNRESTRICTED `--budget` call inherit an artificially narrow
+    plan."""
+    budget_report = _budget_coverage_report(budget_s, universe_for_report, selected)
+    _warn_budget_skipped(budget_s, budget_report)
+
+    if scoped:
+        if deferred:
+            all_results.append(
+                _budget_deferred_result(deferred, budget_s, persisted=False)
+            )
+    elif deferred:
+        all_results.append(_budget_deferred_result(deferred, budget_s))
+        _save_budget_remaining(root, deferred)
+    else:
+        _clear_budget_remaining(root)
+    return budget_report
+
+
+# frob:ticket T-2250
+def _resolve_budget_remaining(
+    root: Path, cfg: AppConfig, universe: list[str]
+) -> tuple[list[str], bool]:
+    """`_run_budgeted_check`'s `remaining`-list resolution, split out to
+    keep it under ARCH001's function-length ceiling: returns `(remaining,
+    scoped)`.
+
+    `scoped=True` (T-2250) means `cfg.check_only` named a real, budget-
+    plannable stage-group scope -- `remaining` is exactly that ordered
+    list, and the caller must NOT touch the shared resume-state file at
+    all (no read, no write): an `--only`-scoped call must never narrow
+    the persisted resume list in a way a later UNRESTRICTED `--budget`
+    call would inherit (T-2235's own defect class, reintroduced from the
+    other direction -- see `_run_budgeted_check`'s docstring). `scoped=
+    False` is T-2235's original unrestricted-run behavior, byte-for-byte
+    (MUST-STILL-PASS): load the resume file (or start from `universe`),
+    drop any name it holds that `universe` no longer recognizes."""
+    only_scope = _resolve_budget_only_scope(cfg.check_only, universe)
+    if only_scope is not None:
+        return only_scope, True
+
+    remaining = _load_budget_remaining(root)
+    if remaining is None:
+        remaining = universe
+    # A resume file can go stale relative to `universe` (a group
+    # renamed/removed since it was written) -- drop anything no longer
+    # recognized rather than trying to run a stage that does not exist.
+    known = set(universe)
+    remaining = [g for g in remaining if g in known]
+    if not remaining:
+        remaining = universe
+    return remaining, False
+
+
 # frob:ticket T-1004
 # frob:ticket T-2235
+# frob:ticket T-2250
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_runs_selected_chunks_and_reports_result  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_persists_resume_state_for_deferred_groups  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_resumes_from_prior_remaining_state  # noqa: E501
@@ -517,6 +711,9 @@ def _warn_budget_skipped(budget_s: int, budget_report: dict) -> None:
 # frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_skipped_is_universe_minus_executed  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_empty_skipped_present_not_absent  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_json_reports_universe_skip_despite_narrow_resume  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_scoped_budget_runs_exactly_the_named_group  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_scoped_budget_never_touches_shared_resume_state  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_only_budget_combo_refuses_a_bare_gate_name  # noqa: E501
 # frob:ticket T-1195
 def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     """`frob check --budget SECONDS`: self-select and order `--only` stage
@@ -533,50 +730,41 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     (`_budget_timing_path`) are a rolling EMA seeded from real measured
     wall time of each chunk actually run, persisted immediately after
     each chunk so a mid-run crash still keeps whatever it measured.
+
+    T-2250: `--only <group> --budget SECONDS` plans over exactly the
+    `--only`-named group(s), never the full universe (T-2235's own
+    incident: `--only lint --budget 120` used to silently discard `lint`
+    and plan `gates-fast` instead, then report `lint` as "skipped"). A
+    scoped run's `budget`-key universe is its own `--only` selection, and
+    it never reads or writes the shared resume-state file -- an `--only`-
+    scoped call must not narrow what a later UNRESTRICTED `--budget` call
+    inherits (see `_resolve_budget_remaining`). `--only` naming something
+    that is not itself a whole stage-group alias (a bare gate/tool name)
+    REFUSES loudly (`_BudgetOnlyUnplannable`) rather than silently
+    widening to every group or silently discarding `--only`.
     """
     from frob.check import available_stages
 
     # narrows for the type checker; caller-guaranteed by `run`'s `is not None` check
     assert cfg.check_budget is not None
     budget_s = cfg.check_budget
+    universe = available_stages()
 
-    remaining = _load_budget_remaining(root)
-    if remaining is None:
-        remaining = available_stages()
-    # A resume file can go stale relative to `available_stages()` (a group
-    # renamed/removed since it was written) -- drop anything no longer
-    # recognized rather than trying to run a stage that does not exist.
-    known = set(available_stages())
-    remaining = [g for g in remaining if g in known]
-    if not remaining:
-        remaining = available_stages()
+    try:
+        remaining, scoped = _resolve_budget_remaining(root, cfg, universe)
+    except _BudgetOnlyUnplannable as exc:
+        result = CheckResult(
+            path=str(root),
+            results=[_budget_only_unplannable_result(exc.unknown, universe)],
+        )
+        from frob.app.check_runner import _report_check_result
+
+        _report_check_result(cfg, result)
+        return
 
     timing = _load_budget_timing(root)
     selected, deferred = _select_budget_chunks(remaining, timing, budget_s)
-
-    # T-1703: these two progress lines are the ONLY output this function
-    # prints outside `_run_budget_chunk`'s own `_run_all_stages` call,
-    # which enters/exits `_stdout_log_ctx` for the duration of each chunk
-    # it runs (quiet under `--json`, same as every other stage). Left
-    # unguarded, they printed straight to stdout ahead of the eventual
-    # JSON payload `_report_check_result` emits below -- corrupting it
-    # for any `json.loads` consumer (the exact leak `_unscoped_error_
-    # findings`'s own `--budget ... --json` spawn, frob.app.ticket_
-    # runner._land_cmd, hit in practice: `[{"tool": "gate:...", ...` with
-    # this line's own prose prepended is not valid JSON). `_log.info` at
-    # its own default level would otherwise reach stdout even under
-    # `--json`'s later `quiet_stdout_logs` wrap in `run` -- that wrap
-    # only covers the SETUP calls before `_handle_early_exit_modes`
-    # dispatches here, not this function's own body.
-    if not cfg.check_json:
-        _log.info(
-            "check --budget %d: running %d stage group(s) (%s), deferring %d (%s)",
-            budget_s,
-            len(selected),
-            ", ".join(selected),
-            len(deferred),
-            ", ".join(deferred) if deferred else "none",
-        )
+    _log_budget_plan(cfg, budget_s, selected, deferred)
 
     all_results: list[ToolResult] = []
     for group in selected:
@@ -587,19 +775,15 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
         if not cfg.check_json:
             _log.info("check --budget: stage group %r done in %.1fs", group, elapsed)
 
-    # T-2235: computed against the FULL `available_stages()` universe, not
-    # against `deferred` -- `deferred` only reflects the tail of THIS
-    # call's `remaining`, which can itself already be a narrow leftover of
-    # an earlier invocation's resume state (see `_budget_coverage_report`'s
-    # docstring for the measured incident this closes).
-    budget_report = _budget_coverage_report(budget_s, available_stages(), selected)
-    _warn_budget_skipped(budget_s, budget_report)
-
-    if deferred:
-        all_results.append(_budget_deferred_result(deferred, budget_s))
-        _save_budget_remaining(root, deferred)
-    else:
-        _clear_budget_remaining(root)
+    # T-2250: the reporting universe is the caller's own `--only`
+    # selection for a scoped run (`remaining` IS that selection -- see
+    # `_resolve_budget_remaining`), never the full `available_stages()`,
+    # so a scoped run's `budget` key never claims a group the caller
+    # never asked for was "skipped".
+    universe_for_report = remaining if scoped else universe
+    budget_report = _finalize_budget_run(
+        root, budget_s, universe_for_report, scoped, selected, deferred, all_results
+    )
 
     result = CheckResult(path=str(root), results=all_results)
 

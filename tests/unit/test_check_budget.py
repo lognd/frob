@@ -92,6 +92,7 @@ class TestUpdateBudgetTiming:
 
 
 # frob:ticket T-2235
+# frob:ticket T-2250
 class TestRunBudgetedCheck:
     """`run(cfg)` with `check_budget` set -- the full self-select/run/
     persist/report loop, with `available_stages`/`_run_all_stages` faked so
@@ -384,6 +385,164 @@ class TestRunBudgetedCheck:
         assert "budget" not in data
         assert set(data.keys()) == {"path", "results"}
 
+    # frob:ticket T-2250
+    def test_only_scoped_budget_runs_exactly_the_named_group(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """(MUST FAIL FIRST, T-2250 acceptance 1) `--only lint --budget N`
+        must run `lint` and report it as executed, never silently run a
+        DIFFERENT stage group and report `lint` as skipped. Reproduces the
+        measured incident on `e02bf61b20be`: `--only lint --budget 120`
+        used to execute `gates-fast` and report `lint` skipped."""
+        import json
+
+        monkeypatch.setattr(
+            check_mod, "available_stages", lambda: ["gates-fast", "lint", "static"]
+        )
+        calls: list[str] = []
+
+        def _fake_run_all_stages(cfg, root, **kwargs):  # noqa: ANN001
+            (group,) = cfg.check_only
+            calls.append(group)
+            return self._fake_result(group)
+
+        monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_budget=1000,
+            check_json=True,
+            check_only=["lint"],
+        )
+        caplog.set_level("INFO")
+        check_run(cfg)
+
+        assert calls == ["lint"]
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
+        assert data["budget"]["executed_groups"] == ["lint"]
+        assert data["budget"]["skipped_groups"] == []
+        assert data["budget"]["complete"] is True
+        tool_names = [r["tool"] for r in data["results"]]
+        assert tool_names == ["lint"]
+
+    # frob:ticket T-2250
+    def test_only_scoped_budget_never_touches_shared_resume_state(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2250 acceptance 3: an `--only`-scoped budgeted run neither
+        reads a pre-existing resume file nor writes one of its own -- a
+        later UNRESTRICTED `--budget` call must never inherit an
+        artificially narrow plan left behind by a scoped call."""
+        monkeypatch.setattr(
+            check_mod, "available_stages", lambda: ["gates-fast", "lint", "static"]
+        )
+        monkeypatch.setattr(
+            check_runner_mod,
+            "_run_all_stages",
+            lambda cfg, root, **kwargs: self._fake_result(cfg.check_only[0]),
+        )
+        # Pre-seed timing so `lint` alone (budget too small for a second
+        # group) genuinely defers something, exercising the persisted=False
+        # path.
+        check_chunking_mod._save_budget_timing(tmp_path, {"lint": 10.0})
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_budget=1000,
+            check_only=["lint"],
+        )
+        check_run(cfg)
+        assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
+
+        # And a later unrestricted call is unaffected -- it still plans
+        # over the full universe, not a scoped leftover.
+        calls: list[str] = []
+
+        def _fake_run_all_stages_2(cfg, root, **kwargs):  # noqa: ANN001
+            (group,) = cfg.check_only
+            calls.append(group)
+            return self._fake_result(group)
+
+        monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages_2)
+        cfg2 = AppConfig(check_path=tmp_path, check_budget=1000)
+        check_run(cfg2)
+        assert calls == ["gates-fast", "lint", "static"]
+
+    # frob:ticket T-2250
+    def test_only_budget_combo_refuses_a_bare_gate_name(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """T-2250: `--only <bare-gate-name> --budget N` cannot be planned
+        at stage-group granularity -- REFUSE loudly, naming the offending
+        value, rather than silently discarding `--only` (the T-2235-class
+        defect) or silently widening it to every group (the other
+        forbidden fix)."""
+        import json
+
+        monkeypatch.setattr(
+            check_mod, "available_stages", lambda: ["gates-fast", "lint", "static"]
+        )
+        called = []
+        monkeypatch.setattr(
+            check_runner_mod,
+            "_run_all_stages",
+            lambda cfg, root, **kwargs: (
+                called.append(cfg.check_only) or self._fake_result("should-not-run")
+            ),
+        )
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_budget=1000,
+            check_json=True,
+            check_only=["ruff"],
+        )
+        caplog.set_level("INFO")
+        with pytest.raises(SystemExit) as excinfo:
+            check_run(cfg)
+        assert excinfo.value.code == 1
+
+        assert called == []
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
+        assert "budget" not in data
+        messages = [d["message"] for r in data["results"] for d in r["diagnostics"]]
+        assert any("ruff" in m and "stage-group" in m for m in messages)
+        assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
+
+
+# frob:ticket T-2250
+class TestResolveBudgetOnlyScope:
+    """`_resolve_budget_only_scope`'s pure validation logic (T-2250)."""
+
+    # frob:ticket T-2250
+    def test_no_only_returns_none_unrestricted(self) -> None:
+        """No `--only` given: `None` means "plan over the full universe",
+        the unrestricted-run signal `_resolve_budget_remaining` checks."""
+        result = check_chunking_mod._resolve_budget_only_scope(None, ["lint", "static"])
+        assert result is None
+
+    # frob:ticket T-2250
+    def test_recognized_group_returns_it_verbatim(self) -> None:
+        """A recognized stage-group alias round-trips as the exact
+        ordered scope to plan over."""
+        result = check_chunking_mod._resolve_budget_only_scope(
+            ["lint"], ["lint", "static", "gates-fast"]
+        )
+        assert result == ["lint"]
+
+    # frob:ticket T-2250
+    def test_bare_gate_name_raises_unplannable(self) -> None:
+        """A name that is not itself a whole stage-group alias (a bare
+        gate/tool name) raises, naming the offending value -- the budget
+        path cannot plan below stage-group granularity."""
+        with pytest.raises(check_chunking_mod._BudgetOnlyUnplannable) as excinfo:
+            check_chunking_mod._resolve_budget_only_scope(["ruff"], ["lint", "static"])
+        assert excinfo.value.unknown == ["ruff"]
 
 
 # frob:ticket T-2235

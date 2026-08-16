@@ -2,7 +2,7 @@
 id: T-2250
 title: 'frob check --budget silently ignores --only: ''--only lint --budget 120''
   runs gates-fast and reports lint as skipped'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,22 +14,45 @@ runs_last: false
 scope:
 - src/frob/app/_check_chunking.py
 - src/frob/app/check_runner.py
+- tests/unit/test_check_budget.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: T-2250 fix requires new regression tests for the --only/--budget combination
+    fix; test file is the required evidence location for _check_chunking.py/check_runner.py
+    changes
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_runs_exactly_the_named_group
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_never_touches_shared_resume_state
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_budget_combo_refuses_a_bare_gate_name
+- tests/unit/test_check_budget.py::TestResolveBudgetOnlyScope::test_bare_gate_name_raises_unplannable
+designated_repro_test: tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_runs_exactly_the_named_group
 acceptance:
 - text: '''--only lint --budget N --json'' executes the lint group or refuses explicitly,
     never a different group (fails today: runs gates-fast, reports lint skipped)'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_runs_exactly_the_named_group
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_budget_combo_refuses_a_bare_gate_name
+  - tests/unit/test_check_budget.py::TestResolveBudgetOnlyScope::test_bare_gate_name_raises_unplannable
 - text: 'MUST-STILL-PASS: --budget without --only, and --only without --budget, both
     behave exactly as today'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
 - text: The persisted resume file is not narrowed by an --only-scoped run in a way
     a later unrestricted run inherits; state what it contains and why that is safe
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_never_touches_shared_resume_state
 - text: 'T-2235''s budget JSON key stays accurate under the combination: executed_groups
     names what actually ran'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_only_scoped_budget_runs_exactly_the_named_group
 threat: null
 component: null
 anchor: false
