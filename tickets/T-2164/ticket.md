@@ -17,6 +17,29 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'GENERALISE beyond the lint case: the hook''s block-once-then-allow semantics
+    means it never changes behaviour for a caller who is confident and wrong. Measured
+    on myself today across three distinct rules -- [raw-linters] (I re-ran ruff on
+    a copied file and invented three phantom findings), [handrolled-fleet-probe] (I
+    re-ran ps/git probes three separate times when scripts/fleet_status.py already
+    reported the answer), and [unscoped-symbol-search]. Each time the exact-rerun
+    escape cost real work: a wasted agent dispatch, a false ''orphaned lease'' conclusion
+    I nearly acted on, and a wrong ''agent died'' diagnosis that led me to requeue
+    a correctly-blocked ticket.'
+  evidence: []
+- text: 'The concrete recurring damage is that the SUGGESTED tool already had the
+    answer. scripts/fleet_status.py''s LEASES section prints each lease''s real worktree
+    (I inferred it from the ticket id instead and got a false ABSENT), and --ticket
+    prints ''BLOCKED BY (still open): ...'' (I grepped for a land commit instead,
+    missed it because --plan lands commit as ''chore(tickets): land --plan'' with
+    no ticket id, and concluded the agent had died). Neither was a tooling gap. Do
+    NOT fix this by making every rule a hard refusal -- some nudges are genuinely
+    advisory and a hard block on a legitimate raw command would be worse. Consider
+    escalating on REPEAT: allow the first exact-rerun, refuse or require an explicit
+    acknowledgement on the third within a session, so a habit gets interrupted while
+    a one-off does not.'
+  evidence: []
 threat: null
 component: null
 anchor: false
