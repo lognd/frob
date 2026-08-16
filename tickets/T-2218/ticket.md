@@ -44,6 +44,19 @@ acceptance:
     the same raw regex-over-ticket.body mechanism (_BUG002_WAIVER_RE's precedent is
     cited in-file at line 244), so fixing one leaves the identical hole in the others.
   evidence: []
+- text: 'SWEEP RESULT, so the next implementer does not re-derive it: 21 sites in
+    src/ compile a frob: directive regex, and most are already safe because they ANCHOR
+    to a comment marker -- _WAIVE_SINGLE_LINE_RE uses ^\s*(#|//)\s*frob:waive, _DOC_INVARIANT_MARKER_RE
+    requires <!-- ... -->, _CALLEE_RAISES_PRESENT_RE requires a leading #. The unanchored,
+    prose-exposed ones are _mutation_evidence.py''s four (BUG002, BUG003, no-behavior-change,
+    must-still-pass), which all scan a whole ticket.body and are this ticket''s scope.
+    Two others share the shape but with far smaller exposure and live in other files:
+    _WAIVE_DOC004_RE and _WAIVE_DOC006_RE scan only a bounded lookbehind WINDOW of
+    doc lines near the finding (src/frob/gates/_docptr.py:164), not a whole body.
+    Do not widen this ticket''s scope to them; note in the Done report whether the
+    markdown-structural approach you land here would transfer, so a follow-up can
+    be sized honestly.'
+  evidence: []
 threat: null
 component: null
 anchor: false
