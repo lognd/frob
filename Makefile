@@ -248,56 +248,19 @@ playbook:
 # clean shutdown" shape observed both times). Override with
 # `make coverage COVERAGE_RERUN_DEADLINE=<seconds>` for a slower machine or
 # a deliberately larger serial suite.
-COVERAGE_RERUN_DEADLINE ?= 1800
-# T-1433: 4 workers reproducibly lost one to an uncatchable kill (OOM-shaped)
-# and wedged the xdist scheduler; the 2026-08-03 2-worker run completed with
-# zero deaths. 2 is the measured-safe default on this 4-core WSL box.
-COVERAGE_WORKERS ?= 2
-# T-1433: the xdist (parallel) phase used to have NO bound at all -- only
-# the `-n 0` serial rerun above got one. Both incidents' own reproduction
-# ("run make coverage twice back-to-back") never actually pinned down
-# WHICH phase the dead-holder futex sat in, so leaving the xdist phase
-# unbounded left half the recipe still able to hang indefinitely. A large
-# default (1h) reflects this phase's own baseline cost (the full parallel
-# suite, not a small rerun) -- override with
-# `make coverage COVERAGE_XDIST_DEADLINE=<seconds>`.
-COVERAGE_XDIST_DEADLINE ?= 3600
-# T-1433: gates tests/conftest.py's SIGUSR1 stack-dump handler on for
-# every pytest invocation this recipe runs (xdist phase AND both serial
-# reruns) -- see tests/conftest.py::_install_stackdump_handler. Off by
-# default for an ordinary `pytest`/`frob test` run; the coverage recipe is
-# exactly the wedge-prone path T-1433's incidents both hit.
-COVERAGE_STACKDUMP_ENV = FROB_COVERAGE_STACKDUMP=1
-
-# T-1235/T-1397: the ONE place that generates COVERAGE_PROCESS_START's rc
-# file, with ABSOLUTE `source`/`data_file` paths -- both `coverage:` and
-# `coverage-fast:` depend on this file target instead of each pointing
-# COVERAGE_PROCESS_START somewhere different. Deterministic content (only
-# $(CURDIR), constant for the life of this checkout), so a plain file
-# target -- not a `.PHONY` recipe re-run every time -- is correct: once
-# generated it never needs regenerating, and `coverage-fast` (T-1397) now
-# reuses exactly the same rc `coverage:` already produced instead of
-# pointing COVERAGE_PROCESS_START at pyproject.toml directly (relative
-# `source`/`data_file`, the same Loss-A shape T-1235 fixed for `coverage:`
-# itself -- any subprocess spawned with a different cwd than $(CURDIR)
-# risks silently losing/stranding its coverage data).
-.frob/coverage-subprocess.rc:
-	mkdir -p .frob
-	printf '%s\n' \
-		'[run]' \
-		'branch = True' \
-		'parallel = True' \
-		'relative_files = True' \
-		'sigterm = True' \
-		'concurrency = multiprocessing, thread' \
-		'disable_warnings = no-data-collected' \
-		'source = $(CURDIR)/src/frob' \
-		'data_file = $(CURDIR)/.coverage' \
-		'[paths]' \
-		'source =' \
-		'    src/frob' \
-		'    */src/frob' \
-		> .frob/coverage-subprocess.rc
+# T-2240: the paragraphs above (T-1180/T-1235/T-1335/T-1353/T-1433) are
+# kept as incident history for WHY the old inline recipe needed each
+# piece of resilience it had -- `native_coverage_refresh`
+# (src/frob/testing/_coverage_refresh.py) now owns the equivalent logic
+# in Python (its own module docstring cites the same T-1677/T-1672/T-1676
+# tickets), so `COVERAGE_RERUN_DEADLINE`/`COVERAGE_WORKERS`/
+# `COVERAGE_XDIST_DEADLINE`/`COVERAGE_STACKDUMP_ENV` and the
+# `.frob/coverage-subprocess.rc` file target that used to back them are
+# retired along with the recipe body that read them -- see `coverage:`
+# below and this ticket's Done report for the one disclosed parity gap
+# (subprocess-coverage measurement) that removing the rc-file generation
+# reopens, already accepted as a gap by `coverage-fast:`'s own T-1525
+# migration.
 
 # T-1469: `frob doctor` reports (never repairs) an IN_PROGRESS ticket with
 # no live cross-worktree lease as unhealthy (`scan_stale_ticket_leases`,
@@ -312,51 +275,38 @@ COVERAGE_STACKDUMP_ENV = FROB_COVERAGE_STACKDUMP=1
 # abort on a stale lease specifically, while still failing hard on every
 # OTHER doctor-checked condition (missing natives, corrupt derived state,
 # a live land.lock, venv shim drift) that `reconcile` does not touch.
-coverage: $(STAMP)
-	rm -f .coverage .coverage.* .frob/coverage-subprocess.rc
-	$(MAKE) core
-	uv run frob ticket reconcile --apply
-	uv run frob doctor
-	$(MAKE) .frob/coverage-subprocess.rc
-	timeout -k 30 $(COVERAGE_XDIST_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-report= -q -n $(COVERAGE_WORKERS) --junitxml=.frob/last-coverage-run.xml > .frob/last-coverage-run.log 2>&1; \
-	status=$$?; \
-	cat .frob/last-coverage-run.log; \
-	if [ $$status -eq 124 ]; then \
-		echo "coverage: ERROR: xdist (parallel) phase exceeded its COVERAGE_XDIST_DEADLINE=$(COVERAGE_XDIST_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) for the thread each worker was blocked in before raising the deadline"; \
-	fi; \
-	if [ $$status -eq 124 ]; then \
-		: ; \
-	elif grep -q "node down" .frob/last-coverage-run.log; then \
-		echo "coverage: WARNING: an xdist worker crashed mid-run (node down) -- that worker's coverage data for EVERY test it executed, not only the ones reported failed, is silently gone (a crash bypasses coverage's own SIGTERM-triggered save); re-running the FULL suite serially (not just --last-failed) to recover complete data rather than accept a deflated stamp"; \
-		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --junitxml=.frob/last-coverage-rerun.xml; \
-		status=$$?; \
-		if [ $$status -eq 124 ]; then \
-			echo "coverage: ERROR: serial rerun (node-down recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) before raising the deadline"; \
-		fi; \
-	elif [ $$status -ne 0 ]; then \
-		echo "coverage: parallel run had failures -- rerunning failed tests once, serially, without coverage-halting"; \
-		timeout -k 30 $(COVERAGE_RERUN_DEADLINE) env $(COVERAGE_STACKDUMP_ENV) COVERAGE_PROCESS_START=$(CURDIR)/.frob/coverage-subprocess.rc uv run pytest --cov=src/frob --cov-branch --cov-append --cov-report= -q -n 0 --timeout-method=signal --last-failed --junitxml=.frob/last-coverage-rerun.xml; \
-		status=$$?; \
-		if [ $$status -eq 124 ]; then \
-			echo "coverage: ERROR: serial rerun (failure recovery) exceeded its COVERAGE_RERUN_DEADLINE=$(COVERAGE_RERUN_DEADLINE)s bound (T-1433) -- killed, not left to hang; this is a wedge, not a slow pass, inspect .frob/stackdumps/*.txt (FROB_COVERAGE_STACKDUMP=1 is on for this phase) before raising the deadline"; \
-		fi; \
-	fi; \
-	uv run coverage combine --append; \
-	uv run coverage xml -i -o .frob/coverage.partial.xml; \
-	if [ $$status -ne 0 ]; then \
-		echo "coverage: ERROR: pytest run failed (exit $$status) -- leaving coverage.xml, .frob/coverage-stamp, and frob-coverage.lock.json untouched (T-1363: a failed/partial run must never overwrite good data); the failed run's own data was written to .frob/coverage.partial.xml for inspection only, never promoted"; \
-		uv run frob clean -y; \
-		exit $$status; \
-	fi; \
-	cp .frob/coverage.partial.xml coverage.xml; \
-	if uv run frob check --stamp-coverage; then \
-		stamp_status=0; \
-	else \
-		stamp_status=$$?; \
-		echo "coverage: ERROR: stamp-coverage failed (exit $$stamp_status) -- make coverage is failing on this, not silently reporting success"; \
-	fi; \
-	uv run frob clean -y; \
-	exit $$stamp_status
+# T-2240: this recipe used to carry ~40 lines of its own crash-recovery/
+# rerun/stamp shell logic (subprocess-rc generation, xdist-deadline
+# timeout, node-down detection + full serial rerun, T-1363 never-promote-
+# partial-on-failure, coverage combine/xml, final `frob check
+# --stamp-coverage`). `frob.testing._coverage_refresh.native_coverage_
+# refresh` (T-1516/T-1677/T-1672) reimplements all of that -- wall-clock
+# + no-progress watchdog, xdist worker-crash signature detection with a
+# one-shot serial `-p no:xdist` retry (the node-down path), T-1676's
+# "keep the data, mark degraded" posture for an ordinary red suite, and
+# a T-1363-equivalent guard (a watchdog-aborted run never reaches
+# `coverage xml`/`stamp_coverage` at all: see `native_coverage_refresh`'s
+# `_write_abort_provenance` branch) -- in pure Python, reachable via `uv
+# run frob coverage --full` (T-1525's CLI entrypoint). `core` stays a
+# real prerequisite (not a recipe-embedded `$(MAKE)` line -- T-2098's
+# fix for the `make -n` compound-recursive-call hazard) so natives are
+# never stale under a fresh checkout; `reconcile`/`doctor` stay as one
+# `&&`-chained recipe line (no `$(MAKE)` on it, so `make -n coverage`
+# still only PRINTS it) preserving the T-1469 stale-ticket-lease
+# self-heal ahead of the run.
+#
+# Disclosed parity gap (pre-existing, not introduced here): neither this
+# path nor `coverage-fast:` (already migrated under T-1525) generates
+# `.frob/coverage-subprocess.rc`/sets `COVERAGE_PROCESS_START`, so a test
+# that spawns `frob` (or anything else) as a real subprocess is not
+# separately coverage-instrumented the way the old ~40-line recipe's
+# manual rc + `coverage combine --append` measured it. `coverage-fast`
+# already accepted this gap at T-1525; this leaf does not introduce a
+# new one, but a follow-up to re-add subprocess-coverage measurement to
+# `native_coverage_refresh` itself is real, tracked work (see this
+# ticket's Done report).
+coverage: core
+	uv run frob ticket reconcile --apply && uv run frob doctor && uv run frob coverage --full
 
 # T-0484: incremental coverage for the common "one small change" loop --
 # `make coverage` above always re-runs the WHOLE suite under coverage, so

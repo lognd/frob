@@ -2,7 +2,7 @@
 id: T-2240
 title: Wire 'make coverage' full-suite recipe to frob coverage --full, retire text-slicing
   tests
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -14,22 +14,57 @@ runs_last: false
 scope:
 - Makefile
 - tests/unit/test_makefile_coverage.py
+evidence_scope:
+- tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_body_is_at_most_two_non_comment_lines
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_no_longer_shells_out_to_pytest_or_coverage_directly
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_depends_on_core_not_a_recipe_embedded_make_call
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
+- tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery::test_crash_signature_triggers_one_serial_retry
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN the coverage: target in Makefile WHEN read THEN its recipe body is
     a single uv run frob coverage --full line, not the ~40-line inline crash-recovery/rerun/stamp
     shell block'
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_body_is_at_most_two_non_comment_lines
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_no_longer_shells_out_to_pytest_or_coverage_directly
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_depends_on_core_not_a_recipe_embedded_make_call
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
+  - tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery::test_crash_signature_triggers_one_serial_retry
 - text: GIVEN tests/unit/test_makefile_coverage.py WHEN read THEN it no longer regexes
     Makefile text (_recipe_tail/_MAKEFILE slicing) and instead exercises frob.testing._coverage_refresh's
     --full path directly
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_body_is_at_most_two_non_comment_lines
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_no_longer_shells_out_to_pytest_or_coverage_directly
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_depends_on_core_not_a_recipe_embedded_make_call
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
+  - tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery::test_crash_signature_triggers_one_serial_retry
 - text: GIVEN the node-down xdist-crash recovery path THEN it still triggers a full
     serial rerun and still refuses to promote partial coverage data on failure (T-1363
     guard), proven by a test, not just inspection
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_body_is_at_most_two_non_comment_lines
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_no_longer_shells_out_to_pytest_or_coverage_directly
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_depends_on_core_not_a_recipe_embedded_make_call
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_reconciles_before_doctor
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor::test_coverage_fast_reconciles_before_doctor
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_produces_coverage_xml_after_worker_crash_recovery
+  - tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery::test_crash_signature_triggers_one_serial_retry
 threat: null
 component: null
 anchor: false

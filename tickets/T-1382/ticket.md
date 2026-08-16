@@ -2,7 +2,7 @@
 id: T-1382
 title: 'Decouple frob from the Makefile: make every workflow a first-class cross-platform
   frob subcommand'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-01'
@@ -12,8 +12,12 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/**
-- docs/**
+- src/frob/_cli_parsers/**
+- src/frob/app/pyfmt_runner.py
+- tests/unit/test_pyfmt_runner.py
+- docs/commands/**
+- docs/guides/agent-playbook.md
+- docs/commands/build.md
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -29,6 +33,67 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/**
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/_cli_parsers/**
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: src/frob/app/pyfmt_runner.py
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: tests/unit/test_pyfmt_runner.py
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/commands/**
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/**
+  reason: narrow to CLI wiring for a new ruff-fix/format subcommand plus doc updates;
+    other modules stay out of scope for this pass
+  actor: logan
+  at: '2026-08-10'
+- op: remove
+  glob: docs/guides/**
+  reason: 'TICK009: docs/guides/** matched 35 files; narrow to the one file this pass
+    actually edits'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: 'TICK009: docs/guides/** matched 35 files; narrow to the one file this pass
+    actually edits'
+  actor: logan
+  at: '2026-08-10'
+- op: add
+  glob: docs/commands/build.md
+  reason: 'TICK009: docs/guides/** matched 35 files; narrow to the one file this pass
+    actually edits'
+  actor: logan
+  at: '2026-08-10'
 designated_repro_test: null
 acceptance:
 - text: GIVEN a repo with no Makefile WHEN every documented frob workflow is run THEN
