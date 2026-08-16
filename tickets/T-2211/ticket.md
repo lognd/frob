@@ -2,7 +2,7 @@
 id: T-2211
 title: resolve_local_import drops imported NAMES for 'from X import submodule', breaking
   verify_imports for the common package-submodule idiom
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -15,9 +15,24 @@ scope:
 - src/frob/lang/_extract.py
 - src/frob/lang/_nodes.py
 - src/frob/graph/callgraph.py
+- tests/test_lang.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_lang.py
+  reason: repro + must-still-pass evidence for from-X-import-Y submodule resolution
+    fix
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_multiple_submodules_resolves_each
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_as_alias_resolves_by_real_name
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_member_control_does_not_fabricate_a_file
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_third_party_import_resolves_to_nothing_local
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_wildcard_still_resolves_the_package
+designated_repro_test: tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
 threat: null
 component: null
 anchor: false

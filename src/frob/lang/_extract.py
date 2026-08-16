@@ -228,12 +228,43 @@ def _block_ends(sorted_nodes: list[Node]) -> list[int]:
 
 
 def _python_import_specifiers(n: Node) -> list[str]:
-    """Import specifiers declared by one python `import`/`from` statement node."""
+    """Import specifiers declared by one python `import`/`from` statement node.
+
+    `from X import Y[, Z, ...]` (T-2211) is genuinely ambiguous in python --
+    `Y` may be a submodule file (`X/Y.py`) or a name defined inside `X`
+    itself (a function, class, or re-export in `X`'s own module body /
+    `__init__.py`) -- and only the caller (`resolve_local_import`, which
+    checks the filesystem under the declared source roots) can tell which.
+    So both readings are emitted as candidate specifiers: `X` alone (the
+    pre-T-2211 behavior, covers the "Y is a member of X" case and every
+    bare `from X import name`) AND `X.Y` for each imported name (covers
+    "Y is a submodule", e.g. `from frob.arch import _python` needing to
+    resolve to `src/frob/arch/_python.py`, not just `_python.py`'s owner
+    package). A `Y as alias` (`aliased_import`) contributes `X.Y` using
+    the pre-alias name (its own `name` field), never the alias, since the
+    alias is a local binding, not part of the module path. `from X import
+    *` (`wildcard_import`) contributes nothing extra -- there is no name to
+    pair with `X`, and `X` alone is already included above."""
     if n.type == "import_statement":
         return [_child_text(child) for child in n.named_children]
     if n.type == "import_from_statement":
         mod = n.child_by_field_name("module_name")
-        return [_child_text(mod)] if mod is not None else []
+        if mod is None:
+            return []
+        mod_text = _child_text(mod)
+        results = [mod_text]
+        for name_node in n.children_by_field_name("name"):
+            if name_node.type == "wildcard_import":
+                continue
+            target = (
+                name_node.child_by_field_name("name")
+                if name_node.type == "aliased_import"
+                else name_node
+            )
+            name_text = _child_text(target)
+            if name_text:
+                results.append(f"{mod_text}.{name_text}")
+        return results
     return []
 
 

@@ -983,3 +983,133 @@ class TestResolveLocalImportConsumers:
         findings = check_layering_violations(tmp_path, config)
         flagged = {f.file for f in findings}
         assert "src/pkg/web/routes.py" in flagged
+
+
+# frob:ticket T-2211
+class TestFromImportSubmoduleResolution:
+    """T-2211: `from X import Y` is ambiguous in real python -- `Y` may be a
+    submodule FILE (`X/Y.py`) or a name defined inside `X` itself. Filed
+    while wiring T-2205 found `_python_import_specifiers` dropped every
+    imported NAME and kept only the module specifier, so `resolve_local_
+    import` could never land on the submodule file -- 14 genuinely-live
+    symbols across `frob.arch`/`frob.app.ticket_runner` read as dead once
+    `verify_imports=True` was wired in, purely because the graph never saw
+    the submodule import edge. Each test below drives the real two-hop
+    pipeline (`extract_imports` -> `resolve_local_import`), matching
+    `TestResolveLocalImportConsumers`'s style just above, rather than
+    re-asserting on `_python_import_specifiers` in isolation."""
+
+    def _resolve_all(
+        self, tmp_path: Path, importer: Path
+    ) -> set[str]:
+        from frob.lang import extract_imports, resolve_local_import
+
+        specs = extract_imports(importer).danger_ok
+        resolved = {
+            resolve_local_import(
+                spec, "python", file_dir=importer.parent, root=tmp_path
+            )
+            for spec in specs
+        }
+        return {r for r in resolved if r is not None}
+
+    def test_from_package_import_submodule_resolves_to_the_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # T-2211 headline symptom: `from frob.arch import _python` must
+        # resolve to `arch/_python.py`, not just `arch/__init__.py` --
+        # before the fix, the imported name `_python` was dropped entirely
+        # and only the bare `frob.arch` specifier was ever extracted.
+        _write(tmp_path, "pkg/__init__.py", "")
+        _write(tmp_path, "pkg/_python.py", "def check() -> None:\n    pass\n")
+        importer = _write(
+            tmp_path, "pkg_user.py", "from pkg import _python\n"
+        )
+        assert self._resolve_all(tmp_path, importer) == {
+            "pkg/__init__.py",
+            "pkg/_python.py",
+        }
+
+    def test_from_package_import_multiple_submodules_resolves_each(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # The `from frob.arch import (_python, _cpp, ...)` idiom the ticket
+        # names directly -- every parenthesized name must resolve.
+        _write(tmp_path, "pkg/__init__.py", "")
+        _write(tmp_path, "pkg/_python.py", "def a() -> None:\n    pass\n")
+        _write(tmp_path, "pkg/_cpp.py", "def b() -> None:\n    pass\n")
+        importer = _write(
+            tmp_path, "pkg_user.py", "from pkg import (_python, _cpp)\n"
+        )
+        assert self._resolve_all(tmp_path, importer) == {
+            "pkg/__init__.py",
+            "pkg/_python.py",
+            "pkg/_cpp.py",
+        }
+
+    def test_from_package_import_submodule_as_alias_resolves_by_real_name(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # `from frob.app import ticket_runner as _ticket_runner` -- the
+        # ticket's other confirmed-concrete case. The alias is a local
+        # binding, not part of the module path; resolution must use the
+        # pre-`as` name.
+        _write(tmp_path, "pkg/__init__.py", "")
+        _write(
+            tmp_path,
+            "pkg/ticket_runner.py",
+            "def snapshot() -> None:\n    pass\n",
+        )
+        importer = _write(
+            tmp_path,
+            "pkg_user.py",
+            "from pkg import ticket_runner as _ticket_runner\n",
+        )
+        assert self._resolve_all(tmp_path, importer) == {
+            "pkg/__init__.py",
+            "pkg/ticket_runner.py",
+        }
+
+    def test_from_package_import_member_control_does_not_fabricate_a_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # MUST-STILL-PASS control: `from X import name_defined_in_X` where
+        # `name_defined_in_X` is a real member of X (not a submodule) must
+        # still resolve to X itself, never a nonexistent `X/name.py` -- an
+        # over-resolving fix is as harmful as the under-resolving bug.
+        _write(
+            tmp_path,
+            "pkg/__init__.py",
+            "def name_defined_in_pkg() -> None:\n    pass\n",
+        )
+        importer = _write(
+            tmp_path,
+            "pkg_user.py",
+            "from pkg import name_defined_in_pkg\n",
+        )
+        assert self._resolve_all(tmp_path, importer) == {"pkg/__init__.py"}
+
+    def test_from_third_party_import_resolves_to_nothing_local(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # MUST-STILL-PASS control: a third-party `from pytest import
+        # fixture` has no local file to resolve to under either reading.
+        importer = _write(
+            tmp_path, "pkg_user.py", "from pytest import fixture\n"
+        )
+        assert self._resolve_all(tmp_path, importer) == set()
+
+    def test_from_package_import_wildcard_still_resolves_the_package(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # `from X import *` has no name to pair with X; the bare module
+        # specifier must still resolve (unaffected, not regressed).
+        _write(tmp_path, "pkg/__init__.py", "")
+        importer = _write(tmp_path, "pkg_user.py", "from pkg import *\n")
+        assert self._resolve_all(tmp_path, importer) == {"pkg/__init__.py"}
