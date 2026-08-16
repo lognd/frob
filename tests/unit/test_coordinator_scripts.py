@@ -287,25 +287,36 @@ class TestTicketFrontmatterOnMain:
         assert fleet_status.ticket_frontmatter_on_main("T-9999") is None
 
 
+# frob:ticket T-2179
 class TestWorktreesTouchingTicket:
-    """`fleet_status.worktrees_touching_ticket` (T-2133)."""
+    """`fleet_status.worktrees_touching_ticket` (T-2133, scope-aware per
+    T-draft-05563e8d)."""
 
+    # frob:ticket T-2179
     def test_finds_a_branch_with_unlanded_commits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """A worktree whose branch has `main..HEAD` commits touching
-        `tickets/<id>/` is reported by name."""
+        `tickets/<id>/` AND touches a declared-scope file is reported by
+        name."""
         worktrees_dir = tmp_path / "worktrees"
         (worktrees_dir / "one").mkdir(parents=True)
         (worktrees_dir / "two").mkdir(parents=True)
         monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
 
         def fake_git(args: list[str], cwd: Path) -> str:
-            return "abc123 done report" if cwd.name == "one" else ""
+            if cwd.name != "one":
+                return ""
+            if args[0] == "log":
+                return "abc123 done report"
+            return "src/a.py\ntickets/T-2114/ticket.md"
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
-        assert fleet_status.worktrees_touching_ticket("T-2114") == ["one"]
+        assert fleet_status.worktrees_touching_ticket(
+            "T-2114", ["src/a.py"]
+        ) == ["one"]
 
+    # frob:ticket T-2179
     def test_empty_when_nothing_touches_it(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -314,12 +325,58 @@ class TestWorktreesTouchingTicket:
         (worktrees_dir / "one").mkdir(parents=True)
         monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
         monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "")
-        assert fleet_status.worktrees_touching_ticket("T-2114") == []
+        assert fleet_status.worktrees_touching_ticket("T-2114", ["src/a.py"]) == []
+
+    # frob:ticket T-2179
+    def test_ledger_only_churn_is_not_reported(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2172 follow-up (the coordinator's own T-2114 incident): a
+        branch that touched `tickets/<id>/` (e.g. id-collision-recovery
+        renumbering) but NEVER touched a file in the ticket's own declared
+        scope must NOT be reported as 'already implemented' -- the exact
+        false-positive shape that printed seven unrelated branches for a
+        ticket nobody had actually worked."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "one").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            if args[0] == "log":
+                return "abc123 chore(tickets): renumber collision"
+            # full branch diff touches ONLY the ticket's own ledger path,
+            # never the declared scope glob below
+            return "tickets/T-2114/ticket.md"
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert (
+            fleet_status.worktrees_touching_ticket(
+                "T-2114", ["src/frob/app/ticket_runner/_land_cmd.py"]
+            )
+            == []
+        )
+
+    # frob:ticket T-2179
+    def test_empty_scope_globs_never_reports(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No known scope to check against (empty `scope_globs`) must read
+        as 'cannot confirm implementation', never fall back to the old
+        looser any-ticket-dir-commit behavior."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "one").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+        monkeypatch.setattr(
+            fleet_status, "_git", lambda args, cwd: "abc123 done report"
+        )
+        assert fleet_status.worktrees_touching_ticket("T-2114", []) == []
 
 
+# frob:ticket T-2179
 class TestTicketReadiness:
     """`fleet_status.ticket_readiness` (T-2133)."""
 
+    # frob:ticket T-2179
     def test_dispatchable_when_no_lease_no_commits_no_divergence(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -330,12 +387,15 @@ class TestTicketReadiness:
             "ticket_frontmatter_on_main",
             lambda tid: {"state": "queued", "scope": ["src/a.py"]},
         )
-        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
         readiness = fleet_status.ticket_readiness("T-2114")
         assert readiness["dispatchable"] is True
         assert readiness["scope_diverges"] is False
         assert readiness["worktrees_with_commits"] == []
 
+    # frob:ticket T-2179
     def test_not_dispatchable_when_a_live_lease_exists(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -358,9 +418,12 @@ class TestTicketReadiness:
             "ticket_frontmatter_on_main",
             lambda tid: {"state": "queued", "scope": ["src/a.py"]},
         )
-        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
         assert fleet_status.ticket_readiness("T-2114")["dispatchable"] is False
 
+    # frob:ticket T-2179
     def test_not_dispatchable_when_another_branch_already_has_commits(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -373,12 +436,13 @@ class TestTicketReadiness:
             lambda tid: {"state": "queued", "scope": ["src/a.py"]},
         )
         monkeypatch.setattr(
-            fleet_status, "worktrees_touching_ticket", lambda tid: ["sibling"]
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: ["sibling"]
         )
         readiness = fleet_status.ticket_readiness("T-2114")
         assert readiness["dispatchable"] is False
         assert readiness["worktrees_with_commits"] == ["sibling"]
 
+    # frob:ticket T-2179
     def test_flags_scope_divergence_between_the_live_lease_and_main(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -401,7 +465,9 @@ class TestTicketReadiness:
             "ticket_frontmatter_on_main",
             lambda tid: {"state": "queued", "scope": ["src/a.py", "src/b.py"]},
         )
-        monkeypatch.setattr(fleet_status, "worktrees_touching_ticket", lambda tid: [])
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
         readiness = fleet_status.ticket_readiness("T-2114")
         assert readiness["scope_diverges"] is True
         assert readiness["dispatchable"] is False

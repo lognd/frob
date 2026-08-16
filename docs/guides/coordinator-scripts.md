@@ -178,16 +178,37 @@ redo a scope-narrowing it had already done on its own branch.
 `ticket_readiness` below is what actually compares this against the
 live lease.
 
+### `_matches_any_scope_glob`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_matches_any_scope_glob -->
+
+`fnmatch.fnmatch`-based glob match against a list of scope patterns --
+the same glob semantics `frob ticket scope`'s own globs use.
+
 ### `worktrees_touching_ticket`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket -->
 
-Names of live worktrees whose branch has an unlanded commit (`git log
-main..HEAD -- tickets/<id>/`) touching a given ticket's own ticket
-directory -- the mechanical version of the hand-inspection T-2114's
-incident required: discovering the ticket was already implemented,
-evidenced, and Done-reported on a sibling branch only by manually
-reading that branch's own commit log and running a process check.
+Names of live worktrees whose branch has an unlanded commit that BOTH
+touches the given ticket's own `tickets/<id>/` directory AND touches at
+least one file matching its `scope_globs` argument somewhere in the
+branch's full diff against `main` -- the mechanical version of the
+hand-inspection T-2114's incident required: discovering the ticket was
+already implemented, evidenced, and Done-reported on a sibling branch
+only by manually reading that branch's own commit log and running a
+process check.
+
+**T-2172 follow-up (precision fix):** the original version reported ANY
+worktree with a `tickets/<id>/`-touching commit as "already
+implemented", with no scope check at all. Real incident: `--ticket
+T-2114` printed seven unrelated branches, none of which had implemented
+anything -- T-2114 had briefly collided with a different id before being
+renumbered to T-2140, so every branch's hit was collision-recovery
+ledger churn (`tickets/T-2114/ticket.md` edits), never real code in
+T-2114's own scope. Requiring a scope-glob match as well as the ticket-
+directory correlation fixes this: an empty `scope_globs` argument (no
+known scope to check against) now reports empty rather than falling
+back to the old, looser behavior.
 
 ### `ticket_readiness`
 

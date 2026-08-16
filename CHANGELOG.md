@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.465.0] - unreleased
+
+- T-2179: fleet_status.py::worktrees_touching_ticket reports ledger-only churn as 'already implemented' (T-2172 follow-up)
+
 ## [0.464.0] - unreleased
 
 - T-2156: Sweep finding identities carry ABSOLUTE paths so commit attribution always fails, every finding reads unattributed, and that raises the quarantine which switches deferred landing off fleet-wide

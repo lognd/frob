@@ -2,7 +2,7 @@
 id: T-2174
 title: 'post-land sweep regression from T-2172, T-2156: 2 new (rule, file) identit(ies),
   1 finding(s) (ARCH001, DUP001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -14,8 +14,12 @@ runs_last: false
 scope:
 - src/frob/graph/callgraph.py
 - tests/unit/verify/test_attribution_module_scope.py
+evidence_scope:
+- tests/unit/test_callgraph_module_scoped.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_callgraph_module_scoped.py::TestBuildReferenceGraphModuleScoped::test_does_not_cross_wire_same_named_helpers_in_unrelated_files
 designated_repro_test: null
 threat: null
 component: null

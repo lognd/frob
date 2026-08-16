@@ -25,9 +25,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import subprocess
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
@@ -190,36 +192,78 @@ def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
     return {"state": state, "scope": scope}
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_matches_any_scope_glob
+# frob:ticket T-2179
+def _matches_any_scope_glob(path: str, scope_globs: Sequence[str]) -> bool:
+    """Whether `path` matches any of `scope_globs` -- `fnmatch.fnmatch`,
+    the same glob semantics `frob ticket scope`'s own globs use (a `*`/`**`
+    pattern, not a regex)."""
+    return any(fnmatch.fnmatch(path, glob) for glob in scope_globs)
+
+
 # frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
 # frob:ticket T-2133
+# frob:ticket T-2179
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_finds_a_bran\
 # ch_with_unlanded_commits
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_empty_when_n\
 # othing_touches_it
-def worktrees_touching_ticket(ticket_id: str) -> list[str]:
-    """Names of live worktrees whose branch carries a commit (not yet on
-    `main`) that touches `tickets/<id>/` -- the "already implemented on
-    another branch" signal T-2114's incident needed: a ticket believed
-    free was in fact already implemented, evidenced, and Done-reported on
-    a sibling worktree's branch, discoverable only by hand-inspecting that
-    branch's own commit log. `git log main..HEAD -- tickets/<id>/` per
-    worktree is the direct, mechanical version of that same inspection."""
-    if not WORKTREES.is_dir():
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_ledger_only_\
+# churn_is_not_reported
+def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
+    """Names of live worktrees whose branch carries an unlanded commit that
+    BOTH (a) touches `tickets/<id>/` (correlates the commit to this ticket
+    at all) AND (b) touches at least one file matching `scope_globs` (the
+    ticket's own declared scope) somewhere in the branch's full `main...
+    HEAD` diff -- genuine implementation evidence, not merely a ledger
+    edit.
+
+    T-2172 follow-up (the coordinator's own incident): the original
+    version reported ANY worktree with a `tickets/<id>/`-touching commit
+    as "already implemented" -- `--ticket T-2114` printed SEVEN branches
+    (t-2071, t-2099, t-2105, t-2107, t-2109, t-2110, t2049-series), none
+    of which had implemented T-2114 at all. T-2114 briefly collided with a
+    different ticket id before being renumbered to T-2140, so every one of
+    those branches had touched `tickets/T-2114/ticket.md` purely as
+    collision-recovery renumbering churn -- never the ticket's own scope.
+    A coordinator trusting that line would skip real, undone work believing
+    it already existed -- worse than printing nothing, since a false
+    "already implemented" is exactly the kind of wrong answer that gets
+    trusted without a second look. Requiring BOTH conditions -- still
+    correlated to this specific id (condition a keeps an unrelated
+    ticket's own scope-glob collision from producing a false positive too)
+    AND touching real declared-scope files (condition b) -- makes the
+    T-2114 case correctly report nothing, since none of those branches'
+    diffs touch `src/frob/app/ticket_runner/_land_cmd.py` (T-2114's own
+    scope).
+
+    An empty `scope_globs` (ticket not on `main` yet, or `main` records no
+    scope at all) can never satisfy condition (b), so it always reports
+    empty rather than falling back to the old any-`tickets/<id>/`-commit
+    behavior -- "no known scope to check against" must read as "cannot
+    confirm implementation", not as "implementation confirmed"."""
+    if not WORKTREES.is_dir() or not scope_globs:
         return []
     hits = []
     for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
-        out = _git(
+        ticket_touch = _git(
             ["log", "main..HEAD", "--oneline", "--", f"tickets/{ticket_id}/"], path
         )
-        if out.strip():
+        if not ticket_touch.strip():
+            continue
+        full_diff = _git(["diff", "--name-only", "main...HEAD"], path)
+        touched_files = full_diff.splitlines()
+        if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
             hits.append(path.name)
     return hits
 
 
 # frob:doc docs/guides/coordinator-scripts.md#ticket_readiness
 # frob:ticket T-2133
+# frob:ticket T-2179
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_dispatchable_when_no\
 # _lease_no_commits_no_divergence
@@ -251,14 +295,18 @@ def ticket_readiness(ticket_id: str) -> dict:
       about what the ticket actually touches (observed twice: once nearly
       releasing a healthy lease, once asking an agent to redo a narrowing
       it had already done).
-    - `worktrees_with_commits`: from `worktrees_touching_ticket` -- a
-      non-empty list means the ticket is already implemented elsewhere,
-      not merely leased.
+    - `worktrees_with_commits`: from `worktrees_touching_ticket`, checked
+      against the LIVE lease's scope when one is held (else `main`'s
+      declared scope, same "trust the lease" rule `scope_diverges` above
+      already applies) -- a non-empty list means the ticket is already
+      implemented elsewhere (a real commit touching declared-scope files),
+      not merely a ledger edit or a lease.
     - `dispatchable`: `False` whenever a live lease is held, OR another
-      worktree already carries commits for this ticket, OR `main`
-      declares it in a state a fresh dispatch cannot productively start
-      from (`done`/`dropped`/`in-progress`) -- `True` otherwise. This is
-      the field a caller (or `main`'s own exit code) gates dispatch on."""
+      worktree already carries SCOPE-matching commits for this ticket, OR
+      `main` declares it in a state a fresh dispatch cannot productively
+      start from (`done`/`dropped`/`in-progress`) -- `True` otherwise.
+      This is the field a caller (or `main`'s own exit code) gates
+      dispatch on."""
     lease = ticket_lease(ticket_id)
     main_info = ticket_frontmatter_on_main(ticket_id)
     main_scope = main_info["scope"] if main_info is not None else None
@@ -267,7 +315,14 @@ def ticket_readiness(ticket_id: str) -> dict:
         and main_scope is not None
         and set(lease.get("scope", [])) != set(main_scope)
     )
-    worktrees_with_commits = worktrees_touching_ticket(ticket_id)
+    # T-draft-05563e8d: the LIVE scope (lease, if held) is what a real
+    # implementation commit would actually touch -- mirrors the "trust
+    # the lease, not the ticket file" rule `scope_diverges` already
+    # established, applied here to the implementation-evidence check too.
+    effective_scope = lease.get("scope", []) if lease is not None else main_scope
+    worktrees_with_commits = worktrees_touching_ticket(
+        ticket_id, effective_scope or ()
+    )
     state_on_main = main_info["state"] if main_info is not None else None
     dispatchable = (
         lease is None

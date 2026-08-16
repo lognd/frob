@@ -475,64 +475,25 @@ def build_reference_graph(root: Path, paths: Sequence[str]) -> CallGraph:
     return CallGraph(calls=refs)
 
 
-# frob:doc docs/modules/graph.md#call-graph
+# frob:doc docs/modules/graph.md#attribution-safe-reference-graph-t-2156
 # frob:ticket T-2156
+# frob:ticket T-2174
+# frob:tests \
+# tests/unit/test_callgraph_module_scoped.py::TestBuildReferenceGraphModuleScoped.test_does_not_cross_wire_same_named_helpers_in_unrelated_files  # noqa: E501
 def build_reference_graph_module_scoped(root: Path, paths: Sequence[str]) -> CallGraph:
-    """Attribution-safe counterpart to `build_reference_graph` (T-2156).
-
-    `build_reference_graph`'s resolution rule is DELIBERATELY over-
-    inclusive: `_ordered_private_callees`/`_resolve_edges` match a called
-    name against `by_name`'s codebase-wide short-name index and add an
-    edge to EVERY private candidate sharing that name, in ANY file,
-    discarding the candidate's own `_cand_path` the index already carries
-    (`_short_name_index`'s `(symref, path, is_private)` tuples). That is
-    correct and safe for `build_reference_graph`'s original consumer,
-    T-0422's dead-symbol gate ("is this symbol referenced anywhere at
-    all") -- an extra edge there only means fewer false dead-code
-    positives, never a false accusation.
-
-    `frob.verify._attribution` (T-1690) reuses the SAME graph shape for a
-    different question -- CAUSAL reachability, "did commit X's touched
-    symbols reach finding F" -- where an edge that does not correspond to
-    a real reference manufactures a false positive attribution. This was
-    observed directly (T-2156): a private helper named `_run` is
-    independently defined, with the identical name, in 17 different test
-    files across this repo (`_commit_all` in 18) -- a deliberate, common
-    convention for git-fixture test helpers, not a naming accident -- so
-    `build_reference_graph`'s blanket short-name match wired a fabricated
-    edge from an unrelated test's `_run` caller straight to
-    `tests/test_ticket_leases.py::_run`, attributing an E402 finding
-    there to a completely unrelated land. The SAME over-matching also
-    explains the `commit=None` findings T-2156 was originally (and
-    wrongly) filed against: `_attribution.py`'s own documented "zero or
-    MORE THAN ONE candidate reaching = unattributed" rule fired correctly
-    once collisions inflated the reaching-candidate count past one -- the
-    rule was right, its input (this graph) was wrong for this consumer.
-
-    This function keeps `_parse_package`/`_short_name_index`/
-    `_referenced_names`'s shared extraction and by-name indexing exactly
-    as `build_reference_graph` does (no duplicated parsing logic), but
-    restricts which same-named PRIVATE candidate a caller may resolve to:
-    a candidate in the caller's OWN file always resolves (ordinary local
-    reference, the overwhelming majority case); a candidate in a
-    DIFFERENT file resolves only when the caller's file actually IMPORTS
-    that candidate's file (`frob.lang.extract_imports` +
-    `frob.lang.resolve_local_import`, best-effort -- a file whose imports
-    cannot be extracted just contributes no cross-file edges, the same
-    degrade-to-narrower posture the rest of this module already uses
-    rather than a hard failure). A same-named collision between two
-    files with no import relationship -- exactly the `_run`/`_commit_all`
-    shape above -- now correctly resolves to NO edge instead of a
-    fabricated one.
-
-    `build_reference_graph` itself is UNCHANGED by this function's
-    existence -- T-0422's dead-symbol gate keeps calling it directly, and
-    must keep its broader recall; narrowing the shared graph globally
-    would risk resurrecting dead-symbol false positives repo-wide to fix
-    an attribution-only problem. Two consumers with genuinely different
-    correctness requirements getting two resolutions here is deliberate,
-    not the T-1966 'one rule, two homes' defect -- the difference is
-    documented, in one shared module, not independently reinvented."""
+    """Attribution-safe counterpart to `build_reference_graph` (T-2156):
+    a cross-file same-named-private-symbol candidate only resolves when
+    the caller's file actually IMPORTS the candidate's file, instead of
+    `build_reference_graph`'s deliberately over-inclusive "any same-named
+    private candidate, any file" match -- which is correct for its
+    original dead-symbol-gate consumer but manufactures false-positive
+    CAUSAL attributions when reused for "did commit X's touched symbols
+    reach finding F" (T-1690). Full rationale, the `_run`/`_commit_all`
+    collision incident, and why `build_reference_graph` itself stays
+    unchanged: docs/modules/graph.md#attribution-safe-reference-graph-t-2156
+    (T-2174: trimmed from this docstring to clear ARCH001 -- the function
+    body itself was always short; the finding was the docstring's own
+    line count)."""
     parsed_by_path = _parse_package(root, paths)
     by_name = _short_name_index(parsed_by_path)
     imports_by_path = _local_imports_by_path(root, parsed_by_path)

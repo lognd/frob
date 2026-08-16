@@ -272,6 +272,53 @@ Resolution is best-effort (flat token stream, no scope/overload
 disambiguation) -- a triage aid, matching the rest of `frob.dup`'s posture,
 not a soundness guarantee.
 
+### Attribution-safe reference graph (T-2156)
+
+<!-- frob:describes src/frob/graph/callgraph.py::build_reference_graph_module_scoped -->
+
+`build_reference_graph(root, paths)`'s short-name resolution is
+DELIBERATELY over-inclusive: it matches a called name against the
+codebase-wide short-name index and wires an edge to EVERY private
+candidate sharing that name, in ANY file, discarding the candidate's own
+path. That is correct and safe for its original consumer (T-0422's
+dead-symbol gate, "is this symbol referenced anywhere at all" -- an extra
+edge there only means fewer false dead-code positives).
+
+`frob.verify._attribution` (T-1690) reuses the same graph shape for a
+different question -- CAUSAL reachability, "did commit X's touched
+symbols reach finding F" -- where a spurious edge manufactures a false
+positive attribution. Observed directly (T-2156): a private helper named
+`_run` is independently defined, with the identical name, in 17 different
+test files (`_commit_all` in 18) -- an ordinary git-fixture-test naming
+convention, not an accident -- so the blanket short-name match wired a
+fabricated edge from one test's `_run` caller to an unrelated file's
+`_run`, attributing a finding to the wrong land. The same over-matching
+also explains the `commit=None` findings that plagued attribution before
+this fix: `_attribution.py`'s "zero or MORE THAN ONE candidate reaching =
+unattributed" rule fired correctly once collisions inflated the
+reaching-candidate count past one -- the rule was right, the graph feeding
+it was wrong for this consumer.
+
+`build_reference_graph_module_scoped(root, paths)` is the fix: same
+shared `_parse_package`/`_short_name_index`/`_referenced_names`
+extraction and indexing as `build_reference_graph` (no duplicated parsing
+logic), but a cross-file candidate only resolves when the caller's file
+actually IMPORTS the candidate's file (`frob.lang.extract_imports` +
+`frob.lang.resolve_local_import`, best-effort -- a file whose imports
+cannot be extracted just contributes no cross-file edges). A same-named
+collision between two files with no import relationship now resolves to
+NO edge instead of a fabricated one.
+
+`build_reference_graph` itself is UNCHANGED and still used directly by
+T-0422's dead-symbol gate, which needs its broader recall -- narrowing
+the shared graph globally would risk resurrecting dead-symbol false
+positives repo-wide to fix an attribution-only problem. Two consumers
+with genuinely different correctness requirements getting two
+resolutions here is deliberate, not the T-1966 "one rule, two homes"
+defect -- the difference is documented, in one shared module, not
+independently reinvented. See `tests/unit/test_callgraph_module_scoped.py`
+for the reproduction of the fixed shape.
+
 ## Import graph
 
 <!-- frob:describes src/frob/graph/imports.py::ImportGraph -->
