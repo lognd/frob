@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.470.0] - unreleased
+
+- T-2193: Evidence discipline only proves the bug existed, never that the fix kept the capability: --check-repro verifies a test FAILED at parent, so a fix that disables the feature entirely passes every gate
+
 ## [0.469.0] - unreleased
 
 - T-2182: Ticket rot is measured by TICK004 in the gates layer but never surfaced where dispatch happens, so 15 tickets aged past threshold (3 critical, up to 20d) while every wave picked freshly-filed work

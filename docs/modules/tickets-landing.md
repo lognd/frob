@@ -847,6 +847,62 @@ at the moment `--designate-repro` runs (before land squashes anything);
 it stops working the moment the ticket lands and the worktree is
 removed, for the same reason described above.
 
+### `BUG003`: the positive-direction must-still-pass control (T-2193)
+
+<!-- frob:describes src/frob/gates/_mutation_evidence.py::must_still_pass_violations -->
+
+BUG002 and TEST016 both only ever prove a NEGATIVE claim: a designated
+repro test that genuinely failed before this ticket's fix (BUG002), or
+diff-touched lines this ticket's bound evidence can mutation-kill
+(TEST016). Neither says anything about whether a capability the fix
+NARROWS -- resolution, matching, filtering, gating -- still accepts or
+matches anything real after the change. A narrowing fix that
+over-corrects until it accepts/matches NOTHING passes both checks
+vacuously: there is no surviving false positive to find, and there is
+no mutant to kill in code that never runs. Three measured instances in
+one session (T-2193's own ticket body) all passed every existing gate
+this way: T-2156's cross-file resolution accepted zero cross-file
+candidates after its own primitive silently returned `None` for every
+intra-repo import; T-2177's scope-plausibility check warned on an
+unrelated file but none of the three real mis-scopings it targeted;
+`frob cycle` found a planted cycle in a top-level layout and missed the
+identical one in src-layout.
+
+`frob:must-still-pass NODE-ID` (declared in `ticket.body`, the same
+body-text-directive mechanism `frob:waive BUG002 reason="..."`/
+`frob:no-behavior-change reason="..."` already use -- see
+`_must_still_pass_controls`) is the explicit, author-named positive
+control: `must_still_pass_violations` runs the SAME node id twice, once
+against the ticket's own fix (`root`'s current tree) and once against
+`base_ref` (the parent, via the same `_bug_repro_outcome_at_ref`
+machinery BUG002 already uses). `BUG003`, always ERROR, fires in exactly
+two shapes: the control FAILS at the fix (the capability broke -- the
+incident this control exists to catch), or the control never PASSED at
+the parent either (a misconfigured designation that was never
+established as "working before" and so cannot prove the fix kept it
+working). Every other combination -- both pass, or either side is
+genuinely unresolvable (`NO_VERDICT`/`SAME_AS_HEAD`/
+`TEST_ABSENT_AT_PARENT`) -- degrades to no violation, mirroring BUG002's
+own posture: an unmeasurable comparison is never guessed at as either a
+pass or a fail.
+
+Deliberately opt-in and explicit, never inferred from the evidence set
+or from the suite passing (per T-2193's own acceptance criteria): in
+all three measured instances above, the FULL SUITE passed, because the
+disabled capability had no test asserting it still functioned at all --
+"more tests" or a coverage threshold cannot express this specific claim,
+only a named designation can. Not restricted to `bug`/`security` kind
+(unlike BUG002/TEST016): the narrowing-fix shape is not kind-specific,
+and the directive itself is the opt-in gate.
+
+**Not yet wired into any `frob ticket land`/`frob ticket close` call
+site** -- T-2193's own declared scope is `src/frob/gates/
+_mutation_evidence.py` alone (plus this doc and its own test file), the
+same one-file-at-a-time discipline its sibling ticket T-2205 used for
+`verify_imports`. Wiring `must_still_pass_violations` into
+`frob.tickets._land`/`frob.app.ticket_runner`'s existing BUG002/TEST016
+call sites is a follow-up ticket's job, not this one's.
+
 ## Live-tracker citation preflight (T-0854)
 
 <!-- frob:describes src/frob/tickets/_live_tracker.py::live_tracker_citations -->

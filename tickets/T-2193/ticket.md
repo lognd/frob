@@ -3,7 +3,7 @@ id: T-2193
 title: 'Evidence discipline only proves the bug existed, never that the fix kept the
   capability: --check-repro verifies a test FAILED at parent, so a fix that disables
   the feature entirely passes every gate'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,8 +14,36 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_mutation_evidence.py
+- tests/test_gates_mutation_evidence.py
+- docs/modules/tickets-landing.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: 'T-2193: evidence tests for the new BUG003 must_still_pass_violations function
+    live in this module''s existing test file'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2193: BUG003 must_still_pass_violations needs a frob:doc edge, new public
+    symbol in this ticket''s sole scoped source file'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-2193: BUG003 must be registered in _KNOWN_GATE_RULES (T-1937) or the
+    ticket cannot close'
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration::test_reconstructed_over_narrowed_matcher_fails_the_control
+- tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_fails_at_fix_is_error_violation
+- tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_never_passed_at_parent_is_error_violation
+- tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_passes_at_both_no_violation
+- tests/test_gates_mutation_evidence.py::TestMustStillPassControls::test_multiple_directives_extracted
 designated_repro_test: null
 acceptance:
 - text: THREE measured instances this session, all of which passed every existing
@@ -29,7 +57,12 @@ acceptance:
     planted cycle in a top-level layout and misses the identical one in src-layout,
     so its clean verdict on frob's own repo is vacuous. This test MUST fail against
     current main.
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration::test_reconstructed_over_narrowed_matcher_fails_the_control
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_fails_at_fix_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_never_passed_at_parent_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_passes_at_both_no_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassControls::test_multiple_directives_extracted
 - text: 'Add a MUST-STILL-PASS control alongside the repro: a designated test (or
     set) that must PASS at the fix commit AND would have passed at the parent, asserting
     the capability the fix narrows is still exercised. --designate-repro/--check-repro
@@ -38,7 +71,12 @@ acceptance:
     is indistinguishable from ''the feature stopped running''. Require it specifically
     for fixes that NARROW a decision rule -- resolution, matching, filtering, gating
     -- where over-correction is silent.'
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration::test_reconstructed_over_narrowed_matcher_fails_the_control
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_fails_at_fix_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_never_passed_at_parent_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_passes_at_both_no_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassControls::test_multiple_directives_extracted
 - text: 'Do NOT satisfy this by requiring ''more tests'' or a coverage threshold --
     the missing thing is a SPECIFIC claim (this capability still works), not volume,
     and a coverage number cannot express it. Do NOT infer the control automatically
@@ -46,7 +84,12 @@ acceptance:
     because the disabled capability had no test asserting it still functioned. The
     control must be an explicit, named designation the author makes, the same way
     --designate-repro is.'
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration::test_reconstructed_over_narrowed_matcher_fails_the_control
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_fails_at_fix_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_never_passed_at_parent_is_error_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassViolations::test_passes_at_both_no_violation
+  - tests/test_gates_mutation_evidence.py::TestMustStillPassControls::test_multiple_directives_extracted
 threat: null
 component: null
 anchor: false

@@ -267,6 +267,14 @@ _KNOWN_GATE_RULES = frozenset(
         # "the defect no longer reproduces" check); see
         # `frob.gates._mutation_evidence.bug_repro_violations`.
         "BUG002",
+        # T-2193: the positive-direction counterpart to BUG002/TEST016 --
+        # a `frob:must-still-pass NODE-ID` designated control must PASS
+        # at both the ticket's own fix and its parent commit, catching a
+        # narrowing fix that silently over-corrects to accept/match
+        # nothing (BUG002/TEST016 both stay clean in that shape, since
+        # there is no surviving false positive and no mutant to kill);
+        # see `frob.gates._mutation_evidence.must_still_pass_violations`.
+        "BUG003",
         # T-1733: refuse OUTRIGHT (not merely flag) when a ticket's
         # evidence was rebound/shrunk (evidence_changes non-empty) AND
         # the surviving evidence is confirmatory-only or unmeasured per

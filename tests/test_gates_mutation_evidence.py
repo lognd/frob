@@ -18,7 +18,9 @@ from frob.gates._mutation_evidence import (
     _bug_repro_outcome_at_ref,
     _BugReproOutcome,
     _designated_repro_test,
+    _must_still_pass_controls,
     bug_repro_violations,
+    must_still_pass_violations,
 )
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 from frob.tickets._mutation_evidence import ConfirmatoryFinding
@@ -640,3 +642,225 @@ class TestBugRepro:
         # at repo/src, `import only_via_pythonpath` failed to collect, and
         # this returned NO_VERDICT -- never a real pass.
         assert outcome is _BugReproOutcome.PASSED_AT_PARENT
+
+
+class TestMustStillPassControls:
+    """`_must_still_pass_controls` (T-2193): extracting `frob:must-still-
+    pass NODE-ID` directives from a ticket's body."""
+
+    def test_single_directive_extracted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_single_directive_extracted  # noqa: E501
+        body = (
+            "## Description\nnarrows cross-file resolution\n"
+            "frob:must-still-pass tests/test_graph.py::test_resolves_a_real_import\n"
+        )
+        assert _must_still_pass_controls(_bug_ticket(body=body)) == (
+            "tests/test_graph.py::test_resolves_a_real_import",
+        )
+
+    def test_multiple_directives_extracted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_multiple_directives_extracted  # noqa: E501
+        body = (
+            "## Description\n"
+            "frob:must-still-pass tests/test_a.py::test_a\n"
+            "frob:must-still-pass tests/test_b.py::test_b\n"
+        )
+        assert _must_still_pass_controls(_bug_ticket(body=body)) == (
+            "tests/test_a.py::test_a",
+            "tests/test_b.py::test_b",
+        )
+
+    def test_no_directive_is_empty(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_no_directive_is_empty  # noqa: E501
+        assert _must_still_pass_controls(_bug_ticket()) == ()
+
+
+class TestMustStillPassViolations:
+    """`must_still_pass_violations` / BUG003 (T-2193): the positive-
+    direction capability control BUG002/TEST016 have no counterpart for.
+    `_run_designated_test` (fix-side) and `_bug_repro_outcome_at_ref`
+    (parent-side) are both mocked -- the real subprocess/worktree
+    machinery is already covered by `TestBugReproAtRef`/`TestBugRepro`
+    above; these tests only exercise this function's own decision table."""
+
+    _BODY = (
+        "## Description\nnarrows cross-file resolution\n"
+        "frob:must-still-pass tests/test_graph.py::test_resolves_a_real_import\n"
+    )
+
+    def test_no_directive_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_no_directive_no_violation  # noqa: E501
+        ticket = _bug_ticket()
+        with patch("frob.gates._mutation_evidence._run_designated_test") as mocked:
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        mocked.assert_not_called()
+        assert violations == ()
+
+    def test_passes_at_both_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_passes_at_both_no_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.PASSED_AT_PARENT,
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.PASSED_AT_PARENT,
+            ),
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        assert violations == ()
+
+    def test_fails_at_fix_is_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_fails_at_fix_is_error_violation  # noqa: E501
+        # The exact shape T-2193 exists to catch: a narrowing fix that
+        # over-corrected until the capability it touches no longer runs.
+        ticket = _bug_ticket(body=self._BODY)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.FAILED_AT_PARENT,
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+            ) as parent_mock,
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        parent_mock.assert_not_called()
+        assert len(violations) == 1
+        assert violations[0].rule == "BUG003"
+        assert violations[0].severity == "error"
+        assert "FAILS at this ticket's own fix" in violations[0].message
+
+    def test_never_passed_at_parent_is_error_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_never_passed_at_parent_is_error_violation  # noqa: E501
+        # The control passes now but never proved a "working before"
+        # baseline -- a misconfigured designation, still refused.
+        ticket = _bug_ticket(body=self._BODY)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.PASSED_AT_PARENT,
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.FAILED_AT_PARENT,
+            ),
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        assert len(violations) == 1
+        assert violations[0].rule == "BUG003"
+        assert violations[0].severity == "error"
+        assert "did NOT pass at the parent" in violations[0].message
+
+    def test_unresolvable_parent_degrades_to_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_parent_degrades_to_no_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.PASSED_AT_PARENT,
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.NO_VERDICT,
+            ),
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        assert violations == ()
+
+    def test_unresolvable_fix_degrades_to_no_violation(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_fix_degrades_to_no_violation  # noqa: E501
+        ticket = _bug_ticket(body=self._BODY)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.NO_VERDICT,
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+            ) as parent_mock,
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        parent_mock.assert_not_called()
+        assert violations == ()
+
+    def test_multiple_directives_each_checked(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_multiple_directives_each_checked  # noqa: E501
+        body = (
+            "## Description\n"
+            "frob:must-still-pass tests/test_a.py::test_a\n"
+            "frob:must-still-pass tests/test_b.py::test_b\n"
+        )
+        ticket = _bug_ticket(body=body)
+        with (
+            patch(
+                "frob.gates._mutation_evidence._run_designated_test",
+                return_value=_BugReproOutcome.FAILED_AT_PARENT,
+            ) as fix_mock,
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+            ) as parent_mock,
+        ):
+            violations = must_still_pass_violations(tmp_path, ticket, "main")
+        parent_mock.assert_not_called()
+        assert fix_mock.call_count == 2
+        assert len(violations) == 2
+        assert {v.rule for v in violations} == {"BUG003"}
+
+
+class TestMustStillPassIntegration:
+    """T-2193's own repro/dogfood pair: a real, on-disk narrowing-fix
+    shape (a matcher that over-corrects to accept nothing) checked
+    end-to-end through `must_still_pass_violations`, no mocking -- the
+    same real-subprocess posture `TestBugRepro` above uses for BUG002."""
+
+    def test_reconstructed_over_narrowed_matcher_fails_the_control(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassIntegration.test_reconstructed_over_narrowed_matcher_fails_the_control kind="integration"  # noqa: E501
+        # T-2193's own acceptance criterion 0: this test MUST fail against
+        # current main (must_still_pass_violations does not exist there).
+        # Parent commit: a matcher with a real, working narrow rule.
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        (repo / "src").mkdir()
+        (repo / "src" / "matcher.py").write_text(
+            "def resolve(name: str, candidates: list[str]) -> str | None:\n"
+            "    for c in candidates:\n"
+            "        if c.endswith(name):\n"
+            "            return c\n"
+            "    return None\n",
+            encoding="utf-8",
+        )
+        (repo / "tests").mkdir()
+        (repo / "tests" / "test_matcher.py").write_text(
+            "import sys\n"
+            "sys.path.insert(0, 'src')\n"
+            "import matcher\n\n"
+            "def test_resolves_a_real_candidate():\n"
+            "    assert matcher.resolve('x.py', ['a/x.py', 'b/y.py']) == 'a/x.py'\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "matcher: working narrow-by-suffix resolution")
+
+        # Fix commit: "narrows" the matcher until it accepts NOTHING --
+        # the T-2156-class over-correction. No test asserts the positive
+        # case broke, so BUG002/TEST016 would both stay clean here.
+        (repo / "src" / "matcher.py").write_text(
+            "def resolve(name: str, candidates: list[str]) -> str | None:\n"
+            "    return None\n",
+            encoding="utf-8",
+        )
+        _commit(repo, "matcher: narrow resolution (over-corrected to accept nothing)")
+
+        body = (
+            "## Description\nnarrows matcher.resolve\n"
+            "frob:must-still-pass tests/test_matcher.py::test_resolves_a_real_candidate\n"
+        )
+        ticket = _bug_ticket(body=body)
+        violations = must_still_pass_violations(repo, ticket, "HEAD~1")
+        assert len(violations) == 1
+        assert violations[0].rule == "BUG003"
+        assert "FAILS at this ticket's own fix" in violations[0].message

@@ -256,6 +256,27 @@ _BUG002_WAIVER_RE = re.compile(r'frob:waive\s+BUG002\s+reason="([^"]*)"')
 #: ordinary defect-repro check still runs).
 _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"')
 
+#: `frob:must-still-pass NODE-ID` (T-2193): the explicit, author-named
+#: positive-direction control BUG002 has no counterpart for. BUG002/
+#: TEST016 both only ever prove a NEGATIVE claim -- a repro test that
+#: failed before this ticket's change, or a mutant this ticket's evidence
+#: kills -- so a fix that NARROWS a decision rule (resolution, matching,
+#: filtering, gating) until it silently accepts/matches NOTHING passes
+#: both checks vacuously: there is no surviving false positive to find
+#: (BUG002/TEST016 are satisfied), and there is also no proof the
+#: narrowed rule still accepts anything real (T-2156/T-2177/`frob cycle`
+#: -- see this module's own docstring reference and T-2193's ticket body
+#: for the three measured instances, all of which passed every existing
+#: gate). `_must_still_pass_controls` below extracts each declared
+#: NODE-ID from `ticket.body` verbatim (same body-text-scan rationale as
+#: `_BUG002_WAIVER_RE`/`_NO_BEHAVIOR_CHANGE_RE` immediately above -- there
+#: is no `Ticket` model field for this, deliberately: this ticket's own
+#: scope is this file alone, and the body-text directive is the only
+#: mechanism reachable without touching `frob.tickets._models`/the CLI
+#: parsers). A bare `frob:must-still-pass` with no NODE-ID is ignored
+#: (matches nothing), same as a bare `frob:waive` with no `reason=`.
+_MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
+
 
 class _BugReproOutcome(Enum):
     """The six possible outcomes of running BUG002's single designated
@@ -358,6 +379,21 @@ def _no_behavior_change_reason(ticket: Ticket) -> str | None:
     so this directive can only ever live here, scanned directly."""
     match = _NO_BEHAVIOR_CHANGE_RE.search(ticket.body)
     return match.group(1) if match else None
+
+
+# frob:ticket T-2193
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_single_directive_extracted  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_multiple_directives_extracted  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_no_directive_is_empty  # noqa: E501
+def _must_still_pass_controls(ticket: Ticket) -> tuple[str, ...]:
+    """Every `frob:must-still-pass NODE-ID` pytest node id declared in
+    `ticket.body` (T-2193), in the order they appear. Empty tuple when no
+    such directive is present -- this control is opt-in, an EXPLICIT,
+    author-named designation (mirroring `--designate-repro`'s own
+    explicit-not-inferred posture, per this ticket's own acceptance
+    criteria), never auto-derived from the evidence set or from the
+    suite passing."""
+    return tuple(_MUST_STILL_PASS_RE.findall(ticket.body))
 
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501
@@ -783,4 +819,127 @@ def bug_repro_violations(
     )
 
 
-__all__ = ["bug_repro_violations", "mutation_evidence_violations"]
+def _must_still_pass_broke_at_fix_message(ticket_id: str, test_id: str) -> str:
+    """BUG003 (T-2193): the designated capability control genuinely
+    FAILS at the ticket's own fix -- the exact silent-capability-loss
+    shape this control exists to catch (a narrowing fix that
+    over-corrected until it accepts/matches nothing)."""
+    return (
+        f"BUG003: {ticket_id}'s must-still-pass control {test_id!r} FAILS "
+        f"at this ticket's own fix -- the capability it asserts was still "
+        f"exercised did not survive this change. This is the exact shape "
+        f"a narrowing fix (resolution/matching/filtering/gating) can "
+        f"over-correct into: the negative-direction evidence (BUG002/"
+        f"TEST016) can be perfectly clean while the positive case is "
+        f"silently disabled. Remedy: fix the narrowing so this control "
+        f"passes again, or if the control test itself no longer applies, "
+        f"pick a different `frob:must-still-pass NODE-ID` that genuinely "
+        f"characterizes the surviving capability."
+    )
+
+
+def _must_still_pass_never_passed_message(ticket_id: str, test_id: str) -> str:
+    """BUG003: the designated control did not even PASS at the parent
+    commit -- it cannot prove "the fix kept this working" because it was
+    never established as working in the first place. A misconfigured
+    designation (the author picked the wrong test), not a real capability
+    regression -- still refused, since a control that cannot prove its
+    own claim is not evidence."""
+    return (
+        f"BUG003: {ticket_id}'s must-still-pass control {test_id!r} did "
+        f"NOT pass at the parent commit either -- it cannot serve as a "
+        f"MUST-STILL-PASS control, since there is no established "
+        f"'working before' state for it to prove survived the fix. "
+        f"Remedy: designate a test that genuinely passed before this "
+        f"ticket's change and exercises the capability the narrowing "
+        f"fix must not silently disable."
+    )
+
+
+# frob:ticket T-2193
+# frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_no_directive_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_passes_at_both_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_fails_at_fix_is_error_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_never_passed_at_parent_is_error_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_parent_degrades_to_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_unresolvable_fix_degrades_to_no_violation  # noqa: E501
+# frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_multiple_directives_each_checked  # noqa: E501
+def must_still_pass_violations(
+    root: Path, ticket: Ticket, base_ref: str = "main"
+) -> tuple[Violation, ...]:
+    """BUG003 (T-2193): the positive-direction control BUG002/TEST016
+    have no counterpart for. Both of those only ever prove a NEGATIVE
+    claim (a repro that failed before the fix, a mutant this ticket's
+    evidence kills) -- silent about whether the capability a narrowing
+    fix touches still runs at all. Three measured instances this session
+    (T-2156, T-2177, `frob cycle`'s own src-layout gap -- see this
+    ticket's own body) all passed BUG002/TEST016 while the underlying
+    capability was, or could have been, entirely disabled.
+
+    For each `frob:must-still-pass NODE-ID` declared in `ticket.body`
+    (`_must_still_pass_controls`, opt-in and explicit -- never inferred
+    from the evidence set or the suite passing, per this ticket's own
+    acceptance criteria): the SAME node id is run twice, once against
+    `root`'s current tree (the fix) and once against `base_ref` (the
+    parent, via the same `_bug_repro_outcome_at_ref` machinery BUG002
+    already uses -- no second checkout mechanism invented). A genuine
+    violation fires in exactly two shapes, both ERROR (silent capability
+    loss is never advisory-tier): the control FAILS at the fix (the
+    capability broke -- `_must_still_pass_broke_at_fix_message`), or the
+    control never PASSED at the parent either (a misconfigured
+    designation that cannot prove anything --
+    `_must_still_pass_never_passed_message`). Every other combination
+    (both pass; either side is unresolvable -- `NO_VERDICT`/
+    `SAME_AS_HEAD`/`TEST_ABSENT_AT_PARENT`) degrades to no violation,
+    mirroring BUG002's own infra-failure posture: an unmeasurable
+    comparison is never guessed at as either a pass or a fail.
+
+    Not restricted to `bug`/`security` kind (unlike BUG002/TEST016):
+    the narrowing-fix shape this control targets is not kind-specific,
+    and the directive itself is the explicit opt-in -- absence of the
+    directive is always `()`, for any kind."""
+    violations: list[Violation] = []
+    for test_id in _must_still_pass_controls(ticket):
+        fix_outcome = _run_designated_test(root, test_id, _BUG_REPRO_TIMEOUT_S)
+        if fix_outcome not in (
+            _BugReproOutcome.PASSED_AT_PARENT,
+            _BugReproOutcome.FAILED_AT_PARENT,
+        ):
+            # Unresolvable at the fix (collection error, missing native,
+            # timeout) -- never guessed at either direction.
+            continue
+        if fix_outcome is _BugReproOutcome.FAILED_AT_PARENT:
+            violations.append(
+                Violation(
+                    rule="BUG003",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=_must_still_pass_broke_at_fix_message(ticket.id, test_id),
+                )
+            )
+            continue
+        parent_outcome = _bug_repro_outcome_at_ref(root, test_id, base_ref)
+        if parent_outcome is _BugReproOutcome.FAILED_AT_PARENT:
+            violations.append(
+                Violation(
+                    rule="BUG003",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=_must_still_pass_never_passed_message(ticket.id, test_id),
+                )
+            )
+        # PASSED_AT_PARENT (clean) and every other unresolvable outcome
+        # (NO_VERDICT/SAME_AS_HEAD/TEST_ABSENT_AT_PARENT) both produce no
+        # violation here -- an unmeasurable parent comparison is not
+        # evidence against the control.
+    return tuple(violations)
+
+
+__all__ = [
+    "bug_repro_violations",
+    "must_still_pass_violations",
+    "mutation_evidence_violations",
+]
