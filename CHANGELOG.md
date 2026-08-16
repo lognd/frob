@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.478.0] - unreleased
+
+- T-2248: frob-timeout-guard misses ticket work and ticket new: both auto-backgrounded today, one stalled an agent, one risked a duplicate id allocation
+
 ## [0.477.0] - unreleased
 
 - T-2241: Add frob sync-skills subcommand; retire Makefile bash bidirectional sync loop

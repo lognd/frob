@@ -2,7 +2,7 @@
 id: T-2248
 title: 'frob-timeout-guard misses ticket work and ticket new: both auto-backgrounded
   today, one stalled an agent, one risked a duplicate id allocation'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,25 +13,95 @@ sprint: null
 runs_last: false
 scope:
 - .claude/hooks/frob-timeout-guard.py
+- tests/test_hook_frob_timeout_guard.py
+- docs/guides/claude-hooks.md
+- frob.lock
+evidence_scope:
+- tests/test_hook_frob_timeout_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_hook_frob_timeout_guard.py
+  reason: T-2248 repro/regression coverage for the PATTERN extension
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: 'T-2248 closure: doc anchor updated for the PATTERN extension'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: frob.lock
+  reason: 'T-2248: frob ack on PATTERN writes into frob.lock'
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_hook_frob_timeout_guard.py::test_ticket_new_under_min_timeout_is_blocked
+- tests/test_hook_frob_timeout_guard.py::test_ticket_work_with_large_timeout_is_allowed
+- tests/test_hook_frob_timeout_guard.py::test_ticket_new_with_large_timeout_is_allowed
+- tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_fast_verb_ticket_show_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_fast_verb_verify_status_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_ticket_work_under_min_timeout_is_blocked
+designated_repro_test: tests/test_hook_frob_timeout_guard.py::test_ticket_work_under_min_timeout_is_blocked
 acceptance:
 - text: 'A Bash call running ''uv run frob ticket work T-XXXX'' under MIN_TIMEOUT_MS
     is blocked (fails today: pattern lacks ''work'')'
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_under_min_timeout_is_blocked
 - text: Same for 'frob ticket new'
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_under_min_timeout_is_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_ticket_show_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_verify_status_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_under_min_timeout_is_blocked
 - text: 'MUST-STILL-PASS: the four currently-guarded verbs still block; a fast verb
     is still not blocked; both recorded false-positive shapes (prose heredoc, quoted-string
     command) still do not fire'
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_under_min_timeout_is_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_ticket_show_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_verify_status_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
 - text: A matching command with tool timeout >= MIN_TIMEOUT_MS is still allowed through
     unchanged
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_under_min_timeout_is_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_new_with_large_timeout_is_allowed
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_ticket_show_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_fast_verb_verify_status_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
 - text: State which verbs were added and the measured basis for each; no speculative
     additions
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_work_under_min_timeout_is_blocked
 threat: null
 component: null
 anchor: false

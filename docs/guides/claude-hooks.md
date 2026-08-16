@@ -58,10 +58,19 @@ exact command was already allowed once (block-once, not block-forever).
 
 ## `frob-timeout-guard.py`
 
-A PreToolUse hook that refuses a long-running frob verb (`land`,
-`done-report`, `check`, `test`) run without a large Bash tool-level
-timeout -- the recurring 120s-auto-background stall class
-`docs/guides/agent-playbook.md`'s section 3b/3c document at length.
+A PreToolUse hook that refuses a long-running frob verb (`ticket land`,
+`ticket done-report`, `ticket work`, `ticket new`, `check`, `test`) run
+without a large Bash tool-level timeout -- the recurring 120s-auto-
+background stall class `docs/guides/agent-playbook.md`'s section 3b/3c
+document at length. `ticket work` and `ticket new` (T-2248) were added
+after both measured exceeding the 120s cap the same way: `ticket work`
+creates a worktree, merges main, and builds natives; `ticket new`
+contends for the ledger allocator lock behind in-flight lands and is not
+safely re-runnable if backgrounded (a killed/re-run call allocates a
+second ticket id). Fast verbs (`ticket show`, `ticket list`, `ticket
+scope`, `verify status`, ...) are deliberately left unguarded -- guarding
+every verb would train a reflexive huge timeout that defeats this guard
+where it matters.
 `MIN_TIMEOUT_MS` (300000) is the floor a Bash call's `timeout` parameter
 must meet; `PATTERN` matches the guarded verbs at command position (via
 `_shellscan.POS`); `REASON` is the exact refusal text an agent sees,

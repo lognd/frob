@@ -1,11 +1,23 @@
 """PreToolUse Bash hook: refuse long-running frob verbs without a large tool timeout.
 
-Long frob commands (land / done-report / check / test) that run without an
-explicit large Bash TOOL-level timeout get auto-backgrounded at the 120s
-default cap, and agents then stall waiting for a notification -- the
-recurring stall pattern this drive has nudged 6+ times. A shell-level
-`timeout N` wrapper does NOT extend the tool cap, so this guard keys on the
-tool parameter itself and tells the caller exactly how to re-run.
+Long frob commands (ticket land / ticket done-report / ticket work /
+ticket new / check / test) that run without an explicit large Bash
+TOOL-level timeout get auto-backgrounded at the 120s default cap, and
+agents then stall waiting for a notification -- the recurring stall
+pattern this drive has nudged 6+ times. A shell-level `timeout N` wrapper
+does NOT extend the tool cap, so this guard keys on the tool parameter
+itself and tells the caller exactly how to re-run.
+
+T-2248: `ticket work` (creates a worktree, merges main, builds natives)
+and `ticket new` (ledger-allocator-lock contention behind in-flight
+lands, and NOT safely re-runnable if backgrounded -- a killed/re-run
+`ticket new` allocates a second ticket id) both measured exceeding the
+120s foreground cap the same way the four originally-guarded verbs do
+(T-2248 ticket body: `ticket new` auto-backgrounded mid-filing; `ticket
+work T-2239` was backgrounded and stalled an agent). Other frob verbs
+(`ticket show`, `ticket list`, `ticket scope`, `verify status`, etc.)
+stay unguarded deliberately -- they are fast, and guarding them would
+train a reflexive huge timeout that defeats this guard everywhere.
 """
 
 import json
@@ -25,7 +37,7 @@ MIN_TIMEOUT_MS = 300000
 # frob:doc docs/guides/claude-hooks.md#frob-timeout-guardpy
 PATTERN = re.compile(
     r"(?:^|[;&|(]\s*|\buv +run +)(?:timeout +\d+ +)?"
-    r"frob +(ticket +(land|done-report)|check|test)\b",
+    r"frob +(ticket +(land|done-report|work|new)|check|test)\b",
     re.M,
 )
 

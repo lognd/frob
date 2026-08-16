@@ -6,7 +6,7 @@
     ".claude/hooks/dispatch-telemetry.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     ".claude/hooks/frob-suggest.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
     ".claude/hooks/frob-timeout-guard.py::MIN_TIMEOUT_MS": "62ec47901b649b88f3bcb9b425ef2a5870e3fb82b0779fbd78c59cb26dced481",
-    ".claude/hooks/frob-timeout-guard.py::PATTERN": "7a8ba6d7e7c7d8dc195a51602d3c61d21b50f9d36006040ff0899f886161e02d",
+    ".claude/hooks/frob-timeout-guard.py::PATTERN": "6aafd348b48184542be847c2634f948dec400c3286f1797d1153802bbc600b18",
     ".claude/hooks/frob-timeout-guard.py::REASON": "458b18cdde055bc322e080f411f86eb5fb22e233b335fabebf6ac2c5e482899a",
     ".claude/hooks/frob-timeout-guard.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
     ".claude/hooks/sync-claude-config.py::MANAGED": "6fdeccfe7393c341d1a3d54d40269f7870c77d454e594de8f5c9517ba659193f",
@@ -2318,5 +2318,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.477.0"
+  "version": "0.478.0"
 }

@@ -350,9 +350,23 @@
       "old_digest": null,
       "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
       "ref": "src/frob/strata/_selfconform.py::_via_less_large_node_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "6aafd348b48184542be847c2634f948dec400c3286f1797d1153802bbc600b18",
+      "old_digest": null,
+      "reason": "T-2248: PATTERN alternation extended to cover ticket work/new; docs/guides/claude-hooks.md's frob-timeout-guard.py section updated in the same change to name the new verbs and their measured basis",
+      "ref": ".claude/hooks/frob-timeout-guard.py::PATTERN"
     }
   ],
   "entries": [
+    {
+      "digest": "6aafd348b48184542be847c2634f948dec400c3286f1797d1153802bbc600b18",
+      "facet": "sig",
+      "ref": ".claude/hooks/frob-timeout-guard.py::PATTERN"
+    },
     {
       "digest": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
       "facet": "sig",
