@@ -27,6 +27,7 @@ def _ticket(
     state: TicketState = TicketState.QUEUED,
     priority: Priority = Priority.MEDIUM,
     created: date = date(2026, 1, 1),
+    runs_last: bool = False,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -44,6 +45,7 @@ def _ticket(
         acceptance=(),
         threat=None,
         body="",
+        runs_last=runs_last,
     )
 
 
@@ -140,3 +142,28 @@ class TestTick004QueueRot:
         queue = TicketQueue(tickets={fresh.id: fresh})
         violations = _tick004_queue_rot(tmp_path, queue)
         assert not any(v.rule == "TICK004" for v in violations)
+
+    def test_stale_runs_last_ticket_gets_a_distinct_message_not_work_it(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2200: a rotting `runs_last` ticket (T-1614's real shape) still
+        produces a TICK004 finding (age is real, disclosed information),
+        but its message must NOT tell an operator to 'work it' -- `frob
+        ticket start` structurally refuses any `runs_last` ticket while
+        other tickets are open (`RunsLastBlocked`), so that instruction is
+        an action the tool itself rejects. The must-still-pass control is
+        `test_stale_critical_ticket_flags` above: an ordinary rotting
+        ticket still gets the normal 'work it' message, unaffected."""
+        stale = _ticket(
+            ticket_id="T-1614",
+            priority=Priority.HIGH,
+            created=date.today() - timedelta(days=11),
+            runs_last=True,
+        )
+        queue = TicketQueue(tickets={stale.id: stale})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [v for v in violations if v.rule == "TICK004" and "T-1614" in v.message]
+        assert len(matches) == 1
+        assert "runs_last" in matches[0].message
+        assert "RunsLastBlocked" in matches[0].message
+        assert "work it" not in matches[0].message

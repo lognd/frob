@@ -277,6 +277,7 @@ def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
 
 
 # frob:ticket T-0411
+# frob:ticket T-2200
 # frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
@@ -286,7 +287,22 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     end up popping off the top half" becomes a visible gate finding
     instead of a silent, age-only queue. Only QUEUED/PLANNED tickets are
     considered (an in-progress/blocked ticket is not rotting, it is being
-    worked or is explicitly waiting on a blocker)."""
+    worked or is explicitly waiting on a blocker).
+
+    T-2200: a `runs_last` ticket is EXCLUDED from the ordinary "work it"
+    message -- `frob ticket start` structurally REFUSES any `runs_last`
+    ticket while other tickets are open (`RunsLastBlocked`), so telling an
+    operator to work one is advice the tool itself will reject. This used
+    to be a real contradiction: `scripts/fleet_status.py`'s own TICKET ROT
+    section listed T-1614 (`runs_last: true`) under "NEEDS DISPATCH" at
+    11 days old, while `frob ticket start T-1614` refused it outright --
+    two subsystems disagreeing about the same ticket's rot. A `runs_last`
+    ticket that has crossed its threshold still reports (age is real,
+    deliberately-deferred information, not something to hide), but under
+    a DISTINCT message that names the real action (wait for the queue to
+    drain, or clear the flag) instead of the generic "work it" text this
+    function emits for every other ticket -- mirroring the report's own
+    third bucket (`scripts/fleet_status.py::_print_ticket_rot`)."""
     thresholds = _tick004_rot_thresholds(root)
     today = date.today()
     violations: list[Violation] = []
@@ -298,18 +314,30 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         if age_days <= threshold:
             continue
         severity = Severity.ERROR if age_days > threshold * 2 else Severity.WARN
+        if t.runs_last:
+            message = (
+                f"TICK004: {t.id} ({t.priority.value} priority) has sat "
+                f"{t.state.value} for {age_days}d (threshold {threshold}d) "
+                f"-- it is deliberately deferred (runs_last), NOT dispatchable "
+                f"via `frob ticket start` while other tickets are open "
+                f"(RunsLastBlocked); a long age here means the queue it is "
+                f"waiting on is not draining, re-prioritize it or clear "
+                f"runs_last if that is no longer the intent"
+            )
+        else:
+            message = (
+                f"TICK004: {t.id} ({t.priority.value} priority) has sat "
+                f"{t.state.value} for {age_days}d (threshold {threshold}d) "
+                f"-- it is rotting; work it, re-prioritize it "
+                f"(`frob ticket priority {t.id} <level>`), or drop it"
+            )
         violations.append(
             Violation(
                 rule="TICK004",
                 severity=severity,
                 file="tickets.md",
                 line=0,
-                message=(
-                    f"TICK004: {t.id} ({t.priority.value} priority) has sat "
-                    f"{t.state.value} for {age_days}d (threshold {threshold}d) "
-                    f"-- it is rotting; work it, re-prioritize it "
-                    f"(`frob ticket priority {t.id} <level>`), or drop it"
-                ),
+                message=message,
             )
         )
     return tuple(violations)

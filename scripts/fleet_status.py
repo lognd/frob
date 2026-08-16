@@ -852,20 +852,31 @@ def _rot_day_thresholds() -> dict[str, int]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file
 # frob:ticket T-2182
+# frob:ticket T-2200
 def _parse_ticket_ledger_file(path: Path) -> dict | None:
-    """`{"id", "state", "priority", "tier", "created"}` parsed directly
-    from a `tickets/<id>/ticket.md` file's own YAML frontmatter -- hand-
-    parsed flat `key: value` lines (matching `ticket_frontmatter_on_main`'s
-    own "no `import yaml`" contract), reading a LOCAL file on disk rather
-    than `git show main:...` since `rotting_tickets` below reports the
-    live, uncommitted ledger state a coordinator's own dispatch decision
-    actually depends on. Returns `None` if the file is unreadable, or if
-    `id`/`state`/`priority`/`created` cannot all be parsed -- a ticket
-    this function cannot fully read is excluded from the rotting set
-    entirely rather than guessed at (a missing `tier:` line defaults to
-    `ticket`, mirroring `TicketTier`'s own default for a ledger row
-    written before tiers existed, per `frob.tickets._models`'s own
-    docstring)."""
+    """`{"id", "state", "priority", "tier", "created", "runs_last"}`
+    parsed directly from a `tickets/<id>/ticket.md` file's own YAML
+    frontmatter -- hand-parsed flat `key: value` lines (matching `ticket_
+    frontmatter_on_main`'s own "no `import yaml`" contract), reading a
+    LOCAL file on disk rather than `git show main:...` since `rotting_
+    tickets` below reports the live, uncommitted ledger state a
+    coordinator's own dispatch decision actually depends on. Returns
+    `None` if the file is unreadable, or if `id`/`state`/`priority`/
+    `created` cannot all be parsed -- a ticket this function cannot fully
+    read is excluded from the rotting set entirely rather than guessed at
+    (a missing `tier:` line defaults to `ticket`, mirroring `TicketTier`'s
+    own default for a ledger row written before tiers existed, per
+    `frob.tickets._models`'s own docstring).
+
+    T-2200: `runs_last` is read as the STRUCTURED ledger field
+    `frob ticket new --runs-last`/`frob ticket runs-last` writes (`runs_
+    last: true`/`runs_last: false`), never inferred from the ticket's
+    title text -- T-1614's own title happens to start with the literal
+    string 'RUNS LAST', which is exactly the lexical shortcut that would
+    silently miss every OTHER `runs_last` ticket whose title does not
+    happen to say so. A missing `runs_last:` line (a ledger row written
+    before the field existed) defaults to `False`, matching `Ticket.
+    runs_last`'s own model default in `frob.tickets._models`."""
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -874,7 +885,7 @@ def _parse_ticket_ledger_file(path: Path) -> dict | None:
     for line in text.splitlines():
         if line == "---":
             continue
-        for key in ("id", "state", "priority", "tier", "created"):
+        for key in ("id", "state", "priority", "tier", "created", "runs_last"):
             prefix = f"{key}:"
             if line.startswith(prefix):
                 value = line[len(prefix) :].strip()
@@ -889,6 +900,7 @@ def _parse_ticket_ledger_file(path: Path) -> dict | None:
         "priority": fields["priority"],
         "tier": fields.get("tier", "ticket"),
         "created": fields["created"],
+        "runs_last": fields.get("runs_last", "false").strip().lower() == "true",
     }
 
 
@@ -921,9 +933,9 @@ def rotting_tickets() -> list[dict]:
     rather than silently drifting from it.
 
     Each entry: `id`, `priority`, `tier` ('ticket'/'story'/'epic'),
-    `state`, `age_days`, `threshold_days`. Malformed `created` dates
-    (unparseable, or a ticket file `_parse_ticket_ledger_file` could not
-    fully read) are skipped rather than guessed at."""
+    `state`, `age_days`, `threshold_days`, `runs_last` (T-2200). Malformed
+    `created` dates (unparseable, or a ticket file `_parse_ticket_ledger_
+    file` could not fully read) are skipped rather than guessed at."""
     if not TICKETS_DIR.is_dir():
         return []
     thresholds = _rot_day_thresholds()
@@ -958,6 +970,7 @@ def rotting_tickets() -> list[dict]:
                 "state": parsed["state"],
                 "age_days": age_days,
                 "threshold_days": threshold,
+                "runs_last": parsed["runs_last"],
             }
         )
     rotting.sort(key=lambda t: (_PRIORITY_RANK.get(t["priority"], 99), -t["age_days"]))
@@ -966,21 +979,36 @@ def rotting_tickets() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot
 # frob:ticket T-2182
+# frob:ticket T-2200
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_splits_by_tier_under_\
 # distinct_action_headings
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_runs_last_ticket_gets\
+# _its_own_deferred_bucket_not_needs_dispatch
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
-    into two headings by TIER, each naming the required ACTION (acceptance
-    [3]/[4]) -- 'NEEDS DISPATCH' for `tier=ticket` (nobody dispatched it;
-    the fix IS to dispatch it) and 'NEEDS DECOMPOSITION' for `tier=epic`/
-    `tier=story` (not directly workable; 'work it' is the wrong
-    instruction for two thirds of a real measured set, T-0411/T-2182's
-    own incident: 10 of 15 rotting tickets were epics, 1 a story, only 4
-    leaf tickets -- reporting them as one undifferentiated count is
-    exactly what read as noise for a whole session). Printed
-    unconditionally inside `_print_fleet_report`, in the standing report
-    a coordinator already runs -- not behind a separate command
+    into headings by required ACTION (acceptance [3]/[4]) -- 'NEEDS
+    DISPATCH' for a leaf ticket (`tier=ticket`) that is NOT `runs_last`
+    (nobody dispatched it; the fix IS to dispatch it), 'NEEDS
+    DECOMPOSITION' for `tier=epic`/`tier=story` (not directly workable;
+    'work it' is the wrong instruction for two thirds of a real measured
+    set, T-0411/T-2182's own incident: 10 of 15 rotting tickets were
+    epics, 1 a story, only 4 leaf tickets -- reporting them as one
+    undifferentiated count is exactly what read as noise for a whole
+    session), and 'DEFERRED (RUNS LAST)' (T-2200) for a leaf ticket that
+    IS `runs_last` -- `frob ticket start` structurally REFUSES any `runs_
+    last` ticket while other tickets are open (`RunsLastBlocked`), so
+    listing it under 'NEEDS DISPATCH' recommends an action the tool
+    itself rejects (T-1614's own real incident: 11 days old, listed under
+    NEEDS DISPATCH, refused with RunsLastBlocked on the very next attempt
+    to start it). A `runs_last` ticket is NEVER dropped from the report
+    silently -- its age past threshold is still real information (the
+    queue it is deliberately waiting behind is not draining) -- it just
+    names the real, different action instead of 'dispatch it'.
+
+    Printed unconditionally inside `_print_fleet_report`, in the standing
+    report a coordinator already runs -- not behind a separate command
     (acceptance [0]/[2]): TICK004 already fires in `frob check`'s gate
     layer, but sat as 11 lines inside a 19-error list and was read as
     noise there; surfacing the same structured comparison here, with the
@@ -989,7 +1017,10 @@ def _print_ticket_rot() -> None:
     the different action it needs."""
     rotting = rotting_tickets()
     print(f"TICKET ROT: {len(rotting)}")
-    leaves = [t for t in rotting if t["tier"] == "ticket"]
+    leaves = [
+        t for t in rotting if t["tier"] == "ticket" and not t.get("runs_last")
+    ]
+    deferred = [t for t in rotting if t["tier"] == "ticket" and t.get("runs_last")]
     non_leaves = [t for t in rotting if t["tier"] != "ticket"]
     if leaves:
         print(f"  NEEDS DISPATCH ({len(leaves)}):")
@@ -997,6 +1028,16 @@ def _print_ticket_rot() -> None:
             print(
                 f"    {t['id']} priority={t['priority']} state={t['state']} "
                 f"age={t['age_days']}d (threshold {t['threshold_days']}d)"
+            )
+    if deferred:
+        print(f"  DEFERRED (RUNS LAST) ({len(deferred)}):")
+        for t in deferred:
+            print(
+                f"    {t['id']} priority={t['priority']} state={t['state']} "
+                f"age={t['age_days']}d (threshold {t['threshold_days']}d) -- "
+                "not dispatchable via `frob ticket start` while other "
+                "tickets are open (RunsLastBlocked); re-prioritize or clear "
+                "runs_last if this is stuck"
             )
     if non_leaves:
         print(f"  NEEDS DECOMPOSITION ({len(non_leaves)}):")

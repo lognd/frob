@@ -1194,9 +1194,15 @@ def _write_ticket(
     priority: str = "high",
     created: str = "2026-01-01",
     tier: str = "ticket",
+    runs_last: bool = False,
 ) -> None:
     """Write a minimal `tickets/<id>/ticket.md` fixture file with just the
-    frontmatter fields `_parse_ticket_ledger_file` reads."""
+    frontmatter fields `_parse_ticket_ledger_file` reads. `runs_last`
+    (T-2200) is written as the same flat `key: value` line real
+    `frob ticket` output uses (`runs_last: true`/`runs_last: false`), the
+    STRUCTURED field the parser reads -- never inferred from `title`, so a
+    fixture whose title happens to say 'RUNS LAST' (mirroring T-1614's
+    real title) with `runs_last=False` must NOT be treated as deferred."""
     ticket_dir = tickets_dir / ticket_id
     ticket_dir.mkdir(parents=True)
     (ticket_dir / "ticket.md").write_text(
@@ -1208,6 +1214,7 @@ def _write_ticket(
         f"created: '{created}'\n"
         f"priority: {priority}\n"
         f"tier: {tier}\n"
+        f"runs_last: {'true' if runs_last else 'false'}\n"
         f"---\n",
         encoding="utf-8",
     )
@@ -1289,6 +1296,28 @@ class TestRottingTickets:
         tiers = {t["id"]: t["tier"] for t in rotting}
         assert tiers == {"T-0004": "ticket", "T-0005": "epic", "T-0006": "story"}
 
+    def test_reads_runs_last_as_a_structured_field_not_from_title(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2200: `runs_last` comes from the ledger frontmatter's own
+        `runs_last:` line, never inferred from `title` text -- a ticket
+        whose title literally says 'RUNS LAST' (mirroring T-1614's real
+        title) but whose `runs_last:` line is `false` must read as an
+        ordinary (non-deferred) rotting ticket, and vice versa."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0007", state="queued", priority="critical",
+            created="2020-01-01", runs_last=True,
+        )
+        _write_ticket(
+            tickets_dir, "T-0008", state="queued", priority="critical",
+            created="2020-01-01", runs_last=False,
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        flags = {t["id"]: t["runs_last"] for t in rotting}
+        assert flags == {"T-0007": True, "T-0008": False}
+
 
 class TestPrintTicketRot:
     """`fleet_status._print_ticket_rot` (T-2182)."""
@@ -1331,6 +1360,56 @@ class TestPrintTicketRot:
         assert "NEEDS DECOMPOSITION (1):" in out
         assert "T-0004" in out.split("NEEDS DECOMPOSITION")[0]
         assert "T-0005" in out.split("NEEDS DECOMPOSITION")[1]
+
+    def test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2200: a rotting leaf ticket with `runs_last=True` (T-1614's
+        real shape) is reported under 'DEFERRED (RUNS LAST)', never under
+        'NEEDS DISPATCH' -- `frob ticket start` structurally refuses a
+        `runs_last` ticket with `RunsLastBlocked`, so listing it as
+        dispatchable is advice the tool itself rejects. This MUST fail
+        against the pre-fix report, which had no third bucket at all and
+        put every leaf ticket -- runs_last or not -- under NEEDS DISPATCH.
+        The must-still-pass control lives alongside it: an ordinary
+        (non-runs_last) rotting leaf ticket still appears under NEEDS
+        DISPATCH, unaffected."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-1614",
+                    "priority": "high",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 11,
+                    "threshold_days": 7,
+                    "runs_last": True,
+                },
+                {
+                    "id": "T-0004",
+                    "priority": "critical",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                    "runs_last": False,
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 2" in out
+        assert "NEEDS DISPATCH (1):" in out
+        assert "DEFERRED (RUNS LAST) (1):" in out
+        # T-1614 must NOT be listed under NEEDS DISPATCH.
+        needs_dispatch_block = out.split("DEFERRED (RUNS LAST)")[0]
+        assert "T-1614" not in needs_dispatch_block
+        assert "T-0004" in needs_dispatch_block
+        deferred_block = out.split("DEFERRED (RUNS LAST)")[1]
+        assert "T-1614" in deferred_block
+        assert "RunsLastBlocked" in deferred_block
 
 
 class TestQuarantineState:
