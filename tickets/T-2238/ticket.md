@@ -1,7 +1,7 @@
 ---
 id: T-2238
 title: Recovered from T-2226's phantom TICK006 citation of T-draft-0bd874ac
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-16'
@@ -27,3 +27,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-2226's Done report claimed T-dr
    once this lands".
 
 2. The 2 DOC011 dangling-`T-draft-*` doc citations: both mappi
+
+## Drop reason
+- 2026-08-16: Phantom TICK006 auto-filing, verified junk. Created from T-2226's Done report prose, which discussed T-draft-0bd874ac because repairing records naming that dead draft id WAS the ticket's subject. That draft was promoted to T-2195 (state=done); zero scope entries, no content. The landing agent independently assessed it as benign. Generator ticketed as T-2243.
