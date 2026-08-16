@@ -498,6 +498,7 @@ class TestCrossTicketLeakage:
 
 
 # frob:ticket T-1618
+# frob:ticket T-2183
 class TestPassengerTickets:
     """`_check_passenger_tickets` -- the T-1618 fix. Unlike
     `TestCrossTicketLeakage` above, this scans the branch diff's own
@@ -709,3 +710,113 @@ class TestPassengerTickets:
         assert result.is_err
         assert result.danger_err == LandError.PassengerTickets
         assert not (repo / "src" / "extracted2.py").exists()
+
+    # frob:ticket T-2183
+    def test_directive_text_in_markdown_prose_is_not_a_passenger(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_directive_ticket_ids_in_diff kind="unit"  # noqa: E501
+        # T-2183 occurrence 1: an agent's own drop-reason prose (or any
+        # other markdown ledger text) can legitimately name the directive
+        # keyword plus another ticket's id -- writing ABOUT a ticket, not
+        # carrying its code. `.md` has no registered grammar, so `_genuine_comment_
+        # lines` can never place any line of it inside a real COMMENT
+        # node; the directive-looking text must not register at all. MUST
+        # FAIL against current main (pre-fix): the old raw-text regex scan
+        # counted this line and refused.
+        prior = new_ticket(repo, _spec("Prior work"))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-md-prose", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/", "tickets/")))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text("# independent fix\n")
+        (wt / "tickets").mkdir(exist_ok=True)
+        (wt / "tickets" / "notes.md").write_text(
+            f"Dropped this direction because it duplicates frob:ticket {prior_id}, "
+            "not something we should carry forward.\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix plus drop-reason prose")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
+
+    # frob:ticket T-2183
+    def test_directive_text_in_a_python_docstring_is_not_a_passenger(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_directive_ticket_ids_in_diff kind="unit"  # noqa: E501
+        # T-2183 occurrence 2: citing a historical ticket id inside a
+        # DOCSTRING for context is the documentation practice this repo
+        # actively encourages -- `frob.lang`'s COMMENT_TYPES-only scan
+        # (deliberately NOT the T-0342 docstring-directive walker, see
+        # `_genuine_comment_lines`'s docstring) means a docstring's string
+        # literal content is never a "comment" node, so this must not
+        # register as a passenger even though the line literally starts
+        # with "# frob:ticket ...". MUST FAIL against current main
+        # (pre-fix): the old raw-text regex scan does not care about node
+        # kind at all and refused on this exact shape (the real T-2189
+        # land incident).
+        prior = new_ticket(repo, _spec("Prior work"))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-docstring", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(
+            'def helper():\n'
+            '    """Do the thing.\n'
+            f'\n    Historical context: # frob:ticket {prior_id} used to do this\n'
+            '    differently.\n'
+            '    """\n'
+            "    return 1\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix, historical docstring note")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert (repo / "src" / "fix.py").exists()
+
+    # frob:ticket T-2183
+    def test_a_genuine_comment_directive_still_reports_that_id(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_directive_ticket_ids_in_diff kind="unit"  # noqa: E501
+        # The control case for the two false-positive fixes above: a REAL
+        # `# frob:ticket <id>` COMMENT (not prose, not a docstring) added
+        # to a `.py` file must still be caught -- the fix narrows WHERE a
+        # directive is recognised, it must not blind the check entirely.
+        prior = new_ticket(repo, _spec("Prior work"))
+        assert prior.is_ok
+        prior_id = prior.danger_ok.id
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-genuine-comment", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "fix.py").write_text(
+            f"# frob:ticket {prior_id}\ndef helper():\n    return 1\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix with a real passenger comment")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.PassengerTickets
+        assert not (repo / "src" / "fix.py").exists()

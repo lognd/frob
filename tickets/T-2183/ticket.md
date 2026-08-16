@@ -3,7 +3,7 @@ id: T-2183
 title: 'Passenger-directive detection regexes raw diff lines, so the words ''frob:ticket
   T-xxxx'' inside a ticket''s own prose refuse the land: an agent had to reword a
   drop-reason sentence to get T-1748 landed'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,9 +14,15 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_markdown_prose_is_not_a_passenger
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_a_python_docstring_is_not_a_passenger
+- tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_genuine_comment_directive_still_reports_that_id
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_a_python_docstring_is_not_a_passenger
 acceptance:
 - text: Recognise a frob:ticket directive from the file's GRAMMAR, not from diff text.
     A directive is only meaningful in a comment position of a source file in a supported
@@ -25,13 +31,19 @@ acceptance:
     runs _DIRECTIVE_TICKET_ID_RE.findall on every '+'/'-' line of 'git diff base...HEAD'
     with no notion of comment position or file type. This test MUST fail against current
     main.
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_markdown_prose_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_a_python_docstring_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_genuine_comment_directive_still_reports_that_id
 - text: Given a diff that adds the literal text 'frob:ticket T-2179' inside prose
     in tickets/T-1748/ticket.md, when the passenger check runs, then no passenger
     is reported -- reproducing the real incident where an agent's drop-reason sentence
     citing another ticket triggered a PassengerTickets refusal and had to be reworded
     to land.
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_markdown_prose_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_a_python_docstring_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_genuine_comment_directive_still_reports_that_id
 - text: Given a diff that adds a genuine '# frob:ticket T-xxxx' comment to a .py source
     file, when the passenger check runs, then that id IS still reported. Do NOT fix
     this by excluding tickets/** by path alone -- that is another lexical rule and
@@ -39,7 +51,10 @@ acceptance:
     weaken T-1618's deliberate blindness to the sibling's ledger state, and do NOT
     re-introduce a DONE/DROPPED exemption; the defect is WHERE a directive is recognised,
     not WHICH ids are exempt.
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_markdown_prose_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_directive_text_in_a_python_docstring_is_not_a_passenger
+  - tests/unit/test_land_cross_ticket_leakage.py::TestPassengerTickets::test_a_genuine_comment_directive_still_reports_that_id
 threat: null
 component: null
 anchor: false

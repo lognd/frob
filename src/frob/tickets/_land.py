@@ -3520,8 +3520,254 @@ def _passenger_ids_from_line_buckets(
     return frozenset(passengers)
 
 
+_HUNK_HEADER_RE = re.compile(r"^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+
+
+def _strip_ab_prefix(path: str) -> str:
+    """Strip git diff's leading `a/`/`b/` path prefix, or return `path` unchanged."""
+    if path.startswith(("a/", "b/")):
+        return path[2:]
+    return path
+
+
+# frob:ticket T-2183
+def _raw_tree_for_worktree_file(worktree: Path, rel_path: str):  # noqa: ANN202
+    """`frob.lang.raw_tree`'s `Result` for `rel_path` as it currently
+    sits on disk in `worktree` (HEAD content), or `None` if the path is
+    not a real file there -- the `ref=None` half of `_raw_tree_for_ref`,
+    split into its own function purely so neither half mixes ARCH103's
+    I/O-plus-branching in one body."""
+    from frob.lang import raw_tree
+
+    source_path = worktree / rel_path
+    if not source_path.is_file():
+        return None
+    return raw_tree(source_path)
+
+
+# frob:ticket T-2183
+def _raw_tree_for_temp_source(content: str, suffix: str):  # noqa: ANN202
+    """`frob.lang.raw_tree`'s `Result` for `content`, materialized into a
+    throwaway temp file (named with `suffix` so `frob.lang`'s extension
+    dispatch still resolves the right grammar) and cleaned up
+    afterwards -- the temp-file create/parse/cleanup half of
+    `_raw_tree_for_ref_content`, split into its own function purely so
+    neither half mixes ARCH103's I/O-plus-branching in one body."""
+    import tempfile
+
+    from frob.lang import raw_tree
+
+    tmp_path: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=suffix, delete=False, encoding="utf-8"
+        ) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        return raw_tree(Path(tmp_path))
+    finally:
+        if tmp_path is not None:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+# frob:ticket T-2183
+def _raw_tree_for_ref_content(worktree: Path, ref: str, rel_path: str):  # noqa: ANN202
+    """`frob.lang.raw_tree`'s `Result` for `rel_path`'s content at git
+    revision `ref` (via `git show`), or `None` on a `git show` failure --
+    the ref-content half of `_raw_tree_for_ref`, split into its own
+    function purely so neither half mixes ARCH103's I/O-plus-branching
+    in one body."""
+    shown = run_argv(["git", "-C", str(worktree), "show", f"{ref}:{rel_path}"])
+    if shown.is_err or shown.danger_ok.returncode != 0:
+        return None
+    return _raw_tree_for_temp_source(shown.danger_ok.stdout, Path(rel_path).suffix)
+
+
+# frob:ticket T-2183
+def _raw_tree_for_ref(worktree: Path, ref: str | None, rel_path: str):  # noqa: ANN202
+    """`frob.lang.raw_tree`'s `Result` for `rel_path`, sourced from the
+    worktree's current (HEAD) content on disk when `ref is None`
+    (`_raw_tree_for_worktree_file`), or from that git revision's content
+    otherwise (`_raw_tree_for_ref_content`) -- the I/O half of
+    `_genuine_comment_lines`, dispatching to whichever source applies."""
+    if ref is None:
+        return _raw_tree_for_worktree_file(worktree, rel_path)
+    return _raw_tree_for_ref_content(worktree, ref, rel_path)
+
+
+# frob:ticket T-2183
+def _comment_lines_in_tree(tree, language_label: str) -> frozenset[int]:  # noqa: ANN001
+    """1-based line numbers `tree` places inside a real grammar COMMENT
+    node, per `frob.lang.COMMENT_TYPES[language_label]` -- the pure
+    tree-walk half of `_genuine_comment_lines`, split out from the I/O
+    half (`_raw_tree_for_ref`) purely to keep each under ARCH001's line
+    threshold."""
+    from frob.lang import COMMENT_TYPES
+
+    comment_types = COMMENT_TYPES.get(language_label, frozenset())
+    if not comment_types:
+        return frozenset()
+    lines: set[int] = set()
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        if node.type in comment_types:
+            lines.update(range(node.start_point[0] + 1, node.end_point[0] + 2))
+        stack.extend(node.children)
+    return frozenset(lines)
+
+
+# frob:ticket T-2183
+def _genuine_comment_lines(
+    worktree: Path, ref: str | None, rel_path: str
+) -> frozenset[int]:
+    """1-based source line numbers of `rel_path` that fall inside a real
+    grammar COMMENT node -- `ref=None` reads the worktree's current
+    (HEAD) content, any other `ref` reads that git revision's content
+    (`_raw_tree_for_ref` owns both I/O paths); `_comment_lines_in_tree`
+    owns the actual tree-walk.
+
+    Deliberately uses `frob.lang.COMMENT_TYPES` (the raw grammar
+    comment-node set: python's `comment`, rust's `line_comment`/
+    `block_comment`, etc.) and NOT `frob.lang._extract._DOCSTRING_
+    COMMENT_WALKERS` -- T-0342's python docstring-directive walker treats
+    a docstring's `frob:` line as directive-bearing for `frob.graph`'s
+    doc-coverage/xref purposes, which is correct there (a docstring IS
+    documentation), but is exactly the wrong answer for a PASSENGER
+    check (T-2183): citing a historical ticket id in a docstring for
+    context is the documentation practice this repo actively encourages,
+    not a sign the diff carries that ticket's code. A path whose
+    extension has no registered grammar (`.md`, `.toml`, ...) yields an
+    empty set here -- `frob.lang.raw_tree` would return
+    `Err(UnsupportedLanguage)` for it anyway, so prose in
+    `tickets/**/*.md` (or any other unsupported-extension file) can
+    never register as a comment-positioned line, regardless of what it
+    says. Checked via `tree_sitter_extensions()` BEFORE calling
+    `raw_tree` (rather than just letting that `Err` happen) so the
+    overwhelmingly common per-land case -- `tickets.md`, touched by
+    nearly every land -- never trips `frob.lang`'s own loud
+    "no grammar registered" WARNING log line; that warning is meant to
+    flag a genuinely unexpected unsupported path reaching a parse
+    call, not to fire on every single land's routine ledger diff."""
+    from frob.lang import tree_sitter_extensions
+
+    if Path(rel_path).suffix.lower() not in tree_sitter_extensions():
+        return frozenset()
+
+    tree_result = _raw_tree_for_ref(worktree, ref, rel_path)
+    if tree_result is None or tree_result.is_err:
+        return frozenset()
+    tree, _source, language_label = tree_result.danger_ok
+    return _comment_lines_in_tree(tree, language_label)
+
+
+# frob:ticket T-2183
+class _DiffLineTracker:
+    """Mutable per-diff scan state for `_bucket_directive_lines`'s
+    sequential line-by-line walk (T-2183): the current file's old/new
+    paths, each side's genuine-comment-line set, and each side's running
+    1-based line counter, plus the id->added/removed-line buckets being
+    built up. A tiny stateful class instead of a growing tuple of locals
+    threaded through one large loop body, so each per-line-kind handler
+    below can update just its own piece and stay under ARCH001's line
+    threshold individually."""
+
+    def __init__(self, worktree: Path, base_ref: str) -> None:
+        """Fresh tracker for one `git diff` scan against `base_ref` in `worktree`."""
+        self.worktree = worktree
+        self.base_ref = base_ref
+        self.added_lines: dict[str, list[str]] = {}
+        self.removed_lines: dict[str, list[str]] = {}
+        self.old_path: str | None = None
+        self.new_comment_lines: frozenset[int] = frozenset()
+        self.old_comment_lines: frozenset[int] = frozenset()
+        self.new_lineno = 0
+        self.old_lineno = 0
+
+    def _on_file_header(self) -> None:
+        """Reset per-file state at a `diff --git` boundary."""
+        self.old_path = None
+        self.new_comment_lines = frozenset()
+        self.old_comment_lines = frozenset()
+
+    def _on_old_path(self, raw: str) -> None:
+        """A `--- ` header: resolve the old path and its `base_ref` comment-line set."""
+        self.old_path = None if raw == "/dev/null" else _strip_ab_prefix(raw)
+        self.old_comment_lines = (
+            _genuine_comment_lines(self.worktree, self.base_ref, self.old_path)
+            if self.old_path is not None
+            else frozenset()
+        )
+
+    def _on_new_path(self, raw: str) -> None:
+        """A `+++ ` header: resolve the new path and its HEAD comment-line set."""
+        new_path = None if raw == "/dev/null" else _strip_ab_prefix(raw)
+        self.new_comment_lines = (
+            _genuine_comment_lines(self.worktree, None, new_path)
+            if new_path is not None
+            else frozenset()
+        )
+
+    def _on_hunk_header(self, match: re.Match[str]) -> None:
+        """A `@@ -old +new @@` header: reset both sides' running line counters."""
+        self.old_lineno = int(match.group(1))
+        self.new_lineno = int(match.group(2))
+
+    def _on_content_line(self, line: str) -> None:
+        """A `+`/`-`/context line: bucket a directive-bearing `+`/`-` line
+        only when its own position is a genuine comment, then advance
+        whichever side's line counter(s) this line consumes."""
+        if line.startswith("+"):
+            text = line[1:]
+            if self.new_lineno in self.new_comment_lines:
+                for directive_id in _DIRECTIVE_TICKET_ID_RE.findall(text):
+                    self.added_lines.setdefault(directive_id, []).append(text)
+            self.new_lineno += 1
+        elif line.startswith("-"):
+            text = line[1:]
+            if self.old_lineno in self.old_comment_lines:
+                for directive_id in _DIRECTIVE_TICKET_ID_RE.findall(text):
+                    self.removed_lines.setdefault(directive_id, []).append(text)
+            self.old_lineno += 1
+        else:
+            self.new_lineno += 1
+            self.old_lineno += 1
+
+
+# frob:ticket T-2183
+def _bucket_directive_lines(
+    diff_text: str, worktree: Path, base_ref: str
+) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """Walk `diff_text` (a `git diff base_ref...HEAD` unified diff) line by
+    line via `_DiffLineTracker`, returning its final (added, removed)
+    directive-id buckets -- the sequential-scan half of
+    `_directive_ticket_ids_in_diff`, split out purely to keep that
+    function's own body under ARCH001's line threshold."""
+    tracker = _DiffLineTracker(worktree, base_ref)
+    for line in diff_text.splitlines():
+        if line.startswith("diff --git "):
+            tracker._on_file_header()
+        elif line.startswith("--- "):
+            tracker._on_old_path(line[4:])
+        elif line.startswith("+++ "):
+            tracker._on_new_path(line[4:])
+        elif (hunk_match := _HUNK_HEADER_RE.match(line)) is not None:
+            tracker._on_hunk_header(hunk_match)
+        elif line.startswith("\\"):
+            # "\ No newline at end of file" -- not a real source line on
+            # either side, must not perturb the line-number counters.
+            continue
+        else:
+            tracker._on_content_line(line)
+    return tracker.added_lines, tracker.removed_lines
+
+
 # frob:ticket T-1618
 # frob:ticket T-2082
+# frob:ticket T-2183
 # frob:doc docs/modules/tickets-landing.md#passenger-ticket-disclosure-t-1618
 def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[str]:
     """Every ticket id named by a `frob:ticket <id>` directive that is a
@@ -3550,6 +3796,19 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
     `_check_passenger_tickets`'s own docstring); do not re-introduce a
     DONE/DROPPED exemption here.
 
+    T-2183: only a line that `_genuine_comment_lines` places inside a
+    real grammar COMMENT node (of its own file version: the worktree's
+    HEAD content for an added `+` line, `base_ref`'s content for a
+    removed `-` line) is ever bucketed at all -- a `frob:ticket` directive
+    written into prose (a `.md` file, a docstring) is not a passenger
+    signal no matter how it reads lexically, because it never carries the
+    sibling ticket's CODE onto main; see `_genuine_comment_lines`'s own
+    docstring for exactly why the docstring case is deliberately excluded
+    even though `frob.lang` CAN recognize a python docstring directive
+    for other purposes. This is the WHERE-a-directive-is-recognised fix,
+    not a WHICH-ids-are-exempt one -- the DONE/DROPPED blindness above is
+    untouched.
+
     Degrades to an empty set (never refuses, never raises) on a `git
     diff` failure -- this is an additional disclosure layer on top of
     `_check_cross_ticket_leakage`'s own hard-fail path, not a replacement
@@ -3557,21 +3816,9 @@ def _directive_ticket_ids_in_diff(worktree: Path, base_ref: str) -> frozenset[st
     diffed = run_argv(["git", "-C", str(worktree), "diff", f"{base_ref}...HEAD"])
     if diffed.is_err or diffed.danger_ok.returncode != 0:
         return frozenset()
-
-    added_lines: dict[str, list[str]] = {}
-    removed_lines: dict[str, list[str]] = {}
-    for line in diffed.danger_ok.stdout.splitlines():
-        if line.startswith("+++") or line.startswith("---"):
-            continue
-        if line.startswith("+"):
-            bucket, text = added_lines, line[1:]
-        elif line.startswith("-"):
-            bucket, text = removed_lines, line[1:]
-        else:
-            continue
-        for directive_id in _DIRECTIVE_TICKET_ID_RE.findall(text):
-            bucket.setdefault(directive_id, []).append(text)
-
+    added_lines, removed_lines = _bucket_directive_lines(
+        diffed.danger_ok.stdout, worktree, base_ref
+    )
     return _passenger_ids_from_line_buckets(added_lines, removed_lines)
 
 
