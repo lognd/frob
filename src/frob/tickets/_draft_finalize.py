@@ -23,16 +23,17 @@ that indirection.
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
-from frob.tickets._models import TicketError
+from frob.tickets._models import Attachment, TicketError
 from frob.tickets._new_renumber import _next_ticket_id_shared
 from frob.tickets._provisional import is_draft_id
-from frob.tickets._store import allocator_lock, ledger_lock
+from frob.tickets._store import allocator_lock, ledger_lock, tickets_dir, write_ticket
 
 # T-1103: shared "frob.tickets" logger name kept explicit (not
 # get_logger(__name__), which would read "frob.tickets._draft_finalize")
@@ -40,6 +41,91 @@ from frob.tickets._store import allocator_lock, ledger_lock
 # the same monkeypatch/logger-name hazard T-1089's ticket_runner split
 # report documented for this family of split.
 _log = get_logger("frob.tickets")
+
+
+# frob:ticket T-2199
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_attachment_path_follows_the_rename  # noqa: E501
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_sha256_is_reverified_at_the_new_location  # noqa: E501
+def _relocate_attachment_records(
+    root: Path, old_id: str, new_id: str
+) -> Result[None, TicketError]:
+    """T-2199: `renumber_one`/`renumber_one_v2` moves `old_id`'s directory
+    (and any attachment FILES nested under it) to `new_id`'s new v2
+    directory, and rewrites every code/ledger prose REFERENCE to the id --
+    but never the ticket's own structured `attachments` list, which was
+    already written (by an earlier `attach()` call, before this rename)
+    with `Attachment.path` values still prefixed by `old_id`. Left alone,
+    those records point at a directory that no longer exists (measured on
+    T-2195: two attachment records still read `T-draft-0bd874ac/
+    attachments/...` after promotion, while the files themselves already
+    lived under `T-2195/attachments/`, producing 3 COV004 errors).
+
+    Rewrites each `old_id`-prefixed `Attachment.path` to its `new_id`
+    equivalent and RE-VERIFIES the recorded `sha256` against the file at
+    that new location -- a move that lost or corrupted a file fails LOUDLY
+    here (`Err(TicketError.WriteFailed)`) rather than silently leaving a
+    valid-looking but wrong path recorded. This is deliberately a
+    structured rewrite of the known `Attachment.path` shape (`<id>/
+    attachments/NN-x.ext`), never a lexical/text substitution of the old
+    id across the ticket file -- a blind string replace would also hit
+    prose that legitimately cites the draft id historically (T-2199's own
+    acceptance). A no-op (`Ok(None)`) if `new_id`'s ticket carries no
+    attachment recorded under the old prefix."""
+    from frob.tickets import _load_one
+
+    loaded = _load_one(root, new_id)
+    if loaded.is_err:
+        return Err(loaded.danger_err)
+    ticket = loaded.danger_ok
+    old_prefix = f"{old_id}/"
+    if not any(a.path.startswith(old_prefix) for a in ticket.attachments):
+        return Ok(None)
+
+    new_attachments: list[Attachment] = []
+    for attachment in ticket.attachments:
+        if not attachment.path.startswith(old_prefix):
+            new_attachments.append(attachment)
+            continue
+        new_rel_path = f"{new_id}/{attachment.path[len(old_prefix) :]}"
+        new_abs_path = tickets_dir(root) / new_rel_path
+        if not new_abs_path.exists():
+            _log.error(
+                "tickets: _relocate_attachment_records: %s -> %s expected "
+                "attachment at %s but it does not exist -- file lost "
+                "during the rename",
+                old_id,
+                new_id,
+                new_abs_path,
+            )
+            return Err(TicketError.WriteFailed)
+        actual_sha256 = hashlib.sha256(new_abs_path.read_bytes()).hexdigest()
+        if actual_sha256 != attachment.sha256:
+            _log.error(
+                "tickets: _relocate_attachment_records: %s -> %s attachment "
+                "%s sha256 mismatch after rename (recorded=%s actual=%s) -- "
+                "file corrupted during the move",
+                old_id,
+                new_id,
+                new_abs_path,
+                attachment.sha256,
+                actual_sha256,
+            )
+            return Err(TicketError.WriteFailed)
+        new_attachments.append(attachment.model_copy(update={"path": new_rel_path}))
+        _log.info(
+            "tickets: _relocate_attachment_records: %s -> %s relocated "
+            "attachment record %s -> %s (sha256 verified)",
+            old_id,
+            new_id,
+            attachment.path,
+            new_rel_path,
+        )
+
+    updated = ticket.model_copy(update={"attachments": tuple(new_attachments)})
+    write_result = write_ticket(root, updated)
+    if write_result.is_err:
+        return Err(write_result.danger_err)
+    return Ok(None)
 
 
 # frob:ticket T-0162
@@ -149,6 +235,9 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
         result = _renumber_one(root, draft_id, final_id)
         if result.is_err:
             return Err(result.danger_err)
+        relocated = _relocate_attachment_records(root, draft_id, final_id)
+        if relocated.is_err:
+            return Err(relocated.danger_err)
         _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
         return Ok(final_id)
 
@@ -259,6 +348,9 @@ def _finalize_draft_for_land_locked(
     result = _renumber_one(worktree, draft_id, final_id)
     if result.is_err:
         return Err(result.danger_err)
+    relocated = _relocate_attachment_records(worktree, draft_id, final_id)
+    if relocated.is_err:
+        return Err(relocated.danger_err)
     _log.info(
         "tickets: finalized draft %s -> %s (land, id ceiling fresh from main %s)",
         draft_id,

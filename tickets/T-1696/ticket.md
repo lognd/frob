@@ -168,3 +168,6 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
+## Failure log
+- 2026-08-16 attempt 1: acceptance requires no ProfileName branches outside this module, but live branches exist in _land.py, _land_cmd.py, _evidence.py, _close_cmd.py, _backpressure.py, all outside declared scope; undoable as scoped, needs a replan widening scope first
