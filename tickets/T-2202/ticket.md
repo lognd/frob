@@ -24,6 +24,26 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'DECOMPOSE into four leaves, one per cluster -- measured from ''frob check
+    --only cycle --json'', three of the four are PACKAGE-LOCAL, so the epic''s original
+    nine-glob scope (gates/**, dup/**, tickets/**, app/**, serve/**, verify/**, arch/**,
+    deploy/**, vet/**) is far wider than any single cluster needs and would lock most
+    of the repo away from the fleet. Leaf 1 (ERROR, cross-package): graph/cache.py
+    -> gates/_docblocks_refs.py -> gates/_docblocks.py -> lang/_support.py -> lang/__init__.py.
+    Leaf 2 (ERROR, dup/ only): _pipeline/_smt.py, _template.py, _pipeline/_fingerprint.py,
+    _pipeline/_callgraph.py. Leaf 3 (ERROR, tickets/ only): _accept.py, _setters.py,
+    _land_finalize.py, _land_verify.py. Leaf 4 (WARNING, vet/ only): _hook.py, _closedworld.py,
+    _scan_violations.py, _scan.py, __init__.py. Each leaf scopes to its own package
+    and can be worked independently.'
+  evidence: []
+- text: 'These cycles are NOT new -- they were invisible until T-2195 (808e0c6fb3f4)
+    fixed resolve_local_import, which had been returning None for every intra-repo
+    import and made frob cycle vacuously green on frob''s own tree. Do NOT treat them
+    as a regression from that land, and do NOT ''fix'' any of them by re-breaking
+    import resolution. Verify the baseline before starting: frob check --only cycle
+    reported 0 errors before T-2195 and 3 errors + 1 warning after.'
+  evidence: []
 threat: null
 component: null
 anchor: false
