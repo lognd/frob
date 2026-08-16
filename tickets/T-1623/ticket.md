@@ -1,7 +1,7 @@
 ---
 id: T-1623
 title: 'strata maturity: make capability enforcement watertight'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-08-05'
