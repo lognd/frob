@@ -792,6 +792,123 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         assert loaded_main.danger_ok[tid].state != TicketState.DONE
 
 
+# frob:ticket T-2214
+def _long_complex_function_source(name: str) -> str:
+    """A python function source, long AND cyclomatically complex enough to
+    trip ARCH001's calibrated default threshold (60 lines, cyclomatic-proxy
+    >= 8) -- shared by every `TestAssertDiffDoesNotWorsenLongFunctions`
+    case that needs a genuine over-threshold function rather than hand-
+    writing 80+ lines of `if`/`for` per test."""
+    lines = [f"def {name}(x):"]
+    for i in range(20):
+        lines.append(f"    if x == {i}:")
+        lines.append(f"        x = x + {i}")
+        lines.append(f"        for j in range({i}):")
+        lines.append(f"            x = x + j")
+    lines.append("    return x")
+    return "\n".join(lines) + "\n"
+
+
+# frob:ticket T-2214
+class TestAssertDiffDoesNotWorsenLongFunctions:
+    """`_assert_diff_does_not_worsen_long_functions_pre_land` (T-2214):
+    ARCH001 is a size threshold, not a doc/test-edge family, so it needs
+    its own diff-scoped check rather than a `_DOC_TEST_EDGE_FAMILIES`
+    entry -- refuse only a function the CURRENT diff itself pushes past
+    threshold, never one already over threshold before the diff."""
+
+    def test_a_new_over_threshold_function_refuses_the_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_new_over_threshold_function_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_worsen_long_functions_pre_land,
+        )
+
+        new_file = repo / "src" / "grown.py"
+        new_file.write_text(_long_complex_function_source("brand_new_long_function"))
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_diff_does_not_worsen_long_functions_pre_land(
+                repo, "T-2214", frozenset({"src/grown.py"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse  # noqa: E501
+        # The function is ALREADY over threshold at the merge-base commit
+        # (committed once, unchanged in shape) -- a later diff that only
+        # adds a trailing comment must not be blamed on THIS land, the
+        # exact global-vs-attributable distinction T-2198 already fixed
+        # for the TICK gate.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_worsen_long_functions_pre_land,
+        )
+
+        already_long = repo / "src" / "already_long.py"
+        already_long.write_text(_long_complex_function_source("pre_existing_long_function"))
+        _commit_all(repo, "pre-existing over-threshold function")
+
+        already_long.write_text(
+            already_long.read_text() + "# trailing comment, function body unchanged\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            repo, "T-2214", frozenset({"src/already_long.py"})
+        )  # must not raise
+
+    def test_an_unrelated_land_touching_no_python_files_is_unaffected(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_an_unrelated_land_touching_no_python_files_is_unaffected  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_worsen_long_functions_pre_land,
+        )
+
+        (repo / "README.md").write_text("# landed feature, edited\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            repo, "T-2214", frozenset({"README.md"})
+        )  # must not raise
+
+    def test_a_waived_over_threshold_function_does_not_refuse(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_waived_over_threshold_function_does_not_refuse  # noqa: E501
+        # A real ARCH001 waiver comment directly above the def is the same
+        # reasoned-waiver escape hatch arch_gate/frob.gates._match_waiver
+        # already honor for this rule -- this check must not invent a
+        # second, stricter one.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_worsen_long_functions_pre_land,
+        )
+
+        new_file = repo / "src" / "waived.py"
+        new_file.write_text(
+            '# frob:waive ARCH001 reason="test fixture, genuinely irreducible"\n'
+            + _long_complex_function_source("waived_long_function")
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            repo, "T-2214", frozenset({"src/waived.py"})
+        )  # must not raise
+
+    def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_empty_touched_set_is_a_no_op  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_worsen_long_functions_pre_land,
+        )
+
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            repo, "T-2214", frozenset()
+        )  # must not raise
+        _assert_diff_does_not_worsen_long_functions_pre_land(
+            repo, "T-2214", None
+        )  # must not raise
+
+
 # frob:ticket T-1907
 class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
     """T-1907 proposal (2): a Done report with no `### Captured claims`

@@ -3,7 +3,7 @@ id: T-2214
 title: 'Nothing gates an oversized function at land time, so ARCH001 accumulates in
   exactly the files the fleet works most: 4 findings in _land_cmd.py, plus fleet_status.py,
   _new.py and telemetry.py'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,9 +14,17 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+evidence_scope:
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_an_unrelated_land_touching_no_python_files_is_unaffected
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_waived_over_threshold_function_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_empty_touched_set_is_a_no_op
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
 acceptance:
 - text: 'Measured correlation between fleet activity and ARCH debt. ARCH001/ARCH103
     errors by file: src/frob/app/ticket_runner/_land_cmd.py 4, scripts/fleet_status.py
@@ -26,7 +34,12 @@ acceptance:
     is unreasonable, the accumulation is. Concrete instance: scripts/fleet_status.py::ticket_readiness
     reached 80 lines (threshold 60) after seven separate lands in one day. This test
     MUST fail against current main.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_an_unrelated_land_touching_no_python_files_is_unaffected
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_waived_over_threshold_function_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_empty_touched_set_is_a_no_op
 - text: 'ARCH001 is a SIZE threshold, not a missing-directive family -- it cannot
     be expressed in T-2201''s _DOC_TEST_EDGE_FAMILIES (label, directive, waive_rule)
     shape, and T-2201''s author was right to parameterise the edge families and disclose
@@ -35,14 +48,23 @@ acceptance:
     decision count and refuse when the diff pushes it past threshold. Compare against
     the merge-base so a function already over threshold and merely touched is not
     blamed on this land.'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_an_unrelated_land_touching_no_python_files_is_unaffected
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_waived_over_threshold_function_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_empty_touched_set_is_a_no_op
 - text: Do NOT reintroduce a full unscoped frob check at land time -- that is the
     ~208s cost T-1684 removed and T-2114/T-2201 correctly avoided by working from
     the diff alone. Do NOT refuse on a function that was ALREADY over threshold before
     the diff; that would block unrelated work in the busiest files and is exactly
     the global-vs-attributable mistake T-2198 just fixed for the TICK gate. Refuse
     only on what the landing diff itself made worse.
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_an_unrelated_land_touching_no_python_files_is_unaffected
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_waived_over_threshold_function_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_empty_touched_set_is_a_no_op
 threat: null
 component: null
 anchor: false

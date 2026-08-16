@@ -2819,9 +2819,7 @@ def _land_plan_tick_findings(
         )
         return None
     result = guarded.danger_ok
-    return _parse_error_findings_from_stdout(
-        "<plan>", result.stdout, result.returncode
-    )
+    return _parse_error_findings_from_stdout("<plan>", result.stdout, result.returncode)
 
 
 # frob:ticket T-2198
@@ -2857,9 +2855,7 @@ def _land_plan_pre_merge_tick_baseline(
 # frob:ticket T-2198
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_pre_existing_tick004_does_not_block_ledger_only_plan_land  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestLandPlan.test_merges_and_finalizes_every_draft_atomically  # noqa: E501
-def _land_plan_check_ticks_fn(
-    root: Path, baseline: frozenset[tuple[str, str]] | None
-):  # noqa: ANN201
+def _land_plan_check_ticks_fn(root: Path, baseline: frozenset[tuple[str, str]] | None):  # noqa: ANN201
     """Build a zero-arg `check_ticks` closure for `land_plan` (T-2198,
     replacing T-1269's global-count version): compares a POST-merge
     `_land_plan_tick_findings(root)` scan against `baseline` -- the
@@ -3539,6 +3535,191 @@ def _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
     sys.exit(1)
 
 
+# frob:ticket T-2214
+def _long_function_symrefs_over_threshold(
+    path: Path, rel: str
+) -> dict[str, tuple[int, int]]:
+    """`{symref: (line, n_lines)}` for every python function in the file at
+    `path` that `frob.arch`'s own long-function check (ARCH001) would flag
+    RIGHT NOW -- long AND structurally complex, at this repo's own
+    `[arch].max_function_lines` threshold (`frob.app._config_meta.
+    load_arch_config`, the same knob `arch_gate` itself reads, T-0373).
+    `{}` for a non-python file, an unparseable one, or one with no
+    over-threshold function -- never a crash (matches every other diff-
+    scoped land-time check's fail-open posture in this module).
+
+    Reuses `frob.arch._python._check_long_functions` (the SAME complexity-
+    aware detector `arch_gate` dispatches, not a reimplementation) against
+    a single file's own parse tree -- no repo-wide `analyze_project` walk,
+    keeping this the same "two small parses per touched file" cost T-2114's
+    doc/test-edge check already pays, not the ~208s T-1684 took off the
+    land critical path."""
+    from frob.app._config_meta import load_arch_config
+    from frob.arch import _python as arch_python
+    from frob.lang import raw_tree
+
+    parsed = raw_tree(path)
+    if parsed.is_err:
+        return {}
+    tree, _source, language = parsed.danger_ok
+    if language != "python":
+        return {}
+    limits = load_arch_config(path.parent)
+    suggestions: list = []
+    arch_python._check_long_functions(
+        tree, rel, limits["max_function_lines"], suggestions
+    )
+    return {s.symref: (s.line or 0, s.metric or 0) for s in suggestions if s.symref}
+
+
+# frob:ticket T-2214
+def _long_function_symrefs_over_threshold_at_merge_base(
+    worktree: Path, merge_base: str, rel_path: str
+) -> set[str]:
+    """Symrefs `_long_function_symrefs_over_threshold` would flag for
+    `rel_path` AS IT EXISTED at `merge_base` -- `git show`n to a scratch
+    `.py` file so `raw_tree` can parse it identically to the current
+    worktree content (T-2214, ARCH001 split of `_new_or_worsened_long_
+    functions_in_diff`). Empty on a `git show` failure (file did not
+    exist at `merge_base` -- everything in it is new by construction)."""
+    import tempfile
+
+    old = run_argv(["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"])
+    if not (old.is_ok and old.danger_ok.returncode == 0):
+        return set()
+    with tempfile.NamedTemporaryFile(
+        suffix=".py", mode="w", encoding="utf-8", delete=False
+    ) as tmp:
+        tmp.write(old.danger_ok.stdout)
+        tmp_path = Path(tmp.name)
+    try:
+        return set(_long_function_symrefs_over_threshold(tmp_path, rel_path))
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+def _new_or_worsened_long_functions_in_file(
+    worktree: Path, merge_base: str, rel_path: str
+) -> list[tuple[str, str, int, int]]:
+    """`_new_or_worsened_long_functions_in_diff`'s own per-file body
+    (T-2214, ARCH001 split): every `(rel_path, symref, line, n_lines)`
+    this ONE file's diff pushes past ARCH001's long-AND-complex threshold
+    that was not already past it at `merge_base`, skipping any symref
+    carrying `frob:waive ARCH001` directly above its `def` in the CURRENT
+    file -- the same reasoned-waiver escape hatch `arch_gate`/`frob.
+    gates._match_waiver` already honor for this exact rule, not a second,
+    weaker one invented here."""
+    from frob.tickets._land import _genuine_comment_lines
+
+    full = worktree / rel_path
+    current = _long_function_symrefs_over_threshold(full, rel_path)
+    if not current:
+        return []
+    old_over = _long_function_symrefs_over_threshold_at_merge_base(
+        worktree, merge_base, rel_path
+    )
+    lines = full.read_text(encoding="utf-8").splitlines()
+    genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
+    findings: list[tuple[str, str, int, int]] = []
+    for symref, (line, n_lines) in sorted(current.items(), key=lambda kv: kv[1][0]):
+        if symref in old_over:
+            continue
+        block_text = "\n".join(_frob_directive_block(lines, line, genuine_lines))
+        if "frob:waive ARCH001" in block_text:
+            continue
+        findings.append((rel_path, symref, line, n_lines))
+    return findings
+
+
+def _new_or_worsened_long_functions_in_diff(
+    worktree: Path, merge_base: str, touched_paths: frozenset[str]
+) -> list[tuple[str, str, int, int]]:
+    """Every `(rel_path, symref, line, n_lines)` for a function this diff
+    ADDS or MODIFIES that crosses ARCH001's long-AND-complex threshold in
+    the CURRENT worktree content but did NOT already cross it in the SAME
+    file's content at `merge_base` -- the diff-scoped, attributable-only
+    ARCH001 check T-2214 asks for, mirroring T-2114's `_new_public_
+    symbols_missing_doc_or_test_edge` shape exactly: two small parses per
+    touched file (current worktree, and `git show <merge_base>:<path>`
+    written to a scratch file so `raw_tree` can parse it the same way),
+    never a full-repo `analyze_project`/`GraphSnapshot` build.
+
+    T-2214's own acceptance criteria: a function ALREADY over threshold
+    before this diff and merely touched must NOT be blamed on this land
+    (the global-vs-attributable distinction T-2198 already fixed for the
+    TICK gate) -- `_new_or_worsened_long_functions_in_file`'s `symref in
+    old_over` check is exactly that, keyed by symref so a function that
+    moves within the file (line changes, symref does not) is still
+    correctly recognized as pre-existing debt, not a new finding."""
+    findings: list[tuple[str, str, int, int]] = []
+    for rel_path in sorted(touched_paths):
+        if not rel_path.endswith(".py"):
+            continue
+        if not (worktree / rel_path).is_file():
+            continue
+        if _is_generated_or_test_path(worktree, rel_path):
+            continue
+        findings.extend(
+            _new_or_worsened_long_functions_in_file(worktree, merge_base, rel_path)
+        )
+    return findings
+
+
+# frob:ticket T-2214
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_new_over_threshold_function_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_a_pre_existing_over_threshold_function_merely_touched_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions.test_an_unrelated_land_touching_no_python_files_is_unaffected  # noqa: E501
+def _assert_diff_does_not_worsen_long_functions_pre_land(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """T-2214: refuse the land when THIS ticket's own diff pushes a
+    function past ARCH001's long-AND-complex threshold that was not
+    already past it at `merge_base` -- nothing gated this at land time
+    before, so ARCH001 debt accumulated exactly in the files the fleet
+    works most (this ticket's own measured correlation: 4 findings in
+    `_land_cmd.py` alone, plus `fleet_status.py`/`_new.py`/`telemetry.py`,
+    each land individually reasonable, the accumulation not). Same
+    unconditional-across-every-profile posture as
+    `_assert_new_public_symbols_have_doc_and_test_edge_pre_land`
+    immediately above it -- under `rapid`, the deferred post-land sweep is
+    otherwise the only thing that would ever catch this, and only AFTER
+    the commit already published with a worse floor.
+
+    Deliberately does NOT reintroduce a full unscoped `frob check` at land
+    time (the ~208s cost T-1684 removed and T-2114/T-2201 correctly
+    avoided by working from the diff alone) -- this walks only the
+    touched `.py` files' own two parses, same bounded cost as the T-2114
+    check it sits beside. An empty touched set, or a `git show` at
+    `merge_base` that fails, degrades to a no-op, matching every other
+    touched-set guard's fail-open posture in this module."""
+    if not touched_paths:
+        return
+    diff_result = working_diff(worktree, "main")
+    if diff_result.is_err:
+        return
+    merge_base = diff_result.danger_ok.base
+    findings = _new_or_worsened_long_functions_in_diff(
+        worktree, merge_base, touched_paths
+    )
+    if not findings:
+        return
+    for rel_path, symref, lineno, n_lines in findings:
+        _log.error(
+            "ticket land: %s refused -- %s:%d %s is now %d line(s), past "
+            "ARCH001's long-AND-complex threshold, and was NOT already "
+            "over it before this diff (T-2214: this family is not relaxed "
+            "by the rapid profile); split the function, or add `frob:waive "
+            'ARCH001 reason="..."` above the def if it genuinely does not '
+            "apply",
+            ticket_id,
+            rel_path,
+            lineno,
+            symref,
+            n_lines,
+        )
+    sys.exit(1)
+
+
 # frob:ticket T-1593
 # frob:ticket T-1692
 # frob:ticket T-1845
@@ -3556,7 +3737,10 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     profile may not relax, per T-1907's own required fix (1). T-2114:
     `_assert_new_public_symbols_have_doc_and_test_edge_pre_land` runs
     right after it, generalizing the same "not relaxed by rapid" posture
-    from the type family to the doc/test-edge families."""
+    from the type family to the doc/test-edge families. T-2214:
+    `_assert_diff_does_not_worsen_long_functions_pre_land` runs right
+    after THAT, same posture again, for the diff-scoped ARCH001
+    long-function threshold."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
 
     # T-1175: fmt/sync-interface/Tier-A-fix absorption runs BEFORE land's
@@ -3572,6 +3756,11 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 
     # frob:ticket T-2114
     _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+        worktree, cfg.ticket_id, touched_paths
+    )
+
+    # frob:ticket T-2214
+    _assert_diff_does_not_worsen_long_functions_pre_land(
         worktree, cfg.ticket_id, touched_paths
     )
 
