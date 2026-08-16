@@ -918,13 +918,13 @@ class TestResolveLocalImportConsumers:
         return find_cycles(graph)
 
     def test_cycle_detected_in_top_level_layout(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="control"
+        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
         cycles = self._cycle_via_absolute_imports(tmp_path)
         assert len(cycles) == 1
         assert set(cycles[0]) == {"pkg/a.py", "pkg/b.py"}
 
     def test_cycle_detected_in_src_layout_too(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="control"
+        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
         # T-2195's headline symptom: before the fix, this same planted
         # cycle vanished (`resolve_local_import` returned `None` for every
         # `pkg.a`/`pkg.b` specifier under `root/src`, so no edge was ever
@@ -939,7 +939,7 @@ class TestResolveLocalImportConsumers:
         assert set(cycles[0]) == {"pkg/a.py", "pkg/b.py"}
 
     def test_layering_resolves_a_nonempty_target_set(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_layering.py::_resolve_import_targets kind="control"
+        # frob:tests src/frob/arch/_layering.py::_resolve_import_targets kind="unit"
         # T-2195 addendum 3: `_resolve_import_targets` (frob.arch._layering,
         # the layering enforcement's own import-resolution call site) must
         # resolve a real src-layout first-party import to a non-empty set
@@ -959,8 +959,7 @@ class TestResolveLocalImportConsumers:
         assert targets == {"pkg/api.py"}
 
     def test_layering_detects_a_real_violation(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/arch/_layering.py::check_layering_violations \
-        # kind="control"
+        # frob:tests src/frob/arch/_layering.py::check_layering_violations kind="unit"
         # T-2195 addendum 3: with import resolution restored, a genuine
         # disallowed cross-layer import must actually be flagged, not just
         # resolved -- the acceptance criteria's own bar ("a non-empty
