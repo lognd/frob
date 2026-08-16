@@ -36,6 +36,21 @@ acceptance:
     check is why a stale-lock theory survived long enough to be filed critical and
     later retracted -- the lock is flock-based and the kernel frees it on holder death.
   evidence: []
+- text: 'Accept MULTIPLE --ticket ids in one invocation and report PAIRWISE SCOPE
+    INTERSECTION across them, so a coordinator can check a whole wave for contention
+    before dispatching it. Compare resolved scope globs against each other and against
+    live leases -- not ticket titles or file-name similarity. Measured need: I dispatched
+    contending tickets twice in one session (a five-ticket docs series all scoped
+    to docs/modules/tickets.md, then T-1748 and T-1780 both claiming that same file),
+    and the second collision hard-refused T-1780 at start via _refuse_on_scope_lease_collision,
+    which has no --steal override. This test MUST fail against current main.'
+  evidence: []
+- text: The wave check must live in the standing report a coordinator ALREADY runs,
+    not behind a separate command. frob ticket wave --agents N already computes scope-disjoint
+    groups and I failed to run it both times -- a capability that requires remembering
+    it exists is not enforcement (the 'automatic over commands' rule). Surfacing intersection
+    in the tool already in the dispatch loop is the fix.
+  evidence: []
 threat: null
 component: null
 anchor: false
