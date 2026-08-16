@@ -17,8 +17,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from frob.gates._models import Severity, Violation
-from frob.vet import _cache, _registry
+from frob.vet._cache import _latest_verdict
 from frob.vet._models import Dependency, PackageVerdict, VetConfig, capability_diff
+from frob.vet._registry import _fetch_publish_date
 
 if TYPE_CHECKING:
     from frob.strata import CveFingerprint
@@ -49,7 +50,7 @@ def _quarantine_violation(
 ) -> Violation | None:
     """VET011: ERROR if newly published within the cooldown window, WARN if
     the publish date could not be verified (never a hard block offline)."""
-    lookup = _registry._fetch_publish_date(
+    lookup = _fetch_publish_date(
         dep.ecosystem,
         dep.name,
         dep.version,
@@ -174,7 +175,7 @@ def _vet003_violation(
     artifact_hash: str,
 ) -> Violation | None:
     """VET003: a version bump that adds a capability vs the stored verdict."""
-    previous = _cache._latest_verdict(cache_path, dep.ecosystem, dep.name)
+    previous = _latest_verdict(cache_path, dep.ecosystem, dep.name)
     if previous is None or previous.artifact_hash == artifact_hash:
         return None
     current = PackageVerdict(

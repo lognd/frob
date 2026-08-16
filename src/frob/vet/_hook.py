@@ -13,9 +13,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from frob.logging import get_logger
-from frob.vet import _registry, _typosquat
 from frob.vet._allow import _load_vet_config
 from frob.vet._models import HookVerdict, VetConfig
+from frob.vet._registry import LATEST_VERSION, _fetch_publish_date, _RegistryResult
+from frob.vet._typosquat import _find_typosquat
 
 _log = get_logger(__name__)
 
@@ -138,6 +139,11 @@ def _collect_packages(pkg_tokens: list[str], strip: _Strip) -> list[tuple[str, s
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's \
+# frob.vet._registry/_typosquat imports at the leaf submodules (breaking an import \
+# cycle through frob/vet/__init__.py's namespace, same shape as T-2232); \
+# parse_hook_command's own behavior, signature, and documented contract are unchanged"
 def parse_hook_command(command: str) -> tuple[str, tuple[tuple[str, str], ...]] | None:
     """Parse a shell command string for install-shaped invocations.
     Returns `(ecosystem, ((name, version_or_empty), ...))`, or `None` if the
@@ -181,7 +187,7 @@ def _parse_install_tokens(
 
 
 def _unverified_lookup_verdict(
-    ecosystem: str, name: str, lookup: _registry._RegistryResult
+    ecosystem: str, name: str, lookup: _RegistryResult
 ) -> HookVerdict | None:
     """An `unverified` `HookVerdict` if the publish-date lookup failed or
     found nothing, else None (caller proceeds to the age check)."""
@@ -212,8 +218,8 @@ def _quarantine_verdict(
     ecosystem: str, name: str, version: str, cfg: VetConfig, cache_path: Path
 ) -> HookVerdict:
     """Registry publish-date verdict: unverified / not-found / quarantine / ok."""
-    lookup_version = version or _registry.LATEST_VERSION
-    lookup = _registry._fetch_publish_date(
+    lookup_version = version or LATEST_VERSION
+    lookup = _fetch_publish_date(
         ecosystem,
         name,
         lookup_version,
@@ -234,7 +240,7 @@ def _quarantine_verdict(
 def _age_based_verdict(
     ecosystem: str,
     name: str,
-    lookup: _registry._RegistryResult,
+    lookup: _RegistryResult,
     age_days: int,
     quarantine_days: int,
 ) -> HookVerdict:
@@ -261,6 +267,11 @@ def _age_based_verdict(
 
 
 # frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's \
+# frob.vet._registry/_typosquat imports at the leaf submodules (breaking an import \
+# cycle through frob/vet/__init__.py's namespace, same shape as T-2232); \
+# check_package's own behavior, signature, and documented contract are unchanged"
 def check_package(
     ecosystem: str, name: str, version: str, *, root: Path
 ) -> HookVerdict:
@@ -268,7 +279,7 @@ def check_package(
     cfg = _load_vet_config(root)
     cache_path = root / _CACHE_REL
 
-    typosquat_of = _typosquat._find_typosquat(ecosystem, name)
+    typosquat_of = _find_typosquat(ecosystem, name)
     if typosquat_of is not None:
         msg = f"{name}: possible typosquat of {typosquat_of}"
         _log.warning("vet: hook: BLOCK %s", msg)

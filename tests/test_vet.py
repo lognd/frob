@@ -260,7 +260,7 @@ class TestQuarantine:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/vet/_hook.py::check_package kind="unit"
-        from frob.vet import _registry
+        import frob.vet._hook as _hook_mod
 
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
@@ -271,7 +271,7 @@ class TestQuarantine:
                 resolved_version=version,
             )
 
-        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "some-new-pkg", "1.0.0", root=tmp_path)
         assert verdict.verdict == "quarantine"
         assert verdict.blocked is True
@@ -279,7 +279,7 @@ class TestQuarantine:
     def test_old_package_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from frob.vet import _registry
+        import frob.vet._hook as _hook_mod
 
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
@@ -290,7 +290,7 @@ class TestQuarantine:
                 resolved_version=version,
             )
 
-        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "requests", "2.31.0", root=tmp_path)
         assert verdict.verdict == "ok"
         assert verdict.blocked is False
@@ -298,7 +298,7 @@ class TestQuarantine:
     def test_network_failure_degrades_to_unverified(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from frob.vet import _registry
+        import frob.vet._hook as _hook_mod
 
         def fake_fetch(
             ecosystem, name, version, *, cache_path, base_url=None, timeout_s=5.0
@@ -307,7 +307,7 @@ class TestQuarantine:
                 ok=False, note="could not verify publish date: timeout"
             )
 
-        monkeypatch.setattr(_registry, "_fetch_publish_date", fake_fetch)
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fake_fetch)
         verdict = check_package("pypi", "requests", "2.31.0", root=tmp_path)
         assert verdict.verdict == "unverified"
         assert verdict.blocked is False
@@ -320,14 +320,14 @@ class TestQuarantine:
         # edit-distance from a popular pypi package must be blocked as
         # "typosquat" WITHOUT ever reaching the registry publish-date
         # lookup (proven here by making that lookup explode if called).
-        from frob.vet import _registry
+        import frob.vet._hook as _hook_mod
 
         def fail_if_called(*args, **kwargs):
             raise AssertionError(
                 "registry lookup must not run once a typosquat is found"
             )
 
-        monkeypatch.setattr(_registry, "_fetch_publish_date", fail_if_called)
+        monkeypatch.setattr(_hook_mod, "_fetch_publish_date", fail_if_called)
         verdict = check_package("pypi", "reqeusts", "1.0.0", root=tmp_path)
         assert verdict.verdict == "typosquat"
         assert verdict.blocked is True

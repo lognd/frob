@@ -18,18 +18,19 @@ from typani.result import Result
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
-from frob.vet import (
-    _cache,
-    _capability,
-    _ecosystem,
-    _lifecycle,
-    _obfuscation,
-    _osv,
-    _source,
-    _supplychain,
-    _typosquat,
-)
 from frob.vet._allow import _load_vet_config
+from frob.vet._cache import _store_verdict
+from frob.vet._capability import (
+    _scan_directory_capabilities,
+    _scan_directory_fingerprints,
+)
+from frob.vet._ecosystem import _npm_non_registry_rule, _python_rules, _rust_rules
+from frob.vet._lifecycle import _scan_lifecycle_scripts
+from frob.vet._obfuscation import _scan_directory_obfuscation
+from frob.vet._osv import _is_available, _run_osv_scan
+from frob.vet._source import _locate_source
+from frob.vet._supplychain import supply_chain_tree_violations
+from frob.vet._typosquat import _find_typosquat
 from frob.vet._lockfile import _find_all_lockfiles, _parse_lockfile
 from frob.vet._models import (
     Dependency,
@@ -128,12 +129,12 @@ def _capability_and_fingerprint_signals(
     signals: list[str] = []
     violations: list[Violation] = []
 
-    observed, decode_to_exec = _capability._scan_directory_capabilities(source_dir)
+    observed, decode_to_exec = _scan_directory_capabilities(source_dir)
     capabilities = set(observed)
     if decode_to_exec:
         signals.append("decode-to-exec")
 
-    obfuscation_signals = _obfuscation._scan_directory_obfuscation(source_dir)
+    obfuscation_signals = _scan_directory_obfuscation(source_dir)
     signals.extend(obfuscation_signals)
     if obfuscation_signals or decode_to_exec:
         violations.append(_vet004_violation(dep, lockfile_name, signals))
@@ -143,7 +144,7 @@ def _capability_and_fingerprint_signals(
     # below) when a dependency's source matches a canonical vulnerable-
     # usage-class needle, independent of whether the dependency's PINNED
     # VERSION has a filed osv advisory (VET005's join).
-    fingerprint_matches = _capability._scan_directory_fingerprints(source_dir)
+    fingerprint_matches = _scan_directory_fingerprints(source_dir)
     if fingerprint_matches:
         signals.append("cve-fingerprint")
         violations.append(_vet006_violation(dep, lockfile_name, fingerprint_matches))
@@ -155,9 +156,9 @@ def _ecosystem_rules(
 ) -> list[Violation]:
     """Ecosystem-specific rule violations (pypi/cargo) for `dep`."""
     if dep.ecosystem == "pypi":
-        return list(_ecosystem._python_rules(dep, source_dir, lockfile_name))
+        return list(_python_rules(dep, source_dir, lockfile_name))
     if dep.ecosystem == "cargo":
-        return list(_ecosystem._rust_rules(dep, source_dir, lockfile_name))
+        return list(_rust_rules(dep, source_dir, lockfile_name))
     return []
 
 
@@ -172,7 +173,7 @@ def _store_verdict_if_hashed(
     `source_dir` produced a real artifact hash."""
     if not artifact_hash:
         return
-    _cache._store_verdict(
+    _store_verdict(
         cache_path,
         PackageVerdict(
             name=dep.name,
@@ -198,7 +199,7 @@ def _prehook_violations(
         if quarantine_v.severity is Severity.ERROR:
             signals.append("quarantined")
 
-    typosquat_of = _typosquat._find_typosquat(dep.ecosystem, dep.name)
+    typosquat_of = _find_typosquat(dep.ecosystem, dep.name)
     if typosquat_of is not None:
         violations.append(
             Violation(
@@ -263,7 +264,7 @@ def _apply_npm_and_prehook_checks(
     prehook quarantine/typosquat violations into `violations`/`signals`,
     in place."""
     if dep.ecosystem == "npm":
-        js_violation = _ecosystem._npm_non_registry_rule(dep, lockfile.name)
+        js_violation = _npm_non_registry_rule(dep, lockfile.name)
         if js_violation is not None:
             violations.append(js_violation)
 
@@ -310,7 +311,7 @@ def _scan_located_source(
     cannot be located this now appends a `VET-SOURCE-UNAVAILABLE` ERROR
     violation (fail-closed) instead of silently returning an empty,
     indistinguishable-from-clean capability set."""
-    source_dir = _source._locate_source(root, dep.ecosystem, dep.name, dep.version)
+    source_dir = _locate_source(root, dep.ecosystem, dep.name, dep.version)
     if source_dir is None:
         signals.append("source-unavailable")
         violations.append(_source_unavailable_violation(dep, lockfile.name))
@@ -578,7 +579,7 @@ def _lifecycle_violations(
     """VET-JS: node_modules lifecycle scripts not covered by [vet.allow]."""
     violations: list[Violation] = []
     skipped: list[str] = []
-    hooks = _lifecycle._scan_lifecycle_scripts(root)
+    hooks = _scan_lifecycle_scripts(root)
     if not (root / "node_modules").is_dir():
         skipped.append("VET-JS: no node_modules present")
     allow = dict(cfg.allow)
@@ -608,9 +609,9 @@ def _osv_violations(
     """VET005: osv-scanner advisories, or a skipped-note when unavailable/off."""
     if not cfg.osv:
         return [], ["VET005: osv disabled ([vet].osv = false)"]
-    if not _osv._is_available():
+    if not _is_available():
         return [], ["VET005: osv-scanner not on PATH"]
-    advisories = _osv._run_osv_scan(lockfile)
+    advisories = _run_osv_scan(lockfile)
     if advisories is None:
         return [], ["VET005: osv-scanner invocation failed"]
     violations: list[Violation] = []
@@ -688,6 +689,12 @@ def _resolve_lockfiles_and_deps(
 # frob:doc docs/modules/vet.md#public-api
 # frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_lockfile_arg
 # frob:tests tests/test_vet.py::TestScanTreeLockArg.test_scan_tree_unsupp_err
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's frob.vet \
+# leaf-submodule imports (_cache/_capability/_ecosystem/_lifecycle/ \
+# _obfuscation/_osv/_source/_supplychain/_typosquat), breaking an import cycle through \
+# frob/vet/__init__.py's namespace, same shape as T-2232; scan_tree's own behavior, \
+# signature, and documented contract are unchanged"
 def scan_tree(
     root: Path,
     *,
@@ -720,7 +727,7 @@ def scan_tree(
     # call, independent of which/how-many lockfiles were found -- these are
     # manifest/CI-workflow/tracked-file-tree properties, not per-dependency
     # source scans.
-    violations.extend(_supplychain.supply_chain_tree_violations(project_root))
+    violations.extend(supply_chain_tree_violations(project_root))
     for lockfile, deps in parsed_lockfiles:
         lf_violations, lf_verdicts = _scan_dependencies(
             deps,

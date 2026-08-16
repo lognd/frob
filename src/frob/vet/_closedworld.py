@@ -29,9 +29,11 @@ from pathlib import Path
 
 from frob.excludes import iter_files
 from frob.logging import get_logger
-from frob.vet import _cache, _capability, _source
+from frob.vet._cache import _latest_verdict, _store_verdict
+from frob.vet._capability import _scan_directory_capabilities
 from frob.vet._capability_registry import DANGEROUS_OPERATIONS, NO_CAPABILITY_MODULES
 from frob.vet._models import ClosedWorldAccounting, ImportResolution, PackageVerdict
+from frob.vet._source import _locate_source
 
 _log = get_logger(__name__)
 
@@ -66,6 +68,11 @@ def _registry_import_roots(language: str) -> frozenset[str]:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0180
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's \
+# frob.vet._cache/_capability/_source imports at the leaf submodules (breaking an \
+# import cycle through frob/vet/__init__.py's namespace, same shape as T-2232); \
+# walk_python_imports's own behavior, signature, and documented contract are unchanged"
 def walk_python_imports(
     source_dir: Path, *, max_files: int = _MAX_FILES
 ) -> frozenset[str]:
@@ -126,7 +133,7 @@ def _scan_capabilities_best_effort(
     best-effort like every other closed-world lookup here, never crash
     the whole accounting pass over one deeply nested dependency file."""
     try:
-        capabilities, _decode_to_exec = _capability._scan_directory_capabilities(
+        capabilities, _decode_to_exec = _scan_directory_capabilities(
             source_dir
         )
         return capabilities
@@ -192,6 +199,11 @@ def _source_hash(source_dir: Path, *, max_files: int = _MAX_FILES) -> str:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0180
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's \
+# frob.vet._cache/_capability/_source imports at the leaf submodules (breaking an \
+# import cycle through frob/vet/__init__.py's namespace, same shape as T-2232); \
+# resolve_import's own behavior, signature, and documented contract are unchanged"
 def resolve_import(
     import_name: str,
     *,
@@ -221,7 +233,7 @@ def resolve_import(
             resolution="no-capability",
             detail="curated stdlib module, no effectful surface",
         )
-    cached = _cache._latest_verdict(cache_path, ecosystem, import_name)
+    cached = _latest_verdict(cache_path, ecosystem, import_name)
     if cached is not None:
         return ImportResolution(
             import_name=import_name,
@@ -231,7 +243,7 @@ def resolve_import(
                 f"capabilities={sorted(cached.capabilities)}"
             ),
         )
-    source_dir = _source._locate_source(root, ecosystem, import_name, "unknown")
+    source_dir = _locate_source(root, ecosystem, import_name, "unknown")
     if source_dir is not None:
         capabilities = _scan_capabilities_best_effort(source_dir, import_name)
         resolved_version = _best_effort_version(import_name)
@@ -243,7 +255,7 @@ def resolve_import(
             artifact_hash=artifact_hash,
             capabilities=capabilities,
         )
-        _cache._store_verdict(cache_path, verdict)
+        _store_verdict(cache_path, verdict)
         _log.info(
             "vet: closed-world: scanned+cached %s/%s@%s, capabilities=%s",
             ecosystem,
@@ -273,6 +285,12 @@ def resolve_import(
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-0180
+# frob:ticket T-2233
+# frob:waive AFFECT001 reason="T-2233: this diff only retargets this file's \
+# frob.vet._cache/_capability/_source imports at the leaf submodules (breaking an \
+# import cycle through frob/vet/__init__.py's namespace, same shape as T-2232); \
+# closed_world_accounting's own behavior, signature, and documented contract are \
+# unchanged"
 def closed_world_accounting(
     root: Path,
     ecosystem: str,
@@ -287,7 +305,7 @@ def closed_world_accounting(
     `source_available=False` (empty `resolutions`) when the source cannot
     be located locally -- an honest "could not check", per docs/modules/
     vet.md "Honest limits", never silently read as zero unknowns."""
-    source_dir = _source._locate_source(root, ecosystem, name, version)
+    source_dir = _locate_source(root, ecosystem, name, version)
     if source_dir is None:
         _log.info(
             "vet: closed-world: no local source for %s/%s@%s; accounting skipped",
