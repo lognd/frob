@@ -28,7 +28,9 @@ import pytest
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
 from frob.app.ticket_runner._query import (
+    _load_unlanded_summary_cache,
     _render_unlanded_branch_work_summary,
+    _save_unlanded_summary_cache,
     _stale_lease_reasons,
 )
 from frob.tickets._leases import LEASE_TTL_SECONDS, _LeaseRecord, leases_dir
@@ -152,6 +154,7 @@ class TestStaleLeaseReasons:
 
 
 # frob:ticket T-1934
+# frob:ticket T-2127
 class TestRenderUnlandedBranchWorkSummary:
     """T-1934 REQUIRED-C: `frob ticket doable` surfaces "N branch(es)
     carry unlanded ticket work" alongside T-1876's own stale-lease
@@ -197,3 +200,80 @@ class TestRenderUnlandedBranchWorkSummary:
 
         assert "1 branch(es) carry unlanded ticket work" in caplog.text
         assert "runner-wiring" in caplog.text
+
+    # frob:ticket T-2127
+    def test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan(
+        self, repo: Path, caplog, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan
+        # T-2127: the underlying scan is a git spawn per local branch,
+        # measured ~95s against this repo's own ~150 branches -- slow
+        # enough to push `frob ticket doable` past its foreground budget
+        # on every call. A second call within the TTL must reuse the
+        # cached branch list rather than re-running `_unlanded_branch_
+        # work`, confirmed here by making a second real scan explode.
+        import logging
+
+        caplog.set_level(logging.INFO)
+        _run(["git", "checkout", "-q", "-b", "runner-wiring"], repo)
+        ticket_dir = repo / "tickets" / "T-9101"
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text(
+            "---\nid: T-9101\ntitle: 'x'\nstate: in-progress\nkind: bug\n"
+            "origin: human\ncreated: '2026-08-09'\n---\nbody\n",
+            encoding="utf-8",
+        )
+        (ticket_dir / "done-report.md").write_text(
+            "## Done report\n\nDone.\n", encoding="utf-8"
+        )
+        _commit_all(repo, "finish T-9101 on runner-wiring")
+        _run(["git", "checkout", "-q", "main"], repo)
+        _run(["git", "clean", "-fdq", "--", "tickets"], repo)
+
+        _render_unlanded_branch_work_summary(repo)
+        assert "runner-wiring" in caplog.text
+        caplog.clear()
+
+        def _boom(*_args, **_kwargs):  # noqa: ANN001, ANN401
+            raise AssertionError(
+                "a second call within the TTL must not re-run the scan"
+            )
+
+        monkeypatch.setattr(
+            "frob.tickets._unlanded._unlanded_branch_work", _boom
+        )
+        _render_unlanded_branch_work_summary(repo)
+        assert "runner-wiring" in caplog.text
+
+    # frob:ticket T-2127
+    def test_expired_cache_is_ignored(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_expired_cache_is_ignored
+        import time
+
+        _save_unlanded_summary_cache(repo, ("stale-branch",))
+        path = repo / ".frob" / "unlanded-summary-cache.json"
+        raw = path.read_text(encoding="utf-8")
+        assert '"stale-branch"' in raw
+        # Backdate the cache past the TTL by writing an ancient
+        # computed_at directly (no public setter for "expired" on
+        # purpose -- the cache never lies about its own age).
+        import json as _json
+
+        payload = _json.loads(raw)
+        payload["computed_at"] = time.time() - 10_000.0
+        path.write_text(_json.dumps(payload), encoding="utf-8")
+        assert _load_unlanded_summary_cache(repo) is None
+
+    # frob:ticket T-2127
+    def test_fresh_cache_round_trips(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_fresh_cache_round_trips
+        _save_unlanded_summary_cache(repo, ("a", "b"))
+        cached = _load_unlanded_summary_cache(repo)
+        assert cached is not None
+        assert cached.branches == ("a", "b")

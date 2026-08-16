@@ -8,9 +8,13 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import json
 import sys
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
+
+from pydantic import BaseModel
 
 from frob.app._style import style_state, style_ticket_id
 from frob.app.config import AppConfig
@@ -656,7 +660,69 @@ def _render_doable_dispatchable(
             _log.info("  %s", _doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
 
 
+# T-2127: TTL a `doable` caller reuses `_unlanded_branch_work`'s own
+#: findings within, instead of re-running its O(branch-count) git-spawn
+#: loop on every single `doable` invocation. 300s is short enough that a
+#: branch finishing/landing between calls is noticed within one
+#: coordinator-attention-span, long enough that back-to-back `doable`
+#: calls (a common polling pattern, `docs/guides/coordinator-scripts.md`)
+#: do not each pay the full scan.
+_UNLANDED_SUMMARY_CACHE_TTL_S = 300.0
+
+_UNLANDED_SUMMARY_CACHE_REL = Path(".frob") / "unlanded-summary-cache.json"
+
+
+class _UnlandedSummaryCache(BaseModel):
+    """`.frob/unlanded-summary-cache.json`'s single record (T-2127):
+    the branch names `_unlanded_branch_work` found carrying unlanded
+    ticket work, and when that scan ran -- `_render_unlanded_branch_
+    work_summary`'s own memoization of a scan measured (2026-08-16,
+    ~150 local branches) at ~95s, which made `frob ticket doable` itself
+    exceed the ~100-110s foreground budget on every call, silently
+    losing the T-1934 summary line it was meant to surface (a slow-but-
+    correct detector a caller times out before ever reading is exactly
+    as invisible as no detector at all)."""
+
+    model_config = {}
+
+    computed_at: float
+    branches: tuple[str, ...]
+
+
+def _load_unlanded_summary_cache(root: Path) -> _UnlandedSummaryCache | None:
+    """The cached `_UnlandedSummaryCache` for `root`, or `None` on any
+    absence/corruption/expiry -- a cache miss for any reason degrades to
+    "recompute", never to "skip the summary silently" (T-2127: this is a
+    performance memoization, not a second source of truth)."""
+    path = root / _UNLANDED_SUMMARY_CACHE_REL
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        cache = _UnlandedSummaryCache.model_validate(raw)
+    except Exception:  # noqa: BLE001 -- any parse/validate failure is just a miss
+        return None
+    if time.time() - cache.computed_at > _UNLANDED_SUMMARY_CACHE_TTL_S:
+        return None
+    return cache
+
+
+def _save_unlanded_summary_cache(root: Path, branches: tuple[str, ...]) -> None:
+    """Persist a fresh `_UnlandedSummaryCache` for `root` -- best-effort:
+    a write failure (read-only tree, missing `.frob/`) is swallowed, since
+    a caller that cannot cache the result can still use the one it just
+    computed for THIS call, it just pays the full scan again next time."""
+    path = root / _UNLANDED_SUMMARY_CACHE_REL
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        cache = _UnlandedSummaryCache(computed_at=time.time(), branches=branches)
+        path.write_text(cache.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    except OSError:
+        _log.warning("doable: unlanded-branch-work cache write failed under %s", root)
+
+
 # frob:ticket T-1934
+# frob:ticket T-2127
 def _render_unlanded_branch_work_summary(root: Path | None) -> None:
     """Print an "N branch(es) carry unlanded ticket work" line, alongside
     T-1876's own stale-lease warning (T-1934 REQUIRED-C: surfaced where a
@@ -666,15 +732,37 @@ def _render_unlanded_branch_work_summary(root: Path | None) -> None:
     verdicts). Silent (no line at all) when nothing is found, matching
     `_render_active_leases`'s own posture of only speaking up when there
     is something to say. `root=None` is a no-op, matching every other
-    lease/reconcile helper's `root=None` convention in this module."""
+    lease/reconcile helper's `root=None` convention in this module.
+
+    T-2127: the underlying `_unlanded_branch_work` scan is a `git`
+    spawn per local branch (diff + grep + ls-tree, `_finished_signals_
+    on_branch`'s own cost) -- correct, already wired here since T-1934,
+    but measured at ~95s wall against this repo's ~150 local branches
+    (2026-08-16), which is enough on its own to push a bare `frob ticket
+    doable` past the foreground `timeout` budget every dispatched agent
+    is required to use (`docs/guides/agent-playbook.md` section 3b) --
+    the summary line this function exists to print was structurally
+    unreachable in practice, not because the detector was wrong, but
+    because the caller timed out before this function ever returned.
+    `_load_unlanded_summary_cache`/`_save_unlanded_summary_cache` memoize
+    the branch list for `_UNLANDED_SUMMARY_CACHE_TTL_S` so repeated
+    `doable` calls inside that window reuse the prior scan instead of
+    repeating it -- the detection logic in `frob.tickets._unlanded`
+    itself is untouched (out of this ticket's declared scope); this is
+    a caching layer around it, not a rewrite of it."""
     if root is None:
         return
-    from frob.tickets._unlanded import _unlanded_branch_work
+    cached = _load_unlanded_summary_cache(root)
+    if cached is not None:
+        branches = list(cached.branches)
+    else:
+        from frob.tickets._unlanded import _unlanded_branch_work
 
-    findings = _unlanded_branch_work(root)
-    if not findings:
+        findings = _unlanded_branch_work(root)
+        branches = sorted({finding.branch for finding in findings})
+        _save_unlanded_summary_cache(root, tuple(branches))
+    if not branches:
         return
-    branches = sorted({finding.branch for finding in findings})
     _log.info(
         "%d branch(es) carry unlanded ticket work (finished on a branch, "
         "not landed to main): %s -- see `frob ticket reconcile`",

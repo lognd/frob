@@ -21,14 +21,14 @@
       "ticket": "T-1628"
     },
     "cli::fs.read": {
-      "accepted_count": 14,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on cli from 0 to 14 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 15,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on cli from 14 to 15 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "cli::fs.write": {
-      "accepted_count": 18,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 19,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on cli from 18 to 19 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "cli::net": {
       "accepted_count": 1,
@@ -171,8 +171,8 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 127,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 126 to 127 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 128,
+      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 127 to 128 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::fs.write": {
