@@ -15,8 +15,16 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_models.py
 - scripts/verify_lands.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: verify_lands.py's frob:doc target -- this ticket changes its argument interface,
+    so the doc must move with it
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: Landing a ticket persists the resulting merge_commit as a structured field
