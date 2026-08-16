@@ -22,7 +22,7 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from frob.dup import _core
+from frob.dup._core import anti_unify
 from frob.dup._models import CloneBinding, ClonePair, CloneRegion, CloneTemplate
 from frob.logging import get_logger
 
@@ -321,6 +321,12 @@ def _hole_param_name(hole: int, bindings: tuple[tuple[CloneBinding, ...], ...]) 
 
 # frob:doc docs/modules/dup.md#clone-template
 # frob:waive ARCH001 reason="an incremental Plotkin lgg fold threading running_labels/running_parents state across an outer fold loop and then a second per-member re-derive loop that depends on the fold's final result; both loops are algorithmically load-bearing steps of one anti-unification pass, not independent checks, so splitting them would just move the same shared running state across a function boundary without reducing it"  # noqa: E501
+# frob:ticket T-2232
+# frob:waive AFFECT001 reason="T-2232: this diff only retargets this file's \
+# frob.dup._core import at the leaf submodule (breaking an import cycle through \
+# frob/dup/__init__.py's namespace, T-2211's discovery of it); build_group_template's \
+# own behavior, signature, and documented contract are unchanged, nothing here for \
+# docs/modules/dup.md#clone-template to reflect"
 def build_group_template(
     root: Path, pairs: tuple[ClonePair, ...]
 ) -> CloneTemplate | None:
@@ -366,7 +372,7 @@ def build_group_template(
 
     running_labels, running_parents, _running_spans, _running_fields = trees[0]
     for labels, parents, _spans, _fields in trees[1:]:
-        fold_result = _core.anti_unify(running_labels, running_parents, labels, parents)
+        fold_result = anti_unify(running_labels, running_parents, labels, parents)
         if fold_result.is_err:
             _log.debug(
                 "build_group_template: fold refused (%s)", fold_result.danger_err
@@ -385,7 +391,7 @@ def build_group_template(
     for region, (labels, parents, spans, _fields), source in zip(
         members, trees, sources, strict=True
     ):
-        member_result = _core.anti_unify(
+        member_result = anti_unify(
             running_labels, running_parents, labels, parents
         )
         if member_result.is_err:

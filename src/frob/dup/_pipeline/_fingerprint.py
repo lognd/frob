@@ -18,7 +18,17 @@ from typing import Any, cast
 from typani import Err, Ok
 from typani.result import Result
 
-from frob.dup import _cache, _core
+from frob.dup._cache import get_fingerprint, get_verdict, put_fingerprint, put_verdict
+from frob.dup._core import (
+    INSTALL_HINT,
+    _candidate_pairs,
+    _exact_regions,
+    _r3_canonical_hash,
+    _tree_edit_similarity,
+    _wl_hash,
+    _winnow_fingerprints,
+    core_available,
+)
 from frob.dup._models import (
     CloneMatchGroup,
     ClonePair,
@@ -75,14 +85,14 @@ def _r3_fingerprint(
 ) -> str | None:
     """R3 canonical hash for a normalized token stream, cache-backed. `None`
     when the frob_core kernel errors (caller skips the symbol's R4/R5)."""
-    cached = _cache.get_fingerprint(state.root, digest, "r3")
+    cached = get_fingerprint(state.root, digest, "r3")
     if cached is not None:
         state.cache_hits += 1
         return str(cached[0])
-    result = _core._r3_canonical_hash(normalized)
+    result = _r3_canonical_hash(normalized)
     if result.is_err:
         return None
-    _cache.put_fingerprint(state.root, digest, "r3", (result.danger_ok,))
+    put_fingerprint(state.root, digest, "r3", (result.danger_ok,))
     return result.danger_ok
 
 
@@ -90,15 +100,15 @@ def _r4_fingerprint(
     state: _FpState, symref: str, digest: str, normalized: tuple[str, ...]
 ) -> None:
     """Compute/cache the R4 winnowed fingerprint set for `symref`."""
-    cached = _cache.get_fingerprint(state.root, digest, _R4_FP_RUNG)
+    cached = get_fingerprint(state.root, digest, _R4_FP_RUNG)
     if cached is not None:
         state.cache_hits += 1
         state.fp_by_ref[symref] = cast("tuple[int, ...]", tuple(cached))
         return
-    result = _core._winnow_fingerprints(normalized, _R4_K, _R4_W)
+    result = _winnow_fingerprints(normalized, _R4_K, _R4_W)
     if result.is_ok:
         state.fp_by_ref[symref] = result.danger_ok
-        _cache.put_fingerprint(state.root, digest, _R4_FP_RUNG, result.danger_ok)
+        put_fingerprint(state.root, digest, _R4_FP_RUNG, result.danger_ok)
 
 
 def _dataflow_graph(
@@ -118,15 +128,15 @@ def _r5_fingerprint(
 ) -> int | None:
     """R5 Weisfeiler-Lehman graph hash for a symbol, cache-backed. `None`
     when the frob_core kernel errors."""
-    cached = _cache.get_fingerprint(state.root, digest, _R5_FP_RUNG)
+    cached = get_fingerprint(state.root, digest, _R5_FP_RUNG)
     if cached is not None:
         state.cache_hits += 1
         return cast(int, cached[0])
     adjacency, labels = _dataflow_graph(state.root, record, body_tokens)
-    result = _core._wl_hash(adjacency, labels, _R5_ITERATIONS)
+    result = _wl_hash(adjacency, labels, _R5_ITERATIONS)
     if result.is_err:
         return None
-    _cache.put_fingerprint(state.root, digest, _R5_FP_RUNG, (result.danger_ok,))
+    put_fingerprint(state.root, digest, _R5_FP_RUNG, (result.danger_ok,))
     return result.danger_ok
 
 
@@ -277,7 +287,7 @@ def _r4_alignment(
 ) -> tuple[float, tuple[tuple[int, int], ...]] | None:
     """The statement-Levenshtein similarity + alignment for an R4 candidate
     pair, cache-backed. `None` when the frob_core kernel errors."""
-    cached = _cache.get_verdict(state.root, d1, d2, _R4_VERDICT_METHOD, _CORPUS_EPOCH)
+    cached = get_verdict(state.root, d1, d2, _R4_VERDICT_METHOD, _CORPUS_EPOCH)
     if cached is not None:
         state.cache_hits += 1
         raw = cast("list[list[int]]", cached[1])
@@ -310,11 +320,11 @@ def _r4_alignment(
             )
         )
     )
-    result = _core._tree_edit_similarity(a_hashes, b_hashes)
+    result = _tree_edit_similarity(a_hashes, b_hashes)
     if result.is_err:
         return None
     sim, alignment_pairs = result.danger_ok
-    _cache.put_verdict(
+    put_verdict(
         state.root,
         d1,
         d2,
@@ -382,7 +392,7 @@ def _r4_reported_sim(
     fallback: float,
 ) -> float:
     """Reported R4 similarity: cached/real APTED, else `fallback`."""
-    cached = _cache.get_verdict(
+    cached = get_verdict(
         state.root, d1, d2, _R4_APTED_VERDICT_METHOD, _CORPUS_EPOCH
     )
     if cached is not None:
@@ -392,7 +402,7 @@ def _r4_reported_sim(
         state.root, snapshot.symbols[a], snapshot.symbols[b]
     )
     if apted_sim is not None:
-        _cache.put_verdict(
+        put_verdict(
             state.root,
             d1,
             d2,
@@ -417,7 +427,7 @@ def _r4_groups(
     if len(r4_refs) < 2:
         return []
     sets = tuple(state.fp_by_ref[r] for r in r4_refs)
-    candidates_result = _core._candidate_pairs(sets, _R4_MIN_SHARED)
+    candidates_result = _candidate_pairs(sets, _R4_MIN_SHARED)
     if candidates_result.is_err:
         _log.debug("find_clones: r4 candidate discovery unavailable")
         return []
@@ -533,7 +543,7 @@ def _r4_candidate_pair(
     touched: frozenset[str] | None,
     seen_pairs: set[frozenset[str]],
 ) -> ClonePair | None:
-    """One `_core._candidate_pairs` index pair, filtered and verified into a
+    """One `_candidate_pairs` index pair, filtered and verified into a
     `ClonePair` (or `None`)."""
     if i == j:
         # T-0191: unlike _bucket_pairs' range(i+1, len(members)) (which
@@ -594,7 +604,7 @@ def _region_groups(
     if len(refs) < 2:
         return []
     normalized_docs = tuple(_r2_normalize(state.body_tokens_by_ref[r]) for r in refs)
-    result = _core._exact_regions(
+    result = _exact_regions(
         normalized_docs, cfg.region_min_tokens, cfg.region_run_cap
     )
     if result.is_err:
@@ -635,7 +645,7 @@ def _region_candidate_pair(
     seen_pairs: set[frozenset[str]],
     hit: tuple[int, int, int, int, int],
 ) -> ClonePair | None:
-    """One `_core._exact_regions` hit `(da, oa, db, ob, length)`, filtered and
+    """One `_exact_regions` hit `(da, oa, db, ob, length)`, filtered and
     turned into an r1.5 `ClonePair` (or `None`)."""
     da, oa, db, ob, length = hit
     a, b = refs[da], refs[db]
@@ -681,6 +691,12 @@ def _r5_groups(
 # frob:doc docs/modules/dup.md#public-api
 # frob:ticket T-0918
 # frob:ticket T-1224
+# frob:ticket T-2232
+# frob:waive AFFECT001 reason="T-2232: this diff only retargets this file's \
+# frob.dup._cache/frob.dup._core imports at the leaf submodules (breaking an import \
+# cycle through frob/dup/__init__.py's namespace, T-2211's discovery of it); \
+# find_clones's own behavior, signature, and documented contract are unchanged, \
+# nothing here for docs/modules/dup.md#public-api to reflect"
 def find_clones(
     snapshot: GraphSnapshot, cfg: DupConfig, diff: Diff | None = None
 ) -> Result[CloneReport, DupError]:
@@ -706,10 +722,10 @@ def find_clones(
     standalone rebuild only blocks concurrent readers for the brief
     duration of an actual cache write, not for the whole rung ladder.
     """
-    if not _core.core_available():
+    if not core_available():
         _log.warning(
             "find_clones: frob_core unavailable, refusing R3+ scan. %s",
-            _core.INSTALL_HINT,
+            INSTALL_HINT,
         )
         return Err(DupError.CoreUnavailable)
 

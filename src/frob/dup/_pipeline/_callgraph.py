@@ -13,7 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from frob.dup import _core
+from frob.dup._core import _apted_similarity
 from frob.dup._pipeline._shared import (
     _ASSIGNMENT_LABELS,
     _BLOCK_LABELS,
@@ -529,7 +529,7 @@ def _apted_similarity_for_pair(
         return None
     labels_a, parents_a = flatten_tree(left_tree.danger_ok)
     labels_b, parents_b = flatten_tree(right_tree.danger_ok)
-    sim_result = _core._apted_similarity(
+    sim_result = _apted_similarity(
         tuple(labels_a), tuple(parents_a), tuple(labels_b), tuple(parents_b)
     )
     if sim_result.is_err:
