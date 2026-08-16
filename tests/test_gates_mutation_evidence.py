@@ -213,6 +213,59 @@ def _bug_ticket(
     )
 
 
+# frob:ticket T-2218
+class TestQuotedRanges:
+    """`_quoted_char_ranges` (T-2218): the shared markdown-structure
+    primitive `_bug002_waiver_reason`/`_no_behavior_change_reason`/
+    `_must_still_pass_controls` all apply before accepting a directive
+    match as a live declaration."""
+
+    def test_fenced_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_fenced_quoted  # noqa: E501
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = 'text\n```\nfrob:waive BUG002 reason="x"\n```\nmore\n'
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("frob:waive")
+        assert any(start <= needle < end for start, end in ranges)
+
+    def test_inline_span_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_inline_span_quoted  # noqa: E501
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = 'text `frob:waive BUG002 reason="x"` more\n'
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("frob:waive")
+        assert any(start <= needle < end for start, end in ranges)
+
+    def test_blockquote_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_blockquote_quoted  # noqa: E501
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = 'text\n> frob:waive BUG002 reason="x"\nmore\n'
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("frob:waive")
+        assert any(start <= needle < end for start, end in ranges)
+
+    def test_indented_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_indented_quoted  # noqa: E501
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = 'text\n\n    frob:waive BUG002 reason="x"\n\nmore\n'
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("frob:waive")
+        assert any(start <= needle < end for start, end in ranges)
+
+    def test_plain_text_not_quoted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_plain_text_not_quoted  # noqa: E501
+        from frob.gates._mutation_evidence import _quoted_char_ranges
+
+        body = 'text\nfrob:waive BUG002 reason="x"\nmore\n'
+        ranges = _quoted_char_ranges(body)
+        needle = body.index("frob:waive")
+        assert not any(start <= needle < end for start, end in ranges)
+
+
 class TestBug002Waiver:
     def test_reason_present_suppresses(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_reason_present_suppresses  # noqa: E501
@@ -228,6 +281,55 @@ class TestBug002Waiver:
 
     def test_no_directive_at_all(self) -> None:
         assert _bug002_waiver_reason(_bug_ticket()) is None
+
+    # frob:ticket T-2218
+    def test_directive_inside_inline_code_span_does_not_suppress(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_directive_inside_inline_code_span_does_not_suppress  # noqa: E501
+        """T-2218 headline repro: `tickets/T-2215/ticket.md:56`'s own
+        shape -- prose DESCRIBING the escape hatch, with the directive
+        quoted inside backticks as an example, must NOT be treated as a
+        declared waiver. MUST FAIL against pre-fix `_BUG002_WAIVER_RE.
+        search`, which has no notion of markdown structure at all."""
+        body = (
+            "## Description\n"
+            "This describes the escape-hatch shape (a "
+            '`frob:waive BUG002 reason="..."` body-text directive) while '
+            "explaining the hole.\n"
+        )
+        assert _bug002_waiver_reason(_bug_ticket(body=body)) is None
+
+    def test_directive_inside_fenced_code_block_does_not_suppress(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_directive_inside_fenced_code_block_does_not_suppress  # noqa: E501
+        body = (
+            "## Description\nExample shape:\n```\n"
+            'frob:waive BUG002 reason="example only"\n```\n'
+        )
+        assert _bug002_waiver_reason(_bug_ticket(body=body)) is None
+
+    def test_directive_inside_blockquote_does_not_suppress(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_directive_inside_blockquote_does_not_suppress  # noqa: E501
+        body = (
+            "## Description\nQuoting another ticket:\n"
+            '> frob:waive BUG002 reason="quoted from elsewhere"\n'
+        )
+        assert _bug002_waiver_reason(_bug_ticket(body=body)) is None
+
+    def test_genuine_declared_waiver_still_suppresses(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBug002Waiver.test_genuine_declared_waiver_still_suppresses  # noqa: E501
+        """MUST-STILL-PASS control (T-2218's critical half): a real,
+        plainly-declared waiver alongside prose discussing the mechanism
+        must still be honored -- a fix that stops recognizing genuine
+        waivers would satisfy the repro above while silently disabling
+        this whole escape hatch."""
+        body = (
+            "## Description\n"
+            "This describes the escape-hatch shape (a "
+            '`frob:waive BUG002 reason="..."` body-text directive).\n\n'
+            'frob:waive BUG002 reason="genuinely nondeterministic"\n'
+        )
+        assert _bug002_waiver_reason(_bug_ticket(body=body)) == (
+            "genuinely nondeterministic"
+        )
 
 
 class TestNoBehaviorChange:
@@ -258,6 +360,34 @@ class TestNoBehaviorChange:
         from frob.gates._mutation_evidence import _no_behavior_change_reason
 
         assert _no_behavior_change_reason(_bug_ticket()) is None
+
+    # frob:ticket T-2218
+    def test_directive_inside_inline_code_span_does_not_recognize(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_directive_inside_inline_code_span_does_not_recognize  # noqa: E501
+        from frob.gates._mutation_evidence import _no_behavior_change_reason
+
+        body = (
+            "## Description\nThe escape hatch here is "
+            '`frob:no-behavior-change reason="..."`, documented for '
+            "reference.\n"
+        )
+        assert _no_behavior_change_reason(_bug_ticket(body=body)) is None
+
+    def test_genuine_declared_directive_still_recognized(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_genuine_declared_directive_still_recognized  # noqa: E501
+        """MUST-STILL-PASS control: a real declaration alongside quoted
+        prose discussing the mechanism must still be honored."""
+        from frob.gates._mutation_evidence import _no_behavior_change_reason
+
+        body = (
+            "## Description\nThe escape hatch here is "
+            '`frob:no-behavior-change reason="..."`, documented for '
+            "reference.\n\n"
+            'frob:no-behavior-change reason="pure rename, no logic change"\n'
+        )
+        assert _no_behavior_change_reason(_bug_ticket(body=body)) == (
+            "pure rename, no logic change"
+        )
 
 
 class TestBugReproViolationsNoBehaviorChange:
@@ -673,6 +803,31 @@ class TestMustStillPassControls:
     def test_no_directive_is_empty(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_no_directive_is_empty  # noqa: E501
         assert _must_still_pass_controls(_bug_ticket()) == ()
+
+    # frob:ticket T-2218
+    def test_directive_inside_fenced_code_block_is_not_extracted(self) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_directive_inside_fenced_code_block_is_not_extracted  # noqa: E501
+        body = (
+            "## Description\nExample directive shape:\n```\n"
+            "frob:must-still-pass tests/test_x.py::test_x\n```\n"
+        )
+        assert _must_still_pass_controls(_bug_ticket(body=body)) == ()
+
+    def test_genuine_directive_alongside_quoted_example_still_extracted(
+        self,
+    ) -> None:
+        # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassControls.test_genuine_directive_alongside_quoted_example_still_extracted  # noqa: E501
+        """MUST-STILL-PASS control: a real directive alongside a quoted
+        example of the same shape must still be extracted, and ONLY the
+        genuine one."""
+        body = (
+            "## Description\nExample directive shape:\n```\n"
+            "frob:must-still-pass tests/test_quoted.py::test_quoted\n```\n"
+            "frob:must-still-pass tests/test_real.py::test_real\n"
+        )
+        assert _must_still_pass_controls(_bug_ticket(body=body)) == (
+            "tests/test_real.py::test_real",
+        )
 
 
 class TestMustStillPassViolations:

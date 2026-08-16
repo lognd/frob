@@ -278,6 +278,101 @@ _NO_BEHAVIOR_CHANGE_RE = re.compile(r'frob:no-behavior-change\s+reason="([^"]*)"
 _MUST_STILL_PASS_RE = re.compile(r"frob:must-still-pass\s+(\S+)")
 
 
+# frob:ticket T-2218
+# frob:tests tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_fenced_quoted
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_inline_span_quoted
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_blockquote_quoted
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_indented_quoted
+# frob:tests \
+# tests/test_gates_mutation_evidence.py::TestQuotedRanges.test_plain_text_not_quoted
+def _quoted_char_ranges(body: str) -> tuple[tuple[int, int], ...]:
+    """Character-offset ranges of `body` (a ticket's markdown body text)
+    that markdown QUOTES rather than DECLARES: a fenced code block, an
+    indented code block, a blockquote, or an inline code span (T-2218).
+    A directive-looking string inside any of these ranges is being shown
+    as an EXAMPLE, not asserted as the ticket's own live directive --
+    the exact ambiguity `tickets/T-2215/ticket.md:56`'s own prose
+    ('a `frob:waive BUG003 reason="..."` body-text directive') measured
+    against `_BUG002_WAIVER_RE` and self-waived.
+
+    Deliberately grammar-based (`tree_sitter_language_pack`'s `markdown`
+    + `markdown_inline` grammars, the same loading mechanism `frob.lang`
+    uses -- see that module's own `_EXTENSION_TABLE`), not an
+    indentation/substring heuristic: a fenced/indented code block and a
+    blockquote are a REAL markdown-grammar distinction from a plain
+    paragraph, and only the markdown_inline grammar (parsed separately,
+    per markdown's own two-stage design -- the block grammar leaves
+    inline content as opaque `inline` leaf nodes) can tell an inline code
+    span (`` `...` ``) apart from a bare word. Deliberately NOT
+    `frob.lang.raw_tree`/`COMMENT_TYPES` -- those answer 'is line N of a
+    SOURCE file (a real filesystem path with a registered grammar) inside
+    a comment', a different question, and `raw_tree` requires a `Path`
+    with `frob.lang`'s own suffix-to-language table matching; a ticket's
+    `body` is an in-memory string with no such path, and `tickets.md`
+    is deliberately excluded from `frob.graph`'s own file walk (see
+    `_BUG002_WAIVER_RE`'s comment) -- routing through `frob.lang` here
+    would return an empty set for every ticket body, exactly the same
+    silent-disable failure mode already caught and rejected once this
+    session for a different suggestion (`_genuine_comment_lines`).
+
+    A code-block/blockquote node's WHOLE byte range is excluded in one
+    step (no need to descend further -- everything inside a fenced code
+    block is definitionally quoted, including a directive that happens
+    to look like it starts a new blockquote/fence). Byte ranges are
+    converted to CHARACTER offsets (`str.find`/regex `Match.span()`
+    operate in characters, tree-sitter in UTF-8 bytes) via a `bytes.
+    decode` slice -- this repo's own ASCII-only convention (CLAUDE.md)
+    means the two coincide in practice, but this stays correct even if
+    a ticket body ever contains non-ASCII text."""
+    from tree_sitter_language_pack import get_parser
+
+    body_bytes = body.encode("utf-8")
+    block_tree = get_parser("markdown").parse(body_bytes)
+    inline_parser = get_parser("markdown_inline")
+    byte_ranges: list[tuple[int, int]] = []
+
+    def walk_block(node) -> None:  # noqa: ANN001
+        if node.type in ("fenced_code_block", "indented_code_block", "block_quote"):
+            byte_ranges.append((node.start_byte, node.end_byte))
+            return
+        if node.type == "inline":
+            inline_text = body_bytes[node.start_byte : node.end_byte]
+            inline_tree = inline_parser.parse(inline_text)
+
+            def walk_inline(inline_node, base: int) -> None:  # noqa: ANN001
+                if inline_node.type == "code_span":
+                    byte_ranges.append(
+                        (base + inline_node.start_byte, base + inline_node.end_byte)
+                    )
+                    return
+                for child in inline_node.children:
+                    walk_inline(child, base)
+
+            walk_inline(inline_tree.root_node, node.start_byte)
+            return
+        for child in node.children:
+            walk_block(child)
+
+    walk_block(block_tree.root_node)
+
+    def byte_to_char(offset: int) -> int:
+        return len(body_bytes[:offset].decode("utf-8"))
+
+    return tuple((byte_to_char(s), byte_to_char(e)) for s, e in byte_ranges)
+
+
+def _is_quoted(pos: int, quoted_ranges: tuple[tuple[int, int], ...]) -> bool:
+    """`True` when character offset `pos` (a regex match's own `start()`)
+    falls inside one of `_quoted_char_ranges`'s ranges -- the shared
+    predicate every directive-extraction function below applies before
+    accepting a match as a live DECLARATION rather than a quoted
+    DISCUSSION (T-2218)."""
+    return any(start <= pos < end for start, end in quoted_ranges)
+
+
 class _BugReproOutcome(Enum):
     """The six possible outcomes of running BUG002's single designated
     reproduction test against the ticket's parent commit."""
@@ -364,9 +459,18 @@ def _bug002_waiver_reason(ticket: Ticket) -> str | None:
     """The `reason="..."` text of a `frob:waive BUG002 reason="..."` line
     found anywhere in `ticket.body`, or `None` if no such (well-formed)
     waiver is present. See `_BUG002_WAIVER_RE`'s comment for why this scans
-    the ticket body directly instead of going through `frob.gates._waive`."""
-    match = _BUG002_WAIVER_RE.search(ticket.body)
-    return match.group(1) if match else None
+    the ticket body directly instead of going through `frob.gates._waive`.
+
+    T-2218: skips any match sitting inside a quoted range (`_quoted_char_
+    ranges` -- a fenced/indented code block, blockquote, or inline code
+    span), so a ticket that merely DISCUSSES the waiver mechanism in
+    prose (quoting the directive as an example) is never mistaken for
+    one that DECLARES it; the first non-quoted match still wins."""
+    quoted = _quoted_char_ranges(ticket.body)
+    for match in _BUG002_WAIVER_RE.finditer(ticket.body):
+        if not _is_quoted(match.start(), quoted):
+            return match.group(1)
+    return None
 
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
@@ -376,9 +480,16 @@ def _no_behavior_change_reason(ticket: Ticket) -> str | None:
     line found anywhere in `ticket.body` (T-1616), or `None` if absent.
     Same body-text-scan rationale as `_bug002_waiver_reason` immediately
     above -- `tickets.md` is excluded from `frob.graph`'s doc/source walk,
-    so this directive can only ever live here, scanned directly."""
-    match = _NO_BEHAVIOR_CHANGE_RE.search(ticket.body)
-    return match.group(1) if match else None
+    so this directive can only ever live here, scanned directly.
+
+    T-2218: same quoted-range skip as `_bug002_waiver_reason` -- a match
+    inside a fenced/indented code block, blockquote, or inline code span
+    is a quoted example, not a live directive."""
+    quoted = _quoted_char_ranges(ticket.body)
+    for match in _NO_BEHAVIOR_CHANGE_RE.finditer(ticket.body):
+        if not _is_quoted(match.start(), quoted):
+            return match.group(1)
+    return None
 
 
 # frob:ticket T-2193
@@ -392,8 +503,19 @@ def _must_still_pass_controls(ticket: Ticket) -> tuple[str, ...]:
     author-named designation (mirroring `--designate-repro`'s own
     explicit-not-inferred posture, per this ticket's own acceptance
     criteria), never auto-derived from the evidence set or from the
-    suite passing."""
-    return tuple(_MUST_STILL_PASS_RE.findall(ticket.body))
+    suite passing.
+
+    T-2218: same quoted-range skip as `_bug002_waiver_reason` -- a
+    `frob:must-still-pass NODE-ID` shown as a quoted example (fenced/
+    indented code block, blockquote, inline code span) is never treated
+    as a declared control; only non-quoted matches contribute NODE-IDs,
+    in the order they appear (unchanged ordering contract)."""
+    quoted = _quoted_char_ranges(ticket.body)
+    return tuple(
+        match.group(1)
+        for match in _MUST_STILL_PASS_RE.finditer(ticket.body)
+        if not _is_quoted(match.start(), quoted)
+    )
 
 
 # frob:tests tests/test_gates_mutation_evidence.py::TestDesignatedReproTest.test_first_pytest_node_id_is_designated  # noqa: E501
