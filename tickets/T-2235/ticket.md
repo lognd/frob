@@ -2,7 +2,7 @@
 id: T-2235
 title: 'frob check --budget silently drops whole gate families and exits normally:
   41 errors became 3 with no skip signal anywhere in the JSON'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,26 +14,59 @@ runs_last: false
 scope:
 - src/frob/app/_check_chunking.py
 - src/frob/app/check_runner.py
+- tests/unit/test_check_budget.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: T-2235 fix requires new regression tests for the budget-reporting fix; test
+    file is the required evidence location for _check_chunking.py/check_runner.py
+    changes
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/commands/check.md
+  reason: T-2235 documents the new --budget JSON 'budget' key and corrects the now-inaccurate
+    'never a silent drop' claim
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_budget_key_absent_and_complete_when_everything_ran
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_unbudgeted_json_has_no_budget_key
+- tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
+- tests/unit/test_check_budget.py::TestBudgetCoverageReport::test_skipped_is_universe_minus_executed
+- tests/unit/test_check_budget.py::TestBudgetCoverageReport::test_empty_skipped_present_not_absent
+designated_repro_test: tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
 acceptance:
 - text: 'A --json --budget run that cannot execute every planned gate emits an explicit
     record of which gates were NOT run, by name (fails today: JSON has only path and
     results)'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
+  - tests/unit/test_check_budget.py::TestBudgetCoverageReport::test_skipped_is_universe_minus_executed
 - text: A run that executed everything reports that positively -- an empty skipped-list
     must be distinguishable from an absent field
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
+  - tests/unit/test_check_budget.py::TestBudgetCoverageReport::test_skipped_is_universe_minus_executed
 - text: 'MUST-STILL-PASS: unbudgeted frob check --json and a sufficient budget both
     produce current results unchanged (findings, ordering, exit codes)'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_budget_key_absent_and_complete_when_everything_ran
+  - tests/unit/test_check_budget.py::TestBudgetCoverageReport::test_empty_skipped_present_not_absent
 - text: 'Exit-code semantics unchanged: a partial run with no findings must not start
     reporting failure'
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_unbudgeted_json_has_no_budget_key
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
 - text: Stderr/summary states in human-readable form that gates were skipped, without
     requiring JSON parsing
-  evidence: []
+  evidence:
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_runs_selected_chunks_and_reports_result
+  - tests/unit/test_check_budget.py::TestRunBudgetedCheck::test_json_reports_universe_skip_despite_narrow_resume
 threat: null
 component: null
 anchor: false

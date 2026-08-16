@@ -22,9 +22,26 @@ persisted rolling estimate of how long each group actually took last time
 (`.frob/check-budget-timing.json`). It runs the selected subset in one
 process, and if anything did not fit, persists the remainder as resume
 state (`.frob/check-budget-state.json`) and reports it as a `BUDGET001`
-warning naming every deferred group -- never a silent drop. Re-running
-the same command continues from the resume state. See
-`docs/guides/agent-playbook.md` section 3b for the full agent recipe.
+warning naming every deferred group. Re-running the same command
+continues from the resume state. See `docs/guides/agent-playbook.md`
+section 3b for the full agent recipe.
+
+T-2235: EVERY `--budget` invocation -- not just one that defers work --
+also reports a `"budget"` JSON key
+(`{"requested_seconds", "executed_groups", "skipped_groups", "complete"}`)
+and, whenever `skipped_groups` is non-empty, an unconditional stderr
+`WARNING` naming every stage group that did NOT run THIS call, regardless
+of `--json`. `skipped_groups` is computed against the FULL
+`available_stages()` universe, not against this call's own resume-derived
+`deferred` list -- a call that inherits an already-narrow resume state
+(e.g. one stage group left over from an earlier invocation) can report
+zero `BUDGET001` deferrals while still having skipped most of the
+universe, and that is exactly the case `"budget"`'s `skipped_groups`
+makes visible: an empty list (present, not absent) means this
+invocation truly executed everything; a non-empty list names what it
+did not, whether or not that gap is "deferred" for the next call.
+`"budget"` is absent entirely on every non-`--budget` call -- the
+unbudgeted `--json` shape is unchanged.
 
 ## Public API
 

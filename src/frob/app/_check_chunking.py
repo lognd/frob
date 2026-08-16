@@ -450,11 +450,73 @@ def _budget_deferred_result(deferred: list[str], budget_s: int) -> ToolResult:
     )
 
 
+# frob:ticket T-2235
+def _budget_coverage_report(
+    budget_s: int, all_groups: list[str], executed_groups: list[str]
+) -> dict:
+    """The `--budget` completeness record `_run_budgeted_check` reports every
+    invocation (T-2235): `executed_groups` in the order this call actually
+    ran them, `skipped_groups` as the full stage-group universe
+    (`available_stages()`, passed in as `all_groups`) minus what THIS call
+    executed, and `complete` as a positive `skipped_groups == []` flag so a
+    consumer can distinguish "nothing skipped" from "this build does not
+    report skips" (the whole dict is absent on every non-budgeted call --
+    see `_report_check_result`).
+
+    Deliberately computed against the FULL universe, not against this
+    call's local `deferred` list: `deferred` is only the tail of whatever
+    `remaining` this call started from, and `remaining` can itself already
+    be a narrow leftover of an EARLIER invocation's resume state (T-2235's
+    own measured incident -- a budgeted run that inherited a resume file
+    already trimmed down to one stage group reported zero deferred and
+    exited clean, having silently never executed the other four). Reporting
+    against the full universe is the only way a single invocation's JSON
+    stays honest about what IT ran, independent of resume-state history."""
+    skipped = sorted(set(all_groups) - set(executed_groups))
+    return {
+        "requested_seconds": budget_s,
+        "executed_groups": executed_groups,
+        "skipped_groups": skipped,
+        "complete": not skipped,
+    }
+
+
+# frob:ticket T-2235
+def _warn_budget_skipped(budget_s: int, budget_report: dict) -> None:
+    """Emit `_run_budgeted_check`'s unconditional skip WARNING (T-2235),
+    split out to keep `_run_budgeted_check` itself under ARCH001's
+    function-length ceiling.
+
+    WARNING severity, never gated on `cfg.check_json`: `config.toml`'s
+    `below_warning` stdout filter excludes WARNING+ from the stdout
+    handler entirely, so this can never leak into a `--json` payload the
+    way an unguarded INFO line would (see the T-1703 comment on the
+    progress-log lines above this call site) -- it reaches only the
+    always-on stderr handler (level WARNING), which is exactly acceptance
+    criterion 5: a human-readable skip signal that needs no JSON parsing,
+    on every partial run."""
+    if not budget_report["skipped_groups"]:
+        return
+    _log.warning(
+        "check --budget %d: %d of %d stage group(s) did NOT run this "
+        "invocation: %s -- this JSON/text output is PARTIAL, not the "
+        "full picture",
+        budget_s,
+        len(budget_report["skipped_groups"]),
+        len(budget_report["executed_groups"]) + len(budget_report["skipped_groups"]),
+        ", ".join(budget_report["skipped_groups"]),
+    )
+
+
 # frob:ticket T-1004
+# frob:ticket T-2235
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_runs_selected_chunks_and_reports_result  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_persists_resume_state_for_deferred_groups  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_resumes_from_prior_remaining_state  # noqa: E501
 # frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_clears_resume_state_once_every_group_has_run  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_skipped_is_universe_minus_executed  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestBudgetCoverageReport.test_empty_skipped_present_not_absent  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestRunBudgetedCheck.test_json_reports_universe_skip_despite_narrow_resume  # noqa: E501
 # frob:ticket T-1195
 def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     """`frob check --budget SECONDS`: self-select and order `--only` stage
@@ -508,8 +570,7 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     # dispatches here, not this function's own body.
     if not cfg.check_json:
         _log.info(
-            "check --budget %d: running %d stage group(s) (%s), deferring "
-            "%d (%s)",
+            "check --budget %d: running %d stage group(s) (%s), deferring %d (%s)",
             budget_s,
             len(selected),
             ", ".join(selected),
@@ -524,9 +585,15 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
         timing = _update_budget_timing(timing, group, elapsed)
         _save_budget_timing(root, timing)
         if not cfg.check_json:
-            _log.info(
-                "check --budget: stage group %r done in %.1fs", group, elapsed
-            )
+            _log.info("check --budget: stage group %r done in %.1fs", group, elapsed)
+
+    # T-2235: computed against the FULL `available_stages()` universe, not
+    # against `deferred` -- `deferred` only reflects the tail of THIS
+    # call's `remaining`, which can itself already be a narrow leftover of
+    # an earlier invocation's resume state (see `_budget_coverage_report`'s
+    # docstring for the measured incident this closes).
+    budget_report = _budget_coverage_report(budget_s, available_stages(), selected)
+    _warn_budget_skipped(budget_s, budget_report)
 
     if deferred:
         all_results.append(_budget_deferred_result(deferred, budget_s))
@@ -538,4 +605,4 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
 
     from frob.app.check_runner import _report_check_result
 
-    _report_check_result(cfg, result)
+    _report_check_result(cfg, result, budget_report=budget_report)

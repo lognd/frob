@@ -91,6 +91,7 @@ class TestUpdateBudgetTiming:
         assert original == {"g": 10.0}
 
 
+# frob:ticket T-2235
 class TestRunBudgetedCheck:
     """`run(cfg)` with `check_budget` set -- the full self-select/run/
     persist/report loop, with `available_stages`/`_run_all_stages` faked so
@@ -278,3 +279,138 @@ class TestRunBudgetedCheck:
         assert diag.code == "BUDGET001"
         assert "gates-native" in diag.message
         assert "static" in diag.message
+
+    # frob:ticket T-2235
+    def test_json_reports_universe_skip_despite_narrow_resume(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """(MUST FAIL FIRST, T-2235 acceptance 1/2) Reproduces the measured
+        incident: a resume file already trimmed to ONE stage group (from
+        some earlier, unrelated invocation) means this run's own local
+        `deferred` list is empty -- nothing left in `remaining` to defer --
+        so the old code reported nothing skipped and exited clean, having
+        silently never touched the other four groups. The `--json` payload
+        must name every stage group `available_stages()` knows about that
+        this call did not itself execute, not just `deferred`."""
+        import json
+
+        monkeypatch.setattr(
+            check_mod, "available_stages", lambda: ["g1", "g2", "g3", "g4", "g5"]
+        )
+
+        def _fake_run_all_stages(cfg, root, **kwargs):  # noqa: ANN001
+            (group,) = cfg.check_only
+            return self._fake_result(group)
+
+        monkeypatch.setattr(check_runner_mod, "_run_all_stages", _fake_run_all_stages)
+        # Simulates a stale resume file left over from an unrelated earlier
+        # invocation: only g5 is "remaining", even though the real universe
+        # is 5 groups.
+        check_chunking_mod._save_budget_remaining(tmp_path, ["g5"])
+        cfg = AppConfig(check_path=tmp_path, check_budget=1000, check_json=True)
+        caplog.set_level("INFO")
+        check_run(cfg)
+
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
+        assert data["budget"]["executed_groups"] == ["g5"]
+        assert data["budget"]["skipped_groups"] == ["g1", "g2", "g3", "g4"]
+        assert data["budget"]["complete"] is False
+        # BUDGET001's own deferred-state note only fires for THIS call's
+        # local deferred tail (empty here -- g5 fit the budget on its own)
+        # -- the resume file is cleared, matching pre-existing behavior.
+        assert not (tmp_path / ".frob" / "check-budget-state.json").exists()
+        # And a human-readable WARNING is emitted regardless of --json.
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        assert any("did NOT run this invocation" in r.message for r in warnings)
+        assert any(
+            all(g in r.message for g in ("g1", "g2", "g3", "g4")) for r in warnings
+        )
+
+    # frob:ticket T-2235
+    def test_json_budget_key_absent_and_complete_when_everything_ran(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """Acceptance 2: a run that DID execute everything reports that
+        positively -- `skipped_groups` is an empty list (present, not
+        absent) and `complete` is `True`."""
+        import json
+
+        monkeypatch.setattr(check_mod, "available_stages", lambda: ["g1", "g2"])
+        monkeypatch.setattr(
+            check_runner_mod,
+            "_run_all_stages",
+            lambda cfg, root, **kwargs: self._fake_result(cfg.check_only[0]),
+        )
+        cfg = AppConfig(check_path=tmp_path, check_budget=1000, check_json=True)
+        caplog.set_level("INFO")
+        check_run(cfg)
+
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
+        assert data["budget"]["skipped_groups"] == []
+        assert data["budget"]["complete"] is True
+
+    # frob:ticket T-2235
+    def test_unbudgeted_json_has_no_budget_key(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """MUST-STILL-PASS control (acceptance 3): a plain, unbudgeted
+        `frob check --json` never sees a `"budget"` key -- the field is
+        strictly additive to the `--budget` path, never a reshape of the
+        default JSON contract."""
+        import json
+
+        monkeypatch.setattr(
+            check_runner_mod,
+            "_run_all_stages",
+            lambda cfg, root, **kwargs: self._fake_result("g1"),
+        )
+        cfg = AppConfig(check_path=tmp_path, check_json=True)
+        caplog.set_level("INFO")
+        check_run(cfg)
+
+        data = next(
+            json.loads(r.message)
+            for r in caplog.records
+            if r.message.strip().startswith("{")
+        )
+        assert "budget" not in data
+        assert set(data.keys()) == {"path", "results"}
+
+
+
+# frob:ticket T-2235
+class TestBudgetCoverageReport:
+    """`_budget_coverage_report`'s pure dict-building logic (T-2235)."""
+
+    # frob:ticket T-2235
+    def test_skipped_is_universe_minus_executed(self) -> None:
+        """The reported `skipped_groups` reflects `all_groups - executed`,
+        not any notion of a local `deferred` list -- this is what makes
+        the report honest even when the caller's own `remaining`/`deferred`
+        bookkeeping was already narrowed by stale resume state before this
+        function ever sees it."""
+        report = check_chunking_mod._budget_coverage_report(
+            480, ["g1", "g2", "g3", "g4", "g5"], ["g5"]
+        )
+        assert report["requested_seconds"] == 480
+        assert report["executed_groups"] == ["g5"]
+        assert report["skipped_groups"] == ["g1", "g2", "g3", "g4"]
+        assert report["complete"] is False
+
+    # frob:ticket T-2235
+    def test_empty_skipped_present_not_absent(self) -> None:
+        """Executing every group in the universe yields an empty (but
+        present) `skipped_groups` list and `complete=True`."""
+        report = check_chunking_mod._budget_coverage_report(
+            480, ["g1", "g2"], ["g1", "g2"]
+        )
+        assert report["skipped_groups"] == []
+        assert report["complete"] is True

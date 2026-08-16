@@ -692,8 +692,12 @@ def _lock_matches_stamp(root: Path) -> bool:
 
 # frob:ticket T-0563
 # frob:ticket T-1260
+# frob:ticket T-2235
 def _report_check_result(  # noqa: ANN001
-    cfg: AppConfig, result, fix_report: dict | None = None
+    cfg: AppConfig,
+    result,
+    fix_report: dict | None = None,
+    budget_report: dict | None = None,
 ) -> None:
     """Emit `result` as JSON or colorized text per `cfg`, then exit 1 on errors.
 
@@ -711,9 +715,19 @@ def _report_check_result(  # noqa: ANN001
     passed, `fix_report` additionally carries a `"fix"` JSON key (fixed/
     rolled_back/fixits, always present -- never a missing key, even when
     nothing was fixed, acceptance criterion 1) or an extra text section.
+
+    T-2235: `budget_report` is `None` for every non-`--budget` call (the
+    unbudgeted default and any other early-exit mode -- byte-identical
+    `results`/`path`/exit-code output to before this ticket, acceptance
+    criterion 3). `_run_budgeted_check` is the only caller that ever passes
+    one: a `{"requested_seconds", "executed_groups", "skipped_groups",
+    "complete"}` dict spliced in as a top-level `"budget"` JSON key so a
+    consumer can tell "nothing skipped" (empty `skipped_groups` list) from
+    "this build does not report skips" (the key absent entirely, on any
+    non-budgeted call) without parsing anything else in the payload.
     """
     if cfg.check_json:
-        _log.info(_result_as_json_with_fix(result, fix_report))
+        _log.info(_result_as_json_with_fix(result, fix_report, budget_report))
     else:
         from frob.logging.color import should_color
 
@@ -721,26 +735,58 @@ def _report_check_result(  # noqa: ANN001
         text = result.as_text(color=should_color(sys.stdout))
         if fix_report is not None:
             text = f"{text}\n\n{_fix_report_text(fix_report)}"
+        if budget_report is not None:
+            text = f"{text}\n\n{_budget_report_text(budget_report)}"
         renderer.line(text)
 
     if result.total_errors > 0:
         sys.exit(1)
 
 
-def _result_as_json_with_fix(result, fix_report: dict | None) -> str:  # noqa: ANN001
-    """`result.as_json()`, with an additional top-level `"fix"` key spliced
-    in when `fix_report` is not `None` (T-1260). `CheckResult` itself
-    (`frob.check.__init__`) is out of this ticket's scope, so the `"fix"`
-    key is added HERE, at the JSON-string layer, rather than as a new
-    `CheckResult` field -- `--fix` is strictly additive to `frob check`'s
-    existing `--json` shape, never a reshape of it."""
-    if fix_report is None:
+def _result_as_json_with_fix(
+    result,  # noqa: ANN001
+    fix_report: dict | None,
+    budget_report: dict | None = None,
+) -> str:
+    """`result.as_json()`, with additional top-level `"fix"`/`"budget"` keys
+    spliced in when `fix_report`/`budget_report` are not `None` (T-1260,
+    T-2235). `CheckResult` itself (`frob.check.__init__`) is out of this
+    ticket's scope, so both keys are added HERE, at the JSON-string layer,
+    rather than as new `CheckResult` fields -- `--fix`/`--budget` are
+    strictly additive to `frob check`'s existing `--json` shape, never a
+    reshape of it (this is also why an unbudgeted/non-`--fix` call's JSON
+    stays byte-identical: neither key is ever added unless its report is
+    not `None`)."""
+    if fix_report is None and budget_report is None:
         return result.as_json()
     import json
 
     payload = json.loads(result.as_json())
-    payload["fix"] = fix_report
+    if fix_report is not None:
+        payload["fix"] = fix_report
+    if budget_report is not None:
+        payload["budget"] = budget_report
     return json.dumps(payload, indent=2)
+
+
+# frob:ticket T-2235
+def _budget_report_text(budget_report: dict) -> str:
+    """The `--budget` coverage summary appended to `frob check --budget`'s
+    human-readable text output (T-2235): which stage groups this
+    invocation actually executed vs. skipped, so an operator reading a
+    terminal sees the same completeness signal `"budget"`'s JSON key
+    carries, without needing `--json`."""
+    executed = budget_report.get("executed_groups", [])
+    skipped = budget_report.get("skipped_groups", [])
+    if skipped:
+        skipped_line = f"SKIPPED this run ({len(skipped)}): {', '.join(skipped)}"
+    else:
+        skipped_line = "SKIPPED this run: none -- every planned stage group ran"
+    return (
+        f"## Budget coverage  ran={len(executed)}  skipped={len(skipped)}\n"
+        f"  executed: {', '.join(executed) if executed else 'none'}\n"
+        f"  {skipped_line}"
+    )
 
 
 def _fix_report_text(fix_report: dict) -> str:
