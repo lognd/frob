@@ -7,7 +7,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-16'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
