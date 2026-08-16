@@ -37,6 +37,21 @@ acceptance:
     fired 11 times inside a 19-error frob check list and was read as noise for the
     whole session.
   evidence: []
+- text: 'Distinguish rot by TIER, because the required ACTION differs and a single
+    count conflates them. Measured on the 15 tickets currently past threshold: 10
+    are tier=epic, 1 is tier=story, only 4 are tier=ticket. A rotting TICKET means
+    nobody dispatched it -- the fix is to dispatch it. A rotting EPIC means nobody
+    decomposed it -- it is not directly workable, and ''work it'' is the wrong instruction.
+    Surfacing them as one undifferentiated number tells a coordinator to do something
+    impossible for two thirds of the set, which is why I read the alarm as noise all
+    session. This test MUST fail against current main.'
+  evidence: []
+- text: Do NOT fix this by exempting epics from TICK004 -- a rotting epic is a real
+    problem (T-1662, the semantics-not-lexical epic, has sat 10 days while its own
+    subject matter caused active defects). Report them under a distinct heading naming
+    the action, e.g. 'needs decomposition into leaves' versus 'needs dispatch', derived
+    from the ledger's tier field rather than from the ticket title.
+  evidence: []
 threat: null
 component: null
 anchor: false
