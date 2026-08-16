@@ -42,6 +42,10 @@ attachments:
   caption: independently confirmed frob cycle vacuous on src-layout; widened acceptance
     criteria and fix-guidance (no src/ lexical special-case)
   sha256: cb8f524a05591cd2b69401bdf42a00cafa2a5a6be873b0678ea2d05da318c51a
+- path: T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
+  caption: three confirmed vacuous consumers (attribution, cycle, arch layering);
+    per-consumer must-still-pass acceptance criteria
+  sha256: e1de499843567281d791d0c15f96ef5ce65d56dd2f2db7679543675311449bc4
 threat: null
 component: null
 anchor: false
