@@ -12,11 +12,42 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/scaffold/_skills_sync.py
-- src/frob/_cli_parsers/**
 - tests/unit/test_skills_sync.py
 - Makefile
+- src/frob/_cli_parsers/_misc.py
+- src/frob/_cli_parsers/__init__.py
+- docs/commands/sync-skills.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: 'narrow overbroad glob per T-1382 planning: scope closure flagged 21 unrelated
+    doc obligations under _cli_parsers/**; new subcommand wiring lives in _misc.py
+    + __init__.py export list only, plus its own new doc page'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: 'narrow overbroad glob per T-1382 planning: scope closure flagged 21 unrelated
+    doc obligations under _cli_parsers/**; new subcommand wiring lives in _misc.py
+    + __init__.py export list only, plus its own new doc page'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: 'narrow overbroad glob per T-1382 planning: scope closure flagged 21 unrelated
+    doc obligations under _cli_parsers/**; new subcommand wiring lives in _misc.py
+    + __init__.py export list only, plus its own new doc page'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/commands/sync-skills.md
+  reason: 'narrow overbroad glob per T-1382 planning: scope closure flagged 21 unrelated
+    doc obligations under _cli_parsers/**; new subcommand wiring lives in _misc.py
+    + __init__.py export list only, plus its own new doc page'
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN no Makefile WHEN ''uv run frob sync-skills'' runs on a repo with agents/
