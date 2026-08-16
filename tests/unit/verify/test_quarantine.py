@@ -7,11 +7,33 @@ from pathlib import Path
 from frob.verify._quarantine import (
     QuarantinedFinding,
     QuarantineError,
+    QuarantineRecord,
     clear_quarantine,
     is_quarantined,
     load_quarantine,
     raise_quarantine,
+    retire_unidentifiable_findings,
 )
+
+
+# frob:ticket T-2207
+# frob:waive WIRE001 reason="test-only helper, exercised by every test in TestIdentityLessFindingRecovery -- not production code to wire" follow_up="T-2217"  # noqa: E501
+def _seed_stuck_store(tmp_path: Path, *, extra: tuple = ()) -> QuarantinedFinding:
+    """Persist a quarantine record directly (bypassing `raise_quarantine`,
+    which after T-2207's producer fix filters an identity-less finding
+    out before it ever reaches disk) -- mirrors an ALREADY-stuck store
+    from before the fix landed, the exact case T-2207's consumer half
+    (`retire_unidentifiable_findings`) must still be able to repair."""
+    identity_less = QuarantinedFinding(rule_id="", file="")
+    record = QuarantineRecord(
+        raised_at="2026-01-01T00:00:00+00:00",
+        batch_commit_shas=("deadbeef",),
+        findings=(identity_less, *extra),
+    )
+    path = tmp_path / ".frob" / "quarantine.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    return identity_less
 
 
 # frob:ticket T-1693
@@ -241,3 +263,139 @@ class TestClearQuarantine:
         ).is_ok
         for _ in range(5):
             assert is_quarantined(tmp_path).danger_ok is True
+
+
+# frob:ticket T-2207
+class TestIdentityLessFindingRecovery:
+    # frob:ticket T-2207
+    def test_cli_addressing_can_never_key_an_identity_less_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
+        # Live incident (T-2207): a stuck store holding a record with
+        # every identity field empty. The CLI's own `RULE:FILE:LINE`
+        # addressing (`frob.app.verify_runner._parse_finding_arg`)
+        # structurally cannot key to it -- `--dismiss '::=<reason>'`
+        # always parses to `None` (malformed) because an empty `file` is
+        # always rejected, never `("", "", None)`. Plain `clear_quarantine`
+        # with no way to build the right disposition key correctly
+        # refuses -- this documents WHY no CLI invocation can ever clear
+        # this store, not a bug in `clear_quarantine` itself.
+        from frob.app.verify_runner import _parse_finding_arg
+
+        assert _parse_finding_arg("::") is None
+
+        _seed_stuck_store(tmp_path)
+        result = clear_quarantine(
+            tmp_path, dispositions={}, reason="tried anyway", actor="test"
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.FindingsNotDisposed
+        assert is_quarantined(tmp_path).danger_ok is True
+
+    # frob:ticket T-2207
+    def test_retire_unidentifiable_findings_recovers_a_stuck_store(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::retire_unidentifiable_findings kind="unit"  # noqa: E501
+        _seed_stuck_store(tmp_path)
+        result = retire_unidentifiable_findings(
+            tmp_path, reason="T-2207 recovery", actor="test"
+        )
+        assert result.is_ok
+        record = result.danger_ok
+        assert record.cleared_at is not None
+        assert record.findings[0].disposition == "dismissed"
+        assert record.findings[0].disposition_reason == "T-2207 recovery"
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-2207
+    def test_retire_unidentifiable_findings_still_blocks_on_a_well_formed_sibling(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::retire_unidentifiable_findings kind="unit"  # noqa: E501
+        # MUST-STILL-PASS control: retiring the identity-less record must
+        # NOT clear quarantine while a real, well-formed finding is still
+        # undisposed -- otherwise this "fix" would just be
+        # clear_quarantine skipping findings under a new name, reopening
+        # the hole T-1693 closed.
+        real = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        _seed_stuck_store(tmp_path, extra=(real,))
+
+        result = retire_unidentifiable_findings(
+            tmp_path, reason="T-2207 recovery", actor="test"
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.FindingsNotDisposed
+        assert is_quarantined(tmp_path).danger_ok is True
+
+        # The identity-less record IS retired even though the overall
+        # clear is refused -- confirmed by disposing the real one next
+        # via the normal path, which now clears cleanly.
+        followup = clear_quarantine(
+            tmp_path,
+            dispositions={(real.rule_id, real.file, real.line): ("filed", "T-9999")},
+            reason="real finding filed",
+            actor="test",
+        )
+        assert followup.is_ok
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-2207
+    def test_retire_unidentifiable_findings_refuses_when_none_present(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::retire_unidentifiable_findings kind="unit"  # noqa: E501
+        real = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        assert raise_quarantine(
+            tmp_path, batch_commit_shas=("deadbeef",), findings=(real,)
+        ).is_ok
+        result = retire_unidentifiable_findings(
+            tmp_path, reason="nothing to retire", actor="test"
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.NoUnidentifiableFindings
+
+    # frob:ticket T-2207
+    def test_retire_unidentifiable_findings_refuses_when_not_raised(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::retire_unidentifiable_findings kind="unit"  # noqa: E501
+        result = retire_unidentifiable_findings(
+            tmp_path, reason="nothing raised", actor="test"
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.NotQuarantined
+
+    # frob:ticket T-2207
+    def test_raise_quarantine_drops_identity_less_findings_at_write_time(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        # Producer-side half of the fix: a batch with a real finding AND
+        # an identity-less one persists only the real finding -- an
+        # identity-less finding is never actionable, so it is dropped
+        # before it ever reaches disk, not persisted then discovered
+        # unrecoverable later.
+        identity_less = QuarantinedFinding(rule_id="", file="")
+        real = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        result = raise_quarantine(
+            tmp_path, batch_commit_shas=("abc123",), findings=(identity_less, real)
+        )
+        assert result.is_ok
+        record = result.danger_ok
+        assert len(record.findings) == 1
+        assert record.findings[0].rule_id == "TEST001"
+
+    # frob:ticket T-2207
+    def test_raise_quarantine_refuses_when_only_identity_less_findings_given(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::raise_quarantine kind="unit"
+        identity_less = QuarantinedFinding(rule_id="", file="")
+        result = raise_quarantine(
+            tmp_path, batch_commit_shas=("abc123",), findings=(identity_less,)
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.EmptyFindings
+        assert is_quarantined(tmp_path).danger_ok is False

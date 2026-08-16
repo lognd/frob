@@ -97,6 +97,17 @@ _QUARANTINE_LOCK_REL = Path(".frob") / "quarantine.lock"
 _NATURALLY_UNATTRIBUTABLE_RULES: frozenset[str] = frozenset({"TICK004"})
 
 
+def _is_unidentifiable(finding: QuarantinedFinding) -> bool:
+    """`True` iff `finding` carries an identity-less shape (`rule_id` AND
+    `file` both empty) -- T-2207's live incident shape: a finding naming
+    no rule and no file is not actionable by construction, so it is
+    filtered out of `raise_quarantine` before it ever reaches disk, and
+    it is the exact shape `retire_unidentifiable_findings` exists to
+    repair for a store that already holds one from before that filter
+    existed."""
+    return finding.rule_id == "" and finding.file == ""
+
+
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 class QuarantineError(ErrorSet):
     """Fallible outcomes of this module's raise/clear/status operations."""
@@ -107,6 +118,13 @@ class QuarantineError(ErrorSet):
         "one or more recorded findings have no filed ticket or dismissal yet"
     )
     EmptyFindings = "raise_quarantine requires at least one finding"
+    #: T-2207: `retire_unidentifiable_findings` called against a raised
+    #: record none of whose findings are identity-less -- nothing for
+    #: this specific verb to do (the normal `clear_quarantine`/CLI
+    #: dispose path is the right tool for a well-formed finding).
+    NoUnidentifiableFindings = (
+        "no identity-less (empty rule_id and file) finding is present to retire"
+    )
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
@@ -250,6 +268,9 @@ def is_quarantined(root: Path) -> Result[bool, QuarantineError]:
 # kind="unit"
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_empty_findings_refused kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestRaiseQuarantine.test_survives_a_fresh_load_reflecting_a_restart kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_drops_identity_less_findings_at_write_time kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_raise_quarantine_refuses_when_only_identity_less_findings_given kind="unit"  # noqa: E501
+# frob:waive DUP001 reason="T-2207: the new identity-less filter block mirrors this function's OWN pre-existing _NATURALLY_UNATTRIBUTABLE_RULES filter shape on purpose (deliberate consistency, see this function's docstring) -- the resulting structural match against unrelated filter/log/drop bodies across the tree (native-stub pairs, compliance-catalog tests, etc) is the generic shape, not shared logic worth extracting"  # noqa: E501
 def raise_quarantine(
     root: Path,
     *,
@@ -299,6 +320,21 @@ def raise_quarantine(
             f for f in findings if f.rule_id not in _NATURALLY_UNATTRIBUTABLE_RULES
         )
 
+    # T-2207: reject an identity-less finding (rule_id AND file both
+    # empty) at write time -- something upstream persisting one is the
+    # PRODUCER half of the live incident this ticket fixes. A finding
+    # naming no rule and no file is not actionable by construction, so
+    # it is dropped here, before it ever reaches `.frob/quarantine.json`,
+    # rather than being written and discovered unrecoverable later.
+    unidentifiable = tuple(f for f in findings if _is_unidentifiable(f))
+    if unidentifiable:
+        _log.error(
+            "quarantine: %d identity-less finding(s) (empty rule_id AND file) "
+            "dropped from this raise -- not actionable by construction (T-2207)",
+            len(unidentifiable),
+        )
+        findings = tuple(f for f in findings if not _is_unidentifiable(f))
+
     if not findings:
         _log.error(
             "quarantine: raise_quarantine called with zero findings for batch %s "
@@ -341,6 +377,7 @@ def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_a_finding_is_undisposed kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_clears_when_every_finding_disposed kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_green_verification_alone_never_clears kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_cli_addressing_can_never_key_an_identity_less_finding kind="unit"  # noqa: E501
 def clear_quarantine(
     root: Path,
     *,
@@ -437,3 +474,131 @@ def _dispose_one(
             update={"disposition": "dismissed", "disposition_reason": ref_or_reason}
         )
     return finding
+
+
+# frob:ticket T-2207
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_recovers_a_stuck_store kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_still_blocks_on_a_well_formed_sibling kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_none_present kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_retire_unidentifiable_findings_refuses_when_not_raised kind="unit"  # noqa: E501
+# frob:waive WIRE001 reason="the new T-2207 recovery verb; not yet wired to the CLI because src/frob/app/verify_runner.py is outside this ticket's scope" follow_up="T-2217"  # noqa: E501
+def retire_unidentifiable_findings(
+    root: Path,
+    *,
+    reason: str,
+    actor: str,
+) -> Result[QuarantineRecord, QuarantineError]:
+    """T-2207's CONSUMER-side recovery verb: explicitly, logged-ly retire
+    every currently-raised finding whose identity is empty (`rule_id`
+    AND `file` both `""` -- `_is_unidentifiable`), dismissing each with
+    `reason`/`actor`, then applying the SAME "clear only if every
+    finding -- identity-less or not -- ends up disposed" rule
+    `clear_quarantine` itself enforces. A well-formed undisposed sibling
+    still blocks the actual clear afterward, exactly as before: this
+    retires ONLY the identity-less records, it is never a bulk-dismiss,
+    and it never widens `clear_quarantine`'s own "no partial clear"
+    contract.
+
+    This exists because the live incident this ticket fixes could not be
+    recovered any other way: the CLI's own `RULE:FILE:LINE` addressing
+    (`frob.app.verify_runner._parse_finding_arg`) can never key to
+    `("", "", None)` -- an empty `file` component is always rejected as
+    malformed, by construction of that syntax, so no `--dismiss`/
+    `--file-ticket` argument can ever name an identity-less finding.
+    `raise_quarantine`'s own producer-side filter (this module, same
+    ticket) stops NEW identity-less findings from ever reaching disk,
+    but a store that already reached this state before that filter
+    existed needs an explicit, non-CLI-syntax-dependent way out -- this
+    is that way out: target the identity-less SHAPE directly rather than
+    a caller-supplied key, since no caller-supplied key can ever exist
+    for it.
+
+    `Err(QuarantineError.NotQuarantined)` if nothing is currently raised
+    (same posture as `clear_quarantine`). `Err(QuarantineError.
+    NoUnidentifiableFindings)` if the current record is raised but
+    carries no identity-less finding -- use `clear_quarantine` directly
+    for a well-formed finding, this verb is not a general-purpose
+    dispose path."""
+    from frob.tickets._land_queue import (  # late import, mirrors raise_quarantine
+        file_lock,
+    )
+
+    with file_lock(_quarantine_lock_path(root), label="quarantine"):
+        loaded = load_quarantine(root)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        record = loaded.danger_ok
+        if record is None or record.cleared_at is not None:
+            _log.error(
+                "quarantine: retire_unidentifiable_findings called but no "
+                "quarantine is currently raised for %s",
+                root,
+            )
+            return Err(QuarantineError.NotQuarantined)
+
+        targets = [f for f in record.findings if _is_unidentifiable(f)]
+        if not targets:
+            _log.error(
+                "quarantine: retire_unidentifiable_findings called but no "
+                "identity-less finding is present in the current record for %s",
+                root,
+            )
+            return Err(QuarantineError.NoUnidentifiableFindings)
+
+        _log.warning(
+            "quarantine: retiring %d identity-less finding(s) for %s by %s -- "
+            "reason: %s (T-2207 recovery path)",
+            len(targets),
+            root,
+            actor,
+            reason,
+        )
+        disposed_findings = tuple(
+            f.model_copy(
+                update={"disposition": "dismissed", "disposition_reason": reason}
+            )
+            if _is_unidentifiable(f)
+            else f
+            for f in record.findings
+        )
+
+        if not _all_findings_disposed(disposed_findings):
+            undisposed = [
+                (f.rule_id, f.file, f.line)
+                for f in disposed_findings
+                if not f.disposition
+            ]
+            partially_retired = record.model_copy(
+                update={"findings": disposed_findings}
+            )
+            _save_quarantine(root, partially_retired)
+            _log.error(
+                "quarantine: %d identity-less finding(s) retired but %d "
+                "well-formed finding(s) still undisposed -- quarantine NOT "
+                "cleared: %s",
+                len(targets),
+                len(undisposed),
+                undisposed,
+            )
+            return Err(QuarantineError.FindingsNotDisposed)
+
+        cleared = record.model_copy(
+            update={
+                "findings": disposed_findings,
+                "cleared_at": _now_iso(),
+                "cleared_reason": reason,
+                "cleared_by": actor,
+            }
+        )
+        _save_quarantine(root, cleared)
+
+    _log.warning(
+        "quarantine: CLEARED for batch %s by %s -- reason: %s (retired %d "
+        "identity-less finding(s)) -- deferred landing resumes",
+        cleared.batch_commit_shas,
+        actor,
+        reason,
+        len(targets),
+    )
+    return Ok(cleared)

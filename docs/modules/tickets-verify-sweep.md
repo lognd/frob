@@ -864,6 +864,40 @@ logged at INFO, the same "nothing to name" shape
 `_raise_quarantine_for_red_batch` already uses for an empty verify
 queue.
 
+**Identity-less findings are refused at write time, and an already-stuck
+store can be recovered (T-2207).** A live incident: something upstream
+persisted a `QuarantinedFinding` with `rule_id=""` and `file=""` both
+empty -- a finding naming no rule and no file. That record could never
+be cleared: `clear_quarantine`'s `dispositions` mapping is keyed by
+`(rule_id, file, line)`, and the CLI's own `RULE:FILE:LINE` addressing
+(`frob.app.verify_runner._parse_finding_arg`) structurally can never
+produce the key `("", "", None)` -- an empty `file` component is always
+rejected as malformed, by construction of that syntax. With no way to
+dispose it, `clear_quarantine` correctly refused forever
+(`FindingsNotDisposed`), leaving deferred landing off fleet-wide with no
+CLI recovery path.
+
+Two fixes, both in this module. PRODUCER: `raise_quarantine` now drops
+any finding whose `rule_id` AND `file` are both empty before persisting
+(`_is_unidentifiable`), logging at ERROR -- the same shape as the
+`_NATURALLY_UNATTRIBUTABLE_RULES` filter just above it in the function
+body, applied one step later. A batch whose only findings are
+identity-less now returns `Err(QuarantineError.EmptyFindings)` instead
+of writing an unrecoverable record to disk. CONSUMER:
+`retire_unidentifiable_findings(root, *, reason, actor)` is the explicit,
+logged recovery verb for a store that already reached this state before
+the producer fix existed (or reaches it again some other way this fix
+did not anticipate) -- it dismisses every identity-less finding in the
+current record by targeting the SHAPE directly rather than a
+caller-supplied key (no caller-supplied key can ever address it), then
+applies `clear_quarantine`'s own "clear only if every finding -- not
+just the identity-less ones -- is disposed" rule. A well-formed
+undisposed sibling still blocks the actual clear afterward: this retires
+only the identity-less records, never a bulk dismiss, and it does not
+reopen the hole T-1693 closed (a real unaddressed finding still gates
+landing).
+<!-- frob:describes src/frob/verify/_quarantine.py::retire_unidentifiable_findings -->
+
 ## `frob verify` CLI (T-1697)
 
 <!-- frob:describes src/frob/app/verify_runner.py::VerifyQuarantineFindingView -->

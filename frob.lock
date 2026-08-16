@@ -242,6 +242,69 @@
       "old_digest": null,
       "reason": "T-2108: new symbols, doc anchor added same change",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "9bb4e2ac11958b6fe775d07a753bd5ca7dfdf77279f87c2908770cc6e238b3d0",
+      "old_digest": null,
+      "reason": "T-2207: docs/modules/tickets-verify-sweep.md's quarantine-circuit-breaker section updated in the same diff with the identity-less-finding producer/consumer subsection; re-verified true",
+      "ref": "src/frob/verify/_quarantine.py::QuarantineError"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "body",
+      "new_digest": "2275e0baa30ff561aec57c92517d14ebb1a58a191cd3ea5736cabd25c264deb6",
+      "old_digest": null,
+      "reason": "T-2207: docs/modules/tickets-verify-sweep.md's quarantine-circuit-breaker section updated in the same diff with the identity-less-finding producer/consumer subsection; re-verified true",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "old_digest": null,
+      "reason": "T-2207: docs/modules/tickets-verify-sweep.md's quarantine-circuit-breaker section updated in the same diff with the identity-less-finding producer/consumer subsection; re-verified true",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "body",
+      "new_digest": "38c413037c1270663165a9474f56df8f2cd92f27680d16ae12492de96263464d",
+      "old_digest": null,
+      "reason": "T-2207: docs/modules/tickets-verify-sweep.md's quarantine-circuit-breaker section updated in the same diff with the identity-less-finding producer/consumer subsection; re-verified true",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "old_digest": null,
+      "reason": "T-2207: docs/modules/tickets-verify-sweep.md's quarantine-circuit-breaker section updated in the same diff with the identity-less-finding producer/consumer subsection; re-verified true",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "body",
+      "new_digest": "26a786fa730ab49686f72236023e7710c3f26b2626b18776675cadfd829995e2",
+      "old_digest": "38c413037c1270663165a9474f56df8f2cd92f27680d16ae12492de96263464d",
+      "reason": "T-2207: re-acking after adding the WIRE001 waiver directive and E501 line-wrap fix above the def; doc still true, no behavior change",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "old_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "reason": "T-2207: re-acking after adding the WIRE001 waiver directive and E501 line-wrap fix above the def; doc still true, no behavior change",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
     }
   ],
   "entries": [
@@ -1034,6 +1097,31 @@
       "digest": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
       "facet": "sig",
       "ref": "src/frob/tickets/clipboard.py::clipboard_image"
+    },
+    {
+      "digest": "9bb4e2ac11958b6fe775d07a753bd5ca7dfdf77279f87c2908770cc6e238b3d0",
+      "facet": "sig",
+      "ref": "src/frob/verify/_quarantine.py::QuarantineError"
+    },
+    {
+      "digest": "2275e0baa30ff561aec57c92517d14ebb1a58a191cd3ea5736cabd25c264deb6",
+      "facet": "body",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "digest": "b8773d7d29e5c2cb0ecd6700aa6436fd17a13660c93021df6ad328ffca330f2e",
+      "facet": "sig",
+      "ref": "src/frob/verify/_quarantine.py::raise_quarantine"
+    },
+    {
+      "digest": "26a786fa730ab49686f72236023e7710c3f26b2626b18776675cadfd829995e2",
+      "facet": "body",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
+      "facet": "sig",
+      "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
     },
     {
       "digest": "26b10e66c50a8a0654663f81127109c966e9048d9ff89fc725b10b004a904ed3",
