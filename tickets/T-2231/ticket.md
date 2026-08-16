@@ -18,8 +18,30 @@ scope:
 - src/frob/graph/cache.py
 - src/frob/lang/__init__.py
 - src/frob/graph/_models.py
+- docs/modules/gates.md
+- docs/modules/graph.md
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'doc closure: these files own the frob:doc targets touched inside the leaf''s
+    scoped source files'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'doc closure: these files own the frob:doc targets touched inside the leaf''s
+    scoped source files'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'doc closure: these files own the frob:doc targets touched inside the leaf''s
+    scoped source files'
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 acceptance:
 - text: Given current main, when 'uv run frob check --only cycle' runs, then this
