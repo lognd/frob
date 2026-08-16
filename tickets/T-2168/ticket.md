@@ -2,7 +2,7 @@
 id: T-2168
 title: 'post-land sweep regression from T-2108, T-2129: 2 new (rule, file) identit(ies),
   4 finding(s) (ARCH001, DRIFT001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -38,3 +38,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DRIFT001  src/frob/app/ticket_runner/_land_cmd.py  -> UNATTRIBUTED (4 batch commits' touched symbols all reach this finding); candidate commits: ['5da87ec3f37553aac0c9b552e64efdcfa2805650', '183f59675edbd7d4e1be8137dadacc140cd7493e', 'f32fa5f215b068b0751204bd39340e3e708f3e21', 'f0ab85d0ee84cefe83d163431e6574a4739d1a14']
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-16: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH001 src/frob/app/ticket_runner/_land_cmd.py, DRIFT001 src/frob/app/ticket_runner/_land_cmd.py) is absent from the fresh unscoped measurement at T-2181's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
