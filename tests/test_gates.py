@@ -2966,6 +2966,49 @@ class TestDeadSymbolGate:
         violations = dead_symbol_gate(tmp_path, snap)
         assert not any("_helper" in v.message for v in violations)
 
+    # frob:ticket T-2205
+    def test_dead_symbol_gate_verifies_imports_across_a_same_named_collision(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_dead_symbols.py::dead_symbol_gate kind="unit"
+        """T-2205: `dead_symbol_gate`'s own `build_reference_graph` call
+        now passes `verify_imports=True` (T-2188 added the flag,
+        T-2195/T-2211 fixed the primitive it depends on -- this ticket
+        wires it into the one consumer named in its own title). Before
+        this wiring, TWO unrelated sibling files each defining a private
+        `_target` with the SAME short name, where only ONE of them is
+        genuinely called and NEITHER imports the other, collapsed to a
+        single ambiguous edge (the T-2156 bare-short-name-collision
+        defect `build_call_graph`'s own docstring documents) -- masking
+        the genuinely dead `_target` in `b.py` as called, purely because
+        a same-named symbol happens to be called somewhere else in the
+        same package directory. `verify_imports=True` requires a real
+        import edge for a cross-file candidate, so only `a.py`'s own
+        `_target` (called from within `a.py` itself, no import needed)
+        resolves -- `b.py`'s `_target`, never imported by anyone, must
+        now read as genuinely dead."""
+        from frob.gates._dead_symbols import dead_symbol_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _target() -> None:\n"
+            "    pass\n\n\n"
+            "def user() -> None:\n"
+            "    _target()\n",
+        )
+        _write(
+            tmp_path,
+            "src/b.py",
+            "def _target() -> None:\n    pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = dead_symbol_gate(tmp_path, snap)
+        flagged_paths = {
+            v.file for v in violations if v.rule == "DEAD001" and "_target" in v.message
+        }
+        assert flagged_paths == {"src/b.py"}
+
 
 # frob:ticket T-1428
 # frob:ticket T-1502

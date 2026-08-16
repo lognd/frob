@@ -22,6 +22,14 @@ Two independent "wired" signals, either one exempts a symbol:
    (`COMMANDS = {"new": _new}`) or a decorator target -- `build_call_
    graph` alone measured a large false-positive rate on this repo's own
    `app/*_runner.py` dispatch tables (see this module's Done report).
+   T-2205: this call passes `verify_imports=True` (T-2188 added the
+   flag, T-2195/T-2211 fixed the `resolve_local_import` src-layout gap
+   that blocked wiring it here) -- a cross-file candidate now only
+   resolves when the caller's file actually imports the candidate's
+   file, closing the bare-short-name-collision false-negative T-2156
+   documents (two unrelated same-named private symbols in one package
+   directory used to fabricate an edge between them regardless of
+   import reachability, silently masking a genuinely dead one).
 2. DECLARED: an existing graph edge (`GraphSnapshot.edges`, already
    computed by `frob.graph.build_graph` in the SAME pass that produced
    `snapshot.symbols` -- no second traversal for this half) of kind
@@ -756,7 +764,7 @@ def dead_symbol_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ..
         called = called_by_package.get(package)
         if called is None:
             files = _package_files(root, record.id.path)
-            graph = build_reference_graph(root, files)
+            graph = build_reference_graph(root, files, verify_imports=True)
             called = frozenset(
                 callee for callees in graph.calls.values() for callee in callees
             )

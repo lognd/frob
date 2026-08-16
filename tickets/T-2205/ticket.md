@@ -2,7 +2,7 @@
 id: T-2205
 title: 'verify_imports has zero consumers now that its blocker landed: T-2188 shipped
   the opt-in, T-2195 fixed the primitive, and nothing tracks turning it on for COV006/DEAD001/PROTO001-005'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -18,13 +18,22 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_dead_symbols.py
 - src/frob/gates/_protocol_summary.py
+- tests/test_gates.py
 evidence_scope:
 - tests/test_graph.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates.py
+  reason: repro + evidence test for verify_imports=True wiring into dead_symbol_gate
+  actor: logan
+  at: '2026-08-16'
 evidence:
 - tests/test_graph.py::TestCallGraph::test_build_reference_graph_catches_dispatch_table_entry
-designated_repro_test: null
+- tests/test_gates.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
+designated_repro_test: tests/test_gates.py::TestDeadSymbolGate::test_dead_symbol_gate_verifies_imports_across_a_same_named_collision
 acceptance:
 - text: 'Measured: ''git grep verify_imports=True -- src/'' returns only a docstring
     line (src/frob/graph/callgraph.py:397). No production caller opts in, and no open
