@@ -21,6 +21,7 @@ _FIXTURES = Path(__file__).parent / "fixtures" / "lang"
 
 def _write(tmp_path: Path, name: str, text: str) -> Path:
     path = tmp_path / name
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
 
@@ -880,3 +881,106 @@ class TestParseCache:
         hits, misses = parse_cache_stats()
         assert misses == 1
         assert hits == 2
+
+
+# frob:ticket T-2195
+class TestResolveLocalImportConsumers:
+    """T-2195 per-consumer controls (playbook: a unit-level fix alone does
+    not prove a downstream consumer came back). Each test drives a real
+    consumer end-to-end -- `frob.cycle` for detection, `frob.arch._layering`
+    for layer enforcement -- rather than re-testing `resolve_local_import`
+    in isolation a second time (`tests/unit/test_lang_primitives.py`
+    already covers the primitive directly)."""
+
+    def _cycle_via_absolute_imports(self, tmp_path: Path) -> list[list[str]]:
+        """Build the SAME two-file cycle (`pkg/a.py` <-> `pkg/b.py`, each
+        importing the other by absolute dotted specifier) `frob cycle`
+        would build, and return whatever `find_cycles` reports -- the
+        exact mechanism T-2195's addendum used to show src-layout hides a
+        planted cycle a top-level layout finds."""
+        from frob.cycle.graph import DependencyGraph, find_cycles
+        from frob.lang import extract_imports, resolve_local_import
+
+        graph = DependencyGraph()
+        specs_by_path = {}
+        for rel, other in (("pkg/a.py", "b"), ("pkg/b.py", "a")):
+            path = _write(tmp_path, rel, f"import pkg.{other}\n")
+            specs_by_path[rel] = (path, extract_imports(path).danger_ok)
+        for rel, (path, specs) in specs_by_path.items():
+            for spec in specs:
+                resolved = resolve_local_import(
+                    spec, "python", file_dir=path.parent, root=tmp_path
+                )
+                if resolved is not None:
+                    graph.add_edge(rel, resolved)
+                else:
+                    graph.add_node(rel)
+        return find_cycles(graph)
+
+    def test_cycle_detected_in_top_level_layout(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="control"
+        cycles = self._cycle_via_absolute_imports(tmp_path)
+        assert len(cycles) == 1
+        assert set(cycles[0]) == {"pkg/a.py", "pkg/b.py"}
+
+    def test_cycle_detected_in_src_layout_too(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="control"
+        # T-2195's headline symptom: before the fix, this same planted
+        # cycle vanished (`resolve_local_import` returned `None` for every
+        # `pkg.a`/`pkg.b` specifier under `root/src`, so no edge was ever
+        # added and `find_cycles` correctly reported nothing to find).
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n'
+        )
+        src_root = tmp_path / "src"
+        src_root.mkdir()
+        cycles = self._cycle_via_absolute_imports(src_root)
+        assert len(cycles) == 1
+        assert set(cycles[0]) == {"pkg/a.py", "pkg/b.py"}
+
+    def test_layering_resolves_a_nonempty_target_set(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_layering.py::_resolve_import_targets kind="control"
+        # T-2195 addendum 3: `_resolve_import_targets` (frob.arch._layering,
+        # the layering enforcement's own import-resolution call site) must
+        # resolve a real src-layout first-party import to a non-empty set
+        # -- before the fix it read `specs=N resolved=0` on this repo's own
+        # tree for every file checked.
+        from frob.arch._layering import _resolve_import_targets
+        from frob.lang import extract_imports
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n'
+        )
+        src_root = tmp_path / "src"
+        _write(tmp_path, "src/pkg/api.py", "def public() -> None:\n    pass\n")
+        caller = _write(tmp_path, "src/pkg/web.py", "import pkg.api\n")
+        specs = extract_imports(caller).danger_ok
+        targets = _resolve_import_targets(specs, caller, src_root)
+        assert targets == {"pkg/api.py"}
+
+    def test_layering_detects_a_real_violation(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_layering.py::check_layering_violations \
+        # kind="control"
+        # T-2195 addendum 3: with import resolution restored, a genuine
+        # disallowed cross-layer import must actually be flagged, not just
+        # resolved -- the acceptance criteria's own bar ("a non-empty
+        # resolved set AND detecting a real violation").
+        from frob.arch._layering import LayeringConfig, check_layering_violations
+
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n'
+        )
+        _write(tmp_path, "src/pkg/data/db.py", "def query() -> None:\n    pass\n")
+        _write(tmp_path, "src/pkg/web/routes.py", "import pkg.data.db\n")
+        config = LayeringConfig.model_validate(
+            {
+                "layers": {
+                    "web": ["src/pkg/web"],
+                    "data": ["src/pkg/data"],
+                },
+                "allow": {},
+            }
+        )
+        findings = check_layering_violations(tmp_path, config)
+        flagged = {f.file for f in findings}
+        assert "src/pkg/web/routes.py" in flagged

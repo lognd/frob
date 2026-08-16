@@ -319,33 +319,54 @@ defect -- the difference is documented, in one shared module, not
 independently reinvented. See `tests/unit/test_callgraph_module_scoped.py`
 for the reproduction of the fixed shape.
 
-**T-2188 update, and an open BLOCKER.** T-2156's own mechanism (import-
-verified cross-file resolution, `_local_imports_by_path`) is now shared,
-opt-in, by `build_call_graph`, `build_reference_graph`, and
-`build_ordered_call_graph` too, via a `verify_imports: bool = False`
-parameter on each -- the same "resolve a cross-file candidate only when
-the caller's file imports it" check `build_reference_graph_module_
+**T-2188 update, and the BLOCKER it filed (T-2195, now FIXED).** T-2156's
+own mechanism (import-verified cross-file resolution, `_local_imports_
+by_path`) is now shared, opt-in, by `build_call_graph`, `build_reference_
+graph`, and `build_ordered_call_graph` too, via a `verify_imports: bool =
+False` parameter on each -- the same "resolve a cross-file candidate only
+when the caller's file imports it" check `build_reference_graph_module_
 scoped` pioneered, generalized rather than reimplemented a second time
 (the T-2156 incident -- `_run`/`_commit_all` collisions -- is not unique
 to attribution; COV006, DEAD001, and PROTO001-005 read the SAME shared
 `by_name` index and were equally exposed). Defaults to `False` on every
-function -- NONE of COV006/DEAD001/PROTO001-005 have been switched to
-`verify_imports=True` yet, and must not be until a BLOCKER clears:
-`frob.lang._nodes.resolve_local_import`'s python branch does not
-resolve this repo's own real import forms (absolute src-layout, e.g.
-`frob.tickets._land`, AND relative, e.g. `._land`/`..lang._nodes`) --
-see the tracking ticket for the measured blast radius (DEAD001 46 -> 241,
-COV006 30 -> 622 findings on this repo's own tree when trialed) and the
-independently-reproduced discovery that this ALSO makes `frob cycle`
+function -- flipping any of COV006/DEAD001/PROTO001-005 to `verify_
+imports=True` is still a separate ticket's job (T-2188 itself, and it
+was explicitly NOT this ticket's job either), but the BLOCKER that made
+doing so unsafe is now cleared: T-2195 found `frob.lang._nodes.resolve_
+local_import`'s python branch resolving `None` for every absolute
+src-layout specifier (`frob.tickets._land`, resolved only against bare
+`root`, never `root/src`) AND every relative specifier (`._land`,
+`..lang._nodes` -- the leading-dot branch did not exist at all) --
+measured blast radius on this repo's own tree: DEAD001 46 -> 241, COV006
+30 -> 622 findings when trialed with `verify_imports=True`, and the
+independently-reproduced discovery that this ALSO made `frob cycle`
 report "no cycles found" on a byte-identical import cycle that a
-top-level (non-`src/`) layout correctly detects. This additionally
-means `build_reference_graph_module_scoped`'s own T-2156 fix has never
-been verified against a genuine cross-file attribution on this repo's
-own tree -- every certifying check to date is equally consistent with
-"cross-file resolution is silently disabled" as with "cross-file
-resolution is accurate"; re-verifying that with a real positive control,
-once the primitive is fixed, is part of the same follow-up. The
-`scope_private_helper_gaps` (T-0998/T-1012) consumer passes `verify_
+top-level (non-`src/`) layout correctly detected. `resolve_local_import`
+now resolves absolute specifiers against every `pyproject.toml`-declared
+source root (`[tool.setuptools] packages.find.where`, `package-dir`, or
+the hatch-wheel-packages equivalent -- never a hardcoded `src/` lexical
+special case, so a different declared layout picks up the same way) in
+addition to bare `root`, and resolves relative specifiers by walking up
+from the importing file's own directory per leading dot, matching
+python's own relative-import semantics. Per-consumer controls now exist
+for all three previously-vacuous consumers (`tests/test_lang.py::
+TestResolveLocalImportConsumers`): `frob.cycle` detects the SAME planted
+cycle in both a top-level and a src-layout project; `frob.arch._layering.
+_resolve_import_targets` resolves a non-empty target set AND `check_
+layering_violations` flags a real disallowed cross-layer import, on a
+src-layout fixture, where before the fix `specs=19 resolved=0`-shaped
+readings made layering enforcement silently vacuous on frob's own repo.
+This additionally means `build_reference_graph_module_scoped`'s own
+T-2156 fix has never been verified against a genuine cross-file
+attribution on this repo's own tree via THIS docs section's prior
+uncertainty -- `tests/test_graph.py::TestBuildCallGraphVerifyImports::
+test_cross_file_candidate_resolves_when_caller_imports_it` already
+exercises that positive case directly (an absolute same-directory
+import, unaffected by the src-layout/relative gap this ticket closed),
+so it was never actually blocked on this fix; re-verifying it against a
+src-layout positive case specifically remains open work for whichever
+ticket flips a real consumer's default. The `scope_private_helper_gaps`
+(T-0998/T-1012) consumer passes `verify_
 imports=False` explicitly (matching the default, kept for documentation
 clarity) -- it has a permanent, different correctness requirement (same-
 directory co-location, not import reachability) unrelated to this

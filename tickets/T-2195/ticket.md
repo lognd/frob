@@ -3,7 +3,7 @@ id: T-2195
 title: resolve_local_import (frob.lang._nodes) does not resolve src-layout absolute
   python imports, silently degrading every consumer of _local_imports_by_path to zero
   cross-file imports
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -32,7 +32,18 @@ scope_changes:
     symbols already declare
   actor: logan
   at: '2026-08-16'
-designated_repro_test: null
+evidence:
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_src_layout_absolute
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_relative_sibling
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_relative_bare_dot_is_package_init
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_relative_parent
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_third_party_still_none
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_scripts_fleet_status_still_resolves
+- tests/test_lang.py::TestResolveLocalImportConsumers::test_cycle_detected_in_top_level_layout
+- tests/test_lang.py::TestResolveLocalImportConsumers::test_cycle_detected_in_src_layout_too
+- tests/test_lang.py::TestResolveLocalImportConsumers::test_layering_resolves_a_nonempty_target_set
+- tests/test_lang.py::TestResolveLocalImportConsumers::test_layering_detects_a_real_violation
+designated_repro_test: tests/unit/test_lang_primitives.py::test_resolve_local_import_src_layout_absolute
 attachments:
 - path: T-draft-0bd874ac/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
   caption: 'widened to CRITICAL: relative imports fail too, zero cross-file resolution

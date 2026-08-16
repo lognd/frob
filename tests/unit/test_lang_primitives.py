@@ -311,6 +311,92 @@ def test_resolve_local_import_python_package_init_branch(tmp_path: Path):
     assert resolved == "pkg/__init__.py"
 
 
+def test_resolve_local_import_src_layout_absolute(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195: an absolute specifier (`pkg.mod`) must resolve under a
+    # pyproject.toml-declared source root (`src/`), not just bare `root` --
+    # the dominant real-world layout this repo itself uses.
+    root = tmp_path
+    (root / "pyproject.toml").write_text(
+        '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n'
+    )
+    pkg = root / "src" / "pkg"
+    pkg.mkdir(parents=True)
+    (pkg / "mod.py").write_text("x = 1\n")
+    resolved = resolve_local_import("pkg.mod", "python", file_dir=root, root=root)
+    assert resolved == "src/pkg/mod.py"
+
+
+def test_resolve_local_import_relative_sibling(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195: `from . import _land` / `from ._land import X` -- a single
+    # leading dot resolves against the importer's OWN directory, no
+    # pyproject.toml lookup required.
+    root = tmp_path
+    pkg = root / "pkg"
+    pkg.mkdir()
+    (pkg / "_land.py").write_text("x = 1\n")
+    resolved = resolve_local_import("._land", "python", file_dir=pkg, root=root)
+    assert resolved == "pkg/_land.py"
+
+
+def test_resolve_local_import_relative_bare_dot_is_package_init(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195: `from . import x` alone (bare `.` specifier, no trailing
+    # module name) resolves to the importer's own `__init__.py`.
+    root = tmp_path
+    pkg = root / "pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("x = 1\n")
+    resolved = resolve_local_import(".", "python", file_dir=pkg, root=root)
+    assert resolved == "pkg/__init__.py"
+
+
+def test_resolve_local_import_relative_parent(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195: `from ..lang._nodes import X` -- two leading dots walk up one
+    # directory from the importer before resolving the rest of the path.
+    root = tmp_path
+    (root / "lang").mkdir()
+    (root / "lang" / "_nodes.py").write_text("x = 1\n")
+    importer_dir = root / "tickets"
+    importer_dir.mkdir()
+    resolved = resolve_local_import(
+        "..lang._nodes", "python", file_dir=importer_dir, root=root
+    )
+    assert resolved == "lang/_nodes.py"
+
+
+def test_resolve_local_import_third_party_still_none(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195 regression guard: a genuinely third-party import must NOT
+    # start resolving just because source-root discovery widened -- only
+    # `os` was checked before this ticket; `pytest`/`tomllib` cover the
+    # exact names the ticket calls out as must-still-fail controls.
+    root = tmp_path
+    (root / "pyproject.toml").write_text(
+        '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n'
+    )
+    (root / "src").mkdir()
+    assert resolve_local_import("pytest", "python", file_dir=root, root=root) is None
+    assert resolve_local_import("tomllib", "python", file_dir=root, root=root) is None
+
+
+def test_resolve_local_import_scripts_fleet_status_still_resolves(tmp_path: Path):
+    # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
+    # T-2195 regression guard: the one absolute form that already worked
+    # (a bare toplevel package under `root`, no src-layout declared at
+    # all) must keep resolving unchanged.
+    root = tmp_path
+    scripts = root / "scripts"
+    scripts.mkdir()
+    (scripts / "fleet_status.py").write_text("x = 1\n")
+    resolved = resolve_local_import(
+        "scripts.fleet_status", "python", file_dir=root, root=root
+    )
+    assert resolved == "scripts/fleet_status.py"
+
+
 def test_resolve_local_import_cpp_resolves_relative_to_file_dir(tmp_path: Path):
     # frob:tests src/frob/lang/_nodes.py::resolve_local_import kind="unit"
     # Exercises the c/cpp branch's happy path: a real, in-root header

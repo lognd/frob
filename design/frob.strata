@@ -230,7 +230,7 @@ node graphlang : trusted {
     clearance Internal;
     code "src/frob/graph/**" "src/frob/lang/**" "src/frob/arch/**";
     may "eval" via "src/frob/arch/_layering.py", "src/frob/lang/_walk_strata.py";
-    may "fs.write" via "src/frob/arch/_layering.py", "src/frob/arch/_lock_ordering.py", "src/frob/graph/_generated.py", "src/frob/graph/cache.py", "src/frob/graph/lock.py";
+    may "fs.write" via "src/frob/arch/_layering.py", "src/frob/arch/_lock_ordering.py", "src/frob/graph/_generated.py", "src/frob/graph/cache.py", "src/frob/graph/lock.py", "src/frob/lang/_nodes.py";
     may "fs.read" via "src/frob/arch/__init__.py", "src/frob/arch/_layering.py", "src/frob/arch/_python.py", "src/frob/graph/__init__.py", "src/frob/graph/imports.py", "src/frob/graph/lock.py", "src/frob/lang/__init__.py";
     // T-1464: `_artifact_cache_connection` reads `PARSE_ARTIFACT_CACHE_ENV`
     // (an owning `ProcessPoolExecutor` parent's own stamped filesystem
