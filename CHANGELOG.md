@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.476.0] - unreleased
+
+- T-2225: fleet_status --ticket reports dispatchable=True when the ticket's SCOPE FILES are held by another agent's live lease (two mis-dispatches measured)
+
 ## [0.475.0] - unreleased
 
 - T-2226: T-2199 residue: tickets promoted before the fix still record dead T-draft-* attachment paths, and no repair path exists (6 of 41 floor errors)

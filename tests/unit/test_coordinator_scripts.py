@@ -1136,6 +1136,171 @@ class TestTicketReadiness:
         assert readiness["dispatchable"] is True
 
 
+class TestScopeLeaseCollisions:
+    """`fleet_status.scope_lease_collisions` / `_expand_scope_globs_to_paths`
+    (T-2225)."""
+
+    def _make_tree(self, tmp_path: Path) -> Path:
+        (tmp_path / "src" / "frob" / "tickets").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "tickets" / "_land.py").write_text(
+            "x = 1\n", encoding="utf-8"
+        )
+        (tmp_path / "src" / "frob" / "app").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "app" / "config.py").write_text(
+            "y = 2\n", encoding="utf-8"
+        )
+        return tmp_path
+
+    def test_glob_scope_collides_with_a_literal_lease_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2225 acceptance [1]/[2]: a glob scope entry (`src/frob/**`)
+        colliding only after EXPANSION against the real filesystem with a
+        live lease's literal scope file (`src/frob/tickets/_land.py`) is
+        detected -- the measured incident this fixes: no lexical/string
+        comparison of those two texts would ever match."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(
+            fleet_status,
+            "lease_classification",
+            lambda record: "live",
+        )
+        held = [
+            {
+                "ticket_id": "T-2215",
+                "worktree": str(root),
+                "scope": ["src/frob/tickets/_land.py"],
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            }
+        ]
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/**"], held
+        )
+        assert len(collisions) == 1
+        assert collisions[0]["ticket_id"] == "T-2215"
+        assert any("_land.py" in p for p in collisions[0]["paths"])
+
+    def test_no_collision_when_files_are_disjoint(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2225 acceptance [3]: a ticket whose scope files do not overlap
+        any live lease's own MUST STILL report no collision (must-still-
+        pass control against a fix that flags everything)."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(fleet_status, "lease_classification", lambda record: "live")
+        held = [
+            {
+                "ticket_id": "T-2215",
+                "worktree": str(root),
+                "scope": ["src/frob/tickets/_land.py"],
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            }
+        ]
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/app/config.py"], held
+        )
+        assert collisions == []
+
+    def test_a_reclaimable_lease_is_never_a_collision(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2225 acceptance [4]: a lease `lease_classification` calls
+        reclaimable (or root-resident) is not held by anyone and must
+        never count as a collision, even though its scope files
+        genuinely overlap on disk -- reuses T-2222's own classification,
+        never re-implements staleness rules here."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(
+            fleet_status, "lease_classification", lambda record: "reclaimable"
+        )
+        held = [
+            {
+                "ticket_id": "T-2215",
+                "worktree": str(root),
+                "scope": ["src/frob/tickets/_land.py"],
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            }
+        ]
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/**"], held
+        )
+        assert collisions == []
+
+
+class TestTicketReadinessScopeCollision:
+    """`fleet_status.ticket_readiness`'s scope-collision integration
+    (T-2225)."""
+
+    def test_not_dispatchable_when_scope_files_are_held_by_another_live_lease(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2225's own reproduction: `--ticket` on a ticket whose scope
+        files are held by another ticket's live lease must report the
+        collision and `dispatchable: False` -- fails today: prints
+        `lease: none` / `dispatchable: True`."""
+        (tmp_path / "src" / "frob" / "tickets").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "tickets" / "_land.py").write_text(
+            "x = 1\n", encoding="utf-8"
+        )
+        monkeypatch.setattr(fleet_status, "REPO", tmp_path)
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "queued", "scope": ["src/frob/**"], "blocked_by": []},
+        )
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "leases",
+            lambda: [
+                {
+                    "ticket_id": "T-2215",
+                    "worktree": str(tmp_path),
+                    "scope": ["src/frob/tickets/_land.py"],
+                    "recorded_at": "2026-08-01T00:00:00+00:00",
+                }
+            ],
+        )
+        monkeypatch.setattr(fleet_status, "lease_classification", lambda record: "live")
+        readiness = fleet_status.ticket_readiness("T-2220")
+        assert readiness["scope_lease_collisions"] != []
+        assert readiness["dispatchable"] is False
+
+    def test_dispatchable_when_no_colliding_lease(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-still-pass control: a ticket whose scope files are held
+        by no one still reports dispatchable."""
+        (tmp_path / "src" / "frob" / "app").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "app" / "config.py").write_text(
+            "y = 2\n", encoding="utf-8"
+        )
+        monkeypatch.setattr(fleet_status, "REPO", tmp_path)
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {
+                "state": "queued",
+                "scope": ["src/frob/app/config.py"],
+                "blocked_by": [],
+            },
+        )
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["scope_lease_collisions"] == []
+        assert readiness["dispatchable"] is True
+
+
 # frob:ticket T-2172
 class TestFleetStatusMain:
     """`fleet_status.main`."""

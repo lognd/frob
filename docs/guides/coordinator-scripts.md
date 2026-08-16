@@ -272,18 +272,47 @@ directory correlation fixes this: an empty `scope_globs` argument (no
 known scope to check against) now reports empty rather than falling
 back to the old, looser behavior.
 
+### `_expand_scope_globs_to_paths`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_expand_scope_globs_to_paths -->
+
+T-2225. Expands scope glob patterns (e.g. `src/frob/**`) against the
+real filesystem, returning the resolved absolute path of every matched
+file -- the mechanism that lets a scope collision be detected at the
+RESOLVED-FILE level, never by comparing glob text. A pattern ending in a
+bare `**` also tries `<pattern>/*`, since pathlib's own `**` semantics
+match directories recursively but not the files inside the deepest one
+without a further path segment.
+
+### `scope_lease_collisions`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#scope_lease_collisions -->
+
+T-2225. Which OTHER held leases collide with a ticket's own effective
+scope at the resolved-file level, restricted to leases `lease_
+classification` (T-2222, reused not re-implemented) calls `"live"` -- a
+reclaimable or root-resident lease is not actually held by anyone and
+never counts as a collision. Fixes the measured incident: two tickets
+were dispatched whose scope files (`src/frob/app/config.py`, `src/frob/
+tickets/_land.py`) were already held by another agent's LIVE lease, and
+the old readiness answered `lease: none` / `dispatchable: True` for both
+because it only ever asked "does THIS ticket hold a lease", never
+"does some OTHER live lease already cover the files it needs".
+
 ### `ticket_readiness`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#ticket_readiness -->
 
 T-2133's actual answer to "given T-####, is it dispatchable right now?" --
-combines the three functions above into one dict: `lease`, `main`
+combines the functions above into one dict: `lease`, `main`
 (state/scope on `main`), `scope_diverges` (`True` when a live lease's
 scope differs from `main`'s declared scope -- the single highest-value
-signal this ticket exists to add), `worktrees_with_commits`, and
-`dispatchable` (`False` whenever a live lease is held, another worktree
-already carries commits for this ticket, or `main` shows a
-`done`/`dropped`/`in-progress` state; `True` otherwise).
+signal this ticket exists to add), `worktrees_with_commits`, `scope_
+lease_collisions` (T-2225, other live leases whose scope files overlap
+this ticket's own), and `dispatchable` (`False` whenever a live lease is
+held, another worktree already carries commits for this ticket, `main`
+shows a `done`/`dropped`/`in-progress` state, or another live lease's
+scope files collide; `True` otherwise).
 
 ### `effective_scope`
 

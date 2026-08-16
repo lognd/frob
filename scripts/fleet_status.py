@@ -501,6 +501,94 @@ def _open_blocker_ids(blocked_by: Sequence[str]) -> list[str]:
     return open_ids
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_expand_scope_globs_to_paths
+# frob:ticket T-2225
+def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
+    """Expand `globs` (scope glob patterns, e.g. `src/frob/**`) against
+    the REAL filesystem under `root`, returning the resolved absolute
+    path of every matched FILE -- T-2225's own fix for the "compare
+    scopes as strings" defect shape: a live lease on `src/frob/tickets/
+    _land.py` collides with a scope entry of `src/frob/**`, and no
+    lexical/substring comparison of those two texts detects that (the
+    glob has to be walked against real files to know what it covers).
+    `root.glob(pattern)` (pathlib, supports `**` recursive segments)
+    handles both a literal path glob (matches at most one file) and a
+    wildcard one; a pattern that cannot be globbed at all (leading `/`,
+    invalid syntax) is skipped rather than raising -- a best-effort scope
+    expansion, matching this script's existing fail-quiet posture. A
+    pattern ending in a bare `**` (a common scope-writing shape, e.g.
+    `src/frob/**`) also tries `<pattern>/*` -- pathlib's own `**` semantics
+    match every directory recursively but NOT the files inside the
+    deepest one unless a further segment follows it (verified: `Path.
+    glob('src/frob/**')` alone returns directories only), so the bare
+    form would silently expand to zero files without this."""
+    paths: set[Path] = set()
+    patterns_to_try = set()
+    for pattern in globs:
+        patterns_to_try.add(pattern)
+        if pattern.endswith("**"):
+            patterns_to_try.add(f"{pattern}/*")
+    for pattern in patterns_to_try:
+        try:
+            matches = root.glob(pattern)
+        except (OSError, ValueError, NotImplementedError):
+            continue
+        for match in matches:
+            if match.is_file():
+                paths.add(match.resolve())
+    return paths
+
+
+# frob:doc docs/guides/coordinator-scripts.md#scope_lease_collisions
+# frob:ticket T-2225
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_glob_scope_coll\
+# ides_with_a_literal_lease_file
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_no_collision_wh\
+# en_files_are_disjoint
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_a_reclaimable_l\
+# ease_is_never_a_collision
+def scope_lease_collisions(
+    ticket_id: str, effective_scope: Sequence[str], held: Sequence[dict]
+) -> list[dict]:
+    """T-2225: which OTHER held leases collide with `effective_scope` (a
+    ticket's own scope globs) at the RESOLVED-FILE level, restricted to
+    leases `lease_classification` (T-2222, reused here rather than
+    re-implemented) calls `"live"` -- a reclaimable or root-resident
+    lease is not actually held by anyone and must never count as a
+    collision (acceptance [4]). Both sides are expanded via `_expand_
+    scope_globs_to_paths` and intersected as concrete file paths, never
+    compared as glob TEXT -- the measured incident this fixes: a scope of
+    `src/frob/**` and a live lease's own scope of `src/frob/tickets/
+    _land.py` are lexically unrelated strings but genuinely overlapping
+    file sets.
+
+    Returns one dict per colliding OTHER ticket:
+    `{"ticket_id": ..., "paths": [str, ...]}` (sorted, deduplicated) --
+    `[]` means no collision (the must-still-pass case)."""
+    my_files = _expand_scope_globs_to_paths(REPO, effective_scope)
+    if not my_files:
+        return []
+    collisions: list[dict] = []
+    for record in held:
+        other_id = record.get("ticket_id")
+        if other_id is None or other_id == ticket_id:
+            continue
+        if lease_classification(record) != "live":
+            continue
+        other_files = _expand_scope_globs_to_paths(REPO, record.get("scope", []))
+        overlap = my_files & other_files
+        if overlap:
+            collisions.append({"ticket_id": other_id, "paths": overlap})
+    # PERF004: sort each collision's paths once, outside the per-lease loop
+    # above, rather than calling sorted() per iteration inside it.
+    for collision in collisions:
+        collision["paths"] = sorted(str(p) for p in collision["paths"])
+    return collisions
+
+
 # frob:ticket T-2196
 def ticket_readiness(ticket_id: str) -> dict:
     """T-2133: the single per-ticket answer to "given T-####, is it
@@ -532,6 +620,9 @@ def ticket_readiness(ticket_id: str) -> dict:
       `done`/`dropped` on `main` (`_open_blocker_ids`) -- `[]` when the
       ticket does not exist on `main` (nothing to read `blocked_by` off
       of yet).
+    - `scope_lease_collisions` (T-2225, own docstring has the full
+      incident/rationale): OTHER live leases whose scope files, once
+      expanded against the real filesystem, overlap this ticket's own.
     - `dispatchable`: T-2196 fixed the defect class this field used to
       embody -- "the report knows more than the verdict uses". Every
       fact this function MEASURES now gates the verdict, not a subset:
@@ -542,10 +633,11 @@ def ticket_readiness(ticket_id: str) -> dict:
       old verdict endorsed it), no live lease may be held, no sibling
       worktree may already carry scope-matching commits, `main`'s own
       state must not be `done`/`dropped`/`in-progress`, `blocked_by` must
-      have no open blocker, and the lease's scope must not have diverged
-      from `main`'s declared scope. `True` only when every one of those
-      checks passes. This is the field a caller (or `main`'s own exit
-      code) gates dispatch on."""
+      have no open blocker, the lease's scope must not have diverged from
+      `main`'s declared scope, and (T-2225) no OTHER live lease's scope
+      files may overlap this ticket's own. `True` only when every one of
+      those checks passes. This is the field a caller (or `main`'s own
+      exit code) gates dispatch on."""
     lease = ticket_lease(ticket_id)
     main_info = ticket_frontmatter_on_main(ticket_id)
     main_scope = main_info["scope"] if main_info is not None else None
@@ -566,6 +658,9 @@ def ticket_readiness(ticket_id: str) -> dict:
         if main_info is not None
         else []
     )
+    scope_collisions = scope_lease_collisions(
+        ticket_id, effective_scope or (), leases()
+    )
     dispatchable = (
         main_info is not None
         and lease is None
@@ -573,6 +668,7 @@ def ticket_readiness(ticket_id: str) -> dict:
         and state_on_main not in ("done", "dropped", "in-progress")
         and not open_blockers
         and not scope_diverges
+        and not scope_collisions
     )
     return {
         "ticket_id": ticket_id,
@@ -581,6 +677,7 @@ def ticket_readiness(ticket_id: str) -> dict:
         "scope_diverges": scope_diverges,
         "worktrees_with_commits": worktrees_with_commits,
         "open_blockers": open_blockers,
+        "scope_lease_collisions": scope_collisions,
         "dispatchable": dispatchable,
     }
 
@@ -1312,6 +1409,12 @@ def _ticket_readiness_lines(readiness: dict) -> list[str]:
     commits = readiness["worktrees_with_commits"]
     if commits:
         lines.append(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")
+    scope_collisions = readiness.get("scope_lease_collisions", [])
+    for collision in scope_collisions:
+        paths = ", ".join(collision["paths"])
+        lines.append(
+            f"  SCOPE COLLISION with live lease {collision['ticket_id']}: {paths}"
+        )
     lines.append(f"  dispatchable: {readiness['dispatchable']}")
     return lines
 
