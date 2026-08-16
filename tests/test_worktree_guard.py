@@ -19,11 +19,12 @@ from frob.app.agent_runner import run as agent_run
 from frob.gitio import GitError
 from frob.scaffold._managed import _apply_stash_guard
 from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
-from frob.tickets._leases import sweep_worktrees
+from frob.tickets._leases import _LeaseRecord, leases_dir, sweep_worktrees
 from frob.tickets._models import TicketError
 from frob.tickets._worktree_guard import (
     FROB_AGENT_ENV,
     FROB_WORKTREE_ENV,
+    PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
     agent_env_exports,
     enforce_worktree_lease,
 )
@@ -41,6 +42,29 @@ def _init_repo(root: Path) -> None:
     (root / "tickets.md").write_text("# Tickets\n\n")
     _git("add", "-A", cwd=root)
     _git("commit", "-q", "-m", "init", cwd=root)
+
+
+def _write_lease(root: Path, ticket_id: str, worktree: Path) -> None:
+    """Writes a live cross-worktree lease file for `ticket_id` (T-2221
+    fixture helper, same shape `tests/test_ticket_leases.py::_write_lease`
+    uses): `worktree` need only exist on disk for `_probe_worktree_
+    liveness` to classify it `"present"` -- it does not need to be a
+    registered `git worktree` of `root`."""
+    resolved = leases_dir(root)
+    assert resolved.is_ok
+    leases_root = resolved.danger_ok
+    leases_root.mkdir(parents=True, exist_ok=True)
+    worktree.mkdir(parents=True, exist_ok=True)
+    record = _LeaseRecord(
+        ticket_id=ticket_id,
+        scope=("src/feature.py",),
+        worktree=str(worktree),
+        branch=f"agent-{ticket_id}",
+        recorded_at="2026-08-16T00:00:00+00:00",
+    )
+    (leases_root / f"{ticket_id}.json").write_text(
+        record.model_dump_json(indent=2) + "\n", encoding="utf-8"
+    )
 
 
 class TestEnforceWorktreeLease:
@@ -151,6 +175,43 @@ class TestAgentEnvExports:
         result = agent_env_exports(not_a_repo)
         assert result.is_err
         assert result.danger_err == GitError.NotARepo
+
+    def test_no_fleet_context_omits_xdist_bound(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_worktree_guard.py::TestAgentEnvExports.test_no_fleet_context_omits\
+        # _xdist_bound
+        """T-2221 must-still-pass control: no other live agent lease ->
+        `PYTEST_XDIST_AUTO_NUM_WORKERS` is not exported at all, so a pytest
+        spawned from this environment resolves `-n auto` against xdist's
+        own default (the full CPU count) -- the single-developer path is
+        never degraded."""
+        _init_repo(tmp_path)
+        result = agent_env_exports(tmp_path)
+        assert result.is_ok
+        assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV not in result.danger_ok
+
+    def test_fleet_context_bounds_xdist_workers(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_worktree_guard.py::TestAgentEnvExports.test_fleet_context_bounds_x\
+        # dist_workers
+        """T-2221 acceptance 1: three OTHER live agent leases visible via
+        the real cross-worktree lease side-channel (never `ps`-parsed) ->
+        `agent_env_exports` includes a `PYTEST_XDIST_AUTO_NUM_WORKERS`
+        bounded well below the raw CPU count, so a 4th agent joining does
+        not also request the whole machine."""
+        _init_repo(tmp_path)
+        for i in range(3):
+            _write_lease(tmp_path, f"T-100{i}", tmp_path.parent / f"peer-wt-{i}")
+        result = agent_env_exports(tmp_path)
+        assert result.is_ok
+        exports = result.danger_ok
+        assert PYTEST_XDIST_AUTO_NUM_WORKERS_ENV in exports
+        workers = int(exports[PYTEST_XDIST_AUTO_NUM_WORKERS_ENV])
+        cpu_count = os.cpu_count() or 1
+        assert 1 <= workers <= cpu_count
+        # 3 other agents + this one joining = 4-way split, never the raw
+        # per-agent `-n auto` count that caused the measured oversubscription.
+        assert workers < cpu_count or cpu_count == 1
 
 
 class TestAgentRunnerEnv:
@@ -284,17 +345,13 @@ class TestSweepWorktreesLiveProcess:
     lease, and had a recent HEAD commit -- exactly the shape that used
     to read as `removed`. This is that exact shape, reproduced."""
 
-    def test_clean_no_lease_recent_head_live_process_kept(
-        self, tmp_path: Path
-    ) -> None:
+    def test_clean_no_lease_recent_head_live_process_kept(self, tmp_path: Path) -> None:
         # frob:tests tests/test_worktree_guard.py::TestSweepWorktreesLiveProcess.test_clean_no_lease_recent_head_live_process_kept  # noqa: E501
         main_repo = tmp_path / "main"
         _init_repo(main_repo)
         wt = tmp_path / "main" / ".claude" / "worktrees" / "agent-live"
         wt.parent.mkdir(parents=True, exist_ok=True)
-        _git(
-            "worktree", "add", "-b", "agent-live", str(wt), cwd=main_repo
-        )
+        _git("worktree", "add", "-b", "agent-live", str(wt), cwd=main_repo)
         # CLEAN (nothing uncommitted), NO lease recorded, RECENT HEAD --
         # every proxy this repo used to trust says "safe to remove".
         holder = subprocess.Popen(

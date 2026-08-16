@@ -2,7 +2,7 @@
 id: T-2221
 title: 'Every agent''s pytest claims the whole machine: -n auto oversubscribes ~4x
   under a multi-agent fleet (load 28 on 12 CPUs)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,22 +14,72 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/config.py
+- src/frob/tickets/_worktree_guard.py
+- tests/test_worktree_guard.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_worktree_guard.py
+  reason: 'Measured: neither in-scope file (_verify.py, config.py) has a pytest spawn
+    affected by -n auto -- _verify.py:1467''s only pytest spawn already overrides
+    addopts entirely (-o addopts=), never resolving xdist auto at all. The one real
+    cross-agent choke point is agent_env_exports() in _worktree_guard.py: it is the
+    SAME env-injection function frob agent env already uses to export FROB_WORKTREE/FROB_AGENT
+    into a dispatched agent''s shell (playbook sec 1b), inherited by every downstream
+    pytest spawn (raw shell AND frob-spawned) without duplicating the rule per call
+    site. read_all_leases() in the same package already provides the real, non-ps
+    cross-worktree concurrency signal doable() uses.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: 'Measured: neither in-scope file (_verify.py, config.py) has a pytest spawn
+    affected by -n auto -- _verify.py:1467''s only pytest spawn already overrides
+    addopts entirely (-o addopts=), never resolving xdist auto at all. The one real
+    cross-agent choke point is agent_env_exports() in _worktree_guard.py: it is the
+    SAME env-injection function frob agent env already uses to export FROB_WORKTREE/FROB_AGENT
+    into a dispatched agent''s shell (playbook sec 1b), inherited by every downstream
+    pytest spawn (raw shell AND frob-spawned) without duplicating the rule per call
+    site. read_all_leases() in the same package already provides the real, non-ps
+    cross-worktree concurrency signal doable() uses.'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'Measured: neither in-scope file (_verify.py, config.py) has a pytest spawn
+    affected by -n auto -- _verify.py:1467''s only pytest spawn already overrides
+    addopts entirely (-o addopts=), never resolving xdist auto at all. The one real
+    cross-agent choke point is agent_env_exports() in _worktree_guard.py: it is the
+    SAME env-injection function frob agent env already uses to export FROB_WORKTREE/FROB_AGENT
+    into a dispatched agent''s shell (playbook sec 1b), inherited by every downstream
+    pytest spawn (raw shell AND frob-spawned) without duplicating the rule per call
+    site. read_all_leases() in the same package already provides the real, non-ps
+    cross-worktree concurrency signal doable() uses.'
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_worktree_guard.py::TestAgentEnvExports::test_fleet_context_bounds_xdist_workers
+- tests/test_worktree_guard.py::TestAgentEnvExports::test_no_fleet_context_omits_xdist_bound
 designated_repro_test: null
 acceptance:
 - text: 'A pytest spawned under agent/fleet context receives a bounded PYTEST_XDIST_AUTO_NUM_WORKERS
     (fails today: nothing sets it)'
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvExports::test_fleet_context_bounds_xdist_workers
 - text: A pytest spawned with NO fleet context MUST STILL resolve auto to full CPU
     count -- must-still-pass control for the single-developer path
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvExports::test_no_fleet_context_omits_xdist_bound
 - text: The bound derives from a real concurrency signal (lease count or coordinator-set
     var), never a hardcoded constant and never parsed from ps output
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvExports::test_fleet_context_bounds_xdist_workers
 - text: Set at a single choke point; if none exists, report the five-spawn-site finding
     rather than silently duplicating the rule
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvExports::test_fleet_context_bounds_xdist_workers
 threat: null
 component: null
 anchor: false

@@ -912,6 +912,38 @@ T-0973: `enforce_worktree_lease`'s `FROB_WORKTREE_ENV` read carries a
 `frob:waive SEC110 reason="..."` -- it is a worktree-lease path marker,
 not a secret.
 
+**`frob agent env` also bounds pytest-xdist under a fleet (T-2221).**
+
+<!-- frob:describes src/frob/tickets/_worktree_guard.py::agent_env_exports -->
+
+**Incident:** `pyproject.toml`'s `addopts` includes `-n auto`, which
+`pytest-xdist` resolves against the machine's whole CPU count -- correct
+for a single developer, wrong the moment several dispatched agents each
+resolve `auto` independently in their own worktree. Measured: 4 concurrent
+agents on a 12-CPU machine each requesting ~12 workers, `LOAD 28.2`.
+
+`agent_env_exports(root)` (T-0574's `frob agent env` choke point) now also
+computes `PYTEST_XDIST_AUTO_NUM_WORKERS` -- the env var `pytest-xdist`
+3.8.0 itself reads when resolving `-n auto` (`xdist/plugin.py`) -- and
+includes it in the exported env whenever `read_all_leases(root)` (the same
+real, cross-worktree lease side-channel `doable()` already uses, never a
+`ps`-parsed process count) shows at least one OTHER live agent lease. The
+bound is `max(1, cpu_count // (existing_leases + 1))`, treating this
+agent as one more concurrent claimant alongside whatever `existing_leases`
+already holds. No other live lease -- the single-developer path --
+exports nothing at all, so `-n auto` resolves against xdist's own default
+(the full CPU count) unaffected.
+
+This is the single choke point for the fix: every pytest spawn that
+inherits this exported shell environment -- an agent's own raw `uv run
+pytest` invocation, or any of the several frob-internal `guarded_
+subprocess_run`/`subprocess.run` pytest spawns across this codebase that
+do not themselves override `addopts` -- picks up the same bound without
+the rule being duplicated at each spawn site. (`_verify.py`'s own direct-
+pytest fallback, `_run_pytest_directly`, is unaffected either way: it
+already passes `-o addopts=`, fully overriding `addopts` and never
+invoking `-n auto` in the first place.)
+
 **Git hook (defense in depth).**
 `frob.scaffold.install_worktree_lease_hook(root, *, force=False)`
 (docs/commands/scaffold.md) installs `pre-commit` and `pre-merge-commit`

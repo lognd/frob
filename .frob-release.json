@@ -2169,6 +2169,7 @@
     "src/frob/tickets/_store.py::write_ticket": "e3c0a84b92cc279f926e20c9ff16239f7c1075be890995f03847e60df48aa242",
     "src/frob/tickets/_worktree_guard.py::FROB_AGENT_ENV": "6f6ad16643b577b93fc9ed9bfd21d31424e84cf04d8bfb1c470c9b95d224bce6",
     "src/frob/tickets/_worktree_guard.py::FROB_WORKTREE_ENV": "30d9b7d45443142e51d7e347b5bceb79199f07ce10725d8252b7d8232f754ccc",
+    "src/frob/tickets/_worktree_guard.py::PYTEST_XDIST_AUTO_NUM_WORKERS_ENV": "bbf0ee3ce872559080747b5a5e48df4e5d95faeaf6f4d687ced55118fb762035",
     "src/frob/tickets/_worktree_guard.py::agent_env_exports": "149643b353f0a30d2d3bf990b10b0725d8cf1c1f3bbedf4ad922a8142c627eda",
     "src/frob/tickets/_worktree_guard.py::enforce_worktree_lease": "240eb6b4ddcd01e15d618beebc279565c51f7d1c34e015d5ae2eb0f8ff8964b0",
     "src/frob/tickets/clipboard.py::ClipboardError": "602f37ca34083cfa40057c58f8a9c407e9fff365766cc0092638719b08b998de",
@@ -2308,5 +2309,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.471.0"
+  "version": "0.472.0"
 }

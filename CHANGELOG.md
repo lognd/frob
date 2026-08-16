@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.472.0] - unreleased
+
+- T-2221: Every agent's pytest claims the whole machine: -n auto oversubscribes ~4x under a multi-agent fleet (load 28 on 12 CPUs)
+
 ## [0.471.0] - unreleased
 
 - T-2207: A malformed empty-identity finding makes quarantine PERMANENTLY unclearable: dispose rejects it as malformed while clearing requires every finding disposed, so deferred landing stays off fleet-wide with no recovery path
