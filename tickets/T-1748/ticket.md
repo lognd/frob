@@ -2,7 +2,7 @@
 id: T-1748
 title: Two tickets sharing one fix mechanism cannot land from one worktree without
   disabling PassengerTickets and BUG002
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-07'
@@ -15,9 +15,16 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/gates/_mutation_evidence.py
 - tests/test_ticket_land.py
-- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/tickets.md
+  reason: premise looks stale (reachability fix T-1720/T-2173 + pre-existing frob:no-behavior-change
+    already cover WANTED items 1/2); expect to close with evidence, not write a doc
+    section -- freeing this file for T-1780's split, which it blocks live
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
@@ -89,3 +96,23 @@ WANTED:
 Evidence must include the real shape: two tickets sharing a mechanism,
 stacked on one branch, landed in order, with no `--allow-cross-ticket`
 and no BUG002 waiver.
+
+## Drop reason
+- 2026-08-16: Stale premise, re-measured with direct evidence, not implemented.
+
+T-1748 was filed 2026-08-07 describing two incidents where a stacked-sibling land required either a fiddly manual worktree split, or --allow-cross-ticket on BOTH lands plus a frob:waive BUG002 on the second -- both checks disabled for the whole series. The three WANTED items asked for: (1) reachability-based passenger detection instead of a whole-branch diff scan, (2) a non-waiver BUG002 disposition for the sibling-already-landed-the-fix case, (3) landing a related series from one worktree without overrides.
+
+I hit this exact class first-hand today landing T-2179 (promoted from T-draft-05563e8d) and T-2174 from one worktree/branch (t-2129), both sharing a fix (fleet_status.py plus callgraph.py touched together). Real commits, not a synthetic repro:
+
+- T-2179 landed first: commit 97fbf751deca456af7ce5557da8ee36cd1b94814, carrying T-2174 as a passenger, ONE explicit --allow-cross-ticket disclosure (the flag named exactly T-2174, nothing else).
+- T-2174 landed second: commit 7f088c06e395bcbc72f6abdfe01238ba974c0f10, with NO --allow-cross-ticket and NO frob:waive BUG002 at all. Its own BUG002 obligation used the pre-existing frob:no-behavior-change reason=... disposition (T-1616, predates this ticket), which is exactly WANTED item 2's ask (the frob:no-behavior-change sibling analogue) -- already the documented route, not a new mechanism.
+
+Both LAND-PROOF lines read verified=True; git show HEAD:tickets/T-2179/ticket.md and T-2174/ticket.md both read state: done on main.
+
+Why the second land needed zero overrides: frob ticket land's CLI wrapper (_land_cmd.py's auto-sync step, T-1720/T-2173, landed 2026-08-11 -- AFTER this ticket was filed) merges main back into the worktree immediately after every successful land. By the time T-2174 landed, T-2179's commits (and its own directive comment naming T-2179, the passenger-scan pattern) were common ancestors of the worktree's own HEAD, so the passenger-directive diff scan no longer contained them at all -- reachability, not a text scan of the whole branch, exactly WANTED item 1.
+
+What is NOT fixed, and should not be: the FIRST land of a stack still requires one --allow-cross-ticket (T-2179's land named T-2174 explicitly). This is correct, not residual: the passenger's code is genuinely not on main yet at that point, so disclosing it is the guard doing its job. I looked at whether PassengerTickets could auto-exempt a same-worktree lease holder (same_worktree_lease already exists and is used for the unrelated doable/scope --add collision check, T-1883) to remove even this first disclosure -- and stopped: T-1967 is the direct, on-the-nose lesson against exactly this shape (CrossTicketLeakage once exempted same-worktree siblings, which is the standard dispatch pattern, and the exemption silently disabled the guard for the common case). A same-worktree auto-exemption on PassengerTickets would repeat that mistake on a sibling gate. One disclosed flag on the series' first land is the guard functioning as designed, not a defect WANTED item 3 is asking to remove.
+
+Net: WANTED 1 done via T-1720/T-2173. WANTED 2 already available pre-ticket via T-1616's frob:no-behavior-change, demonstrated working in production today. WANTED 3 achieved in the form that does not conflict with T-1967 (one disclosed override on the series first land, zero on every subsequent one) -- not the literal zero-overrides-ever the title implies, which would require re-introducing a guard hole this repo already paid to close once.
+
+No code change filed. If a future incident shows the single first-land disclosure is still causing friction (a 3+-ticket stack where every member needs its own disclosure, not just the first), that is a different, narrower question and should be a fresh ticket citing the actual repro, not a reopening of this one.
