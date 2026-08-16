@@ -16,6 +16,7 @@ scope:
 - Makefile
 - docs/modules/release.md
 - docs/commands/release.md
+- tests/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -33,6 +34,12 @@ scope_changes:
     and docs/commands/release.md; include them so this leaf's scope closes without
     narrowing release/** itself, since the new publish verb genuinely lives alongside
     stamp/check/sync in the same module
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_release.py
+  reason: existing release module functions cite tests/test_release.py as their frob:tests
+    evidence home; new publish verb's own tests belong in the same file
   actor: logan
   at: '2026-08-16'
 designated_repro_test: null
