@@ -8,6 +8,8 @@ kind: security
 origin: human
 created: '2026-08-16'
 priority: high
+blocked_by:
+- T-draft-0bd874ac
 parent: T-1662
 tier: ticket
 sprint: null
