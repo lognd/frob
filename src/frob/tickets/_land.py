@@ -46,6 +46,9 @@ from pydantic import BaseModel
 from typani.result import Err, Ok, Result
 
 if TYPE_CHECKING:
+    # frob:ticket T-2215
+    from frob.gates import Violation
+
     # frob:ticket T-1979
     from frob.testing._models import CollectedTests
 
@@ -1026,8 +1029,7 @@ def land(
     reclaim = reclaim_orphaned_squash_residue(root, ticket_id)
     if reclaim.is_err:
         _log.error(
-            "land: %s pre-lock reclaim of orphaned squash residue in %s "
-            "failed: %s",
+            "land: %s pre-lock reclaim of orphaned squash residue in %s failed: %s",
             ticket_id,
             root,
             reclaim.danger_err,
@@ -1519,9 +1521,7 @@ def _land_plan_locked(
 
     merged_finalized, own_commits = _land_plan_merge_and_finalize(root, worktree)
     if merged_finalized.is_err:
-        _land_plan_unwind_after_merge(
-            root, pre_merge_sha, own_commits, dry_run=dry_run
-        )
+        _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits, dry_run=dry_run)
         return Err(merged_finalized.danger_err)
     merge_commit, finalized_ids = merged_finalized.danger_ok
 
@@ -2742,6 +2742,71 @@ def _validate_scope_covered_preflight(
     return Ok(None)
 
 
+# frob:ticket T-2215
+_BUG003_WAIVER_RE = re.compile(r'frob:waive\s+BUG003\s+reason="([^"]*)"')
+
+
+# frob:ticket T-2215
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_present_suppresses  # noqa: E501
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_bare_directive_without_reason_does_not_suppress  # noqa: E501
+def _must_still_pass_waiver_reason(ticket: Ticket) -> str | None:
+    """The `reason="..."` text of a `frob:waive BUG003 reason="..."` line
+    found anywhere in `ticket.body`, or `None` if no such (well-formed)
+    waiver is present. Mirrors `frob.gates._mutation_evidence.
+    _bug002_waiver_reason`'s body-text-directive shape exactly (same
+    regex form, same "malformed directive does not suppress" posture),
+    but lives here rather than in `_mutation_evidence.py`: T-2193 (which
+    built `must_still_pass_violations`/BUG003 itself) declared its own
+    scope as that single gate module alone, so this wiring ticket's own
+    scope (`_land.py`, `_close_cmd.py`, `_waive.py`) is where BUG003's
+    land/close-time escape hatch has to live instead."""
+    match = _BUG003_WAIVER_RE.search(ticket.body)
+    return match.group(1) if match else None
+
+
+# frob:ticket T-2215
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_refuses_when_control_broke_at_fix  # noqa: E501
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWiring.test_land_succeeds_when_gate_reports_clean  # noqa: E501
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassWaiver.test_reason_present_suppresses  # noqa: E501
+def _must_still_pass_land_violations(
+    root: Path, ticket: Ticket, base_ref: str
+) -> tuple[Violation, ...]:
+    """T-2215: wires `frob.gates.must_still_pass_violations` (BUG003,
+    T-2193) into the land path -- the positive-direction control that had
+    zero callers before this ticket. Runs unconditionally (BUG003 is not
+    kind-restricted -- see that function's own docstring: absence of a
+    `frob:must-still-pass` directive in `ticket.body` is always `()`, for
+    any kind, so this call is a no-op for the overwhelming majority of
+    tickets that never declare the directive) and applies the same
+    `frob:waive BUG003 reason="..."` body-text escape hatch BUG002 uses
+    (`_must_still_pass_waiver_reason` above) -- a waived finding is still
+    logged at WARNING, never silently dropped, mirroring
+    `_mutation_evidence_synchronous`'s own `--skip-mutation-evidence`
+    logging posture for BUG002/TEST016."""
+    # T-2218: `must_still_pass_violations` is not re-exported from
+    # `frob.gates`'s package `__init__` (an omission in T-2193's own
+    # land -- `bug_repro_violations`/`mutation_evidence_violations` both
+    # are) -- import directly from its owning submodule rather than
+    # widen this ticket's scope to `frob/gates/__init__.py` to fix that
+    # separately-filed gap.
+    from frob.gates._mutation_evidence import must_still_pass_violations
+
+    violations = must_still_pass_violations(root, ticket, base_ref)
+    if not violations:
+        return ()
+    waiver_reason = _must_still_pass_waiver_reason(ticket)
+    if waiver_reason is not None:
+        for v in violations:
+            _log.warning(
+                "land: %s BUG003 finding waived (reason=%r): %s",
+                ticket.id,
+                waiver_reason,
+                v.message,
+            )
+        return ()
+    return violations
+
+
 # frob:ticket T-1518
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
@@ -2769,6 +2834,15 @@ def _check_mutation_evidence(
     entry -- per that ticket's own "no TEST016 on the land path" text.
     BUG002 is unaffected by the profile and still runs/blocks for bug/
     security kind regardless.
+
+    T-2215 additionally wires `frob.gates.must_still_pass_violations`
+    (BUG003, T-2193) alongside BUG002 in both the deferred and
+    synchronous branches below (`_must_still_pass_land_violations`) --
+    same ERROR-always severity posture, same
+    `frob:waive BUG003 reason="..."` body-text escape hatch shape as
+    BUG002's own `_BUG002_WAIVER_RE`, not kind-restricted (unlike
+    BUG002/TEST016: BUG003 fires for any kind that declares a
+    `frob:must-still-pass` directive).
 
     T-1518 narrowed the SYNCHRONOUS half of this obligation (the actual
     mutation subprocess, `mutation_evidence_violations`/TEST016) to
@@ -2845,6 +2919,8 @@ def _mutation_evidence_sync_decision(
 
 
 # frob:ticket T-1593
+# frob:ticket T-2215
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_land_deferred_refuses_on_bug003_alone  # noqa: E501
 def _mutation_evidence_deferred(
     worktree: Path, ticket: Ticket, base_ref: str, rapid: bool
 ) -> Result[None, LandError]:
@@ -2867,15 +2943,17 @@ def _mutation_evidence_deferred(
                 ticket.id,
                 enqueued.danger_err,
             )
-    bug002_only = bug_repro_violations(worktree, ticket, base_ref)
+    bug002_only = bug_repro_violations(
+        worktree, ticket, base_ref
+    ) + _must_still_pass_land_violations(worktree, ticket, base_ref)
     errors = [v for v in bug002_only if v.severity == "error"]
     for v in bug002_only:
         _log.warning("land: %s %s %s", ticket.id, v.rule, v.message)
     if errors:
         _log.error(
-            "land: %s cannot land -- %d BUG002 finding(s) (kind=%s); "
-            "TEST016 was deferred to the batch mutation sweep, BUG002 "
-            "is unaffected and still blocks",
+            "land: %s cannot land -- %d BUG002/BUG003 finding(s) (kind=%s); "
+            "TEST016 was deferred to the batch mutation sweep, BUG002/"
+            "BUG003 are unaffected and still block",
             ticket.id,
             len(errors),
             ticket.kind,
@@ -2885,6 +2963,8 @@ def _mutation_evidence_deferred(
 
 
 # frob:ticket T-1593
+# frob:ticket T-2215
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_land_synchronous_refuses_on_bug003_alone  # noqa: E501
 def _mutation_evidence_synchronous(
     worktree: Path, ticket: Ticket, base_ref: str, skip: bool
 ) -> Result[None, LandError]:
@@ -2894,9 +2974,11 @@ def _mutation_evidence_synchronous(
     extraction of the original `else` branch body, unchanged."""
     from frob.gates import bug_repro_violations, mutation_evidence_violations
 
-    violations = mutation_evidence_violations(
-        worktree, ticket, base_ref
-    ) + bug_repro_violations(worktree, ticket, base_ref)
+    violations = (
+        mutation_evidence_violations(worktree, ticket, base_ref)
+        + bug_repro_violations(worktree, ticket, base_ref)
+        + _must_still_pass_land_violations(worktree, ticket, base_ref)
+    )
     if not violations:
         return Ok(None)
     errors = [v for v in violations if v.severity == "error"]

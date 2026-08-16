@@ -254,6 +254,8 @@ def _covers_scope_for_ticket(root: Path, ticket) -> bool | None:  # noqa: ANN001
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_close_bug002_t1438.py::TestCloseMutationEvidenceBaseRef.test_uses_merge_base_not_own_branch_tip  # noqa: E501
+# frob:ticket T-2215
+# frob:tests tests/unit/test_ticket_land_bug003_t2215.py::TestMustStillPassCombinesWithBug002.test_close_refuses_on_bug003_alone  # noqa: E501
 def _close_mutation_evidence_for_ticket(
     root: Path, ticket, base_ref: str = "main"
 ) -> bool | None:  # noqa: ANN001
@@ -268,6 +270,10 @@ def _close_mutation_evidence_for_ticket(
     return contract, mirroring `_check_mutation_evidence`'s own T-1427
     treatment on the land path so a `bug`/`security` ticket cannot close
     directly any more than it can land without this check having run.
+    T-2215 additionally runs `frob.gates.must_still_pass_violations`
+    (BUG003, T-2193) through the same channel, via `frob.tickets._land.
+    _must_still_pass_land_violations` -- not kind-restricted, opt-in via
+    a `frob:must-still-pass NODE-ID` directive in `ticket.body`.
 
     T-1438 fix: the base ref this diffs/repros against is the git
     merge-base of HEAD against `base_ref` (`ticket`'s real starting point,
@@ -291,20 +297,23 @@ def _close_mutation_evidence_for_ticket(
     posture), so it degrades to a no-op rather than fail-closed here."""
     from frob.gates import bug_repro_violations, mutation_evidence_violations
     from frob.gitio import _merge_base
+    from frob.tickets._land import _must_still_pass_land_violations
 
     resolved = _merge_base(root, base_ref)
     if resolved.is_err:
         _log.warning(
             "ticket close: %s could not resolve merge-base against %s, "
-            "skipping TEST016/BUG002 mutation-evidence checks",
+            "skipping TEST016/BUG002/BUG003 mutation-evidence checks",
             ticket.id,
             base_ref,
         )
         return None
     parent_ref = resolved.danger_ok
-    violations = mutation_evidence_violations(
-        root, ticket, parent_ref
-    ) + bug_repro_violations(root, ticket, parent_ref)
+    violations = (
+        mutation_evidence_violations(root, ticket, parent_ref)
+        + bug_repro_violations(root, ticket, parent_ref)
+        + _must_still_pass_land_violations(root, ticket, parent_ref)
+    )
     for v in violations:
         _log.warning("ticket close: %s %s %s", ticket.id, v.rule, v.message)
     errors = [v for v in violations if v.severity == "error"]
