@@ -2,7 +2,7 @@
 id: T-2174
 title: 'post-land sweep regression from T-2172, T-2156: 2 new (rule, file) identit(ies),
   1 finding(s) (ARCH001, DUP001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-11'
