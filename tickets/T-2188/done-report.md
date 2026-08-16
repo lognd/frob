@@ -52,7 +52,7 @@ src-layout copy -- confirming the blast radius extends to `frob.app.
 cycle_runner`/`frob.arch._layering`/`frob.arch._python`, not just
 `frob.graph.callgraph`.
 
-**Action taken, not silent.** Filed T-draft-0bd874ac ("resolve_local_
+**Action taken, not silent.** Filed T-2195 ("resolve_local_
 import (frob.lang._nodes) does not resolve src-layout absolute python
 imports, silently degrading every consumer of _local_imports_by_path to
 zero cross-file imports"), raised to CRITICAL priority at the
@@ -62,7 +62,7 @@ control) and stating explicit acceptance criteria (positive cross-file
 resolution cases for absolute/relative/parent-relative forms, a
 regression guard for the one form that resolves today, and the
 two-layout cycle control). Blocked T-2188 on it:
-`frob ticket block T-2188 --by T-draft-0bd874ac`.
+`frob ticket block T-2188 --by T-2195`.
 
 **Why the code changes here are safe to land anyway.** Every new
 `verify_imports` parameter defaults to `False` -- zero behavior change
@@ -74,7 +74,7 @@ positive AND negative tests (`TestBuildCallGraphVerifyImports` in
 `verify_imports=True`; an unrelated same-named helper in a
 non-importing file does NOT fabricate an edge under `verify_imports=
 True`; the default stays the old unverified behavior) -- ready for
-whoever picks up the wiring once T-draft-0bd874ac lands and is
+whoever picks up the wiring once T-2195 lands and is
 re-verified with a real positive control (not just "no new false
 positives"), per the coordinator's own corrected methodology.
 
@@ -115,7 +115,7 @@ Evidence:
   this ticket's code lands, because no consumer opts in yet (confirmed
   by re-running the same `frob check` after the final code state).
 
-Filed: T-draft-0bd874ac (critical, blocks T-2188), two addenda attached
+Filed: T-2195 (critical, blocks T-2188), two addenda attached
 widening its scope and acceptance criteria per the coordinator's own
 two escalations.
 
@@ -129,7 +129,7 @@ DEAD001/PROTO001-005 to import-verified resolution) until T-draft-
 0bd874ac's `resolve_local_import` fix lands AND T-2156's own landed fix
 is re-verified with a genuine positive cross-file control -- both
 explicitly out of this ticket's own declared scope
-(`src/frob/lang/**`). `frob ticket block T-2188 --by T-draft-0bd874ac`
+(`src/frob/lang/**`). `frob ticket block T-2188 --by T-2195`
 recorded.
 
 ### Changed
@@ -137,7 +137,7 @@ recorded.
  tickets/T-2188/ticket.md                           | 11 ++-
  ...tion-repo-wide-t-2156-re-verification-needed.md | 48 +++++++++++
  ...and-fix-guidance-no-src-lexical-special-case.md | 48 +++++++++++
- tickets/T-draft-0bd874ac/ticket.md                 | 94 ++++++++++++++++++++++
+ tickets/T-2195/ticket.md                 | 94 ++++++++++++++++++++++
  4 files changed, 200 insertions(+), 1 deletion(-)
 ```
 
