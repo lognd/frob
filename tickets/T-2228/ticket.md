@@ -1,7 +1,7 @@
 ---
 id: T-2228
 title: Recovered from T-2215's phantom TICK006 citation of T-2218
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-16'
@@ -26,3 +26,6 @@ widening this ticket's scope into `frob/gates/__init__.py` -- filed
 T-2218 (later renumbered/superseded by the coordinator's own filing of
 the SAME id for the waiver-regex/prose-quoting defect below; see
 "Filed" sectio
+
+## Drop reason
+- 2026-08-16: Phantom TICK006 auto-filing, verified junk. Created from T-2215's Done report prose mentioning T-2218 while explaining an escalation. T-2218 resolves to state=done (it landed at 64511427fb3e), so the cited work is complete; zero scope entries, no content. Same disposition as T-1976/T-2035. Generator ticketed as T-2243.
