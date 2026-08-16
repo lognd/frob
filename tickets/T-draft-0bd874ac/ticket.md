@@ -15,8 +15,23 @@ runs_last: false
 scope:
 - src/frob/lang/_nodes.py
 - tests/test_lang.py
+- docs/modules/graph.md
+- tests/unit/test_lang_primitives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: close scope-closure warnings for the docstring/test targets the flagged
+    symbols already declare
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_lang_primitives.py
+  reason: close scope-closure warnings for the docstring/test targets the flagged
+    symbols already declare
+  actor: logan
+  at: '2026-08-16'
 designated_repro_test: null
 threat: null
 component: null
