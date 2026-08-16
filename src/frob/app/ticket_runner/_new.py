@@ -11,6 +11,7 @@ import difflib
 import os
 import re
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -84,6 +85,66 @@ _TITLE_STOPWORDS = frozenset(
         "nothing",
     }
 )
+
+# frob:ticket T-2177
+# Below this length, a candidate word/subword is too generic to be a
+# meaningful signal either way (both "the" and "run" are far too common to
+# prove or disprove a scope match) -- excluded from both the ticket-text
+# and file-token candidate sets so neither side manufactures a false
+# match/non-match off noise.
+_SCOPE_PLAUSIBILITY_MIN_WORD_LEN = 4
+
+# frob:ticket T-2177
+# Generic code/prose words common enough that a match on them alone proves
+# nothing about whether a scope file is the RIGHT file (nearly every source
+# file has a "self", nearly every ticket has a "file") -- excluded from the
+# candidate word sets on both sides so the plausibility check only ever
+# fires on genuinely SPECIFIC vocabulary, not incidental overlap.
+_SCOPE_PLAUSIBILITY_STOPWORDS = frozenset(
+    {
+        "self",
+        "cls",
+        "true",
+        "false",
+        "none",
+        "type",
+        "path",
+        "file",
+        "name",
+        "data",
+        "list",
+        "dict",
+        "root",
+        "args",
+        "kwargs",
+        "return",
+        "import",
+        "from",
+        "with",
+        "this",
+        "that",
+        # frob:ticket T-2177
+        # Repo-domain words this codebase's own source uses so pervasively
+        # (nearly every ticket AND nearly every scope file) that a shared
+        # hit on one of these alone is not evidence of a real match -- the
+        # exact false-positive class that would defeat the check's purpose
+        # if left in: "this ticket mentions frob and land" is true of
+        # almost every ticket ever filed here.
+        "frob",
+        "ticket",
+        "main",
+        "land",
+        "worktree",
+        "commit",
+        "commits",
+    }
+)
+
+_SCOPE_PLAUSIBILITY_TOKEN_RE = re.compile(
+    r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*"
+)
+_SCOPE_PLAUSIBILITY_CAMEL_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+
 
 # frob:ticket T-1556
 # Above this many scope-closure warnings, `_emit_scope_closure_warnings`
@@ -285,6 +346,155 @@ def _title_words(title: str) -> frozenset[str]:
     )
 
 
+# frob:ticket T-2177
+def _split_scope_plausibility_words(token: str) -> tuple[str, ...]:
+    """Lowercased, `_SCOPE_PLAUSIBILITY_MIN_WORD_LEN`-filtered, stopword-
+    filtered subwords of `token` -- splits on `.`/`_` boundaries and on
+    camelCase boundaries (`fooBar` -> `foo`, `bar`), so a compound
+    identifier (`_land_plan_locked`, `REDUNDANT_RERUN`,
+    `rebase_worktree_onto_main`) and prose naming any ONE of its parts
+    (`rebase`) can still overlap on that shared part -- deliberately
+    symmetric with `_scope_plausibility_tokens`'s ticket-text side, which
+    runs the identical split, so a single normalization rule governs both
+    the code-grammar side and the prose side of the comparison (T-2177)."""
+    parts = re.split(r"[._]+", token.strip("._"))
+    words: list[str] = []
+    for part in parts:
+        if not part:
+            continue
+        camel_split = _SCOPE_PLAUSIBILITY_CAMEL_BOUNDARY_RE.split(part)
+        words.extend(camel_split if camel_split else [part])
+    return tuple(
+        w.lower()
+        for w in words
+        if len(w) >= _SCOPE_PLAUSIBILITY_MIN_WORD_LEN
+        and w.lower() not in _SCOPE_PLAUSIBILITY_STOPWORDS
+    )
+
+
+# frob:ticket T-2177
+def _scope_plausibility_ticket_words(title: str, body: str) -> frozenset[str]:
+    """Candidate symbol/word tokens from a ticket's own `title`+`body`
+    prose (T-2177): every identifier-shaped span (`_SCOPE_PLAUSIBILITY_
+    TOKEN_RE` -- bare words, snake_case/leading-underscore identifiers,
+    ALLCAPS constants, dotted qualnames) split into normalized subwords via
+    `_split_scope_plausibility_words`. This is deliberately NOT a grammar
+    parse -- ticket prose is markdown, not source code, so there is no
+    real grammar to parse it with -- but it produces the same SHAPE of
+    output (a set of normalized symbol-like words) that
+    `_scope_plausibility_file_words` derives from the scope file's actual
+    tree-sitter grammar, so the two sides compare as SYMBOL SETS, never as
+    one text searched for the other's substring."""
+    words: set[str] = set()
+    for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(f"{title}\n{body}"):
+        words.update(_split_scope_plausibility_words(match.group(0)))
+    return frozenset(words)
+
+
+# frob:ticket T-2177
+def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
+    """Candidate symbol/word tokens actually present in `path`, parsed
+    with `path`'s real language grammar (T-2177) -- never a lexical scan
+    of the raw file text. Two grammar-level sources, both normalized via
+    `_split_scope_plausibility_words`:
+
+    - `frob.lang.iter_identifiers`: every identifier-shaped LEAF token
+      tree-sitter finds (definitions AND usages, imports, re-exported
+      aliases) -- deliberately excludes comment nodes (comments are a
+      distinct node kind, never visited), so a symbol merely MENTIONED in
+      a comment does not manufacture a false match the way a plain grep
+      would.
+    - String-literal node text (any node whose tree-sitter type name
+      contains `"string"`), tokenized the same way -- catches the T-2157/
+      T-2173 shape directly: a ticket naming a subprocess argument or
+      error string (`git rebase`) that appears as string content, not as
+      an identifier.
+
+    Returns an empty set (never an error) for a language `iter_identifiers`
+    does not support, or a file that fails to parse -- this is a nudge,
+    not a gate; an unparsable scope file should not itself explode
+    `frob ticket new`."""
+    from frob.lang import LangError, iter_identifiers, raw_tree
+
+    words: set[str] = set()
+    ids = iter_identifiers(path)
+    if ids.is_ok:
+        for name, _line in ids.danger_ok:
+            words.update(_split_scope_plausibility_words(name))
+
+    tree_result = raw_tree(path)
+    if tree_result.is_err:
+        if tree_result.danger_err is not LangError.UnsupportedLanguage:
+            _log.debug(
+                "ticket new: scope plausibility: could not parse %s for "
+                "string-literal tokens: %s",
+                path,
+                tree_result.danger_err,
+            )
+        return frozenset(words)
+    tree, source, _language = tree_result.danger_ok
+
+    def visit(node) -> None:  # noqa: ANN001
+        if "string" in node.type:
+            text = source[node.start_byte : node.end_byte].decode(
+                "utf-8", errors="replace"
+            )
+            for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(text):
+                words.update(_split_scope_plausibility_words(match.group(0)))
+            return
+        for child in node.children:
+            visit(child)
+
+    visit(tree.root_node)
+    return frozenset(words)
+
+
+# frob:ticket T-2177
+# frob:tests tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility.test_implausible_scope_warns_loudly  # noqa: E501
+# frob:tests tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility.test_plausible_scope_files_without_friction  # noqa: E501
+def _scope_plausibility_warnings(
+    root: Path, title: str, body: str, scope: Sequence[str]
+) -> tuple[str, ...]:
+    """`()`, or a single loud warning line, when NONE of `scope`'s files
+    contain any grammar-parsed identifier or string-literal token matching
+    any word/symbol the ticket's own `title`/`body` names (T-2177).
+
+    Fires only when the ticket text yields at least one specific candidate
+    word (an empty candidate set -- a title/body with nothing identifier-
+    shaped or specific enough -- makes no claim either way, since there is
+    nothing to check against) AND at least one scope file actually exists
+    on disk to check. A scope naming a file that does not exist yet (a
+    genuinely new file the ticket will create) is skipped for that file
+    rather than counted as a miss -- only EXISTING files are evidence
+    either way. Never raises and never blocks creation on its own: an
+    unparsable/unsupported-language scope file contributes an empty word
+    set for that file, same as `_scope_plausibility_file_words` describes,
+    so worst case this degrades to "checked fewer files than intended,"
+    never a crash."""
+    candidates = _scope_plausibility_ticket_words(title, body)
+    if not candidates:
+        return ()
+    checked_any = False
+    for rel in scope:
+        path = root / rel
+        if not path.is_file():
+            continue
+        checked_any = True
+        if candidates & _scope_plausibility_file_words(path):
+            return ()
+    if not checked_any:
+        return ()
+    return (
+        f"none of the {len(scope)} declared scope file(s) contain any "
+        "identifier or string-literal token matching this ticket's "
+        "title/body (grammar-parsed, not a text search) -- this is exactly "
+        "the T-2157/T-2173/T-2189 shape (a plausible-looking file picked "
+        "from the module NAME instead of the real symbol/error string); "
+        "verify the scope names the file that actually defines/mentions "
+        "the subject before an agent takes a lease on it",
+    )
+
+
 # frob:ticket T-1995
 # frob:ticket T-1998
 # frob:doc docs/modules/tickets.md#public-api
@@ -466,6 +676,17 @@ def _new(root: Path, cfg: AppConfig) -> None:
 
     # frob:ticket T-1995
     _refuse_unacknowledged_related_tickets(root, cfg, cfg.ticket_title, body)
+
+    # frob:ticket T-2177
+    # Runs at FILING time, before a lease can exist -- once an agent holds
+    # the ticket, re-scoping it is refused to anyone else (T-1617/T-2079's
+    # ownership guard), so a scope mistake caught only later costs a full
+    # dispatch round-trip. See `_scope_plausibility_warnings`'s own
+    # docstring for what "implausible" means here.
+    for warning in _scope_plausibility_warnings(
+        root, cfg.ticket_title, body, cfg.ticket_scope
+    ):
+        _log.warning("ticket new: scope plausibility: %s", warning)
 
     spec = _ticket_spec_from_cfg(
         root, cfg, title=cfg.ticket_title, kind=cfg.ticket_kind, body=body

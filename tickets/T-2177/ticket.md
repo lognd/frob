@@ -3,7 +3,7 @@ id: T-2177
 title: 'frob ticket new accepts a scope whose files contain no trace of the ticket''s
   own subject: two tickets were filed against a file with zero matching code, caught
   only by the implementing agent'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -14,8 +14,18 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_scope_plausibility.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_new_scope_plausibility.py
+  reason: test file for the scope-plausibility check
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+- tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_plausible_scope_files_without_friction
 designated_repro_test: null
 acceptance:
 - text: 'Scope-plausibility matching MUST be token/grammar based, never lexical. Parse
@@ -24,12 +34,16 @@ acceptance:
     or regex match: a grep-style ''file contains this text'' check passes on a comment
     merely mentioning the symbol and fails on a re-exported alias -- wrong in both
     directions. This test MUST fail against current main.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_plausible_scope_files_without_friction
 - text: Given a ticket whose title names a symbol defined in file A, when the declared
     scope lists only unrelated file B, then ticket new refuses or warns loudly --
     reproducing the two real misfilings (T-2157 and T-2173, both scoped to src/frob/tickets/_land_git_ops.py,
     which contains zero matching code; git grep -c rebase on that file returns 0).
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_plausible_scope_files_without_friction
 - text: 'Third measured occurrence, all identical in shape: T-2157 and T-2173 were
     filed against src/frob/tickets/_land_git_ops.py (zero rebase code, git grep -c
     rebase = 0), and T-2189 was filed against src/frob/app/ticket_runner/_land_cmd.py
@@ -38,14 +52,18 @@ acceptance:
     than resolving the symbol or error string, and every time the implementing agent
     caught it only after taking a lease and building natives -- so the cost is a full
     dispatch cycle per occurrence, not a moment''s confusion.'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_plausible_scope_files_without_friction
 - text: The check must also run at ticket new time even when the ticket is later re-scoped,
     and re-scoping a LEASED ticket must remain refused (T-1617/T-2079's ownership
     guard correctly blocked the coordinator from fixing T-2189's scope from main).
     So the fix belongs at filing, before a lease exists -- once an agent holds it,
     only that agent can correct it, which is exactly the round-trip this ticket exists
     to prevent.
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+  - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_plausible_scope_files_without_friction
 threat: null
 component: null
 anchor: false
