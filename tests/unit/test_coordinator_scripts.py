@@ -280,6 +280,31 @@ class TestTicketFrontmatterOnMain:
         assert fleet_status.ticket_frontmatter_on_main("T-2114") == {
             "state": "in-progress",
             "scope": ["src/a.py", "src/b.py"],
+            "blocked_by": [],
+        }
+
+    # frob:ticket T-2196
+    # frob:tests \
+    # tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_reads_bl\
+    # ocked_by
+    def test_reads_blocked_by(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The `blocked_by:` list block parses the same way `scope:` does."""
+        text = (
+            "---\n"
+            "id: T-2114\n"
+            "state: queued\n"
+            "blocked_by:\n"
+            "- T-0001\n"
+            "- 'T-0002'\n"
+            "scope:\n"
+            "- src/a.py\n"
+            "priority: high\n"
+        )
+        monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: text)
+        assert fleet_status.ticket_frontmatter_on_main("T-2114") == {
+            "state": "queued",
+            "scope": ["src/a.py"],
+            "blocked_by": ["T-0001", "T-0002"],
         }
 
     def test_missing_ticket_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -864,6 +889,93 @@ class TestTicketReadiness:
         readiness = fleet_status.ticket_readiness("T-2114")
         assert readiness["scope_diverges"] is True
         assert readiness["dispatchable"] is False
+
+    # frob:ticket T-2196
+    # frob:tests \
+    # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_not_dispatchable\
+    # _when_ticket_does_not_exist_on_main
+    def test_not_dispatchable_when_ticket_does_not_exist_on_main(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2196's own reproduction: a ticket absent from `main` must
+        never read `dispatchable: True`, no matter how clean the lease/
+        commit checks come back -- the fact `ticket_frontmatter_on_main`
+        already measures (and `main: ticket does not exist on main`
+        already PRINTS) must gate the verdict, not be computed and then
+        discarded."""
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+        monkeypatch.setattr(
+            fleet_status, "ticket_frontmatter_on_main", lambda tid: None
+        )
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
+        readiness = fleet_status.ticket_readiness("T-9999")
+        assert readiness["main"] is None
+        assert readiness["dispatchable"] is False
+
+    # frob:ticket T-2196
+    # frob:tests \
+    # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_not_dispatchable\
+    # _when_a_blocker_is_still_open
+    def test_not_dispatchable_when_a_blocker_is_still_open(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`blocked_by` naming a still-open ticket must block dispatch --
+        acceptance [2]'s named audit target: this edge was never checked
+        at all before T-2196, so a ticket correctly blocked on an open
+        dependency still read as `dispatchable: True`."""
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+
+        def fake_main(tid: str) -> dict | None:
+            if tid == "T-2114":
+                return {
+                    "state": "queued",
+                    "scope": ["src/a.py"],
+                    "blocked_by": ["T-0001"],
+                }
+            if tid == "T-0001":
+                return {"state": "in-progress", "scope": [], "blocked_by": []}
+            return None
+
+        monkeypatch.setattr(fleet_status, "ticket_frontmatter_on_main", fake_main)
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["open_blockers"] == ["T-0001"]
+        assert readiness["dispatchable"] is False
+
+    # frob:ticket T-2196
+    # frob:tests \
+    # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_dispatchable_whe\
+    # n_every_blocker_is_done
+    def test_dispatchable_when_every_blocker_is_done(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A `blocked_by` entry that is `done` on `main` does not block
+        dispatch -- the positive control for the previous test, proving
+        the new check discriminates rather than always refusing."""
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda tid: None)
+
+        def fake_main(tid: str) -> dict | None:
+            if tid == "T-2114":
+                return {
+                    "state": "queued",
+                    "scope": ["src/a.py"],
+                    "blocked_by": ["T-0001"],
+                }
+            if tid == "T-0001":
+                return {"state": "done", "scope": [], "blocked_by": []}
+            return None
+
+        monkeypatch.setattr(fleet_status, "ticket_frontmatter_on_main", fake_main)
+        monkeypatch.setattr(
+            fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
+        )
+        readiness = fleet_status.ticket_readiness("T-2114")
+        assert readiness["open_blockers"] == []
+        assert readiness["dispatchable"] is True
 
 
 # frob:ticket T-2172

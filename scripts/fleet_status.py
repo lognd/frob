@@ -174,45 +174,59 @@ def ticket_lease(ticket_id: str) -> dict | None:
 # tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_missing_tick\
 # et_returns_none
 def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
-    """`{"state": ..., "scope": [...]}` parsed from `main:tickets/<id>/
-    ticket.md`'s YAML frontmatter, or `None` if the ticket does not exist
-    on `main` at all. Hand-parsed (no `import yaml`, matching this
-    script's own "no `frob` import, plain stdlib" contract from its module
-    docstring) against the narrow shape `frob ticket` actually writes: a
-    flat `key: value` line for `state`, and a `scope:` block of `- 'glob'`
-    list lines directly beneath it. T-2133's own incident: a coordinator
-    read `main:tickets/<id>/ticket.md`'s scope twice believing it was the
-    ticket's LIVE scope, when the authoritative live value (if a lease is
-    held) is the lease record's own `scope` field, which can have
-    diverged via `frob ticket scope` inside a worktree that has not
-    landed yet -- this function reads the STATIC, main-committed side of
-    that comparison; `ticket_readiness` below is what actually compares
-    the two."""
+    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
+    `main:tickets/<id>/ticket.md`'s YAML frontmatter, or `None` if the
+    ticket does not exist on `main` at all. Hand-parsed (no `import yaml`,
+    matching this script's own "no `frob` import, plain stdlib" contract
+    from its module docstring) against the narrow shape `frob ticket`
+    actually writes: a flat `key: value` line for `state`, and `scope:`/
+    `blocked_by:` blocks of `- item` list lines directly beneath each key
+    (a ticket with no blockers omits the `blocked_by:` key entirely rather
+    than writing an empty block, so its absence parses to `[]`, same as
+    the tests' own mocked shape that never sets the key at all -- see
+    `ticket_readiness`'s `.get("blocked_by", [])` read of this dict).
+    T-2133's own incident: a coordinator read `main:tickets/<id>/
+    ticket.md`'s scope twice believing it was the ticket's LIVE scope,
+    when the authoritative live value (if a lease is held) is the lease
+    record's own `scope` field, which can have diverged via `frob ticket
+    scope` inside a worktree that has not landed yet -- this function
+    reads the STATIC, main-committed side of that comparison;
+    `ticket_readiness` below is what actually compares the two.
+
+    T-2196: `blocked_by` is read here (not just `state`/`scope`) so
+    `ticket_readiness` can factor open blockers into its `dispatchable`
+    verdict -- previously this function never even looked at the field,
+    so a blocked ticket's own edges were invisible to the readiness
+    check no matter what."""
     text = _git(["show", f"main:tickets/{ticket_id}/ticket.md"], REPO)
     if not text:
         return None
     lines = text.splitlines()
     state = None
     scope: list[str] = []
-    in_scope_block = False
+    blocked_by: list[str] = []
+    block: list[str] | None = None
     for line in lines:
         if line.startswith("state:"):
             state = line.split(":", 1)[1].strip()
-            in_scope_block = False
+            block = None
             continue
         if line == "scope:":
-            in_scope_block = True
+            block = scope
             continue
-        if in_scope_block:
+        if line == "blocked_by:":
+            block = blocked_by
+            continue
+        if block is not None:
             stripped = line.strip()
             if not stripped.startswith("- "):
-                in_scope_block = False
+                block = None
                 continue
             item = stripped[2:].strip()
             if len(item) >= 2 and item[0] == item[-1] and item[0] in "'\"":
                 item = item[1:-1]
-            scope.append(item)
-    return {"state": state, "scope": scope}
+            block.append(item)
+    return {"state": state, "scope": scope, "blocked_by": blocked_by}
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_matches_any_scope_glob
@@ -313,6 +327,27 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_flags_scope_divergen\
 # ce_between_the_live_lease_and_main
+def _open_blocker_ids(blocked_by: Sequence[str]) -> list[str]:
+    """Which of `blocked_by`'s ticket ids are still OPEN on `main` -- not
+    `done`/`dropped`. An id that does not resolve on `main` at all (a
+    typo, or a blocker cited before it was ever filed) counts as open
+    too: it is certainly not `done`/`dropped`, and treating "cannot even
+    confirm this blocker is resolved" as "resolved" would recreate the
+    exact `dispatchable: True` overclaim T-2196 exists to close, one
+    level removed. T-2196: this is the "blocked_by edges" half of the
+    audit its own acceptance criterion [2] asks for -- previously
+    `ticket_readiness` never looked at `blocked_by` at all, so a ticket
+    correctly blocked on an open dependency still read as dispatchable."""
+    open_ids: list[str] = []
+    for blocker_id in blocked_by:
+        blocker_info = ticket_frontmatter_on_main(blocker_id)
+        blocker_state = blocker_info["state"] if blocker_info is not None else None
+        if blocker_state not in ("done", "dropped"):
+            open_ids.append(blocker_id)
+    return open_ids
+
+
+# frob:ticket T-2196
 def ticket_readiness(ticket_id: str) -> dict:
     """T-2133: the single per-ticket answer to "given T-####, is it
     actually dispatchable?" -- `fleet_status.py` already answers the
@@ -322,8 +357,9 @@ def ticket_readiness(ticket_id: str) -> dict:
     `worktrees_touching_ticket` into one dict:
 
     - `lease`: the live lease record (`ticket_lease`), or `None`.
-    - `main`: `ticket_frontmatter_on_main`'s `{"state", "scope"}`, or
-      `None` if the ticket does not exist on `main` yet.
+    - `main`: `ticket_frontmatter_on_main`'s `{"state", "scope",
+      "blocked_by"}`, or `None` if the ticket does not exist on `main`
+      yet.
     - `scope_diverges`: `True` when a live lease exists AND its `scope`
       differs from `main`'s declared scope -- T-2133's own "single
       highest-value signal": a coordinator reading `main:tickets/<id>/
@@ -338,12 +374,24 @@ def ticket_readiness(ticket_id: str) -> dict:
       already applies) -- a non-empty list means the ticket is already
       implemented elsewhere (a real commit touching declared-scope files),
       not merely a ledger edit or a lease.
-    - `dispatchable`: `False` whenever a live lease is held, OR another
-      worktree already carries SCOPE-matching commits for this ticket, OR
-      `main` declares it in a state a fresh dispatch cannot productively
-      start from (`done`/`dropped`/`in-progress`) -- `True` otherwise.
-      This is the field a caller (or `main`'s own exit code) gates
-      dispatch on."""
+    - `open_blockers`: ids from `main`'s `blocked_by` that are not yet
+      `done`/`dropped` on `main` (`_open_blocker_ids`) -- `[]` when the
+      ticket does not exist on `main` (nothing to read `blocked_by` off
+      of yet).
+    - `dispatchable`: T-2196 fixed the defect class this field used to
+      embody -- "the report knows more than the verdict uses". Every
+      fact this function MEASURES now gates the verdict, not a subset:
+      `main` must actually EXIST (a ticket absent from `main` is never
+      dispatchable, no matter how clean everything else looks -- the
+      T-2195 incident this ticket was filed from: a coordinator dispatched
+      an agent to a ticket id that did not exist on `main` yet, and the
+      old verdict endorsed it), no live lease may be held, no sibling
+      worktree may already carry scope-matching commits, `main`'s own
+      state must not be `done`/`dropped`/`in-progress`, `blocked_by` must
+      have no open blocker, and the lease's scope must not have diverged
+      from `main`'s declared scope. `True` only when every one of those
+      checks passes. This is the field a caller (or `main`'s own exit
+      code) gates dispatch on."""
     lease = ticket_lease(ticket_id)
     main_info = ticket_frontmatter_on_main(ticket_id)
     main_scope = main_info["scope"] if main_info is not None else None
@@ -359,10 +407,18 @@ def ticket_readiness(ticket_id: str) -> dict:
     effective_scope = lease.get("scope", []) if lease is not None else main_scope
     worktrees_with_commits = worktrees_touching_ticket(ticket_id, effective_scope or ())
     state_on_main = main_info["state"] if main_info is not None else None
+    open_blockers = (
+        _open_blocker_ids(main_info.get("blocked_by", []))
+        if main_info is not None
+        else []
+    )
     dispatchable = (
-        lease is None
+        main_info is not None
+        and lease is None
         and not worktrees_with_commits
         and state_on_main not in ("done", "dropped", "in-progress")
+        and not open_blockers
+        and not scope_diverges
     )
     return {
         "ticket_id": ticket_id,
@@ -370,6 +426,7 @@ def ticket_readiness(ticket_id: str) -> dict:
         "main": main_info,
         "scope_diverges": scope_diverges,
         "worktrees_with_commits": worktrees_with_commits,
+        "open_blockers": open_blockers,
         "dispatchable": dispatchable,
     }
 
@@ -1015,14 +1072,25 @@ def quarantine_state() -> tuple[str, int]:
 # ope_divergence_and_sibling_commits
 def _ticket_readiness_lines(readiness: dict) -> list[str]:
     """Render one `TICKET <id>` readiness block (lease, main state/scope,
-    scope divergence, sibling-branch commits, final verdict) as plain
-    text lines, doing none of the actual printing -- the PURE-COMPUTE
-    half of what used to be one function (ARCH103, T-2172: the
-    combined shape mixed I/O, string-formatting, and 4 decision points in
-    one body, which is exactly the three-concerns-in-one-function smell
-    this gate exists to catch). Keeping the formatting/branching logic
-    here, with no `print` call anywhere in this function, is what lets
-    `_print_ticket_readiness` below stay I/O-only."""
+    scope divergence, open blockers, sibling-branch commits, final
+    verdict) as plain text lines, doing none of the actual printing --
+    the PURE-COMPUTE half of what used to be one function (ARCH103,
+    T-2172: the combined shape mixed I/O, string-formatting, and 4
+    decision points in one body, which is exactly the three-concerns-in-
+    one-function smell this gate exists to catch). Keeping the
+    formatting/branching logic here, with no `print` call anywhere in
+    this function, is what lets `_print_ticket_readiness` below stay
+    I/O-only.
+
+    T-2196: the `main: ticket does not exist on main` line and the final
+    `dispatchable: False` it now always pairs with are printed by the
+    SAME code path (`main_info is None` gates both `ticket_readiness`'s
+    verdict and this line) -- previously the line printed a true
+    observation while the verdict below it silently ignored that
+    observation, reading as `dispatchable: True` on the very next line
+    (this ticket's own reproduction). Same fix shape for `open_blockers`:
+    the reason is now stated in the same terms as the measured fact, not
+    left as a bare `False`."""
     ticket_id = readiness["ticket_id"]
     lines = [f"TICKET {ticket_id}"]
     lease = readiness["lease"]
@@ -1043,6 +1111,9 @@ def _ticket_readiness_lines(readiness: dict) -> list[str]:
             "  SCOPE DIVERGES -- the live lease's scope differs from "
             "main's declared scope; trust the lease, not the ticket file"
         )
+    open_blockers = readiness.get("open_blockers", [])
+    if open_blockers:
+        lines.append(f"  BLOCKED BY (still open): {', '.join(open_blockers)}")
     commits = readiness["worktrees_with_commits"]
     if commits:
         lines.append(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")
