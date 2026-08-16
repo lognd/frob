@@ -268,7 +268,7 @@ from ._effects import (
     check_capability_conformance,
 )
 from ._errors import StrataError
-from ._models import KernelModel
+from ._models import KernelModel, Node
 from ._scope_config import load_strata_scope_config
 from ._waive import (
     CONFORMANCE_WAIVER_EXPIRED_RULE,
@@ -319,6 +319,26 @@ SYS_BINDING_TOTALITY = "SYS106"
 #: docstring's SYS107 section). WARN by default; escalated to ERROR by
 #: `[strata] require_may_scope` (`_scope_config.py`).
 SYS_VIA_LESS_LARGE_NODE = "SYS107"
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:ticket T-2224
+#: T-2224: the capability atoms SYS107 treats as FAIL-CLOSED regardless
+#: of `[strata] require_may_scope` -- a via-less grant on one of these,
+#: on a large node, is ALWAYS `Severity.ERROR`
+#: (`frob.gates._sys_selfaudit._selfaudit_severity`), never an opt-in
+#: advisory. These four atoms let a node run attacker-influenced code
+#: (`exec`/`eval`), persist beyond itself (`install-hook`), or cross the
+#: language-runtime trust boundary (`ffi`) -- the shape T-1623's threat
+#: model names as unacceptable to leave WARN-only indefinitely.
+#: `net`/`fs.read`/`fs.write` are deliberately NOT in this set: they stay
+#: WARN-appropriate at whole-node breadth per SYS107's existing
+#: rationale (module docstring's SYS107 section) -- widening this set to
+#: them would be mass unrelated churn across `design/frob.strata`'s
+#: existing declarations, exactly what this ticket's own scope note
+#: warns against.
+SYS107_FAIL_CLOSED_ATOMS: frozenset[str] = frozenset(
+    {"exec", "eval", "install-hook", "ffi"}
+)
 
 # frob:doc docs/strata/surface.md#interface-conformance-mechanical-upkeep-sys104-t-1150
 #: `frob sys audit` rule id for SYS108 (T-1624) duplicate interface
@@ -1652,8 +1672,29 @@ def _node_real_code_file_count(binding: CodeBinding, node_id: str) -> int:
     return sum(1 for owner in binding.owner.values() if owner == node_id)
 
 
+# frob:ticket T-2224
+# frob:waive COV007 reason="T-2224: docs/strata/surface.md#may-scope (T-1440/T-1451) \
+# already documents the SYS107 via-less-large-node advisory this private helper \
+# implements -- same T-0524/T-0529 per-function architecture-doc precedent every other \
+# COV007 waiver in this module already carries, not accidental drift onto a private \
+# helper"
+def _via_less_atoms_for_node(node: Node) -> frozenset[str]:
+    """The `may` atoms `node` grants WITHOUT any `via` scoping (T-2224,
+    split out of `_via_less_large_node_violations` so the node-level
+    "has any via-less grant at all" gate and the per-atom finding loop
+    share one walk instead of two differently-shaped checks). `node.
+    may_grants` empty entirely (a `Node` built directly, bypassing the
+    parser) is treated as "every declared `may` atom is via-less" (the
+    pre-T-1440 meaning `MayGrant.via=()` formalizes) -- mirrors this
+    module's existing hand-built-`Node`-fixture compatibility note."""
+    if not node.may_grants:
+        return frozenset(node.may)
+    return frozenset(grant.atom for grant in node.may_grants if not grant.via)
+
+
 # frob:doc docs/strata/surface.md#may-scope
 # frob:ticket T-1451
+# frob:ticket T-2224
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_large_node_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_less_grant_on_small_node_is_silent  # noqa: E501
 # frob:tests tests/unit/strata/test_sys107_via_scope_advisory.py::TestViaLessLargeNodeAdvisory.test_via_scoped_grant_on_large_node_is_silent  # noqa: E501
@@ -1667,15 +1708,21 @@ def _via_less_large_node_violations(
 ) -> list[SelfConformViolation]:
     """SYS107 (T-1451, module docstring's SYS107 section): a node bound to
     more than `threshold` real files that declares at least one via-less
-    `may` grant is an advisory finding. Judged per NODE, not per grant (one
-    finding per offending node, not one per via-less atom) -- the point is
-    "this node is big enough that its whole-node grants are worth
-    narrowing", a property of the node's size, not of any one atom.
-    `node.may_grants` empty entirely (a `Node` built directly, bypassing
-    the parser) is treated as "every declared `may` is via-less" (the
-    pre-T-1440 meaning `MayGrant.via=()` formalizes), so this still fires
-    correctly for a hand-built `Node` fixture with a flat `may` tuple and
-    no `may_grants` at all."""
+    `may` grant is an advisory finding.
+
+    T-2224: now judged per (node, ATOM) -- one finding per offending
+    via-less atom, not one per node -- rather than the pre-T-2224 "one
+    finding per offending node" shape. This is what makes a PER-
+    CAPABILITY severity decision possible at all: `capability=atom` is
+    set on each finding (the same "multi-instance sub-target" shape
+    SYS100/SYS101 already use), so `frob.gates._sys_selfaudit._
+    selfaudit_severity` can escalate exactly the fail-closed kinds
+    (`SYS107_FAIL_CLOSED_ATOMS` -- exec/eval/install-hook/ffi) to ERROR
+    unconditionally while `net`/`fs.read`/`fs.write` keep the original
+    WARN-unless-`require_may_scope` posture. A node with via-less grants
+    on BOTH a fail-closed and a non-fail-closed atom now correctly
+    produces one ERROR and one WARN finding, not one WARN finding
+    covering both."""
     found: list[SelfConformViolation] = []
     for node in model.nodes:
         if not node.may:
@@ -1683,29 +1730,30 @@ def _via_less_large_node_violations(
         file_count = _node_real_code_file_count(binding, node.id)
         if file_count <= threshold:
             continue
-        has_via_less = not node.may_grants or any(
-            not grant.via for grant in node.may_grants
-        )
-        if not has_via_less:
+        via_less_atoms = _via_less_atoms_for_node(node)
+        if not via_less_atoms:
             continue
-        _log.warning(
-            "selfconform: SYS107 via-less may grant on large node %s (%d files > "
-            "threshold %d)",
-            node.id,
-            file_count,
-            threshold,
-        )
-        found.append(
-            SelfConformViolation(
-                rule=SYS_VIA_LESS_LARGE_NODE,
-                node=node.id,
-                detail=(
-                    f"node {node.id!r} binds {file_count} file(s) (> {threshold}) "
-                    "and declares at least one via-less may grant -- consider "
-                    "narrowing it with via"
-                ),
+        for atom in sorted(via_less_atoms):
+            _log.warning(
+                "selfconform: SYS107 via-less may %r grant on large node %s "
+                "(%d files > threshold %d)",
+                atom,
+                node.id,
+                file_count,
+                threshold,
             )
-        )
+            found.append(
+                SelfConformViolation(
+                    rule=SYS_VIA_LESS_LARGE_NODE,
+                    node=node.id,
+                    detail=(
+                        f"node {node.id!r} binds {file_count} file(s) (> "
+                        f"{threshold}) and declares a via-less {atom!r} may "
+                        "grant -- consider narrowing it with via"
+                    ),
+                    capability=atom,
+                )
+            )
     return found
 
 

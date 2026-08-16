@@ -115,3 +115,58 @@ class TestViaLessLargeNodeAdvisory:
         assert not any(
             v.rule == SYS_VIA_LESS_LARGE_NODE for v in result.danger_ok.violations
         )
+
+    # frob:ticket T-2224
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    # frob:waive DUP001 reason="deliberately near-identical to test_via_less_grant_on_large_node_fires -- same large-node/via-less-grant fixture shape, the only difference is asserting the new capability=<atom> field this ticket adds; a shared fixture builder would obscure exactly what changed between the two tests"  # noqa: E501
+    def test_via_less_grant_carries_the_offending_atom(self, tmp_path: Path):
+        """T-2224: each SYS107 finding now carries `capability=<atom>` --
+        the field a per-capability severity decision (fail-closed kinds
+        always ERROR) needs to key off of."""
+        for i in range(25):
+            _write(tmp_path, f"src/frob/widget/_f{i}.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("exec",),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_VIA_LESS_LARGE_NODE
+        ]
+        assert any(v.node == "widget" and v.capability == "exec" for v in hit)
+
+    # frob:ticket T-2224
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_via_less_grants_on_two_atoms_fire_two_separate_findings(
+        self, tmp_path: Path
+    ):
+        """T-2224: a node with BOTH a via-less exec grant and a via-less
+        net grant produces one finding PER atom, not one finding covering
+        both -- required so the fail-closed atom can be escalated to
+        ERROR independently of the non-fail-closed one staying WARN."""
+        for i in range(25):
+            _write(tmp_path, f"src/frob/widget/_f{i}.py", "x = 1\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="widget",
+                    trust="trusted",
+                    attrs=("code=src/frob/widget/**",),
+                    may=("exec", "net"),
+                ),
+            )
+        )
+        result = check_self_conformance(model, tmp_path)
+        assert result.is_ok
+        hit = [
+            v for v in result.danger_ok.violations if v.rule == SYS_VIA_LESS_LARGE_NODE
+        ]
+        capabilities = {v.capability for v in hit if v.node == "widget"}
+        assert capabilities == {"exec", "net"}

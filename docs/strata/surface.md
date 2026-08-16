@@ -185,12 +185,26 @@ itself uses.
 (T-1450) -- a grant scoped to file A that only file B ever exercised now
 reads as stale on A specifically, judged per `MayGrant` rather than per
 flat kind (`_selfconform.py::_stale_design_violations_for_node`); and
-SYS107 (T-1451), an advisory finding for a via-less `may` on a node
-whose `code` glob binds more than `_LARGE_NODE_FILE_THRESHOLD` (20)
-files, WARN by default and escalatable to ERROR via a `[strata]
-require_may_scope` config knob (`_scope_config.py::StrataScopeConfig`,
-wired into SELFAUDIT001's per-sub-rule severity in
-`frob.gates._sys_selfaudit._selfaudit_severity`).
+SYS107 (T-1451), a finding for a via-less `may` on a node whose `code`
+glob binds more than `_LARGE_NODE_FILE_THRESHOLD` (20) files, one per
+offending capability atom (T-2224: `capability=<atom>` on each
+`SelfConformViolation`, `_selfconform.py::_via_less_atoms_for_node` +
+`_via_less_large_node_violations` -- a node with via-less grants on
+TWO atoms produces two separate findings, not one covering both).
+Severity is decided per atom (`frob.gates._sys_selfaudit._
+selfaudit_severity`): `net`/`fs.read`/`fs.write` and every other
+capability kind keep the original T-1451 posture (WARN by default,
+escalatable to ERROR via a `[strata] require_may_scope` config knob,
+`_scope_config.py::StrataScopeConfig`), but a via-less grant on one of
+the FAIL-CLOSED kinds -- `exec`, `eval`, `install-hook`, `ffi`
+(`_selfconform.py::SYS107_FAIL_CLOSED_ATOMS`) -- is ALWAYS `Severity.
+ERROR`, unconditionally, with no `require_may_scope` opt-in needed.
+T-2224's own threat: these four kinds let a node run attacker-
+influenced code (`exec`/`eval`), persist beyond itself (`install-hook`),
+or cross the language-runtime trust boundary (`ffi`) -- an unbounded,
+ever-growing via-less grant on one of them is not the kind of gap a
+repo owner should be able to leave WARN-only indefinitely just by never
+opting into `require_may_scope`.
 
 **Argument-level scoping, `of` (T-1478).** A `via` glob or symbol still
 only narrows WHERE a grant applies (a file or function); `of` narrows

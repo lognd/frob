@@ -30,17 +30,39 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-1451
-def _selfaudit_severity(sub_rule: str, root: Path) -> Severity:
+# frob:ticket T-2224
+def _selfaudit_severity(
+    sub_rule: str, root: Path, capability: str | None = None
+) -> Severity:
     """`Severity.ERROR` for every SELFAUDIT001 sub-rule EXCEPT SYS107
-    (T-1451's via-less-may-on-a-large-node advisory), which defaults to
-    `Severity.WARN` and is escalated to ERROR only when `[strata]
-    require_may_scope` is set in `root/frob.toml`
-    (`frob.strata._scope_config.load_strata_scope_config`) -- an opt-in
-    for a repo whose owner is ready to make the advisory a hard
-    requirement. Every other sub-rule (SYS100-106/SYS2xx/REL2xx) keeps
+    (T-1451's via-less-may-on-a-large-node advisory).
+
+    T-2224: SYS107 itself now branches on `capability` (the offending
+    via-less atom, T-2224's per-atom finding shape -- see `frob.strata.
+    _selfconform._via_less_large_node_violations`). A `capability` in
+    `frob.strata._selfconform.SYS107_FAIL_CLOSED_ATOMS` (exec/eval/
+    install-hook/ffi -- the kinds that let a node run attacker-influenced
+    code, persist beyond itself, or cross the language-runtime trust
+    boundary) is ALWAYS `Severity.ERROR`, unconditionally: these are not
+    an opt-in advisory the way a via-less `net`/`fs.read`/`fs.write`
+    grant still is. Every OTHER SYS107 capability keeps the original
+    T-1451 posture -- `Severity.WARN`, escalated to ERROR only when
+    `[strata] require_may_scope` is set in `root/frob.toml`
+    (`frob.strata._scope_config.load_strata_scope_config`), an opt-in for
+    a repo whose owner is ready to make the advisory a hard requirement
+    at THAT breadth too. `capability=None` (a caller that has not been
+    updated to pass it, or a SYS107 finding somehow missing one) falls
+    through to the original config-gated WARN/ERROR check -- never
+    silently promoted to ERROR just because the fail-closed check could
+    not run. Every other sub-rule (SYS100-106/SYS2xx/REL2xx) keeps
     SELFAUDIT001's original unconditional-ERROR posture, unchanged."""
     if sub_rule != "SYS107":
         return Severity.ERROR
+    if capability is not None:
+        from frob.strata._selfconform import SYS107_FAIL_CLOSED_ATOMS
+
+        if capability in SYS107_FAIL_CLOSED_ATOMS:
+            return Severity.ERROR
     from frob.strata import load_strata_scope_config
 
     config = load_strata_scope_config(root)
@@ -48,19 +70,30 @@ def _selfaudit_severity(sub_rule: str, root: Path) -> Severity:
 
 
 # frob:ticket T-0756
+# frob:ticket T-2224
 # frob:enforces CHK-GATE-SELFAUDIT001
 def _selfaudit_violation(
-    sub_rule: str, node: str, detail: str, design_dir: str, root: Path
+    sub_rule: str,
+    node: str,
+    detail: str,
+    design_dir: str,
+    root: Path,
+    *,
+    capability: str | None = None,
 ) -> Violation:
     """Build one SELFAUDIT001 finding wrapping a single SYS100-107/SYS2xx/
     REL2xx underlying finding -- split out of `_selfaudit_violations`
     purely to keep its loop bodies short. T-1451: severity is no longer a
     flat constant -- `_selfaudit_severity` special-cases SYS107 to WARN
     (escalatable via `[strata] require_may_scope`), every other sub-rule
-    stays ERROR exactly as before."""
+    stays ERROR exactly as before. T-2224: `capability` (keyword-only,
+    defaults to `None` for every pre-existing call site) threads a
+    SYS107 finding's offending atom through to `_selfaudit_severity` so
+    exec/eval/install-hook/ffi can be escalated to ERROR unconditionally
+    while net/fs.read/fs.write keep the original config-gated posture."""
     return Violation(
         rule="SELFAUDIT001",
-        severity=_selfaudit_severity(sub_rule, root),
+        severity=_selfaudit_severity(sub_rule, root, capability),
         file=design_dir,
         line=1,
         message=(f"SELFAUDIT001: self-audit family {sub_rule} node={node}: {detail}"),
@@ -151,7 +184,9 @@ def _selfaudit_violations(
         )
     else:
         violations.extend(
-            _selfaudit_violation(v.rule, v.node, v.detail, design_dir, root)
+            _selfaudit_violation(
+                v.rule, v.node, v.detail, design_dir, root, capability=v.capability
+            )
             for v in selfconform.danger_ok.violations
         )
 

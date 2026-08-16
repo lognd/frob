@@ -305,6 +305,51 @@
       "old_digest": "a9bed1f11b71cda9b657d1a11a57fa4fdfdbe46950c2154faa6f6a97763bd4b5",
       "reason": "T-2207: re-acking after adding the WIRE001 waiver directive and E501 line-wrap fix above the def; doc still true, no behavior change",
       "ref": "src/frob/verify/_quarantine.py::retire_unidentifiable_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "75617531edc5769001408e1b2744e0528bd889c0e19bbf5f4955a50977d5d4e1",
+      "old_digest": null,
+      "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
+      "ref": "src/frob/strata/_selfconform.py::SYS107_FAIL_CLOSED_ATOMS"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "body",
+      "new_digest": "5990bacf5a2ec0c894f41f0349e6afd5d55bd67eed8245b5c842236f2c021208",
+      "old_digest": null,
+      "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_atoms_for_node"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "9a83c0a1f368f29bdef84fa8206957e9c8a13a94789f5083fc5f63da7300114b",
+      "old_digest": null,
+      "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_atoms_for_node"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "body",
+      "new_digest": "5f292fcde720d8dc00b4247bb632518b85bf1b2715dc1c7b53e1bd1ca6c9b3de",
+      "old_digest": null,
+      "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_large_node_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-16",
+      "facet": "sig",
+      "new_digest": "1157eb0587a6b3ab2004c9a266153bbcd2bfa81e40a46799230681bce52d3f2f",
+      "old_digest": null,
+      "reason": "T-2224: docs/strata/surface.md's may-scope section updated in the same diff describing the fail-closed-atom escalation; re-verified true",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_large_node_violations"
     }
   ],
   "entries": [
@@ -854,6 +899,11 @@
       "ref": "src/frob/serve/_events.py::subscribe_and_wait"
     },
     {
+      "digest": "75617531edc5769001408e1b2744e0528bd889c0e19bbf5f4955a50977d5d4e1",
+      "facet": "sig",
+      "ref": "src/frob/strata/_selfconform.py::SYS107_FAIL_CLOSED_ATOMS"
+    },
+    {
       "digest": "769bd5b146be8cd3c9b73f900fc6fdefb09fb43e698629c1533326bfac06aac3",
       "facet": "body",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
@@ -862,6 +912,26 @@
       "digest": "1acd1a9013351344e5ea44210a0b4183cb852e237973a7f294a612893a160455",
       "facet": "sig",
       "ref": "src/frob/strata/_selfconform.py::_coverage_totality_violations"
+    },
+    {
+      "digest": "5990bacf5a2ec0c894f41f0349e6afd5d55bd67eed8245b5c842236f2c021208",
+      "facet": "body",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_atoms_for_node"
+    },
+    {
+      "digest": "9a83c0a1f368f29bdef84fa8206957e9c8a13a94789f5083fc5f63da7300114b",
+      "facet": "sig",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_atoms_for_node"
+    },
+    {
+      "digest": "5f292fcde720d8dc00b4247bb632518b85bf1b2715dc1c7b53e1bd1ca6c9b3de",
+      "facet": "body",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_large_node_violations"
+    },
+    {
+      "digest": "1157eb0587a6b3ab2004c9a266153bbcd2bfa81e40a46799230681bce52d3f2f",
+      "facet": "sig",
+      "ref": "src/frob/strata/_selfconform.py::_via_less_large_node_violations"
     },
     {
       "digest": "a893850a01f0b7785260d02701afc1ee0a5116a009a0de7907f49348b90cf431",

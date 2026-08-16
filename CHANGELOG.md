@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.473.0] - unreleased
+
+- T-2224: Via-less grants on fail-closed capability kinds (exec/eval/install-hook/ffi) are WARN-only, never enforced
+
 ## [0.472.0] - unreleased
 
 - T-2221: Every agent's pytest claims the whole machine: -n auto oversubscribes ~4x under a multi-agent fleet (load 28 on 12 CPUs)
