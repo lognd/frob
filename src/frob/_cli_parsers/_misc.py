@@ -567,6 +567,34 @@ def _add_coverage_parser(sub) -> None:
     )
 
 
+# frob:ticket T-2241
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as this repo's \
+# other cross-package DEAD001 waivers (T-1024 precedent)"
+def _add_sync_skills_parser(sub) -> None:
+    """Register the `frob sync-skills` subcommand (T-2241) -- registered
+    here for `--help` discoverability/arg-shape validation only, matching
+    `bind`/`agent`/`worktree`'s own precedent: the actual invocation is
+    dispatched directly to `frob.scaffold._skills_sync.run` from raw argv
+    (`frob.__main__._dispatch`), never through this parser's own
+    `AppConfig`."""
+    # -- sync-skills -----------------------------------------------------
+    sync_skills_p = sub.add_parser(
+        "sync-skills",
+        help="bidirectionally sync agents/ and skills/ into ~/.claude "
+        "(T-2241) -- replaces the old Makefile sync-skills: bash recipe",
+    )
+    sync_skills_p.add_argument("path", nargs="?", default=".")
+    sync_skills_p.add_argument(
+        "--claude-dir",
+        dest="claude_dir",
+        default=None,
+        help="target directory (default: ~/.claude) -- override for testing "
+        "or a non-default install location",
+    )
+
+
 # frob:ticket T-0030
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \

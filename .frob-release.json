@@ -1297,6 +1297,9 @@
     "src/frob/scaffold/_pool.py::refill_pool_async": "2a783235732be05d046c47f1088722704e58ef0f971f504a484912514be5dc03",
     "src/frob/scaffold/_pool.py::warm_pool": "d1412a48e3033ccc41301b4358d0a16987858c40992d873b391c29c962cefcf4",
     "src/frob/scaffold/_pool.py::warm_worktree": "ead3374b288a86113d3d5a5f0052775066edb00e0c26a6075bdb2a9685c129a9",
+    "src/frob/scaffold/_skills_sync.py::SkillsSyncReport": "5a47b89fa1885666c21881f13c3a170924aa9a28a58e413991dd8ec659cc0f37",
+    "src/frob/scaffold/_skills_sync.py::run": "92572764844d8b13ffb2ffb62e56a895e0d81ecd853be11fada4aa366856323b",
+    "src/frob/scaffold/_skills_sync.py::sync_skills": "d7c588d43a0d07069e24317564470e95f6d8d6b64117c0bb9ac8d7391948a87d",
     "src/frob/scaffold/project.py::ScaffoldError": "9703e44dc4e54813cc1d3c8b3ba0a852d0684c885c08eedba318e44695260d07",
     "src/frob/scaffold/project.py::install_worktree_lease_hook": "bfe200c6c46781b838f908fdc170b01c61acc27d98b3989b5a8f621acbc61d62",
     "src/frob/scaffold/project.py::list_project_types": "8e6f4f0e9123b0e68786d2d13af57a8d2505e0287ef2962d4a05284b91fb538a",
@@ -2315,5 +2318,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.476.0"
+  "version": "0.477.0"
 }

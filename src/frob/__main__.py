@@ -44,6 +44,7 @@ from frob._cli_parsers import (
     _add_scaffold_parser,
     _add_serve_parser,
     _add_stats_parser,
+    _add_sync_skills_parser,
     _add_sys_parser,
     _add_test_parser,
     _add_ticket_parser,
@@ -414,6 +415,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_natives_parser(sub)
     _add_coverage_parser(sub)
     _add_verify_parser(sub)
+    _add_sync_skills_parser(sub)
 
 
 # frob:doc docs/modules/app.md#entry-point
@@ -493,6 +495,13 @@ def _dispatch(argv: list[str]) -> None:
         from frob.app.worktree_runner import run as _worktree_run
 
         _worktree_run(argv[1:])
+    elif argv and argv[0] == "sync-skills":
+        # T-2241: `frob sync-skills` is dispatched directly, mirroring
+        # `bind`/`agent`/`worktree` above -- see
+        # `frob.scaffold._skills_sync.run`'s own docstring for why.
+        from frob.scaffold._skills_sync import run as _sync_skills_run
+
+        _sync_skills_run(argv[1:])
     elif argv and argv[0] == "refactor":
         # T-1483: `frob refactor` is dispatched directly, mirroring
         # `bind`/`agent`/`worktree` above -- `frob.refactor._cli.

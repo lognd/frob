@@ -1,7 +1,7 @@
 ---
 id: T-2241
 title: Add frob sync-skills subcommand; retire Makefile bash bidirectional sync loop
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -48,19 +48,43 @@ scope_changes:
     + __init__.py export list only, plus its own new doc page'
   actor: logan
   at: '2026-08-16'
+evidence:
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_syncs_new_repo_entries
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_updates_existing_entry_in_place
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_removes_stale_claude_side_entry
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_missing_repo_directories_are_a_no_op
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_files_directly_under_claude_dir_are_left_alone
+- tests/unit/test_skills_sync.py::TestRun::test_run_reports_synced_and_removed_counts
+- tests/unit/test_skills_sync.py::TestRun::test_run_defaults_to_home_claude_when_no_override_given
+- tests/unit/test_skills_sync.py::TestMakefileRecipeDelegates::test_recipe_body_is_a_single_line
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN no Makefile WHEN ''uv run frob sync-skills'' runs on a repo with agents/
     and skills/ directories THEN it bidirectionally syncs them into ~/.claude/agents
     and ~/.claude/skills the same way the old sync-skills: recipe did, including removing
     stale entries no longer present in the repo'
-  evidence: []
+  evidence:
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_syncs_new_repo_entries
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_updates_existing_entry_in_place
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_removes_stale_claude_side_entry
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_missing_repo_directories_are_a_no_op
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_files_directly_under_claude_dir_are_left_alone
+  - tests/unit/test_skills_sync.py::TestRun::test_run_reports_synced_and_removed_counts
+  - tests/unit/test_skills_sync.py::TestRun::test_run_defaults_to_home_claude_when_no_override_given
 - text: GIVEN Windows (no bash, no POSIX for/basename/test) WHEN the sync runs THEN
     it uses only pathlib/shutil, no shelled-out bash loop
-  evidence: []
+  evidence:
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_syncs_new_repo_entries
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_updates_existing_entry_in_place
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_removes_stale_claude_side_entry
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_missing_repo_directories_are_a_no_op
+  - tests/unit/test_skills_sync.py::TestSyncSkills::test_files_directly_under_claude_dir_are_left_alone
+  - tests/unit/test_skills_sync.py::TestRun::test_run_reports_synced_and_removed_counts
+  - tests/unit/test_skills_sync.py::TestRun::test_run_defaults_to_home_claude_when_no_override_given
 - text: 'GIVEN the Makefile WHEN read THEN sync-skills: is a single ''uv run frob
     sync-skills'' line'
-  evidence: []
+  evidence:
+  - tests/unit/test_skills_sync.py::TestMakefileRecipeDelegates::test_recipe_body_is_a_single_line
 threat: null
 component: null
 anchor: false

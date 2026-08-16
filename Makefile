@@ -514,46 +514,12 @@ test-system: core
 	uv run pytest $(TESTS)/system/ -q -n auto
 
 # ---------- skills / agents sync ----------
-# Full bidirectional sync: creates new entries, updates existing ones, and
-# removes stale entries from ~/.claude that no longer exist here.
-
-CLAUDE_DIR := $(HOME)/.claude
+# T-2241: full bidirectional sync (create/update/remove-stale) now lives in
+# `frob.scaffold._skills_sync` (pathlib/shutil, cross-platform -- no POSIX
+# for/basename/[ -d ] loop) -- see docs/commands/sync-skills.md.
 
 sync-skills:
-	@mkdir -p "$(CLAUDE_DIR)/agents" "$(CLAUDE_DIR)/skills"
-	@echo "--- syncing agents ---"
-	@for d in agents/*/; do \
-	    name=$$(basename "$$d"); \
-	    mkdir -p "$(CLAUDE_DIR)/agents/$$name"; \
-	    cp -r "$$d"* "$(CLAUDE_DIR)/agents/$$name/"; \
-	    echo "  synced agent: $$name"; \
-	done
-	@echo "--- syncing skills ---"
-	@for d in skills/*/; do \
-	    name=$$(basename "$$d"); \
-	    mkdir -p "$(CLAUDE_DIR)/skills/$$name"; \
-	    cp -r "$$d"* "$(CLAUDE_DIR)/skills/$$name/"; \
-	    echo "  synced skill: $$name"; \
-	done
-	@echo "--- removing stale agents ---"
-	@for d in "$(CLAUDE_DIR)/agents/"/*/; do \
-	    [ -d "$$d" ] || continue; \
-	    name=$$(basename "$$d"); \
-	    if [ ! -d "agents/$$name" ]; then \
-	        rm -rf "$$d"; \
-	        echo "  removed stale agent: $$name"; \
-	    fi; \
-	done
-	@echo "--- removing stale skills ---"
-	@for d in "$(CLAUDE_DIR)/skills/"/*/; do \
-	    [ -d "$$d" ] || continue; \
-	    name=$$(basename "$$d"); \
-	    if [ ! -d "skills/$$name" ]; then \
-	        rm -rf "$$d"; \
-	        echo "  removed stale skill: $$name"; \
-	    fi; \
-	done
-	@echo "done."
+	uv run frob sync-skills
 
 # ---------- build & publish ----------
 

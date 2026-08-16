@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.477.0] - unreleased
+
+- T-2241: Add frob sync-skills subcommand; retire Makefile bash bidirectional sync loop
+
 ## [0.476.0] - unreleased
 
 - T-2225: fleet_status --ticket reports dispatchable=True when the ticket's SCOPE FILES are held by another agent's live lease (two mis-dispatches measured)
