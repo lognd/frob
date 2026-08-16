@@ -1403,27 +1403,92 @@ def _land_plan_merge_and_finalize(
 
 # frob:ticket T-1495
 # frob:ticket T-1522
+# frob:ticket T-2189
 def _land_plan_unwind_after_merge(
-    root: Path, pre_merge_sha: str, own_commits: Sequence[str]
+    root: Path, pre_merge_sha: str, own_commits: Sequence[str], *, dry_run: bool
 ) -> Result[None, LandError]:
     """T-1522: unwind a `land_plan` failure that happens AFTER the merge
-    step (`_land_plan_merge_and_finalize`'s first own commit) WITHOUT ever
-    discarding that merge commit itself -- see `_land_plan_locked`'s own
-    T-1522 docstring note for the 2026-08-04 incident (T-1199/T-1200's
-    already-merged content eaten by a later, unrelated failure in the SAME
-    invocation) this closes. `own_commits[0]` (when present) is always the
-    merge commit (`_land_plan_merge_and_finalize`'s own contract: it is
-    the first entry appended, before the finalize commit if any) -- reset
-    only as far as THAT, discarding anything committed after it
-    (`own_commits[1:]`, e.g. a finalize commit), never further. When
-    `own_commits` is empty (the merge step itself never produced a commit
-    at all -- `_land_plan_merge_worktree` failed before committing), this
-    degrades to the plain pre-T-1522 unwind straight back to
+    step (`_land_plan_merge_and_finalize`'s first own commit).
+
+    T-2189: `dry_run` decides WHICH unwind a failure gets, and this is now
+    the ONLY place that decision is made -- both of `_land_plan_locked`'s
+    failure branches (a merge/finalize error, and `check_ticks() is
+    False`/`PlanTickGateDirty`) call this function, and prior to T-2189
+    NEITHER branch knew `dry_run` at all: every failure, dry run or not,
+    got the T-1522 "stop at the merge commit" unwind below, which is only
+    correct for a REAL land. A dry run that hit `PlanTickGateDirty` after
+    a successful merge left that merge commit sitting on `root`'s tip --
+    a real commit on `main` from a call that claimed to mutate nothing,
+    with the finalize step (and the draft ids it would have finalized)
+    never reached because the dirty check fired first. Confirmed live:
+    `PlanTickGateDirty` reported, `git log` on `root` showed the merge
+    commit anyway.
+
+    `dry_run=True`: full reset straight back to `pre_merge_sha`,
+    discarding `own_commits` in their entirety including the merge commit
+    -- a dry run is "run it, then always revert" regardless of WHY it is
+    reverting (this mirrors `_land_plan_finish`'s existing dry-run success
+    tail exactly; that tail's own reset is now this same call with
+    `dry_run=True` in all but name). `root`'s tip must never move as a
+    result of a `--dry-run` invocation, whether it fails or succeeds.
+
+    `dry_run=False`: unchanged T-1522 behavior -- WITHOUT ever discarding
+    the merge commit itself (see `_land_plan_locked`'s own T-1522
+    docstring note for the 2026-08-04 incident, T-1199/T-1200's already-
+    merged content eaten by a later, unrelated failure in the SAME
+    invocation, this closes). `own_commits[0]` (when present) is always
+    the merge commit (`_land_plan_merge_and_finalize`'s own contract: it
+    is the first entry appended, before the finalize commit if any) --
+    reset only as far as THAT, discarding anything committed after it
+    (`own_commits[1:]`, e.g. a finalize commit), never further.
+
+    Either way, when `own_commits` is empty (the merge step itself never
+    produced a commit at all -- `_land_plan_merge_worktree` failed before
+    committing), this degrades to the plain unwind straight back to
     `pre_merge_sha`, since there is nothing durable yet to preserve."""
-    if not own_commits:
+    if dry_run or not own_commits:
         return _land_plan_reset_hard(root, pre_merge_sha, own_commits=own_commits)
     merge_commit = own_commits[0]
     return _land_plan_reset_hard(root, merge_commit, own_commits=own_commits[1:])
+
+
+# frob:ticket T-1522
+# frob:ticket T-2189
+def _land_plan_tick_gate_dirty(
+    root: Path,
+    pre_merge_sha: str,
+    own_commits: Sequence[str],
+    *,
+    merge_commit: str,
+    dry_run: bool,
+) -> Result[None, LandError]:
+    """`_land_plan_locked`'s `check_ticks() is False` branch (T-2189, split
+    out to keep that function under the ARCH001 60-line threshold): log
+    the outcome (which differs by `dry_run` -- a dry run fully reverts,
+    a real land keeps the durable merge commit per T-1522) and unwind via
+    `_land_plan_unwind_after_merge`. Returns `Ok(None)` if the unwind
+    itself succeeded (the caller then reports `PlanTickGateDirty`), or the
+    unwind's own `Err` if THAT failed."""
+    if dry_run:
+        _log.error(
+            "land --plan --dry-run: post-merge TICK gate re-check "
+            "reported non-clean -- fully reverting to the pre-merge tip "
+            "%s (T-2189: a dry run leaves no trace, including its own "
+            "merge commit %s)",
+            pre_merge_sha,
+            merge_commit,
+        )
+    else:
+        _log.error(
+            "land --plan: post-merge TICK gate re-check reported "
+            "non-clean -- unwinding to the merge commit %s, keeping "
+            "any queue-drained sibling content it already carries "
+            "(T-1522)",
+            merge_commit,
+        )
+    return _land_plan_unwind_after_merge(
+        root, pre_merge_sha, own_commits, dry_run=dry_run
+    )
 
 
 # frob:ticket T-1495
@@ -1436,25 +1501,17 @@ def _land_plan_locked(
     check_ticks: Callable[[], bool | None] | None,
 ) -> Result[LandPlanReport, LandError]:
     """`land_plan`'s body (T-1269), run by the caller already holding
-    `root`'s `_land_lock`: merge, finalize every draft, optionally re-check
-    TICK-gate cleanliness, and -- for a real (non-dry-run) call -- leave
-    the merge commit as `root`'s new tip. T-1495: every unwind path
-    threads `own_commits` (`_land_plan_merge_and_finalize`'s own return)
-    into `_land_plan_reset_hard`, refusing instead of discarding a foreign
-    commit interleaved onto `root` mid-run -- see
-    `_assert_reset_only_discards_own_commits`'s doc for the 2026-08-04
-    incident this closes.
-
-    T-1522: a failure AFTER the merge already succeeded (a finalize
-    error, or `check_ticks()` reporting dirty) no longer resets all the
-    way back to `pre_merge_sha` -- `_land_plan_unwind_after_merge` stops
-    at the merge commit instead, so content this worktree branch already
-    accumulated from OTHER, earlier tickets (a shared multi-ticket
-    worktree's queue-drain shape) stays durably on `root` even when the
-    finalize/TICK-gate step on top of it fails. `dry_run`'s own
-    always-reset path is UNCHANGED by this -- a dry run is deliberately
-    "run it, then always revert", not a failure path, so it still resets
-    all the way back to `pre_merge_sha` regardless of outcome."""
+    `root`'s `_land_lock`: merge, finalize every draft, optionally
+    re-check TICK-gate cleanliness, and -- for a real (non-dry-run) call
+    -- leave the merge commit as `root`'s new tip. T-1495: every unwind
+    path threads `own_commits` into `_land_plan_reset_hard`, refusing
+    instead of discarding a foreign commit interleaved onto `root`
+    mid-run. Both failure branches (merge/finalize error, and
+    `check_ticks() is False`) delegate their unwind decision to
+    `_land_plan_unwind_after_merge`, which is where the T-1522 (durable
+    merge commit on a real failure) vs T-2189 (full revert on a dry-run
+    failure) policy actually lives -- see that function's own docstring,
+    not duplicated here."""
     pre_merge = _land_plan_pre_merge_sha(root)
     if pre_merge.is_err:
         return Err(pre_merge.danger_err)
@@ -1462,24 +1519,23 @@ def _land_plan_locked(
 
     merged_finalized, own_commits = _land_plan_merge_and_finalize(root, worktree)
     if merged_finalized.is_err:
-        _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits)
+        _land_plan_unwind_after_merge(
+            root, pre_merge_sha, own_commits, dry_run=dry_run
+        )
         return Err(merged_finalized.danger_err)
     merge_commit, finalized_ids = merged_finalized.danger_ok
 
-    if check_ticks is not None:
-        clean = check_ticks()
-        if clean is False:
-            _log.error(
-                "land --plan: post-merge TICK gate re-check reported "
-                "non-clean -- unwinding to the merge commit %s, keeping "
-                "any queue-drained sibling content it already carries "
-                "(T-1522)",
-                merge_commit,
-            )
-            unwound = _land_plan_unwind_after_merge(root, pre_merge_sha, own_commits)
-            return Err(
-                unwound.danger_err if unwound.is_err else LandError.PlanTickGateDirty
-            )
+    if check_ticks is not None and check_ticks() is False:
+        unwound = _land_plan_tick_gate_dirty(
+            root,
+            pre_merge_sha,
+            own_commits,
+            merge_commit=merge_commit,
+            dry_run=dry_run,
+        )
+        return Err(
+            unwound.danger_err if unwound.is_err else LandError.PlanTickGateDirty
+        )
 
     return _land_plan_finish(
         root,

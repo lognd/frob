@@ -24,7 +24,12 @@ from frob.lang import (
     supported_languages,
     symbol_tree,
 )
-from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE, walk_strata
+from frob.lang._walk_strata import (
+    NATIVE_UNAVAILABLE_MESSAGE,
+    _declared_items,
+    _locate_declared_items,
+    walk_strata,
+)
 
 _LITMUS = Path(__file__).resolve().parents[2] / "design" / "litmus" / "chirp.strata"
 
@@ -224,3 +229,157 @@ class TestStrataNativeParserUnavailable:
         path = tmp_path / "a.strata"
         path.write_text("module m\nnode n : trusted {\n}\n")
         assert _parsed_definition(path, "n", "a.strata") is None
+
+
+# frob:ticket T-2187
+class TestGrammarAuthoritativeSymbols:
+    """T-2187: `walk_strata`'s symbols come from strata-core's structured
+    parse (`_declared_items`), not from a line-regex's own guess -- the
+    header-regex line scan only LOCATES a span for a construct the grammar
+    already said exists, and a construct it cannot locate fails the whole
+    walk closed. Every case here reproduces a REAL disagreement shape
+    measured in this repo's own `.strata` corpus (`frob verify explain`:
+    16 header-regex-count != strata-core-declared-count warnings), not a
+    synthetic worst case."""
+
+    def test_quoted_string_claim_id_is_extracted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
+        # T-2187's own root cause, reproduced minimally: `assume "..." ...`
+        # -- a quoted-string claim id -- is real syntax (design/frob.strata
+        # has 32 of these) that the pre-T-2187 `_HEADER_RE`'s
+        # `[A-Za-z_][A-Za-z0-9_]*` identifier group could never match at
+        # all (a `"` is not an identifier character), so this symbol was
+        # silently absent from `pf.symbols` on main with only a WARNING
+        # log line, never surfaced to the caller. This test MUST fail
+        # against current main (the symbol is simply missing there).
+        src = (
+            "module m\n"
+            'node registry : trusted { clearance Internal; }\n'
+            'assume "weakness:CWE-78:claude_hooks" noflow registry -> claude_hooks '
+            'owner logan review "2026-10-15"\n'
+        )
+        path = tmp_path / "quoted_claim.strata"
+        path.write_text(src)
+        pf = parse_file(path).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "m.weakness:CWE-78:claude_hooks" in names, (
+            "a quoted-string claim id must be extracted as a real symbol, "
+            f"got: {sorted(names)}"
+        )
+        claim_sym = _symbol(pf, "m.weakness:CWE-78:claude_hooks")
+        assert claim_sym.kind == SymbolKind.CONST
+
+    def test_resource_declaration_is_extracted(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
+        # `resource` was entirely absent from the pre-T-2187 keyword
+        # vocabulary (`_HEADER_RE`/`_KEYWORD_KIND` both lacked it) despite
+        # being real syntax used 3 times in this repo's own corpus
+        # (design/frob.strata, tests/unit/strata/litmus/contention_*
+        # _arbitered.strata) -- every `resource` declaration undercounted
+        # the regex-derived symbol count by exactly one. This test MUST
+        # fail against current main (no `resource` symbol is ever
+        # produced there at all).
+        src = 'module m\nresource shared_lock {\n    lock "the-lock";\n}\n'
+        path = tmp_path / "resource_decl.strata"
+        path.write_text(src)
+        pf = parse_file(path).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "m.shared_lock" in names, f"resource symbol missing, got: {sorted(names)}"
+        resource_sym = _symbol(pf, "m.shared_lock")
+        assert resource_sym.kind == SymbolKind.CLASS
+        start, end = resource_sym.span
+        assert end > start
+
+    def test_locator_fails_closed_on_a_construct_it_cannot_find(self) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::_locate_declared_items kind="unit"
+        # Direct unit coverage of the fail-closed contract itself (T-2187
+        # acceptance criterion 2): a declared item with no corresponding
+        # header line in `lines` must come back in `unmatched`, never be
+        # silently dropped from the returned symbol count.
+        lines = ["module m", "node n : trusted {", "}"]
+        declared = [("module", "m"), ("node", "n"), ("node", "phantom")]
+        symbols, unmatched = _locate_declared_items(lines, declared)
+        assert unmatched == [("node", "phantom")]
+        assert {s.qualname for s in symbols} == {"m", "m.n"}
+
+    def test_walk_strata_returns_err_not_a_log_line_on_disagreement(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
+        # The ticket's central prohibition: a grammar/locator disagreement
+        # must refuse the whole walk (`Err`), never log a warning and
+        # return the (now-known-incomplete) symbol set anyway -- the
+        # pre-T-2187 behavior this replaces. Forces disagreement by
+        # monkeypatching `_declared_items` to report one extra phantom
+        # construct no source line can ever satisfy. Goes through
+        # `sys.modules` for the real submodule, not the `frob.lang`
+        # package-level rebinding (`from ... import walk_strata as
+        # _walk_strata` shadows the submodule name there) -- same
+        # necessity as `TestStrataNativeParserUnavailable._no_native_
+        # parser` above.
+        walk_strata_mod = sys.modules["frob.lang._walk_strata"]
+        original_declared_items = walk_strata_mod._declared_items
+        monkeypatch.setattr(
+            walk_strata_mod,
+            "_declared_items",
+            lambda parsed_ok: [
+                *original_declared_items(parsed_ok),
+                ("node", "this_id_does_not_exist_in_source"),
+            ],
+        )
+        result = walk_strata("module m\nnode n : trusted {\n}\n")
+        assert result.is_err
+        assert "this_id_does_not_exist_in_source" in result.danger_err
+        assert "refusing" in result.danger_err
+
+    def test_declared_items_covers_every_keyword_family(self) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::_declared_items kind="unit"
+        # One representative of each `Module` list field, including the
+        # two families the pre-T-2187 regex mishandled (`claims` via a
+        # quoted id, `resources` not recognized at all) -- guards against
+        # a future `Module` field being added to strata-core's schema
+        # without a matching `_FIELD_TO_KEYWORD` entry ever being noticed.
+        parsed_ok = {
+            "name": "m",
+            "nodes": [{"id": "n1"}],
+            "flows": [{"id": "f1"}],
+            "boundaries": [{"id": "b1"}],
+            "stores": [{"id": "s1"}],
+            "caches": [{"id": "c1"}],
+            "queues": [{"id": "q1"}],
+            "cdns": [{"id": "cdn1"}],
+            "balancers": [{"id": "bal1"}],
+            "policies": [{"id": "p1"}],
+            "operations": [{"id": "op1"}],
+            "scenarios": [{"id": "sc1"}],
+            "resources": [{"id": "r1"}],
+            "refines": [{"target": "t1"}],
+            "claims": [
+                {"id": "assert1", "assumed": False},
+                {"id": "assume1", "assumed": True},
+            ],
+            "secrets": [],
+        }
+        items = _declared_items(parsed_ok)
+        assert ("module", "m") in items
+        assert ("node", "n1") in items
+        assert ("flow", "f1") in items
+        assert ("boundary", "b1") in items
+        assert ("store", "s1") in items
+        assert ("cache", "c1") in items
+        assert ("queue", "q1") in items
+        assert ("cdn", "cdn1") in items
+        assert ("balancer", "bal1") in items
+        assert ("policy", "p1") in items
+        assert ("operation", "op1") in items
+        assert ("scenario", "sc1") in items
+        assert ("resource", "r1") in items
+        assert ("refine", "t1") in items
+        assert ("assert", "assert1") in items
+        assert ("assume", "assume1") in items
+        # "secrets" has no keyword mapping in `_FIELD_TO_KEYWORD` -- not a
+        # symbol-family this walker's SymbolKind vocabulary covers (no
+        # header syntax it needs to locate a span for either); its
+        # presence in `parsed_ok` must not raise or silently inflate
+        # `items` with a bogus entry.
+        assert len(items) == 16

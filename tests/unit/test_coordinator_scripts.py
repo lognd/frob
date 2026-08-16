@@ -296,9 +296,10 @@ class TestWorktreesTouchingTicket:
     def test_finds_a_branch_with_unlanded_commits(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """A worktree whose branch has `main..HEAD` commits touching
-        `tickets/<id>/` AND touches a declared-scope file is reported by
-        name."""
+        """A worktree whose branch has a `main..HEAD` commit that -- in
+        that SAME commit's own diff -- touches BOTH `tickets/<id>/` and a
+        declared-scope file is reported by name (T-2181: correlation is
+        per commit, not per whole branch)."""
         worktrees_dir = tmp_path / "worktrees"
         (worktrees_dir / "one").mkdir(parents=True)
         (worktrees_dir / "two").mkdir(parents=True)
@@ -308,7 +309,7 @@ class TestWorktreesTouchingTicket:
             if cwd.name != "one":
                 return ""
             if args[0] == "log":
-                return "abc123 done report"
+                return "abc123"
             return "src/a.py\ntickets/T-2114/ticket.md"
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
@@ -343,9 +344,9 @@ class TestWorktreesTouchingTicket:
 
         def fake_git(args: list[str], cwd: Path) -> str:
             if args[0] == "log":
-                return "abc123 chore(tickets): renumber collision"
-            # full branch diff touches ONLY the ticket's own ledger path,
-            # never the declared scope glob below
+                return "abc123"
+            # that commit's own diff touches ONLY the ticket's own ledger
+            # path, never the declared scope glob below
             return "tickets/T-2114/ticket.md"
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
@@ -366,10 +367,353 @@ class TestWorktreesTouchingTicket:
         worktrees_dir = tmp_path / "worktrees"
         (worktrees_dir / "one").mkdir(parents=True)
         monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
-        monkeypatch.setattr(
-            fleet_status, "_git", lambda args, cwd: "abc123 done report"
-        )
+        monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "abc123")
         assert fleet_status.worktrees_touching_ticket("T-2114", []) == []
+
+    # frob:ticket T-2181
+    def test_scope_touch_in_a_different_commit_is_not_correlated(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2181 (T-2179 residue): a branch can have ONE commit that
+        touches `tickets/<id>/` (pure ledger bookkeeping -- e.g. a
+        `blocked_by` edit made while working a DIFFERENT ticket) and a
+        SEPARATE, unrelated commit that touches a file matching this
+        ticket's own scope globs (real work done for that OTHER ticket,
+        which happens to share a scope-glob file). Measured for real:
+        `--ticket T-2114` reported `t-2107` and `t2049-series`, neither of
+        which had implemented T-2114 -- each had one commit touching
+        `tickets/T-2114/` and a wholly separate commit touching
+        `_land_cmd.py` for its own ticket (T-2108, T-2049). Correlating at
+        the WHOLE-BRANCH level (the pre-fix behavior) reported the branch
+        anyway, because it only asked "does any commit touch the ticket
+        dir" and "does the whole diff touch scope" as two independent
+        questions. Fixed behavior: correlation happens PER COMMIT (`git
+        show --name-only` on each commit that itself touches
+        `tickets/<id>/`), so the branch's OTHER commit -- which touches
+        the scope file but never `tickets/T-2114/` -- is never seen by
+        this function at all."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "one").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            if args[0] == "log":
+                # one commit touches only the ticket dir (bookkeeping)
+                return "aaa111"
+            if args[0] == "show":
+                sha = args[-1]
+                if sha == "aaa111":
+                    return "tickets/T-2114/ticket.md"
+                return ""
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert (
+            fleet_status.worktrees_touching_ticket(
+                "T-2114", ["src/frob/app/ticket_runner/_land_cmd.py"]
+            )
+            == []
+        )
+
+
+class TestScopeIntersections:
+    """`fleet_status.scope_intersections` (T-2180)."""
+
+    def test_reports_overlapping_pair(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Two tickets whose effective scope shares a glob are reported as
+        a colliding pair, with the overlapping glob(s) named -- the
+        T-1748/T-1780 shape (a five-ticket docs series all scoped to the
+        same file, then a sixth ticket claiming it again with no
+        override)."""
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_readiness",
+            lambda tid: {
+                "ticket_id": tid,
+                "lease": None,
+                "main": {
+                    "state": "queued",
+                    "scope": ["docs/modules/tickets.md"],
+                },
+            },
+        )
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        collisions = fleet_status.scope_intersections(["T-1748", "T-1780"])
+        assert len(collisions) == 1
+        assert collisions[0]["a"] == "T-1748"
+        assert collisions[0]["b"] == "T-1780"
+        assert ("docs/modules/tickets.md", "docs/modules/tickets.md") in collisions[
+            0
+        ]["overlapping_globs"]
+
+    def test_no_overlap_reports_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Disjoint declared scopes report no collisions at all."""
+
+        def fake_readiness(tid: str) -> dict:
+            scope = ["src/a.py"] if tid == "T-1" else ["src/b.py"]
+            return {
+                "ticket_id": tid,
+                "lease": None,
+                "main": {"state": "queued", "scope": scope},
+            }
+
+        monkeypatch.setattr(fleet_status, "ticket_readiness", fake_readiness)
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        assert fleet_status.scope_intersections(["T-1", "T-2"]) == []
+
+    def test_checks_against_a_held_lease_outside_the_requested_set(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A requested ticket's effective scope is ALSO checked against
+        every held lease not already in the requested set, so a
+        coordinator sees external contention against an already in-flight
+        lease, not just contention within the wave being vetted."""
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_readiness",
+            lambda tid: {
+                "ticket_id": tid,
+                "lease": None,
+                "main": {"state": "queued", "scope": ["src/shared.py"]},
+            },
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "leases",
+            lambda: [{"ticket_id": "T-9999", "scope": ["src/shared.py"]}],
+        )
+        collisions = fleet_status.scope_intersections(["T-1"])
+        assert len(collisions) == 1
+        assert collisions[0] == {
+            "a": "T-1",
+            "b": "T-9999",
+            "overlapping_globs": [("src/shared.py", "src/shared.py")],
+        }
+
+
+class TestLandProcessRows:
+    """`fleet_status.land_process_rows` (T-2180)."""
+
+    def test_parses_matching_rows_and_skips_others(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Rows whose argv contains `ticket land` are parsed into
+        structured dicts (pid, etimes, cputime, argv); the header line
+        and rows for unrelated commands are skipped."""
+        stdout = (
+            "    PID  ETIMES     TIME COMMAND\n"
+            "    100     300    00:10 /venv/bin/python -m frob ticket land "
+            "--ticket T-1234\n"
+            "    200      50    00:00 vim some_file.py\n"
+        )
+        monkeypatch.setattr(
+            subprocess, "run", lambda *a, **k: _completed(stdout)
+        )
+        rows = fleet_status.land_process_rows()
+        assert len(rows) == 1
+        assert rows[0]["pid"] == 100
+        assert rows[0]["etimes"] == 300
+        assert rows[0]["cputime"] == "00:10"
+        assert "ticket land" in rows[0]["argv"]
+
+    def test_failed_ps_returns_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A nonzero `ps` exit reads as no rows, never a raised error."""
+        monkeypatch.setattr(
+            subprocess, "run", lambda *a, **k: _completed("", returncode=1)
+        )
+        assert fleet_status.land_process_rows() == []
+
+
+class TestLandInvocations:
+    """`fleet_status.land_invocations` (T-2180)."""
+
+    def test_collapses_process_fan_out_by_ticket_id(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The ~4-row process fan-out for a single real land (bash
+        wrapper, timeout, uv run, the python process -- T-1344's own
+        measured shape) collapses to ONE invocation keyed on the ticket id
+        parsed from argv, not a per-row count. `ps aux | grep -c "frob
+        ticket land"` returns ~4 for this same input; this must return 1."""
+        rows = [
+            {
+                "pid": 100,
+                "etimes": 300,
+                "cputime": "00:10",
+                "argv": "bash -c timeout 540 uv run frob ticket land --ticket T-1234",
+            },
+            {
+                "pid": 101,
+                "etimes": 298,
+                "cputime": "00:05",
+                "argv": "timeout 540 uv run frob ticket land --ticket T-1234",
+            },
+            {
+                "pid": 102,
+                "etimes": 295,
+                "cputime": "00:05",
+                "argv": "uv run frob ticket land --ticket T-1234",
+            },
+            {
+                "pid": 103,
+                "etimes": 290,
+                "cputime": "04:30",
+                "argv": "/venv/bin/python -m frob ticket land --ticket T-1234",
+            },
+        ]
+        monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
+        invocations = fleet_status.land_invocations()
+        assert len(invocations) == 1
+        inv = invocations[0]
+        assert inv["ticket_id"] == "T-1234"
+        assert sorted(inv["pids"]) == [100, 101, 102, 103]
+        # elapsed = MAX etimes across the group (the longest-lived row)
+        assert inv["elapsed_s"] == 300
+        # cpu = MAX parsed cpu time across the group (270s = 4:30)
+        assert inv["cpu_s"] == 270
+
+    def test_rows_with_no_ticket_id_are_never_merged_together(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Two rows that each lack a `--ticket` fragment cannot be
+        correlated to each other -- each is reported as its own,
+        `ticket_id=None` invocation rather than silently merged into one
+        (which would misreport their combined elapsed/cpu as a single
+        land)."""
+        rows = [
+            {"pid": 200, "etimes": 50, "cputime": "00:01", "argv": "frob ticket land"},
+            {"pid": 201, "etimes": 20, "cputime": "00:02", "argv": "frob ticket land"},
+        ]
+        monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
+        invocations = fleet_status.land_invocations()
+        assert len(invocations) == 2
+        assert all(inv["ticket_id"] is None for inv in invocations)
+        assert {inv["pids"][0] for inv in invocations} == {200, 201}
+
+
+class TestLandLockHolderPids:
+    """`fleet_status.land_lock_holder_pids` (T-2180)."""
+
+    def test_finds_a_pid_holding_the_lock_open(self, tmp_path: Path) -> None:
+        """A pid whose `fd` table contains a symlink resolving to
+        `.frob/land.lock` is reported as a live holder -- the /proc-fd
+        liveness check, not the recorded pid or the lock's file age."""
+        root = tmp_path / "repo"
+        (root / ".frob").mkdir(parents=True)
+        lock_path = root / ".frob" / "land.lock"
+        lock_path.write_text("{}", encoding="utf-8")
+
+        proc = tmp_path / "proc"
+        # pid 555 holds the lock open via fd 7
+        fd_dir = proc / "555" / "fd"
+        fd_dir.mkdir(parents=True)
+        (fd_dir / "7").symlink_to(lock_path)
+        # pid 999 holds an unrelated file open
+        other_fd_dir = proc / "999" / "fd"
+        other_fd_dir.mkdir(parents=True)
+        (other_fd_dir / "3").symlink_to(root / ".frob" / "quarantine.json")
+
+        assert fleet_status.land_lock_holder_pids(root, proc=proc) == [555]
+
+    def test_no_live_holder_returns_empty(self, tmp_path: Path) -> None:
+        """No pid's fd table points at the lock file: reported as no live
+        holder, distinct from the lock file's own existence."""
+        root = tmp_path / "repo"
+        (root / ".frob").mkdir(parents=True)
+        (root / ".frob" / "land.lock").write_text("{}", encoding="utf-8")
+
+        proc = tmp_path / "proc"
+        fd_dir = proc / "111" / "fd"
+        fd_dir.mkdir(parents=True)
+        (fd_dir / "1").symlink_to(root / ".frob" / "quarantine.json")
+
+        assert fleet_status.land_lock_holder_pids(root, proc=proc) == []
+
+
+class TestPrintLandStatus:
+    """`fleet_status._print_land_status` (T-2180)."""
+
+    def test_prints_invocations_and_live_lock_holder(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Each invocation prints its ticket id, pids, elapsed, and cpu
+        time; a live lock holder prints its pid(s), never the recorded-pid
+        or lock-age language."""
+        monkeypatch.setattr(
+            fleet_status,
+            "land_invocations",
+            lambda: [
+                {
+                    "ticket_id": "T-1234",
+                    "pids": [100, 101],
+                    "elapsed_s": 300,
+                    "cpu_s": 270,
+                }
+            ],
+        )
+        monkeypatch.setattr(
+            fleet_status, "land_lock_holder_pids", lambda root: [100]
+        )
+        monkeypatch.setattr(fleet_status, "host_load", lambda: (19.5, 10 * 1024 * 1024))
+        monkeypatch.setattr(fleet_status, "leases", lambda: [{"ticket_id": "T-1"}])
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "LANDS IN FLIGHT: 1" in out
+        assert "T-1234" in out and "elapsed=300s" in out and "cpu=270s" in out
+        assert "LAND LOCK: held, live holder pid(s)=[100]" in out
+        assert "LOAD 19.5" in out and "MEM 10.0GB avail" in out and "1 lease(s)" in out
+
+    def test_prints_stale_lock_when_no_live_holder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """A lock file that exists but has no live /proc-fd holder prints
+        STALE, never silently reads as free -- the exact "stale-lock
+        theory survived long enough to be filed critical" incident this
+        function exists to prevent, and never "trusts" the recorded pid
+        or the lock's file-modification age. REPO is monkeypatched to a
+        scratch directory so this test never touches the real repo's own
+        `.frob/land.lock`."""
+        fake_repo = tmp_path / "repo"
+        (fake_repo / ".frob").mkdir(parents=True)
+        (fake_repo / ".frob" / "land.lock").write_text("{}", encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "REPO", fake_repo)
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "LANDS IN FLIGHT: 0" in out
+        assert "stale" in out.lower()
+        assert "LOAD: unknown" in out
+
+
+class TestHostLoad:
+    """`fleet_status.host_load` (T-2180)."""
+
+    def test_reads_loadavg_and_mem_available(self, tmp_path: Path) -> None:
+        """Both values are read from their own structured /proc fields --
+        `MemAvailable`, not `MemFree`, so a busy-but-healthy host with
+        `MemFree` near 0 does not read as a false alarm."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        (proc / "loadavg").write_text("19.48 11.75 9.23 12/616 123\n", encoding="utf-8")
+        (proc / "meminfo").write_text(
+            "MemTotal:       24000000 kB\n"
+            "MemFree:               0 kB\n"
+            "MemAvailable:   10485760 kB\n",
+            encoding="utf-8",
+        )
+        result = fleet_status.host_load(proc)
+        assert result == (19.48, 10485760)
+
+    def test_missing_proc_files_return_none(self, tmp_path: Path) -> None:
+        """A `/proc` with neither file present (a sandboxed or non-Linux
+        host) reads as unknown, never a fabricated zero load/plenty of
+        memory."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        assert fleet_status.host_load(proc) is None
 
 
 # frob:ticket T-2179
@@ -484,6 +828,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         assert fleet_status.main() == 0
         assert "CLEAN" in capsys.readouterr().out
@@ -495,6 +840,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [" M x.py"])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         assert fleet_status.main() == 1
         out = capsys.readouterr().out
@@ -511,6 +857,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -541,6 +888,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -568,6 +916,7 @@ class TestFleetStatusMain:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(
             fleet_status,
             "ticket_readiness",
@@ -644,11 +993,14 @@ class TestPrintFleetReport:
     T-2172)."""
 
     # frob:ticket T-2172
+    # frob:ticket T-2180
     def test_prints_all_four_sections(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """ROOT, QUARANTINE, LEASES, and WORKTREES each print their own
-        section, in that order."""
+        """ROOT, LANDS, QUARANTINE, LEASES, and WORKTREES each print their
+        own section, in that order (T-2180 added LANDS between ROOT and
+        QUARANTINE)."""
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
         monkeypatch.setattr(
             fleet_status,
@@ -745,6 +1097,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("raised", 2))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()
@@ -760,6 +1113,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()
@@ -774,6 +1128,7 @@ class TestFleetStatusMainQuarantine:
         monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("unknown", 0))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()

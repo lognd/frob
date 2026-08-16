@@ -2,7 +2,7 @@
 id: T-2130
 title: 'post-land sweep regression from T-2109: 1 new (rule, file) identit(ies), 1
   finding(s) (TICK004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-11'
@@ -34,3 +34,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-16: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (TICK004 tickets.md) is absent from the fresh unscoped measurement at T-2181's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.

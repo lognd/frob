@@ -189,14 +189,26 @@ the same glob semantics `frob ticket scope`'s own globs use.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket -->
 
-Names of live worktrees whose branch has an unlanded commit that BOTH
-touches the given ticket's own `tickets/<id>/` directory AND touches at
-least one file matching its `scope_globs` argument somewhere in the
-branch's full diff against `main` -- the mechanical version of the
-hand-inspection T-2114's incident required: discovering the ticket was
-already implemented, evidenced, and Done-reported on a sibling branch
-only by manually reading that branch's own commit log and running a
-process check.
+Names of live worktrees whose branch has an unlanded commit that, in that
+SAME commit's own diff, BOTH touches the given ticket's own
+`tickets/<id>/` directory AND touches at least one file matching its
+`scope_globs` argument -- the mechanical version of the hand-inspection
+T-2114's incident required: discovering the ticket was already
+implemented, evidenced, and Done-reported on a sibling branch only by
+manually reading that branch's own commit log and running a process
+check.
+
+T-2181 (T-2179 residue): correlation was originally computed at the
+WHOLE-BRANCH level -- "does any commit touch the ticket dir" and "does
+the whole branch diff touch scope" as two independent questions -- which
+still let two unrelated commits on the same branch (one bookkeeping edit
+to `tickets/<id>/`, one real-work commit for a DIFFERENT ticket that
+happens to touch a shared scope-glob file) produce a false "already
+implemented" verdict; measured for real against `--ticket T-2114`
+(`t-2107`, `t2049-series`, each implementing a different ticket that
+shares a scope file). Correlation now runs PER COMMIT (`git show
+--name-only` on each commit that itself touches `tickets/<id>/`), so a
+single commit must carry both signals together.
 
 **T-2172 follow-up (precision fix):** the original version reported ANY
 worktree with a `tickets/<id>/`-touching commit as "already
@@ -223,6 +235,120 @@ signal this ticket exists to add), `worktrees_with_commits`, and
 already carries commits for this ticket, or `main` shows a
 `done`/`dropped`/`in-progress` state; `True` otherwise).
 
+### `effective_scope`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#effective_scope -->
+
+T-2180. The scope glob list a ticket is actually working under right
+now: its live lease's `scope` if a lease is held, else `main`'s declared
+scope, else `[]`. Shared by `scope_intersections` so a pairwise
+comparison never compares a stale `main`-only scope against a sibling's
+live, narrowed-in-worktree one.
+
+### `_globs_overlap`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_globs_overlap -->
+
+T-2180. Whether two scope globs can ever match the same path: exact
+equality, or one side being a literal path (no wildcard character) that
+the other's glob matches via `fnmatch.fnmatch`. Deliberately conservative
+-- never claims an overlap it cannot demonstrate.
+
+### `scope_intersections`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#scope_intersections -->
+
+T-2180. PAIRWISE scope-glob intersection across a list of ticket ids,
+using each ticket's effective scope, plus a check of each requested
+ticket's effective scope against every OTHER currently held lease -- so
+a coordinator can vet a whole wave for contention (against itself and
+against in-flight work) before dispatching it, in one call. Measured
+need: a five-ticket docs series all scoped to `docs/modules/tickets.md`,
+then T-1748 and T-1780 both claiming the same file -- the second
+collision hard-refused T-1780 at `start`, with no override, after the
+dispatch had already happened.
+
+### `_parse_ps_cpu_time`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ps_cpu_time -->
+
+T-2180. Parses `ps`'s own `TIME` column (`[[dd-]hh:]mm:ss`) into total
+whole seconds; returns 0 on anything unparseable.
+
+### `land_process_rows`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#land_process_rows -->
+
+T-2180. Every live process whose argv contains a `ticket land`
+invocation, parsed from `ps -eo pid,etimes,time,args`'s structured
+columns (pid, elapsed seconds, cumulative CPU time, argv) -- the raw
+per-PROCESS table a single real land fans out across (bash wrapper,
+`timeout`, `uv run`, the python process itself). `land_invocations`
+collapses this to distinct invocations.
+
+### `land_invocations`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#land_invocations -->
+
+T-2180. Distinct `frob ticket land` invocations, keyed on the ticket id
+parsed from each process row's own `--ticket T-####` argv fragment --
+the fix for `ps aux | grep -c "frob ticket land"` overcounting by
+roughly 4x (the bash wrapper, `timeout`, `uv run`, and the real python
+process all match the same grep). Each entry reports pids, elapsed
+seconds (MAX across the row group), and CPU time (MAX across the group)
+-- content alone cannot distinguish a live land from a dead attempt's
+residue (a killed land's staged diff is byte-identical across retries),
+but CPU time discriminates immediately. Rows with no parseable ticket id
+are reported individually, never silently merged.
+
+### `land_lock_holder_pids`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#land_lock_holder_pids -->
+
+T-2180. Live pids that currently hold `.frob/land.lock` open, found by
+scanning `/proc/<pid>/fd/*` for a symlink resolving to the lock's own
+absolute path -- NOT the pid recorded inside the lock file's own JSON
+(pids are reused) and NOT the lock file's modification age (a legitimate
+land genuinely exceeds 1500s under load). The kernel releases a `flock`
+the instant its holder dies, so this is a live, race-free liveness
+check, not an inference. `proc` is injectable for tests.
+
+### `host_load`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#host_load -->
+
+T-2180. `(1-minute load average, MemAvailable kb)` read from
+`/proc/loadavg` and `/proc/meminfo`'s own structured fields, never from
+parsing `free`/`uptime`'s rendered output (format varies by version and
+locale). Reads `MemAvailable`, not `MemFree` -- a busy-but-healthy Linux
+host commonly shows `MemFree` near 0 with most memory held as
+reclaimable page cache, so reading `MemFree` would raise a false alarm
+on every busy host. Returns `None` (never a fabricated zero) when either
+`/proc` file is missing or unparseable.
+
+### `_land_status_lines`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_land_status_lines -->
+
+T-2180 (ARCH103 split, same precedent as `_ticket_readiness_lines`).
+Renders the LANDS/LAND LOCK/LOAD block as plain text lines from
+already-computed inputs -- the pure-compute half, no `print` call, so
+`_print_land_status` stays I/O-only.
+
+### `_print_land_status`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_land_status -->
+
+T-2180. Prints the LANDS section: `land_invocations` (ticket id, pids,
+elapsed, cpu), `land.lock` holder liveness, and a LOAD line
+(`host_load`'s load average and available memory, plus the held-lease
+count) against this host's recorded 3-4 concurrent agent operational
+guidance. Printed unconditionally inside `_print_fleet_report`, in the
+standing report a coordinator already runs -- not behind a separate
+command (the "automatic over commands" rule). Six concurrent agents
+against the documented cap went unnoticed on this host until someone
+checked `ps`/`free` by hand; this line is where that check now lives.
+
 ### `_ticket_readiness_lines`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines -->
@@ -246,28 +372,51 @@ neither half re-triggers the mixed-concern signal alone.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report -->
 
-Prints the ROOT/QUARANTINE/LEASES/WORKTREES sections `main` used to
+Prints the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main` used to
 print inline, taking `dirt` (already computed by `main`) and
 `idle_seconds` as arguments -- the other half of `main`'s ARCH001/
-ARCH103 decomposition, alongside `_print_ticket_readiness` above.
+ARCH103 decomposition, alongside `_print_ticket_readiness` above. T-2180
+added the LANDS section (`_print_land_status`) between ROOT and
+QUARANTINE.
+
+### `_print_all_ticket_readiness`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_all_ticket_readiness -->
+
+T-2180 (ARCH103 split). Prints `_print_ticket_readiness` for every given
+`--ticket` id in order, returning `True` only if all are dispatchable --
+`main`'s own multi-ticket loop, pulled out so `main` stays a thin
+sequence of calls.
+
+### `_print_scope_intersections`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_scope_intersections -->
+
+T-2180 (ARCH103 split). Prints `scope_intersections`'s own count and
+each colliding pair -- `main`'s own 2+-`--ticket` branch, pulled out
+alongside `_print_all_ticket_readiness` above.
 
 ### fleet_status-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-main -->
 
-CLI entry point: parses `--idle-minutes`/`--ticket`, then (T-draft-
-354a6b64) delegates the actual printing to `_print_ticket_readiness`
-(when `--ticket` is given -- printed FIRST, ahead of the general
-report, so "is T-#### dispatchable" is the first thing read) and
-`_print_fleet_report`; exits 1 when the root is dirty OR (T-2133) a
-given `--ticket` is not dispatchable. `--idle-minutes N` (default 20)
-sets the idle threshold. The quarantine line does not itself change the
-exit code -- it is a visibility fix, not a new dispatch-refusal gate.
+CLI entry point: parses `--idle-minutes`/`--ticket` (repeatable, T-2180),
+then (T-draft-354a6b64) delegates the actual printing to
+`_print_ticket_readiness` (once per given `--ticket` -- printed FIRST,
+ahead of the general report, so "is T-#### dispatchable" is the first
+thing read) and `_print_fleet_report`; exits 1 when the root is dirty OR
+(T-2133) any given `--ticket` is not dispatchable. When 2+ `--ticket`
+values are given, also prints `scope_intersections` across the whole
+set (T-2180) -- every pairwise and lease-external scope collision, so a
+coordinator can vet a wave for contention before dispatching it.
+`--idle-minutes N` (default 20) sets the idle threshold. The quarantine
+line does not itself change the exit code -- it is a visibility fix, not
+a new dispatch-refusal gate.
 
 Usage:
 
 ```
-python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-####]
+python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-#### [--ticket T-#### ...]]
 ```
 
 ## `scripts/verify_lands.py`
