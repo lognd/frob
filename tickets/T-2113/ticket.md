@@ -1,7 +1,7 @@
 ---
 id: T-2113
 title: Recovered from T-2105's phantom TICK006 citation of T-2111
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -25,3 +25,6 @@ CrossTicketLeakage check still consults main's stale declared scope --
 filed by the coordinator as T-2111 (critical), a second instance of
 "one rule, two homes" (T-1966's class), and live evidence for T-1780
 (docs/modules/tickets.md contention: six
+
+## Drop reason
+- 2026-08-16: Phantom TICK006 auto-filing, verified junk. Auto-created by the land path from a prose mention, not by anyone's intent. Its cited id T-2111 resolves to state=done, so the 'recovery' it describes is moot; the ticket carries zero scope entries and no content. Same disposition as T-1976 and T-2035, dropped previously for the identical reason. The generator is T-2243 (filed, high, leaf of T-1662).
