@@ -14,6 +14,8 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/agent_runner.py
+- docs/modules/app.md
+- tests/test_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -21,6 +23,16 @@ scope_changes:
   glob: docs/guides/agent-playbook.md
   reason: T-1382 holds an active lease on this file; fix is producer-side in src/frob/app/agent_runner.py,
     doc note can follow in a separate pass
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'closure: doc anchor + test file for agent_runner.py::run'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_worktree_guard.py
+  reason: 'closure: doc anchor + test file for agent_runner.py::run'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
