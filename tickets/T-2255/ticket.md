@@ -83,7 +83,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9fc8b80ef83ca111b2a6ba72cce081d7201573a7
 ---
 # T-1946's orphaned-evidence land guard fails OPEN on test-collection failure -- the common case in agent worktrees -- and let a land orphan 11 tickets' evidence
 
