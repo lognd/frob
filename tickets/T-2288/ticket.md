@@ -48,7 +48,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0fbea6ec7048bbce0df59d0fe15721e1a5d379d0
 ---
 MEASURED 2026-08-17 (coordinator, read-only via git plumbing). Three
 specimens of the exact leak class T-1934 exists to catch -- finished work
