@@ -3,7 +3,7 @@ id: T-2259
 title: frob agent env writes gitio/process diagnostics to STDOUT, so the documented
   eval fails with a bash syntax error -- T-2221's xdist bound has been inert fleet-wide
   since it landed
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-16'
