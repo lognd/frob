@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6f3accbf4d77f1126ba90ec8d22990c2b413a065
 ---
 # An in-progress ticket can hold NO cross-worktree lease, leaving its scope files unprotected and invisible to the collision check
 
