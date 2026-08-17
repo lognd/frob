@@ -2,7 +2,7 @@
 id: T-2028
 title: 'SCOPE002: docs/modules/gates.md anchor declaration + archgate test relocation,
   residue from T-2012'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -14,6 +14,8 @@ runs_last: false
 scope:
 - docs/modules/gates.md
 - tests/unit/gates/test_examined_sites.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -24,6 +26,8 @@ scope_changes:
     per T-2012''s own SCOPE002 investigation'
   actor: logan
   at: '2026-08-10'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
