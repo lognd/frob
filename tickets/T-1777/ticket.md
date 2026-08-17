@@ -11,10 +11,7 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/app/config.py
-- src/frob/app/ticket_runner/__init__.py
 - docs/modules/tickets-lifecycle.md
-- src/frob/_cli_parsers/_ticket/_metadata.py
 - src/frob/tickets/_leases.py
 - src/frob/app/worktree_runner.py
 scope_breadth_ack: false
@@ -66,6 +63,30 @@ scope_changes:
     is called from; _leases.py needed to thread an operator-supplied --reason into
     force_release_lease''s own WARNING log (a persisted ticket-model audit field is
     blocked by T-2302''s concurrent lease on _models.py, filed as a follow-up)'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/config.py
+  reason: 'T-1777: redesigned around the ALREADY-shipped frob worktree release-lease
+    verb (T-2175) instead of a new frob ticket lease subcommand tree -- AppConfig/_cli_parsers/_ticket/ticket_runner
+    dispatch are not touched by this design, and T-2302 holds a live cross-worktree
+    lease on config.py/_new.py blocking them anyway'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'T-1777: redesigned around the ALREADY-shipped frob worktree release-lease
+    verb (T-2175) instead of a new frob ticket lease subcommand tree -- AppConfig/_cli_parsers/_ticket/ticket_runner
+    dispatch are not touched by this design, and T-2302 holds a live cross-worktree
+    lease on config.py/_new.py blocking them anyway'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-1777: redesigned around the ALREADY-shipped frob worktree release-lease
+    verb (T-2175) instead of a new frob ticket lease subcommand tree -- AppConfig/_cli_parsers/_ticket/ticket_runner
+    dispatch are not touched by this design, and T-2302 holds a live cross-worktree
+    lease on config.py/_new.py blocking them anyway'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
