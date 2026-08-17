@@ -32,6 +32,10 @@ from _require_python import require_python  # noqa: E402
 
 require_python(__file__)
 
+# ruff: noqa: E402 -- every import below MUST follow the require_python(__file__)
+# guard above: T-2236 requires this script to fail with a clear version message
+# on a too-old interpreter BEFORE it imports anything that would raise a
+# confusing SyntaxError instead.
 import argparse
 import fnmatch
 import json
@@ -1323,7 +1327,10 @@ def _swap_guidance(swap: tuple[int, int] | None) -> str:
         swap_used_kb, swap_total_kb = swap
         if swap_total_kb > 0 and swap_used_kb >= _SWAP_PRESSURE_FLOOR_KB:
             swap_used_gb = swap_used_kb / (1024 * 1024)
-            return f"1 agent (SWAP {swap_used_gb:.1f}GB in use -- real memory pressure MemAvailable does not show)"
+            return (
+                f"1 agent (SWAP {swap_used_gb:.1f}GB in use -- real memory"
+                " pressure MemAvailable does not show)"
+            )
     return f"{_AGENT_CAP_GUIDANCE} concurrent"
 
 

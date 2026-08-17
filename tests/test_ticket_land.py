@@ -1480,7 +1480,7 @@ class TestRecordLandCommit:
         while the bystander edit survives, still uncommitted, afterward
         (never silently discarded either)."""
         tid = "T-3000"
-        ticket = _seed_v2_ticket(v2_repo, tid, scope=("src/feature.py",))
+        _seed_v2_ticket(v2_repo, tid, scope=("src/feature.py",))
         _commit_all(v2_repo, "seed T-3000")
         fake_land_sha = _run(["git", "rev-parse", "HEAD"], v2_repo).stdout.strip()
 
