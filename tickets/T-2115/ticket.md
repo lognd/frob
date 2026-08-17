@@ -20,7 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: eafa07d76c0e90827b0309dbee4955f5d54f625a
 ---
 T-2107's land (41286e07b2e0) added _SuggestingArgumentParser.
 parse_known_args (src/frob/__main__.py) to record the argparse
