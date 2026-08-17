@@ -54,7 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 79a3f1e911ed11cb3b89dd2e34e42f6e87b40216
 ---
 T-2290 fixed (c) the unverified-depth/commits-since-watermark reconciliation
 and (b) a soft, non-blocking rapid-profile warning once verification debt
