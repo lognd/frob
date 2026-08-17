@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: eb88878c2ae1f95e05169aeb49cd75dfbbc4f6fd
 ---
 Found while working T-2283 (2026-08-17): three of T-2283's four target
 tests fail because of a genuine defect, not a stale test:
