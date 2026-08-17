@@ -22,6 +22,7 @@ with no lease naming it.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -31,6 +32,7 @@ from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets._journal import _clear_intent, _read_all_intents
 from frob.tickets._leases import (
+    _land_in_progress_for_ticket,
     read_all_leases,
     refuse_if_land_in_progress,
     release_lease,
@@ -103,19 +105,88 @@ def _live_worktrees(root: Path) -> tuple[Path, ...]:
     return tuple(p for p in paths[1:] if p != main)
 
 
+# T-2276@T-2291's own default worktree-cutting convention
+# (`_default_work_worktree`/`frob.app.ticket_runner._lifecycle`): a
+# worktree `frob ticket work`/`start` creates is branched
+# `ticket_id.lower()`, never anything else. Matches a sequential id
+# (t-1234) or a draft id (t-draft-xxxxxxxx), case-insensitively -- kept
+# deliberately narrow to the ONE naming shape this repo's own tooling
+# actually produces, not a broad "anything T-shaped" grep (T-2287's own
+# lexical-match lesson: match a known GRAMMAR, not a loose pattern).
+_DEFAULT_WORKTREE_BRANCH_RE = re.compile(
+    r"^t-(?:(?P<seq>\d{4})|draft-(?P<draft>[0-9a-f]{8}))$"
+)
+
+
+def _live_worktree_ticket_ids(root: Path) -> frozenset[str]:
+    """Ticket ids inferable from a LIVE `git worktree`'s own branch name
+    (T-2292), via `_DEFAULT_WORKTREE_BRANCH_RE` -- best-effort defense-in-
+    depth alongside the lease-based liveness check `_stale_in_progress_
+    ticket_ids` already runs: a worktree that still exists on disk, whose
+    branch is literally named after the ticket, is strong independent
+    evidence the hold is not abandoned, regardless of whatever the lease
+    file happens to read at the sampled instant (the T-2292 incident:
+    `frob ticket reconcile --apply` requeued T-2276 while its worktree
+    and agent were both still live, because the lease read absent/
+    reclaimed at the exact instant reconcile sampled it -- see T-2292's
+    own ticket body). A worktree cut with a custom `--worktree` path or a
+    non-default branch name (a coordinator's own manual `git worktree
+    add`, or a ticket resumed under a differently-named branch across
+    sessions) is simply invisible to this check and falls back to the
+    lease-only signal, unchanged from before this ticket -- this narrows
+    false positives (never requeuing a live default-convention worktree),
+    it does not widen them."""
+    spawned = run_argv(["git", "-C", str(root), "worktree", "list", "--porcelain"])
+    if spawned.is_err or spawned.danger_ok.returncode != 0:
+        return frozenset()
+    ids: set[str] = set()
+    for line in spawned.danger_ok.stdout.splitlines():
+        if not line.startswith("branch "):
+            continue
+        ref = line[len("branch ") :]
+        name = ref.rsplit("/", 1)[-1]
+        match = _DEFAULT_WORKTREE_BRANCH_RE.match(name)
+        if match is None:
+            continue
+        if match.group("seq") is not None:
+            ids.add(f"T-{match.group('seq')}")
+        else:
+            ids.add(f"T-draft-{match.group('draft')}")
+    return frozenset(ids)
+
+
 def _stale_in_progress_ticket_ids(
-    tickets: dict, leased_ticket_ids: frozenset[str]
+    root: Path,
+    tickets: dict,
+    leased_ticket_ids: frozenset[str],
+    live_worktree_ticket_ids: frozenset[str],
 ) -> tuple[str, ...]:
     """Ticket ids the LOCAL ledger shows `IN_PROGRESS` with no corresponding
     LIVE lease (T-0476's stale-hold anomaly) -- `leased_ticket_ids` already
     excludes any lease `read_all_leases` judged stale (worktree path gone,
     T-0473's own liveness guard), so this only needs to check absence, not
-    re-derive liveness itself."""
+    re-derive liveness itself.
+
+    T-2292: a lease-absence read alone is NOT sufficient to call a hold
+    stale -- the false-positive direction (requeuing genuinely live work)
+    is far more expensive than the false-negative direction (missing a
+    stale hold for one more reconcile cycle, see T-2292's own "WHY THIS IS
+    THE DANGEROUS DIRECTION" reasoning), so TWO additional independent
+    signals must also be absent before a ticket is called stale:
+    `_land_in_progress_for_ticket` (a live `frob ticket land` process
+    currently landing exactly this ticket -- the same T-1619 land-process
+    scan `refuse_if_land_in_progress` already runs, reused here per-ticket
+    rather than only once at `apply`'s own entry) and
+    `live_worktree_ticket_ids` (`_live_worktree_ticket_ids`'s
+    branch-name-convention signal, computed once by the caller and passed
+    in rather than re-derived per ticket)."""
     return tuple(
         ticket_id
         for ticket_id, ticket in sorted(tickets.items())
         if ticket.state is TicketState.IN_PROGRESS
         and ticket_id not in leased_ticket_ids
+        and ticket_id not in live_worktree_ticket_ids
+        and not _land_in_progress_for_ticket(root, ticket_id)
     )
 
 
@@ -287,7 +358,10 @@ def reconcile(
         str(Path(lease.worktree).resolve()) for lease in leases
     )
 
-    stale_ids = _stale_in_progress_ticket_ids(tickets, leased_ticket_ids)
+    live_worktree_ticket_ids = _live_worktree_ticket_ids(root)
+    stale_ids = _stale_in_progress_ticket_ids(
+        root, tickets, leased_ticket_ids, live_worktree_ticket_ids
+    )
     orphans = _orphan_worktree_paths(root, leased_worktrees)
     orphaned_intents = tuple(intent.ticket_id for intent in _read_all_intents(root))
     # frob:ticket T-1934

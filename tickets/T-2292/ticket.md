@@ -2,7 +2,7 @@
 id: T-2292
 title: 'reconcile --apply requeued a LIVE ticket mid-land: T-2276 demoted in-progress->queued
   12 minutes after start while its land was running'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -16,14 +16,19 @@ scope:
 - tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_live_default_worktree_with_no_lease_is_never_requeued
+- tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_still_requeues_a_genuinely_gone_worktree
+designated_repro_test: tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_live_default_worktree_with_no_lease_is_never_requeued
 acceptance:
 - text: given a ticket whose land process is running, when reconcile --apply runs,
     then that ticket is never requeued regardless of momentary lease state
-  evidence: []
+  evidence:
+  - tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_live_default_worktree_with_no_lease_is_never_requeued
 - text: given a genuinely stale hold with no process and no worktree, when reconcile
     --apply runs, then it is still requeued (guard not weakened)
-  evidence: []
+  evidence:
+  - tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_still_requeues_a_genuinely_gone_worktree
 threat: null
 component: tickets
 anchor: false

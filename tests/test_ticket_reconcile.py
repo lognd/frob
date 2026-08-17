@@ -270,6 +270,83 @@ class TestReconcileApplyLandInProgressGuard:
         assert loaded.danger_ok[tid].state == TicketState.QUEUED
 
 
+class TestReconcileLiveWorktreeShield:
+    """T-2292: `reconcile --apply` must never requeue a ticket whose
+    default-convention worktree is still LIVE on disk, even if the lease
+    read comes back absent -- the real incident (T-2276 demoted mid-land
+    while its worktree and agent were both live) came from trusting a
+    momentarily-absent lease read as proof of abandonment. This is
+    INDEPENDENT of T-2291's own land-in-progress guard: no land.lock and
+    no live land process are involved here at all, only a live worktree
+    with no lease -- the exact gap `_live_worktree_ticket_ids` closes."""
+
+    def test_live_default_worktree_with_no_lease_is_never_requeued(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_live_def\
+        # ault_worktree_with_no_lease_is_never_requeued
+        from frob.tickets._leases import release_lease
+
+        created = new_ticket(repo, _spec("LiveNoLease", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        # A worktree cut on the SAME default-convention branch name
+        # `frob ticket work`/`start` always uses: ticket_id.lower().
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", tid.lower(), str(wt)], repo)
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        # Simulate the lease reading momentarily absent (the T-2292
+        # incident's own hypothesis) WITHOUT removing the worktree --
+        # the worktree is still fully live, on disk, agent's checkout
+        # intact.
+        release_lease(repo, tid)
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        report = result.danger_ok
+        assert tid not in report.requeued_tickets
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
+
+        _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+
+    def test_still_requeues_a_genuinely_gone_worktree(self, repo: Path) -> None:
+        """Must-still-pass control: once the worktree is ACTUALLY removed
+        (the ordinary crashed-agent shape), the same ticket is requeued
+        exactly as before -- the new worktree-branch shield does not
+        widen into "never requeue a default-branch-named ticket"."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield.test_still_re\
+        # queues_a_genuinely_gone_worktree
+        created = new_ticket(repo, _spec("LiveThenGone", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", tid.lower(), str(wt)], repo)
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        assert result.danger_ok.requeued_tickets == (tid,)
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.QUEUED
+
+
 class TestReconcileOrphanWorktree:
     def test_live_worktree_with_no_lease_is_flagged_not_removed(
         self, repo: Path
