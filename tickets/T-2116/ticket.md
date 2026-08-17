@@ -2,7 +2,7 @@
 id: T-2116
 title: Add frob:doc anchor for detect_duplicate_ticket_id_collisions once docs/modules/tickets.md
   frees
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-11'
@@ -12,7 +12,10 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets.md
+- src/frob/tickets/_land_git_ops.py
+evidence_scope:
+- tests/unit/test_land_duplicate_ticket_id.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -32,6 +35,34 @@ scope_changes:
     every other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+- op: remove
+  glob: docs/modules/tickets-lifecycle.md
+  reason: T-1780 split docs/modules/tickets.md into subject files after this ticket
+    was filed; the doc home for the Public API reference (where this anchor belongs)
+    is docs/modules/tickets.md itself, not tickets-lifecycle.md; also need to touch
+    the source file to remove the now-satisfied COV001 waiver
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: T-1780 split docs/modules/tickets.md into subject files after this ticket
+    was filed; the doc home for the Public API reference (where this anchor belongs)
+    is docs/modules/tickets.md itself, not tickets-lifecycle.md; also need to touch
+    the source file to remove the now-satisfied COV001 waiver
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: T-1780 split docs/modules/tickets.md into subject files after this ticket
+    was filed; the doc home for the Public API reference (where this anchor belongs)
+    is docs/modules/tickets.md itself, not tickets-lifecycle.md; also need to touch
+    the source file to remove the now-satisfied COV001 waiver
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_the_landing_tickets_own_id
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_identical_content_on_both_sides
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_ignores_an_id_that_already_existed_at_the_merge_base
 designated_repro_test: null
 threat: null
 component: null

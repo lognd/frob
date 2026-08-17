@@ -151,6 +151,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/_doable.py::WaveGroup -->
 <!-- frob:describes src/frob/tickets/_doable.py::WaveResult -->
 <!-- frob:describes src/frob/tickets/_doable.py::WaveRemainderReason -->
+<!-- frob:describes src/frob/tickets/_land_git_ops.py::detect_duplicate_ticket_id_collisions -->
 
 ```python
 # frob/tickets/__init__.py
