@@ -11,10 +11,10 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/_cli_parsers/_ticket/**
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/__init__.py
 - docs/modules/tickets-lifecycle.md
+- src/frob/_cli_parsers/_ticket/_metadata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -34,6 +34,18 @@ scope_changes:
     every other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+- op: remove
+  glob: src/frob/_cli_parsers/_ticket/**
+  reason: 'T-1777: narrow to the single parser module this ticket actually edits,
+    avoiding collision with T-2302''s live lease on _new.py under the same glob'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-1777: narrow to the single parser module this ticket actually edits,
+    avoiding collision with T-2302''s live lease on _new.py under the same glob'
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
