@@ -3,7 +3,7 @@ id: T-2255
 title: T-1946's orphaned-evidence land guard fails OPEN when test collection fails
   -- the normal case in agent worktrees -- and let T-2240 orphan 11 tickets' evidence
   (28 COV003, floor 35 to 59)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -37,6 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # T-1946's orphaned-evidence land guard fails OPEN on test-collection failure -- the common case in agent worktrees -- and let a land orphan 11 tickets' evidence
 
