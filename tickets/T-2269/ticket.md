@@ -2,7 +2,7 @@
 id: T-2269
 title: 5 tests in tests/test_coverage.py assert on Makefile recipe text T-2240 already
   retired
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -15,7 +15,9 @@ scope:
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
+designated_repro_test: tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_target_restores_and_verifies_natives_before_pytest
 threat: null
 component: null
 anchor: false

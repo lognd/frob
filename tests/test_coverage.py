@@ -195,54 +195,52 @@ class TestCoverageTargetNativesGuard:
         )
         return result.stdout
 
-    def _assert_guard_precedes_pytest(self, output: str) -> None:
-        """`make core` and `frob doctor` must both appear, in that relative
-        order, strictly before the first `pytest --cov` invocation -- the
-        exact ordering that fails loudly on a missing native instead of
-        letting pytest collection blow up mid-suite (the T-0538 incident)."""
-        core_idx = output.index("make core")
-        doctor_idx = output.index("frob doctor")
-        pytest_idx = output.index("pytest --cov")
-        assert core_idx < doctor_idx < pytest_idx, (
-            f"expected 'make core' < 'frob doctor' < 'pytest --cov', "
-            f"got indices {core_idx}, {doctor_idx}, {pytest_idx} in:\n{output}"
-        )
-
     # frob:ticket T-1595
     # frob:ticket T-2098
-    def _assert_guard_precedes_coverage_cli(self, output: str) -> None:
+    # frob:ticket T-2269
+    def _assert_guard_precedes_coverage_cli(
+        self, output: str, coverage_invocation: str
+    ) -> None:
         """`frob natives build` and `frob doctor` must both appear, in that
-        relative order, strictly before the `frob coverage .` invocation --
-        the same T-0538 guard shape as `_assert_guard_precedes_pytest`, but
-        for the `coverage-fast` target specifically (T-1595): T-1525 moved
-        `coverage-fast`'s own coverage orchestration out of a literal
-        `pytest --cov` Makefile line and into the frob-native `frob
-        coverage` CLI verb (`src/frob/app/coverage_runner.py`), so
-        `pytest --cov` no longer appears anywhere in this target's dry-run
-        expansion at all -- asserting for it here was stale, not a real
-        regression (`frob coverage` still exercises pytest internally, via
-        `run_coverage_wait`/`native_coverage_refresh`, just not as a
-        Makefile-visible subprocess line). T-2098: the natives restore used
-        to read as a recursive `make core` sub-invocation trace; it is now
-        a direct `uv run frob natives build` line (no `$(MAKE)` at all),
-        which is what fixed `make -n coverage-fast` genuinely executing
-        `frob ticket reconcile --apply` -- so this checks for the literal
-        command, not the old recursive-make text."""
+        relative order, strictly before `coverage_invocation` -- the same
+        T-0538 guard shape the old `_assert_guard_precedes_pytest` checked
+        against a literal `pytest --cov` line, generalized (T-2269) to cover
+        both targets now that `coverage` (T-2240) and `coverage-fast`
+        (T-1595) each delegate their whole coverage orchestration to the
+        frob-native `frob coverage` CLI verb
+        (`src/frob/app/coverage_runner.py`) instead of a Makefile-visible
+        `pytest --cov`/`make core` line -- asserting for either literal
+        string is stale, not a real regression (`frob coverage` still
+        exercises pytest internally, via `run_coverage_wait`/
+        `native_coverage_refresh`, just not as a Makefile-visible
+        subprocess line). T-2098: the natives restore used to read as a
+        recursive `make core` sub-invocation trace; it is now a direct
+        `uv run frob natives build` line (no `$(MAKE)` at all), which is
+        what fixed `make -n coverage-fast` genuinely executing `frob ticket
+        reconcile --apply` -- so this checks for the literal command, not
+        the old recursive-make text."""
         core_idx = output.index("frob natives build")
         doctor_idx = output.index("frob doctor")
-        coverage_idx = output.index("frob coverage .")
+        coverage_idx = output.index(coverage_invocation)
         assert core_idx < doctor_idx < coverage_idx, (
             f"expected 'frob natives build' < 'frob doctor' < "
-            f"'frob coverage .', got indices {core_idx}, {doctor_idx}, "
+            f"{coverage_invocation!r}, got indices {core_idx}, {doctor_idx}, "
             f"{coverage_idx} in:\n{output}"
         )
 
     def test_coverage_target_restores_and_verifies_natives_before_pytest(
         self,
     ) -> None:
-        """`make coverage`'s dry-run recipe restores natives (`make core`)
-        and verifies them (`frob doctor`) before the coverage pytest run."""
-        self._assert_guard_precedes_pytest(self._dry_run("coverage"))
+        """`make coverage`'s dry-run recipe restores natives (`frob natives
+        build`) and verifies them (`frob doctor`) before the delegated
+        `frob coverage --full` run. T-2269: T-2240 moved this target's own
+        coverage orchestration off a literal `pytest --cov`/`make core`
+        Makefile line and onto `frob coverage --full`, the same shape
+        `coverage-fast` already used -- this test asserted on the retired
+        text and is rewritten to match, not restoring the old shell."""
+        self._assert_guard_precedes_coverage_cli(
+            self._dry_run("coverage"), "frob coverage --full"
+        )
 
     def test_coverage_fast_incremental_branch_restores_and_verifies_natives(
         self,
@@ -255,7 +253,9 @@ class TestCoverageTargetNativesGuard:
         invocation. T-1595: that invocation is `frob coverage .` (T-1525
         moved this target off a literal `pytest --cov` Makefile line), not
         `pytest --cov` -- see `_assert_guard_precedes_coverage_cli`."""
-        self._assert_guard_precedes_coverage_cli(self._dry_run("coverage-fast"))
+        self._assert_guard_precedes_coverage_cli(
+            self._dry_run("coverage-fast"), "frob coverage ."
+        )
 
 
 class TestMakefileNoCompoundRecursiveMake:
@@ -347,76 +347,6 @@ class TestMakeDryRunDoesNotExecuteMutatingCommands:
                 f"stdout={exc.stdout!r}\nstderr={exc.stderr!r}"
             ) from exc
         assert result.returncode == 0, result.stdout + result.stderr
-
-
-class TestCoverageTargetFlakeTolerance:
-    """T-1180: `make coverage` must not let a load-sensitive parallel-run
-    flake halt the recipe before combine/xml/stamp -- a failed first pass
-    gets exactly one serial (non-xdist) rerun of just the failed tests,
-    appended onto the same coverage data, and only a test still failing
-    after that rerun fails the target. Asserted against the real dry-run
-    recipe text (`make -n coverage`, nothing executed) so a regression that
-    drops the rerun, or lets the first pass's exit code halt the recipe
-    early, fails this test without ever running the (slow, playbook-6b-
-    forbidden-for-a-sub-agent) real target."""
-
-    def _dry_run(self) -> str:
-        result = subprocess.run(
-            ["make", "-n", "coverage"],
-            cwd=_REPO_ROOT,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout
-
-    def test_first_pass_failure_does_not_abort_the_recipe(self) -> None:
-        """The first `pytest --cov` invocation's exit status is captured
-        into a shell variable rather than left to `make`'s default
-        stop-on-nonzero behavior -- `; \\` continuation into `status=$?`
-        immediately after it, not a bare recipe line of its own."""
-        output = self._dry_run()
-        first_pytest_idx = output.index("pytest --cov")
-        # the line immediately following the first pytest invocation must
-        # capture its exit status rather than being a fresh `make` recipe
-        # line (which would abort the whole recipe on nonzero exit).
-        tail = output[first_pytest_idx:]
-        assert "status=$?" in tail
-
-    def test_rerun_is_serial_and_scoped_to_last_failed(self) -> None:
-        """The rerun disables xdist parallelism (`-n 0` -- NOT `-p
-        no:xdist`, which pytest rejects here: `[tool.pytest.ini_options]
-        addopts` bakes in `-n auto`, and unloading the xdist plugin
-        entirely while `-n` is still in `addopts` makes `-n` an
-        unrecognized argument; `-n 0` overrides the count instead, xdist
-        plugin still loaded, worker count zero) and scopes to just the
-        failed tests (`--last-failed`), appending onto the same coverage
-        data (`--cov-append`) -- never a second full-suite parallel run."""
-        output = self._dry_run()
-        assert "-n 0" in output
-        assert "--last-failed" in output
-        assert "--cov-append" in output
-
-    def test_combine_xml_stamp_run_unconditionally_after_the_rerun(self) -> None:
-        """`coverage combine`, `coverage xml`, and `frob check
-        --stamp-coverage` all appear strictly AFTER the serial rerun
-        block, on lines that are not gated behind the captured `status`
-        (i.e. always reached, not just on success) -- the parallel-run
-        failure must never block them."""
-        output = self._dry_run()
-        rerun_idx = output.index("--last-failed")
-        combine_idx = output.index("coverage combine")
-        xml_idx = output.index("coverage xml")
-        stamp_idx = output.index("frob check --stamp-coverage")
-        assert rerun_idx < combine_idx < xml_idx < stamp_idx
-
-    def test_target_exit_reflects_final_status_not_always_zero(self) -> None:
-        """The recipe's own shell block ends with `exit $status` -- a test
-        still failing after the serial rerun must fail `make coverage`
-        itself, not be silently swallowed by combine/xml/stamp's own zero
-        exit codes."""
-        output = self._dry_run()
-        assert "exit $status" in output
 
 
 # frob:ticket T-1517
