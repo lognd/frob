@@ -137,6 +137,7 @@
     "frob-core/src/lib.rs::unresolved_exempt_names": "8fecc2bbf53cef3e754272895cdee4abb47bd6b51754045e29b4a8a49ba8e3c8",
     "frob-core/src/lib.rs::winnow_fingerprints": "ee69c4c8f9122804358d37c8a49c47e9b108a27d85d52208635dd954a42b7e76",
     "frob-core/src/lib.rs::wl_hash": "f345548ad8eb20215c8479a35f30dd915284b318ea06fd89a5b545e3f8a29320",
+    "scripts/_require_python.py::require_python": "ddf17a8d166b70e4efec71f265b987483ac2f6dbdaad212acaa041a6bfee56f5",
     "scripts/check_summary.py::iter_diagnostics": "3f574c46c14b74f1d5c79758f0cd190bd38bc39be1c40ee5d25008745c767411",
     "scripts/check_summary.py::load_report": "33e5b1dd69b769cb597816f81b91c9ebe97fd44367435775a7069a28dec04b5d",
     "scripts/check_summary.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
@@ -2328,5 +2329,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.483.0"
+  "version": "0.484.0"
 }

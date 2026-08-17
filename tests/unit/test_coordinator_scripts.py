@@ -11,31 +11,20 @@ way to unit test outside it -- does not transfer to this shape).
 
 from __future__ import annotations
 
-import importlib.util
 import io
 import json
 import subprocess
 import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 import pytest
 
+from tests.unit.conftest import _load_script as _load
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPTS = _REPO_ROOT / "scripts"
-
-
-def _load(name: str) -> ModuleType:
-    """Import a `scripts/<name>.py` module by path (scripts/ has no __init__)."""
-    path = _SCRIPTS / f"{name}.py"
-    spec = importlib.util.spec_from_file_location(f"_scripts_under_test.{name}", path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
 
 check_summary = _load("check_summary")
 fleet_status = _load("fleet_status")

@@ -3,10 +3,47 @@
 T-1863. Three small, reusable scripts that replace analyses the coordinator
 loop used to re-derive by hand from inline Python, dozens of times per
 session -- and got wrong twice, on both counts documented below. Each
-script is plain stdlib Python (no `frob` import, so it runs under any
-interpreter on `PATH`, not just the project's `uv`-managed one) and is
-meant to be invoked directly, not imported as a library, though every
-function is written to be testable in isolation.
+script is plain stdlib Python (no `frob` import) and is meant to be
+invoked directly, not imported as a library, though every function is
+written to be testable in isolation.
+
+**Invocation (T-2236): `uv run python scripts/<name>.py`, not bare
+`python3 scripts/<name>.py`.** These scripts have no `frob` import, but
+that does NOT mean they run under any interpreter on PATH -- this
+project's own `requires-python = ">=3.11"` (`pyproject.toml`) is not
+guaranteed to be what a bare `python3` resolves to (a fresh clone, CI, or
+an operator's own machine can have an older one on PATH; the exact
+incident this fixes: `python3 scripts/fleet_status.py` broke with a raw
+`ImportError: cannot import name 'UTC' from 'datetime'` the moment a
+legal 3.11 feature landed, on a box whose `python3` was 3.10.12). `scripts/
+fleet_status.py` and `scripts/frob-telemetry-hook` -- the two that use a
+3.11+-only feature -- both start with a call to `scripts/_require_python.
+require_python`, so running either one under an older interpreter now
+prints the required version, the version found, and this exact corrected
+invocation, and exits non-zero, instead of a raw traceback. `uv run
+python ...` guarantees the project's own declared minimum; bare `python3`
+never did.
+
+## `scripts/_require_python.py`
+
+T-2236. The shared interpreter-version guard `scripts/fleet_status.py`
+and `scripts/frob-telemetry-hook` both call as their own first statement
+(before any import that only works on the project's required version).
+This module itself must run under ANY `python3` on PATH -- that is the
+whole point -- so it avoids `tomllib` (itself 3.11+) and any newer
+syntax, reading `requires-python` from `pyproject.toml` via a minimal
+regex instead of a TOML parser.
+
+### `require_python`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#require_python -->
+
+Exit(1) with the required version, the version found, and the correct
+`uv run python ...` invocation if the running interpreter is older than
+`pyproject.toml`'s own `requires-python`; a silent no-op on a supported
+interpreter (invisible on the happy path) AND when the requirement
+cannot be determined at all (fails OPEN, never blocks a script it cannot
+evaluate).
 
 ## `scripts/check_summary.py`
 
@@ -704,10 +741,11 @@ coordinator can vet a wave for contention before dispatching it.
 line does not itself change the exit code -- it is a visibility fix, not
 a new dispatch-refusal gate.
 
-Usage:
+Usage (T-2236: `uv run python`, not bare `python3` -- see this doc's own
+top-of-file note):
 
 ```
-python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-#### [--ticket T-#### ...]]
+uv run python scripts/fleet_status.py [--idle-minutes N] [--ticket T-#### [--ticket T-#### ...]]
 ```
 
 ## `scripts/verify_lands.py`

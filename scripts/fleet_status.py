@@ -24,6 +24,14 @@ Usage:
 
 from __future__ import annotations
 
+import sys as _sys
+from pathlib import Path as _Path
+
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from _require_python import require_python  # noqa: E402
+
+require_python(__file__)
+
 import argparse
 import fnmatch
 import json
@@ -1306,7 +1314,15 @@ def _parse_ticket_ledger_file(path: Path) -> dict | None:
     for line in text.splitlines():
         if line == "---":
             continue
-        for key in ("id", "state", "priority", "tier", "created", "runs_last", "parent"):
+        for key in (
+            "id",
+            "state",
+            "priority",
+            "tier",
+            "created",
+            "runs_last",
+            "parent",
+        ):
             prefix = f"{key}:"
             if line.startswith(prefix):
                 value = line[len(prefix) :].strip()

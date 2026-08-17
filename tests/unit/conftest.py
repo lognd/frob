@@ -9,13 +9,32 @@ pytest plugin machinery."""
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
+from types import ModuleType
 
 #: Repo root, three levels up from this file (tests/unit/conftest.py ->
 #: repo root) -- the same computation `test_coverage_attribution_lock_
 #: t1395.py`/`test_makefile_coverage.py` each used to duplicate privately.
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+_SCRIPTS = _REPO_ROOT / "scripts"
+
+
+# frob:ticket T-2236
+def _load_script(name: str) -> ModuleType:
+    """Import `scripts/<name>.py` by path (`scripts/` has no
+    `__init__.py`, so it is not an ordinary package import). Promoted
+    here (T-2236) from two identical per-file copies
+    (`test_coordinator_scripts.py::_load`, `test_require_python.py::
+    _load`) once a second consumer confirmed the duplication."""
+    path = _SCRIPTS / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"_scripts_under_test.{name}", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 # frob:ticket T-1551

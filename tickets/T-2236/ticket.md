@@ -3,7 +3,7 @@ id: T-2236
 title: Documented invocation of coordinator scripts (bare python3) violates requires-python
   >=3.11, and the failure is a raw ImportError -- broke fleet_status the minute a
   legal 3.11 feature landed
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -16,27 +16,62 @@ scope:
 - scripts/fleet_status.py
 - scripts/frob-telemetry-hook
 - docs/guides/coordinator-scripts.md
+- tests/unit/test_require_python.py
+- scripts/_require_python.py
+- tests/unit/conftest.py
+- tests/unit/test_coordinator_scripts.py
+evidence_scope:
+- tests/unit/test_require_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_require_python.py
+  reason: new repro/regression test for the interpreter-version guard
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: scripts/_require_python.py
+  reason: the new shared version-guard module; scope already lists fleet_status.py/frob-telemetry-hook
+    which import it
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/conftest.py
+  reason: DUP001 fix shared/updated the _load helper in both files
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: DUP001 fix shared/updated the _load helper in both files
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
+designated_repro_test: tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 acceptance:
 - text: Running under an interpreter older than requires-python prints an actionable
     message (required version, found version, correct command) and exits non-zero
     without a raw ImportError traceback
-  evidence: []
+  evidence:
+  - tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 - text: The guard reads the requirement from a single source of truth, not a hardcoded
     (3,11) duplicated per script; if that needs a dependency these import-light scripts
     cannot take, propose the minimal alternative
-  evidence: []
+  evidence:
+  - tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 - text: 'MUST-STILL-PASS: under a supported interpreter every script''s output is
     byte-identical before and after -- the guard is invisible on the happy path'
-  evidence: []
+  evidence:
+  - tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 - text: docs/guides/coordinator-scripts.md documents the invocation actually guaranteed
     to work
-  evidence: []
+  evidence:
+  - tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 - text: Both affected scripts covered; any other version-sensitive script under scripts/
     is reported, not silently fixed
-  evidence: []
+  evidence:
+  - tests/unit/test_require_python.py::TestRequirePython::test_older_interpreter_exits_nonzero_with_actionable_message
 threat: null
 component: null
 anchor: false

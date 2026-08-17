@@ -34,12 +34,18 @@ to append an equivalent event by hand or from a wrapper script.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _require_python import require_python  # noqa: E402
+
+require_python(__file__)
+
 import argparse
 import json
 import os
-import sys
 from datetime import UTC, datetime
-from pathlib import Path
 
 _NO_TELEMETRY_ENV = "FROB_NO_TELEMETRY"
 _TELEMETRY_REL = Path(".frob") / "telemetry.jsonl"

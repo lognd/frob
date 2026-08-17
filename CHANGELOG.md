@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.484.0] - unreleased
+
+- T-2236: Documented invocation of coordinator scripts (bare python3) violates requires-python >=3.11, and the failure is a raw ImportError -- broke fleet_status the minute a legal 3.11 feature landed
+
 ## [0.483.0] - unreleased
 
 - T-2249: fleet_status's concurrency guidance keys on MEM available, which read 11.5GB healthy while the machine was already swapping 6GB with 0 free RAM
