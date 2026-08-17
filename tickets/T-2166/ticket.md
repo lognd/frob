@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e21243fdc7c4c116cc82b2c10a2226b1bc8b53dd
 ---
 T-2108 fixed `frob ticket land --finish` re-running the full land
 pipeline (including a BUG002 repro re-check that now genuinely PASSES,
