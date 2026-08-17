@@ -1561,6 +1561,22 @@ class Ticket(BaseModel):
     # established for `scope_breadth_ack` -- `None` when `anchor` is
     # False, set together by `set_anchor`, never independently.
     anchor_reason: str | None = None
+    # frob:ticket T-2220
+    # the sha of the commit that landed this ticket onto main, written by
+    # `frob.tickets._land_squash._record_land_commit` in a small follow-up
+    # commit right after `_commit_squash_apply` produces it (T-2220: this
+    # is a structural necessity, not a style choice -- a commit cannot
+    # embed its own hash in its own tree, so the land path that KNOWS this
+    # value can only durably record it in the NEXT commit it makes, still
+    # inside the same `frob ticket land` invocation, never a later script).
+    # `None` for any ticket never landed (queued/in-progress/dropped, or a
+    # `--plan` land's own drafts-only commit, which has no single "this
+    # ticket's" commit to name) or landed before this field existed.
+    # `scripts/verify_lands.py` and `_find_landing_commit`
+    # (`frob.app.ticket_runner._lifecycle`) both resolve a ticket id to a
+    # commit through THIS field -- never through a `git log --grep`, which
+    # cannot match a `--plan` land's commit subject (T-2220's own defect).
+    land_commit: str | None = None
     body: str = ""
 
     @field_validator("scope", mode="before")

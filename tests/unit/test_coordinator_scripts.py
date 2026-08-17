@@ -1917,8 +1917,108 @@ class TestSubject:
         assert verify_lands.subject("abc123") == "fix: a thing"
 
 
+# frob:ticket T-2220
+class TestLoadLandCommit:
+    """`verify_lands.load_land_commit` -- T-2220's ticket-id resolution."""
+
+    # frob:ticket T-2220
+    def test_returns_land_commit_for_a_landed_ticket(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket whose `land_commit` field is set resolves to that sha."""
+        from typani.result import Ok
+
+        class _Fake:
+            land_commit = "abc123full"
+
+        # `load_land_commit` imports `frob.tickets._load_one` internally
+        # (lazy import, at call time) -- patch the module attribute it
+        # will fetch.
+        import frob.tickets as tickets_mod
+
+        monkeypatch.setattr(tickets_mod, "_load_one", lambda root, tid: Ok(_Fake()))
+        assert verify_lands.load_land_commit("T-9999") == "abc123full"
+
+    # frob:ticket T-2220
+    def test_returns_none_for_an_unlanded_ticket(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket that exists but was never landed has `land_commit=None`."""
+        from typani.result import Ok
+
+        class _Fake:
+            land_commit = None
+
+        import frob.tickets as tickets_mod
+
+        monkeypatch.setattr(tickets_mod, "_load_one", lambda root, tid: Ok(_Fake()))
+        assert verify_lands.load_land_commit("T-9998") is None
+
+    # frob:ticket T-2220
+    def test_returns_missing_for_an_unknown_ticket_id(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket id that resolves to no ticket at all returns a `KeyError`
+        instance (never raised), kept distinct from `None`/a real sha."""
+        from typani.result import Err
+
+        import frob.tickets as tickets_mod
+
+        monkeypatch.setattr(
+            tickets_mod, "_load_one", lambda root, tid: Err("not-found")
+        )
+        result = verify_lands.load_land_commit("T-0000")
+        assert isinstance(result, KeyError)
+
+
+# frob:ticket T-2220
 class TestVerifyLandsMain:
     """`verify_lands.main`."""
+
+    # frob:ticket T-2220
+    # frob:tests tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain.test_ticket_id_argument_resolves_via_land_commit  # noqa: E501
+    def test_ticket_id_argument_resolves_via_land_commit(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Acceptance criterion 3 (must-still-pass) + criterion 4: a SHA
+        argument still works unchanged, AND a ticket id argument resolves
+        through `load_land_commit` to a sha before the same ancestor check
+        every plain sha gets -- this is what makes a `--plan` land
+        (unreachable by any commit-subject grep) resolvable by id."""
+        monkeypatch.setattr(
+            verify_lands, "load_land_commit", lambda tid: "planlandedshafull"
+        )
+        monkeypatch.setattr(verify_lands, "resolve", lambda sha: f"{sha}-resolved")
+        monkeypatch.setattr(verify_lands, "is_ancestor", lambda sha, ref: True)
+        monkeypatch.setattr(verify_lands, "subject", lambda sha: "chore: land --plan")
+        monkeypatch.setattr(
+            sys, "argv", ["verify_lands.py", "T-2211", "realsha", "--ref", "main"]
+        )
+        assert verify_lands.main() == 0
+        out = capsys.readouterr().out
+        assert "ON main" in out
+        assert "planlandedsh" in out  # sha truncated to 12 chars, same as ON's format
+
+    # frob:ticket T-2220
+    # frob:tests tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain.test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha  # noqa: E501
+    def test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Acceptance criterion 5: an unlanded ticket id (`land_commit`
+        still `None`) is refused with a message DISTINCT from `UNKNOWN-SHA`
+        (a plain typo) -- never conflated, exactly the discipline
+        `resolve`/`is_ancestor` already apply to unknown-vs-missing shas."""
+        monkeypatch.setattr(verify_lands, "load_land_commit", lambda tid: None)
+        monkeypatch.setattr(verify_lands, "resolve", lambda sha: None)
+        monkeypatch.setattr(
+            sys, "argv", ["verify_lands.py", "T-2299", "typo123", "--ref", "main"]
+        )
+        assert verify_lands.main() == 1
+        out = capsys.readouterr().out
+        assert "NOT-LANDED" in out
+        assert "T-2299" in out
+        assert "UNKNOWN-SHA typo123" in out
+        assert "NOT-LANDED" not in out.split("UNKNOWN-SHA")[1]
 
     def test_distinguishes_unknown_from_missing(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]

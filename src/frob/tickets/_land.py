@@ -1197,15 +1197,31 @@ def _land_plan_merge_worktree(root: Path, worktree: Path) -> Result[str, LandErr
 
 # frob:ticket T-1269
 def _land_plan_finalize_drafts(
-    root: Path,
+    root: Path, merge_commit: str
 ) -> Result[tuple[tuple[str, str], ...], LandError]:
     """Finalize EVERY draft id now present in `root`'s merged ledger
     (T-1269), one `finalize_draft` call each (T-0162's existing allocator
     -- never a hand-assigned id), in a stable (sorted) order so a retry
     after an unwind is deterministic. `Err(NotFound)` (propagated from
     `finalize_draft`) on the first failure -- the caller resets `root`
-    back to its pre-merge tip, so a partial finalize never survives."""
-    from frob.tickets import finalize_draft, load_all
+    back to its pre-merge tip, so a partial finalize never survives.
+
+    T-2220: each newly-finalized ticket also gets its own `land_commit`
+    field set to `merge_commit` here, in-memory, before the caller
+    (`_land_plan_commit_finalize`) stages and commits the finalize
+    rewrite -- `merge_commit` is ALREADY a real, prior commit by the time
+    this runs (the merge step that produced it committed before finalize
+    ever starts), so baking its sha into a ticket record finalize is
+    about to commit is not the self-reference problem `_record_land_
+    commit` (`frob.tickets._land_squash`) exists to avoid for a
+    SQUASH-APPLY land's own commit -- this is a different, already-known
+    sha. This is the concrete fix for the ticket's own measured defect:
+    a `--plan` land's commit subject (`chore(tickets): land --plan
+    finalize ...`) carries no ticket id at all, so a finalized ticket's
+    `land_commit` field is the ONLY way `scripts/verify_lands.py`/
+    `_find_landing_commit` can ever resolve it by id."""
+    from frob.tickets import _load_one, finalize_draft, load_all
+    from frob.tickets._store import write_ticket
 
     loaded = load_all(root)
     if loaded.is_err:
@@ -1222,7 +1238,29 @@ def _land_plan_finalize_drafts(
                 result.danger_err,
             )
             return Err(LandError.NotFound)
-        finalized.append((draft_id, result.danger_ok))
+        final_id = result.danger_ok
+        finalized.append((draft_id, final_id))
+        reloaded = _load_one(root, final_id)
+        if reloaded.is_err:
+            _log.error(
+                "land --plan: %s not found immediately after its own "
+                "finalize -- cannot record land_commit (T-2220); the "
+                "finalize itself already succeeded, this is a best-effort "
+                "augmentation only",
+                final_id,
+            )
+            continue
+        stamped = reloaded.danger_ok.model_copy(update={"land_commit": merge_commit})
+        written = write_ticket(root, stamped)
+        if written.is_err:
+            _log.error(
+                "land --plan: %s land_commit write failed (%s) -- %s "
+                "finalized correctly, only the T-2220 record field is "
+                "missing",
+                final_id,
+                written.danger_err,
+                final_id,
+            )
     return Ok(tuple(finalized))
 
 
@@ -1385,7 +1423,7 @@ def _land_plan_merge_and_finalize(
     merge_commit = merged.danger_ok
     own_commits.append(merge_commit)
 
-    finalized = _land_plan_finalize_drafts(root)
+    finalized = _land_plan_finalize_drafts(root, merge_commit)
     if finalized.is_err:
         return Err(finalized.danger_err), own_commits
 

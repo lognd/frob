@@ -1421,6 +1421,100 @@ class TestLand:
         assert _run(["git", "status", "--porcelain"], wt).stdout.strip() == ""
 
 
+# frob:ticket T-2220
+class TestRecordLandCommit:
+    """T-2220: a landed ticket persists the commit that landed it, in its
+    own `land_commit` field, written by the land path itself -- never
+    inferrable afterward from a `git log --grep` (the `--plan` case below
+    is the one that grep structurally cannot reach at all)."""
+
+    # frob:ticket T-2220
+    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
+    def test_records_land_commit_field_in_a_follow_up_commit(self, repo: Path) -> None:
+        """MUST-FAIL-FIRST (acceptance criterion 1): landing a ticket must
+        leave `land_commit` set on the ticket's OWN record, naming the
+        commit `land()`'s own `LandReport.commit_sha` names -- and that
+        sha must genuinely be an ancestor of `root`'s post-land HEAD (the
+        T-2220 follow-up-commit design: `root` ends one commit AHEAD of
+        `commit_sha`, never behind it, so `merge-base --is-ancestor` still
+        holds)."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-record", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add thingamajig", scope=("src/t.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "t.py").write_text("# thingamajig\n")
+        _commit_all(wt, "add thingamajig")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.commit_sha is not None
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        ticket = landed.danger_ok[report.final_id]
+        assert ticket.land_commit == report.commit_sha
+        assert (
+            _run(
+                ["git", "merge-base", "--is-ancestor", report.commit_sha, "HEAD"], repo
+            ).returncode
+            == 0
+        )
+
+    # frob:ticket T-2220
+    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
+    def test_plan_land_finalized_ticket_is_resolvable_by_ticket_id(
+        self, repo: Path, tmp_path: Path
+    ) -> None:
+        """Acceptance criterion 4: a `--plan` land's own commit subject
+        (`chore(tickets): land --plan finalize ...`) carries no ticket id
+        at all -- a `git log --grep "land T-####"` cannot match it. The
+        finalized ticket's own `land_commit` field must still resolve it,
+        to `report.merge_commit` (the ONLY sha this land makes before the
+        finalize commit -- no self-reference problem here, unlike the
+        per-ticket `land()` path above, since `merge_commit` already
+        exists as a real commit by the time finalize writes it)."""
+        from frob.tickets._land import land_plan
+
+        worktree = repo.parent / "design-wt"
+        _run(["git", "worktree", "add", str(worktree), "-b", "design", "main"], repo)
+        (worktree / "docs").mkdir()
+        (worktree / "docs" / "new.md").write_text("# New doc\n")
+        draft = new_ticket(worktree, _spec("A design-phase draft ticket")).danger_ok
+        assert draft.id.startswith("T-draft-")
+        _commit_all(worktree, "docs: add new.md + file draft")
+
+        result = land_plan(repo, worktree)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.merge_commit is not None
+        _old_id, new_id = report.finalized[0]
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        landed_ticket = loaded.danger_ok[new_id]
+        assert landed_ticket.land_commit == report.merge_commit
+
+        # The defect this closes: the OLD grep pattern
+        # (`_find_landing_commit`'s pre-T-2220 `git log --grep "land
+        # {ticket_id}([^0-9]|$)"`) requires the literal substring
+        # "land T-####" -- this commit's subject names `new_id` only via
+        # "-> T-####" (the finalize mapping), never as "land T-####", so
+        # the old grep genuinely could not have found it even though the
+        # id IS textually present somewhere in the subject.
+        import re as _re
+
+        finalize_sha = report.commit_sha
+        assert finalize_sha is not None
+        subject = _run(
+            ["git", "log", "-1", "--format=%s", finalize_sha], repo
+        ).stdout.strip()
+        assert "--plan" in subject
+        assert _re.search(rf"land {new_id}([^0-9]|$)", subject) is None
+
+
 def _t2114_concurrent_new_ticket(repo: Path, result_path: Path) -> None:
     """Multiprocessing target (module-level so `fork` can spawn it, T-2114
     -- mirrors `_t0907_child_land`'s own pattern below): calls `new_ticket`
@@ -4599,6 +4693,7 @@ class TestPreCommitUnscopedSweep:
 
 
 # frob:ticket T-1078
+# frob:ticket T-2220
 class TestReleaseBumpQuartetAtomicity:
     """T-1078: land's REL001 bump used to update pyproject.toml/
     CHANGELOG.md while leaving `.frob-release.json` on its old version
@@ -4610,6 +4705,7 @@ class TestReleaseBumpQuartetAtomicity:
     diagnostic names an incoherent quartet explicitly when that is the
     actual cause of a monotonicity refusal."""
 
+    # frob:ticket T-2220
     def test_manifest_version_written_same_step_as_pyproject(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestReleaseBumpQuartetAtomicity.test_manifest_version_written_same_step_as_pyproject  # noqa: E501
         (repo / ".frob-release.json").write_text(
@@ -4647,7 +4743,17 @@ class TestReleaseBumpQuartetAtomicity:
         assert '"a": "digest"' in manifest_text
         # Landed in the SAME commit as pyproject.toml -- no leftover diff.
         assert _status_ignoring_frob(repo) == ""
-        head_files = _run(["git", "show", "--stat", "--format=", "HEAD"], repo).stdout
+        # T-2220: `result.danger_ok.commit_sha` is the squash-apply commit
+        # itself -- root's actual HEAD is now one commit further, a
+        # separate `land_commit`-recording follow-up `_record_land_commit`
+        # makes right after it (structurally required: a commit cannot
+        # embed its own hash). The release quartet's own atomicity claim
+        # is about THAT commit, not whatever root's tip happens to be.
+        landed_sha = result.danger_ok.commit_sha
+        assert landed_sha is not None
+        head_files = _run(
+            ["git", "show", "--stat", "--format=", landed_sha], repo
+        ).stdout
         assert ".frob-release.json" in head_files
         assert "pyproject.toml" in head_files
 
@@ -4768,6 +4874,7 @@ class TestRealCallbackStaleWorktreeManifest:
 
 
 # frob:ticket T-0793
+# frob:ticket T-2220
 class TestUvLockSync:
     """T-0793: land's release-bump step re-syncs `uv.lock` in the SAME
     commit as a real version bump, and the DirtyMain check tolerates (and
@@ -4775,6 +4882,7 @@ class TestUvLockSync:
     flapping from a prior `uv run`/`uv lock` against an already-bumped
     pyproject.toml."""
 
+    # frob:ticket T-2220
     def test_bump_then_lock_synced_in_commit(
         self, repo: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -4819,8 +4927,13 @@ class TestUvLockSync:
         assert (repo / "uv.lock").read_text().count('version = "1.2.3"') == 1
         # uv.lock landed in the SAME commit as the bump, not left dirty.
         assert _status_ignoring_frob(repo) == ""
+        # T-2220: check the SQUASH-APPLY commit itself (`commit_sha`), not
+        # bare HEAD -- root's tip is now one commit further, a follow-up
+        # `_record_land_commit` write made right after it.
+        landed_sha = result.danger_ok.commit_sha
+        assert landed_sha is not None
         committed_files = _run(
-            ["git", "show", "--name-only", "--pretty=format:", "HEAD"], repo
+            ["git", "show", "--name-only", "--pretty=format:", landed_sha], repo
         ).stdout.split()
         assert "uv.lock" in committed_files
 
@@ -5424,6 +5537,7 @@ class TestScopeUnboundPreflightBeforeMerge:
 
 
 # frob:ticket T-0795
+# frob:ticket T-2220
 class TestLandRetryAfterFinalizeThenFail:
     """T-0795: three real lands this drive (T-0676, T-0774, T-0767) merged
     and finalized in the worktree (the ticket transitioned to `done` and
@@ -5514,6 +5628,7 @@ class TestLandRetryAfterFinalizeThenFail:
         assert f"land {final_id}" in log
         assert _status_ignoring_frob(repo) == ""
 
+    # frob:ticket T-2220
     def test_retry_after_full_success_reports_absorption_not_commit_failed(
         self, repo: Path
     ) -> None:
@@ -5524,8 +5639,18 @@ class TestLandRetryAfterFinalizeThenFail:
         and the ledger splice of an already-matching block is a no-op.
         This must report a clean `absorbed by prior land` success
         (`ledger_spliced=False`, `commit_sha` naming the SAME commit the
-        first land made, no new files), never `CommitFailed` from an
-        empty `git commit`."""
+        first land's own tip ended at, no new files), never `CommitFailed`
+        from an empty `git commit`.
+
+        T-2220: `first.danger_ok.commit_sha` names the squash-apply commit
+        specifically (unchanged) -- but `root`'s actual tip after a REAL
+        land is now one commit further, `_record_land_commit`'s own
+        follow-up commit (structurally required: a commit cannot embed its
+        own hash). The retry's absorption path reports root's CURRENT
+        HEAD (unchanged existing behavior, `_report_stacked_sibling_
+        absorption`), so the "same commit" this test's own docstring
+        promises is root's tip as of right after the first land
+        (`first_tip` below), not `first.danger_ok.commit_sha` itself."""
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-absorbed", str(wt)], repo)
         created = new_ticket(wt, _spec("Absorbed by its own prior land"))
@@ -5539,15 +5664,16 @@ class TestLandRetryAfterFinalizeThenFail:
         final_id = first.danger_ok.final_id
         first_sha = first.danger_ok.commit_sha
         assert first_sha is not None
+        first_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
         retry = land(repo, final_id, wt, dry_run=False)
 
         assert retry.is_ok, retry.err
         assert retry.danger_ok.ledger_spliced is False
-        assert retry.danger_ok.commit_sha == first_sha
+        assert retry.danger_ok.commit_sha == first_tip
         assert retry.danger_ok.files_changed == ()
         # No new commit was made -- root's tip is unchanged by the retry.
-        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == first_sha
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == first_tip
 
     def test_retry_when_still_queued_re_runs_the_ordinary_transition(
         self, repo: Path
@@ -9393,6 +9519,7 @@ class TestLandPlanUnwindNeverDiscardsForeignCommits:
 
 
 # frob:ticket T-1522
+# frob:ticket T-2220
 class TestLandPlanQueueDrainCommitsDurable:
     """T-1522: the exact 2026-08-04 T-1199/T-1200 incident shape --
     `land_plan`'s merge step already durably carries a shared worktree
@@ -9401,6 +9528,7 @@ class TestLandPlanQueueDrainCommitsDurable:
     finalize failure AFTER that merge succeeded must not discard it."""
 
     # frob:ticket T-1522
+    # frob:ticket T-2220
     # frob:tests tests/test_ticket_land.py::TestLandPlanQueueDrainCommitsDurable.test_finalize_failure_after_merge_keeps_the_merge_commit  # noqa: E501
     def test_finalize_failure_after_merge_keeps_the_merge_commit(
         self, repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -9418,7 +9546,7 @@ class TestLandPlanQueueDrainCommitsDurable:
         # or any other post-merge finalize error) AFTER the merge commit
         # already exists on root -- exactly the 2026-08-04 shape where
         # something unrelated to the already-merged content fails.
-        def _always_fails(_root: Path) -> Result[tuple, _LandError]:
+        def _always_fails(_root: Path, _merge_commit: str) -> Result[tuple, _LandError]:
             return Err(_LandError.NotFound)
 
         monkeypatch.setattr(land_module, "_land_plan_finalize_drafts", _always_fails)

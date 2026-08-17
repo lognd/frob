@@ -127,35 +127,24 @@ def _auto_plan_if_queued(root: Path, ticket_id: str, ticket):  # noqa: ANN201
 
 
 def _find_landing_commit(root: Path, ticket_id: str) -> str | None:
-    """The short hash of the commit that landed `ticket_id`, if cheaply
-    derivable (T-0835) -- `frob ticket land`'s own commits are conventionally
-    titled `land <id> ...` (see this repo's own git history), so a `git log
-    --grep` for that exact phrase against `root` finds it in one spawn. Best-
-    effort: `None` on any git failure, an empty result, or a non-repo `root`
-    -- a terminal-state refusal must still fire even when the commit cannot
-    be named, just without the extra detail."""
-    from frob import gitio
+    """The full hash of the commit that landed `ticket_id`, from its own
+    persisted `Ticket.land_commit` field (T-2220) -- NOT a `git log
+    --grep` for a `land <id>` commit subject. A grep-based lookup used to
+    live here and was the exact defect T-2220 fixed: `frob ticket land
+    --plan` commits as `chore(tickets): land --plan`, with no ticket id in
+    the subject at all, so a grep silently found nothing for every ticket
+    a `--plan` land finalized -- see `Ticket.land_commit`'s own docstring
+    for who writes this field and why it cannot be baked into its own
+    commit. Best-effort: `None` when the ticket cannot be loaded, or when
+    it was never landed at all (field still `None`) -- a terminal-state
+    refusal must still fire even when the commit cannot be named, just
+    without the extra detail."""
+    from frob.tickets import _load_one
 
-    spawned = gitio.run_argv(
-        (
-            "git",
-            "-C",
-            str(root),
-            "log",
-            "--oneline",
-            "-E",
-            "--grep",
-            f"land {ticket_id}([^0-9]|$)",
-            "-n",
-            "1",
-        )
-    )
-    if spawned.is_err:
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_err:
         return None
-    line = spawned.danger_ok.stdout.strip()
-    if not line:
-        return None
-    return line.split(maxsplit=1)[0]
+    return loaded.danger_ok.land_commit
 
 
 def _refuse_if_terminal(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001

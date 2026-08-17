@@ -582,7 +582,20 @@ def _overlay_landed_ticket(
     not a genuine same-ticket state divergence `_newer` should arbitrate,
     so this refuses loudly instead of silently picking a winner and
     discarding the other ticket's content wholesale (the 2026-07-29
-    incident: 46a115c4 clobbered by 17c6ca89)."""
+    incident: 46a115c4 clobbered by 17c6ca89).
+
+    T-2220: `land_commit` is carried forward from whichever side has it if
+    `_newer`'s winner would otherwise drop it -- the exact same "never
+    silently discard a richer side's data" principle `_newer` already
+    applies to evidence/acceptance (D-09/T-0764), extended to this field.
+    Without this, a RETRY of the same worktree (T-1001's own no-op-
+    absorption path) always picks the worktree's own committed copy as
+    the tie-break winner (`_newer`'s step 3, `b` wins on a full tie) --
+    but the worktree's copy was committed BEFORE `_record_land_commit`
+    (`frob.tickets._land_squash`) ever wrote this field onto main, so it
+    never carries it, and a naive overlay would silently erase main's
+    already-recorded land_commit on every subsequent retry/sibling land
+    in the same worktree."""
     if ticket_id not in merged or merged[ticket_id] == incoming:
         merged[ticket_id] = incoming
         return Ok(None)
@@ -597,7 +610,10 @@ def _overlay_landed_ticket(
             incoming.title,
         )
         return Err(TicketError.IdTitleMismatch)
-    merged[ticket_id] = _newer(existing, incoming)
+    winner = _newer(existing, incoming)
+    if winner.land_commit is None and existing.land_commit is not None:
+        winner = winner.model_copy(update={"land_commit": existing.land_commit})
+    merged[ticket_id] = winner
     return Ok(None)
 
 

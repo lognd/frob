@@ -446,6 +446,29 @@ Order of operations, and why it is this order:
     `ticket.kind`; `feature`->`feat`, `bug`/`security`/`ux`/`incident`->
     `fix`, `docs`->`docs`, `invariant`->`test`). ASCII only, no
     `Co-Authored-By` line, matching repo convention.
+10.5. **Record `land_commit`** (T-2220, best-effort, immediately after step
+    10's commit sha is known): `_record_land_commit`
+    (`frob.tickets._land_squash`) loads `final_id` fresh from `root` (now
+    holding step 10's committed content), sets its `land_commit` field to
+    step 10's own sha, and commits THAT write as a small follow-up commit
+    (`chore(tickets): record land commit for <final-id>`) under
+    `FROB_LAND_INTERNAL=1` -- structurally the earliest point this can
+    happen, since a commit cannot embed its own hash in its own tree (see
+    `Ticket.land_commit`'s own docstring). A failure here (ticket not
+    found post-squash, a write/add/commit git failure) is logged loudly
+    and swallowed, never turned into a `LandError` -- step 10's land is
+    already sealed on `root` by this point, and an already-sealed land is
+    never failed over a missing convenience field. `root`'s tip after a
+    successful `land()` call is therefore this record commit, one ahead
+    of `LandReport.commit_sha` (step 10's own sha, unchanged) -- both are
+    ancestors of `main` either way, so nothing downstream that already
+    checks `LandReport.commit_sha` needs to change.
+    `scripts/verify_lands.py` and `_find_landing_commit`
+    (`frob.app.ticket_runner._lifecycle`) both resolve a ticket id to a
+    commit by reading this field directly -- see
+    `docs/guides/coordinator-scripts.md#load_land_commit` -- never by
+    grepping a commit subject for the ticket id, which cannot match a
+    `--plan` land (below) at all.
 11. **`--push`** (T-0631, CLI-only, opt-in): once `frob ticket land`'s
     entire chain above has actually succeeded -- step 10's commit exists
     and every check before it passed, never on a `--dry-run` (nothing
@@ -508,7 +531,20 @@ planner worktrees in one drive.
 3. Finalize EVERY draft id (`is_draft_id`) now present in `root`'s merged
    ledger to the next free real id, one `finalize_draft` call each
    (T-0162's existing allocator-locked next-id computation -- never a
-   hand-assigned id), then commit the rewrite in one
+   hand-assigned id). T-2220: for each `(draft_id, final_id)` pair, also
+   stamp `final_id`'s own `land_commit` field to step 2's `merge_commit`
+   sha -- already a real, prior commit by this point, so (unlike the
+   per-ticket `land <id>` path's own step 10.5 above) this needs no
+   separate follow-up commit at all; it is staged in-memory and rides
+   into the SAME `chore(tickets): land --plan finalize ...` commit this
+   step already makes. This is the field's PRIMARY motivating case
+   (T-2220's own measured defect): this commit's subject carries no
+   ticket id anywhere in it, so `merge_commit` recorded here is the ONLY
+   way `scripts/verify_lands.py`/`_find_landing_commit` can ever resolve
+   a `--plan`-finalized ticket by id -- a `git log --grep "land T-####"`
+   structurally cannot match this subject. A `--plan` land with no
+   incoming draft ids records nothing (nothing was finalized).
+   Then commit the rewrite in one
    `chore(tickets): land --plan finalize ...` commit.
 4. Optionally re-check the TICK gate via an injected `check_ticks()`
    callable (`frob ticket land --plan`'s CLI supplies `frob check --only

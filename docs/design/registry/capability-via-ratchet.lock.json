@@ -226,9 +226,9 @@
       "ticket": "T-2001"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 16,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 17,
+      "reason": "T-2220: land_commit follow-up writes (_record_land_commit in _land_squash.py, the per-finalized-id stamp in _land_plan_finalize_drafts in _land.py) add one new write_ticket/git-commit call site recording the land commit onto its own ticket -- both write paths land expects, not new/unaudited",
+      "ticket": "T-2220"
     },
     "verify::exec": {
       "accepted_count": 1,

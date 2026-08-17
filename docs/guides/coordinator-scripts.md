@@ -613,19 +613,44 @@ True when `sha` is an ancestor of `ref` per
 The one-line commit subject for `sha`, so a human can eyeball that the
 resolved commit is the one they meant.
 
+### `load_land_commit`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#load_land_commit -->
+
+Resolves a ticket id to the sha it landed at, by reading that ticket's own
+persisted `land_commit` field (`frob.tickets._models.Ticket.land_commit`) --
+never by grepping git history for the id. Returns the sha string when the
+ticket landed, `None` when the ticket exists but was never landed (or
+landed before this field existed), or a `KeyError` instance (returned, not
+raised) when no such ticket exists at all -- three outcomes kept lexically
+distinct in `main`'s own output, the same "never conflate unknown with
+missing" discipline `resolve`/`is_ancestor` already apply to a plain sha.
+
+This is why a ticket id resolves correctly even for a `frob ticket land
+--plan` land: that land's own commit subject is `chore(tickets): land
+--plan finalize ...`, with no ticket id in it at all, so nothing short of a
+structured field the land itself wrote could ever resolve it (see
+`docs/modules/tickets-landing.md#frob-ticket-land---plan-t-1269` for how
+`--plan` writes it).
+
 ### verify_lands-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#verify_lands-main -->
 
-CLI entry point: for every sha argument, prints `UNKNOWN-SHA <sha>` when
-it does not resolve, `MISSING <sha> NOT an ancestor of <ref>` when it
-resolves but is not landed, or `ON <ref> <sha> <subject>` when it is a
-genuine ancestor; exits 1 if any sha was unknown or missing.
+CLI entry point: each argument may be a commit sha OR a ticket id
+(`T-####`, T-2220). A ticket id argument resolves via `load_land_commit`
+first (`UNKNOWN-TICKET <id>` if no such ticket exists, `NOT-LANDED <id>` if
+it exists but never landed) and then falls through to the same sha check
+every plain sha argument gets: prints `UNKNOWN-SHA <arg>` when it does not
+resolve, `MISSING <sha> NOT an ancestor of <ref>` when it resolves but is
+not landed, or `ON <ref> <sha> <subject>` when it is a genuine ancestor;
+exits 1 if any argument was unknown, missing, an unrecognized ticket id, or
+an unlanded ticket id.
 
 Usage:
 
 ```
-python3 scripts/verify_lands.py <sha> [<sha> ...] [--ref main]
+python3 scripts/verify_lands.py <sha-or-ticket-id> [...] [--ref main]
 ```
 
 ## Design and gate posture

@@ -2,7 +2,7 @@
 id: T-2220
 title: A landed ticket does not record its own land commit, so verify_lands.py cannot
   be addressed by ticket id (--plan lands unreachable)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -18,6 +18,12 @@ scope:
 - docs/guides/coordinator-scripts.md
 - docs/modules/tickets-landing.md
 - src/frob/app/ticket_runner/_lifecycle.py
+- src/frob/tickets/_land_ledger_merge.py
+- src/frob/tickets/_land_squash.py
+- docs/design/registry/capability-via-ratchet.lock.json
+- tests/test_ticket_land.py
+- tests/test_ticket_leases.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -42,23 +48,84 @@ scope_changes:
     of the persisted field; without it the fix would add a field nothing reads'
   actor: logan
   at: '2026-08-16'
-designated_repro_test: null
+- op: add
+  glob: src/frob/tickets/_land_ledger_merge.py
+  reason: T-1334/post-filing refactor moved the squash-apply commit machinery this
+    ticket's own evidence cites (_land.py:1383's merge_commit) out of _land.py into
+    sibling modules; _land_ledger_merge.py's _overlay_landed_ticket is where a land_commit
+    written directly to root gets silently erased by a same-worktree retry's tie-break
+    (_newer picks the incoming/worktree side, which never carries the field) -- fixing
+    that here is required to land T-2220 without breaking the existing T-1001 no-op-retry-absorption
+    guarantee
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/tickets/_land_squash.py
+  reason: T-1334's post-filing split moved _commit_squash_apply/_land_commit_details
+    (the per-ticket land path's own merge_commit-equivalent, the ticket's own cited
+    producer) out of _land.py into this sibling module -- _record_land_commit (T-2220's
+    follow-up-commit write) lives here
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-2220 adds new fs.write call sites to the tickets_ledger node (write_ticket
+    calls in _record_land_commit/_land_plan_finalize_drafts, plus their git-add/git-commit
+    follow-ups) -- SELFAUDIT001/SYS111 requires the ratchet ceiling bumped in the
+    same diff that adds the sites
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-2220's own evidence lives in these three test files (TestRecordLandCommit
+    in test_ticket_land.py, the land_commit stamp fix in test_ticket_leases.py::TestRefusesTerminalState,
+    TestLoadLandCommit/TestVerifyLandsMain additions in test_coordinator_scripts.py)
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-2220's own evidence lives in these three test files (TestRecordLandCommit
+    in test_ticket_land.py, the land_commit stamp fix in test_ticket_leases.py::TestRefusesTerminalState,
+    TestLoadLandCommit/TestVerifyLandsMain additions in test_coordinator_scripts.py)
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-2220's own evidence lives in these three test files (TestRecordLandCommit
+    in test_ticket_land.py, the land_commit stamp fix in test_ticket_leases.py::TestRefusesTerminalState,
+    TestLoadLandCommit/TestVerifyLandsMain additions in test_coordinator_scripts.py)
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+- tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
+- tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
+- tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
+designated_repro_test: tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
 acceptance:
 - text: Landing a ticket persists the resulting merge_commit as a structured field
     on the ticket record, written by the land path itself
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
 - text: verify_lands.py accepts a ticket id and resolves via that field, and a SHA
     argument MUST STILL WORK (must-still-pass control)
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_records_land_commit_field_in_a_follow_up_commit
+  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
 - text: A --plan land (no ticket id in the commit subject) is resolvable by ticket
     id -- the case a log grep cannot reach
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_ticket_id_argument_resolves_via_land_commit
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
 - text: A never-landed ticket id is refused distinguishably from a typo'd SHA
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_plan_land_finalized_ticket_is_resolvable_by_ticket_id
+  - tests/unit/test_coordinator_scripts.py::TestVerifyLandsMain::test_never_landed_ticket_id_refused_distinguishably_from_a_typo_sha
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # A landed ticket does not record its own land commit, so the prescribed verification tool cannot be run from a ticket id
 

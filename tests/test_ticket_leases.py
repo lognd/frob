@@ -58,6 +58,7 @@ from frob.tickets._leases import (
     warn_if_worktree_stale,
 )
 from frob.tickets._models import Origin, TicketKind, TicketSpec
+from frob.tickets._store import write_ticket
 
 # frob:ticket T-2099
 #: Real git fixture repos and real lease files throughout (module docstring
@@ -213,9 +214,11 @@ def _write_lease(
     )
 
 
+# frob:ticket T-2220
 class TestRefusesTerminalState:
     """Behavior 1: `start` refuses a done/dropped ticket outright."""
 
+    # frob:ticket T-2220
     def test_refuses_done_ticket(self, repo: Path, caplog) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefusesTerminalState.test_refuses_done_ticket
@@ -230,7 +233,18 @@ class TestRefusesTerminalState:
                 ticket_evidence_cmd="echo verified",
             )
         )
-        _commit_all(repo, "land T-0001 feature ticket")
+        # T-2220: `_find_landing_commit` reads the ticket's own persisted
+        # `land_commit` field now, never a `git log --grep` over the
+        # commit subject -- stamp it directly rather than relying on the
+        # commit MESSAGE text the way this test used to (a real `land()`
+        # call would stamp this itself via `_record_land_commit`).
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        stamped = loaded.danger_ok["T-0001"].model_copy(
+            update={"land_commit": "a" * 40}
+        )
+        assert write_ticket(repo, stamped).is_ok
+        _commit_all(repo, "chore(tickets): record land commit for T-0001")
 
         cfg = AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):

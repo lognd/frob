@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.479.0] - unreleased
+
+- T-2220: A landed ticket does not record its own land commit, so verify_lands.py cannot be addressed by ticket id (--plan lands unreachable)
+
 ## [0.478.0] - unreleased
 
 - T-2248: frob-timeout-guard misses ticket work and ticket new: both auto-backgrounded today, one stalled an agent, one risked a duplicate id allocation

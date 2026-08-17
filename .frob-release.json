@@ -166,6 +166,7 @@
     "scripts/fleet_status.py::worktrees_touching_ticket": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
     "scripts/verify_lands.py::REPO": "359d18a5db6144166af75a63b53d2e02ae00dca50ebfa5f2a85b28394be220ff",
     "scripts/verify_lands.py::is_ancestor": "41aa4dd87d72de06f22ccc251218cf0246b9ed87cbdf1022868ffb8be98cf2b6",
+    "scripts/verify_lands.py::load_land_commit": "f9080ed5c43eef7001a327b92dcc6906c027e735a61c2d1b02a338e8c8347c59",
     "scripts/verify_lands.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     "scripts/verify_lands.py::resolve": "1e729cd6197014cda1f0c351fa9ad948c6fa3f4dc2b32e7b1cd0af66db83bda0",
     "scripts/verify_lands.py::subject": "bd658519ebebabcac151b91b1145861df2e013865438435215268a5332820d03",
@@ -2318,5 +2319,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.478.0"
+  "version": "0.479.0"
 }

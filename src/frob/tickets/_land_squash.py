@@ -655,6 +655,101 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
     return sha_str, files
 
 
+# frob:ticket T-2220
+# frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
+def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
+    """Persist `land_sha` (the squash-apply commit that just landed
+    `final_id`'s code) onto that ticket's own `land_commit` field, in a
+    small follow-up commit made right here, still inside this same `frob
+    ticket land` invocation (T-2220 -- see `Ticket.land_commit`'s own
+    docstring for why this cannot be baked into `land_sha`'s own commit: a
+    commit's tree/hash is fixed before the commit exists, so nothing can
+    embed its own future hash in its own content; the earliest a commit
+    can truthfully name a sha is the very next commit after it).
+
+    Best-effort throughout, mirroring `_record_verify_intent_for_landed_
+    commit`'s posture in `frob.tickets._land`: `land_sha` is already
+    durably on `root` by the time this runs, so a failure here (ticket
+    not found post-squash, a write/add/commit git failure) is logged
+    loudly and swallowed, never turned into a `LandError` -- an already-
+    sealed land must never be reported as failed over a missing
+    convenience field. Returns the new HEAD sha (this record commit) on
+    success, or `None` if no new commit was made (the field could not be
+    written, or nothing to commit)."""
+    from frob.tickets import _load_one
+    from frob.tickets._store import write_ticket
+
+    loaded = _load_one(root, final_id)
+    if loaded.is_err:
+        _log.error(
+            "land: %s not found post-squash in %s -- cannot record its "
+            "own land_commit (%s); %s already landed, this is a best-"
+            "effort T-2220 augmentation only",
+            final_id,
+            root,
+            land_sha,
+            final_id,
+        )
+        return None
+    updated = loaded.danger_ok.model_copy(update={"land_commit": land_sha})
+    written = write_ticket(root, updated)
+    if written.is_err:
+        _log.error(
+            "land: %s land_commit write failed (%s) -- %s already landed "
+            "at %s, only the T-2220 record field is missing",
+            final_id,
+            written.danger_err,
+            final_id,
+            land_sha,
+        )
+        return None
+
+    add_argv = ["git", "-C", str(root), "add", "-A"]
+    with _land_internal_git_env():
+        add = run_argv(add_argv)
+        if add.is_err or add.danger_ok.returncode != 0:
+            _log.error(
+                "land: %s land_commit add failed: %s -- %s already landed "
+                "at %s, only the T-2220 record field is missing",
+                final_id,
+                _describe_git_failure(add_argv, add),
+                final_id,
+                land_sha,
+            )
+            return None
+        commit_argv = [
+            "git",
+            "-C",
+            str(root),
+            "commit",
+            "-m",
+            f"chore(tickets): record land commit for {final_id}",
+        ]
+        commit = run_argv(commit_argv)
+    if commit.is_err or commit.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s land_commit commit failed: %s -- %s already landed "
+            "at %s, only the T-2220 record field is missing",
+            final_id,
+            _describe_git_failure(commit_argv, commit),
+            final_id,
+            land_sha,
+        )
+        return None
+
+    new_sha = _rev_parse(root, "HEAD")
+    if new_sha.is_err:
+        return None
+    _log.info(
+        "land: %s land_commit recorded as %s (own record commit %s)",
+        final_id,
+        land_sha,
+        new_sha.danger_ok,
+    )
+    return new_sha.danger_ok
+
+
 # frob:ticket T-1001
 def _absorption_scoped_content_matches(
     root: Path, worktree: Path, ticket: Ticket
@@ -1136,8 +1231,41 @@ def _land_squash_apply_finish(
     if committed.is_err:
         return Err(committed.danger_err)
 
+    return _finish_real_land_report(
+        root,
+        ticket_id,
+        final_id,
+        wip_committed,
+        did_merge,
+        v2_mode,
+        worktree_changeset=worktree_changeset,
+        release_bumped_to=release_bumped_to,
+        natives_rebuilt=natives_rebuilt,
+    )
+
+
+# frob:ticket T-2220
+def _finish_real_land_report(
+    root: Path,
+    ticket_id: str,
+    final_id: str,
+    wip_committed: bool,
+    did_merge: bool,
+    v2_mode: bool,
+    *,
+    worktree_changeset: frozenset[str],
+    release_bumped_to: str | None,
+    natives_rebuilt: bool,
+) -> Result[LandReport, LandError]:
+    """`_land_squash_apply_finish`'s own tail (T-2220, split out to keep
+    that function under ARCH001's 60-line threshold): the just-made
+    commit's sha/files, `_record_land_commit`'s best-effort follow-up
+    write (see that function's own docstring for why it cannot be baked
+    into the commit it names), and the final `LandReport`."""
     sha_str, files = _land_commit_details(root)
     _log.info("land: %s landed as %s onto %s at %s", ticket_id, final_id, root, sha_str)
+    if sha_str is not None:
+        _record_land_commit(root, final_id, sha_str)
     return Ok(
         LandReport(
             ticket_id=ticket_id,
