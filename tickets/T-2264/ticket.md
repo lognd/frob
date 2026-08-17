@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 71ff94b4e72ee5a98ff728c0b2898bf0356e01d0
 ---
 # Lease liveness misses a land: `frob ticket land` runs from the ROOT with `--worktree <path>`, so a lease with an in-flight land is classified RECLAIMABLE
 
