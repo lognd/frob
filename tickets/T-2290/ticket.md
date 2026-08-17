@@ -73,7 +73,7 @@ threat: null
 component: verify
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 13e3026ad550af31f8f1ae45a2db98591c99c7ea
 ---
 MEASURED 2026-08-17. `frob verify status` reports:
 
