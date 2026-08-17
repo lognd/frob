@@ -3,7 +3,7 @@ id: T-2259
 title: frob agent env writes gitio/process diagnostics to STDOUT, so the documented
   eval fails with a bash syntax error -- T-2221's xdist bound has been inert fleet-wide
   since it landed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -47,22 +47,35 @@ scope_changes:
   reason: 'closure: agent env export logic lives here per test bindings'
   actor: logan
   at: '2026-08-17'
-designated_repro_test: null
+evidence:
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_diagnostics_still_appear_on_stderr
+- tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_no_fleet_context_still_produces_valid_eval_output
+designated_repro_test: tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
 acceptance:
 - text: 'eval "$(uv run frob agent env <worktree>)" succeeds with NO filtering and
     sets the three vars (fails today: bash syntax error)'
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_diagnostics_still_appear_on_stderr
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_no_fleet_context_still_produces_valid_eval_output
 - text: stdout contains ONLY export lines -- assert on every line, not just that exports
     are present
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_stdout_contains_only_export_lines
 - text: 'MUST-STILL-PASS: the gitio/process diagnostics still appear, on stderr, unchanged
     -- redirected not removed'
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_diagnostics_still_appear_on_stderr
 - text: No-fleet-context case still emits no bound and still produces valid eval-able
     output
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_no_fleet_context_still_produces_valid_eval_output
 - text: agent-playbook.md:243 documents the form that actually works
-  evidence: []
+  evidence:
+  - tests/test_worktree_guard.py::TestAgentEnvStdoutPurity::test_bare_eval_succeeds_with_no_filtering
 threat: null
 component: null
 anchor: false

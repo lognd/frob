@@ -265,6 +265,87 @@ class TestAgentRunnerEnv:
         assert "usage" in err.lower()
 
 
+class TestAgentEnvStdoutPurity:
+    """T-2259: `frob agent env`'s stdout must be pure shell -- it exists to
+    be `eval`'d (`eval "$(uv run frob agent env <path>)"`). In-process
+    tests (`TestAgentRunnerEnv` above) cannot catch a channel-pollution
+    regression here: under pytest, frob's root logger installs NO handlers
+    at all (T-1621, `frob.logging.logger._init`), so `capsys` alone never
+    sees the `gitio`/`process` DEBUG/INFO tracing that a real process's
+    `_LazyStdoutHandler` prints. These tests shell out to the actual `frob`
+    entry point as a real subprocess -- the only way to exercise the real
+    logging handlers -- and assert on every stdout line, not merely that
+    the exports are present among other noise."""
+
+    def test_bare_eval_succeeds_with_no_filtering(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_bare_eval_succeeds_with_no_filtering  # noqa: E501
+        _init_repo(tmp_path)
+        script = f'eval "$(uv run frob agent env {shlex.quote(str(tmp_path))})" && echo EVAL_OK'
+        result = subprocess.run(
+            ["bash", "-c", script],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "EVAL_OK" in result.stdout
+
+    def test_stdout_contains_only_export_lines(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_stdout_contains_only_export_lines  # noqa: E501
+        _init_repo(tmp_path)
+        result = subprocess.run(
+            ["uv", "run", "frob", "agent", "env", str(tmp_path)],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        lines = [line for line in result.stdout.splitlines() if line]
+        assert lines, "expected at least one export line on stdout"
+        for line in lines:
+            assert line.startswith("export "), (
+                f"non-export line on stdout: {line!r} (full stdout: {result.stdout!r})"
+            )
+
+    def test_diagnostics_still_appear_on_stderr(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_diagnostics_still_appear_on_stderr  # noqa: E501
+        # MUST-STILL-PASS: the gitio/process diagnostics are redirected to
+        # stderr, not deleted.
+        _init_repo(tmp_path)
+        result = subprocess.run(
+            ["uv", "run", "frob", "agent", "env", str(tmp_path)],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "gitio:" in result.stderr
+        assert "process:" in result.stderr
+
+    def test_no_fleet_context_still_produces_valid_eval_output(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_worktree_guard.py::TestAgentEnvStdoutPurity.test_no_fleet_context_still_produces_valid_eval_output  # noqa: E501
+        # T-2221's own control: no other live agent lease -> no
+        # PYTEST_XDIST_AUTO_NUM_WORKERS bound, and the output is still
+        # pure, eval-able shell.
+        _init_repo(tmp_path)
+        result = subprocess.run(
+            ["uv", "run", "frob", "agent", "env", str(tmp_path)],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "PYTEST_XDIST_AUTO_NUM_WORKERS" not in result.stdout
+        for line in (line for line in result.stdout.splitlines() if line):
+            assert line.startswith("export ")
+
+
 class TestStashGuardHook:
     """T-0574: the scaffold-managed `reference-transaction` hook that
     mechanically refuses `git stash` while sibling worktrees exist for the
