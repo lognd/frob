@@ -17,7 +17,8 @@ from frob.verify._quarantine import (
 
 
 # frob:ticket T-2207
-# frob:waive WIRE001 reason="test-only helper, exercised by every test in TestIdentityLessFindingRecovery -- not production code to wire; follow_up points at T-2246 (WIRE002 requires a live open ticket, not because that ticket is expected to remove the waiver itself)" follow_up="T-2246"  # noqa: E501
+# frob:ticket T-2246
+# frob:waive WIRE001 reason="private test-seed helper (leading underscore, lives under tests/) called only by TestIdentityLessFindingRecovery's own test methods -- there is no production caller to wire it to by design, the T-1592 permanent-test-helper shape docs/modules/gates.md's WIRE001/WIRE002 section documents" permanent="true"  # noqa: E501
 def _seed_stuck_store(tmp_path: Path, *, extra: tuple = ()) -> QuarantinedFinding:
     """Persist a quarantine record directly (bypassing `raise_quarantine`,
     which after T-2207's producer fix filters an identity-less finding

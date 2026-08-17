@@ -98,7 +98,8 @@ class TestBuildStatus:
         assert status.rapid_soft_warning is not None
 
 
-# frob:waive WIRE001 reason="test-only fixture helper, exercised by every test in TestDispose's retire-unidentifiable trio -- not production code to wire; follow_up points at T-2246 (WIRE002 requires a live open ticket, not because that ticket is expected to remove the waiver itself), same posture as tests/unit/verify/test_quarantine.py::_seed_stuck_store's own waiver" follow_up="T-2246"  # noqa: E501
+# frob:ticket T-2246
+# frob:waive WIRE001 reason="private test-seed helper (leading underscore, lives under tests/) called only by TestDispose's retire-unidentifiable trio -- there is no production caller to wire it to by design, same T-1592 permanent-test-helper shape as tests/unit/verify/test_quarantine.py::_seed_stuck_store's own waiver" permanent="true"  # noqa: E501
 def _seed_identity_less_store(tmp_path: Path, *, extra: tuple = ()) -> None:
     """T-2217: persist a quarantine record directly (bypassing
     `raise_quarantine`, which T-2207's producer-side fix now filters an
