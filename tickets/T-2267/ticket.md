@@ -1,0 +1,41 @@
+---
+id: T-2267
+title: 'post-land sweep regression from T-2250: 3 new (rule, file) identit(ies) (,
+  E501, F541)'
+state: queued
+kind: bug
+origin: agent
+created: '2026-08-17'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope:
+- /home/logan/projects/frob/src/frob/lang/_nodes.py
+- /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+---
+The deferred post-land unscoped sweep (T-1684) for T-2250 at commit a464da7a7e0fb34842a1e038d0ec7d39487226eb found 3 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+
+T-1935: this is a count of DISTINCT (rule, file) IDENTITIES, not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). The true per-finding count could not be independently re-measured this run (spawn refused/timeout/unparsable) -- re-run `frob check` unscoped against the file(s) below for the exact count before treating this identity count as a completeness claim.
+
+New (rule, file) identit(ies) filed here:
+
+-   
+- E501  /home/logan/projects/frob/src/frob/lang/_nodes.py
+- F541  /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py
+
+Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+
+-     -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- E501  /home/logan/projects/frob/src/frob/lang/_nodes.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+- F541  /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+
+Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
