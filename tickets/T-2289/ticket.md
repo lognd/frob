@@ -84,7 +84,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7788a1830a6201b7ec88020e983a79a79179cf5a
 ---
 MEASURED 2026-08-17 by aggregating all 5 concurrent implementer agents'
 Bash transcripts (288 tool calls, 6440s of command wall time).
