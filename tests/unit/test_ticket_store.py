@@ -546,6 +546,45 @@ class TestV2WriteTicket:
         assert v2_ticket_path(tmp_path, "T-0001").exists()
         assert not v2_ticket_dir(tmp_path, "T-0002").exists()
 
+    # frob:ticket T-2270
+    def test_write_all_v2_keeps_done_report_split_out(self, tmp_path: Path) -> None:
+        """T-2270: `write_all`'s v2 branch used to write `ticket.body`
+        (already carrying any sibling `done-report.md` merged in by
+        `load_all`) straight to `ticket.md`, silently re-embedding the
+        report -- exactly the bulk-write path a land-time ledger-wide
+        rewrite (e.g. the draft-id-reference rewrite) drives on every
+        ticket, not just the ones it actually changes. A round trip
+        through `load_all` -> `write_all` must leave `ticket.md`
+        report-free and `done-report.md` as the one on-disk copy, same as
+        a single-ticket `write_ticket` already guarantees."""
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestV2WriteTicket.test_write_all_v2_keeps_do\
+        # ne_report_split_out kind="unit"
+        (tmp_path / "tickets" / "T-0001").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-0001" / "ticket.md").write_text(
+            _serialize_ticket(_ticket())
+        )
+        report = "## Done report\n\nimplemented the thing\n\n### Evidence\nnone\n"
+        assert write_done_report(tmp_path, "T-0001", report).is_ok
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert "implemented the thing" in loaded.danger_ok["T-0001"].body
+
+        rewritten = write_all(tmp_path, loaded.danger_ok)
+        assert rewritten.is_ok
+
+        ticket_text = v2_ticket_path(tmp_path, "T-0001").read_text(encoding="utf-8")
+        assert "Done report" not in ticket_text
+        report_text = v2_done_report_path(tmp_path, "T-0001").read_text(
+            encoding="utf-8"
+        )
+        assert report_text == report
+
+        reloaded = load_all(tmp_path)
+        assert reloaded.is_ok
+        assert "implemented the thing" in reloaded.danger_ok["T-0001"].body
+
 
 # frob:ticket T-1561
 class TestWriteArchivedTicket:
@@ -630,6 +669,48 @@ class TestWriteArchivedTicket:
         archived = load_archive(tmp_path)
         assert archived.is_ok
         assert archived.danger_ok.keys() == {"T-0001", "T-0002"}
+
+    # frob:ticket T-2270
+    def test_v2_write_archived_ticket_keeps_done_report_split_out(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2270: `write_archived_ticket`'s v2 branch used to write
+        `ticket.body` straight to the archive's `ticket.md` verbatim --
+        if that body had already been merged with a sibling
+        `done-report.md` (`load_archive`'s `_merge_sibling_done_report`,
+        exactly what `--replace --archived` loads through), the report
+        was silently re-embedded in `ticket.md`, duplicating it. This is
+        the acceptance-1 repro for the archive side: a ticket that HAS a
+        Done report body, round-tripped through `write_archived_ticket`,
+        must keep `ticket.md` report-free and `done-report.md` as the one
+        on-disk copy, byte for byte."""
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestWriteArchivedTicket.test_v2_write_archiv\
+        # ed_ticket_keeps_done_report_split_out kind="unit"
+        from frob.tickets._store import v2_archive_dir, write_archived_ticket
+
+        adir = v2_archive_dir(tmp_path, "T-0001")
+        adir.mkdir(parents=True)
+        (adir / "ticket.md").write_text(_serialize_ticket(_ticket()))
+        report = "## Done report\n\nimplemented the thing\n\n### Evidence\nnone\n"
+        (adir / "done-report.md").write_text(report, encoding="utf-8")
+        assert _store_mode(tmp_path) == "v2"
+
+        loaded = load_archive(tmp_path)
+        assert loaded.is_ok
+        merged = loaded.danger_ok["T-0001"]
+        assert "implemented the thing" in merged.body
+
+        result = write_archived_ticket(tmp_path, merged)
+        assert result.is_ok
+
+        ticket_text = (adir / "ticket.md").read_text(encoding="utf-8")
+        assert "Done report" not in ticket_text
+        assert (adir / "done-report.md").read_text(encoding="utf-8") == report
+
+        reloaded = load_archive(tmp_path)
+        assert reloaded.is_ok
+        assert "implemented the thing" in reloaded.danger_ok["T-0001"].body
 
     # frob:ticket T-1583
     def test_v2_write_archive_prunes_ids_absent_from_the_map(

@@ -2,7 +2,7 @@
 id: T-2270
 title: frob ticket evidence silently drops the Done report body when re-serializing
   ticket.md -- hit twice in one ticket, survived only because the agent noticed
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,22 +13,35 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_store.py
+evidence_scope:
+- tests/unit/test_ticket_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_keeps_done_report_split_out
+- tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archived_ticket_keeps_done_report_split_out
+- tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_prunes_removed_ticket
+- tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte
+designated_repro_test: tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_keeps_done_report_split_out
 acceptance:
 - text: Recording evidence on a ticket that HAS a Done report body preserves it byte-for-byte
     (fails today)
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_keeps_done_report_split_out
+  - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archived_ticket_keeps_done_report_split_out
 - text: 'MUST-STILL-PASS: a ticket with no report body still records evidence cleanly;
     set_done_report still replaces the body as today'
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_prunes_removed_ticket
+  - tests/unit/test_ticket_store.py::TestV2DoneReport::test_write_then_read_back_byte_for_byte
 - text: Every ticket.md writer audited for the same round-trip loss; state which were
     checked and which were affected
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archived_ticket_keeps_done_report_split_out
 - text: Any writer that legitimately must drop the body says so loudly -- silence
     is the defect
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_keeps_done_report_split_out
 threat: null
 component: null
 anchor: false

@@ -2002,11 +2002,19 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
     (see `replace_evidence`'s `archived` parameter) give the CLI a real
     path to repair what the gate polices, instead of a workaround.
 
-    v2 mode: identical shape to `write_ticket`'s v2 branch, just under
+    v2 mode: same split shape `_write_ticket_v2_mode` uses, just under
     `v2_archive_dir` instead of `v2_ticket_path`, still under the
     per-ticket `ticket_lock` (never the archive's own bulk `ledger_lock`
     -- writing one archived ticket must not block a concurrent archive of
-    a DIFFERENT ticket). Single mode: the archive-side analog of
+    a DIFFERENT ticket). T-2270: this used to write `ticket.body` (which
+    `load_archive`'s `_merge_sibling_done_report` may have already
+    spliced a sibling `done-report.md` INTO) straight to `ticket.md`
+    verbatim -- silently re-embedding the Done report the v2 split exists
+    to keep out of `ticket.md`, duplicating it across both files with no
+    warning. `_split_done_report` (the same helper `_write_ticket_v2_mode`
+    already uses) now runs here too, so an archived ticket's `ticket.md`
+    stays report-free and `done-report.md` stays the one on-disk copy,
+    exactly like the active tree. Single mode: the archive-side analog of
     `_write_ticket_single_mode` -- splices `ticket`'s own marker block
     into `tickets-archive.md`'s raw text (`_splice_ticket_section`) and
     refuses (`Err(LedgerIntegrityViolation)`) unless the result re-parses
@@ -2018,11 +2026,7 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
     somewhere a dir-mode repo would never look."""
     mode = _store_mode(root)
     if mode == "v2":
-        with ticket_lock(root, ticket.id):
-            return atomic_write(
-                v2_archive_dir(root, ticket.id) / "ticket.md",
-                _serialize_ticket(ticket),
-            )
+        return _write_archived_ticket_v2_mode(root, ticket)
     if mode != "single":
         _log.error(
             "tickets: write_archived_ticket refused -- %s mode has no "
@@ -2032,6 +2036,28 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
         return Err(TicketError.NotFound)
     with ledger_lock(root):
         return _splice_single_ticket(archive_path(root), _ARCHIVE_HEADER, ticket)
+
+
+# frob:ticket T-2270
+def _write_archived_ticket_v2_mode(
+    root: Path, ticket: Ticket
+) -> Result[None, TicketError]:
+    """`write_archived_ticket`'s v2-mode body, split out to keep the
+    public dispatcher under the ARCH001 length threshold -- the same
+    `_split_done_report`/dual-`atomic_write` shape `_write_ticket_v2_mode`
+    uses for the active tree (T-2270: the archive side used to skip this
+    split and write the merged body straight to `ticket.md`)."""
+    body, report_text = _split_done_report(ticket.body)
+    with ticket_lock(root, ticket.id):
+        written = atomic_write(
+            v2_archive_dir(root, ticket.id) / "ticket.md",
+            _serialize_ticket(ticket.model_copy(update={"body": body})),
+        )
+        if written.is_err or report_text is None:
+            return written
+        return atomic_write(
+            v2_archive_dir(root, ticket.id) / "done-report.md", report_text
+        )
 
 
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
@@ -2064,10 +2090,24 @@ def write_all(
     single-mode only, since dir mode has no single ledger file to
     fingerprint.
 
-    T-1254: v2 mode writes each ticket's own `ticket.md` (never touching a
-    sibling's `done-report.md`/`attachments/`) and prunes any v2 directory
-    not present in `tickets` (`_prune_stale_v2_dirs`), mirroring dir mode's
-    write-each-then-prune shape one directory level deeper. Held under the
+    T-1254: v2 mode writes each ticket's own `ticket.md` and prunes any v2
+    directory not present in `tickets` (`_prune_stale_v2_dirs`), mirroring
+    dir mode's write-each-then-prune shape one directory level deeper.
+    T-2270: it DOES touch a sibling `done-report.md` now -- every `ticket`
+    handed to `write_all` was loaded via `load_all`, whose v2 branch
+    already spliced any existing `done-report.md` INTO `ticket.body`
+    (`_merge_sibling_done_report`); writing that merged body straight to
+    `ticket.md` verbatim re-embedded the Done report the v2 split exists
+    to keep out of it, silently duplicating it across both files (a
+    bulk-write caller like the land-time draft-id-reference rewrite
+    touches EVERY active ticket, not just the ones it actually changed,
+    so this fired on every ticket with a report on every land). `_write_
+    all_v2` now runs each ticket's body through `_split_done_report` (the
+    same helper `_write_ticket_v2_mode`/`write_archived_ticket` use) before
+    writing `ticket.md`, and refreshes `done-report.md` alongside it, so
+    the invariant this module's own docstring promises -- v2 stores the
+    report in its own file, never `ticket.md` -- holds for a bulk write
+    the same way it already held for a single-ticket one. Held under the
     same `ledger_lock` as the other branches -- a wholesale replace is
     still a whole-store operation regardless of backend, distinct from the
     single-ticket `ticket_lock` `write_ticket` uses for its own v2 path.
@@ -2152,9 +2192,18 @@ def _write_all_v2(
     keep_dirs: set[Path] = set()
     for ticket in tickets.values():
         path = v2_ticket_path(root, ticket.id)
-        result = atomic_write(path, _serialize_ticket(ticket))
+        body, report_text = _split_done_report(ticket.body)
+        result = atomic_write(
+            path, _serialize_ticket(ticket.model_copy(update={"body": body}))
+        )
         if result.is_err:
             return Err(result.danger_err)
+        if report_text is not None:
+            report_result = atomic_write(
+                v2_done_report_path(root, ticket.id), report_text
+            )
+            if report_result.is_err:
+                return Err(report_result.danger_err)
         keep_dirs.add(v2_ticket_dir(root, ticket.id))
     _prune_stale_v2_dirs(root, keep_dirs)
     return Ok(None)
