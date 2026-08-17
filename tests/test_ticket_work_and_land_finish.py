@@ -896,7 +896,7 @@ def _long_complex_function_source(name: str) -> str:
         lines.append(f"    if x == {i}:")
         lines.append(f"        x = x + {i}")
         lines.append(f"        for j in range({i}):")
-        lines.append(f"            x = x + j")
+        lines.append("            x = x + j")
     lines.append("    return x")
     return "\n".join(lines) + "\n"
 

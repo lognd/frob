@@ -2,7 +2,7 @@
 id: T-2260
 title: 'post-land sweep regression from T-2243, T-2233, T-2241, T-2248: 7 new (rule,
   file) identit(ies), 8 finding(s) (CLAUDE001, DRIFT001, E501, F541)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-16'
@@ -15,6 +15,8 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/lang/_nodes.py
 - tests/test_ticket_work_and_land_finish.py
+evidence_scope:
+- tests/unit/test_lang_primitives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -36,6 +38,8 @@ scope_changes:
     sync-claude-config.py did not reproduce on re-measure'
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/unit/test_lang_primitives.py::test_resolve_local_import_scripts_fleet_status_still_resolves
 designated_repro_test: null
 threat: null
 component: null

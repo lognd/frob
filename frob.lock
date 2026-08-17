@@ -377,6 +377,42 @@
       "old_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
       "reason": "T-2166: re-verified against the new docs/modules/tickets-landing.md#--finish-is-pure-cleanup-when-already-landed-t-2108 section, which now frob:describes this symbol; the doc accurately describes the current body",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "58bc38ebae4737e94cd0cccb9b260af069b2cde2b1b4cbf75d03c17e5840b56d",
+      "old_digest": "d1dfb4a2b6c94a0ae96e2d4f70f67ac87ad14c262226e72b629348fb8d232749",
+      "reason": "T-2260: re-verified docs/modules/tickets-verify-sweep.md and the resolve_local_import docstring still describe current behavior after unrelated body digest drift; re-acking",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-2260: re-verified docs/modules/tickets-verify-sweep.md and the resolve_local_import docstring still describe current behavior after unrelated body digest drift; re-acking",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "033eda2ed8f3855a185658b0685bf6a24357ae2e90029c922e0b1c9579b63c38",
+      "old_digest": "76f2a90701d1e3d70be9393283e4f54adac05fd16bde31105177ee06ed62ce45",
+      "reason": "T-2260: re-verified docs/modules/tickets-verify-sweep.md and the resolve_local_import docstring still describe current behavior after unrelated body digest drift; re-acking",
+      "ref": "src/frob/lang/_nodes.py::resolve_local_import"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
+      "old_digest": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
+      "reason": "T-2260: re-verified docs/modules/tickets-verify-sweep.md and the resolve_local_import docstring still describe current behavior after unrelated body digest drift; re-acking",
+      "ref": "src/frob/lang/_nodes.py::resolve_local_import"
     }
   ],
   "entries": [
@@ -441,7 +477,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "d1dfb4a2b6c94a0ae96e2d4f70f67ac87ad14c262226e72b629348fb8d232749",
+      "digest": "58bc38ebae4737e94cd0cccb9b260af069b2cde2b1b4cbf75d03c17e5840b56d",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
@@ -806,7 +842,7 @@
       "ref": "src/frob/lang/__init__.py::supported_languages"
     },
     {
-      "digest": "76f2a90701d1e3d70be9393283e4f54adac05fd16bde31105177ee06ed62ce45",
+      "digest": "033eda2ed8f3855a185658b0685bf6a24357ae2e90029c922e0b1c9579b63c38",
       "facet": "body",
       "ref": "src/frob/lang/_nodes.py::resolve_local_import"
     },

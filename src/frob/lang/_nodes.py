@@ -70,7 +70,10 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
                     if isinstance(value, str) and value:
                         roots.append(root / value)
         hatch_wheel_cfg = (
-            tool_cfg.get("hatch", {}).get("build", {}).get("targets", {}).get("wheel", {})
+            tool_cfg.get("hatch", {})
+            .get("build", {})
+            .get("targets", {})
+            .get("wheel", {})
         )
         if isinstance(hatch_wheel_cfg, dict):
             for pkg in hatch_wheel_cfg.get("packages") or []:
