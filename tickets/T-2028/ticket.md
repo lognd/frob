@@ -33,7 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b98fb05f73afc247439b94645c3422bf919b3f5b
 ---
 T-2012 closed the two SCOPE002 error-shaped gaps left over from T-1921
 (tests/unit/gates/test_examined_sites.py, tests/test_arch_gate.py). One
