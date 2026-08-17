@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2cd92a86ff3e813392f26f69f36a345d4fc0c6ca
 ---
 Found while working T-2274 (2026-08-17): these 4 tests in
 tests/test_ticket_land.py fail on unmodified main (verified at commit
