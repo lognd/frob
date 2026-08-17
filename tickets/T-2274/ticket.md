@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d08758024e749f47b80131abbf83a9c4afbb6972
 ---
 MEASURED (2026-08-17, during T-2255): editing `src/frob/tickets/_land.py`
 directly in the shared primary checkout (`/home/logan/projects/frob`,
