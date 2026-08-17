@@ -112,6 +112,15 @@ def install_worktree_lease_hook(root, *, force=False) -> Result[tuple[Path, ...]
     # wrong checkout, independent of frob.tickets' own worktree-lease
     # guard (docs/modules/tickets-data-storage.md#worktree-lease-guard-t-0431). Refuses
     # to overwrite an existing hook file without force=True.
+    # T-2071: both hooks ALSO carry a second, FACT-based guard that does
+    # NOT depend on FROB_AGENT (measured UNSET in every dispatched Agent
+    # tool shell, making the guard above inert for its own target
+    # population). It refuses a commit made in the PRIMARY checkout while
+    # other worktrees exist (a fleet is dispatched) whose staged files
+    # are not limited to tickets.md/tickets/** -- almost always a
+    # dispatched agent shell that wandered out of its leased worktree --
+    # unless FROB_LAND_INTERNAL=1 covers it (frob ticket land's own
+    # internal commits).
 ```
 
 ## Managed blocks (T-0736)

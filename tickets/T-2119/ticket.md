@@ -1,7 +1,7 @@
 ---
 id: T-2119
 title: Document T-2071's fact-based root-contamination guard in scaffold.md
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -12,8 +12,12 @@ sprint: null
 runs_last: false
 scope:
 - docs/commands/scaffold.md
+evidence_scope:
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_agent_context_root_write_refused_without_frob_agent
 designated_repro_test: null
 threat: null
 component: null
