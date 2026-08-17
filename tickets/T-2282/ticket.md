@@ -125,7 +125,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 51057a9d42a89fc5b57ab208f3f1ee8c678a4019
 ---
 # Agents strand themselves by ending a turn with a pending background task; the guard enumerates slow commands instead of catching the actual failure
 
