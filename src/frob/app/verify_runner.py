@@ -265,6 +265,28 @@ def _run_status(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# frob:doc docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-t-2310
+# frob:ticket T-2310
+def _run_drain_async(cfg: AppConfig) -> None:
+    """`frob verify drain-async`: the CLI entry point the detached drain
+    child runs (T-2310). Not a verb a developer normally types -- `frob
+    ticket land` spawns it after every real rapid-profile land. Exits 0
+    whether it drained, found nothing to drain, or declined because a
+    land is in progress (all expected, benign outcomes -- see `frob.
+    verify._drain`'s own docstring); only a spawn/measurement failure
+    (`DrainError.SpawnRefused`, or the underlying `WorkerError`) exits
+    non-zero, so a human re-running this by hand can tell outcomes
+    apart, matching `frob ticket sweep-async`'s own precedent."""
+    from frob.verify._drain import DrainError, run_drain_async
+
+    root = _resolve_root(cfg)
+    result = run_drain_async(root)
+    if result.is_err:
+        if result.danger_err is DrainError.LandInProgress:
+            return
+        sys.exit(1)
+
+
 def _run_now(cfg: AppConfig) -> None:
     """`frob verify now`: drain and verify the queue synchronously, right
     now, for a human who wants the unverified window closed before
@@ -558,8 +580,8 @@ def _run_dispose(cfg: AppConfig) -> None:
 # frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 # frob:ticket T-1697
 def run(cfg: AppConfig) -> None:
-    """`frob verify status|now|explain|dispose` dispatch -- see this
-    module's own docstring for what each subcommand does."""
+    """`frob verify status|now|explain|dispose|drain-async` dispatch --
+    see this module's own docstring for what each subcommand does."""
     if cfg.verify_command == "status":
         _run_status(cfg)
     elif cfg.verify_command == "now":
@@ -568,6 +590,10 @@ def run(cfg: AppConfig) -> None:
         _run_explain(cfg)
     elif cfg.verify_command == "dispose":
         _run_dispose(cfg)
+    elif cfg.verify_command == "drain-async":
+        _run_drain_async(cfg)
     else:
-        _log.error("frob verify requires a subcommand: status|now|explain|dispose")
+        _log.error(
+            "frob verify requires a subcommand: status|now|explain|dispose|drain-async"
+        )
         sys.exit(1)

@@ -1311,3 +1311,91 @@ a different call-site timing:
   matching T-1983's own "never treat unmeasurable as resolved" rule.
 - The measured cost of the one re-check is always logged.
 
+## Automatic watermark drain (`rapid` only, T-2310)
+
+<!-- frob:describes src/frob/verify/_drain.py::spawn_deferred_drain -->
+<!-- frob:describes src/frob/verify/_drain.py::run_drain_async -->
+<!-- frob:describes src/frob/verify/_drain.py::DrainError -->
+
+T-2290 measured this repo's own `rapid` checkout with a watermark stuck 6
+days / 530 real commits behind, growing every land: `ceilings_for_profile`
+gives `rapid` unbounded depth/age ceilings BY DESIGN (never blocks, T-1692's
+own framing) -- but nothing else ever forced the deferred verification
+queue (T-1687/T-1688) to actually drain, so "deferred" had quietly become
+"never". T-2290 added a loud, non-blocking warning
+(`rapid_soft_warning`, above) once the gap crosses a threshold; this
+section is the coordinator-decided follow-up (T-2310) that keeps the gap
+from growing unbounded in the first place, without ever weakening rapid's
+own never-block contract.
+
+**Design constraints (coordinator decision, binding, not a suggestion):**
+
+1. Rapid's never-block contract is inviolable -- the drain never blocks,
+   slows, or gates a land.
+2. Automatic, not invoked -- modeled directly on the deferred post-land
+   sweep (above): a DETACHED background pass, spawned so the land does
+   not wait on it, reusing that machinery rather than inventing a second
+   one.
+3. Runs only when the fleet is idle -- gated on "no land currently in
+   progress" using the SAME check the land path already performs, and
+   simply skips (never queues, never retry-loops) when one is.
+4. Incremental and resumable -- advances the watermark in bounded
+   rounds, so a killed drain leaves the watermark further along, never
+   corrupt, never rolled back.
+5. `rapid_soft_warning` (T-2290) stays unchanged -- it is the backstop
+   for when the drain cannot keep pace, and how an operator learns that.
+
+**Mechanism.** `spawn_deferred_drain(root, land_ticket_id)` fires
+`frob verify drain-async` into a DETACHED child
+(`start_new_session=True`, the exact `_detached_sweep_env`-pinned shape
+`spawn_deferred_post_land_sweep` already established, T-2030's own
+root-cause fix reused verbatim) and returns immediately -- spawned
+unconditionally, alongside the sweep spawn, from the same rapid-land
+call site. It deliberately does NOT check land-in-progress itself: the
+spawning process IS a `frob ticket land` still holding `land.lock` at
+that exact call site, so a check performed there would always see
+itself and never spawn anything.
+
+The check that matters lives in the spawned child's own entrypoint,
+`run_drain_async`: one non-blocking probe
+(`frob.tickets._leases._probe_land_once`, the identical primitive
+`refuse_if_land_in_progress` itself calls per attempt) and, if a land is
+in progress anywhere against `root`, decline immediately -- no queue, no
+retry loop. By the time the detached child's own Python interpreter has
+started (measurably slower than the spawning land's own remaining
+cleanup), that land's lock has very likely already released; if it has
+not, the child correctly treats that as a live land and declines, which
+is the conservative behavior wanted, not a bug.
+
+Once clear, `run_drain_async` calls `frob.verify._worker.
+run_coalesced_verification` EXACTLY ONCE -- never a loop over the whole
+backlog. That function's own existing contract already is the bounded,
+resumable batch primitive constraint 4 needs: one call verifies once at
+the queue's tip and, only on a genuinely green result, durably advances
+the watermark past every queued entry it covers; a red, unmeasurable, or
+interrupted (killed mid-`verify_fn`) call leaves the watermark exactly
+where it already was -- never corrupt, never rolled back. Repeated
+per-land spawns (every real rapid land fires one) are what accumulate
+visible progress across a large backlog over time, the same amortized
+shape the sweep already uses for a full-repo check.
+
+`frob verify drain-async` is a real subcommand, not a `-c` code string,
+for the same reason `frob ticket sweep-async` is: inspectable,
+re-runnable by hand, covered by ordinary CLI surface tests. It exits 0
+whether it drained, found nothing to drain, or declined because a land
+is in progress (all expected, benign outcomes); only a genuine
+spawn/measurement failure exits non-zero.
+
+**What this section deliberately does NOT change:** the land-side spawn
+call site itself (`frob.app.ticket_runner._land_cmd.
+_land_core_finish_post_land`'s rapid-land branch, alongside
+`spawn_deferred_post_land_sweep`) is BLOCKED as of T-2310's own initial
+land -- both `_land_cmd.py` and `_rapid_sweep.py` were held under a live
+cross-worktree lease (T-2303) at the time. `spawn_deferred_drain`/
+`run_drain_async`/the `drain-async` CLI verb are fully implemented,
+tested, and independently runnable (`frob verify drain-async` by hand,
+or via a scheduled/manual `spawn_deferred_drain` call) -- the ONLY
+missing piece is the two-line call to `spawn_deferred_drain` inside the
+existing rapid-land branch. See the follow-up ticket this section's own
+citation names for that last wiring step once the lease clears.
+

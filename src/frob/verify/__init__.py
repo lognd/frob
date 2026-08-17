@@ -40,6 +40,11 @@ from frob.verify._backpressure import (
     current_status,
     rapid_soft_warning,
 )
+from frob.verify._drain import (
+    DrainError,
+    run_drain_async,
+    spawn_deferred_drain,
+)
 from frob.verify._watermark import (
     SCHEMA_VERSION,
     VerifyQueueEntry,
@@ -72,6 +77,7 @@ __all__ = [
     "BackpressureError",
     "BackpressureStatus",
     "CoalescingWorker",
+    "DrainError",
     "VerifyFn",
     "VerifyQueueEntry",
     "Watermark",
@@ -92,4 +98,6 @@ __all__ = [
     "rapid_soft_warning",
     "record_intent",
     "run_coalesced_verification",
+    "run_drain_async",
+    "spawn_deferred_drain",
 ]

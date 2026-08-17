@@ -1,5 +1,6 @@
-"""Register `frob verify status|now|explain|dispose` (T-1697): the CLI
-surface over the T-1686 unverified-window package (`frob.verify`)."""
+"""Register `frob verify status|now|explain|dispose|drain-async`
+(T-1697/T-2310): the CLI surface over the T-1686 unverified-window
+package (`frob.verify`)."""
 
 from __future__ import annotations
 
@@ -7,9 +8,9 @@ from __future__ import annotations
 # frob:ticket T-1697
 def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersAction
     """Register the `frob verify` subcommand and its `status`/`now`/
-    `explain`/`dispose` actions -- the operable surface over the durable
-    verify queue/watermark/quarantine state `frob.verify` already
-    maintains (T-1687/T-1692/T-1693)."""
+    `explain`/`dispose`/`drain-async` actions -- the operable surface
+    over the durable verify queue/watermark/quarantine state
+    `frob.verify` already maintains (T-1687/T-1692/T-1693/T-2310)."""
     verify_p = sub.add_parser(
         "verify",
         help="the T-1686 unverified window: depth/age/quarantine status, "
@@ -90,3 +91,13 @@ def _add_verify_parser(sub) -> None:  # noqa: ANN001 -- argparse _SubParsersActi
         "mutually exclusive with --file-ticket/--dismiss, and a "
         "well-formed sibling still blocks the actual clear",
     )
+
+    # frob:ticket T-2310
+    drain_async_p = verify_sub.add_parser(
+        "drain-async",
+        help="run one bounded automatic watermark-drain round (rapid "
+        "profile; normally spawned by `frob ticket land`, not a verb a "
+        "developer normally types -- declines immediately if a land is "
+        "currently in progress)",
+    )
+    drain_async_p.add_argument("--path", dest="verify_path", metavar="DIR")

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.494.0] - unreleased
+
+- T-2310: rapid profile needs a real verification-debt drain mechanism (design decision deferred from T-2290)
+
 ## [0.493.0] - unreleased
 
 - T-2298: frob fmt with a broad path rewrote 49 unrelated .strata fixture files; a test-input corpus must not be reformattable by an unscoped fmt
