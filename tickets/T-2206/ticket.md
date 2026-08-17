@@ -2,7 +2,7 @@
 id: T-2206
 title: 'post-land sweep regression from T-2199: 17 new (rule, file) identit(ies),
   32 finding(s) (ARCH001, ARCH103, COV004, DOC011)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-16'
@@ -116,6 +116,8 @@ scope_changes:
     by T-2260's land
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_cli_land_end_to_end_refuses_a_worktree_with_a_new_undocumented_symbol
 designated_repro_test: null
 threat: null
 component: null

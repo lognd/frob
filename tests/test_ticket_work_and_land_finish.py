@@ -829,7 +829,8 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
         # precedent exactly: this calls `_land`, the CLI entrypoint that
         # exists at BOTH revisions, end to end against a worktree whose
         # own diff introduces a new public top-level symbol with no
-        # frob:doc/frob:tests edge. At the parent commit (no guard wired
+        # doc/test edge (the `frob:doc` / `frob:tests` directive pair). At
+        # the parent commit (no guard wired
         # into `_land_core_prepare`), this land PROCEEDS -- the exact gap
         # this ticket measured, a new public symbol landing clean, red
         # only once the deferred post-land sweep eventually catches it
