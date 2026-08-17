@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 353475ea0beca8b5133f3c74601faad0e9b73516
 ---
 T-2095 fixed scope narrowing propagation to the cross-worktree lease
 side-channel's collision CHECK (a candidate no longer refused over a
