@@ -38,7 +38,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: de314036e01ffeafbba87df852742f1ec1ada0e2
 ---
 MEASURED 2026-08-17: `frob ticket reconcile` reports 244 unlanded-work
 findings across 117 branches. Exactly 5 are real (T-1860@t-1860,
