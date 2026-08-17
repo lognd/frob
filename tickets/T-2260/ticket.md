@@ -12,14 +12,30 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- .claude/hooks/sync-claude-config.py
-- design
-- src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/lang/_nodes.py
 - tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: .claude/hooks/sync-claude-config.py
+  reason: 'narrowing to genuine findings only: DRIFT001 _land_cmd.py and CLAUDE001
+    sync-claude-config.py did not reproduce on re-measure'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: design
+  reason: 'narrowing to genuine findings only: DRIFT001 _land_cmd.py and CLAUDE001
+    sync-claude-config.py did not reproduce on re-measure'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'narrowing to genuine findings only: DRIFT001 _land_cmd.py and CLAUDE001
+    sync-claude-config.py did not reproduce on re-measure'
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
