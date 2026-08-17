@@ -1312,8 +1312,21 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     `PASSED`, or a dry run / recovered-marker call that never went through
     `land()`'s own claims-check step in this process) leaves the printed
     token as the plain `True`/`False` of the unchanged bool, exactly as
-    before -- the healthy path has no behavior change."""
-    from frob.tickets._land import _LAST_CLAIMS_OUTCOME, _ClaimsReverifyOutcome
+    before -- the healthy path has no behavior change.
+
+    T-2275: identical T-2091 treatment for T-2255's `_OrphanEvidenceCheck
+    Outcome` (`_LAST_ORPHAN_EVIDENCE_OUTCOME`, `frob.tickets._land`) --
+    printed as its own `orphan_evidence_check=` field, `unknown` when no
+    entry exists (same dry-run/recovered-marker fallback), surfacing
+    only: this field never changes the RETURNED `verified` bool, exactly
+    as `claims_reverify=` does not. T-2255 was scoped to `_land.py`
+    alone, so this ticket is the `_land_cmd.py`-side wiring T-2091's own
+    precedent already established for a sibling check."""
+    from frob.tickets._land import (
+        _LAST_CLAIMS_OUTCOME,
+        _LAST_ORPHAN_EVIDENCE_OUTCOME,
+        _ClaimsReverifyOutcome,
+    )
 
     ancestor_ok, state_desc, state_ok = _land_proof_checks(
         root, report.final_id, report.commit_sha
@@ -1324,14 +1337,20 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     claims_skipped = claims_outcome is _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
     printed_verified = "SKIPPED-UNMEASURED" if claims_skipped else verified
 
+    orphan_evidence_outcome = _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(report.ticket_id, None)
+
     _log.info(
         "LAND-PROOF: ticket=%s commit=%s is_ancestor_of_main=%s "
-        "state_on_main=%s claims_reverify=%s verified=%s",
+        "state_on_main=%s claims_reverify=%s orphan_evidence_check=%s "
+        "verified=%s",
         report.final_id,
         report.commit_sha,
         ancestor_ok,
         state_desc,
         claims_outcome.value if claims_outcome is not None else "unknown",
+        orphan_evidence_outcome.value
+        if orphan_evidence_outcome is not None
+        else "unknown",
         printed_verified,
     )
     return verified

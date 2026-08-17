@@ -2,7 +2,7 @@
 id: T-2275
 title: 'LAND-PROOF: wire _LAST_ORPHAN_EVIDENCE_OUTCOME into _print_land_proof (T-2091
   parity for the T-2255 orphan-evidence check)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-17'
@@ -13,17 +13,31 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land_proof_claims.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land_proof_claims.py
+  reason: wiring test lives here, mirroring T-2091's own test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_skipped_unmeasured_is_surfaced_not_dropped
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_ran_healthy_path_is_printed
+- tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_no_recorded_outcome_prints_unknown
+designated_repro_test: tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_skipped_unmeasured_is_surfaced_not_dropped
 acceptance:
 - text: 'LAND-PROOF: line gains orphan_evidence_check= printed from _LAST_ORPHAN_EVIDENCE_OUTCOME'
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_skipped_unmeasured_is_surfaced_not_dropped
 - text: No change to the returned verified bool -- surfacing only
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_ran_healthy_path_is_printed
 - text: Test mirrors test_ticket_land_proof_claims.py's SKIPPED_UNMEASURED-not-printed-as-verified-True
     coverage
-  evidence: []
+  evidence:
+  - tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome::test_no_recorded_outcome_prints_unknown
 threat: null
 component: null
 anchor: false

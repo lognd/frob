@@ -18,7 +18,8 @@ from types import SimpleNamespace
 import pytest
 
 from frob.app.ticket_runner import _land_cmd
-from frob.tickets._land import _LAST_CLAIMS_OUTCOME
+from frob.tickets._land import _LAST_CLAIMS_OUTCOME, _LAST_ORPHAN_EVIDENCE_OUTCOME
+from frob.tickets._land import _OrphanEvidenceCheckOutcome
 from frob.tickets._land_verify import _ClaimsReverifyOutcome
 
 
@@ -124,4 +125,98 @@ class TestLandProofClaimsOutcome:
         line = proof_lines[-1]
         assert "verified=True" in line
         assert "claims_reverify=unknown" in line
+        assert verified is True
+
+
+# frob:ticket T-2275
+class TestLandProofOrphanEvidenceOutcome:
+    """`_print_land_proof` consulting `_LAST_ORPHAN_EVIDENCE_OUTCOME`
+    (T-2255's own outcome record, T-2091 parity per T-2275): mirrors
+    `TestLandProofClaimsOutcome` above exactly, one field over."""
+
+    # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_skipped_unmeasured_is_surfaced_not_dropped  # noqa: E501
+    def test_skipped_unmeasured_is_surfaced_not_dropped(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+        tmp_path,
+    ) -> None:
+        # This MUST fail against current main: pre-T-2275, `_print_land_
+        # proof` never consults `_LAST_ORPHAN_EVIDENCE_OUTCOME` at all, so
+        # the LAND-PROOF line carries no `orphan_evidence_check=` field.
+        monkeypatch.setattr(
+            _land_cmd,
+            "_land_proof_checks",
+            lambda root, fid, sha: (True, "done", True),
+        )
+        report = _fake_report("T-9101")
+        _LAST_ORPHAN_EVIDENCE_OUTCOME["T-9101"] = (
+            _OrphanEvidenceCheckOutcome.SKIPPED_UNMEASURED
+        )
+        try:
+            with caplog.at_level(logging.INFO):
+                verified = _land_cmd._print_land_proof(tmp_path, report)
+        finally:
+            _LAST_ORPHAN_EVIDENCE_OUTCOME.pop("T-9101", None)
+
+        proof_lines = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert proof_lines, "expected a LAND-PROOF line to be logged"
+        line = proof_lines[-1]
+        assert "orphan_evidence_check=skipped-unmeasured" in line
+        # T-2275 is surfacing only -- the returned bool is the unchanged
+        # ancestor+state computation, unaffected by this field.
+        assert verified is True
+
+    # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_ran_healthy_path_is_printed  # noqa: E501
+    def test_ran_healthy_path_is_printed(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+        tmp_path,
+    ) -> None:
+        monkeypatch.setattr(
+            _land_cmd,
+            "_land_proof_checks",
+            lambda root, fid, sha: (True, "done", True),
+        )
+        report = _fake_report("T-9102")
+        _LAST_ORPHAN_EVIDENCE_OUTCOME["T-9102"] = _OrphanEvidenceCheckOutcome.RAN
+        try:
+            with caplog.at_level(logging.INFO):
+                verified = _land_cmd._print_land_proof(tmp_path, report)
+        finally:
+            _LAST_ORPHAN_EVIDENCE_OUTCOME.pop("T-9102", None)
+
+        proof_lines = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert proof_lines
+        line = proof_lines[-1]
+        assert "orphan_evidence_check=ran" in line
+        assert verified is True
+
+    # frob:tests tests/test_ticket_land_proof_claims.py::TestLandProofOrphanEvidenceOutcome.test_no_recorded_outcome_prints_unknown  # noqa: E501
+    def test_no_recorded_outcome_prints_unknown(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+        tmp_path,
+    ) -> None:
+        # No entry at all (dry run / recovered-marker path that never
+        # went through `_check_orphaned_evidence_deletion` in this
+        # process) -- must fall back to `unknown`, same as
+        # `claims_reverify=`'s own fallback.
+        monkeypatch.setattr(
+            _land_cmd,
+            "_land_proof_checks",
+            lambda root, fid, sha: (True, "done", True),
+        )
+        report = _fake_report("T-9103")
+        _LAST_ORPHAN_EVIDENCE_OUTCOME.pop("T-9103", None)
+
+        with caplog.at_level(logging.INFO):
+            verified = _land_cmd._print_land_proof(tmp_path, report)
+
+        proof_lines = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert proof_lines
+        line = proof_lines[-1]
+        assert "orphan_evidence_check=unknown" in line
         assert verified is True
