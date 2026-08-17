@@ -359,6 +359,24 @@
       "old_digest": null,
       "reason": "T-2248: PATTERN alternation extended to cover ticket work/new; docs/guides/claude-hooks.md's frob-timeout-guard.py section updated in the same change to name the new verbs and their measured basis",
       "ref": ".claude/hooks/frob-timeout-guard.py::PATTERN"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "d4d89ad5a1fc69624f90712e2d74ba5592418714e5f51f9fe91d90bd3ac51d08",
+      "old_digest": "12e44c5052391dba59199e7e391f561cbf341050b61113fb8a0faa58e392a02e",
+      "reason": "T-2166: re-verified against the new docs/modules/tickets-landing.md#--finish-is-pure-cleanup-when-already-landed-t-2108 section, which now frob:describes this symbol; the doc accurately describes the current body",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "old_digest": "643df04561ab54e2a1680b6196481362fc6c923965c9974c6b5131111ff17e48",
+      "reason": "T-2166: re-verified against the new docs/modules/tickets-landing.md#--finish-is-pure-cleanup-when-already-landed-t-2108 section, which now frob:describes this symbol; the doc accurately describes the current body",
+      "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
     }
   ],
   "entries": [
@@ -393,7 +411,7 @@
       "ref": "src/frob/app/telemetry.py::usage_report"
     },
     {
-      "digest": "12e44c5052391dba59199e7e391f561cbf341050b61113fb8a0faa58e392a02e",
+      "digest": "d4d89ad5a1fc69624f90712e2d74ba5592418714e5f51f9fe91d90bd3ac51d08",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed"
     },

@@ -2180,6 +2180,59 @@ for manual resolution -- never left mid-merge, which would otherwise hand
 a LATER guard (the next ticket's own T-1922 committed-waive-deletion
 scan, or its pre-work sweep) a half-mutated worktree to reason about.
 
+## --finish is pure cleanup when already landed (T-2108)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main -->
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_finish_only_if_already_landed -->
+
+`frob ticket land <id> --finish` on a ticket ALREADY terminal (`done`/
+`dropped`) on `main` -- a prior invocation of this same worktree's own
+land already succeeded (it died between the commit and the worktree-
+removal cleanup) or a coordinator closed the ticket directly on `main`
+-- used to re-run the FULL land pipeline anyway, including a fresh
+BUG002 repro re-check of the ticket's designated repro test. For a
+`bug`/`security`-kind ticket whose fix already landed, that re-check now
+genuinely PASSES against `main`'s new parent, so BUG002 refused the
+retry every single time: a land with nothing left to land was never
+able to finish cleanly.
+
+`_ticket_terminal_state_on_main` answers the question in one ledger
+read (`load_all` against `root`'s ledger, the SAME primitive `_land_
+proof_checks` uses post-land for its own `state_desc`) instead of
+rediscovering it via a full merge+verify cycle: `None` for the
+overwhelmingly common case (a ticket that genuinely still needs to
+land, or an unknown/non-terminal state), else the terminal `state:`
+string. `_finish_only_if_already_landed` is the caller-facing gate: if
+the state is terminal, it performs the pure-cleanup half of `--finish`
+directly -- worktree removal via the existing `_finish_worktree`, plus
+branch deletion when `--retire-on-proof` was also passed -- and returns
+`True`, telling `_land` to return immediately without ever calling
+`_land_core`. It returns `False` (no side effect at all) for the
+ordinary case, leaving the caller's existing land path untouched.
+
+This is a DIFFERENT check from `_check_already_landed`/
+`AlreadyLandedOnMain` (the section above this one covers auto-sync, not
+this check; see "Already-landed-on-main: first-class outcome (T-1618)"
+earlier in this file): that one fires for ANY `frob ticket land` call
+(not just `--finish`/`--retire-on-proof`) and refuses LOUDLY the moment
+a merge-base diff against `main` comes up empty -- it is a scope-diff
+check, keyed on there being no content left to land, and it still runs
+the merge to discover that. `_finish_only_if_already_landed` instead
+keys on the ticket's own ledger STATE being terminal, checked BEFORE any
+merge is attempted, and succeeds QUIETLY -- consistent with `--finish`'s
+whole purpose being cleanup after a land whose outcome is already known,
+not a fresh land attempt that happens to find nothing to do.
+
+Deliberately does NOT reuse the T-1845 land-finish-pending marker
+machinery: that marker exists to make an INTERRUPTED mutation of `main`
+recoverable/idempotent for a land THIS invocation just performed; this
+path performs no mutation of `main` at all (the land it is cleaning up
+after already committed, in a prior invocation), so there is nothing for
+a marker to make safe to retry. A cleanup failure here (a wedged
+worktree, a live process) surfaces through the same `_finish_worktree`
+error path the ordinary `--finish` case already uses, with the same
+remedy.
+
 ## OutOfScopeWaiveDeletion false-refusal on a stale worktree (T-1922)
 
 <!-- frob:describes src/frob/tickets/_land.py::_restrict_to_branch_own_files -->

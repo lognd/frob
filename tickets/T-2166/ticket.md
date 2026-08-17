@@ -1,7 +1,7 @@
 ---
 id: T-2166
 title: docs/modules/tickets.md needs a --finish-pure-cleanup section for T-2108
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-11'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets-landing.md
+evidence_scope:
+- tests/unit/test_land_finish_idempotent.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -31,6 +33,9 @@ scope_changes:
     other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+evidence:
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_terminal_on_main_skips_land_core_and_cleans_up
+- tests/unit/test_land_finish_idempotent.py::TestFinishOnlyIfAlreadyLanded::test_non_terminal_on_main_runs_the_normal_land
 designated_repro_test: null
 threat: null
 component: null
