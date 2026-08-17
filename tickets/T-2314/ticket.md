@@ -85,7 +85,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 68b0cdff9466a37a0aa67ddbbac26100940628cb
 ---
 MEASURED 2026-08-17 by an implementer working T-2303, empirically, not
 inferred.
