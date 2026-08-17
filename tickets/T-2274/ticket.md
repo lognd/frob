@@ -2,7 +2,7 @@
 id: T-2274
 title: Land bookkeeping commit (T-2256's 'record land commit') absorbed an unrelated
   bystander's dirty _land.py edit -- 32-line stranger diff, zero ticket/evidence trail
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -15,18 +15,24 @@ scope:
 - src/frob/tickets/_land_squash.py
 - src/frob/tickets/_land_finalize.py
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
+designated_repro_test: tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 acceptance:
 - text: The land-time step that produces a 'record land commit'/bookkeeping commit
     is identified and, if it stages more than its own owned paths, narrowed to stage
     only those
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 - text: A regression test seeds an unrelated dirty tracked file in the shared root
     before the bookkeeping-commit step and asserts the resulting commit never contains
     it
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 threat: null
 component: null
 anchor: false

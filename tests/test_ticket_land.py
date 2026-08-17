@@ -1463,6 +1463,50 @@ class TestRecordLandCommit:
             == 0
         )
 
+    # frob:ticket T-2274
+    # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
+    def test_record_land_commit_never_absorbs_a_bystanders_dirty_file(
+        self, v2_repo: Path
+    ) -> None:
+        """MUST-FAIL-FIRST (T-2274): the T-2256 incident -- a concurrent
+        land's own uncommitted, unrelated edit to `_land.py` was sitting
+        in the shared root when `_record_land_commit`'s bookkeeping step
+        ran, and a blanket `git add -A` scooped it into that commit,
+        publishing a stranger's mid-edit diff to main with zero ticket/
+        evidence trail attached to the ticket the bookkeeping commit
+        named. Seed the identical shape here -- an unrelated TRACKED
+        file dirtied in `v2_repo` right before `_record_land_commit`
+        runs -- and assert the resulting commit's diff never contains it,
+        while the bystander edit survives, still uncommitted, afterward
+        (never silently discarded either)."""
+        tid = "T-3000"
+        ticket = _seed_v2_ticket(v2_repo, tid, scope=("src/feature.py",))
+        _commit_all(v2_repo, "seed T-3000")
+        fake_land_sha = _run(["git", "rev-parse", "HEAD"], v2_repo).stdout.strip()
+
+        bystander = v2_repo / "src" / "feature.py"
+        original = bystander.read_text()
+        bystander.write_text(original + "# a concurrent land's own dirty edit\n")
+
+        new_sha = _land_squash_mod._record_land_commit(v2_repo, tid, fake_land_sha)
+
+        assert new_sha is not None, "record_land_commit must still make its own commit"
+        head_files = _run(
+            ["git", "show", "--stat", "--format=", new_sha], v2_repo
+        ).stdout
+        assert "feature.py" not in head_files
+        assert str(v2_ticket_path(v2_repo, tid).relative_to(v2_repo)) in head_files
+
+        # The bystander's edit was never absorbed -- it is still sitting
+        # there, uncommitted, exactly as a genuinely concurrent process's
+        # own in-progress work would be.
+        status = _run(["git", "status", "--porcelain", "--", "src/feature.py"], v2_repo)
+        assert "feature.py" in status.stdout
+
+        reloaded = load_all(v2_repo)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok[tid].land_commit == fake_land_sha
+
     # frob:ticket T-2220
     # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
     def test_plan_land_finalized_ticket_is_resolvable_by_ticket_id(

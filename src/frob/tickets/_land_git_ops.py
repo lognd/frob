@@ -447,6 +447,28 @@ def _porcelain_dirty_paths(root: Path) -> tuple[str, ...]:
     )
 
 
+# frob:ticket T-2274
+def _pathspec_targets(dirty_paths: tuple[str, ...] | frozenset[str]) -> list[str]:
+    """`_porcelain_dirty_paths`'s entries, made safe to hand straight to
+    `git add --`: a rename/copy entry renders as one DISPLAY string `old
+    -> new` (porcelain v1's own rename format), which is not a valid
+    pathspec -- `git add -- "old -> new"` fails outright (T-2274, caught
+    by this exact shape appearing mid-`finalize_draft`'s own `git mv`).
+    `git mv` already stages the rename itself, so the destination path
+    alone is enough to name it for a caller building an explicit `git
+    add --` pathspec list from a before/after dirty-path delta; every
+    other (non-rename) entry passes through unchanged. Order-preserving,
+    not de-duplicated by the caller's responsibility -- callers already
+    `sorted()` the result where determinism matters."""
+    targets: list[str] = []
+    for path in dirty_paths:
+        if " -> " in path:
+            targets.append(path.split(" -> ", 1)[1])
+        else:
+            targets.append(path)
+    return targets
+
+
 # frob:ticket T-1740
 def _porcelain_dirty_paths_staged(root: Path) -> tuple[str, ...]:
     """The SUBSET of `_porcelain_dirty_paths(root)` that is STAGED (`git

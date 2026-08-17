@@ -1317,20 +1317,35 @@ def _land_plan_finalize_drafts(
 
 
 # frob:ticket T-1269
+# frob:ticket T-2274
 def _land_plan_commit_finalize(
-    root: Path, finalized: tuple[tuple[str, str], ...]
+    root: Path, finalized: tuple[tuple[str, str], ...], *, before_dirty: frozenset[str]
 ) -> Result[None, LandError]:
     """Commit `finalize_draft`'s ledger (and any code-reference) rewrites
     (T-1269) -- `finalize_draft`/`renumber_one` write the tree but do not
     commit it themselves (the same "write, caller commits" convention
     `_wip_commit` already applies elsewhere in this package); a no-op
     (`Ok(None)`, nothing to commit) when `finalized` is empty, so a plan-
-    land with no incoming draft ids stays a single (merge-only) commit."""
+    land with no incoming draft ids stays a single (merge-only) commit.
+
+    T-2274: stages only `_porcelain_dirty_paths(root) - before_dirty` --
+    the paths that became dirty since the caller's pre-finalize snapshot
+    -- never a blanket `git add -A`, which would also commit any
+    unrelated file already dirty in the shared `root` before this
+    finalize step ran (the same class of incident T-2256's own land hit
+    at `_record_land_commit`, `frob.tickets._land_squash`)."""
     if not finalized:
         return Ok(None)
-    added = run_argv(["git", "-C", str(root), "add", "-A"])
+    from frob.tickets._land_git_ops import _pathspec_targets, _porcelain_dirty_paths
+
+    new_paths = sorted(
+        _pathspec_targets(frozenset(_porcelain_dirty_paths(root)) - before_dirty)
+    )
+    if not new_paths:
+        return Ok(None)
+    added = run_argv(["git", "-C", str(root), "add", "--", *new_paths])
     if added.is_err or added.danger_ok.returncode != 0:
-        _log.error("land --plan: git add -A failed in %s", root)
+        _log.error("land --plan: git add failed in %s", root)
         return Err(LandError.GitFailed)
     message = "chore(tickets): land --plan finalize " + ", ".join(
         f"{old} -> {new}" for old, new in finalized
@@ -1475,11 +1490,19 @@ def _land_plan_merge_and_finalize(
     merge_commit = merged.danger_ok
     own_commits.append(merge_commit)
 
+    # T-2274: snapshot before finalize writes anything, so the commit
+    # below can stage exactly what THIS run produced -- see
+    # `_land_plan_commit_finalize`'s own docstring.
+    from frob.tickets._land_git_ops import _porcelain_dirty_paths
+
+    before_dirty = frozenset(_porcelain_dirty_paths(root))
     finalized = _land_plan_finalize_drafts(root, merge_commit)
     if finalized.is_err:
         return Err(finalized.danger_err), own_commits
 
-    committed = _land_plan_commit_finalize(root, finalized.danger_ok)
+    committed = _land_plan_commit_finalize(
+        root, finalized.danger_ok, before_dirty=before_dirty
+    )
     if committed.is_err:
         return Err(committed.danger_err), own_commits
     if finalized.danger_ok:

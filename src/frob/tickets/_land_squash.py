@@ -45,6 +45,8 @@ from frob.tickets._land_git_ops import (
     _auto_resolve_out_of_scope_conflicts,
     _describe_git_failure,
     _land_internal_git_env,
+    _pathspec_targets,
+    _porcelain_dirty_paths,
     _read_archive_text_or_empty,
     _read_ledger_text_or_empty,
     _read_text_at_ref,
@@ -656,8 +658,10 @@ def _land_commit_details(root: Path) -> tuple[str | None, tuple[str, ...]]:
 
 
 # frob:ticket T-2220
+# frob:ticket T-2274
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_records_land_commit_field_in_a_follow_up_commit  # noqa: E501
 # frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_plan_land_finalized_ticket_is_resolvable_by_ticket_id  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestRecordLandCommit.test_record_land_commit_never_absorbs_a_bystanders_dirty_file  # noqa: E501
 def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
     """Persist `land_sha` (the squash-apply commit that just landed
     `final_id`'s code) onto that ticket's own `land_commit` field, in a
@@ -692,6 +696,18 @@ def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
             final_id,
         )
         return None
+    # T-2274: snapshot the dirty-path set BEFORE this write, so the
+    # `add` below can stage exactly (and only) the paths THIS write_ticket
+    # call itself produced -- never a bystander's unrelated dirty file
+    # already sitting in `root` at this moment (the T-2256 incident: a
+    # concurrent land's own uncommitted mid-edit to `_land.py` was ambient
+    # in the shared root when this exact step ran and got scooped into
+    # this commit by a blanket `git add -A`). Comparing the before/after
+    # porcelain sets is mode-agnostic -- it works whether `write_ticket`
+    # touches `tickets.md` (single mode), `tickets/<id>/ticket.md` (dir/v2
+    # mode), or some future storage shape, without this function needing
+    # to know or guess which.
+    before_dirty = frozenset(_porcelain_dirty_paths(root))
     updated = loaded.danger_ok.model_copy(update={"land_commit": land_sha})
     written = write_ticket(root, updated)
     if written.is_err:
@@ -704,8 +720,34 @@ def _record_land_commit(root: Path, final_id: str, land_sha: str) -> str | None:
             land_sha,
         )
         return None
+    return _stage_and_commit_land_commit_record(root, final_id, land_sha, before_dirty)
 
-    add_argv = ["git", "-C", str(root), "add", "-A"]
+
+# frob:ticket T-2274
+def _stage_and_commit_land_commit_record(
+    root: Path, final_id: str, land_sha: str, before_dirty: frozenset[str]
+) -> str | None:
+    """`_record_land_commit`'s own ARCH001 split (T-2274): stage exactly
+    the paths `write_ticket` itself made dirty (`before_dirty`'s
+    complement, see the caller's own T-2274 comment) and commit them --
+    never `git add -A`. Same best-effort, log-and-swallow posture as the
+    caller."""
+    new_paths = sorted(
+        _pathspec_targets(frozenset(_porcelain_dirty_paths(root)) - before_dirty)
+    )
+    if not new_paths:
+        _log.error(
+            "land: %s land_commit write produced no new dirty path in %s "
+            "-- %s already landed at %s, only the T-2220 record field is "
+            "missing (nothing to stage, so nothing committed)",
+            final_id,
+            root,
+            final_id,
+            land_sha,
+        )
+        return None
+
+    add_argv = ["git", "-C", str(root), "add", "--", *new_paths]
     with _land_internal_git_env():
         add = run_argv(add_argv)
         if add.is_err or add.danger_ok.returncode != 0:

@@ -42,7 +42,9 @@ from frob.logging import get_logger
 from frob.tickets._land_git_ops import (
     _describe_git_failure,
     _land_internal_git_env,
+    _pathspec_targets,
     _porcelain_dirty,
+    _porcelain_dirty_paths,
 )
 from frob.tickets._models import LandError, Ticket, TicketState
 from frob.tickets._provisional import is_draft_id
@@ -57,6 +59,34 @@ from frob.tickets._store import (
 )
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-2274
+def _commit_pending_merge(
+    worktree: Path, ticket_id: str, main_branch_name: str
+) -> Result[None, LandError]:
+    """`_land_finalize_and_close`'s own ARCH001 split (T-2274): commit an
+    already-staged (`--no-commit`) merge of `main_branch_name` into
+    `worktree`, under `FROB_LAND_INTERNAL=1` so the T-0731 land-owned-
+    files `pre-commit` hook never refuses it."""
+    commit_argv = [
+        "git",
+        "-C",
+        str(worktree),
+        "commit",
+        "-m",
+        f"merge {main_branch_name} into worktree for landing {ticket_id}",
+    ]
+    with _land_internal_git_env():
+        commit = run_argv(commit_argv)
+    if commit.is_err or commit.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s merge commit failed: %s",
+            ticket_id,
+            _describe_git_failure(commit_argv, commit),
+        )
+        return Err(LandError.GitFailed)
+    return Ok(None)
 
 
 def _land_finalize_and_close(
@@ -76,25 +106,21 @@ def _land_finalize_and_close(
     T-1179: `root` (main) is threaded through to `_finalize_and_close_
     ticket` so the draft-id finalize below reads its id ceiling from
     main's CURRENT ledger, not `worktree`'s possibly-stale copy -- see
-    `finalize_draft_for_land`'s doc for the incident this closes."""
+    `finalize_draft_for_land`'s doc for the incident this closes.
+
+    T-2274: `worktree` and `root` can be the SAME checkout (the no-
+    `--worktree` land path lands directly in the shared root) -- snapshot
+    the dirty-path set here, before any finalize/rewrite writes below,
+    so `_commit_finalize_writes` can stage exactly what this pipeline
+    itself produced instead of a blanket `git add -A` that would also
+    scoop up a bystander's unrelated dirty file already sitting in
+    `worktree` at this moment (the same class of incident T-2256's own
+    land hit at `_record_land_commit`, `frob.tickets._land_squash`)."""
+    before_dirty = frozenset(_porcelain_dirty_paths(worktree))
     if did_merge:
-        commit_argv = [
-            "git",
-            "-C",
-            str(worktree),
-            "commit",
-            "-m",
-            f"merge {main_branch_name} into worktree for landing {ticket_id}",
-        ]
-        with _land_internal_git_env():
-            commit = run_argv(commit_argv)
-        if commit.is_err or commit.danger_ok.returncode != 0:
-            _log.error(
-                "land: %s merge commit failed: %s",
-                ticket_id,
-                _describe_git_failure(commit_argv, commit),
-            )
-            return Err(LandError.GitFailed)
+        merge_committed = _commit_pending_merge(worktree, ticket_id, main_branch_name)
+        if merge_committed.is_err:
+            return Err(merge_committed.danger_err)
 
     finalized = _finalize_and_close_ticket(
         root, worktree, ticket_id, covers_scope=covers_scope
@@ -122,7 +148,7 @@ def _land_finalize_and_close(
     if waive_rewritten.is_err:
         return Err(waive_rewritten.danger_err)
 
-    committed = _commit_finalize_writes(worktree, final_id)
+    committed = _commit_finalize_writes(worktree, final_id, before_dirty=before_dirty)
     if committed.is_err:
         return Err(committed.danger_err)
     return Ok(final_id)
@@ -810,16 +836,32 @@ def _close_finalized_ticket(
 # worktree would be left dirty after a successful land (reviewer repro,
 # T-0176). Commit them now so the squash-apply below sees everything, and
 # the worktree ends up clean.
-def _commit_finalize_writes(worktree: Path, final_id: str) -> Result[None, LandError]:
+# frob:ticket T-2274
+def _commit_finalize_writes(
+    worktree: Path, final_id: str, *, before_dirty: frozenset[str]
+) -> Result[None, LandError]:
     """Commit any working-tree changes finalize/close made, if any -- under
     `FROB_LAND_INTERNAL=1` (T-0828) so this land-internal commit is never
-    refused by the T-0731 land-owned-files `pre-commit` hook."""
+    refused by the T-0731 land-owned-files `pre-commit` hook.
+
+    T-2274: stages only `_porcelain_dirty_paths(worktree) - before_dirty`
+    -- the paths that became dirty SINCE `_land_finalize_and_close`
+    snapshotted `before_dirty`, i.e. exactly what finalize/rewrite/close
+    wrote here -- never a blanket `git add -A`, which would also commit
+    any unrelated file already dirty in `worktree` before this pipeline
+    started (the no-`--worktree` land path runs this directly against the
+    shared root, where a bystander's dirty edit can be ambient)."""
     finalize_dirty = _porcelain_dirty(worktree)
     if finalize_dirty.is_err:
         return Err(finalize_dirty.danger_err)
     if not finalize_dirty.danger_ok:
         return Ok(None)
-    add_argv = ["git", "-C", str(worktree), "add", "-A"]
+    new_paths = sorted(
+        _pathspec_targets(frozenset(_porcelain_dirty_paths(worktree)) - before_dirty)
+    )
+    if not new_paths:
+        return Ok(None)
+    add_argv = ["git", "-C", str(worktree), "add", "--", *new_paths]
     with _land_internal_git_env():
         add = run_argv(add_argv)
         if add.is_err or add.danger_ok.returncode != 0:
