@@ -15,6 +15,7 @@ runs_last: false
 scope:
 - src/frob/app/agent_runner.py
 - tests/test_worktree_guard.py
+- src/frob/tickets/_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -39,6 +40,11 @@ scope_changes:
   reason: app.md is a broad shared module doc covering ~90 unrelated symbols; closure
     would explode scope far beyond this bugfix. Not adding a new public symbol, so
     no new doc obligation is created
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_worktree_guard.py
+  reason: 'closure: agent env export logic lives here per test bindings'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
