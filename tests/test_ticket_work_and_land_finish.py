@@ -909,6 +909,149 @@ class TestAssertDiffDoesNotWorsenLongFunctions:
         )  # must not raise
 
 
+# frob:ticket T-2280
+class TestAssertDiffDoesNotAddNewFileLocalErrors:
+    """`_assert_diff_does_not_add_new_file_local_errors_pre_land` (T-2280):
+    generalizes T-2214's ARCH001-only does-not-worsen gate to every
+    ERROR-severity rule `_FILE_LOCAL_ERROR_CHECKERS` covers -- RENDER001
+    is the fixture rule (T-2280's own measured motivation: RENDER001 went
+    1 -> 4 while other classes were being actively repaired)."""
+
+    def test_a_new_render001_refuses_the_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_new_render001_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        new_file = repo / "src" / "printer.py"
+        new_file.write_text("def run() -> None:\n    print('hello')\n")
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_diff_does_not_add_new_file_local_errors_pre_land(
+                repo, "T-2280", frozenset({"src/printer.py"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_pre_existing_render001_merely_touched_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_pre_existing_render001_merely_touched_does_not_refuse  # noqa: E501
+        # The bare print() already existed at merge-base -- a later diff
+        # that only adds a trailing comment must not be blamed on THIS
+        # land, the same global-vs-attributable distinction T-2214/T-2198
+        # already established.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        already_printing = repo / "src" / "already_printing.py"
+        already_printing.write_text("def run() -> None:\n    print('hello')\n")
+        _commit_all(repo, "pre-existing bare print")
+
+        already_printing.write_text(
+            already_printing.read_text() + "# trailing comment, body unchanged\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", frozenset({"src/already_printing.py"})
+        )  # must not raise
+
+    def test_a_clean_land_is_unaffected(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_clean_land_is_unaffected  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        clean_file = repo / "src" / "clean.py"
+        clean_file.write_text("def run() -> None:\n    return None\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", frozenset({"src/clean.py"})
+        )  # must not raise
+
+    def test_a_waived_new_finding_does_not_refuse(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_waived_new_finding_does_not_refuse  # noqa: E501
+        # A real RENDER001 waiver comment directly above the call site is
+        # the same reasoned-waiver escape hatch render_lint_gate/frob.
+        # gates._match_waiver already honor for this rule -- this check
+        # must not invent a second, stricter one.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        new_file = repo / "src" / "waived_print.py"
+        new_file.write_text(
+            "def run() -> None:\n"
+            '    # frob:waive RENDER001 reason="test fixture, genuine exception"\n'
+            "    print('hello')\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", frozenset({"src/waived_print.py"})
+        )  # must not raise
+
+    def test_an_unrelated_land_touching_no_python_files_is_unaffected(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_an_unrelated_land_touching_no_python_files_is_unaffected  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        (repo / "README.md").write_text("# landed feature, edited\n")
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", frozenset({"README.md"})
+        )  # must not raise
+
+    def test_empty_touched_set_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_empty_touched_set_is_a_no_op  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", frozenset()
+        )  # must not raise
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2280", None
+        )  # must not raise
+
+    def test_unmeasurable_diff_reports_skipped_unmeasured_and_lands(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_unmeasurable_diff_reports_skipped_unmeasured_and_lands  # noqa: E501
+        # T-2255's own lesson applied here: a comparison that cannot be
+        # made must SURFACE the skip loudly and let the land proceed,
+        # never hard-fail silently or loudly.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+        from frob.gitio import GitError
+        from typani.result import Err
+
+        new_file = repo / "src" / "printer2.py"
+        new_file.write_text("def run() -> None:\n    print('hello')\n")
+        _run(["git", "add", "-A"], repo)
+
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd.working_diff",
+            lambda *a, **k: Err(GitError.NotARepo),
+        )
+        with caplog.at_level("WARNING"):
+            _assert_diff_does_not_add_new_file_local_errors_pre_land(
+                repo, "T-2280", frozenset({"src/printer2.py"})
+            )  # must not raise
+        assert any(
+            "SKIPPED-UNMEASURED" in record.message for record in caplog.records
+        )
+
+
 # frob:ticket T-1907
 class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
     """T-1907 proposal (2): a Done report with no `### Captured claims`

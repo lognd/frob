@@ -2,7 +2,7 @@
 id: T-2280
 title: 'Land-time ''does not worsen'' gate covers ARCH001 alone, so every other error
   rule accumulates: floor grinds at -0.5/land while RENDER001 went 1 to 4'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,25 +13,47 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: new pre-land gate needs test coverage in the module's existing land test
+    file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_clean_land_is_unaffected
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_pre_existing_render001_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_unmeasurable_diff_reports_skipped_unmeasured_and_lands
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
 acceptance:
 - text: 'A land introducing a NEW error-severity finding in a touched file is refused,
     naming rule/file/symbol (fixture: a bare print() producing a new RENDER001)'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
 - text: 'MUST-STILL-PASS: clean land unaffected; pre-existing error in a touched file
     does not refuse; T-2214''s ARCH001 behaviour unchanged; unmeasurable worktree
     reports SKIPPED-UNMEASURED and still lands'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_clean_land_is_unaffected
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_pre_existing_render001_merely_touched_does_not_refuse
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_unmeasurable_diff_reports_skipped_unmeasured_and_lands
 - text: Participating rules derived from SEVERITY, not a hardcoded rule-name list,
     so a newly added ERROR gate is covered automatically
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
 - text: The refusal names what to fix and how to waive it in one message
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
 - text: State the added wall-clock on a land before and after; the land path is the
     fleet bottleneck
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
 threat: null
 component: null
 anchor: false

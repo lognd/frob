@@ -9,15 +9,19 @@ dispatch, tests that monkeypatch these names) keeps working."""
 from __future__ import annotations
 
 import ast
+import itertools
 import json
+import re
 import sys
 import time
+from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 
 from typani.result import Err, Ok
 
 from frob.app.config import AppConfig
+from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv, working_diff
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
@@ -3720,6 +3724,296 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
     sys.exit(1)
 
 
+# frob:ticket T-2280
+# frob:waive WIRE001 reason="stored as a value in the _FILE_LOCAL_ERROR_CHECKERS tuple \
+# immediately below and invoked indirectly from there \
+# (_file_local_error_violations_for_content iterates the tuple and calls each entry, \
+# checker(rel_path, text)) -- the same indirect-dispatch shape WIRE001 cannot trace \
+# through that frob.gates._arch's own analogous waiver documents; genuinely wired, not \
+# dead. This registry-dispatch shape is permanent by design (T-2280's own extension \
+# point for future file-local checkers), so this waiver's premise does not expire" \
+# follow_up="T-2285"
+def _render001_checker(rel_path: str, text: str) -> tuple[Violation, ...]:
+    """`_FILE_LOCAL_ERROR_CHECKERS` adapter for RENDER001 (T-2280): parses
+    `text` as python and reuses `frob.gates._render_lint`'s own
+    `_scan_python_prints`/`_render001_violation` -- the SAME detector
+    `render_lint_gate` dispatches repo-wide, not a reimplementation.
+    Empty for a non-.py path or unparseable text (this land-time diff
+    check degrades to no-op on a parse failure, same fail-open posture
+    every other pre-land guard in this module takes; `render_lint_gate`'s
+    own PARSE001 path is for the full unscoped gate run, not here)."""
+    from frob.gates._render_lint import _render001_violation, _scan_python_prints
+
+    if not rel_path.endswith(".py"):
+        return ()
+    try:
+        tree = ast.parse(text, filename=rel_path)
+    except SyntaxError:
+        return ()
+    return tuple(
+        _render001_violation(rel_path, site) for site in _scan_python_prints(tree)
+    )
+
+
+# frob:ticket T-2280
+#: Rules covered by `_assert_diff_does_not_add_new_file_local_errors_pre_
+#: land`: file-local, single-file, no-repo-graph ERROR checkers this
+#: land-time gate can afford to run TWICE per touched file (current
+#: content, and a merge-base scratch copy) at T-2214's own bounded cost
+#: -- two small parses per file, never a repo-wide `analyze_project`/
+#: `GraphSnapshot` build. A rule needing cross-file/call-graph context to
+#: even evaluate (ARCH103's SRP/cohesion classification needs the whole
+#: call graph; SELFAUDIT001 evaluates frob's OWN design/compliance state,
+#: not any particular file; COV00x reasons over the evidence graph) does
+#: not fit this shape and is deliberately NOT here -- see this ticket's
+#: Done report for the measured reason each was left out. Add a new
+#: `(rel_path, text) -> tuple[Violation, ...]` entry here to bring a new
+#: file-local ERROR rule under this gate; nothing else needs editing --
+#: `_file_local_error_violations_for_content` filters by
+#: `Severity.ERROR` alone (T-2280 criterion 3), so a checker's own new
+#: ERROR-severity sub-finding is picked up with no further wiring.
+_FILE_LOCAL_ERROR_CHECKERS: tuple[Callable[[str, str], tuple[Violation, ...]], ...] = (
+    _render001_checker,
+)
+
+
+# frob:ticket T-2280
+def _file_local_error_violations_for_content(
+    rel_path: str, text: str
+) -> tuple[Violation, ...]:
+    """Every `Severity.ERROR` `Violation` from `_FILE_LOCAL_ERROR_CHECKERS`
+    for `rel_path`'s `text` -- called with BOTH the current worktree
+    file's content and a `git show`n merge-base scratch copy's content
+    (T-2214's own two-content shape, generalized beyond ARCH001, T-2280).
+    A checker's non-ERROR findings are dropped here: severity is the sole
+    participation test (T-2280 criterion 3), never a rule-name allowlist.
+    A checker that raises is treated as finding nothing for this call
+    (fail-open, matching every sibling pre-land guard's posture on an
+    unmeasurable input)."""
+    out: list[Violation] = []
+    for checker in _FILE_LOCAL_ERROR_CHECKERS:
+        try:
+            violations = checker(rel_path, text)
+        except Exception:  # noqa: BLE001 -- fail-open pre-land guard, same posture as siblings
+            continue
+        out.extend(v for v in violations if v.severity == Severity.ERROR)
+    return tuple(out)
+
+
+# frob:ticket T-2280
+_LINE_ANCHOR_RE = re.compile(r":\d+\b")
+
+
+# frob:ticket T-2280
+def _violation_identity(v: Violation) -> str:
+    """A line-number-INDEPENDENT identity for `v`, generalizing T-2214's
+    symref-keyed old-vs-current comparison to any file-local checker's
+    `Violation`: uses `v.symref` when the checker set one (the precise
+    case), otherwise strips the embedded `:LINE` token from `v.message`
+    (every gate message in this repo follows the `RULE: file:line ...`
+    convention -- `frob.gates._models.Violation`'s own docstring), so a
+    violation that merely SHIFTED lines within the same file (an
+    unrelated edit earlier in the file) compares equal to its
+    old-content counterpart instead of registering as a false-positive
+    'new' finding."""
+    if v.symref:
+        return f"{v.rule}::{v.symref}"
+    return f"{v.rule}::{_LINE_ANCHOR_RE.sub(':N', v.message)}"
+
+
+# frob:ticket T-2280
+def _new_file_local_errors_in_file(
+    worktree: Path, merge_base: str, rel_path: str
+) -> list[Violation]:
+    """Every `Violation` `_FILE_LOCAL_ERROR_CHECKERS` finds in `rel_path`'s
+    CURRENT worktree content whose `_violation_identity` was not already
+    present in the SAME file's content at `merge_base` (T-2214's ARCH001
+    split generalized, T-2280). Compares MULTISETS of identities
+    (`collections.Counter`), not sets: two identical bare `print(...)`
+    sites in the same file at merge-base and three now is one NEW
+    finding, not zero (a naive set-difference would miss it since the
+    identity string is not unique per site)."""
+    full = worktree / rel_path
+    if not full.is_file():
+        return []
+    try:
+        current_text = full.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    current = _file_local_error_violations_for_content(rel_path, current_text)
+    if not current:
+        return []
+    old_result = run_argv(
+        ["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"]
+    )
+    if old_result.is_ok and old_result.danger_ok.returncode == 0:
+        old = _file_local_error_violations_for_content(
+            rel_path, old_result.danger_ok.stdout
+        )
+    else:
+        old = ()
+    old_counts = Counter(_violation_identity(v) for v in old)
+    # ONE sort of the whole `current` list (PERF004: never a sort call
+    # inside a per-identity loop), then group by identity -- each group
+    # comes out highest-line-first, so the "assume the newest lines are
+    # the new ones" attribution below is a cheap slice, not a fresh sort.
+    current_sorted = sorted(
+        current, key=lambda v: (_violation_identity(v), -v.line)
+    )
+    by_identity: dict[str, list[Violation]] = {}
+    for identity, group in itertools.groupby(current_sorted, key=_violation_identity):
+        by_identity[identity] = list(group)
+    new_counts = Counter(_violation_identity(v) for v in current)
+    findings: list[Violation] = []
+    for identity, count in new_counts.items():
+        n_new = count - old_counts.get(identity, 0)
+        if n_new <= 0:
+            continue
+        findings.extend(by_identity[identity][:n_new])
+    return findings
+
+
+# frob:ticket T-2280
+def _new_file_local_errors_in_diff(
+    worktree: Path, merge_base: str, touched_paths: frozenset[str]
+) -> list[Violation]:
+    """Every NEW file-local ERROR `Violation` (T-2280) across every
+    touched `.py` file, generated/test paths excluded -- the diff-scoped
+    entry point `_assert_diff_does_not_add_new_file_local_errors_pre_land`
+    calls, mirroring `_new_or_worsened_long_functions_in_diff`'s own
+    per-touched-file loop exactly."""
+    findings: list[Violation] = []
+    for rel_path in sorted(touched_paths):
+        if not rel_path.endswith(".py"):
+            continue
+        if _is_generated_or_test_path(worktree, rel_path):
+            continue
+        findings.extend(_new_file_local_errors_in_file(worktree, merge_base, rel_path))
+    return findings
+
+
+# frob:ticket T-2280
+def _unwaived_file_local_error_findings(
+    worktree: Path, findings: list[Violation]
+) -> list[Violation]:
+    """`findings` with any site carrying `frob:waive <RULE> reason="..."`
+    directly above it dropped -- the same reasoned-waiver escape hatch
+    every gate in this repo already honors, checked here identically to
+    T-2214's own ARCH001 waiver check (`_frob_directive_block`/
+    `_genuine_comment_lines`), never a second, stricter mechanism."""
+    from frob.tickets._land import _genuine_comment_lines
+
+    lines: dict[str, list[str]] = {}
+    genuine: dict[str, frozenset[int]] = {}
+    unwaived: list[Violation] = []
+    for v in findings:
+        if v.file not in lines:
+            full = worktree / v.file
+            try:
+                lines[v.file] = full.read_text(encoding="utf-8").splitlines()
+            except (OSError, UnicodeDecodeError):
+                lines[v.file] = []
+            genuine[v.file] = _genuine_comment_lines(worktree, None, v.file)
+        block_text = "\n".join(
+            _frob_directive_block(lines[v.file], v.line, genuine[v.file])
+        )
+        if f"frob:waive {v.rule}" in block_text:
+            continue
+        unwaived.append(v)
+    return unwaived
+
+
+# frob:ticket T-2280
+def _log_file_local_error_refusals(ticket_id: str, unwaived: list[Violation]) -> None:
+    """Logs one ERROR line per unwaived new finding (T-2280), naming the
+    rule/file/symbol/fix and the `frob:waive` escape hatch in the same
+    message -- acceptance criterion 4."""
+    for v in unwaived:
+        _log.error(
+            "ticket land: %s refused -- %s:%d new %s finding, not present in "
+            "this file at merge-base (T-2280: generalizes T-2214's "
+            "does-not-worsen gate, not relaxed by the rapid profile): %s -- "
+            'fix it, or add `frob:waive %s reason="..."` above the site if '
+            "it genuinely does not apply",
+            ticket_id,
+            v.file,
+            v.line,
+            v.rule,
+            v.message,
+            v.rule,
+        )
+
+
+# frob:ticket T-2280
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_new_render001_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_pre_existing_render001_merely_touched_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_clean_land_is_unaffected  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_waived_new_finding_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_unmeasurable_diff_reports_skipped_unmeasured_and_lands  # noqa: E501
+def _assert_diff_does_not_add_new_file_local_errors_pre_land(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> None:
+    """T-2280: generalizes T-2214's ARCH001-only "does not worsen" gate to
+    every ERROR-severity rule `_FILE_LOCAL_ERROR_CHECKERS` covers (RENDER001
+    today) -- refuses the land when THIS ticket's own diff introduces a
+    NEW error-severity finding in a file it touches, that was not already
+    present in the same file at `merge_base`. Measured motivation: the
+    unscoped floor went 59 -> 53 -> 49 across ~10 lands (roughly -0.5/land,
+    grinding not converging) because T-2214's gate is the only rule with
+    this protection -- RENDER001 alone went 1 -> 4 while other lands
+    actively repaired it.
+
+    Fail-open, loudly, when the comparison cannot be made (T-2255's own
+    lesson, applied here on purpose): an empty touched set, or a `git
+    diff`/`git show` that fails (fresh worktree with no reachable
+    merge-base, detached-HEAD oddity), reports SKIPPED-UNMEASURED at
+    WARNING and lets the land proceed -- this must never hard-fail on an
+    unmeasurable input, only on a genuinely measured new finding.
+
+    A new finding whose site carries `frob:waive <RULE> reason="..."`
+    directly above it (the same reasoned-waiver escape hatch every gate
+    in this repo already honors) is skipped, identically to T-2214's own
+    ARCH001 waiver check.
+
+    Scope note (T-2280): deliberately NOT a second full `frob check`
+    invocation -- reuses exactly T-2214's bounded "two small parses per
+    touched file" cost, never the ~208s T-1684 removed from the land
+    critical path. See this ticket's Done report for the measured added
+    wall-clock."""
+    if not touched_paths:
+        return
+    diff_result = working_diff(worktree, "main")
+    if diff_result.is_err:
+        _log.warning(
+            "ticket land: %s SKIPPED-UNMEASURED file-local-error diff check "
+            "(T-2280) -- could not read the working diff against main; "
+            "landing WITHOUT this comparison rather than blocking on an "
+            "unmeasurable input",
+            ticket_id,
+        )
+        return
+    merge_base = diff_result.danger_ok.base
+    try:
+        findings = _new_file_local_errors_in_diff(worktree, merge_base, touched_paths)
+    except Exception as exc:  # noqa: BLE001 -- surface-and-proceed, never block on this
+        _log.warning(
+            "ticket land: %s SKIPPED-UNMEASURED file-local-error diff check "
+            "(T-2280) -- comparison raised %s: %s; landing WITHOUT this "
+            "comparison rather than blocking on an unmeasurable input",
+            ticket_id,
+            type(exc).__name__,
+            exc,
+        )
+        return
+    if not findings:
+        return
+    unwaived = _unwaived_file_local_error_findings(worktree, findings)
+    if not unwaived:
+        return
+    _log_file_local_error_refusals(ticket_id, unwaived)
+    sys.exit(1)
+
+
 # frob:ticket T-1593
 # frob:ticket T-1692
 # frob:ticket T-1845
@@ -3761,6 +4055,11 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
 
     # frob:ticket T-2214
     _assert_diff_does_not_worsen_long_functions_pre_land(
+        worktree, cfg.ticket_id, touched_paths
+    )
+
+    # frob:ticket T-2280
+    _assert_diff_does_not_add_new_file_local_errors_pre_land(
         worktree, cfg.ticket_id, touched_paths
     )
 
