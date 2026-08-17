@@ -10,6 +10,23 @@ build for them), but ARCH101 (low-cohesion-class) and ARCH103
 own `frob.toml` (T-0977/T-0990) and DO fail `frob check` here; other repos
 adopting `frob.arch` choose their own severities per category.
 
+## frob arch
+
+`frob arch [path]` runs the scanner from the CLI and prints every
+`ArchSuggestion` found under `path` (default: the repo root), one per
+finding; `--json` emits the same findings as a machine-readable list
+instead of text. `--max-function-lines N` and `--max-class-methods N`
+override this repo's `frob.toml`-configured thresholds for the
+long-function and god-class checks for a single invocation, without
+editing config -- useful for probing "how much would tightening this
+threshold cost right now" before committing to a config change.
+Severity per category otherwise comes from `frob.toml`'s `[arch]` table
+(T-0977/T-0990) -- a category left unconfigured stays advisory (exit 0
+regardless of findings), while a category configured `severity="error"`
+makes a nonzero finding count a nonzero exit code, the same posture
+`frob check`'s own `gate:arch` stage uses when it calls this same
+entrypoint.
+
 ## Scope
 
 Python and C/C++ today (whatever `frob.lang.raw_tree` resolves to a

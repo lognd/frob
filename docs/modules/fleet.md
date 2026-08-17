@@ -6,6 +6,19 @@ sibling repos, probes each one (git branch/dirty state, a `frob check
 into one reddest-first table or JSON payload; `frob fleet route` files a
 ticket directly into a named sibling's own ledger.
 
+## frob fleet
+
+Two subcommands: `frob fleet status [--json]` reads `fleet.toml` and
+prints the reddest-first status/gate rollup table across every manifest
+repo (or the same data as JSON). `frob fleet route --repo NAME --title
+TEXT [--kind KIND] [--priority PRI] [--scope GLOB] [--body TEXT]` files a
+ticket directly into a named sibling repo's own ledger without a
+coordinator having to `cd` there first -- `--repo` must name a repo
+present in the manifest, `--kind` is one of the same values `frob ticket
+new --kind` accepts (`feature`/`bug`/`security`/`ux`/`docs`/`invariant`/
+`incident`). See "Manifest (`fleet.toml`)" below for the config shape
+both subcommands read.
+
 ## Why this exists
 
 The 9-repo compliance campaign (frob plus 8 sibling repos each wired to

@@ -11,6 +11,22 @@ not "verified okay" because a scanner found nothing; it is verified okay
 because its observed capabilities match a human-reviewed declaration, and
 any drift from that declaration is loud.
 
+## frob vet
+
+`frob vet [path] [--hook COMMAND] [--json] [--cve-mirror DIR] [--timeout
+SECONDS] [--jobs N]` -- `path` scopes the scan (default: the repo root);
+`--json` swaps the printed report for a machine-readable one; `--cve-mirror
+DIR` points at a local `cvelistV5` mirror to match dependencies against
+instead of `[tool.frob].vet_cve_mirror` in `pyproject.toml` (T-0147);
+`--timeout SECONDS` bounds each package's scan so one pathological
+package cannot hang the whole run -- on expiry that package gets a
+`VET-TIMEOUT` verdict instead (T-0208/T-0251); `--jobs N` scans packages
+concurrently (default 1; N>1 is best-effort against the shared
+verdict/registry, per the option's own help text). `--hook COMMAND`
+switches modes entirely: instead of scanning the dependency tree, it
+checks a single install-shaped shell command before it runs, the shape a
+Claude Code `PreToolUse` hook invokes it in.
+
 ## Why capability diffs are the right primitive
 
 Real supply-chain attacks (event-stream, xz-utils, the 2024-2026 npm/PyPI

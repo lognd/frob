@@ -8,6 +8,19 @@ so "hot AND quadratic" becomes a ranked, gated finding instead of a
 debugging session. (Origin: the malmberg incident -- a linear search
 across 28k files whose fix was literally a hashset.)
 
+## frob perf
+
+Four subcommands: `frob perf profile -- ARGV` runs a command under
+cProfile and stores a content-addressed `.pstats` artifact; `frob perf
+heat [--json]` renders the profiled heat-map, symbols ranked by
+cumulative time, joined onto the obligation graph; `frob perf collect`
+resolves a perf/V8/JFR profile (or the python sampler's own output) into
+per-language hot-graph deciles for the static PERF rules to consume;
+`frob perf hot` queries the hot-graph sketch store (T-0711) for the
+currently-hottest sections without re-profiling. See "The three pieces"
+below for how profile/heat/collect+hot compose into the PERF00x gate
+family.
+
 ## The three pieces
 
 1. **Profile**: `frob perf profile -- <argv>` runs the command under

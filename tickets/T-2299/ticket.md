@@ -2,7 +2,7 @@
 id: T-2299
 title: 'DOC012 debt: 24 CLI subcommands have no dedicated doc section, disclosed in
   T-1783''s Done report but never tracked; burn to zero then promote WARN->ERROR'
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-08-17'

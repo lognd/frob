@@ -17,6 +17,17 @@ Output is the mutation score (killed / total) and a list of survivors with
 their file:line and what was mutated. Exit 1 when any mutant survived, so a
 weak suite fails CI.
 
+## frob mutate
+
+`frob mutate FILE [--path DIR] [--json] [-- TEST-CMD]` -- `FILE` is the
+source module to mutate; `--path DIR` scopes which directory the default
+test discovery runs from when no explicit `-- TEST-CMD` is given;
+`--json` swaps the printed report for a machine-readable one. Everything
+after a literal `--` is passed through verbatim as the test command to
+run per mutant (defaulting to `uv run pytest -q` when omitted), so a
+narrower/faster test selection can be substituted per invocation without
+touching config.
+
 ## Why it matters
 
 TEST002 counts cases and TEST005 measures coverage, but both are gameable:

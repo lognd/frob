@@ -12,6 +12,15 @@ query`.
 
 <!-- frob:invariant INV-021 -->
 
+## frob serve
+
+`frob serve [path]` starts the MCP server over stdio, rooted at `path`
+(default: the repo root) -- it never returns while connected, since an
+MCP-aware client drives it over stdin/stdout for the life of the session.
+There is no `--json`/daemon mode here: the whole point is the MCP
+protocol itself, not a CLI report, so an agent wires it in as an MCP
+server entry rather than invoking it directly.
+
 ## mcp SDK
 
 <!-- frob:describes src/frob/serve/_tools.py::ServeError -->

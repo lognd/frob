@@ -10,6 +10,20 @@ Supersedes the current Type-1/Type-2 `frob.dup` when the re-platform onto
 operates on `frob.lang`'s normalized output, so a Python helper
 reimplemented in TypeScript is still a clone.
 
+## frob dup
+
+`frob dup [path] [--min-lines N] [--probe SYMREF_A SYMREF_B] [--json]`
+runs the rung ladder from the CLI, same entrypoint `frob check`'s DUP001
+gate uses. `path` scopes the scan (default: the repo root); `--min-lines
+N` (default 6) sets the minimum function-body size a rung will even
+consider, filtering out trivial matches; `--json` swaps the printed
+report for a machine-readable one. `--probe SYMREF_A SYMREF_B` runs rung
+R6 (observational equivalence) directly against two named symbols instead
+of the whole corpus -- it EXECUTES both symbols' source files via
+`importlib` with no sandbox, so only probe symrefs from a tree you
+already trust; see "R6 ... opt-in (`--probe`)" above and the safety note
+in that rung's own row.
+
 ## The rungs
 
 | Rung | Technique | Catches | Cost |

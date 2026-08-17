@@ -11,6 +11,15 @@ frob stats --days 90     # wider commit window
 frob stats --json        # machine-readable
 ```
 
+## frob stats
+
+Full flag surface: `frob stats [--path DIR] [--days N] [--json]`.
+`--path DIR` scopes the collection to a subdirectory (default: the repo
+root); `--days N` widens or narrows the commit-cadence window (default
+30); `--json` swaps the printed report for a machine-readable one. There
+is no gate wired to this command's output -- see the "One sentence"
+above: it is measurement-only, never enforced.
+
 Output covers:
 
 - **Tickets**: total, doable, blocked, counts by state and kind, and the

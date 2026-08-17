@@ -7,6 +7,20 @@ contracts is detectable statically -- a type checker for obligations.
 Built on `frob.lang` (tree-sitter): uniform symbol and comment extraction
 for Python, TypeScript, Rust, C, and C++.
 
+## frob graph
+
+Four subcommands, all read-only against the persisted cache: `frob graph
+build` (re)builds the graph cache from scratch, needed after a change
+`frob check`'s own incremental rebuild path did not pick up; `frob graph
+query REF` resolves a `path::Qualified.Name` symbol ref (see "Symbol
+references" below for the exact form) and prints its stored edges;
+`frob graph why REF` explains a ref's current drift/ack status and what
+remedies it (e.g. an `frob ack` call, a doc edit); `frob graph affects
+REF` reports the transitive closure of every uses-contract dependent plus
+every doc/test edge a change to `REF` would affect -- the same
+"blast radius" query `frob ack`/`frob check`'s DRIFT family reason about
+internally.
+
 ## Symbol references
 
 <!-- frob:waive DOC006 reason="illustrative example of the path::Qualified.Name form, not a real pointer -- GraphStore.load is a made-up placeholder, not a claim that this file/symbol exists" -->

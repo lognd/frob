@@ -15,6 +15,17 @@ frob clean --deep -y     # tier 3: + frob's own .frob/ caches, FROBLEMS.md
 frob clean --json        # machine-readable report, either tier
 ```
 
+## frob clean
+
+The full flag surface: `frob clean [path] [--all] [--deep] [-y/--yes]
+[--json]`. `path` scopes the scan to a subdirectory (default: the repo
+root); the three tier flags are additive, each pulling in the previous
+tier's candidate set plus its own (see "Tiers" below for exactly what
+each tier considers safe to remove); `-y`/`--yes` is the only flag that
+turns a dry-run preview into an actual deletion -- every other invocation
+just prints what WOULD be removed. `--json` swaps the printed candidate
+list for a machine-readable report, compatible with either tier.
+
 ## Tiers
 
 - **`CleanTier.SAFE`** (`frob clean`): fragments that are DEFINITELY never
