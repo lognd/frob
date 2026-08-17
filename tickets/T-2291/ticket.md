@@ -2,7 +2,7 @@
 id: T-2291
 title: reconcile --apply writes ledger demotions before its LandInProgress guard refuses,
   stranding them uncommitted and DirtyMain-blocking every agent land
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -13,16 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_reconcile.py
+evidence_scope:
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard::test_apply_refuses_and_writes_nothing_while_land_lock_held
+- tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard::test_apply_still_requeues_when_no_land_in_progress
+designated_repro_test: tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard::test_apply_refuses_and_writes_nothing_while_land_lock_held
 acceptance:
 - text: given a land in progress, when frob ticket reconcile --apply runs and refuses,
     then no ticket.md has been modified and git status on the root is clean
-  evidence: []
+  evidence:
+  - tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard::test_apply_refuses_and_writes_nothing_while_land_lock_held
 - text: given no land in progress, when reconcile --apply runs, then it requeues and
     commits as before (behaviour preserved)
-  evidence: []
+  evidence:
+  - tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard::test_apply_still_requeues_when_no_land_in_progress
 threat: null
 component: tickets
 anchor: false

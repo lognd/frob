@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.490.0] - unreleased
+
+- T-2291: reconcile --apply writes ledger demotions before its LandInProgress guard refuses, stranding them uncommitted and DirtyMain-blocking every agent land
+
 ## [0.489.0] - unreleased
 
 - T-1783: New rule: every top-level CLI verb needs a dedicated doc section, not just a table row

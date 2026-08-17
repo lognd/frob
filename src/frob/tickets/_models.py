@@ -1829,6 +1829,10 @@ class TicketError(ErrorSet):
     WorktreeLeaseViolation = (
         "FROB_WORKTREE is leased to a different worktree than this command's cwd"
     )
+    # frob:ticket T-2291
+    ReconcileLandInProgress = (
+        "reconcile --apply refuses to write while a frob ticket land is in progress"
+    )
     # frob:ticket T-2079
     # Ledger ownership (T-1669's design, split off as T-2079): a ticket
     # currently leased (cross-worktree lease side-channel, T-0473) to one

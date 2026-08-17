@@ -176,6 +176,100 @@ class TestReconcileStaleHold:
         _run(["git", "worktree", "remove", "--force", str(wt)], repo)
 
 
+class TestReconcileApplyLandInProgressGuard:
+    """T-2291: `reconcile(apply=True)` must refuse BEFORE writing anything
+    while a `frob ticket land` holds `.frob/land.lock` -- previously the
+    equivalent guard fired only later, at the ledger-commit step, after
+    `_requeue_stale_holds` had already mutated ticket.md on disk (the real
+    9246d4b5a/2d854269c incident). Both a must-now-fail (refused, tree
+    untouched) and a must-still-pass (no lock held, behaviour unchanged)
+    case are required so the guard cannot regress into over-refusing."""
+
+    def test_apply_refuses_and_writes_nothing_while_land_lock_held(
+        self, repo: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_ap\
+        # ply_refuses_and_writes_nothing_while_land_lock_held
+        import fcntl
+        import json
+        import os as _os
+
+        from frob.tickets._leases import LAND_LOCK_REL
+        from frob.tickets._models import TicketError
+
+        created = new_ticket(repo, _spec("Stale3", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-d", str(wt)], repo)
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = _os.open(str(lock_path), _os.O_CREAT | _os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _os.write(
+            holder_fd,
+            (json.dumps({"pid": _os.getpid(), "ticket_id": "T-8888"}) + "\n").encode(),
+        )
+        try:
+            status_before = _run(
+                ["git", "status", "--porcelain"], repo
+            ).stdout
+            with caplog.at_level("WARNING"):
+                result = reconcile(repo, apply=True, wait_timeout_s=0)
+            assert result.is_err
+            assert result.danger_err == TicketError.ReconcileLandInProgress
+
+            # The write did not happen: ledger unchanged on disk AND the
+            # working tree is exactly as dirty (or clean) as before the
+            # call -- not "requeued and abandoned uncommitted".
+            loaded = load_all(repo)
+            assert loaded.is_ok
+            assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
+            status_after = _run(["git", "status", "--porcelain"], repo).stdout
+            assert status_after == status_before
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            _os.close(holder_fd)
+
+    def test_apply_still_requeues_when_no_land_in_progress(self, repo: Path) -> None:
+        """Positive control: with no land lock held, `apply=True` still
+        performs the ordinary requeue -- the new guard must not weaken the
+        original T-0476 behaviour for the common, no-land-running case."""
+        # frob:tests \
+        # tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_ap\
+        # ply_still_requeues_when_no_land_in_progress
+        created = new_ticket(repo, _spec("Stale4", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-e", str(wt)], repo)
+        assert transition(wt, tid, TicketState.PLANNED).is_ok
+        assert transition(wt, tid, TicketState.IN_PROGRESS).is_ok
+        _run(["git", "worktree", "remove", "--force", str(wt)], repo)
+        _set_state_directly(repo, tid, TicketState.IN_PROGRESS)
+
+        assert not (repo / ".frob" / "land.lock").exists()
+        result = reconcile(repo, apply=True)
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.requeued_tickets == (tid,)
+        assert report.applied is True
+
+        loaded = load_all(repo)
+        assert loaded.is_ok
+        assert loaded.danger_ok[tid].state == TicketState.QUEUED
+
+
 class TestReconcileOrphanWorktree:
     def test_live_worktree_with_no_lease_is_flagged_not_removed(
         self, repo: Path

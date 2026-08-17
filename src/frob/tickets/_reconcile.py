@@ -30,7 +30,11 @@ from typani.result import Err, Ok, Result
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets._journal import _clear_intent, _read_all_intents
-from frob.tickets._leases import read_all_leases, release_lease
+from frob.tickets._leases import (
+    read_all_leases,
+    refuse_if_land_in_progress,
+    release_lease,
+)
 from frob.tickets._models import TicketError, TicketState
 from frob.tickets._store import load_all
 from frob.tickets._unlanded import _unlanded_branch_work
@@ -194,17 +198,50 @@ def _remove_orphan_worktrees(root: Path, orphans: tuple[Path, ...]) -> tuple[str
     return tuple(removed)
 
 
+# frob:ticket T-2291
+def _refuse_apply_if_land_in_progress(
+    root: Path, *, apply: bool, wait_timeout_s: float | None
+) -> Result[None, TicketError]:
+    """`reconcile`'s own pre-write guard (T-2291), split out to keep
+    `reconcile` under ARCH001's line threshold: when `apply` is set,
+    checks `refuse_if_land_in_progress` BEFORE any transition/lease/
+    worktree write runs, so a refusal leaves the tree untouched instead
+    of the pre-T-2291 shape (write first, refuse only later at the
+    caller's ledger-commit step, stranding the write uncommitted -- the
+    real 9246d4b5a incident). `Ok(None)` when `apply` is unset (a dry-run
+    never writes, so there is nothing to guard) or when no land is in
+    progress."""
+    if not apply:
+        return Ok(None)
+    land_check = refuse_if_land_in_progress(root, wait_timeout_s=wait_timeout_s)
+    if land_check.is_err:
+        _log.warning(
+            "tickets: reconcile --apply refused (land in progress under "
+            "%s) -- no ledger/lease/worktree write attempted",
+            root,
+        )
+        return Err(TicketError.ReconcileLandInProgress)
+    return Ok(None)
+
+
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileStaleHold.test_apply_requeues_stale_hold_and_releases_lease kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileOrphanWorktree.test_apply_and_remove_orphans_actually_removes_it kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork.test_reports_the_confirmed_leak_shape kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_refuses_and_writes_nothing_while_land_lock_held kind="unit"  # noqa: E501
+# frob:tests tests/test_ticket_reconcile.py::TestReconcileApplyLandInProgressGuard.test_apply_still_requeues_when_no_land_in_progress kind="unit"  # noqa: E501
 # frob:ticket T-0601
 # frob:ticket T-1934
+# frob:ticket T-2291
 # frob:waive AFFECT001 reason="same T-1720 live-lease conflict on \
 # docs/modules/tickets.md as ReconcileReport's own waiver above -- see that comment \
 # for the removal condition"
 def reconcile(
-    root: Path, *, apply: bool = False, remove_orphans: bool = False
+    root: Path,
+    *,
+    apply: bool = False,
+    remove_orphans: bool = False,
+    wait_timeout_s: float | None = None,
 ) -> Result[ReconcileReport, TicketError]:
     """Detect (and, if `apply`, heal) T-0476's two anomaly classes under
     `root`: stale `IN_PROGRESS` holds with no live lease (requeued to
@@ -217,7 +254,28 @@ def reconcile(
 
     `apply=False` (the default) is a pure dry-run: every anomaly is still
     detected and returned, nothing is mutated -- the same "report first,
-    mutate only when asked" posture `frob.clean.scan`/`clean` use."""
+    mutate only when asked" posture `frob.clean.scan`/`clean` use.
+
+    `wait_timeout_s` forwards to `refuse_if_land_in_progress`'s own bounded
+    wait (T-2291, `None` = its normal configured default) -- exposed here
+    only so a test can force an immediate refusal (`wait_timeout_s=0`)
+    without burning real wall-clock time on a lock that is held for the
+    whole test.
+
+    T-2291: when `apply` is set, this checks `refuse_if_land_in_progress`
+    FIRST, before any transition/lease/worktree write runs (see
+    `_refuse_apply_if_land_in_progress`) -- previously the equivalent
+    guard only fired later, at the caller's ledger-commit step
+    (`commit_full_ledger_change` -> `_add_and_commit_tickets_md`), by
+    which point `_requeue_stale_holds` had already mutated ticket.md
+    files on disk. A refusal now leaves the tree exactly as it found it:
+    `Err(TicketError.ReconcileLandInProgress)`, no write attempted."""
+    guard = _refuse_apply_if_land_in_progress(
+        root, apply=apply, wait_timeout_s=wait_timeout_s
+    )
+    if guard.is_err:
+        return Err(guard.danger_err)
+
     loaded = load_all(root)
     if loaded.is_err:
         return Err(loaded.danger_err)
