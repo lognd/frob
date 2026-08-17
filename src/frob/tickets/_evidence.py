@@ -152,13 +152,29 @@ def _has_done_report(body: str) -> bool:
     return has_substantive_done_report(body)
 
 
-def _start_blockers(ticket: Ticket, queue: dict[str, Ticket]) -> list[str]:
-    """Blocker ids of `ticket` that are unknown or still in an open state."""
-    from frob.tickets import _OPEN_STATES
+def _start_blockers(
+    ticket: Ticket, queue: dict[str, Ticket], root: Path | None = None
+) -> list[str]:
+    """Blocker ids of `ticket` that are unknown or still in an open state.
 
-    return [
-        b for b in ticket.blocked_by if b not in queue or queue[b].state in _OPEN_STATES
-    ]
+    T-1984: delegates to `frob.tickets._doable._open_blockers` (rather than
+    re-deriving its own open/closed check) so the QUEUED -> IN_PROGRESS
+    transition guard honors the SAME T-2104 read-time reconciliation
+    `doable`/`doable_blocked` already apply -- an IN_PROGRESS blocker whose
+    LIVE lease scope (`root` given) has since narrowed away from any
+    overlap with `ticket`'s own scope stops counting here too. Before this,
+    `doable` could list a ticket as dispatchable while `frob ticket start`
+    on that exact ticket still refused with `BlockerOpen`: T-2104 patched
+    only the read-side listing, never the write-side transition guard that
+    actually gates `start` (measured, T-1984's own repro:
+    `TestStartHonorsSelfHealedBlockedBy.test_narrowed_in_progress_blocker_
+    no_longer_blocks_start`). `root=None` (a caller with no repo root to
+    hand) preserves the exact prior behavior unchanged, matching `_open_
+    blockers`'s own `root=None` contract."""
+    from frob.tickets._doable import _open_blockers
+    from frob.tickets._models import TicketQueue
+
+    return list(_open_blockers(TicketQueue(tickets=queue), ticket, root))
 
 
 # frob:ticket T-1613
@@ -198,7 +214,7 @@ def _transition_guard(
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
-        open_ids = _start_blockers(ticket, queue)
+        open_ids = _start_blockers(ticket, queue, root)
         if open_ids:
             _log.warning(
                 "tickets: %s cannot start, open blockers %s", ticket.id, open_ids

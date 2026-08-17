@@ -2,7 +2,7 @@
 id: T-1984
 title: 'block writes a permanent edge for a transient lease collision, and there is
   no unblock: two starved tickets are now unreachable'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,10 +12,37 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_doable.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/
+  reason: narrow to the start-time blocker-check gap and its self-heal fix
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: narrow to the start-time blocker-check gap and its self-heal fix
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: narrow to the start-time blocker-check gap and its self-heal fix
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_tickets.py
+  reason: narrow to the start-time blocker-check gap and its self-heal fix
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy::test_narrowed_in_progress_blocker_no_longer_blocks_start
+- tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy::test_still_overlapping_in_progress_blocker_still_refuses_start
+- tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy::test_queued_blocker_still_refuses_start_regardless_of_scope
+designated_repro_test: tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy::test_narrowed_in_progress_blocker_no_longer_blocks_start
 threat: null
 component: null
 anchor: false

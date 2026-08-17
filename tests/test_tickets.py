@@ -857,6 +857,91 @@ class TestDoableStaleBlockedBySelfHeals:
         assert "T-0001" not in {t.id for t in result}
 
 
+# frob:ticket T-1984
+class TestStartHonorsSelfHealedBlockedBy:
+    """T-1984: `doable`'s T-2104 self-heal (an IN_PROGRESS blocker's
+    `blocked_by` edge stops counting once its LIVE lease scope narrows
+    away from any overlap) only ever patched `doable`/`doable_blocked` --
+    the actual QUEUED -> IN_PROGRESS transition guard (`_start_blockers`,
+    consulted by `transition`/`frob ticket start`) never threaded `root`
+    through at all, so a ticket T-2104 lists as doable still refused to
+    actually START with `TicketError.BlockerOpen`. That is the real
+    remaining half of T-1984's own incident: `frob ticket doable` listing
+    a ticket is not the same as `frob ticket start` accepting it."""
+
+    # frob:ticket T-1984
+    def test_narrowed_in_progress_blocker_no_longer_blocks_start(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_narrowed_in_pr\
+        # ogress_blocker_no_longer_blocks_start
+        """(MUST FAIL FIRST on main): once the IN_PROGRESS blocker's live
+        scope no longer overlaps the blocked ticket's own scope, `transition`
+        to IN_PROGRESS must succeed -- fails today: `_start_blockers` never
+        consults `root`/live lease scope at all, unlike `_open_blockers`."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.PLANNED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Holder"
+        ).model_copy(update={"scope": ("src/frob/tickets/_y.py",)})
+        _write(tmp_path, holder, slug="holder")
+
+        result = transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+        assert result.is_ok, result.err
+        assert result.danger_ok.state == TicketState.IN_PROGRESS
+
+    # frob:ticket T-1984
+    def test_still_overlapping_in_progress_blocker_still_refuses_start(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_still_overlapp\
+        # ing_in_progress_blocker_still_refuses_start
+        """MUST-STILL-PASS control: an IN_PROGRESS blocker whose scope
+        STILL overlaps the blocked ticket's own scope keeps refusing the
+        start -- narrowing-triggered self-heal only, never a blanket
+        bypass of a genuine live collision."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.PLANNED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Holder"
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, holder, slug="holder")
+
+        result = transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+        assert result.is_err
+        assert result.danger_err == TicketError.BlockerOpen
+
+    # frob:ticket T-1984
+    def test_queued_blocker_still_refuses_start_regardless_of_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestStartHonorsSelfHealedBlockedBy.test_queued_blocker\
+        # _still_refuses_start_regardless_of_scope
+        """MUST-STILL-PASS control: a genuine dependency edge against a
+        QUEUED (not IN_PROGRESS, no live lease) blocker is honored exactly
+        as before -- disjoint scope is not license to self-heal a
+        deliberate non-scope-collision dependency at start time either."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.PLANNED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.QUEUED, title="Design first"
+        ).model_copy(update={"scope": ("src/frob/tickets/_y.py",)})
+        _write(tmp_path, holder, slug="holder")
+
+        result = transition(tmp_path, "T-0001", TicketState.IN_PROGRESS)
+        assert result.is_err
+        assert result.danger_err == TicketError.BlockerOpen
+
+
 class TestFailureLog:
     def test_appends_creates_section(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_reporting.py::record_failure
