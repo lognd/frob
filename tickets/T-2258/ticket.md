@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d21d2570d092c0ddde4088a577832a72b984e6e0
 ---
 # T-2221's xdist bound is never applied: `frob ticket work` creates the worktree, knows the env, and never surfaces it -- agents run unbounded and drove the box to 1GB free RAM
 
