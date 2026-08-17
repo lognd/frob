@@ -188,3 +188,39 @@ non-blocking flock on that same lock file) and before
 `_refuse_if_main_dirty`'s own DirtyMain check -- so a dead land's residue
 is cleared automatically at the start of the very next land attempt,
 instead of requiring a coordinator to notice and clear it by hand.
+
+**T-2286 fixed a real defect in the "is this orphaned residue" test
+itself.** The original test was "`root` is dirty AND `land.lock` is
+free" -- that is not evidence of squash residue, it is evidence of
+nothing: `land.lock` is free in the ordinary case (no land currently in
+flight), so ANY uncommitted content on `root` -- a stray untracked file,
+a genuinely hand-edited `uv.lock`, anything -- got silently `git reset
+--hard` + `git clean -fd`'d away here, before `_refuse_if_main_dirty`
+ever got a chance to see the dirt and refuse. That both destroyed real
+uncommitted content and defeated the DirtyMain safety check for every
+land where nothing else currently held the lock (confirmed directly via
+`tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main` and
+both `TestUvLockSync` dirty-lock tests, which failed exactly this way
+against the pre-fix code).
+
+The fix adds a POSITIVE marker requirement, reusing the T-0907/T-1963
+land-repair marker (`frob.tickets._land_git_ops._land_repair_dir`,
+written by `_write_land_repair_marker` strictly BEFORE
+`_land_squash_apply` starts mutating `root`, cleared the moment it
+returns) rather than inventing a second mechanism: `reclaim_orphaned_
+squash_residue` now resets `root` only when at least one such marker is
+present on disk AND `land.lock` is free. A marker can only exist if a
+real `_land_squash_apply` call started (and, since it survived, never
+finished) mutating `root` -- so "marker present + lock free" is proof
+the run that wrote it is dead, not a guess derived from the shape of the
+dirt. A dirty `root` with no marker is left completely untouched, for
+`_refuse_if_main_dirty` to see and refuse on its own terms. The three
+path/dir helpers this marker family shares (`_LAND_REPAIR_DIRNAME`/
+`_land_repair_dir`/`_land_repair_marker_path`) moved from `frob.tickets.
+_land` to `frob.tickets._land_git_ops` as part of this fix, so this
+reclaim function can read them without a circular import -- `_land.py`
+imports them back under their original names; the T-0907/T-1963
+marker-writing/reconciling functions themselves (`_write_land_repair_
+marker`, `_clear_land_repair_marker`, `_repair_stale_land_marker`,
+`_reconcile_one_land_repair_marker`) are unchanged and still live in
+`_land.py`.

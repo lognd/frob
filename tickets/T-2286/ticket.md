@@ -1,7 +1,7 @@
 ---
 id: T-2286
 title: reclaim_orphaned_squash_residue silently discards genuine dirty-main content
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,33 @@ runs_last: false
 scope:
 - src/frob/tickets/_land_git_ops.py
 - src/frob/tickets/_land.py
+- docs/design/land-checkpoint-durability.md
+- tests/unit/test_land_squash_residue_reclaim.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: docs/design/land-checkpoint-durability.md
+  reason: 'T-2286: cross-reference the marker-based fix in its existing design doc,
+    and update the reclaim-family fixture/regression test the fix directly touches'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_land_squash_residue_reclaim.py
+  reason: 'T-2286: cross-reference the marker-based fix in its existing design doc,
+    and update the reclaim-family fixture/regression test the fix directly touches'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
+- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_with_other_change_still_refuses
+- tests/test_ticket_land.py::TestUvLockSync::test_dirty_lock_version_plus_other_line_still_refuses
+- tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_dirty_without_a_marker_is_never_reclaimed
+- tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_reclaims_when_no_live_land_holds_the_lock
+- tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue::test_does_not_touch_a_live_lands_own_staging
+designated_repro_test: tests/test_ticket_land.py::TestLand::test_refuses_on_dirty_main
 threat: null
 component: null
 anchor: false

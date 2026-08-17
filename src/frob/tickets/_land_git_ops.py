@@ -79,6 +79,31 @@ from frob.tickets._store import (
 
 _log = get_logger(__name__)
 
+# frob:ticket T-0907
+# frob:ticket T-2286
+# T-2286: moved from `frob.tickets._land` (where T-0907/T-1963 originally
+# defined this trio) so `reclaim_orphaned_squash_residue` below can read
+# the SAME marker `_land.py`'s `_write_land_repair_marker` writes, as its
+# positive "this is genuine dead-land squash residue" signal, without a
+# circular import (`_land.py` already imports the rest of this reclaim
+# family FROM this module, never the reverse). `_land.py` imports these
+# three names back under their original names; no behavior change to any
+# of the T-0907/T-1963 marker-writing/reconciling functions still defined
+# there.
+_LAND_REPAIR_DIRNAME = "land-repair"
+
+
+def _land_repair_dir(root: Path) -> Path:
+    """`<root>/.frob/land-repair`, where a crashed `land()`'s pre-mutation
+    root tip is recorded (T-0907) so a later invocation can reconcile it."""
+    return root / ".frob" / _LAND_REPAIR_DIRNAME
+
+
+def _land_repair_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket land-repair marker path under `root` (T-0907)."""
+    return _land_repair_dir(root) / f"{ticket_id}.json"
+
+
 # T-2157: same posix-only degradation as `frob.tickets._land`'s own
 # `_land_lock` -- see `reclaim_orphaned_squash_residue`'s docstring for why
 # this module reads (never writes) that module's `LAND_LOCK_REL` constant
@@ -266,6 +291,7 @@ def _verified_reset_root(
 
 # frob:ticket T-2157
 # frob:ticket T-2170
+# frob:ticket T-2286
 # frob:doc \
 # docs/design/land-checkpoint-durability.md#reclaim_orphaned_squash_residue-t-2157t-2170
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock  # noqa: E501
@@ -273,8 +299,12 @@ def _verified_reset_root(
 # frob:tests \
 # tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test\
 # _clean_root_is_a_no_op
+# frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_land_calls_reclaim_before_acquiring_its_own_lock  # noqa: E501
 # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestLandCallsReclaimAtStartup.test_orphaned_residue_from_a_dead_land_is_cleared_before_the_dirtymain_refusal  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestLand.test_refuses_on_dirty_main
+# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_with_other_change_still_refuses  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestUvLockSync.test_dirty_lock_version_plus_other_line_still_refuses  # noqa: E501
 def reclaim_orphaned_squash_residue(
     root: Path, ticket_id: str
 ) -> Result[bool, LandError]:
@@ -326,12 +356,57 @@ def reclaim_orphaned_squash_residue(
     ZERO production callers; the fleet-blocking trap it exists to close
     (a killed land's staged residue silently refusing every other agent's
     land until a human clears it by hand) was only closed by this wiring,
-    not by the primitive's own existence."""
+    not by the primitive's own existence.
+
+    T-2286: as originally wired, this treated "root is dirty AND land.lock
+    is free" alone as proof of orphaned squash residue. That is not
+    evidence of residue -- it is evidence of nothing: `land.lock` is free
+    in the overwhelmingly common case (no land currently in flight), so
+    ANY uncommitted content on `root` -- a stray untracked file, a
+    genuinely hand-edited `uv.lock`, anything -- got silently `git reset
+    --hard` + `git clean -fd`'d away here, before `_refuse_if_main_dirty`
+    ever got a chance to see the dirt and refuse. That both destroyed real
+    uncommitted content and defeated the DirtyMain safety check for every
+    land where nothing else currently held the lock (confirmed directly:
+    `TestLand::test_refuses_on_dirty_main` and both `TestUvLockSync` dirty
+    -lock tests in `tests/test_ticket_land.py` failed exactly this way).
+
+    Fixed by requiring a POSITIVE marker, not a heuristic: this now only
+    ever resets `root` when at least one T-0907/T-1963 land-repair marker
+    (`_land_repair_dir`, written by `_write_land_repair_marker` in
+    `frob.tickets._land` strictly BEFORE `_land_squash_apply` starts
+    mutating `root`, and cleared the moment it returns) is present on
+    disk. That marker already exists for exactly this purpose -- T-1963
+    hardened its own in-lock reconciliation (`_repair_stale_land_marker`)
+    to repair unconditionally regardless of tip drift -- so reusing it
+    here is applying the SAME positive-evidence primitive one call earlier
+    (before the lock is acquired), not inventing a second mechanism. A
+    dirty `root` with no marker present is no longer touched at all: it is
+    left for `_refuse_if_main_dirty` to see and refuse, exactly as a
+    genuinely unrelated dirty file must be. A marker can only exist here
+    if a real `_land_squash_apply` call started (and, since it is still
+    present, never finished) mutating `root` -- so "marker present + lock
+    free" is proof the run that wrote it is dead, not a guess about what
+    the resulting dirt looks like."""
+    marker_dir = _land_repair_dir(root)
+    markers = sorted(marker_dir.glob("*.json")) if marker_dir.is_dir() else []
+    if not markers:
+        # T-2286: no positive evidence of squash residue at all -- do not
+        # even bother checking dirty state (a marker-less clean root is
+        # the common case anyway) or the lock; leave `root` completely
+        # untouched for `_refuse_if_main_dirty` to evaluate on its own
+        # terms, whatever it finds.
+        return Ok(False)
     dirty = _porcelain_dirty(root)
     if dirty.is_err:
         return Err(dirty.danger_err)
     if not dirty.danger_ok:
-        return Ok(False)
+        # A marker survived with nothing left to clean up (e.g. the
+        # crashed run died between writing the marker and its own first
+        # mutation) -- still genuine orphaned state to clear, just with an
+        # empty working tree; fall through so the markers themselves get
+        # removed rather than lingering forever.
+        return _clear_markers_only(markers, ticket_id)
     if _fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
         _log.warning(
             "land: %s reclaim_orphaned_squash_residue: fcntl unavailable on "
@@ -341,15 +416,36 @@ def reclaim_orphaned_squash_residue(
             root,
         )
         return Ok(False)
-    return _reclaim_via_land_lock_probe(root, ticket_id)
+    return _reclaim_via_land_lock_probe(root, ticket_id, markers)
 
 
-def _reclaim_via_land_lock_probe(root: Path, ticket_id: str) -> Result[bool, LandError]:
+def _clear_markers_only(
+    markers: Sequence[Path], ticket_id: str
+) -> Result[bool, LandError]:
+    """A land-repair marker survived with nothing dirty left to reset --
+    still clears the stale marker(s) so they do not linger forever, but
+    performs no git mutation at all (T-2286: nothing to reclaim)."""
+    for marker_path in markers:
+        marker_path.unlink(missing_ok=True)
+    _log.info(
+        "land: %s cleared %d stale land-repair marker(s) with no "
+        "corresponding dirty state left to reset",
+        ticket_id,
+        len(markers),
+    )
+    return Ok(True)
+
+
+def _reclaim_via_land_lock_probe(
+    root: Path, ticket_id: str, markers: Sequence[Path]
+) -> Result[bool, LandError]:
     """The lock-acquire-then-reset half of `reclaim_orphaned_squash_residue`,
     split out to keep that function's own decision-point count under
     ARCH001/ARCH103's threshold -- pure extraction, no behavior change.
-    Assumes `root` is already known dirty and `_fcntl` is available; the
-    caller (`reclaim_orphaned_squash_residue`) checks both first."""
+    Assumes `root` is already known dirty, at least one land-repair marker
+    is present (`markers`, T-2286's positive-evidence requirement), and
+    `_fcntl` is available; the caller (`reclaim_orphaned_squash_residue`)
+    checks all three first."""
     assert _fcntl is not None  # narrows for the type checker; caller already checked
     lock_path = root / LAND_LOCK_REL
     lock_path.parent.mkdir(parents=True, exist_ok=True)
@@ -358,43 +454,51 @@ def _reclaim_via_land_lock_probe(root: Path, ticket_id: str) -> Result[bool, Lan
         _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
     except OSError:
         _log.warning(
-            "land: %s root %s has staged/dirty content but land.lock is "
-            "currently HELD by a live process -- this is a live land's own "
-            "staging, not orphaned residue; leaving it untouched",
+            "land: %s root %s has staged/dirty content and a land-repair "
+            "marker is present, but land.lock is currently HELD by a live "
+            "process -- this is a live land's own in-progress staging, not "
+            "orphaned residue; leaving it untouched",
             ticket_id,
             root,
         )
         os.close(fd)
         return Ok(False)
     try:
-        return _reset_orphaned_residue_under_lock(root, ticket_id)
+        return _reset_orphaned_residue_under_lock(root, ticket_id, markers)
     finally:
         _fcntl.flock(fd, _fcntl.LOCK_UN)
         os.close(fd)
 
 
 def _reset_orphaned_residue_under_lock(
-    root: Path, ticket_id: str
+    root: Path, ticket_id: str, markers: Sequence[Path]
 ) -> Result[bool, LandError]:
     """The actual reset+clean, run only once `_reclaim_via_land_lock_probe`
     has proven `land.lock` is free -- split out for the same ARCH103
-    reason as its caller."""
+    reason as its caller. Clears every marker in `markers` once the reset
+    succeeds (T-2286): the residue they were positive evidence for is now
+    gone, so leaving them behind would misidentify a future genuinely dirty
+    `root` as orphaned residue all over again."""
     current = _rev_parse(root, "HEAD")
     if current.is_err:
         return Err(current.danger_err)
     pre_land_tip = current.danger_ok
     _log.warning(
         "land: %s reclaiming orphaned squash-merge residue in %s -- "
-        "land.lock was free (no live land process holds it) while "
-        "root's index/working tree carried uncommitted content; "
-        "resetting to HEAD (%s) and cleaning untracked files",
+        "land.lock was free (no live land process holds it) and %d "
+        "land-repair marker(s) (T-0907/T-1963) prove this is genuine dead"
+        "-land residue, not arbitrary dirt (T-2286); resetting to HEAD "
+        "(%s) and cleaning untracked files",
         ticket_id,
         root,
+        len(markers),
         pre_land_tip,
     )
     reset = _verified_reset_root(root, pre_land_tip, ticket_id)
     if reset.is_err:
         return Err(reset.danger_err)
+    for marker_path in markers:
+        marker_path.unlink(missing_ok=True)
     return Ok(True)
 
 

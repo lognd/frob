@@ -15,12 +15,16 @@ ticket_land.py`, which T-2114/T-2118 hold a lease on this session.
 from __future__ import annotations
 
 import fcntl
+import json
 import os
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
-from frob.tickets._land_git_ops import reclaim_orphaned_squash_residue
+from frob.tickets._land_git_ops import (
+    _land_repair_marker_path,
+    reclaim_orphaned_squash_residue,
+)
 from frob.tickets._leases import LAND_LOCK_REL
 
 
@@ -49,19 +53,34 @@ def _seed_root(tmp_path: Path) -> Path:
     return root
 
 
-def _simulate_orphaned_squash_stage(root: Path) -> None:
+# frob:ticket T-2286
+def _simulate_orphaned_squash_stage(root: Path, *, ticket_id: str = "T-9999") -> None:
     """Mimics what a killed `_squash_and_splice_ledger` leaves behind: a
     tracked file modified AND staged, plus an untracked file added but not
     staged -- both must be gone after a successful reclaim, matching what
     `git merge --squash --no-commit` really stages (modified/added tracked
     content is staged; some untracked scratch content is not, exactly like
     T-2157's own incident report's `git status --porcelain` listing showed
-    a mix of `M `/`A ` and untouched paths)."""
+    a mix of `M `/`A ` and untouched paths).
+
+    T-2286: a real killed squash-merge ALWAYS has a T-0907/T-1963
+    land-repair marker on disk too -- `_write_land_repair_marker` in
+    `frob.tickets._land` writes it strictly BEFORE `_land_squash_apply`
+    starts mutating `root`, so this fixture now writes one as well, to
+    stay a faithful "real killed-land shape" rather than a synthetic one
+    that omits the exact positive-evidence signal the fix now requires."""
+    marker_path = _land_repair_marker_path(root, ticket_id)
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_path.write_text(
+        json.dumps({"ticket_id": ticket_id, "pre_land_tip": "deadbeef"}) + "\n",
+        encoding="utf-8",
+    )
     (root / "committed.txt").write_text("squash-modified\n")
     _run(["git", "add", "committed.txt"], root)
     (root / "untracked-scratch.txt").write_text("scratch\n")
 
 
+# frob:ticket T-2286
 class TestReclaimOrphanedSquashResidue:
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_reclaims_when_no_live_land_holds_the_lock kind="unit"  # noqa: E501
     def test_reclaims_when_no_live_land_holds_the_lock(self, tmp_path: Path) -> None:
@@ -130,6 +149,32 @@ class TestReclaimOrphanedSquashResidue:
 
         post = _run(["git", "status", "--porcelain"], root)
         assert post.stdout.strip() == ""
+
+    # frob:ticket T-2286
+    # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_dirty_without_a_marker_is_never_reclaimed kind="unit"  # noqa: E501
+    def test_dirty_without_a_marker_is_never_reclaimed(self, tmp_path: Path) -> None:
+        """T-2286's own acceptance test: `root` dirty AND `land.lock` free
+        is NOT, by itself, proof of orphaned squash residue -- a stray
+        uncommitted file (a hand-edited `uv.lock`, `dirty.txt`, anything)
+        must survive untouched with no T-0907/T-1963 land-repair marker on
+        disk, since nothing ever proved a squash-merge staged it. FAILS
+        against the pre-fix `reclaim_orphaned_squash_residue`, which reset
+        ANY dirty-and-unlocked root unconditionally."""
+        root = _seed_root(tmp_path)
+        (root / "dirty.txt").write_text("uncommitted, unrelated to any land\n")
+
+        result = reclaim_orphaned_squash_residue(root, "T-9999")
+        assert result.is_ok, result
+        assert result.danger_ok is False, (
+            "a dirty root with no land-repair marker must never be reset -- "
+            "that is arbitrary dirt, not proven squash residue"
+        )
+
+        post = _run(["git", "status", "--porcelain"], root)
+        assert "dirty.txt" in post.stdout, (
+            "genuine uncommitted content must survive when no marker proves "
+            "it is dead-land residue"
+        )
 
 
 class TestLandCallsReclaimAtStartup:

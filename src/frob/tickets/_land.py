@@ -62,6 +62,8 @@ from frob.tickets._land_git_ops import (
     _auto_resolve_out_of_scope_conflicts,
     _commit_rapid_debt_only_drift,
     _committed_out_of_scope_waive_deletions,
+    _land_repair_dir,
+    _land_repair_marker_path,
     _merge_main_into_worktree,
     _porcelain_dirty,
     _restore_lock_version_only_drift,
@@ -487,20 +489,16 @@ def _land_lock(
 # reconciled by `_repair_stale_land_marker` at the START of the NEXT
 # `land()` call against the same `root`/ticket -- the "leave an explicit
 # marker the next invocation repairs" half of the T-0907 fix requirement.
-_LAND_REPAIR_DIRNAME = "land-repair"
-
-
-# frob:ticket T-0907
-def _land_repair_dir(root: Path) -> Path:
-    """`<root>/.frob/land-repair`, where a crashed `land()`'s pre-mutation
-    root tip is recorded (T-0907) so a later invocation can reconcile it."""
-    return root / ".frob" / _LAND_REPAIR_DIRNAME
-
-
-# frob:ticket T-0907
-def _land_repair_marker_path(root: Path, ticket_id: str) -> Path:
-    """The per-ticket land-repair marker path under `root` (T-0907)."""
-    return _land_repair_dir(root) / f"{ticket_id}.json"
+#
+# T-2286: `_LAND_REPAIR_DIRNAME`/`_land_repair_dir`/`_land_repair_marker_
+# path` moved to `frob.tickets._land_git_ops` (the git-plumbing home this
+# module already imports the rest of the reclaim family from) so
+# `reclaim_orphaned_squash_residue` there can read the SAME marker this
+# module writes as its positive "this dirt is genuine squash residue"
+# signal, instead of guessing from dirty-state alone -- see that module's
+# docstring for the fix this closes. Imported back here under their
+# original names; no caller-visible change to any function still defined
+# in this module.
 
 
 # frob:ticket T-0907
