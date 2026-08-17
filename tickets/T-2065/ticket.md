@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 90c8e43caeb5bc6b9024acfd36d2b5e415eded57
 ---
 Surfaced while measuring T-2055 (_land_gate_claims_fn's spawn cost).
 
