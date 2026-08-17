@@ -396,10 +396,11 @@ argument -- `frob ticket land T-#### --worktree ...` -- there is no
 "frob ticket land"` overcounting by roughly 4x (the bash wrapper,
 `timeout`, `uv run`, and the real python process all match the same
 grep). Each entry reports pids, elapsed seconds (MAX across the row
-group), and CPU time (MAX across the group) -- content alone cannot
-distinguish a live land from a dead attempt's residue (a killed land's
-staged diff is byte-identical across retries), but CPU time
-discriminates immediately.
+group), CPU time (MAX across the group), and (T-2249) `child_cpu_s`
+(`_descendant_cpu_seconds`, summed over every live descendant of the
+group's own pids) -- content alone cannot distinguish a live land from a
+dead attempt's residue (a killed land's staged diff is byte-identical
+across retries), but CPU time discriminates immediately.
 
 **T-2193 fix**: an earlier version looked for a `--ticket T-####` FLAG,
 which does not exist on `land`'s own argparse usage, so it matched
@@ -410,6 +411,33 @@ reported as their own invocation -- there is nothing to deduplicate an
 uncorrelated row against, so it is process-table noise (e.g. a
 coordinator's own wait-loop shell whose command line merely contains
 the text), never evidence of a land.
+
+**T-2249 fold-in (not separately ticketed)**: `cpu_s` alone reads a
+healthy land running `frob check` as a CHILD process as a near-zero-CPU
+stall -- the 4 tracked rows (bash wrapper, `timeout`, `uv run`, the
+python process) accumulate almost none of their own CPU while the real
+work happens one process down. `child_cpu_s` fixes this by walking the
+whole process tree, chased twice before being fixed here.
+
+### `_all_process_ppid_cpu`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_all_process_ppid_cpu -->
+
+T-2249. `{pid: (ppid, cpu_seconds)}` for every live process, ONE
+`ps -eo pid,ppid,time` call -- the snapshot `_descendant_cpu_seconds`
+builds a child-lookup table from, so `land_invocations` costs one extra
+`ps` invocation total for the whole report, never one per descendant.
+Structured columns only (matching `land_process_rows`'s own contract),
+never a text line-count.
+
+### `_descendant_cpu_seconds`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_descendant_cpu_seconds -->
+
+T-2249. Sum of `_all_process_ppid_cpu`'s own cpu-seconds for every LIVE
+descendant of a set of root pids (never the root pids themselves) --
+walks the ppid links built from ONE `ps` snapshot, so summing a land's
+whole process tree costs nothing extra per pid.
 
 ### `land_lock_holder_pids`
 
@@ -434,7 +462,36 @@ locale). Reads `MemAvailable`, not `MemFree` -- a busy-but-healthy Linux
 host commonly shows `MemFree` near 0 with most memory held as
 reclaimable page cache, so reading `MemFree` would raise a false alarm
 on every busy host. Returns `None` (never a fabricated zero) when either
-`/proc` file is missing or unparseable.
+`/proc` file is missing or unparseable. `MemAvailable` alone is not the
+whole memory-pressure picture -- see `swap_pressure`.
+
+### `swap_pressure`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#swap_pressure -->
+
+T-2249. `(swap_used_kb, swap_total_kb)` read from `/proc/meminfo`'s
+`SwapTotal`/`SwapFree` fields -- the same file `host_load` already reads
+`MemAvailable` from, no new `/proc` file and no subprocess. Measured
+incident: `MemAvailable` read a healthy 11.5GB while the same host had 0
+free RAM and 6GB already in swap -- `MemAvailable` counts reclaimable
+page cache and says nothing about pages already pushed to swap.
+`swap_total_kb == 0` (no swap configured) is a real, valid case, never
+an error. Returns `None` (never a fabricated zero) when the file is
+missing/unparseable.
+
+### `_swap_guidance`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_swap_guidance -->
+
+T-2249. The concurrency GUIDANCE clause text: the static `"3-4 agent
+concurrent"` unless `swap_pressure`'s own reading shows
+`swap_used_kb >= _SWAP_PRESSURE_FLOOR_KB` (1GB -- set well below the
+measured 6GB incident and well above the few-MB of swap a healthy host
+routinely carries; "any swap at all" is deliberately NOT the trigger,
+per the ticket's own caution), in which case it names the pressure
+directly. `swap is None` (unknown) or `swap_total_kb == 0` (no swap
+configured) both fall through to the ordinary guidance -- pressure is
+only ever claimed from a real reading.
 
 ### `_land_status_lines`
 
@@ -444,22 +501,32 @@ T-2180 (ARCH103 split, same precedent as `_ticket_readiness_lines`).
 Renders the LANDS/LAND LOCK/LOAD block as plain text lines from
 already-computed inputs -- the pure-compute half, no `print` call, so
 `_print_land_status` stays I/O-only. T-2222: the LOAD line's own
-concurrency guidance clause is computed from the LIVE lease count
-(`live_lease_count`), never the raw `len(leases())` -- both are shown
+concurrency guidance clause (`_swap_guidance`, T-2249) is computed from
+the LIVE lease count (`live_lease_count`) and swap pressure together,
+never the raw `len(leases())` alone -- both lease counts are shown
 (`"N live lease(s) (M total)"`) so a reclaimable/root-resident lease is
 never silently read as a live agent.
+
+T-2249 fold-in (not separately ticketed): an idle `LAND LOCK` (file
+exists, no live `/proc`-fd holder) now prints as the NORMAL resting
+state, never 'stale' -- a flock is kernel-released the instant its
+holder dies, so this wording had already contributed to one retracted
+ticket claiming a stale lock deadlocked the fleet. Each land's `cpu=`
+line also shows `child_cpu_s` (`land_invocations`' own field) when
+nonzero.
 
 ### `_print_land_status`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_land_status -->
 
 T-2180. Prints the LANDS section: `land_invocations` (ticket id, pids,
-elapsed, cpu), `land.lock` holder liveness, and a LOAD line
-(`host_load`'s load average and available memory, plus the live/total
-held-lease counts, T-2222) against this host's recorded 3-4 concurrent
-agent operational guidance. Printed unconditionally inside
-`_print_fleet_report`, in the standing report a coordinator already
-runs -- not behind a separate command (the "automatic over commands"
+elapsed, cpu, child cpu), `land.lock` holder liveness, and a LOAD line
+(`host_load`'s load average and available memory, `swap_pressure`
+(T-2249), plus the live/total held-lease counts, T-2222) against this
+host's recorded concurrency guidance (`_swap_guidance`). Printed
+unconditionally inside `_print_fleet_report`, in the standing report a
+coordinator already runs -- not behind a separate command (the
+"automatic over commands"
 rule). Six concurrent agents against the documented cap went unnoticed
 on this host until someone
 checked `ps`/`free` by hand; this line is where that check now lives.

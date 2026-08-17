@@ -2,7 +2,7 @@
 id: T-2249
 title: fleet_status's concurrency guidance keys on MEM available, which read 11.5GB
   healthy while the machine was already swapping 6GB with 0 free RAM
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,24 +13,47 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: new repro/regression tests for the swap-pressure fix and the two folded-in
+    fixes
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'doc closure: new/changed public symbols need frob:doc anchors'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 acceptance:
 - text: 'With swap in use, the report surfaces it and the concurrency guidance reflects
     the pressure (fails today: swap never read, guidance is a static string)'
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: 'MUST-STILL-PASS: on a machine with SwapTotal 0, no false pressure claim and
     no crash (division by zero total)'
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: Existing LOAD/MEM figures reported unchanged -- this adds a signal, does not
     replace them
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: Reads /proc/meminfo directly, consistent with existing MemAvailable handling;
     no subprocess, no new dependency
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 - text: State the measured basis for any threshold chosen
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestSwapGuidance::test_swap_above_floor_overrides_the_static_guidance
 threat: null
 component: null
 anchor: false

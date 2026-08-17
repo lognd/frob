@@ -929,6 +929,74 @@ def land_process_rows() -> list[dict]:
     return rows
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_all_process_ppid_cpu
+def _all_process_ppid_cpu() -> dict[int, tuple[int, int]]:
+    """`{pid: (ppid, cpu_seconds)}` for every live process, ONE `ps -eo
+    pid,ppid,time` call -- the snapshot `_descendant_cpu_seconds` builds
+    a child-lookup table from, so summing a land's whole process tree
+    costs one extra `ps` invocation total, never one per descendant.
+    Structured columns only, matching this file's existing `ps -eo
+    pid,etimes,time,args` usage in `land_process_rows` -- never a text
+    line-count (`ps aux | grep -c ...`), the class of bug that already
+    produced a 4x land-count miscount here once."""
+    try:
+        done = subprocess.run(
+            ["ps", "-eo", "pid,ppid,time"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
+    if done.returncode != 0:
+        return {}
+    table: dict[int, tuple[int, int]] = {}
+    for line in done.stdout.splitlines()[1:]:
+        parts = line.split(None, 2)
+        if len(parts) < 3:
+            continue
+        pid_s, ppid_s, cputime_s = parts
+        try:
+            pid = int(pid_s)
+            ppid = int(ppid_s)
+        except ValueError:
+            continue
+        table[pid] = (ppid, _parse_ps_cpu_time(cputime_s))
+    return table
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_descendant_cpu_seconds
+def _descendant_cpu_seconds(
+    root_pids: list[int], table: dict[int, tuple[int, int]]
+) -> int:
+    """Sum of `table`'s own cpu-seconds for every LIVE descendant of
+    `root_pids` (never `root_pids` themselves) -- a land's tracked pids
+    (bash wrapper, `timeout`, `uv run`, the python process) are each a
+    real row in `land_process_rows`'s own `cpu_s`, but a healthy land
+    running `frob check` as a CHILD of the python process accumulates
+    real CPU time on a pid this land's own row never counts, reading as
+    a near-zero-CPU stall. This walks `table`'s ppid links (built once by
+    `_all_process_ppid_cpu`, never a second `ps` call per pid) to total
+    every descendant's own time, so `land_invocations`' `child_cpu_s`
+    reflects the whole tree's activity, not just the 4 tracked rows."""
+    children_of: dict[int, list[int]] = {}
+    for pid, (ppid, _cpu) in table.items():
+        children_of.setdefault(ppid, []).append(pid)
+    total = 0
+    seen = set(root_pids)
+    stack = list(root_pids)
+    while stack:
+        pid = stack.pop()
+        for child in children_of.get(pid, []):
+            if child in seen:
+                continue
+            seen.add(child)
+            total += table[child][1]
+            stack.append(child)
+    return total
+
+
 # frob:doc docs/guides/coordinator-scripts.md#land_invocations
 # frob:ticket T-2180
 # frob:ticket T-2193
@@ -969,13 +1037,19 @@ def land_invocations() -> list[dict]:
 
     Each entry: `ticket_id`, `pids` (every pid in the row group),
     `elapsed_s` (the MAX `etimes` across the group -- the longest-lived
-    row is the one that actually started the invocation), and `cpu_s`
-    (the MAX parsed CPU time across the group). CPU time is reported
-    precisely because content alone cannot distinguish a live land from a
-    dead attempt's residue -- a killed land's staged diff is byte-
-    identical across retries because it is the same work -- but CPU time
-    discriminates immediately: a wedged/dead process stops accumulating
-    CPU while a live one keeps climbing."""
+    row is the one that actually started the invocation), `cpu_s` (the
+    MAX parsed CPU time across the group), and `child_cpu_s` (summed
+    across every LIVE descendant of the group's own pids,
+    `_descendant_cpu_seconds`). CPU time is reported precisely because
+    content alone cannot distinguish a live land from a dead attempt's
+    residue -- a killed land's staged diff is byte-identical across
+    retries because it is the same work -- but CPU time discriminates
+    immediately: a wedged/dead process stops accumulating CPU while a
+    live one keeps climbing. `child_cpu_s` exists because `cpu_s` alone
+    reads a healthy land running `frob check` as a CHILD process as a
+    near-zero-CPU stall -- the tracked pids (bash wrapper, `timeout`,
+    `uv run`, the python process) accumulate almost no CPU of their own
+    while the real work happens one process down."""
     rows = land_process_rows()
     groups: dict[str, list[dict]] = {}
     for row in rows:
@@ -984,12 +1058,16 @@ def land_invocations() -> list[dict]:
             continue
         groups.setdefault(ticket_id, []).append(row)
 
+    ppid_cpu_table = _all_process_ppid_cpu() if groups else {}
     invocations = [
         {
             "ticket_id": ticket_id,
             "pids": [r["pid"] for r in group_rows],
             "elapsed_s": max(r["etimes"] for r in group_rows),
             "cpu_s": max(_parse_ps_cpu_time(r["cputime"]) for r in group_rows),
+            "child_cpu_s": _descendant_cpu_seconds(
+                [r["pid"] for r in group_rows], ppid_cpu_table
+            ),
         }
         for ticket_id, group_rows in groups.items()
     ]
@@ -1096,6 +1174,85 @@ def host_load(proc: Path = Path("/proc")) -> tuple[float, int] | None:
     if mem_available_kb is None:
         return None
     return load_1min, mem_available_kb
+
+
+#: T-2249: measured basis. The incident this ticket fixes had 6,291,456 KB
+#: (6GB) of swap in use, with 0 free RAM, while `MemAvailable` still read
+#: a healthy 11.5GB -- real pressure the existing LOAD/MEM line could not
+#: show. 1GB (1,048,576 KB) is set well below that measured incident (so
+#: it still fires) and well above the few-MB of swap a healthy Linux host
+#: routinely has resident from boot-time/idle-process paging (so a
+#: machine that legitimately uses "some" swap, per the ticket's own
+#: caution, does not false-positive) -- NOT "any swap at all".
+_SWAP_PRESSURE_FLOOR_KB = 1024 * 1024
+
+
+# frob:doc docs/guides/coordinator-scripts.md#swap_pressure
+# frob:ticket T-2249
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestSwapPressure.test_reads_swap_used_and_tot\
+# al
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestSwapPressure.test_swap_total_zero_never_c\
+# rashes_or_claims_pressure
+def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
+    """`(swap_used_kb, swap_total_kb)` read from `<proc>/meminfo`'s own
+    `SwapTotal`/`SwapFree` fields -- the same file `host_load` already
+    reads `MemAvailable` from, no new `/proc` file and no subprocess
+    (`free` is deliberately never shelled out to, matching this script's
+    import-light contract). `swap_used_kb = SwapTotal - SwapFree`, the
+    same arithmetic `free`'s own 'used' column uses. Returns `None` if
+    the file is missing/unparseable, which the caller must treat as
+    "unknown", never "0 swap in use". `swap_total_kb == 0` (no swap
+    configured at all) is a real, valid case -- NOT an error -- and the
+    caller (`_swap_guidance`) must never divide by it or claim pressure
+    from it; see that function's own must-still-pass control."""
+    meminfo_path = proc / "meminfo"
+    swap_total_kb = None
+    swap_free_kb = None
+    try:
+        for line in meminfo_path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("SwapTotal:"):
+                swap_total_kb = int(line.split()[1])
+            elif line.startswith("SwapFree:"):
+                swap_free_kb = int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        return None
+    if swap_total_kb is None or swap_free_kb is None:
+        return None
+    return max(swap_total_kb - swap_free_kb, 0), swap_total_kb
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
+# frob:ticket T-2249
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestSwapGuidance.test_swap_above_floor_overri\
+# des_the_static_guidance
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestSwapGuidance.test_swap_below_floor_keeps_\
+# the_static_guidance
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestSwapGuidance.test_unknown_swap_keeps_the_\
+# static_guidance
+def _swap_guidance(swap: tuple[int, int] | None) -> str:
+    """The concurrency GUIDANCE clause text -- `_AGENT_CAP_GUIDANCE`
+    UNLESS `swap` (`swap_pressure`'s own reading) shows real pressure
+    (`swap_used_kb >= _SWAP_PRESSURE_FLOOR_KB`), in which case it names
+    the pressure directly instead of the static agent-count string. T-
+    2249: the defect this fixes is the GUIDANCE keying on the wrong
+    quantity (`MemAvailable`, which reads healthy while swap is already
+    in heavy use) -- this is the one place that quantity changes, so a
+    coordinator reading only the guidance clause (not the raw numbers)
+    still sees the real constraint. `swap is None` (unknown) or `swap[1]
+    == 0` (no swap configured, a real and common case, never an error)
+    both fall through to the ordinary static guidance -- swap pressure is
+    additive information, never claimed from an absence of data."""
+    if swap is not None:
+        swap_used_kb, swap_total_kb = swap
+        if swap_total_kb > 0 and swap_used_kb >= _SWAP_PRESSURE_FLOOR_KB:
+            swap_used_gb = swap_used_kb / (1024 * 1024)
+            return f"1 agent (SWAP {swap_used_gb:.1f}GB in use -- real memory pressure MemAvailable does not show)"
+    return f"{_AGENT_CAP_GUIDANCE} concurrent"
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_rot_day_thresholds
@@ -1522,41 +1679,57 @@ def _land_status_lines(
     load: tuple[float, int] | None,
     held_lease_count: int,
     live_lease_count_: int,
+    swap: tuple[int, int] | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
     (mirrors `_ticket_readiness_lines`'s own precedent, T-2172): no
     `print` call, no I/O, so `_print_land_status` below stays I/O-only.
     `invocations` are `land_invocations`'s own dicts (ticket id, pids,
-    elapsed, cpu). `holder_pids`/`lock_exists` distinguish a live-held
-    lock from a stale one from a free one. `load` is `host_load`'s
+    elapsed, cpu, child_cpu). `holder_pids`/`lock_exists` distinguish a
+    live-held lock from a resting/free one. `load` is `host_load`'s
     `(1-minute load average, MemAvailable kb)`, or `None` when unknown.
+    `swap` is `swap_pressure`'s own `(swap_used_kb, swap_total_kb)`, or
+    `None` when unknown (T-2249).
 
     T-2222: `held_lease_count` (the raw `len(leases())`) and `live_lease_
     count_` (`live_lease_count(leases())`, T-2222's own live-vs-reclaimable
-    classification) are BOTH shown, but the concurrency GUIDANCE clause is
-    computed from `live_lease_count_` alone -- the measured incident this
-    fixes: '6 lease(s) -- guidance is 3-4 agent concurrent' read as 6 live
-    agents when only 4 were (two were reclaimable/root-resident), and the
-    coordinator held dispatch on that overstated number. The trailing
-    underscore on the parameter avoids shadowing the module-level
-    `live_lease_count` function of the same name."""
+    classification) are BOTH shown, but the concurrency GUIDANCE clause
+    (`_swap_guidance`, T-2249) is computed from `live_lease_count_` and
+    `swap` together, never the raw lease count alone -- the measured
+    incident this fixes: '6 lease(s) -- guidance is 3-4 agent concurrent'
+    read as 6 live agents when only 4 were. The trailing underscore on
+    the parameter avoids shadowing the module-level `live_lease_count`
+    function of the same name.
+
+    Two folded-in fixes, neither separately ticketed (both observed
+    causing a wrong read of this exact section): the LAND LOCK line for
+    an idle, no-live-holder lock file now reads as the NORMAL resting
+    state (flock is kernel-released on holder death) rather than
+    'stale', which had already contributed to one retracted ticket
+    claiming a deadlock; and each land's `cpu=` figure now also reports
+    `child_cpu_s` (`land_invocations`' own field) when nonzero, so a
+    healthy land running `frob check` as a child process no longer reads
+    as a near-zero-CPU stall."""
     lines = [f"LANDS IN FLIGHT: {len(invocations)}"]
     for inv in invocations:
         # T-2193: land_invocations() drops any row it cannot parse a
         # ticket id from, so ticket_id is always real here -- never None.
         pids = ",".join(str(p) for p in inv["pids"])
+        child_cpu_s = inv.get("child_cpu_s", 0)
+        child_part = f" (+{child_cpu_s}s in children)" if child_cpu_s else ""
         lines.append(
             f"  {inv['ticket_id']} pids={pids} elapsed={inv['elapsed_s']}s "
-            f"cpu={inv['cpu_s']}s"
+            f"cpu={inv['cpu_s']}s{child_part}"
         )
 
     if holder_pids:
         lines.append(f"LAND LOCK: held, live holder pid(s)={holder_pids}")
     elif lock_exists:
         lines.append(
-            "LAND LOCK: file exists but NO live process holds it open -- "
-            "stale (recorded pid may be reused; do not trust it or lock age)"
+            "LAND LOCK: file exists, no live holder -- normal resting "
+            "state (flock releases instantly on holder death; the "
+            "recorded pid may be reused, do not trust it or lock age)"
         )
     else:
         lines.append("LAND LOCK: free")
@@ -1569,7 +1742,7 @@ def _land_status_lines(
         lines.append(
             f"LOAD {load_1min:.1f}  MEM {mem_available_gb:.1f}GB avail  "
             f"{live_lease_count_} live lease(s) ({held_lease_count} total) "
-            f"-- guidance is {_AGENT_CAP_GUIDANCE} concurrent"
+            f"-- guidance is {_swap_guidance(swap)}"
         )
     return lines
 
@@ -1601,6 +1774,7 @@ def _print_land_status() -> None:
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
     load = host_load()
+    swap = swap_pressure()
     held = leases()
     for line in _land_status_lines(
         invocations,
@@ -1609,6 +1783,7 @@ def _print_land_status() -> None:
         load,
         len(held),
         live_lease_count(held),
+        swap,
     ):
         print(line)
 

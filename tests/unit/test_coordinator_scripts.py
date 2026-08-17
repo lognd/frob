@@ -664,6 +664,56 @@ class TestLandInvocations:
         monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
         assert fleet_status.land_invocations() == []
 
+    # frob:ticket T-2249
+    def test_child_cpu_s_sums_live_descendants_not_tracked_rows(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Fold-in fix (not separately ticketed): a healthy land's own 4
+        tracked rows can each read ~0 CPU while the real work happens in
+        a CHILD process (e.g. `frob check`) neither `land_process_rows`
+        nor its `cpu_s` ever sees. `child_cpu_s` must total that child's
+        own CPU time, found by walking `_all_process_ppid_cpu`'s ppid
+        links from the tracked pids -- summing descendants only, never
+        double-counting the tracked pids themselves."""
+        rows = [
+            {
+                "pid": 200,
+                "etimes": 60,
+                "cputime": "00:01",
+                "argv": "uv run frob ticket land T-5555 --worktree /w",
+            },
+        ]
+        monkeypatch.setattr(fleet_status, "land_process_rows", lambda: rows)
+        monkeypatch.setattr(
+            fleet_status,
+            "_all_process_ppid_cpu",
+            lambda: {
+                200: (1, 1),  # the tracked land pid itself: ppid=1, 1s cpu
+                201: (200, 45),  # child: frob check, 45s cpu
+                202: (201, 5),  # grandchild spawned by frob check
+            },
+        )
+        invocations = fleet_status.land_invocations()
+        assert len(invocations) == 1
+        assert invocations[0]["cpu_s"] == 1
+        assert invocations[0]["child_cpu_s"] == 50
+
+
+class TestDescendantCpuSeconds:
+    """`fleet_status._descendant_cpu_seconds` (T-2249)."""
+
+    def test_sums_only_live_descendants_not_the_root(self) -> None:
+        """The root pid's own cpu-seconds are never included -- only
+        pids reachable by following ppid links FROM the root."""
+        table = {1: (0, 999), 100: (1, 3), 101: (100, 7), 200: (1, 4)}
+        assert fleet_status._descendant_cpu_seconds([100], table) == 7
+        # 200 is a sibling of 100 under pid 1, not a descendant of 100
+        assert fleet_status._descendant_cpu_seconds([1], table) == 3 + 7 + 4
+
+    def test_no_children_returns_zero(self) -> None:
+        table = {100: (1, 5)}
+        assert fleet_status._descendant_cpu_seconds([100], table) == 0
+
 
 class TestLandLockHolderPids:
     """`fleet_status.land_lock_holder_pids` (T-2180)."""
@@ -739,17 +789,59 @@ class TestPrintLandStatus:
         assert "LOAD 19.5" in out and "MEM 10.0GB avail" in out
         assert "1 live lease(s) (1 total)" in out
 
-    def test_prints_stale_lock_when_no_live_holder(
+    # frob:ticket T-2249
+    def test_prints_child_cpu_when_nonzero_omits_when_zero(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Fold-in fix: an invocation with `child_cpu_s` > 0 prints the
+        `(+Ns in children)` suffix; one with `child_cpu_s` == 0 (or the
+        key entirely absent, matching a caller on an older shape) prints
+        exactly as before -- never a spurious `(+0s in children)`."""
+        monkeypatch.setattr(
+            fleet_status,
+            "land_invocations",
+            lambda: [
+                {
+                    "ticket_id": "T-1111",
+                    "pids": [10],
+                    "elapsed_s": 60,
+                    "cpu_s": 1,
+                    "child_cpu_s": 45,
+                },
+                {
+                    "ticket_id": "T-2222",
+                    "pids": [20],
+                    "elapsed_s": 60,
+                    "cpu_s": 30,
+                    "child_cpu_s": 0,
+                },
+            ],
+        )
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 0)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "T-1111" in out and "cpu=1s (+45s in children)" in out
+        assert "T-2222" in out and "cpu=30s" in out
+        assert "cpu=30s (+0s in children)" not in out
+
+    def test_prints_no_live_holder_as_normal_resting_state_not_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        """A lock file that exists but has no live /proc-fd holder prints
-        STALE, never silently reads as free -- the exact "stale-lock
-        theory survived long enough to be filed critical" incident this
-        function exists to prevent, and never "trusts" the recorded pid
-        or the lock's file-modification age. REPO is monkeypatched to a
-        scratch directory so this test never touches the real repo's own
-        `.frob/land.lock`."""
+        """A lock file that exists but has no live /proc-fd holder --
+        the NORMAL resting state for an idle repo, since flock is
+        kernel-released the instant its holder dies -- must never read
+        as 'stale' (fold-in fix, not separately ticketed: this exact
+        wording contributed to one retracted ticket claiming a stale
+        lock deadlocked the fleet). Still names the real state (no live
+        holder) and still warns against trusting the recorded pid or
+        lock age -- it is a liveness fact, not silence. REPO is
+        monkeypatched to a scratch directory so this test never touches
+        the real repo's own `.frob/land.lock`."""
         fake_repo = tmp_path / "repo"
         (fake_repo / ".frob").mkdir(parents=True)
         (fake_repo / ".frob" / "land.lock").write_text("{}", encoding="utf-8")
@@ -757,10 +849,13 @@ class TestPrintLandStatus:
         monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
         monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
         monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
         fleet_status._print_land_status()
         out = capsys.readouterr().out
         assert "LANDS IN FLIGHT: 0" in out
-        assert "stale" in out.lower()
+        assert "stale" not in out.lower()
+        assert "no live holder" in out.lower()
+        assert "normal resting state" in out.lower()
         assert "LOAD: unknown" in out
 
     # frob:ticket T-2222
@@ -946,6 +1041,75 @@ class TestHostLoad:
         proc = tmp_path / "proc"
         proc.mkdir()
         assert fleet_status.host_load(proc) is None
+
+
+class TestSwapPressure:
+    """`fleet_status.swap_pressure` (T-2249)."""
+
+    def test_reads_swap_used_and_total(self, tmp_path: Path) -> None:
+        """`swap_used_kb = SwapTotal - SwapFree`, matching `free`'s own
+        arithmetic -- the measured incident's own numbers (24GB total,
+        17GB free, so 6GB [6291456 kB rounded] used)."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        (proc / "meminfo").write_text(
+            "MemTotal:       24000000 kB\n"
+            "SwapTotal:      25165824 kB\n"
+            "SwapFree:       17825792 kB\n",
+            encoding="utf-8",
+        )
+        assert fleet_status.swap_pressure(proc) == (7340032, 25165824)
+
+    def test_swap_total_zero_never_crashes_or_claims_pressure(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STILL-PASS: `SwapTotal: 0` (no swap configured, a real
+        and common case) reads as `(0, 0)`, never a crash and never fed
+        to `_swap_guidance` as pressure."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        (proc / "meminfo").write_text(
+            "MemTotal:       24000000 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\n",
+            encoding="utf-8",
+        )
+        assert fleet_status.swap_pressure(proc) == (0, 0)
+        assert fleet_status._swap_guidance((0, 0)) == "3-4 agent concurrent"
+
+    def test_missing_proc_file_returns_none(self, tmp_path: Path) -> None:
+        """A `/proc` with no `meminfo` at all reads as unknown, never a
+        fabricated zero (which `_swap_guidance` would otherwise be unable
+        to distinguish from 'genuinely no swap in use')."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        assert fleet_status.swap_pressure(proc) is None
+
+
+class TestSwapGuidance:
+    """`fleet_status._swap_guidance` (T-2249)."""
+
+    def test_swap_above_floor_overrides_the_static_guidance(self) -> None:
+        """(MUST FAIL FIRST, pre-fix) Swap usage at/above
+        `_SWAP_PRESSURE_FLOOR_KB` (1GB) replaces the static '3-4 agent'
+        text with the real pressure, using the measured incident's own
+        6GB figure."""
+        guidance = fleet_status._swap_guidance((6 * 1024 * 1024, 24 * 1024 * 1024))
+        assert "3-4 agent" not in guidance
+        assert "SWAP" in guidance
+        assert "6.0GB" in guidance
+
+    def test_swap_below_floor_keeps_the_static_guidance(self) -> None:
+        """A few MB of swap (well under the 1GB floor, the ticket's own
+        'not any swap at all' caution) must NOT trip the pressure
+        guidance -- a machine legitimately using a little swap is not
+        automatically over-committed."""
+        guidance = fleet_status._swap_guidance((10 * 1024, 24 * 1024 * 1024))
+        assert guidance == "3-4 agent concurrent"
+
+    def test_unknown_swap_keeps_the_static_guidance(self) -> None:
+        """`swap is None` (unreadable /proc) must never be read as
+        'pressure' -- pressure is only ever claimed from a real reading,
+        same posture as `host_load` returning `None`."""
+        assert fleet_status._swap_guidance(None) == "3-4 agent concurrent"
 
 
 # frob:ticket T-2179

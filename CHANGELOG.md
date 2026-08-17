@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.483.0] - unreleased
+
+- T-2249: fleet_status's concurrency guidance keys on MEM available, which read 11.5GB healthy while the machine was already swapping 6GB with 0 free RAM
+
 ## [0.482.0] - unreleased
 
 - T-2231: Break gates/lang/graph import cycle: _docblocks<->_docblocks_refs split plus lang<->graph.cache lazy-break not recognized by static cycle check
