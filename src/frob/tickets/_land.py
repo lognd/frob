@@ -4537,7 +4537,21 @@ def _check_orphaned_evidence_deletion(
     function's own docstring for the full narrowing contract. Computing
     `merge_base` failing degrades to the OLD, more conservative
     file-level-only behavior (never a crash, never a silent pass on a
-    tooling problem) rather than skipping the whole check."""
+    tooling problem) rather than skipping the whole check.
+
+    T-2255: every early-out below that skips node-identity resolution
+    entirely now ALSO records `_OrphanEvidenceCheckOutcome.SKIPPED_
+    UNMEASURED` for `ticket.id` in `_LAST_ORPHAN_EVIDENCE_OUTCOME` before
+    returning `Ok(None)` -- the return value is unchanged (still a
+    best-effort, non-blocking skip; see this check's own "do NOT hard-
+    fail" constraint), but the skip is no longer silent: `_print_land_
+    proof` surfaces it on the `LAND-PROOF:` line so "ran and found
+    nothing" and "could not run at all" are distinguishable after the
+    fact, closing exactly the gap T-2255 measured (a fresh worktree's
+    routine `collect_python_tests` failure silently reading as a passed
+    check). Reaching the node-identity-resolution step below (past the
+    ledger load) records `RAN` regardless of whether orphans are found --
+    a refusal is its own unmistakable `Err`, no separate marker needed."""
     changed = _branch_changed_files(worktree, base_ref)
     if changed.is_err:
         _log.debug(
@@ -4545,8 +4559,14 @@ def _check_orphaned_evidence_deletion(
             ticket.id,
             changed.danger_err,
         )
+        _LAST_ORPHAN_EVIDENCE_OUTCOME[ticket.id] = (
+            _OrphanEvidenceCheckOutcome.SKIPPED_UNMEASURED
+        )
         return Ok(None)
     if not changed.danger_ok:
+        # T-2255: nothing this branch touched -- trivially nothing to
+        # orphan. A genuine pass, not a skip.
+        _LAST_ORPHAN_EVIDENCE_OUTCOME[ticket.id] = _OrphanEvidenceCheckOutcome.RAN
         return Ok(None)
 
     from frob.testing import collect_python_tests
@@ -4557,6 +4577,9 @@ def _check_orphaned_evidence_deletion(
             "land: %s orphaned-evidence check skipped -- test collection failed (%s)",
             ticket.id,
             collected.danger_err,
+        )
+        _LAST_ORPHAN_EVIDENCE_OUTCOME[ticket.id] = (
+            _OrphanEvidenceCheckOutcome.SKIPPED_UNMEASURED
         )
         return Ok(None)
 
@@ -4570,7 +4593,14 @@ def _check_orphaned_evidence_deletion(
             ticket.id,
             loaded.danger_err,
         )
+        _LAST_ORPHAN_EVIDENCE_OUTCOME[ticket.id] = (
+            _OrphanEvidenceCheckOutcome.SKIPPED_UNMEASURED
+        )
         return Ok(None)
+
+    # T-2255: node-identity resolution is reachable from here on -- the
+    # check RAN, whether or not it goes on to refuse.
+    _LAST_ORPHAN_EVIDENCE_OUTCOME[ticket.id] = _OrphanEvidenceCheckOutcome.RAN
 
     merge_base = _true_merge_base(worktree, base_ref)
     merge_base_ref = merge_base.danger_ok if merge_base.is_ok else None

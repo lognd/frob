@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 55838588a376f60cbfb81ff5a3f345a0d3d4c40c
 ---
 # Repoint the 28 orphaned COV003 evidence ids left by T-2240's legitimate test retirement -- 47% of the current error floor
 
