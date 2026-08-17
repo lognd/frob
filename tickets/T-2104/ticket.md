@@ -1,7 +1,7 @@
 ---
 id: T-2104
 title: A stale blocked_by does not self-heal when its blocker narrows scope
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,9 +12,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_doable.py
+- tests/test_tickets.py
+evidence_scope:
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: BUG002 evidence for T-2104 lives in this test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_narrowed_in_progress_blocker_self_heals
+- tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_still_overlapping_in_progress_blocker_still_blocks
+- tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_queued_blocker_never_self_heals_on_scope
+designated_repro_test: tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals::test_narrowed_in_progress_blocker_self_heals
 threat: null
 component: null
 anchor: false

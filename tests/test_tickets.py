@@ -307,7 +307,9 @@ class TestNewTicketExactDuplicateRefusal:
 
         scope = ("src/widget.py",)
         first_spec = TicketSpec(
-            title="Fix the widget", kind=TicketKind.BUG, origin=Origin.AGENT,
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
             scope=scope,
         )
         assert new_ticket(tmp_path, first_spec).is_ok
@@ -769,6 +771,90 @@ class TestDoable:
         )
         queue = load_queue(tmp_path).danger_ok
         assert doable(queue) == ()
+
+
+# frob:ticket T-2104
+class TestDoableStaleBlockedBySelfHeals:
+    """T-2104: a `blocked_by` entry against an IN_PROGRESS blocker whose
+    LIVE scope has since narrowed away from any overlap with the blocked
+    ticket's own scope self-heals in `doable` -- reproducing T-2076's own
+    real incident (a block against T-1669 survived T-1669's own narrowing
+    and had to be cleared through the store API by hand)."""
+
+    # frob:ticket T-2104
+    def test_narrowed_in_progress_blocker_self_heals(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_narrowed_in_pro\
+        # gress_blocker_self_heals
+        """(MUST FAIL FIRST on main): once the IN_PROGRESS blocker's live
+        scope no longer overlaps the blocked ticket's own scope, `doable`
+        (given `root`) must stop excluding the blocked ticket -- fails
+        today: `doable`'s exclusion never re-checks `blocked_by` against
+        the blocker's CURRENT scope at all."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Holder"
+        ).model_copy(update={"scope": ("src/frob/tickets/_y.py",)})
+        _write(tmp_path, holder, slug="holder")
+        queue = load_queue(tmp_path).danger_ok
+
+        # Without root, the pre-T-2104 behavior is unchanged -- still blocked.
+        assert "T-0001" not in {t.id for t in doable(queue)}
+
+        # With root, the narrowed (disjoint) scope self-heals it.
+        result = doable(queue, tmp_path)
+        assert "T-0001" in {t.id for t in result}
+
+    # frob:ticket T-2104
+    def test_still_overlapping_in_progress_blocker_still_blocks(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_still_overlappi\
+        # ng_in_progress_blocker_still_blocks
+        """MUST-STILL-PASS control: an IN_PROGRESS blocker whose scope
+        STILL overlaps the blocked ticket's own scope keeps blocking --
+        this is narrowing-triggered self-heal, never a blanket bypass."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.IN_PROGRESS, title="Holder"
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, holder, slug="holder")
+        queue = load_queue(tmp_path).danger_ok
+
+        result = doable(queue, tmp_path)
+        assert "T-0001" not in {t.id for t in result}
+
+    # frob:ticket T-2104
+    def test_queued_blocker_never_self_heals_on_scope(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestDoableStaleBlockedBySelfHeals.test_queued_blocker_\
+        # never_self_heals_on_scope
+        """A block against a QUEUED (not IN_PROGRESS) blocker is left
+        untouched regardless of scope overlap -- `frob ticket block` is a
+        general dependency-ordering primitive, not exclusively a scope-
+        collision response, and a QUEUED blocker has no LIVE lease to
+        compare against in the first place. Disjoint scope here must NOT
+        be read as license to self-heal a deliberate non-scope
+        dependency."""
+        blocked = _ticket(
+            ticket_id="T-0001", state=TicketState.QUEUED, blocked_by=("T-0002",)
+        ).model_copy(update={"scope": ("src/frob/gates/_x.py",)})
+        _write(tmp_path, blocked, slug="blocked")
+        holder = _ticket(
+            ticket_id="T-0002", state=TicketState.QUEUED, title="Design first"
+        ).model_copy(update={"scope": ("src/frob/tickets/_y.py",)})
+        _write(tmp_path, holder, slug="holder")
+        queue = load_queue(tmp_path).danger_ok
+
+        result = doable(queue, tmp_path)
+        assert "T-0001" not in {t.id for t in result}
 
 
 class TestFailureLog:

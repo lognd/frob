@@ -74,7 +74,7 @@ def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
 # frob:ticket T-0715
 # frob:ticket T-1613
 # invariant spec: [INV-032](invariants/INV-032.md)
-def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
+def _doable_candidates(queue: TicketQueue, root: Path | None = None) -> list[Ticket]:
     """Queued/planned LEAF tickets (tier=TICKET) that currently have no open
     blockers, unordered. T-0715: an EPIC/STORY never surfaces here even if
     it has no `blocked_by` of its own -- only a leaf ticket is ever
@@ -84,13 +84,23 @@ def _doable_candidates(queue: TicketQueue) -> list[Ticket]:
     T-1613: a `runs_last` ticket additionally never surfaces here while
     `_other_open_tickets` is non-empty -- it stays structurally undoable,
     not merely warned-about, until every OTHER non-runs-last ticket in the
-    ledger has reached a terminal state (done/dropped)."""
+    ledger has reached a terminal state (done/dropped).
+
+    T-2104: `root` (optional, threaded straight from `doable`/`doable_
+    blocked`) is passed to `_open_blockers` so a `blocked_by` entry
+    against an IN_PROGRESS blocker whose LIVE lease has since narrowed
+    away from any overlap self-heals here -- see `_open_blockers`'s own
+    docstring for the full reasoning and its deliberate QUEUED/PLANNED/
+    BLOCKED-blocker exclusion. `root=None` (every pre-T-2104 caller, and
+    any test with no repo root to hand) preserves the exact prior
+    behavior: a recorded `blocked_by` entry blocks unconditionally as
+    long as its blocker is open."""
     return [
         t
         for t in queue.tickets.values()
         if t.state in (TicketState.QUEUED, TicketState.PLANNED)
         and t.tier is TicketTier.TICKET
-        and not _open_blockers(queue, t)
+        and not _open_blockers(queue, t, root)
         and (not t.runs_last or not _other_open_tickets(queue, t))
     ]
 
@@ -692,7 +702,7 @@ def doable(
     (`_render_doable_dispatchable`) rather than hidden."""
     from frob.tickets import _doable_sort_key
 
-    candidates = _doable_candidates(queue)
+    candidates = _doable_candidates(queue, root)
     if not show_anchors:
         candidates = [t for t in candidates if not t.anchor]
     if not ignore_lease:
@@ -957,7 +967,7 @@ def doable_blocked(
     re-deriving it."""
     from frob.tickets import _doable_sort_key
 
-    candidates = _doable_candidates(queue)
+    candidates = _doable_candidates(queue, root)
     if root is not None and breadth is None:
         breadth = scope_breadth_context(root)
     all_leases = _all_leases(queue, root)
@@ -1046,7 +1056,7 @@ def already_landed_markers(
     ever touched this ticket's own ledger entry."""
     threshold, files = breadth if breadth is not None else scope_breadth_context(root)
     hits: list[Ticket] = []
-    for ticket in _doable_candidates(queue):
+    for ticket in _doable_candidates(queue, root):
         needle = _ticket_directive_marker(ticket.id)
         for rel in _narrow_scope_files(ticket, threshold, files):
             path = root / rel
@@ -1060,13 +1070,63 @@ def already_landed_markers(
     return tuple(sorted(hits, key=lambda t: t.id))
 
 
-def _open_blockers(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
-    """Blocker ids of ticket whose current state is not done/dropped (or unknown)."""
+def _open_blockers(
+    queue: TicketQueue, ticket: Ticket, root: Path | None = None
+) -> tuple[str, ...]:
+    """Blocker ids of `ticket` whose current state is not done/dropped (or
+    unknown).
+
+    T-2104: when `root` is given, a blocker that is IN_PROGRESS (holds a
+    live scope-lease) whose CURRENT lease scope (`_all_leases` -- the SAME
+    local-ledger-plus-cross-worktree side-channel T-2095's own scope-
+    narrowing fix consults) no longer overlaps `ticket`'s own scope is
+    ALSO dropped -- the self-heal `frob ticket block <id> --by <holder>`
+    itself cannot provide, since it records `blocked_by` once, at refusal
+    time, and nothing re-checks it later against the holder's since-
+    narrowed lease. T-2076's own incident: a block against an in-progress
+    ticket survived that ticket's own later scope narrowing and had to be
+    cleared through the store API by hand, because no unblock verb
+    existed.
+
+    Deliberately restricted to an IN_PROGRESS blocker: `frob ticket block`
+    is a general dependency-ordering primitive, not exclusively a scope-
+    collision response (`_block`'s own implementation records ANY `--by`
+    id with no reason field at all) -- a block against a QUEUED/PLANNED/
+    BLOCKED ticket is left untouched regardless of scope, since that shape
+    covers legitimate non-scope sequencing (e.g. "do the design ticket
+    first") this check must never silently discard. Only an IN_PROGRESS
+    blocker genuinely HAS a "current live lease scope" to compare against
+    in the first place, matching T-2076's own real incident shape exactly
+    (a block against an actively-worked, scope-leasing ticket).
+
+    This is a monotone, READ-TIME reconciliation, not a ledger write --
+    `blocked_by` itself is left untouched on disk (`frob ticket block`
+    remains the only writer, matching T-2095's own "may only ever be
+    CLEARED, never newly created" reasoning extended one step further: a
+    stale-looking clear here is always safe to recompute fresh on the next
+    call, so there is nothing to persist and no write-time race to guard
+    against).
+
+    `root=None` (every pre-T-2104 caller, and any test with no repo root
+    to hand) preserves the exact prior behavior unchanged: a recorded
+    `blocked_by` entry blocks unconditionally as long as its blocker is
+    open, regardless of scope."""
     from frob.tickets import _OPEN_STATES
 
+    all_leases: dict[str, tuple[str, ...]] | None = None
     open_ids: list[str] = []
     for blocker_id in ticket.blocked_by:
         blocker = queue.tickets.get(blocker_id)
         if blocker is None or blocker.state in _OPEN_STATES:
+            if (
+                root is not None
+                and blocker is not None
+                and blocker.state is TicketState.IN_PROGRESS
+            ):
+                if all_leases is None:
+                    all_leases = dict(_all_leases(queue, root))
+                lease_scope = all_leases.get(blocker_id, blocker.scope)
+                if scope_overlap_globs(ticket.scope, lease_scope) is None:
+                    continue
             open_ids.append(blocker_id)
     return tuple(open_ids)
