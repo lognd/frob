@@ -14,7 +14,6 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/agent_runner.py
-- docs/modules/app.md
 - tests/test_worktree_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -33,6 +32,13 @@ scope_changes:
 - op: add
   glob: tests/test_worktree_guard.py
   reason: 'closure: doc anchor + test file for agent_runner.py::run'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/modules/app.md
+  reason: app.md is a broad shared module doc covering ~90 unrelated symbols; closure
+    would explode scope far beyond this bugfix. Not adding a new public symbol, so
+    no new doc obligation is created
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
