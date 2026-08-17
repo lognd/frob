@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f5d6e7f98b64116139471e3aaad10c381ae395f0
 ---
 T-2107 fixed the cross-subparser did-you-mean suggestion in
 src/frob/__main__.py (_SuggestingArgumentParser now scopes both the
