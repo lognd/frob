@@ -15,6 +15,8 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - docs/modules/tickets-lifecycle.md
 - src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/tickets/_leases.py
+- src/frob/app/worktree_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -44,6 +46,26 @@ scope_changes:
   glob: src/frob/_cli_parsers/_ticket/_metadata.py
   reason: 'T-1777: narrow to the single parser module this ticket actually edits,
     avoiding collision with T-2302''s live lease on _new.py under the same glob'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-1777: real minimal design puts the --force override on the ALREADY-shipped
+    frob worktree release-lease verb (T-2175) rather than duplicating a second frob
+    ticket lease release CLI surface -- worktree_runner.py is where force_release_lease
+    is called from; _leases.py needed to thread an operator-supplied --reason into
+    force_release_lease''s own WARNING log (a persisted ticket-model audit field is
+    blocked by T-2302''s concurrent lease on _models.py, filed as a follow-up)'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/worktree_runner.py
+  reason: 'T-1777: real minimal design puts the --force override on the ALREADY-shipped
+    frob worktree release-lease verb (T-2175) rather than duplicating a second frob
+    ticket lease release CLI surface -- worktree_runner.py is where force_release_lease
+    is called from; _leases.py needed to thread an operator-supplied --reason into
+    force_release_lease''s own WARNING log (a persisted ticket-model audit field is
+    blocked by T-2302''s concurrent lease on _models.py, filed as a follow-up)'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
