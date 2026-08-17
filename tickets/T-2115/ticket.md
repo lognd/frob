@@ -2,7 +2,7 @@
 id: T-2115
 title: 'COV001/TEST001: _SuggestingArgumentParser.parse_known_args public with no
   doc/test edge (T-2107 regression)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-11'
@@ -45,3 +45,6 @@ T-1382 cross-worktree lease (same block hit while landing T-2107 itself)
 -- frob:waive COV001 with that reason, citing the existing
 T-draft-9a07db1f/renumbered follow-up that already tracks refreshing
 that doc once the lease frees.
+
+## Drop reason
+- 2026-08-17: already fixed: T-2107's own land (41286e07b2e0) added the frob:tests edges (tests/unit/test_main_entry.py::TestDidYouMean.test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand and test_unrecognized_flag_error_shows_invoked_subcommand_usage) and a frob:waive COV001 (citing T-2112 for the doc edge once the T-1382 lease on docs/commands/cli-vocabulary.md frees) directly on _SuggestingArgumentParser.parse_known_args in the same commit. Verified via git log -- src/frob/__main__.py (41286e07b2e0 is the current tip for that region) and a fresh gate:TEST/gate:DOC run showing no COV001/TEST001 finding for parse_known_args. Nothing left to fix under this ticket's scope.
