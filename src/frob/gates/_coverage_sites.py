@@ -130,10 +130,10 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # actually examined this run) -- kept as an explicit waiver rather than removed \
 # because static call-graph analysis of _load_family_reporters' dict-dispatch call \
 # site is fragile, same posture T-1942 already established for the archgate reporter's \
-# own waivers below. follow_up re-pointed to T-2057 (the open successor \
-# tracking strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 \
-# requires a live open ticket citation, not because that ticket is expected to touch \
-# this specific waiver" follow_up="T-2057"
+# own waivers below. follow_up re-pointed to T-2057 (the open successor tracking \
+# strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 requires \
+# a live open ticket citation, not because that ticket is expected to touch this \
+# specific waiver" follow_up="T-2057"
 # frob:waive COV005 reason="T-1943: this is a brand-new private function, not a helper \
 # extracted above attach_examined_sites/site_examined -- COV005's (kind, \
 # target)=(waive, 'WIRE001') key is shared by every WIRE001 waiver in this file, so \
@@ -266,8 +266,7 @@ def _graph_examined_sites(root: Path) -> frozenset[str]:
 def _vet_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's VET-family
     reporter -- the repo-relative file paths `frob.vet._capability.
-    scan_file_capabilities` (the OPAQUE001/CVE-fingerprint gates' own
-    per-file capability scanner) could actually scan this run: a real
+    scan_file_capabilities` could actually scan this run: a real
     registered capability-pattern language (`frob.vet._capability.
     language_for(path) is not None`) that exists as an ordinary file this
     run. A file with no capability-pattern table for its language is
@@ -281,7 +280,23 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
     Deliberately a metadata-only `is_file()` check, not a content read
     (`scan_file_capabilities` itself is the only real reader in this
     path) -- this reporter's job is choosing the candidate set, not
-    duplicating the scan a real caller would perform."""
+    duplicating the scan a real caller would perform.
+
+    T-2056: NOT the OPAQUE001/CVE-fingerprint gates' scanner -- `opaque_
+    gate` (`src/frob/gates/_opaque.py`) does not call `scan_file_
+    capabilities` at all; it calls `_opaque_indirection_findings`, a
+    scanner its own module docstring says is DELIBERATELY DISJOINT from
+    the `scan_file_capabilities` universe (two separate universes per
+    `docs/design/capability-evasion-taxonomy.md`: statically-resolvable
+    name bindings vs. runtime-opaque constructs). `scan_file_
+    capabilities` is actually consumed by `frob.strata._selfconform`
+    (folded into SELFAUDIT001, whose own `Violation.file` is always the
+    constant `design_dir` string -- not a per-file site this reporter's
+    identity space matches) and by `frob.vet._capability_scan.py`'s
+    `_aggregate_capabilities` (which scans a THIRD-PARTY dependency's
+    extracted source tree, never this repo's own `root`). No live rule's
+    violation site corresponds to what this reporter tracks today; do not
+    wire a consumer on the strength of a claimed OPAQUE001 tie."""
     from frob import excludes as _excludes
     from frob.vet._capability import language_for
 
@@ -305,8 +320,7 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
 # call-graph analysis of that dynamic-report-construction call site is fragile. \
 # follow_up re-pointed to T-2011 (the open ticket wiring perf/strata/graph/ vet \
 # examined-sites into WAIVE004) since WIRE002 requires a live open ticket citation, \
-# not because that ticket is expected to remove this waiver itself" \
-# follow_up="T-2057"
+# not because that ticket is expected to remove this waiver itself" follow_up="T-2057"
 def attach_examined_sites(report: "GateReport", root: Path) -> "GateReport":
     """T-1921: returns a COPY of `report` whose `stats.examined_sites` is
     populated for every family `_load_family_reporters` knows how to

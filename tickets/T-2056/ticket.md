@@ -1,7 +1,7 @@
 ---
 id: T-2056
 title: _vet_examined_sites' docstring wrongly claims OPAQUE001 uses scan_file_capabilities
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -12,8 +12,12 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_coverage_sites.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +64,5 @@ tie, or (b) if a real per-repo vet consumer is wanted, build one from
 whatever OPAQUE001's `_opaque_indirection_findings` candidate set actually
 is (`supported_extensions()`-filtered `_shared_tracked_files`), which is
 NOT what this reporter currently computes.
+
+frob:no-behavior-change reason="took suggested fix (a): the docstring on _vet_examined_sites is corrected to drop the false OPAQUE001/CVE-fingerprint claim and add an explicit note naming the real consumers of scan_file_capabilities, with no change to the function's logic or return value. The designated evidence (the CLI-dispatch integration test) correctly PASSES at both parent and fix, since nothing observable changed."
