@@ -2,7 +2,7 @@
 id: T-2277
 title: 'REL001: pyproject.toml release-readiness finding has no owning ticket (T-2268
   triage)'
-state: in-progress
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -41,3 +41,6 @@ edit.
 Fix: run `frob release`/`frob check --only release` to see which specific
 REL001 sub-condition (open debt past its ceiling, an expired deprecation)
 is firing, and resolve that underlying condition.
+
+## Drop reason
+- 2026-08-17: Re-measured against current unscoped floor: frob check --only release runs clean (0 findings, no gate:REL output). Neither REL001 sub-condition fires on pyproject.toml today; stale T-2268 triage residue, dropping rather than inventing work
