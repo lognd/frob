@@ -32,7 +32,11 @@ from frob.tickets import (
     new_ticket,
     transition,
 )
-from frob.tickets._land import _check_orphaned_evidence_deletion
+from frob.tickets._land import (
+    _LAST_ORPHAN_EVIDENCE_OUTCOME,
+    _check_orphaned_evidence_deletion,
+    _OrphanEvidenceCheckOutcome,
+)
 from frob.tickets._models import LandError
 from frob.tickets._store import atomic_write, ledger_path, load_all, write_ticket
 
@@ -130,7 +134,10 @@ class TestOrphanedEvidenceDeletion:
 
     # frob:ticket T-1946
     def test_refuses_when_branch_deletes_evidence_bound_test(
-        self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests \
         # tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion.test_\
@@ -236,8 +243,10 @@ class TestOrphanedEvidenceDeletion:
         landing_id = landing.danger_ok.id
         (wt / "tests" / "test_old.py").unlink()
         (wt / "tests" / "test_new.py").write_text("def test_it():\n    pass\n")
-        repointed = load_all(wt).danger_ok[other_id].model_copy(
-            update={"evidence": ("tests/test_new.py::test_it",)}
+        repointed = (
+            load_all(wt)
+            .danger_ok[other_id]
+            .model_copy(update={"evidence": ("tests/test_new.py::test_it",)})
         )
         assert write_ticket(wt, repointed).is_ok
         _commit_all(
@@ -341,7 +350,9 @@ class TestOrphanedEvidenceDeletionOnArchivedTicket:
         assert archive(wt, force=True).is_ok
         _commit_all(wt, f"archive {other_id}")
 
-        landing = new_ticket(wt, _spec("Unrelated fix", scope=("tests/test_scratch2.py",)))
+        landing = new_ticket(
+            wt, _spec("Unrelated fix", scope=("tests/test_scratch2.py",))
+        )
         assert landing.is_ok
         landing_id = landing.danger_ok.id
         (wt / "tests" / "test_scratch2.py").write_text("def test_it():\n    pass\n")
@@ -355,3 +366,188 @@ class TestOrphanedEvidenceDeletionOnArchivedTicket:
         result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
 
         assert result.is_ok, result.err
+
+
+# frob:ticket T-2255
+class TestOrphanEvidenceCheckOutcome:
+    """T-2255: `_check_orphaned_evidence_deletion` records `_OrphanEvidence
+    CheckOutcome` in `_LAST_ORPHAN_EVIDENCE_OUTCOME` for every call, and
+    logs the `SKIPPED_UNMEASURED` case at WARNING -- closing the gap where
+    a fresh worktree's routine `collect_python_tests` failure silently
+    read as a passed check (T-2240's 11-ticket orphan incident: the guard
+    existed, and never ran, and nothing said so)."""
+
+    # frob:ticket T-2255
+    def test_skipped_unmeasured_recorded_and_logged_on_collection_failure(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
+        # t_skipped_unmeasured_recorded_and_logged_on_collection_failure
+        # T-2255 acceptance 1 (MUST FAIL on pre-fix code): the exact
+        # normal-case shape (a fresh worktree, `collect_python_tests`
+        # fails because natives aren't built) must record SKIPPED_
+        # UNMEASURED, not the pre-T-2255 silent Ok(None) that is
+        # indistinguishable from a genuine pass.
+        from typani import Err
+
+        from frob.testing._runners import TestingError
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-skip", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Fresh worktree land", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "src" / "fix.py").write_text("# a fix\n")
+        _commit_all(wt, f"{landing_id}: unrelated fix")
+
+        import frob.testing as testing_mod
+
+        monkeypatch.setattr(
+            testing_mod,
+            "collect_python_tests",
+            lambda root: Err(TestingError.CollectFailed),
+        )
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(landing_id, None)
+        with caplog.at_level("WARNING"):
+            result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_ok
+        assert (
+            _LAST_ORPHAN_EVIDENCE_OUTCOME.get(landing_id)
+            is _OrphanEvidenceCheckOutcome.SKIPPED_UNMEASURED
+        )
+        assert "SKIPPED-UNMEASURED" in caplog.text
+        assert landing_id in caplog.text
+
+    # frob:ticket T-2255
+    def test_ran_recorded_on_healthy_pass(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
+        # t_ran_recorded_on_healthy_pass
+        # MUST-STILL-PASS control's own outcome-record companion: a
+        # normal, unbound-deletion land (T-1946's own must-still-pass
+        # shape) records RAN, not SKIPPED_UNMEASURED.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-ran", str(wt)], repo)
+
+        landing = new_ticket(wt, _spec("Cleanup", scope=("tests/test_scratch3.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "tests").mkdir(exist_ok=True)
+        (wt / "tests" / "test_scratch3.py").write_text("def test_it():\n    pass\n")
+        _commit_all(wt, f"{landing_id}: add scratch test")
+        (wt / "tests" / "test_scratch3.py").write_text("# deleted, cited by nobody\n")
+        _commit_all(wt, f"{landing_id}: delete scratch test, unbound to anything")
+
+        _patch_collect(monkeypatch, frozenset())
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(landing_id, None)
+        result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_ok
+        assert (
+            _LAST_ORPHAN_EVIDENCE_OUTCOME.get(landing_id)
+            is _OrphanEvidenceCheckOutcome.RAN
+        )
+
+    # frob:ticket T-2255
+    def test_ran_recorded_even_when_check_refuses(
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
+        # t_ran_recorded_even_when_check_refuses
+        # A refusal is its own unmistakable Err -- RAN still records
+        # (the check DID run), no separate marker needed for the refuse
+        # case itself.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-ran-refuse", str(wt)], repo)
+
+        other = new_ticket(
+            wt, _spec("Unrelated work", scope=("tests/test_orphan2.py",))
+        )
+        assert other.is_ok
+        other_id = other.danger_ok.id
+        assert transition(wt, other_id, TicketState.PLANNED).is_ok
+        assert transition(wt, other_id, TicketState.IN_PROGRESS).is_ok
+        loaded = load_all(wt)
+        other_ticket = loaded.danger_ok[other_id]
+        other_ticket = other_ticket.model_copy(
+            update={"evidence": ("tests/test_orphan2.py::test_it",)}
+        )
+        assert write_ticket(wt, other_ticket).is_ok
+        (wt / "tests").mkdir(exist_ok=True)
+        (wt / "tests" / "test_orphan2.py").write_text("def test_it():\n    pass\n")
+        _commit_all(wt, f"{other_id}: add the test this ticket's evidence cites")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix2.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "tests" / "test_orphan2.py").write_text("# test_it deleted\n")
+        _commit_all(wt, f"{landing_id}: unrelated cleanup that deletes test_it")
+
+        _patch_collect(monkeypatch, frozenset())
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(landing_id, None)
+        with caplog.at_level("ERROR"):
+            result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_err
+        assert result.danger_err == LandError.OrphanedEvidenceDeletion
+        assert (
+            _LAST_ORPHAN_EVIDENCE_OUTCOME.get(landing_id)
+            is _OrphanEvidenceCheckOutcome.RAN
+        )
+
+    # frob:ticket T-2255
+    def test_skipped_unmeasured_does_not_block_the_land(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.tes\
+        # t_skipped_unmeasured_does_not_block_the_land
+        # T-2255 acceptance 4: a worktree that genuinely cannot collect
+        # does not become unlandable -- the check still returns Ok(None)
+        # on a collection failure, exactly as before T-2255. Only the
+        # surfacing changed, never the refuse/pass verdict on this path.
+        from typani import Err
+
+        from frob.testing._runners import TestingError
+
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "series-skip-not-blocking", str(wt)], repo
+        )
+
+        landing = new_ticket(wt, _spec("Fresh worktree land 2", scope=("src/fix3.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        (wt / "src" / "fix3.py").write_text("# a fix\n")
+        _commit_all(wt, f"{landing_id}: unrelated fix")
+
+        import frob.testing as testing_mod
+
+        monkeypatch.setattr(
+            testing_mod,
+            "collect_python_tests",
+            lambda root: Err(TestingError.CollectFailed),
+        )
+
+        landing_ticket = load_all(wt).danger_ok[landing_id]
+        result = _check_orphaned_evidence_deletion(wt, landing_ticket, "main")
+
+        assert result.is_ok

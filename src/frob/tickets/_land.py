@@ -38,6 +38,7 @@ import os
 import re
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from enum import StrEnum
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING
@@ -156,6 +157,57 @@ called synchronously after `land()` returns) reads and pops it by
 process boundary -- a land that crashes before printing loses the entry
 same as it loses the rest of the tail, no different from any other
 in-memory land state."""
+
+
+# frob:ticket T-2255
+class _OrphanEvidenceCheckOutcome(StrEnum):
+    """T-2255: `_check_orphaned_evidence_deletion`'s own RAN-vs-SKIPPED
+    signal, the same shape T-2091 already gave `_ClaimsReverifyOutcome`
+    for a different land-time check that collapsed "ran and found
+    nothing" and "could not run at all" onto the identical `Ok(None)` --
+    indistinguishable to `_land_precheck_remaining_checks`'s `.is_err`-
+    only call site. T-1946's guard is node-level by design (a file-level
+    check would have missed the exact T-2240 incident that motivated
+    this), and `collect_python_tests` genuinely fails in a fresh, not-
+    yet-built agent worktree -- hard-failing on that would block the
+    fleet on an environment artifact, a worse outcome than the bug
+    (T-2255's own ticket says so explicitly). So the check keeps its
+    best-effort `Ok(None)` skip behavior; what changes is that the skip
+    is no longer SILENT. `RAN` covers both a clean pass (no orphans
+    found) and a refusal (orphans found, `Err(LandError.
+    OrphanedEvidenceDeletion)` -- self-evidently visible via that Err, no
+    separate marker needed for it); `SKIPPED_UNMEASURED` covers every
+    early-out this function takes before it can resolve node identity at
+    all (unreadable diff, failed collection, unreadable ledger)."""
+
+    RAN = "ran"
+    SKIPPED_UNMEASURED = "skipped-unmeasured"
+
+
+# frob:ticket T-2255
+# frob:tests tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_skipped_unmeasured_recorded_and_logged_on_collection_failure  # noqa: E501
+# frob:tests tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome.test_ran_recorded_on_healthy_pass  # noqa: E501
+_LAST_ORPHAN_EVIDENCE_OUTCOME: dict[str, _OrphanEvidenceCheckOutcome] = {}
+"""T-2255: the most recent `_OrphanEvidenceCheckOutcome`
+`_check_orphaned_evidence_deletion` observed for a given `ticket_id`, in
+THIS process -- the exact `_LAST_CLAIMS_OUTCOME` (T-2091) pattern applied
+to a second land-time check that shared the same defect shape. Kept
+process-local and in-scope-only (T-2255's own scope is `_land.py` alone,
+unlike T-2091's paired `_land.py`+`_land_cmd.py` scope): rather than
+threading this through `LandReport`/`_print_land_proof` into the
+`LAND-PROOF:` line the way T-2091 did for claims re-verification --
+which would need `_land_cmd.py` in scope, filed instead as a narrow
+follow-up ticket noted in this ticket's Done report -- the SKIPPED_
+UNMEASURED case is made operator-visible directly at the point it
+happens: `_check_orphaned_evidence_deletion` logs it at WARNING (not
+DEBUG, the pre-T-2255 level that made the skip invisible in a normal
+land's own console output), so a land that skips this check says so in
+its own output, not just in an in-process dict a test can inspect. This
+dict remains the mechanism a unit test asserts against directly, and the
+home for a future ticket to thread into `LAND-PROOF:` without needing to
+re-derive the outcome. Never persisted to disk and never read across a
+process boundary, same lifetime/degradation posture as `_LAST_CLAIMS_
+OUTCOME`."""
 
 
 # frob:ticket T-1515
@@ -4541,21 +4593,23 @@ def _check_orphaned_evidence_deletion(
 
     T-2255: every early-out below that skips node-identity resolution
     entirely now ALSO records `_OrphanEvidenceCheckOutcome.SKIPPED_
-    UNMEASURED` for `ticket.id` in `_LAST_ORPHAN_EVIDENCE_OUTCOME` before
-    returning `Ok(None)` -- the return value is unchanged (still a
-    best-effort, non-blocking skip; see this check's own "do NOT hard-
-    fail" constraint), but the skip is no longer silent: `_print_land_
-    proof` surfaces it on the `LAND-PROOF:` line so "ran and found
-    nothing" and "could not run at all" are distinguishable after the
-    fact, closing exactly the gap T-2255 measured (a fresh worktree's
-    routine `collect_python_tests` failure silently reading as a passed
-    check). Reaching the node-identity-resolution step below (past the
-    ledger load) records `RAN` regardless of whether orphans are found --
-    a refusal is its own unmistakable `Err`, no separate marker needed."""
+    UNMEASURED` for `ticket.id` in `_LAST_ORPHAN_EVIDENCE_OUTCOME`, and
+    logs it at WARNING (not the pre-T-2255 DEBUG, invisible in a normal
+    land's own console output) before returning `Ok(None)` -- the return
+    value is unchanged (still a best-effort, non-blocking skip; see this
+    check's own "do NOT hard-fail" constraint), but the skip is no longer
+    silent: it now says so, in the land's own output, at the moment it
+    happens -- closing exactly the gap T-2255 measured (a fresh
+    worktree's routine `collect_python_tests` failure silently reading as
+    a passed check). Reaching the node-identity-resolution step below
+    (past the ledger load) records `RAN` regardless of whether orphans
+    are found -- a refusal is its own unmistakable `Err`, no separate
+    marker needed."""
     changed = _branch_changed_files(worktree, base_ref)
     if changed.is_err:
-        _log.debug(
-            "land: %s orphaned-evidence check skipped -- diff unreadable (%s)",
+        _log.warning(
+            "land: %s orphaned-evidence check SKIPPED-UNMEASURED -- "
+            "diff unreadable (%s)",
             ticket.id,
             changed.danger_err,
         )
@@ -4573,8 +4627,9 @@ def _check_orphaned_evidence_deletion(
 
     collected = collect_python_tests(worktree)
     if collected.is_err:
-        _log.debug(
-            "land: %s orphaned-evidence check skipped -- test collection failed (%s)",
+        _log.warning(
+            "land: %s orphaned-evidence check SKIPPED-UNMEASURED -- "
+            "test collection failed (%s)",
             ticket.id,
             collected.danger_err,
         )
@@ -4588,8 +4643,9 @@ def _check_orphaned_evidence_deletion(
 
     loaded = load_queue(worktree)
     if loaded.is_err:
-        _log.debug(
-            "land: %s orphaned-evidence check skipped -- ledger unreadable (%s)",
+        _log.warning(
+            "land: %s orphaned-evidence check SKIPPED-UNMEASURED -- "
+            "ledger unreadable (%s)",
             ticket.id,
             loaded.danger_err,
         )

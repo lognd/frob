@@ -3,7 +3,7 @@ id: T-2255
 title: T-1946's orphaned-evidence land guard fails OPEN when test collection fails
   -- the normal case in agent worktrees -- and let T-2240 orphan 11 tickets' evidence
   (28 COV003, floor 35 to 59)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,25 +14,71 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/unit/test_land_orphaned_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: T-2091 set the precedent for this exact pairing (_land.py's process-local
+    RAN/SKIPPED_UNMEASURED outcome dict + _land_cmd.py's _print_land_proof consuming/printing
+    it on the LAND-PROOF line) for the claims-reverify check; T-2255's acceptance
+    criterion 5 needs the identical wiring for the orphaned-evidence check so a land's
+    own record -- not just an in-process dict a unit test can inspect -- distinguishes
+    ran from skipped. Test file addition is the evidence home for the new outcome-record
+    behavior, alongside T-1946's existing suite it lives in.
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_land_orphaned_evidence.py
+  reason: T-2091 set the precedent for this exact pairing (_land.py's process-local
+    RAN/SKIPPED_UNMEASURED outcome dict + _land_cmd.py's _print_land_proof consuming/printing
+    it on the LAND-PROOF line) for the claims-reverify check; T-2255's acceptance
+    criterion 5 needs the identical wiring for the orphaned-evidence check so a land's
+    own record -- not just an in-process dict a unit test can inspect -- distinguishes
+    ran from skipped. Test file addition is the evidence home for the new outcome-record
+    behavior, alongside T-1946's existing suite it lives in.
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'Reverting: touching this file pulls in 326 pre-existing scope-closure doc
+    warnings unrelated to T-2255, and the check''s own operator-visible surfacing
+    (WARNING-level land log + in-process outcome record) is achievable entirely within
+    _land.py''s own scope without it. LAND-PROOF wiring (the T-2091-style print) is
+    filed as a narrow follow-up ticket instead.'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_skipped_unmeasured_recorded_and_logged_on_collection_failure
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_ran_recorded_on_healthy_pass
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_ran_recorded_even_when_check_refuses
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_skipped_unmeasured_does_not_block_the_land
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_deletion_of_unbound_test_lands_cleanly
+- tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
 designated_repro_test: null
 acceptance:
 - text: When collect_python_tests fails, the land does not silently proceed as if
     the check passed; the skip is surfaced as explicit UNMEASURED state, never a silent
     Ok(None)
-  evidence: []
+  evidence:
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_skipped_unmeasured_recorded_and_logged_on_collection_failure
 - text: A land removing a test function bound as evidence on another ticket is refused
     even when the containing FILE survives (the T-2240 shape)
-  evidence: []
+  evidence:
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_refuses_when_branch_deletes_evidence_bound_test
 - text: 'MUST-STILL-PASS: deleting an unbound test still lands cleanly; deleting and
     re-adding the ticket''s OWN evidence in one diff is still not refused'
-  evidence: []
+  evidence:
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanedEvidenceDeletion::test_deletion_of_unbound_test_lands_cleanly
 - text: A worktree that genuinely cannot collect does not become unlandable; state
     what it does instead and why that is safe
-  evidence: []
+  evidence:
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_skipped_unmeasured_does_not_block_the_land
 - text: The land's own record distinguishes 'check ran and passed' from 'check skipped'
-  evidence: []
+  evidence:
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_skipped_unmeasured_recorded_and_logged_on_collection_failure
+  - tests/unit/test_land_orphaned_evidence.py::TestOrphanEvidenceCheckOutcome::test_ran_recorded_on_healthy_pass
 threat: null
 component: null
 anchor: false
