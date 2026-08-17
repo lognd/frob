@@ -228,7 +228,22 @@ OUTCOME`."""
 # enough that an orphaned holder is surfaced well within a human's
 # attention span rather than discovered by symptom (destroyed commits)
 # hours later.
-_LAND_LOCK_TIMEOUT_S = 600.0
+#
+# T-2065: was 600.0, ABOVE the agent-playbook's own mandated foreground
+# shell wrapper (`timeout 540`-580, docs/guides/agent-playbook.md section
+# 0 item 3 / section 3b). A land queued behind a foreign holder for
+# anywhere between the shell wrapper's floor and this value got SIGTERM'd
+# by that OUTER wrapper before this module's own `LandLockTimeout` could
+# ever fire and print a clean, attributable refusal -- confirmed as the
+# mechanism behind the T-2032/T-2033 silent land deaths (agent-playbook.md
+# section 13). Lowered to sit strictly BELOW the wrapper's floor rather
+# than raising the wrapper (T-1344's explicit finding: raising either
+# number only makes a genuinely stuck land take longer to surface) -- 500s
+# still comfortably covers the "two legitimate back-to-back land() calls"
+# case this constant exists for, while guaranteeing this module's own
+# clean refusal fires with margin before an outer `timeout 540` would ever
+# need to intervene.
+_LAND_LOCK_TIMEOUT_S = 500.0
 # frob:ticket T-1495
 _LAND_LOCK_POLL_S = 1.0
 

@@ -9935,6 +9935,29 @@ class TestLandLockHolderMetadataAndTimeout:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
 
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockHolderMetadataAndTimeout.test_lock_timeout\
+    # _stays_below_the_playbook_shell_wrapper_floor
+    # frob:ticket T-2065
+    def test_lock_timeout_stays_below_the_playbook_shell_wrapper_floor(self) -> None:
+        """T-2065: `_LAND_LOCK_TIMEOUT_S` must sit strictly BELOW the
+        agent-playbook's own mandated foreground shell-wrapper floor
+        (`timeout 540`, docs/guides/agent-playbook.md section 0 item 3 /
+        section 3b) -- otherwise a land queued behind a foreign holder can
+        be SIGTERM'd by that outer wrapper before `_land_lock`'s own
+        `LandLockTimeout` ever gets a chance to fire and print a clean,
+        attributable refusal (the confirmed T-2032/T-2033 silent-death
+        mechanism). Was 600.0 (above the floor) before this fix."""
+        from frob.tickets._land import _LAND_LOCK_TIMEOUT_S
+
+        playbook_shell_wrapper_floor_s = 540.0
+        assert _LAND_LOCK_TIMEOUT_S < playbook_shell_wrapper_floor_s, (
+            f"_LAND_LOCK_TIMEOUT_S={_LAND_LOCK_TIMEOUT_S} exceeds the "
+            f"playbook's own mandated {playbook_shell_wrapper_floor_s}s "
+            "shell-wrapper floor -- a land queued this long gets "
+            "SIGTERM'd before LandLockTimeout can ever fire (T-2065)"
+        )
+
 
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:
     """T-1804: `_unscoped_error_findings` -- the shared spawn both
