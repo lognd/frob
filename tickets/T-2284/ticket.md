@@ -88,7 +88,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e539bf52c72b88143f42b90b2417ddf626422cb6
 ---
 # Land's Tier-A auto-fix edits files outside the landing ticket's scope, including files under another ticket's live lease, forcing a CrossTicketLeakage refusal and a manual revert
 
