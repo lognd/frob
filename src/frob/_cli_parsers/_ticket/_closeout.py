@@ -10,12 +10,26 @@ from __future__ import annotations
 from pathlib import Path
 
 
+# frob:waive AFFECT001 reason="T-2254 adds --backfill-drafts/--apply flags to the \
+# existing attach subcommand; docs/guides/agentic-workflow.md#the-humanai-split \
+# describes the human/AI ticket-queue split at large, not this parser's individual \
+# flag surface, and pulling it into scope for two new store_true flags is out of \
+# proportion to this ticket's narrowed scope (T-2220 held a live lease on \
+# src/frob/app/ticket_runner/_lifecycle.py for this ticket's whole duration, which is \
+# why the dispatch decision itself lives in a new sibling module instead) -- the new \
+# flags are documented in their own --help text and in \
+# frob.app.ticket_runner._attach_backfill's module docstring"
 def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
     """Register `attach`/`block`/`close`: the non-evidence closeout subcommands."""
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
     )
-    ticket_attach_p.add_argument("ticket_id", metavar="id")
+    # T-2254: `ticket_id` becomes OPTIONAL (was `metavar="id"` alone, always
+    # required) so `--backfill-drafts` below -- a repo-wide repair with no
+    # single target ticket -- can omit it; the runner
+    # (`frob.app.ticket_runner._attach_backfill._attach_dispatch`) still
+    # requires it for the ordinary single-file attach path, unchanged.
+    ticket_attach_p.add_argument("ticket_id", metavar="id", nargs="?", default=None)
     ticket_attach_p.add_argument(
         "ticket_attach_path", metavar="path", nargs="?", default=None
     )
@@ -28,6 +42,23 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         help="skip T-1615's uniform auto-commit of this ledger change; "
         "WARNS that the ledger is left dirty and will DirtyMain-block a "
         "concurrent `frob ticket land`",
+    )
+    # frob:ticket T-2254
+    ticket_attach_p.add_argument(
+        "--backfill-drafts",
+        dest="ticket_attach_backfill_drafts",
+        action="store_true",
+        help="repair attachment path fields a pre-T-2199 draft promotion "
+        "left dangling at a vanished T-draft-<hash> directory (T-2226's "
+        "backfill_stale_draft_attachment_paths); repo-wide, no ticket id "
+        "needed. Report-only by default -- pass --apply to actually write",
+    )
+    ticket_attach_p.add_argument(
+        "--apply",
+        dest="ticket_attach_backfill_apply",
+        action="store_true",
+        help="with --backfill-drafts, write the repairs found (default: "
+        "dry-run report only, same shape as `frob ticket reconcile`)",
     )
 
     ticket_block_p = ticket_sub.add_parser("block", help="record a blocker")

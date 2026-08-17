@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.480.0] - unreleased
+
+- T-2254: T-2226's attachment backfill has no CLI entry point: the repair is unreachable and 2 COV004 findings remain, now that T-2239 removed the CRLF blocker
+
 ## [0.479.0] - unreleased
 
 - T-2220: A landed ticket does not record its own land commit, so verify_lands.py cannot be addressed by ticket id (--plan lands unreachable)

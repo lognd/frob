@@ -45,33 +45,30 @@ _log = get_logger("frob.tickets")
 
 
 # frob:ticket T-2199
+# frob:ticket T-2254
 # frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_attachment_path_follows_the_rename  # noqa: E501
 # frob:tests tests/unit/test_draft_finalize_attachments.py::TestFinalizeDraftRelocatesAttachmentRecords.test_sha256_is_reverified_at_the_new_location  # noqa: E501
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
 def _relocate_attachment_records(
-    root: Path, old_id: str, new_id: str
+    root: Path, old_id: str, new_id: str, *, dry_run: bool = False
 ) -> Result[None, TicketError]:
     """T-2199: `renumber_one`/`renumber_one_v2` moves `old_id`'s directory
-    (and any attachment FILES nested under it) to `new_id`'s new v2
-    directory, and rewrites every code/ledger prose REFERENCE to the id --
-    but never the ticket's own structured `attachments` list, which was
-    already written (by an earlier `attach()` call, before this rename)
-    with `Attachment.path` values still prefixed by `old_id`. Left alone,
-    those records point at a directory that no longer exists (measured on
-    T-2195: two attachment records still read `T-draft-0bd874ac/
-    attachments/...` after promotion, while the files themselves already
-    lived under `T-2195/attachments/`, producing 3 COV004 errors).
+    (attachment FILES included) to `new_id`'s directory but never rewrites
+    the ticket's own structured `attachments` list, left pointing at
+    `old_id` (measured on T-2195: COV004 errors after promotion). Rewrites
+    each `old_id`-prefixed `Attachment.path` to its `new_id` equivalent and
+    RE-VERIFIES the recorded `sha256` against the file at the new location
+    -- a lost/corrupted file fails LOUDLY (`Err(WriteFailed)`) rather than
+    silently recording a wrong path. Structured rewrite of the known
+    `<id>/attachments/NN-x.ext` shape, never a lexical substitution (would
+    also hit prose legitimately citing the draft id, T-2199's own
+    acceptance). No-op (`Ok(None)`) if `new_id` carries no attachment under
+    the old prefix.
 
-    Rewrites each `old_id`-prefixed `Attachment.path` to its `new_id`
-    equivalent and RE-VERIFIES the recorded `sha256` against the file at
-    that new location -- a move that lost or corrupted a file fails LOUDLY
-    here (`Err(TicketError.WriteFailed)`) rather than silently leaving a
-    valid-looking but wrong path recorded. This is deliberately a
-    structured rewrite of the known `Attachment.path` shape (`<id>/
-    attachments/NN-x.ext`), never a lexical/text substitution of the old
-    id across the ticket file -- a blind string replace would also hit
-    prose that legitimately cites the draft id historically (T-2199's own
-    acceptance). A no-op (`Ok(None)`) if `new_id`'s ticket carries no
-    attachment recorded under the old prefix."""
+    T-2254: `dry_run=True` runs every check unchanged (same `Err(
+    WriteFailed)` on a real problem) but returns before the final
+    `write_ticket` -- `Ok(None)` then means "would repair cleanly", not
+    "repaired". The T-2199 caller never passes it (default `False`)."""
     from frob.tickets import _load_one
 
     loaded = _load_one(root, new_id)
@@ -84,49 +81,73 @@ def _relocate_attachment_records(
 
     new_attachments: list[Attachment] = []
     for attachment in ticket.attachments:
-        if not attachment.path.startswith(old_prefix):
-            new_attachments.append(attachment)
-            continue
-        new_rel_path = f"{new_id}/{attachment.path[len(old_prefix) :]}"
-        new_abs_path = tickets_dir(root) / new_rel_path
-        if not new_abs_path.exists():
-            _log.error(
-                "tickets: _relocate_attachment_records: %s -> %s expected "
-                "attachment at %s but it does not exist -- file lost "
-                "during the rename",
-                old_id,
-                new_id,
-                new_abs_path,
-            )
-            return Err(TicketError.WriteFailed)
-        actual_sha256 = hashlib.sha256(new_abs_path.read_bytes()).hexdigest()
-        if actual_sha256 != attachment.sha256:
-            _log.error(
-                "tickets: _relocate_attachment_records: %s -> %s attachment "
-                "%s sha256 mismatch after rename (recorded=%s actual=%s) -- "
-                "file corrupted during the move",
-                old_id,
-                new_id,
-                new_abs_path,
-                attachment.sha256,
-                actual_sha256,
-            )
-            return Err(TicketError.WriteFailed)
-        new_attachments.append(attachment.model_copy(update={"path": new_rel_path}))
-        _log.info(
-            "tickets: _relocate_attachment_records: %s -> %s relocated "
-            "attachment record %s -> %s (sha256 verified)",
-            old_id,
-            new_id,
-            attachment.path,
-            new_rel_path,
+        relocated = _relocate_one_attachment(
+            root, old_id, new_id, old_prefix, attachment
         )
+        if relocated.is_err:
+            return Err(relocated.danger_err)
+        new_attachments.append(relocated.danger_ok)
+
+    if dry_run:
+        return Ok(None)
 
     updated = ticket.model_copy(update={"attachments": tuple(new_attachments)})
     write_result = write_ticket(root, updated)
     if write_result.is_err:
         return Err(write_result.danger_err)
     return Ok(None)
+
+
+def _relocate_one_attachment(
+    root: Path,
+    old_id: str,
+    new_id: str,
+    old_prefix: str,
+    attachment: Attachment,
+) -> Result[Attachment, TicketError]:
+    """`_relocate_attachment_records`'s per-attachment body, split out to
+    keep that function under ARCH001's line budget (T-2254): an
+    `old_prefix`-mismatched `attachment` passes through unchanged; a
+    matching one is rewritten to `new_id`'s path and sha256-reverified
+    against the FILE at that new location, failing loudly
+    (`Err(WriteFailed)`) on a missing or corrupted file rather than
+    recording a wrong path."""
+    if not attachment.path.startswith(old_prefix):
+        return Ok(attachment)
+    new_rel_path = f"{new_id}/{attachment.path[len(old_prefix) :]}"
+    new_abs_path = tickets_dir(root) / new_rel_path
+    if not new_abs_path.exists():
+        _log.error(
+            "tickets: _relocate_attachment_records: %s -> %s expected "
+            "attachment at %s but it does not exist -- file lost "
+            "during the rename",
+            old_id,
+            new_id,
+            new_abs_path,
+        )
+        return Err(TicketError.WriteFailed)
+    actual_sha256 = hashlib.sha256(new_abs_path.read_bytes()).hexdigest()
+    if actual_sha256 != attachment.sha256:
+        _log.error(
+            "tickets: _relocate_attachment_records: %s -> %s attachment "
+            "%s sha256 mismatch after rename (recorded=%s actual=%s) -- "
+            "file corrupted during the move",
+            old_id,
+            new_id,
+            new_abs_path,
+            attachment.sha256,
+            actual_sha256,
+        )
+        return Err(TicketError.WriteFailed)
+    _log.info(
+        "tickets: _relocate_attachment_records: %s -> %s relocated "
+        "attachment record %s -> %s (sha256 verified)",
+        old_id,
+        new_id,
+        attachment.path,
+        new_rel_path,
+    )
+    return Ok(attachment.model_copy(update={"path": new_rel_path}))
 
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models
@@ -145,12 +166,16 @@ class AttachmentBackfillReport(BaseModel):
 
 
 # frob:ticket T-2226
+# frob:ticket T-2254
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_repairs_a_pre_t2199_stale_draft_pointer  # noqa: E501
 # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_leaves_a_correctly_recorded_attachment_untouched  # noqa: E501
 # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_reports_unresolvable_rather_than_guessing  # noqa: E501
+# frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
 def backfill_stale_draft_attachment_paths(
     root: Path,
+    *,
+    dry_run: bool = False,
 ) -> Result[AttachmentBackfillReport, TicketError]:
     """T-2226: repair `attachments[].path` fields left dangling by a draft
     promotion that happened BEFORE T-2199's forward-rewrite fix landed --
@@ -180,7 +205,15 @@ def backfill_stale_draft_attachment_paths(
     must-still-pass control). A pair `_relocate_attachment_records`
     itself refuses (missing file, sha mismatch) is recorded in
     `unresolved` and left exactly as found -- never guessed, never
-    silently dropped (T-2226 acceptance [4])."""
+    silently dropped (T-2226 acceptance [4]).
+
+    T-2254: `dry_run=True` (the `frob ticket attach --backfill-drafts`
+    CLI default, mirroring `frob ticket reconcile`'s report-first/
+    `--apply`-to-write shape) runs the exact same discovery and
+    sha-reverify checks and produces the exact same `repaired`/
+    `unresolved` report -- a `repaired` pair under dry-run means "this
+    WOULD relocate cleanly", not "this was relocated" -- but writes
+    nothing to any ticket file."""
     merged = _load_merged(root)
     if merged.is_err:
         return Err(merged.danger_err)
@@ -188,7 +221,7 @@ def backfill_stale_draft_attachment_paths(
     unresolved: list[str] = []
     for ticket_id, ticket in merged.danger_ok.items():
         one_repaired, one_unresolved = _backfill_one_ticket(
-            root, ticket_id, ticket.attachments
+            root, ticket_id, ticket.attachments, dry_run=dry_run
         )
         repaired.extend(one_repaired)
         unresolved.extend(one_unresolved)
@@ -198,13 +231,20 @@ def backfill_stale_draft_attachment_paths(
 
 
 def _backfill_one_ticket(
-    root: Path, ticket_id: str, attachments: tuple[Attachment, ...]
+    root: Path,
+    ticket_id: str,
+    attachments: tuple[Attachment, ...],
+    *,
+    dry_run: bool = False,
 ) -> tuple[list[str], list[str]]:
     """`backfill_stale_draft_attachment_paths`'s per-ticket body, split out
     to keep the public entry point under ARCH001's line budget: finds
     every stale `T-draft-*`-prefixed attachment path on `ticket_id` and
     relocates each via `_relocate_attachment_records`, returning
-    `(repaired_pairs, unresolved_pairs)` for the caller to accumulate."""
+    `(repaired_pairs, unresolved_pairs)` for the caller to accumulate.
+    `dry_run` (T-2254) passes straight through to `_relocate_attachment_
+    records` -- see its own docstring for the exact preview-vs-write
+    contract."""
     stale_draft_ids = sorted(
         {
             attachment.path.split("/", 1)[0]
@@ -216,7 +256,9 @@ def _backfill_one_ticket(
     repaired: list[str] = []
     unresolved: list[str] = []
     for draft_id in stale_draft_ids:
-        relocated = _relocate_attachment_records(root, draft_id, ticket_id)
+        relocated = _relocate_attachment_records(
+            root, draft_id, ticket_id, dry_run=dry_run
+        )
         pair = f"{ticket_id}:{draft_id}"
         if relocated.is_err:
             _log.error(

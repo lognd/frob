@@ -30,6 +30,7 @@ from frob.logging import get_logger, logger_levels
 from frob.process._guard import guarded_subprocess_run
 
 from ._archive import _archive
+from ._attach_backfill import _attach_dispatch
 from ._close_cmd import (
     _apply_close_time_evidence,
     _close,
@@ -174,6 +175,7 @@ __all__ = [
     "_apply_evidence",
     "_apply_release_bump_for_land",
     "_attach",
+    "_attach_dispatch",
     "_flow",
     "_auto_plan_if_queued",
     "_block",
@@ -340,7 +342,8 @@ def _ticket_dispatch_table() -> dict:
         "promote": _promote,
         "land": _land,
         "merge-driver": _merge_driver,
-        "attach": _attach,
+        # frob:ticket T-2254
+        "attach": _attach_dispatch,
         "block": _block,
         "close": _close,
         # frob:ticket T-1005

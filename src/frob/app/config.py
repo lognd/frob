@@ -497,6 +497,12 @@ class AppConfig(BaseModel):
     ticket_absorbed_by: str | None = None
     ticket_caption: str = ""
     ticket_attach_path: Path | None = None
+    #: `frob ticket attach --backfill-drafts` (T-2254): repo-wide draft-
+    #: attachment-path repair mode instead of a single-file attach.
+    ticket_attach_backfill_drafts: bool = False
+    #: with `--backfill-drafts`, actually write the repairs found
+    #: (default: dry-run report only, same shape as `ticket reconcile`).
+    ticket_attach_backfill_apply: bool = False
     ticket_json: bool = False
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False

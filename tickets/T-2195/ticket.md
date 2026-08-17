@@ -45,11 +45,11 @@ evidence:
 - tests/test_lang.py::TestResolveLocalImportConsumers::test_layering_detects_a_real_violation
 designated_repro_test: tests/unit/test_lang_primitives.py::test_resolve_local_import_src_layout_absolute
 attachments:
-- path: T-draft-0bd874ac/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
+- path: T-2195/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
   caption: 'widened to CRITICAL: relative imports fail too, zero cross-file resolution
     repo-wide, T-2156 re-verification needed'
   sha256: 52c8a76d9827cda441c2e95fe3f97685dca9e7dd5405bda6ca19cdb510165dc6
-- path: T-draft-0bd874ac/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
+- path: T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
   caption: independently confirmed frob cycle vacuous on src-layout; widened acceptance
     criteria and fix-guidance (no src/ lexical special-case)
   sha256: cb8f524a05591cd2b69401bdf42a00cafa2a5a6be873b0678ea2d05da318c51a

@@ -1130,6 +1130,106 @@ class TestTicketAttach:
         assert "attached" in caplog.text
 
 
+# frob:waive WIRE001 reason="private test-fixture helper used only by this file's own \
+# TestTicketAttachBackfillDrafts test methods, same shape as \
+# test_draft_finalize_attachments.py's _seed_pre_t2199_promoted_ticket" permanent="true"
+def _seed_stale_draft_attachment(tmp_path: Path, caplog) -> None:
+    """`frob ticket new` + `attach` a real file (correct path), then
+    rewrite the ledger's `Attachment.path` back to a stale `T-draft-*`
+    prefix while leaving the FILE at its real (correct) location --
+    reproduces the exact pre-T-2199 promotion shape `backfill_stale_
+    draft_attachment_paths` repairs, entirely through the public
+    `ticket_run` CLI dispatch plus one direct ledger write (no bespoke
+    on-disk fixture construction, unlike `test_draft_finalize_
+    attachments.py`'s lower-level unit tests of the primitive itself)."""
+    cfg = AppConfig(
+        ticket_command="new", ticket_path=tmp_path, ticket_title="x", ticket_kind="bug"
+    )
+    ticket_run(cfg)
+    image = tmp_path / "img.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 16)
+    cfg = AppConfig(
+        ticket_command="attach",
+        ticket_path=tmp_path,
+        ticket_id="T-0001",
+        ticket_attach_path=image,
+    )
+    with caplog.at_level("INFO"):
+        ticket_run(cfg)
+
+    from frob.tickets._store import load_all, write_ticket
+
+    ticket = load_all(tmp_path).danger_ok["T-0001"]
+    real_attachment = ticket.attachments[0]
+    stale_path = f"T-draft-cafef00d/{real_attachment.path.split('/', 1)[1]}"
+    stale_attachment = real_attachment.model_copy(update={"path": stale_path})
+    write_ticket(
+        tmp_path, ticket.model_copy(update={"attachments": (stale_attachment,)})
+    )
+
+
+class TestTicketAttachBackfillDrafts:
+    """`frob ticket attach --backfill-drafts [--apply]` (T-2254): CLI
+    dispatch for `backfill_stale_draft_attachment_paths` -- the primitive
+    itself (repair correctness, must-still-pass control, unresolved
+    reporting) is covered by `tests/unit/test_draft_finalize_attachments.
+    py::TestBackfillStaleDraftAttachmentPaths`; these exercise the CLI
+    plumbing (flag routing, dry-run-by-default, --apply writes+commits)."""
+
+    def test_backfill_drafts_dry_run_does_not_write(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        _seed_stale_draft_attachment(tmp_path, caplog)
+        from frob.tickets._store import load_all
+
+        before = load_all(tmp_path).danger_ok["T-0001"].attachments[0].path
+        assert before.startswith("T-draft-cafef00d/")
+
+        cfg = AppConfig(
+            ticket_command="attach", ticket_path=tmp_path, ticket_attach_backfill_drafts=True
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "would repair 1 stale draft attachment" in caplog.text
+        assert "T-0001:T-draft-cafef00d" in caplog.text
+        assert "dry-run only, nothing written" in caplog.text
+
+        after = load_all(tmp_path).danger_ok["T-0001"].attachments[0].path
+        assert after == before, "dry-run must not write anything"
+
+    # frob:waive SELFAUDIT001 reason="reads back tmp_path's own attachment file \
+    # written earlier in this same test (via _seed_stale_draft_attachment's attach() \
+    # call) to verify byte-identity post-repair -- the ordinary tmp_path round-trip \
+    # shape T-1762's precedent already waives elsewhere in this suite, not a new \
+    # capability class"
+    def test_backfill_drafts_apply_writes_and_reports(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        _seed_stale_draft_attachment(tmp_path, caplog)
+
+        cfg = AppConfig(
+            ticket_command="attach",
+            ticket_path=tmp_path,
+            ticket_attach_backfill_drafts=True,
+            ticket_attach_backfill_apply=True,
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "repaired 1 stale draft attachment" in caplog.text
+        assert "T-0001:T-draft-cafef00d" in caplog.text
+
+        from frob.tickets._store import load_all
+
+        relocated = load_all(tmp_path).danger_ok["T-0001"].attachments[0]
+        assert relocated.path.startswith("T-0001/attachments/")
+        assert "T-draft-cafef00d" not in relocated.path
+        from frob.tickets._store import tickets_dir
+
+        resolved = tickets_dir(tmp_path) / relocated.path
+        assert resolved.exists()
+        assert resolved.read_bytes() == (tmp_path / "img.png").read_bytes()
+
+
 class TestTicketBlock:
     def test_missing_args_exits_1(self, tmp_path: Path) -> None:
         cfg = AppConfig(ticket_command="block", ticket_path=tmp_path)

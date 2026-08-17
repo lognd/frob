@@ -2,7 +2,7 @@
 id: T-2254
 title: 'T-2226''s attachment backfill has no CLI entry point: the repair is unreachable
   and 2 COV004 findings remain, now that T-2239 removed the CRLF blocker'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,29 +13,144 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_draft_finalize.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_attach_backfill.py
+- tests/unit/test_draft_finalize_attachments.py
+- tests/unit/test_app_runners_batch7.py
+- tickets/T-2195/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/app/ticket_runner/_attach_backfill.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_draft_finalize_attachments.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'T-2254''s own scope note: CLI wiring for the attachment backfill needs
+    the T-2217 dispose-flag precedent''s three files (cli parser, AppConfig field,
+    _config_external registration); src/frob/app/ticket_runner/_lifecycle.py is under
+    T-2220''s live cross-worktree lease, so the dispatch decision and backfill runner
+    are split into a NEW sibling module (_attach_backfill.py) wired via __init__.py''s
+    dispatch table instead, leaving _lifecycle.py''s existing _attach untouched; tests/unit/test_app_runners_batch7.py
+    owns the existing TestTicketAttach/TestTicketReconcileCli CLI-dispatch smoke tests
+    this change''s new tests belong beside'
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tickets/T-2195/ticket.md
+  reason: 'backfill_stale_draft_attachment_paths --apply (acceptance [2]) writes the
+    repaired path: field directly into tickets/T-2195/ticket.md -- the ledger record
+    this ticket''s own acceptance criteria requires be corrected'
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts::test_backfill_drafts_apply_writes_and_reports
+- tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts::test_backfill_drafts_dry_run_does_not_write
+- tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_dry_run_reports_without_writing
+- tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_repairs_a_pre_t2199_stale_draft_pointer
+- tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_leaves_a_correctly_recorded_attachment_untouched
+- tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_reports_unresolvable_rather_than_guessing
+designated_repro_test: tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts::test_backfill_drafts_apply_writes_and_reports
 acceptance:
 - text: 'The backfill is invocable from the frob CLI (fails today: four in-module
     references, no parser or runner)'
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts::test_backfill_drafts_apply_writes_and_reports
 - text: Running it repairs the two T-draft-0bd874ac attachment paths on T-2195; unscoped
     frob check --only coverage then reports 0 COV004 (currently 2)
-  evidence: []
+  evidence:
+  - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_repairs_a_pre_t2199_stale_draft_pointer
 - text: Attachment FILES are byte-identical afterwards, verified against the recorded
     sha256; only the ledger path field changes
-  evidence: []
+  evidence:
+  - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_repairs_a_pre_t2199_stale_draft_pointer
 - text: 'MUST-STILL-PASS: a correctly-recorded attachment is untouched, and an unresolvable
     draft id is reported not guessed (T-2226''s existing tests)'
-  evidence: []
+  evidence:
+  - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_leaves_a_correctly_recorded_attachment_untouched
+  - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_reports_unresolvable_rather_than_guessing
 - text: A dry-run/report-only mode exists, or an explicit reason is given for its
     absence
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestTicketAttachBackfillDrafts::test_backfill_drafts_dry_run_does_not_write
+  - tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths::test_dry_run_reports_without_writing
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # T-2226's attachment backfill has no CLI entry point, so the repair it enables can only be run from Python -- and two COV004 findings still sit unrepaired
 

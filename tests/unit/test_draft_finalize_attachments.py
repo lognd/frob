@@ -307,3 +307,48 @@ class TestBackfillStaleDraftAttachmentPaths:
         assert loaded.is_ok
         untouched = loaded.danger_ok[real_id].attachments[0]
         assert untouched.path == missing_attachment.path
+
+    # frob:tests tests/unit/test_draft_finalize_attachments.py::TestBackfillStaleDraftAttachmentPaths.test_dry_run_reports_without_writing  # noqa: E501
+    def test_dry_run_reports_without_writing(self, tmp_path: Path) -> None:
+        """T-2254 acceptance [5]: `dry_run=True` produces the exact same
+        `repaired`/`unresolved` report as a real run, but the ticket file
+        on disk is byte-for-byte unchanged -- proving dry-run previews
+        rather than silently mutating anyway."""
+        real_id = "T-2195"
+        draft_id = "T-draft-0bd874ac"
+        _seed_pre_t2199_promoted_ticket(
+            tmp_path,
+            real_id,
+            draft_id,
+            "cross-file resolution analysis",
+            b"real-investigation-history",
+            record_stale_path=True,
+        )
+        ticket_md_path = tmp_path / "tickets" / real_id / "ticket.md"
+        before = ticket_md_path.read_text()
+
+        result = backfill_stale_draft_attachment_paths(tmp_path, dry_run=True)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.repaired == (f"{real_id}:{draft_id}",)
+        assert report.unresolved == ()
+
+        after = ticket_md_path.read_text()
+        assert after == before, (
+            "dry_run=True must not write anything -- ticket.md changed anyway"
+        )
+
+        from frob.tickets._store import load_all
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        still_stale = loaded.danger_ok[real_id].attachments[0]
+        assert still_stale.path.startswith(f"{draft_id}/")
+
+        # A real (non-dry-run) call afterward still repairs cleanly --
+        # dry-run must not have left any partial/inconsistent state behind.
+        real_result = backfill_stale_draft_attachment_paths(tmp_path, dry_run=False)
+        assert real_result.is_ok, real_result.err
+        assert real_result.danger_ok.repaired == (f"{real_id}:{draft_id}",)
+        relocated = load_all(tmp_path).danger_ok[real_id].attachments[0]
+        assert relocated.path.startswith(f"{real_id}/attachments/")

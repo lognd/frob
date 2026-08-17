@@ -442,6 +442,9 @@ _BOOL_FLAGS = (
     "ticket_steal",
     "ticket_reconcile_apply",
     "ticket_reconcile_remove_orphans",
+    # frob:ticket T-2254
+    "ticket_attach_backfill_drafts",
+    "ticket_attach_backfill_apply",
     # frob:ticket T-0715
     "ticket_doable_by_parent",
     # frob:ticket T-1615
