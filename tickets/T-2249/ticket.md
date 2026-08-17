@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5e7ecf2ad065247ec39fe05791fe17710858b806
 ---
 # fleet_status's concurrency guidance keys on "MEM available", which reads healthy while the machine is already swapping GBs
 
