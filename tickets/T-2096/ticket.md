@@ -30,7 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: aa9d340faef409f4d54ae593cf2303dac0502acc
 ---
 Found while working T-2079 (and originally noted in T-1669/T-2079's own
 ticket body): `frob ticket renumber`/`_scan_v2_reference_files`
