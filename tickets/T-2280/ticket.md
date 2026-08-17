@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 948b2eee1d56a6129bb998da20985eb38f99eb4f
 ---
 # The land-time "does not worsen" gate covers ARCH001 alone, so every other rule accumulates one finding at a time
 
