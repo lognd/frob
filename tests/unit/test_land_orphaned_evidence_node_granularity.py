@@ -68,11 +68,13 @@ _WITH_TARGET = (
 )
 
 
-def _other_ticket(evidence_id: str, ticket_id: str = "T-0500") -> Ticket:
+def _other_ticket(
+    evidence_id: str, ticket_id: str = "T-0500", state: TicketState = TicketState.DONE
+) -> Ticket:
     return Ticket(
         id=ticket_id,
         title="other ticket",
-        state=TicketState.DONE,
+        state=state,
         kind=TicketKind.BUG,
         origin=Origin.AGENT,
         created=date(2026, 1, 1),
@@ -252,3 +254,46 @@ class TestOrphanedEvidenceFindingsNodeGranularity:
             "T-1959", {"T-0500": other}, changed_paths, tests, root, None
         )
         assert orphaned == {"T-0500": ["tests/test_foo.py::TestFoo::test_long_gone"]}
+
+    # frob:tests tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity.test_dropped_tickets_evidence_never_orphans_a_land  # noqa: E501
+    # frob:ticket T-2066
+    def test_dropped_tickets_evidence_never_orphans_a_land(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2066: the real T-1959/T-1579 incident's own shape -- a
+        DROPPED ticket's evidence node existed at the landing branch's
+        merge-base (so the node-level narrowing above would still flag
+        it) but is skipped entirely because a `dropped` ticket's evidence
+        is a historical record, never a live proof obligation the
+        node-level narrowing needs to adjudicate at all. A still-open (or
+        `done`) ticket in the exact same shape (the test right above this
+        one) must still refuse -- this skip is DROPPED-state specific."""
+        root = tmp_path / "repo"
+        _git_init(root)
+        _write_foo(root, _WITH_TARGET)
+        _commit_all(root, "base with target")
+        _run(["git", "checkout", "-q", "-b", "feature"], root)
+        _write_foo(root, _ONLY_STILL_HERE)
+        _commit_all(root, "delete test_real_deletion_target")
+
+        merge_base = _true_merge_base(root, "main")
+        assert merge_base.is_ok, merge_base
+
+        other = _other_ticket(
+            "tests/test_foo.py::TestFoo::test_real_deletion_target",
+            state=TicketState.DROPPED,
+        )
+        changed_paths = frozenset({"tests/test_foo.py"})
+        tests = CollectedTests(
+            node_ids=frozenset({"tests/test_foo.py::TestFoo::test_still_here"})
+        )
+
+        orphaned = _orphaned_evidence_findings(
+            "T-1959",
+            {"T-0500": other},
+            changed_paths,
+            tests,
+            root,
+            merge_base.danger_ok,
+        )
+        assert orphaned == {}

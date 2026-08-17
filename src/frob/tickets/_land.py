@@ -4785,6 +4785,31 @@ def _check_orphaned_evidence_deletion(
     return _refuse_orphaned_evidence(ticket.id, orphaned)
 
 
+# frob:ticket T-2066
+# frob:tests tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity.test_dropped_tickets_evidence_never_orphans_a_land  # noqa: E501
+def _dropped_evidence_is_never_orphaned(other: Ticket) -> bool:
+    """Whether `other` is DROPPED (T-2066): `dropped` means "the work as
+    specified should NOT be done" (its own state-machine meaning,
+    docs/modules/tickets.md), so its evidence citations are a historical
+    record, never a live "must keep resolving" obligation a DIFFERENT
+    ticket's land should ever be gated on.
+
+    Closes a real, confirmed false-attribution incident: a dropped
+    ticket's evidence node deleted by a commit already on `main` long
+    before the landing branch's own fork point got misattributed to
+    whichever unrelated branch happened to land next and touch the same
+    FILE (never the same test) for its own reasons --
+    `_test_node_existed_at_ref`'s merge-base-existence narrowing cannot
+    always distinguish "this branch's own diff removed the node" from
+    "the node was already gone via an earlier, unrelated main-side
+    change the branch's fork point still predates". A genuine sibling
+    regression on a still-open-or-`done` ticket is untouched by this skip
+    and still refuses exactly as before."""
+    from frob.tickets._models import TicketState
+
+    return other.state is TicketState.DROPPED
+
+
 # frob:ticket T-1979
 def _orphaned_evidence_findings(
     landing_id: str,
@@ -4821,13 +4846,17 @@ def _orphaned_evidence_findings(
     strictly file-level-only behavior for a caller that has no merge-base
     to offer (or an existing test constructing this function directly,
     pre-T-2060) -- never a behavior change for that
-    caller, only an added narrowing when the extra context is present."""
+    caller, only an added narrowing when the extra context is present.
+
+    T-2066: a DROPPED other-ticket is skipped outright, before any
+    node-level check -- see `_dropped_evidence_is_never_orphaned`'s own
+    docstring for why."""
     from frob.gates import _evidence_valid_for_ticket
     from frob.tickets._models import is_cmd_evidence
 
     orphaned: dict[str, list[str]] = {}
     for other_id, other in queue.items():
-        if other_id == landing_id:
+        if other_id == landing_id or _dropped_evidence_is_never_orphaned(other):
             continue
         for evidence in other.evidence:
             if is_cmd_evidence(evidence):

@@ -2,7 +2,7 @@
 id: T-2066
 title: OrphanedEvidenceDeletion land refusal misattributes a pre-existing main-history
   deletion to the landing branch
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,26 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land*.py
+- src/frob/tickets/_land.py
+- tests/unit/test_land_orphaned_evidence_node_granularity.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrow to _orphaned_evidence_findings and its regression test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_land_orphaned_evidence_node_granularity.py
+  reason: narrow to _orphaned_evidence_findings and its regression test
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity::test_dropped_tickets_evidence_never_orphans_a_land
+- tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity::test_a_genuine_this_branch_deletion_still_refuses
+- tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity::test_node_level_narrowing_clears_a_pre_existing_absence
+designated_repro_test: tests/unit/test_land_orphaned_evidence_node_granularity.py::TestOrphanedEvidenceFindingsNodeGranularity::test_dropped_tickets_evidence_never_orphans_a_land
 threat: null
 component: null
 anchor: false
