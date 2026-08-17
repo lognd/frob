@@ -2,7 +2,7 @@
 id: T-2123
 title: frob ticket new accepts an unacknowledged over-broad scope; enforcement point
   is missing at filing time, not just start
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'
@@ -13,9 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_new_renumber.py
+- tests/unit/test_new_ticket_over_broad_scope_warning.py
+evidence_scope:
+- tests/unit/test_new_ticket_over_broad_scope_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_new_ticket_over_broad_scope_warning.py
+  reason: BUG002 evidence for T-2123 lives in this test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_over_broad_scope_warns_at_filing_time
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_precise_scope_is_silent_at_filing_time
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_ack_bypasses_the_warning
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_severity_scales_with_a_catastrophic_match_count
+designated_repro_test: tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_over_broad_scope_warns_at_filing_time
 threat: null
 component: null
 anchor: false

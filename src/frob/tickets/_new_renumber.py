@@ -629,7 +629,122 @@ def new_ticket(
         return Err(written.danger_err)
     ticket = written.danger_ok
     _commit_new_ticket(root, ticket, no_commit, warn_if_dirty=warn_if_dirty)
+    # frob:ticket T-2123
+    _warn_over_broad_scope_on_new(root, ticket)
     return Ok(ticket)
+
+
+# frob:ticket T-2123
+# frob:doc docs/modules/tickets-data-storage.md#mega-glob-scope-refused-at-start-t-1866
+# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_over_broad_scope_warns_at_filing_time  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_precise_scope_is_silent_at_filing_time  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_ack_bypasses_the_warning  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew.test_severity_scales_with_a_catastrophic_match_count  # noqa: E501
+def _warn_over_broad_scope_on_new(root: Path, ticket: Ticket) -> None:
+    """T-2123: the SAME TICK009/`large_glob_warnings` breadth measure and
+    `scope_breadth_ack` escape hatch T-1866 already enforces (as a hard
+    refusal) at `frob ticket start` time, now ALSO surfaced at `frob
+    ticket new` filing time -- the earlier gap T-1866 itself flagged but
+    could not fix under its own declared scope: an over-broad scope enters
+    the ledger and can suppress the `doable` queue's signal for other
+    agents from the moment of FILING, not just from start.
+
+    WARN-only here, never a refusal: `start`'s hard refusal works because
+    an already-filed ticket can be acknowledged via `frob ticket scope-ack
+    <id>` before retrying `start` -- but a ticket being CREATED has no id
+    yet to acknowledge against, so refusing filing outright would strand
+    the author with no way forward inside a single command. `spec`-level
+    `scope_breadth_ack` wiring (a `frob ticket new --scope-breadth-ack`
+    flag) would close this circularity fully but needs CLI-parser/
+    `AppConfig` changes outside this ticket's own declared scope
+    (`src/frob/tickets/_new_renumber.py` alone) -- noted as follow-up
+    work, not silently worked around here.
+
+    T-2123's second finding: the coordinator's own measured incident
+    (`frob ticket new --scope src/frob/app/ticket_runner/` accepted,
+    logging 614 collapsed scope-closure warnings, 8 shown) made a
+    catastrophic scope look like a minor nit. This function's own
+    prominence scales with the match count instead of always logging at
+    WARNING: any entry whose match count exceeds `_CATASTROPHIC_SCOPE_
+    MULTIPLE` times the breadth threshold logs at ERROR, with a summary
+    line naming the worst offender's match count -- the loudest single
+    signal fires proportionally to how bad the scope actually is, not a
+    flat severity regardless of whether it is 2x or 200x over."""
+    if ticket.scope_breadth_ack:
+        return
+    from frob.tickets import (
+        _load_large_glob_max_files,
+        _repo_files,
+        large_glob_warnings,
+    )
+
+    threshold = _load_large_glob_max_files(root)
+    files = _repo_files(root)
+    warnings = large_glob_warnings(ticket, root, breadth=(threshold, files))
+    if not warnings:
+        return
+    worst_multiple = _worst_over_broad_multiple(ticket, threshold, files)
+    catastrophic = (
+        worst_multiple is not None and worst_multiple >= _CATASTROPHIC_SCOPE_MULTIPLE
+    )
+    log_fn = _log.error if catastrophic else _log.warning
+    for warning in warnings:
+        log_fn("ticket new: %s: %s", ticket.id, warning)
+    if catastrophic:
+        _log.error(
+            "ticket new: %s scope is CATASTROPHICALLY over-broad (worst "
+            "entry matches %.0fx the %d-file breadth threshold) -- this "
+            "will suppress the doable queue's signal for other agents the "
+            "moment this ticket starts; narrow it now (`frob ticket scope "
+            "%s --remove '<glob>' --add '<file>' --reason '...'`), or "
+            "acknowledge it explicitly (`frob ticket scope-ack %s --reason "
+            "'...'`) if this genuinely is a package-wide epic",
+            ticket.id,
+            worst_multiple,
+            threshold,
+            ticket.id,
+            ticket.id,
+        )
+
+
+# frob:ticket T-2123
+# A catastrophically over-broad scope matches this many TIMES the breadth
+# threshold before its warning escalates from WARNING to ERROR -- an
+# arbitrary but reasoned cutoff (an order of magnitude past "merely over
+# the line") that separates "a bit too broad, narrow it" from the T-2123
+# incident shape (614 files matched against whatever this repo's threshold
+# is, an unmistakably catastrophic scope, not a borderline one).
+_CATASTROPHIC_SCOPE_MULTIPLE = 10
+
+
+# frob:ticket T-2123
+def _worst_over_broad_multiple(
+    ticket: Ticket, threshold: int, files: tuple[str, ...]
+) -> float | None:
+    """The largest `matched / threshold` ratio across `ticket`'s over-broad
+    scope entries (`_over_broad_scope_entries`), or `None` if none are
+    over-broad -- `_warn_over_broad_scope_on_new`'s severity-scaling input.
+    A chronically-broad LITERAL glob (`OVER_BROAD_LITERAL_GLOBS`) counts as
+    its own full match set size, matching `large_glob_warnings`'s own
+    per-entry match-count computation for that case."""
+    import fnmatch
+
+    from frob.tickets._doable import _entry_to_glob, _over_broad_scope_entries
+    from frob.tickets._models import OVER_BROAD_LITERAL_GLOBS
+
+    worst = 0.0
+    for entry in _over_broad_scope_entries(ticket.scope, threshold, files):
+        if entry in OVER_BROAD_LITERAL_GLOBS:
+            # Chronically over-broad by definition (T-0453 DESIGN
+            # CORRECTION), regardless of the CURRENT repo's file count --
+            # a genuinely empty/tiny fixture repo must not read as "not
+            # catastrophic" just because it happens to have few files on
+            # disk right now. Treated as maximally catastrophic outright
+            # rather than derived from `len(files)`.
+            return float(_CATASTROPHIC_SCOPE_MULTIPLE)
+        matched = len(fnmatch.filter(files, _entry_to_glob(entry)))
+        worst = max(worst, matched / threshold if threshold else float(matched))
+    return worst if worst > 0 else None
 
 
 def _allocate_and_check_ticket_id(root: Path) -> Result[str, TicketError]:
@@ -1282,9 +1397,7 @@ def renumber_one(
         # file, so only a foreign lease on that specific id can conflict --
         # see `_refuse_if_other_worktree_holds_live_lease_for_id`'s
         # docstring for why the bulk guard is too broad here.
-        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(
-            root, old_id
-        )
+        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(root, old_id)
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
     with allocator_lock(root), ledger_lock(root):
