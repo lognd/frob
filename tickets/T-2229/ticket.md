@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fb926551fe5c331f8140a5f9cd3fd456f3093d5b
 ---
 TICK004 (`_tick004_queue_rot`, `src/frob/gates/_tickets_gate.py`) and
 `scripts/fleet_status.py`'s TICKET ROT section both flag a queued/planned
