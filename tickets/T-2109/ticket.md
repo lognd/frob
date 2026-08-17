@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7de538c7615e0553ab81d4925a6d4d97c89d43ad
 ---
 Follow-up to T-2102, per explicit coordinator review: T-2102 replaced
 `test_parses_and_elaborates`'s hardcoded `== 23` node-count golden with
