@@ -1,7 +1,7 @@
 ---
 id: T-2112
 title: docs/commands/cli-vocabulary.md drifted by T-2107's did-you-mean scoping fix
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-10'
@@ -12,8 +12,13 @@ sprint: null
 runs_last: false
 scope:
 - docs/commands/cli-vocabulary.md
+evidence_scope:
+- tests/unit/test_main_entry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unrecognized_flag_suggestion_scoped_to_invoked_subcommand
+- tests/unit/test_main_entry.py::TestDidYouMean::test_unrecognized_flag_error_shows_invoked_subcommand_usage
 designated_repro_test: null
 threat: null
 component: null

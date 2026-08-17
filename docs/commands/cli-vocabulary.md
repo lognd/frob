@@ -26,12 +26,19 @@ wiring. Two argparse error shapes get a suggestion appended:
 
 - **Invalid subcommand/choice**: candidates come straight out of
   argparse's own error message text (it already lists every valid choice).
-- **Unrecognized flag**: candidates are every `--flag` string registered
-  anywhere in the whole CLI (`_collect_option_strings`, walked once after
-  `_build_parser` assembles the full subcommand tree) -- deliberately
-  global rather than per-subcommand, since one flag name per concept
-  across subcommands is this same ticket's other half (below), so a
-  cross-subcommand suggestion is the intended behavior, not noise.
+- **Unrecognized flag**: candidates are the `--flag` strings registered on
+  the ACTUALLY-INVOKED subcommand and its descendants only
+  (`_collect_option_strings(target)`, T-2107), not the whole CLI tree --
+  argparse always raises a leftover-arguments error on the ROOT parser
+  even when the mistake was made several subcommand levels down (`frob
+  ticket doable --limit`), so `_SuggestingArgumentParser.parse_known_args`
+  records every parser argparse recurses into onto `_INVOKED_PARSERS`
+  during the call, and `error()` uses `_INVOKED_PARSERS[-1]` (the
+  most-specific subcommand actually reached) as `target` for both the
+  suggestion pool and the printed usage block, falling back to the global
+  `_ALL_OPTION_STRINGS` pool only when no invocation chain was recorded at
+  all. A flag that exists only on a DIFFERENT subcommand is neither
+  suggested nor implied by the shown usage.
 
 `difflib.get_close_matches` (cutoff 0.6, top-1) decides whether a
 candidate is close enough to suggest at all; a wildly different token
