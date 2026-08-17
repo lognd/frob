@@ -1,7 +1,7 @@
 ---
 id: T-2279
 title: 'COV002: _lifecycle.py and _land.py changed with no owning ticket (T-2268 triage)'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -44,3 +44,6 @@ filing -- do not start this ticket until that lease clears; check
 Fix: add a `frob:ticket <this-id>` directive to the flagged symbol(s), or
 confirm an existing open ticket's scope should have covered the file and
 widen it instead of adding a redundant directive.
+
+## Drop reason
+- 2026-08-17: Re-measured: COV002 is diff-driven (requires an uncommitted diff to compare against declared scope); main currently has no uncommitted changes, so COV002 cannot fire on any file right now, including _lifecycle.py/_land.py. This was stale T-2268 triage residue from a diff in flight at filing time. Also blocked: src/frob/tickets/_land.py is under a live T-2118 lease, so even if the premise reproduced, this ticket could not be started right now. Dropping rather than inventing work against a gate that cannot fire in the current tree state
