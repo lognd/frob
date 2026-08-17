@@ -644,6 +644,53 @@ class TestDoc006BareIdentifierNarrowing:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "CHANGELOG.md")
 
+    def test_sharded_archive_dir_is_an_archival_record_not_checked(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2131: `tickets/archive/<id>/*.md` (the v2 sharded-per-ticket
+        migration's own archive shard) is the SAME class as `tickets-
+        archive.md`/`CHANGELOG.md` above -- `frob ticket archive` moves a
+        closed/dropped ticket's `done-report.md` here verbatim, forever.
+        Its command citations are correct-at-close-time history, not a
+        doc that is wrong right now."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write(
+            tmp_path,
+            "tickets/archive/T-0001/done-report.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/archive/T-0001/done-report.md")
+
+    def test_live_ticket_dir_still_flagged(self, tmp_path: Path) -> None:
+        """The archive-directory exclusion above narrows to `tickets/
+        archive/**` specifically -- a still-open ticket's own `tickets/
+        T-<id>/ticket.md` (not yet archived) must still be checked exactly
+        as any other live doc, per the standing rule against blanket-
+        excluding all of `tickets/**`."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write(
+            tmp_path,
+            "tickets/T-0002/ticket.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-0002/ticket.md")
+
     def test_live_doc_still_flagged_after_changelog_exclusion(
         self, tmp_path: Path
     ) -> None:

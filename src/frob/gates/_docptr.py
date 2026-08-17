@@ -1295,6 +1295,38 @@ def _tests_target_shape_violations(snapshot: GraphSnapshot) -> list[Violation]:
 # it would be to falsify history.
 _ARCHIVAL_LEDGER_FILES = frozenset({"tickets-archive.md", "CHANGELOG.md"})
 
+# frob:ticket T-2131
+#: `tickets/archive/T-*/*.md` (T-1... the v2 sharded-per-ticket migration's
+#: own archive shard) is the SAME class of file `_ARCHIVAL_LEDGER_FILES`
+#: already exists to exempt -- `frob ticket archive` moves a closed/
+#: dropped ticket's `ticket.md`/`done-report.md` here verbatim, forever,
+#: exactly as it moved a section into the old `tickets-archive.md`
+#: monofile before the migration. This exclusion was never added when the
+#: sharded archive directory replaced the monofile, so every archived
+#: done-report's correct-at-the-time command citations (T-2131 measured:
+#: 500 of 584 repo-wide DOC006 findings, 85.6%, including several now-
+#: removed subcommands -- `frob edit`/`frob dispatch`/`frob mission`/
+#: `frob todo` -- named honestly in Done reports written while those
+#: commands still existed) tripped DOC006 as if they were live, broken
+#: docs. A glob prefix, not another exact-name entry: the sharded shape
+#: is `tickets/archive/<id>/<file>.md`, unbounded in count, unlike the
+#: two fixed monofile names above.
+_ARCHIVAL_DIR_PREFIX = "tickets/archive/"
+
+
+# frob:ticket T-2131
+def _is_archival_doc(doc_path: str) -> bool:
+    """Whether `doc_path` is a historical record `doc006_gate` must never
+    check against the CURRENT tree -- `_ARCHIVAL_LEDGER_FILES`'s two fixed
+    monofile names, or anything under the v2 sharded archive directory
+    (`_ARCHIVAL_DIR_PREFIX`). Split out as its own predicate (T-2131)
+    purely so the two archival shapes -- fixed names vs. an unbounded
+    glob prefix -- read as one obviously-correct check at each call site,
+    not because either shape changed."""
+    return doc_path in _ARCHIVAL_LEDGER_FILES or doc_path.startswith(
+        _ARCHIVAL_DIR_PREFIX
+    )
+
 
 def _tracked_all_files(root: Path) -> frozenset[str]:
     """Every git-tracked file in `root`, repo-relative POSIX paths."""
@@ -1410,7 +1442,7 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 
     violations: list[Violation] = list(_tests_target_shape_violations(snapshot))
     for doc_path in _tracked_md_files(root):
-        if doc_path in _ARCHIVAL_LEDGER_FILES:
+        if _is_archival_doc(doc_path):
             continue
         text = _read_md(root, doc_path)
         if text is None:

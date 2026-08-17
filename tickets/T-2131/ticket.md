@@ -2,7 +2,7 @@
 id: T-2131
 title: 'DOC006: exclude tickets/archive/** sharded done-reports from CLI-pointer liveness
   checks'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-11'
@@ -13,8 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: doc006_gate's own test file, needed to add archival-directory exclusion
+    coverage
+  actor: logan
+  at: '2026-08-11'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_sharded_archive_dir_is_an_archival_record_not_checked
+- tests/test_docptr_gate.py::TestDoc006BareIdentifierNarrowing::test_live_ticket_dir_still_flagged
 designated_repro_test: null
 threat: null
 component: null
