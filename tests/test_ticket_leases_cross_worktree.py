@@ -22,11 +22,13 @@ from frob.tickets import (
     TicketQueue,
     TicketSpec,
     TicketState,
+    add_evidence,
     doable,
     leased_by,
     load_all,
     mutate_scope,
     new_ticket,
+    set_done_report,
     transition,
 )
 from frob.tickets._leases import (
@@ -224,6 +226,110 @@ class TestCrossWorktreeLeaseVisibility:
         held = next(lease for lease in leases if lease.ticket_id == tid)
         assert "src/other.py" in held.scope
         assert "src/feature.py" in held.scope
+
+    # frob:ticket T-2271
+    def test_scope_change_while_queued_then_start_leases_with_post_change_scope(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-2271's suspected mechanism: a `scope --add` while the ticket is
+        still QUEUED (before `_auto_plan_if_queued`'s own queued->planned
+        write), immediately followed by the planned->in-progress
+        transition. `mutate_scope` does not record a lease for a
+        not-yet-in-progress ticket (correctly -- there is nothing to lease
+        yet), so the only recording opportunity is the IN_PROGRESS
+        transition itself; this proves it fires with the POST-change
+        scope, not a stale pre-change snapshot."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_scope_change_while_queued_then_start_leases_with_post_change_scope
+        (repo / "src" / "other.py").write_text("# other\n")
+        created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+
+        # Ticket is still QUEUED here -- mirrors T-2259's own git history
+        # (four `scope` commits before the start transition).
+        mutated = mutate_scope(
+            repo, tid, add=("src/other.py",), reason="widen before start"
+        )
+        assert mutated.is_ok
+        assert not any(lease.ticket_id == tid for lease in read_all_leases(repo)), (
+            "a QUEUED ticket must not hold a lease yet"
+        )
+
+        # `_auto_plan_if_queued` + the IN_PROGRESS transition, exactly as
+        # `frob ticket start` drives them.
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+
+        leases = read_all_leases(second_worktree)
+        held = next((lease for lease in leases if lease.ticket_id == tid), None)
+        assert held is not None, (
+            "the in-progress transition must record a lease even when a "
+            "scope change happened first, in the same worktree, while "
+            "still queued"
+        )
+        assert "src/other.py" in held.scope
+        assert "src/feature.py" in held.scope
+
+    # frob:ticket T-2271
+    def test_local_close_releases_the_lease_before_a_second_worktree_sees_done(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """T-2271's ACTUAL mechanism (not the suspected scope-change one):
+        `frob ticket land`'s own `_land_finalize_and_close` transitions a
+        ticket to DONE in the WORKTREE, releasing the shared cross-worktree
+        lease immediately, BEFORE the merge commit reaches the primary
+        checkout's own copy of `tickets/<id>/ticket.md` (`_land_squash_
+        apply` is a later, separate step). A ticket can therefore read
+        in-progress from `second_worktree`'s own local ledger view while
+        already holding NO shared lease at all -- this is the exact shape
+        T-2271 was filed from (T-2259: `state: in-progress` on main, no
+        `.git/frob-leases/T-2259.json`), reproduced here directly against
+        `transition`/`read_all_leases` with no `_land.py` involved at all:
+        `_sync_cross_worktree_lease` releases synchronously and
+        unconditionally the moment `from_state is IN_PROGRESS`, regardless
+        of whether any OTHER worktree's own ledger copy has caught up to
+        the same state yet. Not a bug in the recorder -- the lease and a
+        stale peer worktree's ticket-state READ answer different
+        questions, exactly the distinction this ticket's own 'do not
+        infer occupancy from state' constraint protects."""
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility.\
+        # test_local_close_releases_the_lease_before_a_second_worktree_sees_done
+        created = new_ticket(repo, _spec("Feature A", scope=("src/feature.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+        assert any(lease.ticket_id == tid for lease in read_all_leases(second_worktree))
+
+        # `second_worktree`'s own local ledger has never seen this ticket
+        # at all -- it never merged/pulled `repo`'s commits, exactly like
+        # the primary checkout's `tickets/<id>/ticket.md` before a land's
+        # squash-apply step reaches it.
+        stale_view = load_all(second_worktree)
+        assert stale_view.is_ok
+        assert tid not in stale_view.danger_ok
+
+        # `repo` (standing in for the worktree land finalizes in) closes
+        # the ticket LOCALLY, exactly what `_finalize_and_close_ticket`
+        # does before `_land_squash_apply` ever touches the primary
+        # checkout.
+        assert add_evidence(repo, tid, ["tests/test_x.py::test_a"]).is_ok
+        assert set_done_report(repo, tid, why="did the thing").is_ok
+        assert transition(repo, tid, TicketState.DONE).is_ok
+
+        # The shared lease is gone immediately...
+        assert not any(
+            lease.ticket_id == tid for lease in read_all_leases(second_worktree)
+        )
+        # ...even though `second_worktree`'s OWN ledger view still has no
+        # record of this ticket at all (the pre-merge equivalent of a
+        # peer's stale "state: in-progress" read) -- proving the lease
+        # answers "is anyone actively holding this right now", not
+        # "does every peer's ledger copy agree on the current state".
+        assert tid not in load_all(second_worktree).danger_ok
 
 
 class TestLeaseAttributionProvenance:
@@ -720,7 +826,9 @@ class TestLeaseDeltaReconciliation:
         # lease at this point.
         _run(["git", "merge", "main"], second_worktree)
         held = next(
-            lease for lease in read_all_leases(second_worktree) if lease.ticket_id == tid
+            lease
+            for lease in read_all_leases(second_worktree)
+            if lease.ticket_id == tid
         )
         assert set(held.scope) == {"src/feature.py", "src/other.py"}
 
@@ -728,7 +836,10 @@ class TestLeaseDeltaReconciliation:
         # but second_worktree never merges this commit, so its own on-disk
         # ticket.md stays on the pre-narrowing snapshot.
         narrowed = mutate_scope(
-            repo, tid, remove=("src/other.py",), reason="narrow to the real touched file"
+            repo,
+            tid,
+            remove=("src/other.py",),
+            reason="narrow to the real touched file",
         )
         assert narrowed.is_ok
         _commit_all(repo, "narrow scope")
@@ -765,11 +876,15 @@ class TestLeaseDeltaReconciliation:
         assert transition(repo, tid, TicketState.PLANNED).is_ok
         assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
 
-        expanded = mutate_scope(repo, tid, add=("src/another.py",), reason="also needed")
+        expanded = mutate_scope(
+            repo, tid, add=("src/another.py",), reason="also needed"
+        )
         assert expanded.is_ok
 
         held = next(
-            lease for lease in read_all_leases(second_worktree) if lease.ticket_id == tid
+            lease
+            for lease in read_all_leases(second_worktree)
+            if lease.ticket_id == tid
         )
         assert set(held.scope) == {"src/feature.py", "src/another.py"}
 

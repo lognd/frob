@@ -3,7 +3,7 @@ id: T-2271
 title: 'An in-progress ticket can hold NO cross-worktree lease: T-2259 worked by a
   live agent with no lease file, so its scope reads unclaimed to T-2225''s collision
   check'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -14,22 +14,32 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_evidence.py
+evidence_scope:
+- tests/test_ticket_leases_cross_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_change_while_queued_then_start_leases_with_post_change_scope
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_local_close_releases_the_lease_before_a_second_worktree_sees_done
+- tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease
 designated_repro_test: null
 acceptance:
 - text: 'A ticket driven to in-progress after a scope change in the same worktree
     session holds a recorded lease (fails today: T-2259)'
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_change_while_queued_then_start_leases_with_post_change_scope
 - text: The recorded scope reflects the post-change scope, not a stale pre-change
     snapshot
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_change_while_queued_then_start_leases_with_post_change_scope
 - text: 'MUST-STILL-PASS: ordinary start records exactly one lease; transition out
     of in-progress still releases it; --steal still behaves per _lifecycle.py:193-211;
     no lease resurrection for terminal tickets'
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_release_on_close_removes_the_lease
 - text: State the actual mechanism found -- 'it works now' is not a diagnosis
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_local_close_releases_the_lease_before_a_second_worktree_sees_done
 threat: null
 component: null
 anchor: false
@@ -135,3 +145,5 @@ It also silently understates fleet concurrency: `fleet_status` reported
 `src/frob/app/ticket_runner/_lifecycle.py` owns `_start`/`_auto_plan_if_queued`
 and is currently UNLEASED but is also T-2258's declared scope -- coordinate
 rather than colliding if both are dispatched.
+
+<!-- frob:no-behavior-change reason="this ticket's own audit found no defect in _sync_cross_worktree_lease/_evidence.py to fix -- both regression tests added prove the recorder already works correctly for the suspected sequence, and identify the real (different, out-of-scope) mechanism. No production code path changed." -->
