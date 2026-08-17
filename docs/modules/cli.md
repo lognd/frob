@@ -279,6 +279,171 @@ in the same call. See `docs/design/ledger-v2.md` section 7 for the full
 migration design and `docs/modules/tickets-data-storage.md#migration-to-v2-t-1259-docsdesignledger-v2md-section-7`
 for the storage-internals writeup.
 
+## frob ack
+
+`frob ack [ref ...] [--facet {sig,body,doc}] [--path DIR] [--reason TEXT
+| --reason-file PATH] [--list]` re-verifies one or more `path::Qualified.
+Name` refs against their current graph-recorded digest, clearing the
+drift the DRIFT family gates would otherwise flag -- `--facet` narrows
+which digest (signature, body, or doc) is being re-verified when a ref
+has drifted on more than one facet independently; `--reason`/
+`--reason-file` is required and records WHAT was re-verified and why the
+doc is still true (the file form exists for the same shell-safety reason
+`docs/guides/agent-playbook.md` section 1d documents for ticket prose).
+`--list` shows the append-only ack audit trail instead of acking
+anything -- read-only, no ref required.
+
+## frob agent
+
+`frob agent env WORKTREE-PATH` prints the two `export` lines a dispatched
+agent's shell needs before running `pytest`/`frob` directly against a
+worktree: `FROB_WORKTREE=<path>` and `FROB_AGENT=1` (T-0574) -- exactly
+the env `docs/guides/agent-playbook.md` section 1b's `eval "$(frob agent
+env ...)"` recipe sources. `env` is currently the only subcommand.
+
+## frob debt
+
+`frob debt [--path DIR] [--json]` reports open technical-debt markers
+(`frob:todo`/deprecation entries and similar) under `path` (default: the
+repo root); `--json` swaps the printed report for a machine-readable
+one. Measurement only -- see `frob deprecated` below for the related,
+but distinct, expiring-deprecation view.
+
+## frob deprecated
+
+`frob deprecated [--path DIR] [--json]` reports every live
+`frob:deprecated`-style marker under `path` (default: the repo root)
+along with its expiry state, the same data REL001's open-debt half
+checks at land time; `--json` swaps the printed report for a
+machine-readable one.
+
+## frob design
+
+`frob design {sys,registry,docs,graph,exports} ...` groups the
+design-knowledge subcommands under one umbrella: `sys` applies/queries
+the strata design model (plan, doc, export, ...); `registry` reads the
+unified design-knowledge registry (T-0407); `docs` extracts docstrings
+from a file/symbol in overview form (for full-text search across `docs/`
+use `frob explore docs-search` instead, not this); `graph` is the same
+obligation-graph build/query/why surface `frob graph` (see above)
+exposes directly, reachable here too for discoverability; `exports`
+generates a package's `__init__.py` from its public symbols. Each
+subcommand has its own `--help`; this entry exists so `frob design ...`
+itself resolves to something documented, per DOC012.
+
+## frob docs
+
+`frob docs [path] [symbol] [--overview] [--search QUERY] [--json]
+[--sync-commands]` inspects a file or symbol's documentation coverage:
+plain `frob docs path [symbol]` shows relevant `docs/` headings and
+summaries touching that path/symbol; `--overview` is the same view
+without narrowing to a symbol; `--search QUERY` full-text searches
+`docs/` (also reachable as `frob explore docs-search`); `--sync-commands`
+regenerates this very file's "Generated command reference" block (below)
+from the live argparse registry (T-1011) instead of inspecting anything
+-- the two modes are mutually exclusive with `path`/`symbol`.
+
+## frob explore
+
+`frob explore {map,outline,xref,docs-search} ...` groups the
+navigation/read-only-inspection subcommands (T-1238, supersedes T-0580/
+T-0802): `map` prints the whole-project structural map (symbols + line
+counts); `outline FILE` prints one file's structural skeleton (classes,
+functions, line numbers); `xref SYMBOL` finds a symbol's definition plus
+every referencing file through the call graph -- the preferred
+alternative to a raw recursive `grep` for a known symbol name, per this
+repo's own `frob-suggest` hook; `docs-search QUERY` full-text searches
+`docs/`. See "Navigation commands" above for the historical regrouping
+context.
+
+## frob ops
+
+`frob ops {release,natives,doctor,clean,fleet,deploy,scaffold,gitlog,
+stats} ...` is a second-tier umbrella grouping operational subcommands
+that are each also independently useful; most (`clean`, `fleet`,
+`stats`) are documented in their own dedicated sections elsewhere in
+this file or under `docs/modules/`. The remaining ones reachable only
+through this umbrella: `release` computes the mechanical semver bump
+from the public-API graph (REL001, land-owned per
+`docs/guides/agent-playbook.md` section 4b -- never run by hand in a
+worktree); `natives` builds every declared `[[native]]` crate (T-0864,
+see "frob natives build" above); `doctor` verifies `frob_core`/
+`strata_core` are actually installed (see "`frob doctor`" above);
+`deploy` compiles `std.host` manifests into install/status/uninstall
+bash; `scaffold` scaffolds a new project from a template.
+
+## frob pool
+
+`frob pool {snapshot,clear} ...` manages a rule's ratchet baseline pool:
+`snapshot --key KEY RULE` baselines a given key as WARN for `RULE`, so
+anything else of that rule still reports at error severity (a targeted
+escape hatch for a known, accepted finding rather than a blanket
+waiver); `clear --key KEY RULE --reason TEXT` removes one baselined key
+from the pool, always requiring a reason -- the same "every ratcheted
+finding eventually needs a disposition" posture `docs/guides/
+agent-playbook.md` section 7 describes for `frob:waive`.
+
+## frob profile
+
+`frob profile {show,downgrade} ...` inspects and manages the RAPID/
+standard land-profile auto-ratchet (T-1575, see the "profile: ... is
+running RAPID" warnings `frob ticket land` prints): `show` reports the
+configured profile, the effective profile after any auto-ratchet, and
+any persisted ratchet state; `downgrade` explicitly clears a persisted
+rapid-to-standard auto-ratchet -- the ONLY way back once ratcheted,
+never automatic.
+
+## frob quality
+
+`frob quality {check,test,dup,arch,bind,cycle,mutate,perf} ...` is a
+second CLI surface over several gates/tools also reachable through their
+own top-level subcommands (`frob dup`, `frob arch`, `frob mutate`, `frob
+perf`, all documented in their own sections above): `check` runs an
+aggregated quality gate (ruff, ty, cycle/dup/arch/bind/exports) with
+errors surfaced first, sized to hand directly to a subagent; `test`
+selects and runs tests for the touched set (or `--all`); `bind` verifies
+binding declarations match source signatures; `cycle` detects dependency
+cycles. Prefer this umbrella when you want several quality checks
+narrated together; prefer the standalone top-level command when you want
+just one.
+
+## frob registry
+
+`frob registry {audit,add} ...` manages the design-knowledge registry
+`frob design registry` (above) reads: `audit` reports per-registry-file
+disposition accounting (handled/deferred/out-of-scope/unaccounted);
+`add` appends a new pending entry to a registry file's universe corpus,
+the T-0429 exhaustive-research emit path.
+
+## frob test
+
+`frob test [path] [--all] [--fuzz] [--collect] [--wait-coverage] [--base
+REF] [--lang L] [--fallback {package,suite,warn}] [--json]` selects and
+runs tests for the touched set under `path` (or the whole suite with
+`--all`); `--fuzz` property-tests fuzz-obligated pydantic models and
+stamps the result (T-0002); `--collect` drops and rebuilds the pytest
+collection cache, then exits (T-0333) -- the fix for a fresh worktree's
+`ModuleNotFoundError` per `docs/guides/agent-playbook.md` section 1
+step 2; `--wait-coverage` blocks in the foreground, single-flight across
+concurrent callers, until the coverage stamp is fresh, then exits -- the
+definitive-result alternative to backgrounding `make coverage` and
+stalling on a notification that structurally cannot arrive (T-0322, see
+section 6b of the playbook); `--base REF` sets the diff base for
+touched-set selection; `--fallback` controls what happens when the
+touched set cannot be resolved (fall back to the whole package, the
+whole suite, or just warn).
+
+## frob worktree
+
+`frob worktree {sweep,remove,release-lease} ...` manages dispatched-agent
+git worktrees: `sweep [path] [--dry-run] [--min-age HOURS]` is the
+lease-aware bulk cleanup `docs/guides/agent-playbook.md` section 12b
+mandates over a raw `git worktree remove` loop (T-0836); `remove` safely
+removes a single worktree with T-1739's liveness check (T-1779); `release-
+lease TICKET-ID` releases one ticket's cross-worktree lease, but only if
+it is confirmed orphaned -- its recorded worktree path no longer exists
+(T-1779 finding 7).
+
 ## Generated command reference (T-1011)
 
 <!-- frob:invariant INV-045 -->

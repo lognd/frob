@@ -1,7 +1,7 @@
 ---
 id: T-2316
 title: 'DOC012: document remaining subcommands with no dedicated doc file (cli.md)'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-17'
@@ -12,18 +12,24 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/cli.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given the 14 listed subcommands, when frob check --only docblocks runs, then
     none of ack/agent/debt/deprecated/design/docs/explore/ops/pool/profile/quality/registry/test/worktree
     appear in the DOC012 finding list
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given docs/modules/cli.md, when read, then each of the 14 subcommands has
     a real `## frob <name>` (or deeper) heading with actual descriptive prose, not
     an empty placeholder
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 anchor: false
