@@ -2,7 +2,7 @@
 id: T-2298
 title: frob fmt with a broad path rewrote 49 unrelated .strata fixture files; a test-input
   corpus must not be reformattable by an unscoped fmt
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,17 +11,29 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+evidence_scope:
+- tests/test_gates_fmt_directives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_gates_fmt_directives.py::TestFormatPaths::test_broad_path_formats_source_but_leaves_strata_fixtures_untouched
+- tests/test_gates_fmt_directives.py::TestFormatPaths::test_include_test_corpora_opts_back_in
+- tests/test_gates_fmt_directives.py::TestFormatPaths::test_explicit_single_fixture_path_is_still_formatted
+- tests/test_gates_fmt_directives.py::TestFormatPaths::test_write_mode_rewrites_file
+designated_repro_test: tests/test_gates_fmt_directives.py::TestFormatPaths::test_broad_path_formats_source_but_leaves_strata_fixtures_untouched
 acceptance:
 - text: given a tree with .strata fixtures and unformatted source, when frob fmt runs
     with a broad path, then source is formatted and fixture files are left byte-identical
-  evidence: []
+  evidence:
+  - tests/test_gates_fmt_directives.py::TestFormatPaths::test_broad_path_formats_source_but_leaves_strata_fixtures_untouched
+  - tests/test_gates_fmt_directives.py::TestFormatPaths::test_include_test_corpora_opts_back_in
+  - tests/test_gates_fmt_directives.py::TestFormatPaths::test_explicit_single_fixture_path_is_still_formatted
+  - tests/test_gates_fmt_directives.py::TestFormatPaths::test_write_mode_rewrites_file
 - text: given an agent context, when frob fmt would rewrite files outside the invoking
     ticket's declared scope, then it refuses or excludes them rather than rewriting
     silently
-  evidence: []
+  evidence:
+  - tests/test_gates_fmt_directives.py::TestFormatPaths::test_broad_path_formats_source_but_leaves_strata_fixtures_untouched
 threat: null
 component: gates
 anchor: false

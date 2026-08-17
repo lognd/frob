@@ -723,7 +723,7 @@
     "src/frob/gates/_fmt_directives.py::FmtChange": "ea8741b398fe11d4690d8916903481776ec126dd2a6c5422ebd6f1f7e8fc9ac2",
     "src/frob/gates/_fmt_directives.py::FmtReport": "11a60528b9ef3d166ee7b3928901298283e5a50d65961937b22ba07fa6dc2c63",
     "src/frob/gates/_fmt_directives.py::canonicalize_text": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
-    "src/frob/gates/_fmt_directives.py::format_paths": "205d4437fa6d2f51b6311b3e7e1fc8524f85f177bc3af2b19542681869ebdd2e",
+    "src/frob/gates/_fmt_directives.py::format_paths": "ae726fbd686fc3f43b4860f8e34d65600ee4d7c4e72980fa5b612a0f02712a1a",
     "src/frob/gates/_fmt_directives.py::marker_for": "4ecc2ea6297b65a8707f28903068312f02340040a4f303cc99c98b1e9d390b02",
     "src/frob/gates/_fmt_directives.py::read_line_length": "fdeac28194531c0a95f14523d29cbb236495a094406a75d92400b2a731fbb700",
     "src/frob/gates/_fuzz.py::fuzz_gate": "ffa8533c057bcee13876df5c547fab8eda00ee601fc2a8d12d1464a107abf0b8",
@@ -2339,5 +2339,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.492.0"
+  "version": "0.493.0"
 }

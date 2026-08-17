@@ -465,6 +465,17 @@ def _add_fmt_parser(sub) -> None:
         help="report non-canonical files without rewriting them",
     )
     fmt_p.add_argument("--json", dest="fmt_json", action="store_true")
+    fmt_p.add_argument(
+        "--include-test-corpora",
+        dest="fmt_include_test_corpora",
+        action="store_true",
+        help=(
+            "also rewrite test-input corpus files (tests/**/*.strata) -- "
+            "excluded by default (T-2298), since a fixture file is a test "
+            "INPUT and a formatter rewriting one can silently change what "
+            "a test asserts against"
+        ),
+    )
 
 
 # frob:ticket T-1808

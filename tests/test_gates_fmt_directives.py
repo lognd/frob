@@ -457,6 +457,87 @@ class TestFormatPaths:
         report = format_paths(tmp_path, check_only=True, limit=88)
         assert report.changes == ()
 
+    def test_broad_path_formats_source_but_leaves_strata_fixtures_untouched(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2298 acceptance [0]: a broad `frob fmt` path formats genuinely
+        unformatted source AND leaves a `tests/**/*.strata` fixture
+        byte-identical -- the real incident (49 unrelated fixture files
+        rewritten by a broad path) with a positive control (source still
+        gets formatted, so this is not "fmt stopped working"). Must FAIL
+        against pre-fix main."""
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_broad_path_formats_s\
+        # ource_but_leaves_strata_fixtures_untouched
+        source = tmp_path / "a.py"
+        unformatted = (
+            '# frob:waive R reason="this reason is intentionally long so '
+            'it overflows the line-length limit and must be wrapped"\n'
+        )
+        source.write_text(unformatted)
+
+        fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
+        fixture.parent.mkdir(parents=True)
+        fixture_original = (
+            "// frob:waive R reason=\"this reason is also intentionally "
+            "long so it would overflow the line-length limit and wrap\"\n"
+        )
+        fixture.write_text(fixture_original)
+
+        report = format_paths(tmp_path, check_only=False, limit=88)
+
+        assert source.read_text() != unformatted, "source should be formatted"
+        assert fixture.read_text() == fixture_original, (
+            "fixture must stay byte-identical"
+        )
+        assert "a.py" in [c.path for c in report.changes]
+        assert "tests/fixtures/corpus.strata" not in [c.path for c in report.changes]
+
+    def test_include_test_corpora_opts_back_in(self, tmp_path: Path) -> None:
+        """T-2298: `include_test_corpora=True` formats a fixture file
+        explicitly opted into -- the exclusion is a default, not a hard
+        block."""
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_include_test_corpora\
+        # _opts_back_in
+        fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
+        fixture.parent.mkdir(parents=True)
+        fixture_original = (
+            "// frob:waive R reason=\"this reason is also intentionally "
+            "long so it would overflow the line-length limit and wrap\"\n"
+        )
+        fixture.write_text(fixture_original)
+
+        report = format_paths(
+            tmp_path, check_only=False, limit=88, include_test_corpora=True
+        )
+        assert "tests/fixtures/corpus.strata" in [c.path for c in report.changes]
+        assert fixture.read_text() != fixture_original
+
+    def test_explicit_single_fixture_path_is_still_formatted(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2298: naming a fixture file EXPLICITLY as the target (not
+        reached via a broad walk) is a deliberate, scoped request and is
+        still formatted -- the exclusion only applies to a broad path's
+        expanded walk, matching `_land_cmd.py`'s own touched-file scoping
+        (T-1404), which calls `format_paths` per-file on the ticket's real
+        touched set."""
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestFormatPaths.test_explicit_single_fixt\
+        # ure_path_is_still_formatted
+        fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
+        fixture.parent.mkdir(parents=True)
+        fixture_original = (
+            "// frob:waive R reason=\"this reason is also intentionally "
+            "long so it would overflow the line-length limit and wrap\"\n"
+        )
+        fixture.write_text(fixture_original)
+
+        report = format_paths(fixture, check_only=False, limit=88)
+        assert report.changes != ()
+        assert fixture.read_text() != fixture_original
+
 
 # frob:ticket T-1359
 class TestWriteFormattedCrashSafety:

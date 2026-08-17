@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.493.0] - unreleased
+
+- T-2298: frob fmt with a broad path rewrote 49 unrelated .strata fixture files; a test-input corpus must not be reformattable by an unscoped fmt
+
 ## [0.492.0] - unreleased
 
 - T-2290: rapid profile defers verification with no drain: watermark 6 days and 403 commits stale, and reported unverified depth (84) understates it ~5x

@@ -460,6 +460,8 @@ _BOOL_FLAGS = (
     "fleet_skip_gates",
     "fmt_check",
     "fmt_json",
+    # frob:ticket T-2298
+    "fmt_include_test_corpora",
     # frob:ticket T-1808
     "claude_check",
     # frob:ticket T-1525

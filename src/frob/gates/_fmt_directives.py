@@ -513,15 +513,51 @@ def _relpath_for_change(path: Path, root: Path) -> str:
     return str(path)
 
 
+#: T-2298: a `.strata` file under a `tests/` root is a test INPUT --
+#: `tests/unit/strata/litmus/*.strata` and
+#: `tests/fixtures/**/*.strata` are both real, measured incidents of a
+#: broad `frob fmt` rewriting a corpus a test asserts byte-for-byte
+#: against. `.strata` files OUTSIDE `tests/` (`design/frob.strata`,
+#: `design/litmus/*.strata`) are genuine project source and stay in scope.
+_TEST_CORPUS_SUFFIXES = frozenset({".strata"})
+
+
+def _is_test_corpus_path(rel_path: str) -> bool:
+    """True if `rel_path` (root-relative, POSIX-separated) is a test-input
+    corpus file `format_paths` must not rewrite unless
+    `include_test_corpora=True` (T-2298): a `tests/` root component
+    combined with one of `_TEST_CORPUS_SUFFIXES`. Scoped to `tests/`
+    specifically -- a broad "any fixture-shaped path" rule would also
+    catch legitimate source under an unrelated `fixtures`-named directory
+    outside the test tree, which is not this bug."""
+    if Path(rel_path).suffix not in _TEST_CORPUS_SUFFIXES:
+        return False
+    parts = Path(rel_path).parts
+    return "tests" in parts
+
+
 # frob:ticket T-0979
+# frob:ticket T-2298
 def _format_one_path(
-    path: Path, root: Path, *, limit: int, check_only: bool
+    path: Path,
+    root: Path,
+    *,
+    limit: int,
+    check_only: bool,
+    include_test_corpora: bool,
 ) -> "FmtChange | None":
     """`format_paths`'s per-file half: canonicalize `path` (skipping an
-    unsupported language or an unreadable file), returning its
-    `FmtChange` if it is not already canonical, and -- unless `check_only`
-    -- rewriting it in place. See `format_paths`'s own docstring for the
-    CRLF-preserving `newline=""` rationale this shares."""
+    unsupported language, an unreadable file, or -- unless
+    `include_test_corpora` -- a test-input corpus file per
+    `_is_test_corpus_path`, T-2298), returning its `FmtChange` if it is not
+    already canonical, and -- unless `check_only` -- rewriting it in place.
+    See `format_paths`'s own docstring for the CRLF-preserving `newline=""`
+    rationale this shares."""
+    if not include_test_corpora and _is_test_corpus_path(
+        _relpath_for_change(path, root)
+    ):
+        _log.debug("format_paths: skipping test-corpus file %s", path)
+        return None
     original = _read_source_for_format(path)
     if original is None:
         return None
@@ -540,7 +576,11 @@ def _format_one_path(
 # frob:tests \
 # tests/test_gates_fmt_directives.py::TestFormatPaths.test_write_mode_rewrites_file
 def format_paths(
-    root: Path, *, check_only: bool, limit: int | None = None
+    root: Path,
+    *,
+    check_only: bool,
+    limit: int | None = None,
+    include_test_corpora: bool = False,
 ) -> FmtReport:
     """Canonicalize every `frob:` directive comment under `root` (a repo
     root or a single file), skipping the usual excluded/pruned dirs via
@@ -551,6 +591,17 @@ def format_paths(
     remediation hint is built from). Otherwise, each non-canonical file is
     rewritten in place. `limit` overrides `read_line_length`'s
     pyproject-derived default, mainly for tests.
+
+    T-2298: `include_test_corpora=False` (the default) skips any file
+    `_is_test_corpus_path` flags -- a `.strata` file under `tests/`. A real
+    incident landed here: `frob fmt .` with a broad path rewrote 49
+    unrelated `.strata` fixture files in one run. A fixture is a test
+    INPUT; a formatter rewriting one can silently change what a test
+    asserts against while every gate still reads green, and the diff looks
+    like routine formatting so a reviewer skims past it. Pass
+    `include_test_corpora=True` (CLI: `--include-test-corpora`) to opt
+    back into the old unscoped behavior when a corpus file's own
+    formatting genuinely needs fixing.
 
     T-0441 CRLF fix (reviewer CRITICAL): both the read and the write use
     `newline=""`, which disables Python's universal-newline translation in
@@ -572,11 +623,20 @@ def format_paths(
     from frob.excludes import iter_files
 
     resolved_limit = limit if limit is not None else read_line_length(root)
-    paths = (root,) if root.is_file() else iter_files(root)
+    # T-2298: a single FILE named explicitly as `root` is a deliberate,
+    # scoped target -- the corpus exclusion only applies to a BROAD path's
+    # expanded walk (`iter_files`), never to "the caller asked for exactly
+    # this file". `format_paths(a_fixture_path, ...)` still formats it.
+    explicit_single_file = root.is_file()
+    paths = (root,) if explicit_single_file else iter_files(root)
     changes: list[FmtChange] = []
     for path in paths:
         change = _format_one_path(
-            path, root, limit=resolved_limit, check_only=check_only
+            path,
+            root,
+            limit=resolved_limit,
+            check_only=check_only,
+            include_test_corpora=include_test_corpora or explicit_single_file,
         )
         if change is not None:
             changes.append(change)

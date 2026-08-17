@@ -29,7 +29,12 @@ def run(cfg: AppConfig) -> None:
     project_root = root if root.is_dir() else root.parent
     limit = read_line_length(project_root)
 
-    report = format_paths(root, check_only=cfg.fmt_check, limit=limit)
+    report = format_paths(
+        root,
+        check_only=cfg.fmt_check,
+        limit=limit,
+        include_test_corpora=cfg.fmt_include_test_corpora,
+    )
 
     if cfg.fmt_json:
         _log.info(report.model_dump_json(indent=2))

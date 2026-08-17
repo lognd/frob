@@ -897,6 +897,9 @@ class AppConfig(BaseModel):
     fmt_path: Path | None = None
     fmt_check: bool = False
     fmt_json: bool = False
+    #: T-2298: opt-in to also rewriting test-input corpus files
+    #: (tests/**/*.strata) -- excluded by default.
+    fmt_include_test_corpora: bool = False
 
     # claude (T-1808: fold .claude/hooks/sync-claude-config.py into a verb)
     claude_command: str | None = None  # sync
