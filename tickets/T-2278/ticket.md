@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dfba819d3c2a69a78f019eaa380b41ab0ba048b1
 ---
 T-2268 holding-ticket triage (2026-08-17): DOC005 fires because README.md's
 top-level subcommand table (and docs/modules/cli.md's mirror) is out of
