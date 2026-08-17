@@ -1,7 +1,7 @@
 ---
 id: T-2276
 title: 'PERF004: scripts/fleet_status.py has no owning ticket (T-2268 triage)'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-17'

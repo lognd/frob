@@ -2,7 +2,7 @@
 id: T-1382
 title: 'Decouple frob from the Makefile: make every workflow a first-class cross-platform
   frob subcommand'
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-08-01'
