@@ -14,9 +14,15 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/agent_runner.py
-- docs/guides/agent-playbook.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/guides/agent-playbook.md
+  reason: T-1382 holds an active lease on this file; fix is producer-side in src/frob/app/agent_runner.py,
+    doc note can follow in a separate pass
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 acceptance:
 - text: 'eval "$(uv run frob agent env <worktree>)" succeeds with NO filtering and
@@ -37,6 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # `frob agent env` writes diagnostics to STDOUT alongside the export block, so the documented `eval "$(...)"` fails with a shell syntax error
 
