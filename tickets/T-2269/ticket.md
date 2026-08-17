@@ -22,7 +22,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8729042781e8f863343b245b9999c36df0406823
 ---
 Measured 2026-08-16 while working T-2256 (COV003 evidence repointing for
 T-2240's Makefile rewrite). T-2240 (dcb07727d8ce) rewrote `coverage:` /
