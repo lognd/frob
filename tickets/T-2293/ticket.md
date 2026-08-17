@@ -2,7 +2,7 @@
 id: T-2293
 title: 'post-land sweep regression from T-2116, T-2269: 28 new (rule, file) identit(ies),
   49 finding(s) (ARCH001, ARCH103, COV001, COV003)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -110,3 +110,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-17: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH001 src/frob/app/telemetry.py, ARCH001 src/frob/app/ticket_runner/_land_cmd.py, ARCH001 src/frob/app/ticket_runner/_new.py, ARCH103 scripts/fleet_status.py, ARCH103 src/frob/app/ticket_runner/_land_cmd.py, ARCH103 src/frob/release/_cli.py, COV001 src/frob/tickets/_land_git_ops.py, COV003 tickets/T-1205, COV003 tickets/T-1235, COV003 tickets/T-1397, COV003 tickets/T-1526, DOC001 docs/commands/release.md, DOC011 docs/design/gate-semantics-classification.md, DOC011 docs/guides/coordinator-scripts.md, DRIFT001 src/frob/app/ticket_runner/_rapid_sweep.py, DRIFT001 src/frob/lang/_nodes.py, DRIFT002 scripts/fleet_status.py, E402 scripts/fleet_status.py, E501 scripts/fleet_status.py, E501 src/frob/lang/_nodes.py, F541 tests/test_ticket_work_and_land_finish.py, F841 tests/test_ticket_land.py, PERF004 src/frob/app/ticket_runner/_land_cmd.py, RENDER001 src/frob/release/_cli.py, SEC110 tests/test_release.py, SELFAUDIT001 design, TEST010 tests/test_ticket_work_and_land_finish.py, TICK004 tickets.md) is absent from the fresh unscoped measurement at T-2292's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
