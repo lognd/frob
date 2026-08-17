@@ -1,11 +1,13 @@
 ---
 id: T-2283
 title: 4 pre-existing test_ticket_land.py failures on main (found during T-2274)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
 priority: medium
+blocked_by:
+- T-2286
 parent: null
 tier: ticket
 sprint: null
@@ -15,10 +17,13 @@ scope:
 - src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+designated_repro_test: tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 acceptance:
 - text: All 4 named tests pass
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
 threat: null
 component: null
 anchor: false

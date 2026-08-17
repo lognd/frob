@@ -3495,11 +3495,22 @@ class TestLedgerV2LandMergeStory:
 
         # Main independently retitles the SAME ticket's SAME field, after
         # the branch point -- a genuine same-line textual conflict on
-        # tickets/T-3000/ticket.md.
-        main_ticket = load_all(v2_repo).danger_ok["T-3000"]
-        assert write_ticket(
-            v2_repo, main_ticket.model_copy(update={"title": "Renamed by main"})
-        ).is_ok
+        # tickets/T-3000/ticket.md. T-2079 landed `enforce_ticket_
+        # ownership`, which correctly refuses a `write_ticket` call from
+        # main against a ticket currently leased to the worktree (the
+        # T-1617 shape this scenario would otherwise BE) -- so this needs
+        # to land the SAME textual edit as a raw file write instead, the
+        # way an out-of-band edit (a direct commit, a cherry-pick, a
+        # different tool entirely) would actually reach main's checkout
+        # without ever going through frob's own ownership-guarded API.
+        # That is exactly the git-level conflict this test means to drive
+        # `land`'s `MergeConflict` path with -- not an ownership check.
+        ticket_path = v2_repo / "tickets" / "T-3000" / "ticket.md"
+        original_text = ticket_path.read_text()
+        assert "title: Seed" in original_text
+        ticket_path.write_text(
+            original_text.replace("title: Seed", "title: Renamed by main", 1)
+        )
         _commit_all(v2_repo, "main retitles T-3000")
 
         result = land(v2_repo, "T-3000", wt, dry_run=True)
