@@ -1054,6 +1054,79 @@ class TestWorkerCrashRetryUnmeasurableExitReporting:
         assert "could not" in messages.lower()
 
 
+# frob:ticket T-2087
+class TestWorkerCrashSignatureRealSubprocess:
+    """T-2087: `_WORKER_CRASH_SIGNATURE_RE` built from REAL crashed-worker
+    subprocess output (not a hand-typed string) on this repo's own
+    pinned pytest-xdist -- the T-2032/T-2032-follow-up precedent this
+    ticket's own acceptance criteria call for. Two independent crash
+    mechanisms (`os._exit`, `SIGKILL`) against a real `pytest -n <N>`
+    subprocess, both asserting the signature matches -- if either
+    reproduces a DIFFERENT message shape on a future xdist upgrade, this
+    test catches the drift instead of a hand-maintained fixture string
+    silently going stale."""
+
+    def _run_real_crash(
+        self, tmp_path: Path, test_body: str, *, worker_count: int
+    ) -> str:
+        (tmp_path / "pyproject.toml").write_text(
+            '[tool.pytest.ini_options]\naddopts = "-q"\n', encoding="utf-8"
+        )
+        (tmp_path / "test_crash.py").write_text(test_body, encoding="utf-8")
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-n",
+                str(worker_count),
+                "-p",
+                "no:cacheprovider",
+                "test_crash.py",
+            ],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout + result.stderr
+
+    def test_os_exit_worker_crash_is_a_real_repro(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess.test_os_exit_worker_crash_is_a_real_repro  # noqa: E501
+        output = self._run_real_crash(
+            tmp_path,
+            "import os\n\n"
+            "def test_ok():\n    assert 1 == 1\n\n"
+            "def test_crash_worker():\n    os._exit(1)\n",
+            worker_count=1,
+        )
+        assert _refresh_mod._WORKER_CRASH_SIGNATURE_RE.search(output), output
+
+    def test_sigkill_worker_crash_is_a_real_repro(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess.test_sigkill_worker_crash_is_a_real_repro  # noqa: E501
+        output = self._run_real_crash(
+            tmp_path,
+            "import os\nimport signal\n\n"
+            "def test_ok():\n    assert 1 == 1\n\n"
+            "def test_crash_worker():\n    os.kill(os.getpid(), signal.SIGKILL)\n",
+            worker_count=1,
+        )
+        assert _refresh_mod._WORKER_CRASH_SIGNATURE_RE.search(output), output
+
+    def test_summary_line_alone_matches_the_quoted_node_id(self) -> None:
+        # frob:tests tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess.test_summary_line_alone_matches_the_quoted_node_id  # noqa: E501
+        """T-2087's own root-cause repro, pinned as a fast unit-level
+        regression lock so a future edit cannot silently reintroduce the
+        quote mismatch: the REAL summary line this repo's pytest-xdist
+        emits (`worker 'gw1' crashed while running '...'`) must match
+        even with NO other crash-signature line present in the output
+        (isolating the summary-line branch specifically, unlike the two
+        real-subprocess tests above which always also carry a
+        `replacing crashed worker` line earlier in the same output)."""
+        assert _refresh_mod._WORKER_CRASH_SIGNATURE_RE.search(
+            "worker 'gw1' crashed while running 'test_crash.py::test_crash_worker'"
+        )
+
+
 # frob:ticket T-2032
 class TestNeutralizedAddopts:
     """T-2032 follow-up: stripping the explicit `-n <N>` from the retry

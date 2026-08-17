@@ -2,7 +2,7 @@
 id: T-2087
 title: worker-crash signature regex may not match this repo's pinned pytest-xdist's
   real crash message
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -16,7 +16,11 @@ scope:
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_summary_line_alone_matches_the_quoted_node_id
+- tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_os_exit_worker_crash_is_a_real_repro
+- tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_sigkill_worker_crash_is_a_real_repro
+designated_repro_test: tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_summary_line_alone_matches_the_quoted_node_id
 threat: null
 component: null
 anchor: false
