@@ -49,7 +49,7 @@ WHY and the recovery recipes.
    existing pre-merge wip-commit like anything else. You do not need to
    run either by hand before landing any more; still worth running `uv
    run frob fmt --check` mid-ticket if you want to see drift EARLY
-   rather than wait for land to fix it silently. T-1870: `frob sys
+   rather than wait for land to fix it silently. T-1870: <!-- frob:waive DOC006 reason="deliberately historical -- the very next clause says this subcommand was deleted per an explicit owner directive; the pointer documents a command that no longer exists on purpose, not a live one" -->`frob sys
    sync-interface` used to be a third absorbed step here (auto-writing
    `interface=` drift into `design/frob.strata` on every land) --
    deleted per an explicit owner directive that no code path may

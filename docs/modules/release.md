@@ -151,7 +151,7 @@ def changelog_skeleton_entry(root, version, note=None) -> bool
 <!-- frob:describes src/frob/release/_publish.py::PublishReport -->
 <!-- frob:describes src/frob/release/_publish.py::publish -->
 
-`frob release publish` composes the whole release sequence -- bump the
+<!-- frob:waive DOC006 reason="frob release publish is real and wired (verified: uv run frob release publish --help resolves) but is a direct-dispatch special case in src/frob/__main__.py._dispatch, same as frob refactor/bind -- invisible to DOC006's argparse-tree walk, not a broken pointer" -->`frob release publish` composes the whole release sequence -- bump the
 patch version, `stamp`, sync the derived artifacts (`uv lock` +
 `changelog_skeleton_entry`), `git add`/`commit`/`push`, `uv build`, `uv
 publish` -- replacing Makefile's old `upload:` bash recipe (`set -a && .

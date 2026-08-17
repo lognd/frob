@@ -804,7 +804,7 @@ re-cover it. SYS110 is that re-coverage -- re-dispositioned to
 <!-- frob:ticket T-1916 -->
 
 A Tier-A auto-fix handler (`SYS-IFACE-ORDER`,
-`frob.gates._fix_engine_sync.fix_sys_interface_canonical_order`) used to
+<!-- frob:waive DOC006 reason="deliberately historical -- this section heading itself says retired T-1916, and the sentence says used to, documenting a removed handler on purpose" -->`frob.gates._fix_engine_sync.fix_sys_interface_canonical_order`) used to
 normalize the PRESENTATION of a node's declared `interface=` block
 (group by resolved kind, alphabetical within each group) on every `frob
 ticket land`. It never consulted code to decide `interface=` MEMBERSHIP

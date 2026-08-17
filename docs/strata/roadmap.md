@@ -24,7 +24,7 @@ always surfaces work in proof-dependency order.
 
 ## CLI surface (target)
 
-`frob sys check` is deliberately absent from this list (T-1926 decision).
+<!-- frob:waive DOC006 reason="deliberately never built -- this exact sentence explains the T-1926 decision NOT to add this verb, documenting a rejected candidate is the whole point of this section" -->`frob sys check` is deliberately absent from this list (T-1926 decision).
 T-1480 found the premise it would have served -- "parse + elaborate +
 prove + report" -- already fully satisfied by the existing `frob sys
 audit` (`sys_runner.py::_run_audit`): it parses, elaborates, runs the

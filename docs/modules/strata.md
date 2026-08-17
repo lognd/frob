@@ -135,11 +135,11 @@ to be checked here: a node declared its public interface with one
 `interface=<symbol>` attr per symbol, and SYS104 required the declared
 set to EQUAL the real public surface of the node's own `code=`-bound
 `.py` files (either direction of mismatch fired). T-1113 (T-1150's own
-`frob sys sync-interface` writer) made this mandatory and mechanically
+<!-- frob:waive DOC006 reason="deliberately historical -- section heading says DELETED, T-1870; this subcommand and its writer no longer exist on purpose" -->`frob sys sync-interface` writer) made this mandatory and mechanically
 kept `interface=` in sync -- which is exactly the "declaration
 auto-derived from the thing it supposedly governs cannot govern
 anything" shape T-1870's owner directive named. SYS104 (the check), its
-writer (`frob.strata._sync_interface`), and every auto-fix/CLI/land-time
+writer (<!-- frob:waive DOC006 reason="same deleted-by-T-1870 symbol as the frob sys sync-interface waiver above" -->`frob.strata._sync_interface`), and every auto-fix/CLI/land-time
 path that touched `interface=` are all deleted -- no code path anywhere
 auto-updates declared public-symbol surface any more. `interface=` is
 now purely hand-declared, and the SLH-SYS-EVA-03 evasion row above is

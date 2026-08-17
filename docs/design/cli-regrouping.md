@@ -53,9 +53,9 @@ without the lifecycle) and are now `frob ticket debt` / `frob ticket
 deprecated`, siblings of every other `frob ticket` subcommand.
 
 DECISION (T-1570): fold under the EXISTING singular `ticket` verb, not a
-new plural `tickets` parent. A `frob tickets` (plural) top-level command
+new plural `tickets` parent. <!-- frob:waive DOC006 reason="frob tickets (plural) is a rejected, never-built candidate this DECISION explicitly argues AGAINST -- per this doc's own module docstring, every not-yet-built candidate verb group is waived DOC006 individually" -->A `frob tickets` (plural) top-level command
 whose only job is containing the existing singular `frob ticket` verb
-group would read as confusing near-duplication right next to it (`frob
+group would read as confusing near-duplication right next to it (<!-- frob:waive DOC006 reason="same rejected-candidate reasoning as the frob tickets waiver immediately above" -->`frob
 tickets ticket new`?) for zero benefit over just adding two more
 subcommands to the verb group that already exists -- worse than the
 status quo by this epic's own "delete or simplify, never add a

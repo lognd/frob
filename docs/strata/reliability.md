@@ -10,8 +10,7 @@ wiring.
 **T-1938 (pure de-duplication, no observable behavior change):** every
 family below used to construct its RELWAIVE002 "stale waiver" finding
 with its own byte-identical `stale = tuple(...)` block, differing only in
-which `*Violation` dataclass it built (`docs/strata/waive.md#drift-lock-
-stale-waivers-fail`'s "declared waiver that matched nothing" case). That
+which `*Violation` dataclass it built (`docs/strata/waive.md#drift-lock-stale-waivers-fail`'s "declared waiver that matched nothing" case). That
 block now lives once, as `_waive.py::stale_relwaive_violations`, and each
 `check_X_obligations` below calls it with its own violation type (or a
 small factory lambda where a family needs an extra field, e.g.

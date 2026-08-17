@@ -158,7 +158,7 @@ and a `Stop` hook (`.claude/settings.json`), is the real caller of
 `cold_start` -- `True` only for Claude Code's own `source="startup"`,
 `False` for `"resume"`/`"clear"`/`"compact"`, `None` for anything else) at
 session start and `event="end"` at stop, both under the session's own
-`session_id` as `dispatch_id`. `frob stats --agentic`'s plain-text output
+`session_id` as `dispatch_id`. <!-- frob:waive DOC006 reason="FROB_STATS_AGENTIC env-var trigger, not a real argparse flag -- see this same file's line 71 and docs/modules/stats.md#agentic-timetoken-profiling---agentic-t-0178" -->`frob stats --agentic`'s plain-text output
 renders the resulting `frob.stats.dispatch_cost_report` join
 (`_dispatch_cost_lines`, `src/frob/app/stats_runner.py`) in addition to the
 existing `--json` path.

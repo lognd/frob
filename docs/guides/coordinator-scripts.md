@@ -615,7 +615,7 @@ or any required field is missing. `tier` defaults to `ticket`, matching
 existed.
 
 T-2200: `runs_last` is read as the STRUCTURED `runs_last:` ledger line
-`frob ticket new --runs-last` writes, never inferred from `title` text --
+`frob ticket runs-last <id> on` writes, never inferred from `title` text --
 T-1614's own title happens to start with the literal string 'RUNS LAST',
 which is exactly the lexical shortcut that would silently miss every
 OTHER `runs_last` ticket whose title does not happen to say so. Missing

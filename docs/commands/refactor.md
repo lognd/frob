@@ -164,13 +164,13 @@ A `from x.y import z` attribute-style call site written as
 
 ## CLI wiring status
 
-T-1483 wired `frob refactor` into `frob`'s main dispatch. Because
+T-1483 wired <!-- frob:waive DOC006 reason="frob refactor is real and wired (see the rest of this section) but is special-cased in src/frob/__main__.py::_dispatch BEFORE the normal argparse tree (_build_parser) is built, exactly like frob bind/agent/worktree -- it never becomes a Subcommand enum member or an entry in _SUBCOMMAND_RUNNER_NAMES, so DOC006's CLI-resolution check (which walks the argparse tree) cannot see it" -->`frob refactor` into `frob`'s main dispatch. Because
 `run_refactor_command(args: argparse.Namespace) -> int` takes a parsed
 `Namespace` and returns a raw exit code directly -- T-1197's own shape,
 matching every other `_add_*_parser` builder's signature for a later
 single-line wire-in -- rather than the uniform `run(AppConfig)` entry
 point every subcommand in `frob.app.app._SUBCOMMAND_RUNNER_NAMES`
-shares, `frob refactor` is routed the same way `frob bind`/`agent`/
+shares, <!-- frob:waive DOC006 reason="same special-cased pre-argparse dispatch as the frob refactor waiver above -- real and wired, just invisible to the argparse-tree walk DOC006's CLI resolution performs" -->`frob refactor` is routed the same way `frob bind`/`agent`/
 `worktree` already are: `src/frob/__main__.py::_dispatch` recognizes
 `argv[0] == "refactor"` and dispatches directly, before the main
 `argparse` parser tree (`_build_parser`) is even built -- it never

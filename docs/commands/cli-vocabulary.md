@@ -30,7 +30,7 @@ wiring. Two argparse error shapes get a suggestion appended:
   the ACTUALLY-INVOKED subcommand and its descendants only
   (`_collect_option_strings(target)`, T-2107), not the whole CLI tree --
   argparse always raises a leftover-arguments error on the ROOT parser
-  even when the mistake was made several subcommand levels down (`frob
+  even when the mistake was made several subcommand levels down (<!-- frob:waive DOC006 reason="illustrative hypothetical unrecognized flag showing the nested-subcommand error shape, not a real frob ticket doable option" -->`frob
   ticket doable --limit`), so `_SuggestingArgumentParser.parse_known_args`
   records every parser argparse recurses into onto `_INVOKED_PARSERS`
   during the call, and `error()` uses `_INVOKED_PARSERS[-1]` (the

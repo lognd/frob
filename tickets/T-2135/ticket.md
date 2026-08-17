@@ -2,7 +2,7 @@
 id: T-2135
 title: 'DOC006 remaining 88: repair live docs/** CLI/anchor/symbol pointers, triage
   49 live (non-archived) ticket-body findings'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-11'
@@ -23,6 +23,11 @@ scope:
 - docs/strata/reliability.md
 - docs/strata/roadmap.md
 - docs/strata/surface.md
+- docs/commands/cli-vocabulary.md
+- docs/guides/coordinator-scripts.md
+- docs/modules/release.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -109,11 +114,44 @@ scope_changes:
     3+ other tickets (T-1973 et al), add once free
   actor: logan
   at: '2026-08-11'
+- op: add
+  glob: docs/commands/cli-vocabulary.md
+  reason: 'T-2135: narrowing scope to the exact live docs/** files with genuine DOC006
+    pointer breakage this ticket is fixing (measured via a fresh --only docblocks
+    run), adding the 3 files with real findings not yet in scope; deliberately excluding
+    docs/modules/tickets-landing.md/tickets-lifecycle.md/tickets-verify-sweep.md/tickets-data-storage.md
+    (same contended tickets.md-adjacent family the ticket body already flagged) --
+    filing a follow-up for those instead of locking files other agents need'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'T-2135: narrowing scope to the exact live docs/** files with genuine DOC006
+    pointer breakage this ticket is fixing (measured via a fresh --only docblocks
+    run), adding the 3 files with real findings not yet in scope; deliberately excluding
+    docs/modules/tickets-landing.md/tickets-lifecycle.md/tickets-verify-sweep.md/tickets-data-storage.md
+    (same contended tickets.md-adjacent family the ticket body already flagged) --
+    filing a follow-up for those instead of locking files other agents need'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/release.md
+  reason: 'T-2135: narrowing scope to the exact live docs/** files with genuine DOC006
+    pointer breakage this ticket is fixing (measured via a fresh --only docblocks
+    run), adding the 3 files with real findings not yet in scope; deliberately excluding
+    docs/modules/tickets-landing.md/tickets-lifecycle.md/tickets-verify-sweep.md/tickets-data-storage.md
+    (same contended tickets.md-adjacent family the ticket body already flagged) --
+    filing a follow-up for those instead of locking files other agents need'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-0969/T-2131 residue. After T-2131's archive-directory exclusion, DOC006
 dropped from 584 to 88 (measured 2026-08-11). The remaining 88 need real

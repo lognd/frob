@@ -2566,7 +2566,7 @@ Hooks and docs reference `frob` verbs BY NAME, as plain strings, with
 nothing checking they resolve: `frob-timeout-guard.py`'s own `PATTERN`
 (`frob +(ticket +(land|done-report)|check|test)\b`) decides whether a
 command needs a large tool timeout, and `frob-suggest.py`'s refusal text
-SUGGESTS `uv run frob test`/`frob check`/`frob ticket ...`/etc. A rename
+SUGGESTS `uv run frob test`/`frob check`/<!-- frob:waive DOC006 reason="illustrative ellipsis placeholder for any frob ticket subcommand, not a literal invocation" -->`frob ticket ...`/etc. A rename
 (the T-1567..T-1571 CLI regrouping this rule exists to unblock) silently
 breaks both: the hook keeps running and keeps passing, or keeps blocking
 a caller and then telling it to run a command that no longer exists
@@ -4259,7 +4259,7 @@ justifications on top of a detector that never earned them.
 T-1763 swept all 349 `frob:waive INV006 reason="..."`/`preset="..."`
 directives before deleting the gate -- a dead directive naming a deleted
 rule reads as a live suppression to the next reader, which is worse than
-no directive at all. `frob.gates._inv006_split_assist` (the T-1134
+no directive at all. <!-- frob:waive DOC006 reason="deliberately historical -- this section documents the deletion of INV006 and its helpers, the sentence explicitly says they were removed" -->`frob.gates._inv006_split_assist` (the T-1134
 split-carry helper, INV006-only) and its `fix_inv006_carried_waiver`
 Tier-A auto-fix handler (`frob.gates._fix_engine`) were deleted along
 with it. See `frob.gates._inv`'s own module docstring for the same note
@@ -5031,7 +5031,7 @@ or forwards a `snapshot` to either callee.
 
 T-1870 (owner directive: no code path may auto-update declared
 public-symbol surface) deleted SYS104's own writer/handler
-(`fix_sys104_interface_union`, `frob.strata._sync_interface`) that used
+(`fix_sys104_interface_union`, <!-- frob:waive DOC006 reason="deliberately historical -- deleted by T-1870, per an explicit owner directive that no code path may auto-update declared public-symbol surface, as this same sentence explains" -->`frob.strata._sync_interface`) that used
 to be documented in this section alongside SYS100's -- `interface=` is
 no longer synced by anything, including at land time; SYS100's `may=`
 capability sync (documented above) is a DIFFERENT, deliberate, live

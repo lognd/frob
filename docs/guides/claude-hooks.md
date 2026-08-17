@@ -28,7 +28,7 @@ see `docs/modules/gates.md` for that exemption's rationale).
 
 ## `diagnosis-nudge.py`
 
-A Stop-event hook (playbook `docs/guides/agent-playbook.md#11b`): if the
+A Stop-event hook (playbook `docs/guides/agent-playbook.md#11b-the-diagnosis-nudge-stop-hook-t-1734`): if the
 turn's own last message states a diagnosis-shaped claim with no matching
 `frob ticket new` in this repo's telemetry stream recently, appends a
 `systemMessage` nudge naming the gap. `main` reads the JSON payload on
@@ -52,7 +52,7 @@ does -- a telemetry hook must never fail a turn. Tested end-to-end via
 A PreToolUse hook that blocks-once on a raw linter/formatter invocation
 (`ruff`, `mypy`, `ty`, ...) run directly instead of through
 `frob check`, pointing the caller at the accountable path -- the
-`[raw-linters]` block message this repo's own agents see mid-session.
+`raw-linters` rule's block message this repo's own agents see mid-session.
 `main` reads the tool-input payload from stdin and decides whether this
 exact command was already allowed once (block-once, not block-forever).
 

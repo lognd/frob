@@ -75,7 +75,7 @@ yet -- that is a `.claude/hooks/**` (SessionStart/Stop) and
 (see T-1724's Done report for the id) and deliberately out of this
 ticket's own scope, which is the schema and the join, not the wiring.
 `dispatch_cost_report(root)` is reachable today via
-`frob stats --agentic --json` (the pydantic model dumps automatically
+<!-- frob:waive DOC006 reason="same FROB_STATS_AGENTIC env-var trigger explained above, not a real argparse flag -- see this file's own note at #agentic-timetoken-profiling---agentic-t-0178" -->`frob stats --agentic --json` (the pydantic model dumps automatically
 through the existing `--json` path) even with no dispatch events recorded
 yet -- an empty/absent stream produces an all-empty report, same posture
 as `agentic_report`.
