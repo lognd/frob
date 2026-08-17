@@ -150,7 +150,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b8fab3e6e8bb80f3467587dbd37c4b52cba1a851
 ---
 # T-2226's attachment backfill has no CLI entry point, so the repair it enables can only be run from Python -- and two COV004 findings still sit unrepaired
 
