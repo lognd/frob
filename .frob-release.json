@@ -8,7 +8,10 @@
     ".claude/hooks/frob-timeout-guard.py::MIN_TIMEOUT_MS": "62ec47901b649b88f3bcb9b425ef2a5870e3fb82b0779fbd78c59cb26dced481",
     ".claude/hooks/frob-timeout-guard.py::PATTERN": "6aafd348b48184542be847c2634f948dec400c3286f1797d1153802bbc600b18",
     ".claude/hooks/frob-timeout-guard.py::REASON": "458b18cdde055bc322e080f411f86eb5fb22e233b335fabebf6ac2c5e482899a",
+    ".claude/hooks/frob-timeout-guard.py::RUN_IN_BACKGROUND_REASON": "248760b4b8132e6daa861a5593a9a0bb88823f5401247a82d3bdfab1d0da6faa",
     ".claude/hooks/frob-timeout-guard.py::main": "a87346f60f77c98d14a0c83f059fb1dbc7738bb54732a146f8793d55b5262976",
+    ".claude/hooks/pending-background-guard.py::REASON": "b77ad0bb1bfe793e8fd4f47cb258f3ad40b7ffeb62eb6296a60ddabfb591d433",
+    ".claude/hooks/pending-background-guard.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
     ".claude/hooks/sync-claude-config.py::MANAGED": "6fdeccfe7393c341d1a3d54d40269f7870c77d454e594de8f5c9517ba659193f",
     ".claude/hooks/sync-claude-config.py::main": "32d91e95a2cbbf6ade25a6b4124bdb2b9a132e66c5b4cb5e12cd9c719fd6f6b6",
     ".claude/hooks/sync-claude-config.py::plan": "50acacc6180032449e843f58848c44bf174bdd67e245b9af8f863667a29266cf",
@@ -2332,5 +2335,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.487.0"
+  "version": "0.488.0"
 }

@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.488.0] - unreleased
+
+- T-2282: Agents strand themselves ending a turn with a pending background task: the guard enumerates slow commands instead of catching the stranding (3 stalls this session)
+
 ## [0.487.0] - unreleased
 
 - T-2284: Land's Tier-A auto-fix edits files outside the landing ticket's scope (and under other tickets' live leases), forcing CrossTicketLeakage refusals and manual reverts

@@ -3,7 +3,7 @@ id: T-2282
 title: 'Agents strand themselves ending a turn with a pending background task: the
   guard enumerates slow commands instead of catching the stranding (3 stalls this
   session)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -15,26 +15,112 @@ runs_last: false
 scope:
 - .claude/hooks/frob-timeout-guard.py
 - .claude/settings.json
+- .claude/hooks/pending-background-guard.py
+- tests/test_hook_frob_timeout_guard.py
+- tests/test_hook_pending_background_guard.py
+- docs/guides/claude-hooks.md
+evidence_scope:
+- tests/test_hook_pending_background_guard.py
+- tests/test_hook_frob_timeout_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/pending-background-guard.py
+  reason: 'T-2282: widen scope to the new Stop hook, its tests, the extended timeout-guard
+    tests, and the doc anchors both hooks'' frob:doc lines resolve against'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_hook_frob_timeout_guard.py
+  reason: 'T-2282: widen scope to the new Stop hook, its tests, the extended timeout-guard
+    tests, and the doc anchors both hooks'' frob:doc lines resolve against'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_hook_pending_background_guard.py
+  reason: 'T-2282: widen scope to the new Stop hook, its tests, the extended timeout-guard
+    tests, and the doc anchors both hooks'' frob:doc lines resolve against'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: 'T-2282: widen scope to the new Stop hook, its tests, the extended timeout-guard
+    tests, and the doc anchors both hooks'' frob:doc lines resolve against'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_hook_pending_background_guard.py::test_auto_backgrounded_task_with_no_resolution_is_blocked
+- tests/test_hook_pending_background_guard.py::test_explicit_run_in_background_with_no_resolution_is_blocked
+- tests/test_hook_pending_background_guard.py::test_resolved_via_completion_notification_is_not_blocked
+- tests/test_hook_pending_background_guard.py::test_reentrant_stop_does_not_block_twice
+- tests/test_hook_pending_background_guard.py::test_reentrant_stop_with_real_pending_task_does_not_block_twice
+- tests/test_hook_pending_background_guard.py::test_no_background_task_normal_stop_is_not_blocked
+- tests/test_hook_pending_background_guard.py::test_missing_transcript_file_fails_open
+- tests/test_hook_pending_background_guard.py::test_malformed_stdin_fails_open
+- tests/test_hook_pending_background_guard.py::test_single_event_described_by_both_start_patterns_is_not_self_resolved
+- tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_blocked_for_agent_regardless_of_command
+- tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_allowed_for_coordinator
+- tests/test_hook_frob_timeout_guard.py::test_run_in_background_false_not_blocked_for_agent
+- tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+- tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+- tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
+designated_repro_test: tests/test_hook_pending_background_guard.py::test_auto_backgrounded_task_with_no_resolution_is_blocked
 acceptance:
 - text: Establish and state with evidence whether the Stop payload exposes pending
     background tasks; if not, say so and fall back rather than fabricating a signal
-  evidence: []
+  evidence:
+  - tests/test_hook_pending_background_guard.py::test_auto_backgrounded_task_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_explicit_run_in_background_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_resolved_via_completion_notification_is_not_blocked
 - text: 'An agent ending its turn with a background task it is waiting on is stopped
     and told what to do instead (fails today: marked complete, silently stalls)'
-  evidence: []
+  evidence:
+  - tests/test_hook_pending_background_guard.py::test_auto_backgrounded_task_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_explicit_run_in_background_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_reentrant_stop_does_not_block_twice
+  - tests/test_hook_pending_background_guard.py::test_reentrant_stop_with_real_pending_task_does_not_block_twice
+  - tests/test_hook_pending_background_guard.py::test_no_background_task_normal_stop_is_not_blocked
 - text: Explicit run_in_background on a status/verification command is refused at
     PreToolUse, keyed on the structured parameter not a command-name pattern
-  evidence: []
+  evidence:
+  - tests/test_hook_pending_background_guard.py::test_auto_backgrounded_task_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_explicit_run_in_background_with_no_resolution_is_blocked
+  - tests/test_hook_pending_background_guard.py::test_resolved_via_completion_notification_is_not_blocked
+  - tests/test_hook_pending_background_guard.py::test_reentrant_stop_does_not_block_twice
+  - tests/test_hook_pending_background_guard.py::test_reentrant_stop_with_real_pending_task_does_not_block_twice
+  - tests/test_hook_pending_background_guard.py::test_no_background_task_normal_stop_is_not_blocked
+  - tests/test_hook_pending_background_guard.py::test_missing_transcript_file_fails_open
+  - tests/test_hook_pending_background_guard.py::test_malformed_stdin_fails_open
+  - tests/test_hook_pending_background_guard.py::test_single_event_described_by_both_start_patterns_is_not_self_resolved
+  - tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_blocked_for_agent_regardless_of_command
 - text: 'MUST-STILL-PASS: coordinator can still background a long measurement; T-2248''s
     four verbs still block; both recorded false-positive shapes still do not fire;
     report-and-stop remains reachable'
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_blocked_for_agent_regardless_of_command
+  - tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_allowed_for_coordinator
+  - tests/test_hook_frob_timeout_guard.py::test_run_in_background_false_not_blocked_for_agent
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
 - text: State the residual gap -- if auto-backgrounding at 120s is only caught by
     the Stop hook, say so plainly
-  evidence: []
+  evidence:
+  - tests/test_hook_frob_timeout_guard.py::test_explicit_run_in_background_allowed_for_coordinator
+  - tests/test_hook_frob_timeout_guard.py::test_run_in_background_false_not_blocked_for_agent
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_land_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_ticket_done_report_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_check_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_test_verb_still_blocks_under_min_timeout
+  - tests/test_hook_frob_timeout_guard.py::test_prose_heredoc_mentioning_guarded_verb_is_not_blocked
+  - tests/test_hook_frob_timeout_guard.py::test_quoted_string_command_is_not_blocked
 threat: null
 component: null
 anchor: false

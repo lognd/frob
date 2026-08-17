@@ -69,6 +69,16 @@
             "statusMessage": "dispatch-telemetry"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/pending-background-guard.py",
+            "timeout": 15,
+            "statusMessage": "pending-background-guard"
+          }
+        ]
       }
     ]
   }

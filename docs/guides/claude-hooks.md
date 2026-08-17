@@ -78,6 +78,50 @@ naming the re-run recipe. `main` reads the tool-input payload from stdin
 and emits `REASON` (blocking) when a guarded verb appears without a
 qualifying timeout.
 
+T-2282: `main` also denies an explicit `run_in_background=true` outright,
+in agent context (`FROB_AGENT` set) only, regardless of which command it
+names -- `RUN_IN_BACKGROUND_REASON` is the refusal text. This closes the
+class the verb-enumeration `PATTERN` check cannot: T-2248's list was
+bypassed the very next stall by a non-frob command
+(`python3 scripts/fleet_status.py`), so this checks the structured
+`run_in_background` parameter directly instead of extending the list
+again. The coordinator's own shell has no `FROB_AGENT` set and is
+unaffected -- it may still background a long measurement.
+
+## `pending-background-guard.py`
+
+A Stop hook (T-2282) that refuses to end a turn stranding an unresolved
+background Bash task -- the failure mode `frob-timeout-guard.py` cannot
+close alone, since no PreToolUse hook can see the harness's own ~120s
+auto-background timer, and a command-name-enumeration approach
+(T-2248's `PATTERN`) was proven bypassable by the very next stall's
+non-frob command. This hook instead fires on the STRANDING itself,
+reconstructed from the transcript rather than a dedicated payload field
+(the Stop payload's own documented fields -- `session_id`,
+`transcript_path`, `cwd`, `stop_hook_active`, `reason` -- carry no
+"pending background tasks" signal).
+
+`_AUTO_BACKGROUND_ID` / `_EXPLICIT_BACKGROUND_ID` / `_AUTO_BACKGROUND_ACK`
+are the three lexical start markers a background task leaves in the
+transcript JSONL (the structured `toolUseResult.backgroundTaskId` field,
+and two acknowledgement-text phrasings). `_tail_text` reads only the last
+`_TAIL_BYTES` of `transcript_path` -- transcripts observed in this repo
+exceed 40MB, and only the most recent task matters here. `_pending_task_id`
+finds a start marker whose id never genuinely reappears afterward (masking
+out the OTHER start pattern's mention of the very same event first, so one
+real background-start is not mistaken for its own resolution); a later
+completion notification (`<task-id>...<status>...</status>`) or an
+explicit poll of the task's output both count as resolution -- the latter
+is a known, accepted false negative (a poll showing the job still running
+still reads as "resolved" here). `REASON` is the block message; `_decision`
+returns `{"decision": "block", ...}` when `_pending_task_id` finds one
+pending id and `stop_hook_active` is not already `True` -- the re-entrancy
+check that guarantees this hook blocks AT MOST ONCE per turn, so a
+genuinely stuck agent can still report-and-stop on the second attempt.
+`main` reads the JSON payload on stdin, fails open (exit 0, no output) on
+any read/parse error, and prints the block decision only when one fires.
+Tested end-to-end via `tests/test_hook_pending_background_guard.py`.
+
 ## `sync-claude-config.py`
 
 Materialises the git-tracked canonical `.claude/hooks/**` /
