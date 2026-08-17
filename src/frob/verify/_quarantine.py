@@ -364,6 +364,63 @@ def raise_quarantine(
     return Ok(record)
 
 
+# frob:ticket T-2312
+def _path_shape_hint(
+    root: Path,
+    undisposed: list[tuple[str, str, int | None]],
+    dispositions: dict[tuple[str, str, int | None], tuple[str, str]],
+) -> list[str]:
+    """T-2312: diagnose the specific case where a `clear_quarantine` call
+    refuses with `FindingsNotDisposed` because the caller's `--file-ticket`/
+    `--dismiss` key resolves to the SAME file as an undisposed finding but
+    written with a different path shape (absolute vs. relative) -- the
+    quarantine store holds whatever shape the finding was originally
+    recorded with, and a disposition key is matched by literal string
+    equality (`_dispose_one`), so a shape mismatch fails identically to a
+    genuinely wrong key: a bare `FindingsNotDisposed` naming the stored
+    tuple, with nothing pointing at WHY the caller's own key -- which may
+    look correct at a glance -- did not match.
+
+    Returns one human-readable hint string per undisposed finding whose
+    `(rule_id, line)` matches some given disposition key and whose `file`
+    resolves (via `Path.resolve()`, relative to `root` when not already
+    absolute) to the identical filesystem path as that key's `file` --
+    i.e. the two keys name the same finding, differing only in path
+    shape. Empty when no such pairing exists (an ordinary undisposed
+    finding, or a malformed path this cannot resolve, is not this
+    diagnosis and must not be reported as if it were)."""
+    hints: list[str] = []
+    for rule_id, file, line in undisposed:
+        try:
+            stored_path = Path(file)
+            resolved_stored = (
+                stored_path if stored_path.is_absolute() else root / stored_path
+            ).resolve()
+        except OSError:
+            continue
+        for d_rule, d_file, d_line in dispositions:
+            if d_rule != rule_id or d_line != line or d_file == file:
+                continue
+            try:
+                given_path = Path(d_file)
+                resolved_given = (
+                    given_path if given_path.is_absolute() else root / given_path
+                ).resolve()
+            except OSError:
+                continue
+            if resolved_given == resolved_stored:
+                hints.append(
+                    f"quarantine: {rule_id}:{file}: undisposed finding is "
+                    f"stored with a different PATH SHAPE than the "
+                    f"--file-ticket/--dismiss key given ({d_file!r}) -- "
+                    f"same file, but the stored identity uses {file!r} "
+                    "verbatim (string-matched, not resolved); re-address it "
+                    f"using that exact stored form"
+                )
+                break
+    return hints
+
+
 def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
     """`True` iff every finding in `findings` carries a non-empty
     `disposition` (`"filed"` or `"dismissed"`) -- `clear_quarantine`'s own
@@ -378,6 +435,39 @@ def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_clears_when_every_finding_disposed kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_green_verification_alone_never_clears kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_cli_addressing_can_never_key_an_identity_less_finding kind="unit"  # noqa: E501
+# frob:ticket T-2312
+def _refuse_if_undisposed(
+    root: Path,
+    disposed_findings: tuple[QuarantinedFinding, ...],
+    dispositions: dict[tuple[str, str, int | None], tuple[str, str]],
+) -> QuarantineError | None:
+    """T-2312 (ARCH001 split of `clear_quarantine`): its own "still
+    undisposed" refusal branch. `None` (proceed) when every finding in
+    `disposed_findings` already carries a disposition; otherwise logs
+    the undisposed set at ERROR -- plus a `_path_shape_hint` for any of
+    them whose stored identity differs from a given disposition key only
+    by absolute/relative path shape (T-2312's own diagnosability
+    requirement: a bare `FindingsNotDisposed` leaves an operator with no
+    clue WHY a key that looks right at a glance did not match) -- and
+    returns `QuarantineError.FindingsNotDisposed` for the caller to wrap
+    in its own `Err(...)` (plain error value, not a `Result`, so this
+    helper's return type never has to fake a `T` it does not know)."""
+    if _all_findings_disposed(disposed_findings):
+        return None
+    undisposed = [
+        (f.rule_id, f.file, f.line) for f in disposed_findings if not f.disposition
+    ]
+    _log.error(
+        "quarantine: clear_quarantine refused -- %d finding(s) still "
+        "undisposed: %s",
+        len(undisposed),
+        undisposed,
+    )
+    for hint in _path_shape_hint(root, undisposed, dispositions):
+        _log.error("%s", hint)
+    return QuarantineError.FindingsNotDisposed
+
+
 def clear_quarantine(
     root: Path,
     *,
@@ -419,19 +509,9 @@ def clear_quarantine(
         disposed_findings = tuple(
             _dispose_one(f, dispositions) for f in record.findings
         )
-        if not _all_findings_disposed(disposed_findings):
-            undisposed = [
-                (f.rule_id, f.file, f.line)
-                for f in disposed_findings
-                if not f.disposition
-            ]
-            _log.error(
-                "quarantine: clear_quarantine refused -- %d finding(s) still "
-                "undisposed: %s",
-                len(undisposed),
-                undisposed,
-            )
-            return Err(QuarantineError.FindingsNotDisposed)
+        refusal = _refuse_if_undisposed(root, disposed_findings, dispositions)
+        if refusal is not None:
+            return Err(refusal)
 
         cleared = record.model_copy(
             update={

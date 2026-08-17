@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from frob.verify._quarantine import (
     QuarantinedFinding,
     QuarantineError,
@@ -253,6 +255,43 @@ class TestClearQuarantine:
         assert by_rule["TEST001"].disposition_ref == "T-1000"
         assert by_rule["TEST002"].disposition == "dismissed"
         assert by_rule["TEST002"].disposition_reason == "false positive"
+
+    # frob:ticket T-2312
+    def test_path_shape_mismatch_is_diagnosed_not_a_bare_refusal(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
+        """T-2312 acceptance [3]: the quarantine store can hold an
+        ABSOLUTE-path finding identity while an operator's `--file-ticket`
+        key uses a RELATIVE one (or vice versa) -- `_dispose_one` matches
+        by literal string equality, so this fails identically to a
+        genuinely wrong key. `clear_quarantine` must still refuse (never
+        silently accept a shape-mismatched key as a match), but it must
+        ALSO log a hint naming the path-shape mismatch specifically,
+        rather than leaving the operator with only a bare
+        `FindingsNotDisposed`."""
+        stored_relative = "src/x.py"
+        absolute_given = str((tmp_path / "src" / "x.py").resolve())
+        assert raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("abc123",),
+            findings=(
+                QuarantinedFinding(rule_id="TEST001", file=stored_relative, line=1),
+            ),
+        ).is_ok
+        with caplog.at_level("ERROR"):
+            result = clear_quarantine(
+                tmp_path,
+                dispositions={("TEST001", absolute_given, 1): ("filed", "T-1000")},
+                reason="tried with the wrong path shape",
+                actor="test",
+            )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.FindingsNotDisposed
+        assert is_quarantined(tmp_path).danger_ok is True
+        assert any(
+            "PATH SHAPE" in record.message for record in caplog.records
+        ), "a path-shape mismatch must be named as such, not left as a bare refusal"
 
     # frob:ticket T-1693
     def test_green_verification_alone_never_clears(self, tmp_path: Path) -> None:

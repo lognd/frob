@@ -2,7 +2,7 @@
 id: T-2312
 title: Auto-filer skips DISPOSAL when it declines to file a duplicate, pinning quarantine
   and deadlocking every land fleet-wide
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,25 +11,70 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- tests/unit/test_rapid_sweep.py
+- tests/unit/verify/test_quarantine.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/verify/_quarantine.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
+- tests/unit/verify/test_quarantine.py
+- tests/unit/test_land_cmd_quarantine.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-2312 repro/positive-control tests
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/verify/test_quarantine.py
+  reason: T-2312 repro/positive-control tests
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: The two source files this fix actually edits. Both were lease-blocked when
+    T-2312 was implemented (T-2303 held _rapid_sweep.py as a queued tracker, T-2310
+    held verify/**); T-2303 has since been narrowed to ['design'] and T-2310 has landed,
+    so the real scope can now be declared.
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/verify/_quarantine.py
+  reason: The two source files this fix actually edits. Both were lease-blocked when
+    T-2312 was implemented (T-2303 held _rapid_sweep.py as a queued tracker, T-2310
+    held verify/**); T-2303 has since been narrowed to ['design'] and T-2310 has landed,
+    so the real scope can now be declared.
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_path_shape_mismatch_is_diagnosed_not_a_bare_refusal
+- tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_notice_names_undisposed_count_and_dispose_command
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
 acceptance:
 - text: given findings whose equivalent ticket already exists, when the auto-filer
     declines to duplicate, then it disposes them to that existing ticket and quarantine
     clears
-  evidence: []
+  evidence:
+  - tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping
 - text: given findings with no owning ticket at all, when the sweep runs, then quarantine
     still raises and still blocks (guard not weakened)
-  evidence: []
+  evidence:
+  - tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_non_duplicate_filing_failure_still_leaves_quarantine_raised
 - text: given quarantine is raised, when an operator reads fleet status or a land
     refusal, then the raised state and undisposed count are stated without needing
     frob verify status
-  evidence: []
+  evidence:
+  - tests/unit/test_land_cmd_quarantine.py::TestQuarantineOverrideCeilings::test_notice_names_undisposed_count_and_dispose_command
 - text: given a quarantine store holding both absolute-path and relative-path finding
     identities, when an operator addresses one with --file-ticket, then a path-shape
     mismatch is reported as such rather than as a bare FindingsNotDisposed
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_path_shape_mismatch_is_diagnosed_not_a_bare_refusal
 threat: null
 component: verify
 anchor: false

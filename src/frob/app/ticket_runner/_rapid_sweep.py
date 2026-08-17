@@ -72,11 +72,22 @@ import sys
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+
+if TYPE_CHECKING:
+    # frob:ticket T-2312
+    # `_dispose_to_existing_duplicate_or_none`'s own annotations only --
+    # `from __future__ import annotations` above makes every annotation a
+    # lazy string at runtime (its own local imports still cover the
+    # function body), but `ty` resolves annotations statically and needs
+    # these names in scope to typecheck the signature.
+    from frob.tickets import TicketSpec
+    from frob.tickets._models import TicketError
 
 _log = get_logger(__name__)
 
@@ -1320,6 +1331,56 @@ def _build_regression_body(
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
+# frob:ticket T-2312
+def _dispose_to_existing_duplicate_or_none(
+    root: Path,
+    spec: TicketSpec,
+    final_id: str,
+    unfiled_pairs: list[tuple[str, str]],
+    error: TicketError,
+) -> str | None:
+    """T-2312 (ARCH001 split of `_file_regression_ticket`): its own
+    `new_ticket(...)` failure branch. A `DuplicateTicket` refusal means an
+    EXISTING ticket already covers this exact title+scope -- correctly
+    refusing to file a second one must not also abandon disposal, so this
+    resolves that existing ticket (`_find_exact_duplicate`) and disposes
+    `unfiled_pairs` to it, exactly as if this call had just filed it,
+    returning its id.
+
+    Every OTHER failure -- including a `DuplicateTicket` whose duplicate
+    cannot be re-resolved (a TOCTOU race between the refusal and this
+    lookup; never expected in practice) -- is logged at ERROR and returns
+    `None`, unchanged from the pre-T-2312 behavior: an unfiled regression
+    with NO known owner at all is the one outcome quarantine must keep
+    blocking on, and this split must never widen that to cover a filing
+    failure that is not actually a duplicate."""
+    from frob.tickets._models import TicketError
+    from frob.tickets._new_renumber import _find_exact_duplicate
+
+    if error is TicketError.DuplicateTicket:
+        existing = _find_exact_duplicate(root, spec)
+        if existing is not None:
+            _log.info(
+                "rapid sweep: %s: %s already covers this exact title "
+                "and scope -- disposing %d finding(s) to it instead "
+                "of filing a duplicate",
+                final_id,
+                existing.id,
+                len(unfiled_pairs),
+            )
+            _auto_dispose_filed_findings(root, unfiled_pairs, existing.id)
+            return existing.id
+    _log.error(
+        "rapid sweep: %s introduced %d new error(s) but the regression "
+        "ticket could NOT be filed (%s) -- pairs: %s",
+        final_id,
+        len(unfiled_pairs),
+        error,
+        unfiled_pairs,
+    )
+    return None
+
+
 def _file_regression_ticket(
     root: Path,
     final_id: str,
@@ -1434,15 +1495,9 @@ def _file_regression_ticket(
     # would correctly describe.
     created = new_ticket(root, spec, no_commit=True, warn_if_dirty=False)
     if created.is_err:
-        _log.error(
-            "rapid sweep: %s introduced %d new error(s) but the regression "
-            "ticket could NOT be filed (%s) -- pairs: %s",
-            final_id,
-            len(unfiled_pairs),
-            created.danger_err,
-            unfiled_pairs,
+        return _dispose_to_existing_duplicate_or_none(
+            root, spec, final_id, unfiled_pairs, created.danger_err
         )
-        return None
     regression_id = created.danger_ok.id
     _commit_regression_ticket(root, regression_id, attribution_label)
     _auto_dispose_filed_findings(root, unfiled_pairs, regression_id)

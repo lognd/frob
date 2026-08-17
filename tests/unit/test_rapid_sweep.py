@@ -1798,6 +1798,95 @@ class TestFileRegressionTicket:
         )
         assert filed is not None
 
+    # frob:ticket T-2312
+    def test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping  # noqa: E501
+        """T-2312 acceptance [0]: findings whose equivalent ticket already
+        exists (same title+scope `new_ticket` would refuse as an exact
+        duplicate) get disposed to that ticket -- and quarantine clears --
+        instead of being silently abandoned when the auto-filer declines
+        to file a second one. Calling `_file_regression_ticket` twice with
+        identical arguments and no attribution reproduces the real
+        incident directly: the first call files a regression ticket, the
+        second computes the SAME deterministic title+scope and hits the
+        exact-duplicate refusal `new_ticket` already enforces."""
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.verify import record_intent
+        from frob.verify._quarantine import load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        pairs = frozenset({("RULE1", "a.py")})
+
+        first = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", pairs)
+        assert first is not None
+
+        second = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", pairs)
+        assert second == first, (
+            "a refused duplicate must dispose to the EXISTING ticket, "
+            "never return None and abandon the findings"
+        )
+
+        record = load_quarantine(tmp_path).danger_ok
+        assert record is not None
+        assert record.cleared_at is not None, (
+            "quarantine must clear once the duplicate-owned findings are "
+            "disposed to the existing ticket"
+        )
+
+    # frob:ticket T-2312
+    def test_non_duplicate_filing_failure_still_leaves_quarantine_raised(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_non_duplicate_filing_failure_still_leaves_quarantine_raised  # noqa: E501
+        """T-2312 acceptance [1] (must-still-pass positive control): a
+        filing failure that is NOT a duplicate refusal (no existing
+        ticket owns these findings at all) must still leave quarantine
+        RAISED and still return `None` -- the T-2312 fix only reroutes
+        the DUPLICATE branch to disposal, it must never make an
+        ownerless finding's filing failure look disposed."""
+        import frob.tickets as tickets_mod
+        from typani import Err
+
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.tickets._models import TicketError
+        from frob.verify import record_intent
+        from frob.verify._quarantine import load_quarantine
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+        monkeypatch.setattr(
+            tickets_mod, "new_ticket", lambda *a, **k: Err(TicketError.WriteFailed)
+        )
+
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is None
+
+        record = load_quarantine(tmp_path).danger_ok
+        assert record is not None
+        assert record.cleared_at is None, (
+            "an ownerless finding's failed filing must NOT clear "
+            "quarantine -- that is the guard's real job"
+        )
+
     def test_all_attributed_to_open_tickets_files_nothing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
