@@ -2,7 +2,7 @@
 id: T-2317
 title: wire T-2310's spawn_deferred_drain into the land call site (blocked by T-2303
   lease during T-2310)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -14,8 +14,19 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - docs/modules/tickets-verify-sweep.md
+- tests/unit/test_land_cmd_drain_wiring.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_land_cmd_drain_wiring.py
+  reason: T-2317 wiring test
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_land_cmd_drain_wiring.py::TestRapidLandDrainWiring::test_real_rapid_land_spawns_both_sweep_and_drain
+- tests/unit/test_land_cmd_drain_wiring.py::TestRapidLandDrainWiring::test_dry_run_spawns_neither
+- tests/unit/test_land_cmd_drain_wiring.py::TestRapidLandDrainWiring::test_no_commit_sha_spawns_neither
 designated_repro_test: null
 threat: null
 component: null

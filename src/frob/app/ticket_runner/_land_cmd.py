@@ -4655,6 +4655,12 @@ def _land_core_finish_post_land(
             spawn_deferred_post_land_sweep(
                 root, cfg.ticket_id, report.final_id, report.commit_sha
             )
+            # T-2310/T-2317: fire the automatic watermark drain alongside
+            # the existing sweep spawn -- same call site, same detached,
+            # never-gates-the-land posture.
+            from frob.verify._drain import spawn_deferred_drain
+
+            spawn_deferred_drain(root, cfg.ticket_id)
         return Ok(report)
 
     if not report.dry_run and pre_land_sha is not None:

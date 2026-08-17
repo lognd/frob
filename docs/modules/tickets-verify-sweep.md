@@ -1386,16 +1386,12 @@ whether it drained, found nothing to drain, or declined because a land
 is in progress (all expected, benign outcomes); only a genuine
 spawn/measurement failure exits non-zero.
 
-**What this section deliberately does NOT change:** the land-side spawn
-call site itself (`frob.app.ticket_runner._land_cmd.
-_land_core_finish_post_land`'s rapid-land branch, alongside
-`spawn_deferred_post_land_sweep`) is BLOCKED as of T-2310's own initial
-land -- both `_land_cmd.py` and `_rapid_sweep.py` were held under a live
-cross-worktree lease (T-2303) at the time. `spawn_deferred_drain`/
-`run_drain_async`/the `drain-async` CLI verb are fully implemented,
-tested, and independently runnable (`frob verify drain-async` by hand,
-or via a scheduled/manual `spawn_deferred_drain` call) -- the ONLY
-missing piece is the two-line call to `spawn_deferred_drain` inside the
-existing rapid-land branch. See the follow-up ticket this section's own
-citation names for that last wiring step once the lease clears.
+**The land-side trigger (T-2317):** `frob.app.ticket_runner._land_cmd.
+_land_core_finish_post_land`'s rapid-land branch calls `spawn_deferred_
+drain` immediately after `spawn_deferred_post_land_sweep`, under the
+SAME guard (`not report.dry_run and report.commit_sha is not None`) --
+so every real rapid land fires both the post-land sweep and the
+watermark drain from one detached-spawn call site, neither gating the
+other. `frob verify drain-async` remains fully usable standalone (by
+hand, or on any schedule) independent of this automatic trigger.
 
