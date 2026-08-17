@@ -151,7 +151,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4180cac4f864e9a79df8e6c9fecbb0f3358cb4d8
 ---
 T-0969/T-2131 residue. After T-2131's archive-directory exclusion, DOC006
 dropped from 584 to 88 (measured 2026-08-11). The remaining 88 need real
