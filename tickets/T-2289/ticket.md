@@ -2,7 +2,7 @@
 id: T-2289
 title: 'T-1914 sibling-state-regression guard names the LANDING ticket as its own
   sibling: 6 of 6 refusals were self-conflicts, 40% of all land attempts'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,20 +11,75 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_land.py
+- src/frob/tickets/_land_git_ops.py
+- src/frob/tickets/_store.py
+- tests/unit/test_land_sibling_regression.py
+- docs/modules/tickets-landing.md
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: narrow to the T-1914 sibling-guard/self-conflict merge machinery and its
+    regression test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: narrow to the T-1914 sibling-guard/self-conflict merge machinery and its
+    regression test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: narrow to the T-1914 sibling-guard/self-conflict merge machinery and its
+    regression test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_land_sibling_regression.py
+  reason: narrow to the T-1914 sibling-guard/self-conflict merge machinery and its
+    regression test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc closure target for _land.py's frob:doc anchors
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-2289's fix changes this file's own AC3 same-ticket-conflict test expectation
+    (self-conflicts now auto-resolve instead of surfacing loudly)
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_genuine_sibling_conflict_still_refuses
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_regressed_sibling_is_detected_by_rank_comparison
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_no_regression_when_sibling_state_only_improves_or_holds
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_pre_fix_shape_would_have_silently_reverted_sibling
+- tests/test_ticket_land.py::TestLedgerV2LandMergeStory::test_same_ticket_conflict_surfaces_loudly_no_splice
+- tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_self_conflict_lands_by_keeping_newer_state
+designated_repro_test: tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_self_conflict_lands_by_keeping_newer_state
 acceptance:
 - text: given a land whose only divergent ledger row is the landing ticket's own,
     when frob ticket land runs, then it resolves by keeping the newer state and does
     not refuse
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_self_conflict_lands_by_keeping_newer_state
 - text: given a land where a genuine sibling ticket's row would regress, when frob
     ticket land runs, then it still refuses (guard not weakened)
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_genuine_sibling_conflict_still_refuses
+  - tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_regressed_sibling_is_detected_by_rank_comparison
 - text: given the regression tests, when they run, then both the self-conflict and
     genuine-sibling cases are covered as distinct must-pass/must-fail fixtures
-  evidence: []
+  evidence:
+  - tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_self_conflict_lands_by_keeping_newer_state
+  - tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve::test_genuine_sibling_conflict_still_refuses
 threat: null
 component: tickets
 anchor: false

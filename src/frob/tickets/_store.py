@@ -576,6 +576,29 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-2289
+def _parse_ticket_text(text: str, where: str) -> Result[Ticket, TicketError]:
+    """Split raw `---`-frontmatter + body TEXT into a validated Ticket
+    (T-2289): the actual parse body `_parse_ticket_file` used to inline,
+    pulled out so a caller holding a ticket.md's text directly -- e.g. a
+    `git show <ref>:tickets/<id>/ticket.md` blob for a side of an unresolved
+    merge conflict, never written to `path` at all -- can reuse the exact
+    same parse/validate path instead of round-tripping through a temp
+    file. `where` is a caller-supplied label used only for error logging
+    (a path when there is one, a synthetic description like `"ours"`
+    otherwise)."""
+    match = _FRONTMATTER_RE.match(text)
+    if match is None:
+        _log.error("tickets: %s has no valid frontmatter block", where)
+        return Err(TicketError.MalformedFrontmatter)
+    try:
+        data = yaml.load(match.group(1), Loader=_yaml_loader())
+    except yaml.YAMLError as exc:
+        _log.error("tickets: %s frontmatter is not valid YAML: %s", where, exc)
+        return Err(TicketError.MalformedFrontmatter)
+    return _validate(data, match.group(2), where)
+
+
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
 # frob:waive COV007 reason="docs/modules/tickets.md's Storage internals section \
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
@@ -583,16 +606,7 @@ def _validate(data: dict, body: str, where: str) -> Result[Ticket, TicketError]:
 def _parse_ticket_file(path: Path) -> Result[Ticket, TicketError]:
     """Split a legacy ticket file into frontmatter + body and validate it."""
     text = path.read_text(encoding="utf-8")
-    match = _FRONTMATTER_RE.match(text)
-    if match is None:
-        _log.error("tickets: %s has no valid frontmatter block", path)
-        return Err(TicketError.MalformedFrontmatter)
-    try:
-        data = yaml.load(match.group(1), Loader=_yaml_loader())
-    except yaml.YAMLError as exc:
-        _log.error("tickets: %s frontmatter is not valid YAML: %s", path, exc)
-        return Err(TicketError.MalformedFrontmatter)
-    return _validate(data, match.group(2), str(path))
+    return _parse_ticket_text(text, str(path))
 
 
 def _dir_path_for(root: Path, ticket: Ticket) -> Path:

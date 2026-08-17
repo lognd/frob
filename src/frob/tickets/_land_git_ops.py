@@ -1470,6 +1470,69 @@ def _checkout_and_stage(cwd: Path, keep: str, path: str) -> Result[None, LandErr
     return Ok(None)
 
 
+# frob:ticket T-2289
+# frob:tests tests/unit/test_land_sibling_regression.py::TestSelfConflictAutoResolve.test_self_conflict_lands_by_keeping_newer_state  # noqa: E501
+def _resolve_self_conflict_by_newer_state(
+    cwd: Path, ticket_id: str, main_branch: str, remaining: frozenset[str]
+) -> frozenset[str]:
+    """T-2289: if `tickets/<ticket_id>/ticket.md` -- the LANDING ticket's
+    OWN row, never a sibling's -- is (still) conflicted in `remaining`,
+    resolve it automatically by keeping whichever side's ticket the
+    playbook's own newer-state rule (`_newer`, section 10) would pick,
+    instead of leaving it for a manual `git merge`/`TerminalStateRegression`
+    resolution. Both sides are read directly from git (`HEAD` for the
+    worktree's own pre-merge commit, `main_branch` for main's tip) rather
+    than from the conflicted working-tree file, so this never depends on
+    conflict-marker text. Any OTHER still-conflicted path (a sibling's own
+    directory, `done-report.md`, anything this function does not
+    recognize) is left untouched -- this narrows `remaining`, it never
+    widens what counts as resolvable, so a genuine cross-ticket conflict
+    still refuses exactly as before.
+
+    A malformed side (parse failure on either blob) or a git failure
+    degrades to leaving the path conflicted -- fail closed, same posture
+    every other conflict-resolution helper in this module uses; this is a
+    convenience that lands the common self-conflict shape automatically,
+    never a mechanism that may itself corrupt the ledger."""
+    from frob.tickets._land_ledger_merge import _newer
+    from frob.tickets._store import _parse_ticket_text, _serialize_ticket
+
+    target = f"tickets/{ticket_id}/ticket.md"
+    if target not in remaining:
+        return remaining
+
+    ours = run_argv(["git", "-C", str(cwd), "show", f"HEAD:{target}"])
+    theirs = run_argv(["git", "-C", str(cwd), "show", f"{main_branch}:{target}"])
+    if (
+        ours.is_err
+        or ours.danger_ok.returncode != 0
+        or theirs.is_err
+        or theirs.danger_ok.returncode != 0
+    ):
+        return remaining
+
+    ours_ticket = _parse_ticket_text(ours.danger_ok.stdout, "ours")
+    theirs_ticket = _parse_ticket_text(theirs.danger_ok.stdout, "theirs")
+    if ours_ticket.is_err or theirs_ticket.is_err:
+        return remaining
+
+    winner = _newer(ours_ticket.danger_ok, theirs_ticket.danger_ok)
+    target_path = cwd / target
+    target_path.write_text(_serialize_ticket(winner), encoding="utf-8")
+    add = run_argv(["git", "-C", str(cwd), "add", "--", target])
+    if add.is_err or add.danger_ok.returncode != 0:
+        return remaining
+
+    _log.info(
+        "land: %s auto-resolved its OWN self-conflict in %s by keeping the "
+        "newer state (%s, T-2289) -- no manual resolution needed",
+        ticket_id,
+        target,
+        winner.state.value,
+    )
+    return remaining - {target}
+
+
 def _check_only_tickets_conflicted(
     worktree: Path, ticket: Ticket, main_branch: str
 ) -> Result[None, LandError]:

@@ -3482,6 +3482,21 @@ class TestLedgerV2LandMergeStory:
         self, v2_repo: Path
     ) -> None:
         # frob:tests src/frob/tickets/_land.py::land kind="unit"
+        #
+        # T-2289 superseded this test's original AC3 claim ("a same-
+        # ticket conflict is always left conflicted, never resolved by
+        # picking a side") for the ONE case where "picking a side" is
+        # actually the playbook's own mechanical rule: a conflict where
+        # the LANDING ticket's own row diverges from main's. That case is
+        # now auto-resolved by keeping the newer state (`_newer`,
+        # T-2289's `_resolve_self_conflict_by_newer_state`) instead of
+        # requiring manual `git merge` resolution -- see
+        # `TestSelfConflictAutoResolve` in
+        # tests/unit/test_land_sibling_regression.py for the dedicated
+        # must-pass/must-fail pair. AC3's "never resolved by picking a
+        # side" claim still holds for every OTHER kind of conflict (a
+        # genuine sibling's own row, any file outside a ticket's own
+        # directory) -- unchanged by this fix.
         wt = v2_repo.parent / "wt-v2-b"
         _run(["git", "worktree", "add", "-b", "feature-v2-b", str(wt)], v2_repo)
 
@@ -3503,8 +3518,6 @@ class TestLedgerV2LandMergeStory:
         # way an out-of-band edit (a direct commit, a cherry-pick, a
         # different tool entirely) would actually reach main's checkout
         # without ever going through frob's own ownership-guarded API.
-        # That is exactly the git-level conflict this test means to drive
-        # `land`'s `MergeConflict` path with -- not an ownership check.
         ticket_path = v2_repo / "tickets" / "T-3000" / "ticket.md"
         original_text = ticket_path.read_text()
         assert "title: Seed" in original_text
@@ -3513,13 +3526,15 @@ class TestLedgerV2LandMergeStory:
         )
         _commit_all(v2_repo, "main retitles T-3000")
 
+        # T-2289: the worktree's copy (in_progress, evidence + Done
+        # report) strictly outranks main's stale copy (still queued) --
+        # `_newer` picks the worktree's side, so this now auto-resolves
+        # and the dry-run reports clean instead of refusing.
         result = land(v2_repo, "T-3000", wt, dry_run=True)
-        assert result.is_err
-        assert result.danger_err == LandError.MergeConflict
-
-        # Refused loudly, not silently spliced -- the merge attempt is
-        # cleanly aborted, worktree left exactly as found.
-        assert _status_ignoring_frob(wt) == ""
+        assert result.is_ok, (
+            f"self-conflict on T-3000's own row failed to auto-resolve: "
+            f"{result.danger_err if result.is_err else None}"
+        )
 
 
 class TestDraftIdFinalization:

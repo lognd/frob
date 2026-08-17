@@ -66,6 +66,7 @@ from frob.tickets._land_git_ops import (
     _land_repair_marker_path,
     _merge_main_into_worktree,
     _porcelain_dirty,
+    _resolve_self_conflict_by_newer_state,
     _restore_lock_version_only_drift,
     _rev_parse,
     _true_merge_base,
@@ -5253,7 +5254,17 @@ def _merge_main_into_worktree_v2(
     if resolved.is_err:
         _abort_merge(worktree)
         return Err(resolved.danger_err)
-    remaining = resolved.danger_ok
+    # T-2289: a conflict on the LANDING ticket's own `tickets/<id>/
+    # ticket.md` -- never a sibling's, `_resolve_self_conflict_by_newer_
+    # state` only ever recognizes this exact ticket_id's own path -- is
+    # auto-resolved by keeping the newer state (playbook section 10's own
+    # rule) instead of being surfaced as a MergeConflict requiring manual
+    # resolution. Runs strictly AFTER the out-of-scope resolve above and
+    # narrows `remaining` further; never widens it, so any OTHER still-
+    # conflicted path (a genuine sibling, done-report.md) is unaffected.
+    remaining = _resolve_self_conflict_by_newer_state(
+        worktree, ticket.id, main_branch, resolved.danger_ok
+    )
     if remaining:
         _abort_merge(worktree)
         _log.error(
@@ -5313,6 +5324,16 @@ def _assert_no_sibling_state_regression(
     post_states = _sibling_ticket_states(worktree, landing_id)
     regressed = []
     for ticket_id, pre_state in pre_states.items():
+        # T-2289: a ticket is never its own sibling. `pre_states`/
+        # `post_states` are already built by `_sibling_ticket_states`,
+        # which excludes `landing_id` -- this second, explicit check is
+        # deliberate belt-and-suspenders (not dead code): it holds even if
+        # a future caller ever passes in a `pre_states` map assembled some
+        # other way, so this guard can never regress into once again
+        # naming the landing ticket as its own "sibling" (the exact T-2289
+        # incident) no matter how its inputs were constructed.
+        if ticket_id == landing_id:
+            continue
         post_state = post_states.get(ticket_id)
         if post_state is None:
             continue
