@@ -390,6 +390,61 @@ class TestUnlandedBranchWork:
         findings = _unlanded_branch_work(repo)
         assert findings == ()
 
+    # frob:ticket T-2287
+    def test_fixture_directive_string_in_a_test_file_is_not_flagged(
+        self, repo: Path
+    ) -> None:
+        """T-2287's measured incident: a test file carries a literal
+        `frob:ticket T-9001` string as FIXTURE DATA (no ticket.md for
+        T-9001 exists anywhere, branch or main) -- `_TICKET_DIRECTIVE_RE`
+        greps blob text with no way to tell that apart from a real
+        directive on its own, so this id must NOT resolve to a finding:
+        it cannot resolve to any real `ticket.md` at all."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_fixture_\
+        # directive_string_in_a_test_file_is_not_flagged
+        _branch(repo, "touches-fixture-test-file")
+        (repo / "tests").mkdir(parents=True, exist_ok=True)
+        (repo / "tests" / "test_gates.py").write_text(
+            'def test_something() -> None:\n'
+            '    body = "frob:ticket T-9001 acceptance sample"\n'
+            '    assert body\n',
+            encoding="utf-8",
+        )
+        _commit_all(repo, "touch tests/test_gates.py (unrelated real work)")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert findings == ()
+
+    # frob:ticket T-2287
+    def test_genuine_directive_anchored_specimen_still_flagged(
+        self, repo: Path
+    ) -> None:
+        """Positive control for T-2287's narrowing fix: a REAL
+        directive-anchored specimen (a committed non-`tickets/**` file
+        carrying a live `frob:ticket` directive, whose OWN `ticket.md`
+        resolves on the branch to a non-`in-progress` state) must still
+        be reported -- the resolve-check narrows false positives, it does
+        not also swallow the genuine T-1948 shape."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_genuine_\
+        # directive_anchored_specimen_still_flagged
+        _branch(repo, "genuine-specimen-branch")
+        _write_ticket_md(repo, "T-9401", state="queued")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_real_work.py").write_text(
+            "# frob:ticket T-9401\ndef real_work() -> None: ...\n", encoding="utf-8"
+        )
+        _commit_all(repo, "real anchored work for T-9401, ledger never updated")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 1
+        assert findings[0].ticket_id == "T-9401"
+        assert findings[0].branch == "genuine-specimen-branch"
+        assert findings[0].signal == "directive-anchored"
+
     def test_findings_for_one_branch_matches_the_aggregate(self, repo: Path) -> None:
         """`_unlanded_findings_for_branch` (the single-branch entry
         `frob.tickets._leases.sweep_worktrees`'s new `kept:unlanded` gate

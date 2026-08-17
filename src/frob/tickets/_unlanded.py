@@ -359,7 +359,9 @@ def _branch_own_changed_files(root: Path, branch: str) -> frozenset[str]:
 
 
 # frob:ticket T-1955
-def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
+def _finished_signals_on_branch(
+    root: Path, branch: str, main_states: dict[str, str]
+) -> dict[str, str]:
     """`ticket_id -> signal` for every ticket `branch` carries that LOOKS
     finished, by either of T-1934's REQUIRED-A shapes: `"done-report"` (a
     `tickets/T-####/done-report.md` blob exists on the branch -- the
@@ -391,14 +393,26 @@ def _finished_signals_on_branch(root: Path, branch: str) -> dict[str, str]:
     and shared between the two helper calls below -- both used to spawn
     their own `_blob_text(root, branch, ...)` call per candidate ticket
     id; see `_ticket_states_on_ref`'s own docstring for the full
-    measurement."""
+    measurement.
+
+    T-2287: `main_states` (the caller's already-resolved `_all_ticket_
+    states_on_main` result) is threaded down to the directive-anchored
+    signal specifically, so it can require a matched id to resolve to a
+    REAL ticket (known on `branch` OR `main`, active or archived) before
+    reporting -- see `_directive_anchor_signals_on_branch`'s own
+    docstring for why."""
     own_changed = _branch_own_changed_files(root, branch)
     branch_states = _ticket_states_on_branch(root, branch)
     signals = _done_report_and_local_state_signals(
         root, branch, own_changed, branch_states
     )
     for ticket_id, signal in _directive_anchor_signals_on_branch(
-        root, branch, own_changed, branch_states, exclude=signals.keys()
+        root,
+        branch,
+        own_changed,
+        branch_states,
+        main_states,
+        exclude=signals.keys(),
     ).items():
         signals[ticket_id] = signal
     return signals
@@ -477,11 +491,13 @@ def _directive_anchored_ticket_ids(
 
 
 # frob:ticket T-1948
+# frob:ticket T-2287
 def _directive_anchor_signals_on_branch(
     root: Path,
     branch: str,
     own_changed: frozenset[str],
     branch_states: dict[str, str],
+    main_states: dict[str, str],
     *,
     exclude: KeysView[str],
 ) -> dict[str, str]:
@@ -496,10 +512,32 @@ def _directive_anchor_signals_on_branch(
     weakest, "code exists but the ledger disagrees" signal, not a second
     vote on an id already known finished). T-2125: `branch_states` is a
     dict lookup (no spawn) replacing what used to be a `_blob_text` call
-    per candidate id here too."""
+    per candidate id here too.
+
+    T-2287 MEASURED FALSE-POSITIVE FIX: `_TICKET_DIRECTIVE_RE` greps raw
+    blob TEXT (this module's own docstring: "never parses source, only
+    greps blob text"), so it matches a `frob:ticket T-9001`-shaped string
+    sitting in a test file as FIXTURE DATA with equal confidence to a real
+    directive comment -- measured 239 of 244 `frob ticket reconcile`
+    findings this way (fixture ids `T-9001`/`T-0104`/`T-1`/
+    `T-draft-9bda8d62`, repeated once per branch that happens to touch
+    `tests/test_gates.py`/`tests/test_gates_fix_engine.py`/
+    `tests/test_graph.py`). A REAL directive always anchors an id with a
+    `ticket.md` somewhere this repo's own ledger machinery can resolve --
+    on `branch` itself (`branch_states`) or on `main`, active or archived
+    (`main_states`) -- while a fixture string invents an id with NO
+    `ticket.md` anywhere at all. Requiring the match to resolve before
+    treating it as a signal (option (b) from T-2287's own ticket body: a
+    narrowing heuristic, not a real parse -- a commented-out mention of a
+    REAL id would still slip through, same limitation the ticket itself
+    names) drops every one of the measured fixture ids without touching
+    the five genuine findings, each of which anchors a real, still-
+    resolvable ticket id."""
     signals: dict[str, str] = {}
     for ticket_id in _directive_anchored_ticket_ids(root, branch, own_changed):
         if ticket_id in exclude:
+            continue
+        if ticket_id not in branch_states and ticket_id not in main_states:
             continue
         state = branch_states.get(ticket_id)
         if state != _ACTIVE_STATE:
@@ -547,7 +585,9 @@ def _unlanded_findings_for_branch(
     if main_states is None:
         main_states = _all_ticket_states_on_main(root)
     findings: list[_UnlandedWork] = []
-    for ticket_id, signal in sorted(_finished_signals_on_branch(root, branch).items()):
+    for ticket_id, signal in sorted(
+        _finished_signals_on_branch(root, branch, main_states).items()
+    ):
         if _is_ticket_lease_live(root, ticket_id, leases):
             continue
         state_on_main = main_states.get(ticket_id)

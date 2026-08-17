@@ -2,7 +2,7 @@
 id: T-2287
 title: unlanded-branch detector greps blob text, so fixture frob:ticket strings in
   3 test files make 239 of 244 findings false positives
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -16,18 +16,24 @@ scope:
 - tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_fixture_directive_string_in_a_test_file_is_not_flagged
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_genuine_directive_anchored_specimen_still_flagged
+designated_repro_test: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_fixture_directive_string_in_a_test_file_is_not_flagged
 acceptance:
 - text: given the repo as of 2026-08-17, when frob ticket reconcile runs, then the
     unlanded-work report contains the five genuine findings and none of T-9001/T-0104/T-1/T-draft-9bda8d62
-  evidence: []
+  evidence:
+  - tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_fixture_directive_string_in_a_test_file_is_not_flagged
 - text: given a test file containing a fixture frob:ticket T-9001 string literal,
     when the directive-anchored signal scans it, then no finding is emitted
-  evidence: []
+  evidence:
+  - tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_fixture_directive_string_in_a_test_file_is_not_flagged
 - text: given a genuine directive-anchored specimen (committed non-tickets file with
     a live frob:ticket directive and a non-in-progress ticket.md), when the signal
     scans it, then the finding is still emitted
-  evidence: []
+  evidence:
+  - tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_genuine_directive_anchored_specimen_still_flagged
 threat: null
 component: tickets
 anchor: false
