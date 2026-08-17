@@ -3,7 +3,7 @@ id: T-2258
 title: 'frob ticket work never surfaces the fleet env, so T-2221''s xdist bound is
   never applied: an agent ran 39 unbounded processes while the box sat at 1GB free
   RAM'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,24 +14,38 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+evidence_scope:
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_prints_the_agent_env_eval_line_naming_the_worktree
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_fleet_context_reports_the_bound_agent_env_exports_computed
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_no_fleet_context_does_not_claim_an_xdist_bound
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_creates_worktree_merges_main_and_starts_ticket
+- tests/test_ticket_work_and_land_finish.py::TestWork::test_reuses_an_existing_worktree_and_merges_main_for_freshness
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestWork::test_prints_the_agent_env_eval_line_naming_the_worktree
 acceptance:
 - text: 'frob ticket work output includes the exact command (or export block) to apply
     the fleet env, naming the resolved worktree path (fails today: zero references
     to ''agent env'' under src/frob/app/ticket_runner/)'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_prints_the_agent_env_eval_line_naming_the_worktree
 - text: Values come from agent_env_exports, not a second computation
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_fleet_context_reports_the_bound_agent_env_exports_computed
 - text: 'MUST-STILL-PASS: with no other live lease, no bound is claimed and solo worktree
     creation is unchanged'
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_no_fleet_context_does_not_claim_an_xdist_bound
 - text: ticket work exit code and existing behaviour unchanged; additive output only
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_creates_worktree_merges_main_and_starts_ticket
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_reuses_an_existing_worktree_and_merges_main_for_freshness
 - text: State whether other worktree-creating paths should emit it too; do not widen
     silently
-  evidence: []
+  evidence:
+  - tests/test_ticket_work_and_land_finish.py::TestWork::test_prints_the_agent_env_eval_line_naming_the_worktree
 threat: null
 component: null
 anchor: false

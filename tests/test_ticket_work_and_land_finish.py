@@ -153,6 +153,98 @@ class TestWork:
         assert loaded.is_ok
         assert loaded.danger_ok[tid].state == TicketState.IN_PROGRESS
 
+    # frob:ticket T-2258
+    def test_prints_the_agent_env_eval_line_naming_the_worktree(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Acceptance 1: `ticket work` output includes the exact command
+        to apply the worktree-guard env, naming the resolved worktree
+        path -- fails today (zero references to 'agent env' anywhere
+        under `src/frob/app/ticket_runner/`)."""
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_prints_the_agent_env\
+        # _eval_line_naming_the_worktree
+        created = new_ticket(repo, _spec("Work verb env hint"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        with caplog.at_level("INFO"):
+            _work(repo, cfg)
+
+        worktree = _default_work_worktree(repo, tid)
+        assert f'eval "$(uv run frob agent env {worktree})"' in caplog.text
+
+    # frob:ticket T-2258
+    def test_no_fleet_context_does_not_claim_an_xdist_bound(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """MUST-STILL-PASS control: with no other live lease, `agent_env_
+        exports` exports nothing for `PYTEST_XDIST_AUTO_NUM_WORKERS`, and
+        `ticket work` must not invent a claim of one either -- a solo
+        developer's output stays free of any fleet-bound line."""
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_no_fleet_context_doe\
+        # s_not_claim_an_xdist_bound
+        created = new_ticket(repo, _spec("Work verb solo"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        with caplog.at_level("INFO"):
+            _work(repo, cfg)
+
+        assert "PYTEST_XDIST_AUTO_NUM_WORKERS" not in caplog.text
+        assert "fleet context detected" not in caplog.text
+
+    # frob:ticket T-2258
+    def test_fleet_context_reports_the_bound_agent_env_exports_computed(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Acceptance 2: the value shown comes from `agent_env_exports`
+        (T-2221's real cross-worktree lease signal), not a second
+        computation here."""
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestWork.test_fleet_context_report\
+        # s_the_bound_agent_env_exports_computed
+        from frob.tickets._leases import _LeaseRecord, leases_dir
+
+        created = new_ticket(repo, _spec("Work verb fleet"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _commit_all(repo, "add ticket")
+
+        leases_root = leases_dir(repo)
+        assert leases_root.is_ok
+        leases_root.danger_ok.mkdir(parents=True, exist_ok=True)
+        peer_wt = repo.parent / "peer-wt"
+        peer_wt.mkdir(parents=True, exist_ok=True)
+        record = _LeaseRecord(
+            ticket_id="T-9001",
+            scope=("src/other.py",),
+            worktree=str(peer_wt),
+            branch="agent-T-9001",
+            recorded_at="2026-08-16T00:00:00+00:00",
+        )
+        (leases_root.danger_ok / "T-9001.json").write_text(
+            record.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+
+        cfg = AppConfig(ticket_command="work", ticket_id=tid, ticket_foreground=True)
+        with caplog.at_level("INFO"):
+            _work(repo, cfg)
+
+        worktree = _default_work_worktree(repo, tid)
+        from frob.tickets._worktree_guard import agent_env_exports
+
+        expected = agent_env_exports(worktree)
+        assert expected.is_ok
+        expected_workers = expected.danger_ok["PYTEST_XDIST_AUTO_NUM_WORKERS"]
+        assert f"PYTEST_XDIST_AUTO_NUM_WORKERS={expected_workers}" in caplog.text
+        assert "fleet context detected" in caplog.text
+
 
 # frob:ticket T-1790
 class TestRootIsItselfANestedWorktree:
@@ -382,9 +474,11 @@ class TestAssertDesignLoadsPreLand:
         )
         _run(["git", "add", "-A"], repo)
 
-        def _corrupting_tier_a_fix(*_args: object, **_kwargs: object) -> tuple[object, ...]:
+        def _corrupting_tier_a_fix(
+            *_args: object, **_kwargs: object
+        ) -> tuple[object, ...]:
             (design_dir / "sample.strata").write_text(
-                'module sample\n\nnode checker : trusted {\n'
+                "module sample\n\nnode checker : trusted {\n"
                 '    attr interface=["unterminated\n};\n'
             )
             return ()
@@ -419,9 +513,7 @@ class TestAssertTouchedFilesTypeCheckPreLand:
     test proves the actual wiring (cwd, extra-search-path, exit code
     parsing) works end to end, not just that some mocked call happened."""
 
-    def test_a_type_error_in_a_touched_file_refuses_the_land(
-        self, repo: Path
-    ) -> None:
+    def test_a_type_error_in_a_touched_file_refuses_the_land(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertTouchedFilesTypeCheckPreLand.test_a_type_error_in_a_touched_file_refuses_the_land  # noqa: E501
         from frob.app.ticket_runner._land_cmd import (
             _assert_touched_files_type_check_pre_land,
@@ -847,7 +939,9 @@ class TestAssertDiffDoesNotWorsenLongFunctions:
         )
 
         already_long = repo / "src" / "already_long.py"
-        already_long.write_text(_long_complex_function_source("pre_existing_long_function"))
+        already_long.write_text(
+            _long_complex_function_source("pre_existing_long_function")
+        )
         _commit_all(repo, "pre-existing over-threshold function")
 
         already_long.write_text(
@@ -1624,7 +1718,9 @@ class TestLandProofAndFinish:
             _land(worktree, land_cfg)  # root == worktree, the bug shape
 
         proof_lines = [
-            rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
+            rec.message
+            for rec in caplog.records
+            if rec.message.startswith("LAND-PROOF:")
         ]
         assert len(proof_lines) == 1
         # T-2091: this fixture's Done report carries no "### Captured
@@ -1673,7 +1769,9 @@ class TestLandProofAndFinish:
         _commit_all(repo, "anchor ticket, still queued")
         commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
-        fake_report = SimpleNamespace(ticket_id=tid, final_id=tid, commit_sha=commit_sha)
+        fake_report = SimpleNamespace(
+            ticket_id=tid, final_id=tid, commit_sha=commit_sha
+        )
         assert _print_land_proof(repo, fake_report) is True
 
     # frob:ticket T-1884
@@ -1692,7 +1790,9 @@ class TestLandProofAndFinish:
         _commit_all(repo, "ordinary ticket, still queued")
         commit_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
-        fake_report = SimpleNamespace(ticket_id=tid, final_id=tid, commit_sha=commit_sha)
+        fake_report = SimpleNamespace(
+            ticket_id=tid, final_id=tid, commit_sha=commit_sha
+        )
         assert _print_land_proof(repo, fake_report) is False
 
     # frob:ticket T-2129
@@ -1871,7 +1971,9 @@ class TestLandProofAndFinish:
 
         assert exc_info.value.code != 0
         proof_lines = [
-            rec.message for rec in caplog.records if rec.message.startswith("LAND-PROOF:")
+            rec.message
+            for rec in caplog.records
+            if rec.message.startswith("LAND-PROOF:")
         ]
         assert len(proof_lines) == 1
         # T-2091: `_land_a_real_ticket`'s earlier real `land()` call left
@@ -1917,9 +2019,7 @@ class TestLandProofAncestorRetry:
                 calls["n"] += 1
                 if calls["n"] < 3:
                     return Ok(
-                        ProcResult(
-                            argv=tuple(argv), returncode=1, stdout="", stderr=""
-                        )
+                        ProcResult(argv=tuple(argv), returncode=1, stdout="", stderr="")
                     )
             return real_run_argv(argv, **kwargs)
 

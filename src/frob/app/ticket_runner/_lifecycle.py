@@ -345,6 +345,69 @@ def _worktree_add_or_reuse(root: Path, worktree: Path, ticket_id: str) -> None:
     )
 
 
+# frob:ticket T-2258
+def _print_agent_env_hint(worktree: Path, label: str) -> None:
+    """Surface the worktree-guard env (T-2258) at the one point `ticket
+    work`/`ticket work --cluster` cannot forget: right after the worktree
+    an agent is about to start working in is created/reused, before this
+    command hands off to `_start`. `frob agent env`'s own T-2221 fleet-
+    aware xdist bound went inert for hours because nothing but a playbook
+    line (`docs/guides/agent-playbook.md:243`) told a dispatched agent to
+    apply it -- a rule every agent must remember on every dispatch is not
+    enforcement.
+
+    Calls `agent_env_exports` (`frob.tickets._worktree_guard`) rather than
+    recomputing anything -- this is a surfacing step, never a second
+    implementation of the bound (the T-1966 shape this ticket's own `do
+    not` list names explicitly). PRINTS the `eval` line rather than
+    mutating this process's own environment: a subprocess cannot export
+    into its parent shell, so the agent must run it themselves.
+
+    The xdist-bound line only appears when `agent_env_exports` actually
+    returned one (fleet context: another live lease exists) -- with no
+    other live lease it exports nothing for that key, and this prints
+    nothing claiming one either, so a solo developer's `ticket work`
+    output is unchanged apart from the always-present `eval` hint.
+
+    Best-effort: a resolution failure here (e.g. `worktree` somehow not a
+    git worktree yet) degrades to a logged warning, never a `sys.exit` --
+    `ticket work`'s job is creating the worktree and starting the ticket,
+    not gating on a secondary diagnostic."""
+    from frob.tickets._worktree_guard import (
+        PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
+        agent_env_exports,
+    )
+
+    exports = agent_env_exports(worktree)
+    if exports.is_err:
+        _log.warning(
+            "ticket work: %s could not resolve the agent env for %s (%s) -- "
+            'run `eval "$(uv run frob agent env %s)"` manually before '
+            "running pytest/frob directly from your shell",
+            label,
+            worktree,
+            exports.danger_err,
+            worktree,
+        )
+        return
+    _log.info(
+        "ticket work: %s apply this worktree's agent env before running "
+        'pytest/frob directly from your shell: eval "$(uv run frob agent '
+        'env %s)"',
+        label,
+        worktree,
+    )
+    workers = exports.danger_ok.get(PYTEST_XDIST_AUTO_NUM_WORKERS_ENV)
+    if workers is not None:
+        _log.info(
+            "ticket work: %s fleet context detected (another live lease "
+            "exists) -- the eval above bounds %s=%s",
+            label,
+            PYTEST_XDIST_AUTO_NUM_WORKERS_ENV,
+            workers,
+        )
+
+
 # frob:ticket T-1175
 def _ensure_worktree_fresh(worktree: Path, ticket_id: str) -> None:
     """`frob ticket work`'s freshness half (T-1175, playbook section 0 step
@@ -565,6 +628,7 @@ def _work_cluster(root: Path, cfg: AppConfig) -> None:
     _worktree_add_or_reuse(root, worktree, cluster_id)
     _ensure_worktree_fresh(worktree, cluster_id)
     _build_natives_for_work(worktree, cluster_id)
+    _print_agent_env_hint(worktree, f"--cluster {cluster_id}")
 
     _log.info(
         "ticket work --cluster %s: worktree ready at %s -- starting %d "
@@ -634,6 +698,7 @@ def _work(root: Path, cfg: AppConfig) -> None:
     _worktree_add_or_reuse(root, worktree, cfg.ticket_id)
     _ensure_worktree_fresh(worktree, cfg.ticket_id)
     _build_natives_for_work(worktree, cfg.ticket_id)
+    _print_agent_env_hint(worktree, cfg.ticket_id)
 
     _log.info(
         "ticket work: %s worktree ready at %s -- starting", cfg.ticket_id, worktree
