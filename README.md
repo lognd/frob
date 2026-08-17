@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-44 total commands, statically bound to the live subcommand registry
+45 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -77,6 +77,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob debt` | List outstanding `frob:debt` entries (rule, site, ticket, until) |
 | `frob profile` | Show or explicitly downgrade the effective rapid/standard profile ratchet (`show`/`downgrade --reason`) |
 | `frob claude` | Sync this repo's tracked Claude config (hooks, agent-playbook.md) to `~/.claude/` via `sync [--check]` (T-1808) |
+| `frob sync-skills` | Bidirectionally sync this repo's `agents/`/`skills/` directories into `~/.claude/agents`/`~/.claude/skills` (T-2241) |
 | `frob deprecated` | List outstanding `frob:deprecated` entries (symref, since, sunset, ticket, status) |
 | `frob fleet` | Cross-repo status/gate rollup and ticket routing over a `fleet.toml` manifest of sibling repos (`status`/`route`) |
 

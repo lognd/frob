@@ -1,7 +1,7 @@
 ---
 id: T-2278
 title: 'DOC005: README/cli.md command table missing sync-skills row (T-2268 triage)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,13 +13,18 @@ runs_last: false
 scope:
 - README.md
 - docs/modules/cli.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: Both DOC005 identities resolve (sync-skills row present, count claims correct)
     and no longer appear in an unscoped frob check
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 anchor: false
@@ -44,3 +49,5 @@ Fix: add a `sync-skills` row to both command tables, matching the live
 registry (see docs/modules/gates.md's DOC005 section, "README command-
 table drift-lock", for the exact format/count-claim convention both files
 must satisfy).
+
+frob:no-behavior-change reason="pure docs fix: adds the missing sync-skills row to README.md's hand-curated command table and docs/modules/cli.md's generated mirror, and bumps README's stale N-total-commands prose count -- no source code under src/frob/** changed, so BUG002's normal fail-at-parent/pass-at-fix repro shape does not apply; the designated evidence (the CLI-dispatch integration test, the standard docs-only-ticket precedent per playbook section 5) PASSES at both parent and fix, which is exactly what a no-behavior-change claim predicts."

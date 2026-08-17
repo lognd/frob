@@ -336,6 +336,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob scaffold` | scaffold a new project from a template |
 | `frob serve` | MCP stdio adapter exposing frob's enforcement queries as tools |
 | `frob stats` | delivery measurement: queue health + commit cadence |
+| `frob sync-skills` | bidirectionally sync agents/ and skills/ into ~/.claude (T-2241) -- replaces the old Makefile sync-skills: bash recipe |
 | `frob sys` | strata design-model applications (plan, doc, export, ...) |
 | `frob test` | select and run tests for the touched set (or --all) |
 | `frob ticket` | the statically-checkable ticket queue |
