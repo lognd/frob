@@ -43,6 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Follow-up from T-1749: `set_designated_repro_test`
 (src/frob/tickets/_setters.py) now accepts an optional `reason` kwarg and

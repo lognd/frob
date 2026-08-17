@@ -24,6 +24,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from frob.logging import get_logger
+from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -35,7 +36,7 @@ _SYNCED_KINDS = ("agents", "skills")
 
 
 # frob:ticket T-2241
-# frob:doc docs/commands/sync-skills.md
+# frob:doc docs/commands/sync-skills.md#public-api
 # frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_syncs_new_repo_entries  # noqa: E501
 class SkillsSyncReport(BaseModel):
     """One `sync_skills` call's effect: which `<kind>/<name>` entries were
@@ -88,7 +89,7 @@ def _sync_one_kind(repo_dir: Path, claude_kind_dir: Path) -> SkillsSyncReport:
 
 
 # frob:ticket T-2241
-# frob:doc docs/commands/sync-skills.md
+# frob:doc docs/commands/sync-skills.md#public-api
 # frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_syncs_new_repo_entries  # noqa: E501
 # frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_updates_existing_entry_in_place  # noqa: E501
 # frob:tests tests/unit/test_skills_sync.py::TestSyncSkills.test_removes_stale_claude_side_entry  # noqa: E501
@@ -115,7 +116,7 @@ def _default_claude_dir() -> Path:
 
 
 # frob:ticket T-2241
-# frob:doc docs/commands/sync-skills.md
+# frob:doc docs/commands/sync-skills.md#public-api
 # frob:tests tests/unit/test_skills_sync.py::TestRun.test_run_reports_synced_and_removed_counts  # noqa: E501
 def run(argv: list[str]) -> None:
     """`frob sync-skills [path] [--claude-dir DIR]` (T-2241): the CLI entry
@@ -144,12 +145,13 @@ def run(argv: list[str]) -> None:
     reports = sync_skills(repo_root, claude_dir)
     total_synced = sum(len(r.synced) for r in reports.values())
     total_removed = sum(len(r.removed) for r in reports.values())
+    renderer = Renderer.for_stream(sys.stdout)
     for kind, report in reports.items():
         for name in report.synced:
-            print(f"  synced {kind[:-1]}: {name}")
+            renderer.line(f"  synced {kind[:-1]}: {name}")
         for name in report.removed:
-            print(f"  removed stale {kind[:-1]}: {name}")
-    print(f"sync-skills: {total_synced} synced, {total_removed} removed")
+            renderer.line(f"  removed stale {kind[:-1]}: {name}")
+    renderer.line(f"sync-skills: {total_synced} synced, {total_removed} removed")
     sys.exit(0)
 
 

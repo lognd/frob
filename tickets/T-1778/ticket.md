@@ -23,6 +23,7 @@ anchor: true
 anchor_reason: permanent WIRE001 waiver home for tests/unit/test_land_finish_guard.py:_add_worktree
   -- follow_up=T-1778 cites this ticket by design (re-pointed off the closing T-1743),
   so it must never reach a terminal state (T-1856)
+land_commit: null
 ---
 tests/unit/test_land_finish_guard.py:70's WIRE001 waiver cites follow_up=T-1743, which is closing -- re-point to this ticket instead so the waiver keeps a live tracker.
 

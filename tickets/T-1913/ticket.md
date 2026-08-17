@@ -31,6 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Split from T-1884 (its own "ADDITIONAL MEASUREMENT" block, 2026-08-09,
 coordinator). T-1884's original scope (anchor tickets left queued/blocked

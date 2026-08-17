@@ -37,6 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED, 2026-08-10, during `frob ticket land T-1977` (landed commit
 f3257572a).

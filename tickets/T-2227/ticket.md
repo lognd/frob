@@ -37,6 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # An agent spinning on ledger bookkeeping without committing code is invisible; nothing distinguishes it from an agent making progress
 

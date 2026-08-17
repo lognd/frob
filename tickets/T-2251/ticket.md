@@ -23,6 +23,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Split from T-1382 (measured 2026-08-10, see T-1382's own body for the full
 21-target classification table).

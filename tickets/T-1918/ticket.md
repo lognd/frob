@@ -26,6 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REGRESSION INTRODUCED THIS SESSION by T-1882 (landed 29e94b35e,
 2026-08-09). Not latent -- it was green this morning.

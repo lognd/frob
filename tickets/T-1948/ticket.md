@@ -33,6 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED against a real specimen (coordinator audit, 2026-08-10): worktree
 .claude/worktrees/t1552-ledger-v2, branch t1552-ledger-v2, held 525 lines

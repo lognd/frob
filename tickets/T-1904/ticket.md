@@ -65,6 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 SUPERSEDES the design T-1579 asked for. Filed 2026-08-09 from the T-1579 investigation; see T-1579 for the full trace.
 

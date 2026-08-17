@@ -18,6 +18,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1628's frob:waive WIRE001 comment on capability_ratchet_violations (src/frob/strata/_effects.py) says wiring into frob sys audit is out of scope and names follow_up=T-1977. T-1977 landed the wiring (SYS111, src/frob/gates/_sys_selfaudit.py). The waiver comment is now stale prose (not currently failing any gate, since WAIVE gate reports 0 errors) but should be removed for accuracy -- out of T-1977's declared scope, filed separately rather than touched silently.
 

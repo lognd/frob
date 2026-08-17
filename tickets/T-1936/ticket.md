@@ -99,6 +99,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 OBSERVED LIVE 2026-08-09. I ran `frob ticket reconcile --apply` on main
 to requeue a stale in-progress hold. It correctly requeued T-1901 and

@@ -33,6 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 land's absorbed Tier-A fmt auto-fix rewrapped a single-line
 `# frob:waive WALK001 reason="..."  # noqa: E501` comment inside

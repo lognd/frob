@@ -17,6 +17,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Auto-filed by the TICK006 Tier-A fix (T-1544): T-2105's Done report claimed T-2111 was filed, but T-2111 resolves to no block in tickets.md or tickets-archive.md -- a phantom filing trail. The original claim's own surrounding text (the only surviving description of the intended work) is quoted verbatim below; review and refine as needed.
 

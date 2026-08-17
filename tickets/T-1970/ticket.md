@@ -113,6 +113,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). The frob comment DSL has no way to
 MENTION a directive without USING it, and no escape syntax exists

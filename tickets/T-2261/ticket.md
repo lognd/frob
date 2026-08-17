@@ -33,6 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # Nothing ever invokes `frob worktree sweep`, so agent worktrees accumulate unbounded -- measured at 107 worktrees / 67GB / 95 idle
 

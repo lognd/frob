@@ -21,6 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Observed live during T-1556's land (commit 16880d5170a2). T-1556's own
 worktree diff added `may "env.read" via ".../_new.py";` to

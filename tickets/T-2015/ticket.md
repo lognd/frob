@@ -26,6 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-2001's own new Tier-A handler landed at 114 lines, over the ARCH001 threshold -- filed and fixed in the same pass as discovery. Split the load-lock/compute-bumps/write half into _apply_capability_ratchet_bumps, zero behavior change.
 

@@ -22,6 +22,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 TEST005 attribution is now honest (T-1235: subprocess + pool-worker
 coverage recorded) and floors are recalibrated to unit_branch_cov=75 /

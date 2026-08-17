@@ -83,6 +83,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). WIRE002 guarantees that a
 `frob:waive WIRE001` NAMES a follow-up ticket. It does not, and cannot,

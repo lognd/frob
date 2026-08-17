@@ -54,6 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1937 built the broad, repo-wide completeness net (`frob.gates._rule_id_scan.scan_candidate_rule_id_literals`/`find_unregistered_rule_ids`) and wired it into a drift-lock TEST (`tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete`), which runs on every normal test/check pass -- so a new unregistered rule id anywhere under src/ already fails loud automatically today, satisfying the ticket's core "automatic over documenting the caveat harder" ask.
 

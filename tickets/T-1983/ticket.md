@@ -36,6 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). T-1684's deferred post-land sweep
 files a bug ticket for every new (rule, file) identity it sees. Under

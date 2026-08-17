@@ -54,6 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 A ticket can land with LAND-PROOF verified=True, pass an independent
 scripts/verify_lands.py check, and reach state=done -- while its own land

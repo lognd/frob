@@ -22,6 +22,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Regression measured post-land of T-1980: unscoped `frob check --only
 gates` on main now includes one real, unwaived DOC006 error:

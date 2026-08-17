@@ -121,6 +121,7 @@ labels:
 - watermark-epic
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1684 took the multi-minute verification sweep off the land critical
 path under `rapid`. The same reasoning generalises to `standard`, and

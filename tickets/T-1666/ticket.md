@@ -24,6 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1659 fixed CACHE001 and OPAQUE001's missing Violation.symref (both now
 symbol-exact). That symref narrowing surfaced real work this ticket's

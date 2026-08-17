@@ -66,6 +66,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT FINDING (2026-08-10). Deleting or renaming a test
 silently orphans OTHER tickets' recorded evidence. Nothing refuses it at

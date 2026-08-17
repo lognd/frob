@@ -57,6 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Follow-up from T-1944 (evidence-only scope): `frob.tickets.demote_to_
 evidence_only` exists and is tested, but there is no CLI surface for it

@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Discovered while working T-2076 (land-time gate spawn under FROB_AGENT):
 once T-2076's fix let the land-time gate spawn actually run (instead of

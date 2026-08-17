@@ -27,6 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED 2026-08-10 15:15Z, live and reproducible right now.
 

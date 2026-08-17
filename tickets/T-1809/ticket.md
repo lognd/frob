@@ -61,6 +61,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1719 item 2 (gate the Claude-config drift) was cut from that ticket's
 own scope for two reasons: (a) it depends on the sync verb the sibling

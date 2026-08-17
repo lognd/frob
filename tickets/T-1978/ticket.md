@@ -21,6 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1629 registered SYS110 in _KNOWN_GATE_RULES but the docs/modules/gates.md#rule-catalog frob:enumerates member list was not updated, regressing the unscoped floor 0 -> 1 (DOCENUM001). Add SYS110 to the enumerates member list. Same shape T-1958 fixed for the prior batch (T-1937).
 

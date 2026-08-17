@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Filed while working T-1980 (frob global-install version policy). This
 repo already detects and reports the exact condition -- a bare `frob`

@@ -40,6 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 docs/strata/roadmap.md's "CLI surface (target)" names `frob sys check`
 ("parse + elaborate + prove + report") as a phase-5 verb. T-1480

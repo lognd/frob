@@ -30,6 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 The shared cross-worktree lease file (`.git/frob-leases/<id>.json`) is
 re-recorded by `mutate_scope` from whichever worktree happens to run a

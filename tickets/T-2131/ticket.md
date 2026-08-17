@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-0969 residue (parent epic: burn WARN-tier quality gates to zero).
 DOC006 is the dominant WARN family: 584 findings across 350 files.

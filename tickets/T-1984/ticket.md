@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `frob ticket block <id> --by <other>` writes a permanent `blocked_by`
 graph edge. There is no inverse verb -- `frob ticket --help`'s subcommand

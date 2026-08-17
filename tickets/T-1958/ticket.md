@@ -22,6 +22,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1937 (landed 577c708436639342620efdd080d6667ee552db78) added 8 new rule
 ids to src/frob/gates/_waive.py::_KNOWN_GATE_RULES (BUDGET001, CHECK001,

@@ -79,6 +79,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 frob.toml [testing] recalibrated unit_branch_cov=75 / module_line_cov=70
 on honest TEST005 attribution data (T-1235 fixed subprocess + pool-worker

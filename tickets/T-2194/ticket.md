@@ -21,6 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-2187 follow-up. `tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbols`
 has two minimal repro tests (a quoted-string claim id, a `resource`

@@ -76,6 +76,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 STRUCTURAL FINDING, discovered blocking a real land (2026-08-10).
 

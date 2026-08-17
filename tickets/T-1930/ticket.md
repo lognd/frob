@@ -21,6 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1556's criterion 2 has two halves: (a) every close/land refusal names
 the exact next command, and (b) a single porcelain verb exists that

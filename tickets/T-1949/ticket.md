@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED while working T-1934: `frob check --only archgate` fails with a
 pre-existing ARCH001 error, unrelated to T-1934's own scope:

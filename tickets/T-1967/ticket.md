@@ -43,6 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `frob ticket land` squash-applies the ENTIRE worktree diff. When two
 tickets share one worktree, landing the first silently carries the

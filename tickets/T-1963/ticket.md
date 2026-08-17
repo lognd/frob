@@ -33,6 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `frob ticket land` serializes on a repo-wide lock. At the standing
 dispatch target (5 agents in parallel), the queue wait alone exceeds the

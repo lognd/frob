@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). TICK009 flags an over-broad ticket
 scope as a WARNING. Nothing refuses it, so a ticket can be started with

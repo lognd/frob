@@ -116,6 +116,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 FOUR INSTANCES IN ONE SESSION (2026-08-09): T-1907, T-1884, T-1882,
 T-1911. Every one bound evidence that passed at BOTH the parent and the

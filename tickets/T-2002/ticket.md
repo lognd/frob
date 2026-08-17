@@ -34,6 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1995 landed related_tickets without a frob:tests directive naming its real test coverage (TestRelatedTicketsSearch in tests/unit/test_ticket_new_related.py); TEST001 fired. Add the directive.
 

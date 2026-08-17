@@ -71,6 +71,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `frob ticket new` accepts any ticket without checking whether the work is
 already tracked or already done. Seven tickets filed this session had to

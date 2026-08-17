@@ -97,6 +97,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1719 implemented only the doctor-side global-vs-local frob binary skew
 check (its item 3). Items 1 and 2 of T-1719's original plan are still

@@ -66,6 +66,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED 2026-08-09, coordinator. T-1893 (docs, scope=docs/modules/gates.md) could not be started: ScopeLeaseConflict reported the file as leased by in-progress T-1579.
 

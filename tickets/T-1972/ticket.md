@@ -19,6 +19,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1629 added live gate rule SYS110 (frob.strata._selfconform). frob check --only registry warns REG010: no CHK-GATE-SYS110 entry exists in check-coverage.yaml. File one (handled_by:SYS110, matching the CHK-GATE-SYS108/SYS109 precedent) and add a frob:enforces CHK-GATE-SYS110 edge if REG008 also wants one.
 

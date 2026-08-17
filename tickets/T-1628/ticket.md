@@ -100,6 +100,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Capability `via` lists in design/frob.strata only ever grow. When a new file starts writing to disk, the fix is to append it to the fs.write list, and nothing anywhere pushes back. The self-model therefore documents an ever-loosening posture while looking green the whole time.
 

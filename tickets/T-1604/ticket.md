@@ -23,6 +23,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Add Bash/Shell to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 

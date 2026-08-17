@@ -84,6 +84,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED on main at 2675e8c56, 2026-08-09:
 

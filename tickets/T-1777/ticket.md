@@ -39,6 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `frob.tickets._leases.force_release_lease` (T-1743) is a working,
 tested Python-API release path for an orphaned cross-worktree lease --

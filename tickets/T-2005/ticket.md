@@ -56,6 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `_run_designated_test` (src/frob/gates/_mutation_evidence.py) builds a
 `PYTHONPATH`-overridden `env` dict pointed at the parent-commit worktree's

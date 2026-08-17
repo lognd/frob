@@ -21,6 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-2036 fixed the path-shape false-drop defect that caused T-2022 to be auto-dropped while its two F401 findings (tests/test_gates_fmt_directives.py, tests/unit/test_tickets_evidence_only_scope.py) were still live. T-2022 itself was not reopened -- its scope does not overlap T-2036's, and the fixing worktree's ticket CLI exposed no reopen verb for a dropped ticket. Fix the two live F401 unused-import findings, or transition T-2022 back to queued/open and let it track them.
 

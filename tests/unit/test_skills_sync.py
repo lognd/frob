@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from frob.gates._render_lint import render_lint_gate
 from frob.scaffold._skills_sync import run, sync_skills
 
 #: T-2241 acceptance[2]: repo root, resolved the same way every other
@@ -107,6 +108,29 @@ class TestSyncSkills:
         sync_skills(repo, claude_dir)
 
         assert stray_file.exists()
+
+
+# frob:ticket T-2268
+class TestSkillsSyncRenderLint:
+    """T-2268: `_skills_sync.py::run` used to write through bare `print`
+    calls (a RENDER001 regression from T-2241's own land, hours old at the
+    time this ticket was filed) instead of routing through
+    `frob.render.Renderer` like every other CLI entry point in this repo.
+    `render_lint_gate` scans this repo's own git-tracked source directly,
+    so this genuinely reproduces against the pre-fix source (RENDER001
+    fires) and passes against the fixed source (it does not)."""
+
+    def test_no_render001_violations_for_skills_sync(self) -> None:
+        """`render_lint_gate(_REPO_ROOT)` reports zero RENDER001 violations
+        for `src/frob/scaffold/_skills_sync.py` (T-2268 acceptance[1])."""
+        violations = render_lint_gate(_REPO_ROOT)
+        offenders = [
+            v
+            for v in violations
+            if v.rule == "RENDER001"
+            and v.file == "src/frob/scaffold/_skills_sync.py"
+        ]
+        assert offenders == []
 
 
 class TestMakefileRecipeDelegates:

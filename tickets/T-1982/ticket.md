@@ -52,6 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 `pyproject.toml` excludes `tests/fixtures/**` from type checking, but the
 land-time `ty check` invocation passes EXPLICIT PATHS, and an explicit

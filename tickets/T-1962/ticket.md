@@ -25,6 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Unscoped `frob check --only gates` re-measure after T-1881/T-1959
 surfaced 2 ARCH001 errors introduced by T-1881's landed constant-folding

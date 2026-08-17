@@ -67,6 +67,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 AUDIT FINDING (full gate audit, 2026-08-09).
 

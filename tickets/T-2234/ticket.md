@@ -46,5 +46,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Spawned while decomposing T-2202 (epic) into leaf tickets, 2026-08-16. Direct measurement of 'uv run frob check --only cycle' on today's main shows this cluster has grown from T-2202's originally recorded 4-file tickets/-only cluster to a single reported SCC spanning src/frob/tickets, app, serve, verify, testing, strata, gates, perf, refactor, policy, natives, registry, release, check, graph, plus __main__.py/doctor.py/__init__.py -- effectively most of src/frob outside dup/, lang/, vet/, gates' docblocks pair, and arch/deploy. A leaf scoped to this cluster's actual files would be exactly the mega-glob T-2202 itself was blocked for; it cannot be dispatched as a mechanical fix leaf until it is broken into sub-SCCs. NOT a code ticket -- see its own acceptance.

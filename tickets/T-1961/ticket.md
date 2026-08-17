@@ -52,6 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). Every ledger-writing verb refuses
 outright while any land holds the repo lock:

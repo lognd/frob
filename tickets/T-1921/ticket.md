@@ -141,6 +141,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Filed from T-1904's own investigation (2026-08-09). T-1904's acceptance
 criteria required per-SITE analysis-coverage tracking -- proof that the

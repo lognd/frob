@@ -27,6 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1809 implemented the Claude-config sync drift check (CLAUDE001,
 `src/frob/app/check_runner.py::_claude_config_drift_result`) as an opt-in

@@ -20,6 +20,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1964 landed the deferred docs/modules/gates.md WAIVE004 wiring writeup. src/frob/gates/_fix_engine_sync.py:953 still carries a frob:waive AFFECT001 comment with follow_up="T-1964" from when the doc write was blocked by T-1958's lease. Now that the doc exists, ack the AFFECT001 finding on that function normally and remove the waiver (or re-point follow_up to this ticket until acked).
 

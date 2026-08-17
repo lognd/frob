@@ -108,6 +108,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED 2026-08-09, coordinator, from three consecutive post-land sweep regressions in one wave: T-1894, T-1896, T-1906. (Re-filed: the original draft's id was consumed by a ledger renumber during the T-1895 land recovery.)
 

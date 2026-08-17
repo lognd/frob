@@ -17,6 +17,11 @@ frob sync-skills [path] [--claude-dir DIR]
 overrides the target directory (default: `~/.claude`) -- mainly useful for
 testing against a temp directory rather than the real `~/.claude`.
 
+Output routes through `frob.render.Renderer` (docs/modules/render.md#renderer)
+like every other CLI entry point in this repo, rather than bare `print`
+calls -- the synced/removed entry lines and the final summary line all go
+through `Renderer.for_stream(sys.stdout).line(...)`.
+
 ## What it does
 
 For each of `agents/` and `skills/`:

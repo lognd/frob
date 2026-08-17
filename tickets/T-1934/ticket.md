@@ -138,6 +138,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED 2026-08-09. Exactly one confirmed leak right now, plus two
 near-misses recovered by hand this session. The count is small only

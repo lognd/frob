@@ -25,6 +25,7 @@ anchor_reason: permanent WIRE001 follow_up anchor -- _GroupedHelpFormatter and i
   callback methods are genuinely wired via argparse formatter_class, which the best-effort
   callgraph cannot trace; never any code to write; must never reach a terminal state
   or WIRE002 orphans
+land_commit: null
 ---
 T-1571's _GroupedHelpFormatter (src/frob/__main__.py) and its two methods
 (_format_action, _format_grouped_subparsers) are genuinely wired -- passed

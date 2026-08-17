@@ -73,6 +73,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 REPEATED-MISTAKE AUDIT (2026-08-10). Adding ONE gate rule id requires
 hand-updating at least THREE places. None of them is checked before the

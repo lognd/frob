@@ -19,6 +19,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Found while working T-2011 (wiring perf/strata/graph/vet examined-sites
 into WAIVE004): `_vet_examined_sites`' own docstring

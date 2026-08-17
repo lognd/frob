@@ -34,6 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED 2026-08-09, coordinator, on main. THIS IS A DATA-LOSS BUG.
 

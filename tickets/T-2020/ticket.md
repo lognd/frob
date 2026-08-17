@@ -25,6 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Post-land ARCH001 residue on T-2013's own split: both new helper
 functions (_capability_counts_at_head, _apply_capability_ratchet_bumps)

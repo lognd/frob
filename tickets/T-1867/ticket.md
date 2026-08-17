@@ -81,6 +81,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 T-1856 added the first-class `anchor`/`anchor_reason` fields on `Ticket`
 (src/frob/tickets/_models.py), `set_anchor` (src/frob/tickets/_land.py,

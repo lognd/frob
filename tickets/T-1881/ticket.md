@@ -114,6 +114,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED FINDING from T-1552's stage-1/stage-2 v1-ledger-deletion window
 (2026-08-08): a natural experiment where ~13 symbols became provably

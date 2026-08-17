@@ -63,6 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED: bit TWICE within one hour on 2026-08-10, two different agents,
 same file pair.

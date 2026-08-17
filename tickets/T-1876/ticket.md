@@ -44,6 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 A lease survives the death of the agent holding it, with nothing to
 detect or reclaim it, and it blocks every other ticket in its scope

@@ -39,6 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 MEASURED on main, 2026-08-09, tree clean (git status --porcelain empty):
 
