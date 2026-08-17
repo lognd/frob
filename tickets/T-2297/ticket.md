@@ -14,10 +14,16 @@ runs_last: false
 scope:
 - /home/logan/projects/frob/scripts/fleet_status.py
 - /home/logan/projects/frob/src/frob/lang/_nodes.py
-- /home/logan/projects/frob/tests/test_ticket_land.py
 - /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: /home/logan/projects/frob/tests/test_ticket_land.py
+  reason: F841 unused variable in test_ticket_land.py reproduces on re-measure; keeping
+    it in scope actually -- retracting this remove
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
