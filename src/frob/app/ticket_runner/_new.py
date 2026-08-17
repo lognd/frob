@@ -801,6 +801,8 @@ def _new(root: Path, cfg: AppConfig) -> None:
     _emit_scope_closure_warnings(
         "ticket new", ticket.id, _scope_closure_warnings(root, ticket.scope)
     )
+    # frob:ticket T-2257
+    _emit_scope_overlap_warnings(root, ticket.id, ticket.scope)
     # frob:ticket T-0178
     from frob.app.telemetry import record_ticket_event
 
@@ -882,6 +884,120 @@ def _emit_scope_closure_warnings(
         len(warnings) - len(shown),
         len(warnings),
     )
+
+
+# frob:ticket T-2257
+# Mirrors `frob.tickets._land._NON_TERMINAL_TICKET_STATES` -- only a
+# currently OPEN ticket's scope is a live claim worth warning about; a
+# done/dropped ticket's old scope is history, not a pileup.
+_NON_TERMINAL_TICKET_STATES_FOR_OVERLAP = frozenset(
+    {"queued", "planned", "in-progress", "blocked"}
+)
+
+
+# frob:ticket T-2257
+# frob:waive DUP001 reason="a near-identical glob-to-real-file expander to \
+# scripts/fleet_status.py::_expand_scope_globs_to_paths (T-2225) -- this ticket's own \
+# declared scope is src/frob/app/ticket_runner/_new.py alone, and \
+# scripts/fleet_status.py is deliberately import-light (does not import frob at all, \
+# per its own module docstring) so it cannot be imported from here; reimplements \
+# rather than reaching across that boundary, same posture T-2118's \
+# _touched_symrefs_for_intent took for an identical cross-file-scope constraint"
+def _expand_scope_globs_to_paths(root: Path, globs) -> set[Path]:  # noqa: ANN001
+    """Expand `globs` (scope glob patterns, e.g. `src/frob/**`) against the
+    REAL filesystem under `root`, returning the resolved absolute path of
+    every matched FILE -- the token/grammar (never lexical) comparison this
+    repo's standing directive requires: two scope entries that are
+    different TEXT (`src/frob/**` vs `src/frob/gates/_x.py`) can still
+    cover the same real file, and no string comparison of the two entries
+    themselves would ever show that.
+
+    A pattern ending in a bare `**` also tries `<pattern>/*` -- pathlib's
+    `**` alone matches directories, not the files inside the deepest one,
+    so the bare form would otherwise silently expand to zero files. A
+    pattern that cannot be globbed at all is skipped rather than raising:
+    best-effort, matching this repo's existing fail-quiet scope-tooling
+    posture (see `scripts/fleet_status.py::_expand_scope_globs_to_paths`,
+    T-2225, this function's own sibling in the script that cannot import
+    this package)."""
+    paths: set[Path] = set()
+    patterns_to_try: set[str] = set()
+    for pattern in globs:
+        patterns_to_try.add(pattern)
+        if pattern.endswith("**"):
+            patterns_to_try.add(f"{pattern}/*")
+    for pattern in patterns_to_try:
+        try:
+            # frob:waive WALK001 reason="root is the repo checkout and the pattern is \
+            # a scope glob supplied by a ticket's own declared scope, not a \
+            # bounded-subtree walk this could prune ahead of time -- the same shape \
+            # scripts/fleet_status.py::_expand_scope_globs_to_paths (T-2225) already \
+            # takes for the identical call"
+            matches = root.glob(pattern)
+        except (OSError, ValueError, NotImplementedError):
+            continue
+        for match in matches:
+            if match.is_file():
+                paths.add(match.resolve())
+    return paths
+
+
+# frob:ticket T-2257
+# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_overlapping_scope_names_the_other_ticket_and_path  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_glob_vs_file_overlap_is_detected  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_non_overlapping_scope_is_silent  # noqa: E501
+# frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings.test_terminal_state_tickets_are_excluded  # noqa: E501
+def _scope_overlap_warnings(root: Path, new_ticket_id: str, scope) -> tuple[str, ...]:  # noqa: ANN001
+    """T-2257: one warning per OTHER currently-open (non-terminal) ticket
+    whose declared `scope` resolves to at least one real file `scope` (the
+    ticket just filed) also resolves to -- advisory only, never a refusal
+    (T-2257's own acceptance criterion: two tickets legitimately sharing a
+    file is normal, e.g. a fix and its follow-on residue; presuming they
+    must be one series or auto-blocking one on the other would be a worse
+    failure mode than the pileup this warns about).
+
+    Computed on RESOLVED PATHS (`_expand_scope_globs_to_paths`), not scope
+    text, so a glob-vs-file overlap (`src/frob/**` vs
+    `src/frob/gates/_x.py`) is caught -- the exact shape a lexical/string
+    comparison of the two scope entries would miss. Terminal tickets
+    (done/dropped) are excluded: their old scope is history, not a live
+    claim. Best-effort: an unreadable ledger yields `()` silently, same
+    posture as `_scope_closure_warnings` (a nudge, not a gate)."""
+    from frob.tickets._store import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return ()
+    my_paths = _expand_scope_globs_to_paths(root, scope)
+    if not my_paths:
+        return ()
+    warnings: list[str] = []
+    for other_id, other in sorted(loaded.danger_ok.items()):
+        if other_id == new_ticket_id:
+            continue
+        if other.state not in _NON_TERMINAL_TICKET_STATES_FOR_OVERLAP:
+            continue
+        other_paths = _expand_scope_globs_to_paths(root, other.scope)
+        overlap = sorted(
+            str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
+            for p in (my_paths & other_paths)
+        )
+        if overlap:
+            warnings.append(
+                f"scope overlaps {other_id} ({other.state}) on: {', '.join(overlap)}"
+            )
+    return tuple(warnings)
+
+
+# frob:ticket T-2257
+def _emit_scope_overlap_warnings(root: Path, ticket_id: str, scope) -> None:  # noqa: ANN001
+    """Log `_scope_overlap_warnings`'s output as `ticket new <id>: <warning>`
+    lines -- split out of `_new` itself (ARCH001: keep the top-level
+    command under its line threshold), mirroring `_emit_scope_closure_
+    warnings`'s own log-wrapper shape for the sibling scope-closure
+    check."""
+    for warning in _scope_overlap_warnings(root, ticket_id, scope):
+        _log.warning("ticket new: %s: %s", ticket_id, warning)
 
 
 # frob:ticket T-0998

@@ -2,7 +2,7 @@
 id: T-2257
 title: 'frob ticket new does not warn when another QUEUED ticket already scopes the
   same file: four tickets piled onto scripts/fleet_status.py and must now run serially'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,25 +13,45 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_new_ticket_scope_overlap_warning.py
+evidence_scope:
+- tests/unit/test_new_ticket_scope_overlap_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_new_ticket_scope_overlap_warning.py
+  reason: BUG002 evidence for T-2257 lives in this test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_glob_vs_file_overlap_is_detected
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_non_overlapping_scope_is_silent
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_terminal_state_tickets_are_excluded
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_real_case_four_prior_tickets_all_named
+designated_repro_test: tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
 acceptance:
 - text: 'Filing a ticket whose scope overlaps an existing queued/in-progress ticket
     emits a warning naming the other ticket(s) and overlapping path(s) (fails today:
     no such warning)'
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
 - text: Overlap computed on resolved paths so glob-vs-file is detected (src/frob/**
     vs src/frob/gates/_x.py)
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_glob_vs_file_overlap_is_detected
 - text: 'MUST-STILL-PASS: a non-overlapping ticket files silently as today, and filing
     SUCCEEDS in both cases -- advisory, not a gate'
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_non_overlapping_scope_is_silent
 - text: Terminal-state tickets (done/dropped/archived) excluded; state how determined
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_terminal_state_tickets_are_excluded
 - text: 'Verified against the real case: a fifth ticket scoped to scripts/fleet_status.py
     names T-2213, T-2229, T-2236, T-2249'
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_real_case_four_prior_tickets_all_named
 threat: null
 component: null
 anchor: false
