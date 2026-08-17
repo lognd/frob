@@ -33,7 +33,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 95cecbf710646ff2e3c16264d67a749f7bda59a4
 ---
 MEASURED 2026-08-17, real incident on main (see T-2291 for the same
 incident's other defect).
