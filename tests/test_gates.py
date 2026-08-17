@@ -14551,6 +14551,112 @@ class TestOptInGates:
             for rec in caplog.records
         )
 
+    # frob:ticket T-2314
+    def test_perf_gate_reports_a_repo_relative_file_not_absolute(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        """T-2314 (MUST FAIL FIRST on main): before this fix, `perf_gate`'s
+        `Violation.file` carried an ABSOLUTE path (`parse_file(root /
+        rel_path)`'s `ParsedFile.path` flowed straight through to
+        `_violation`), while every other gate -- and `frob:waive`'s own
+        graph-derived edge `src` -- uses a repo-relative path. This is the
+        root cause of the waiver-defect T-2314 exists to fix: `_match_
+        waiver`'s file-level fallback does exact string equality, so an
+        absolute `violation.file` could never match a relative waiver
+        `src`."""
+        from frob.gates import perf_gate
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def scan(items):\n"
+            "    for group in items:\n"
+            "        for x in sorted(group):\n"
+            "            pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        violations = perf_gate(tmp_path, snap)
+        assert violations, "expected at least one PERF004 violation"
+        for v in violations:
+            assert not Path(v.file).is_absolute(), (
+                f"{v.rule} at {v.file!r} carries an absolute path"
+            )
+            assert v.file == "src/a.py"
+
+    # frob:ticket T-2314
+    def test_frob_waive_perf004_suppresses_the_named_finding(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        """POSITIVE CONTROL 1: a PERF site carrying `frob:waive PERF004
+        reason="..."` is suppressed once `_apply_waivers` runs over
+        `perf_gate`'s own output -- the exact shape T-2314's ticket body
+        names as REQUIRED acceptance criterion [0]."""
+        from frob.gates import perf_gate
+        from frob.gates._waive import _apply_waivers
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def scan(items):\n"
+            "    for group in items:\n"
+            '        # frob:waive PERF004 reason="test waiver"\n'
+            "        for x in sorted(group):\n"
+            "            pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        kept, waived = _apply_waivers(perf_gate(tmp_path, snap), snap)
+        assert not any(v.rule == "PERF004" for v in kept)
+        assert any(v.rule == "PERF004" for v in waived)
+
+    # frob:ticket T-2314
+    def test_frob_waive_perf004_does_not_blanket_suppress_other_sites(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        """MUST-STILL-PASS control (T-2314 acceptance [1]): an UNWAIVED
+        genuine PERF004 site still reports -- the fix is a correct path
+        normalization, never a blanket suppression of the rule."""
+        from frob.gates import perf_gate
+        from frob.gates._waive import _apply_waivers
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def scan(items):\n"
+            "    for group in items:\n"
+            "        for x in sorted(group):\n"
+            "            pass\n",
+        )
+        snap = _snapshot(tmp_path)
+        kept, waived = _apply_waivers(perf_gate(tmp_path, snap), snap)
+        assert any(v.rule == "PERF004" for v in kept)
+        assert not waived
+
+    # frob:ticket T-2314
+    def test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses(
+        self,
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::perf_gate
+        """POSITIVE CONTROL 3 (T-2314 acceptance): the ALREADY-EXISTING
+        `frob:waive PERF008 reason="..."` at
+        `src/frob/app/ticket_runner/_rapid_sweep.py:1652` -- the decisive
+        control that proved this was a real mechanism defect, not one
+        agent's malformed directive -- now actually suppresses its own
+        finding when run against the real repo tree."""
+        from frob.gates import perf_gate
+        from frob.gates._waive import _apply_waivers
+
+        repo_root = Path(__file__).resolve().parents[1]
+        snap = _snapshot(repo_root)
+        kept, waived = _apply_waivers(perf_gate(repo_root, snap), snap)
+        assert not any(
+            v.rule == "PERF008"
+            and v.file == "src/frob/app/ticket_runner/_rapid_sweep.py"
+            for v in kept
+        ), "the existing _rapid_sweep.py:1652 waiver should suppress this finding"
+
 
 class TestPerfReachDegradedMarker:
     """`_perf_reach_degraded_marker` (T-1578): a content-stale-but-still-

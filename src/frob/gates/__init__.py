@@ -5518,7 +5518,22 @@ def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     stays pure). A file whose extension SHOULD parse but fails still gets
     a visible skip message. PERF009 is read straight from
     `.frob/perf/ratchet_findings.json` (a `frob perf collect` artifact,
-    never a live re-collection at gate time)."""
+    never a live re-collection at gate time).
+
+    T-2314: both producers (`perf_rules`, `ratchet_violations`) report
+    `Violation.file` as an ABSOLUTE path (`perf_rules` via `parse_file(root
+    / rel_path)`'s `ParsedFile.path`; `ratchet_violations` via `str(root /
+    ".frob" / ...)`) -- every other gate, and the graph's own `frob:waive`
+    edges, use a repo-relative path. `_match_waiver`'s file-level fallback
+    (`frob.gates._waive._match_waiver`) does exact string equality against
+    `violation.file`, so an absolute path can never match a relative
+    waiver `src`: every `frob:waive PERF00x` directive in the tree was
+    silently inert (confirmed empirically -- see T-2314). Relativized once,
+    here, at this gate's own return boundary, the one place both producers
+    funnel through before `_apply_waivers` ever sees the result -- leaves
+    `perf_rules`'s own internal `ParsedFile.path` usage (disk I/O via
+    `_source_lines`) untouched, since that still needs a real, resolvable
+    absolute path."""
     from frob.perf import perf_rules
     from frob.perf._ratchet import ratchet_violations
 
@@ -5526,10 +5541,29 @@ def perf_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     parsed = _perf_gate_parse_files(root, candidate_paths)
     violations = list(perf_rules(snapshot, parsed))
     violations.extend(ratchet_violations(root))
+    violations = [_relativize_perf_violation_file(root, v) for v in violations]
     _log.info(
         "perf_gate: %d file(s) scanned, %d violation(s)", len(parsed), len(violations)
     )
     return tuple(violations)
+
+
+def _relativize_perf_violation_file(root: Path, violation: Violation) -> Violation:
+    """T-2314: normalize one `perf_gate` violation's `.file` to a
+    repo-relative path (matching every other gate's convention and what
+    `frob.gates._waive._match_waiver`'s file-level fallback expects) if it
+    currently carries an absolute path under `root` -- a no-op for a
+    violation that is already relative, or whose `.file` does not resolve
+    under `root` at all (never raises; a mismatch just means no
+    relativization is possible, not a fatal error worth surfacing here)."""
+    try:
+        rel = Path(violation.file).relative_to(root)
+    except ValueError:
+        return violation
+    rel_str = str(rel)
+    if rel_str == violation.file:
+        return violation
+    return violation.model_copy(update={"file": rel_str})
 
 
 def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[ParsedFile]:
