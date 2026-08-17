@@ -3744,15 +3744,18 @@ def _assert_diff_does_not_worsen_long_functions_pre_land(
 
 
 # frob:ticket T-2280
-# frob:waive WIRE001 reason="stored as a value in the _FILE_LOCAL_ERROR_CHECKERS tuple \
+# frob:waive WIRE001 reason="stored as a value in _FILE_LOCAL_ERROR_CHECKERS \
 # immediately below and invoked indirectly from there \
-# (_file_local_error_violations_for_content iterates the tuple and calls each entry, \
-# checker(rel_path, text)) -- the same indirect-dispatch shape WIRE001 cannot trace \
-# through that frob.gates._arch's own analogous waiver documents; genuinely wired, not \
-# dead. This registry-dispatch shape is permanent by design (T-2280's own extension \
-# point for future file-local checkers), so this waiver's premise does not expire" \
-# follow_up="T-2285"
-def _render001_checker(rel_path: str, text: str) -> tuple[Violation, ...]:
+# (_file_local_error_violations_for_content iterates the tuple, calls each entry, \
+# checker(worktree, rel_path, text)) -- the same indirect-dispatch shape WIRE001 \
+# cannot trace that frob.gates._arch's own analogous waiver documents; genuinely \
+# wired, not dead. Permanent by design (T-2280's own extension point), so this waiver \
+# does not expire -- follow_up points at T-2057 (open, unrelated), not the ticket \
+# landing this change: a waiver citing its own landing ticket blocks its close \
+# (T-2280's own LiveTrackerCited lesson)" follow_up="T-2057"
+def _render001_checker(
+    worktree: Path, rel_path: str, text: str
+) -> tuple[Violation, ...]:
     """`_FILE_LOCAL_ERROR_CHECKERS` adapter for RENDER001 (T-2280): parses
     `text` as python and reuses `frob.gates._render_lint`'s own
     `_scan_python_prints`/`_render001_violation` -- the SAME detector
@@ -3760,7 +3763,11 @@ def _render001_checker(rel_path: str, text: str) -> tuple[Violation, ...]:
     Empty for a non-.py path or unparseable text (this land-time diff
     check degrades to no-op on a parse failure, same fail-open posture
     every other pre-land guard in this module takes; `render_lint_gate`'s
-    own PARSE001 path is for the full unscoped gate run, not here)."""
+    own PARSE001 path is for the full unscoped gate run, not here). Takes
+    `worktree` for interface parity with `_doc005_checker` (T-2285),
+    unused here -- RENDER001's finding needs nothing beyond the file's
+    own text."""
+    del worktree
     from frob.gates._render_lint import _render001_violation, _scan_python_prints
 
     if not rel_path.endswith(".py"):
@@ -3774,45 +3781,121 @@ def _render001_checker(rel_path: str, text: str) -> tuple[Violation, ...]:
     )
 
 
+# frob:ticket T-2285
+# frob:waive WIRE001 reason="stored as a value in the _FILE_LOCAL_ERROR_CHECKERS tuple \
+# a few lines below and invoked indirectly from there \
+# (_file_local_error_violations_for_content iterates the tuple and calls each entry) \
+# -- the same indirect-dispatch shape _render001_checker's own analogous waiver \
+# documents; genuinely wired, not dead" follow_up="T-2057"
+def _doc005_checker(worktree: Path, rel_path: str, text: str) -> tuple[Violation, ...]:
+    """`_FILE_LOCAL_ERROR_CHECKERS` adapter for DOC005's README.md-table
+    half (T-2285): reuses `frob.gates._docblocks`'s own
+    `_console_command_sources`/`_console_trees`/`_doc005_missing_stale_
+    violations`/`_doc005_count_violations`/`_readme_table_rows` -- the
+    SAME detector `doc005_gate` dispatches, not a reimplementation.
+
+    Only `README.md` participates (empty for every other path) -- DOC005
+    is not a generic per-file rule the way RENDER001 is; it is ONE file
+    (`README.md`) checked against the LIVE subcommand tree. Measured
+    (T-2285): building that tree costs ~51ms (`_console_command_sources`
+    + `_console_trees`, a single `argparse` walk, not an `analyze_
+    project`/`GraphSnapshot` build) -- affordable to rebuild on both the
+    current-content and merge-base-content call this gate makes, same as
+    every other file-local checker's two-small-parses-per-file cost.
+
+    Deliberately does NOT gate the cli.md generator-freshness half
+    (`_doc005_cli_table_freshness_violations`) or the cross-file MISSING
+    case (a live subcommand with NO row in README.md at all, which is not
+    attributable to README.md's OWN diff -- the live tree changed, not
+    this file's content) -- only STALE rows (a row naming a dead
+    subcommand) and count-claim mismatches are genuinely THIS file's own
+    content diffed against a shared external truth, matching T-2214's
+    "attributable to this diff" posture. See this ticket's Done report
+    for the full reasoning."""
+    if rel_path != "README.md":
+        return ()
+    from frob.gates._docblocks import (
+        _console_command_sources,
+        _console_trees,
+        _doc005_count_violations,
+        _doc005_missing_stale_violations,
+        _readme_table_rows,
+    )
+
+    console_sources = _console_command_sources(worktree)
+    if not console_sources:
+        return ()
+    console_trees = _console_trees(worktree, console_sources)
+    if not console_trees:
+        return ()
+    rows = _readme_table_rows(text)
+    violations = list(
+        _doc005_missing_stale_violations(rel_path, console_sources, console_trees, rows)
+    )
+    violations.extend(_doc005_count_violations(rel_path, console_trees, text))
+    # STALE-and-count-claim-only: a MISSING row (a live command with no
+    # row anywhere) is NOT attributable to THIS file's content -- the
+    # live tree changed, not README.md's own diff (`_doc005_missing_
+    # stale_violations`'s own MISSING message text: "has no command-
+    # table row"). STALE ("no longer exists in the live") and a count
+    # claim ("commands but the live registry has") ARE this file's own
+    # content -- filter on the exact substrings those two builders emit,
+    # not an invented tag.
+    return tuple(
+        v
+        for v in violations
+        if "no longer exists in the live" in v.message
+        or "commands but the live" in v.message
+    )
+
+
 # frob:ticket T-2280
 #: Rules covered by `_assert_diff_does_not_add_new_file_local_errors_pre_
-#: land`: file-local, single-file, no-repo-graph ERROR checkers this
+#: land`: file-local, single-file, no-full-repo-graph ERROR checkers this
 #: land-time gate can afford to run TWICE per touched file (current
-#: content, and a merge-base scratch copy) at T-2214's own bounded cost
-#: -- two small parses per file, never a repo-wide `analyze_project`/
-#: `GraphSnapshot` build. A rule needing cross-file/call-graph context to
-#: even evaluate (ARCH103's SRP/cohesion classification needs the whole
-#: call graph; SELFAUDIT001 evaluates frob's OWN design/compliance state,
-#: not any particular file; COV00x reasons over the evidence graph) does
-#: not fit this shape and is deliberately NOT here -- see this ticket's
-#: Done report for the measured reason each was left out. Add a new
-#: `(rel_path, text) -> tuple[Violation, ...]` entry here to bring a new
-#: file-local ERROR rule under this gate; nothing else needs editing --
-#: `_file_local_error_violations_for_content` filters by
+#: content, and a merge-base scratch copy) at T-2214's own bounded cost.
+#: RENDER001 (T-2280) needs nothing beyond the file's own text. DOC005
+#: (T-2285) needs one cheap external truth (the live subcommand tree,
+#: ~51ms to build, a single `argparse` walk) rebuilt on each call -- NOT
+#: a repo-wide `analyze_project`/`GraphSnapshot` build. A rule needing
+#: THAT (ARCH103's SRP/cohesion classification needs the whole call
+#: graph; SELFAUDIT001 evaluates frob's OWN design/compliance state, not
+#: any particular file's content at all) does not fit this shape and is
+#: deliberately NOT here -- see T-2285's Done report for the measured
+#: reason each was left out. Add a new
+#: `(worktree, rel_path, text) -> tuple[Violation, ...]` entry here to
+#: bring a new file-local ERROR rule under this gate; nothing else needs
+#: editing -- `_file_local_error_violations_for_content` filters by
 #: `Severity.ERROR` alone (T-2280 criterion 3), so a checker's own new
 #: ERROR-severity sub-finding is picked up with no further wiring.
-_FILE_LOCAL_ERROR_CHECKERS: tuple[Callable[[str, str], tuple[Violation, ...]], ...] = (
+_FILE_LOCAL_ERROR_CHECKERS: tuple[
+    Callable[[Path, str, str], tuple[Violation, ...]], ...
+] = (
     _render001_checker,
+    _doc005_checker,
 )
 
 
 # frob:ticket T-2280
 def _file_local_error_violations_for_content(
-    rel_path: str, text: str
+    worktree: Path, rel_path: str, text: str
 ) -> tuple[Violation, ...]:
     """Every `Severity.ERROR` `Violation` from `_FILE_LOCAL_ERROR_CHECKERS`
     for `rel_path`'s `text` -- called with BOTH the current worktree
     file's content and a `git show`n merge-base scratch copy's content
     (T-2214's own two-content shape, generalized beyond ARCH001, T-2280).
-    A checker's non-ERROR findings are dropped here: severity is the sole
-    participation test (T-2280 criterion 3), never a rule-name allowlist.
-    A checker that raises is treated as finding nothing for this call
-    (fail-open, matching every sibling pre-land guard's posture on an
-    unmeasurable input)."""
+    `worktree` (T-2285) is passed through for a checker that needs an
+    external, cheap-to-rebuild truth beyond the file's own text (DOC005's
+    live subcommand tree); RENDER001 ignores it. A checker's non-ERROR
+    findings are dropped here: severity is the sole participation test
+    (T-2280 criterion 3), never a rule-name allowlist. A checker that
+    raises is treated as finding nothing for this call (fail-open,
+    matching every sibling pre-land guard's posture on an unmeasurable
+    input)."""
     out: list[Violation] = []
     for checker in _FILE_LOCAL_ERROR_CHECKERS:
         try:
-            violations = checker(rel_path, text)
+            violations = checker(worktree, rel_path, text)
         except Exception:  # noqa: BLE001 -- fail-open pre-land guard, same posture as siblings
             continue
         out.extend(v for v in violations if v.severity == Severity.ERROR)
@@ -3859,7 +3942,7 @@ def _new_file_local_errors_in_file(
         current_text = full.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError):
         return []
-    current = _file_local_error_violations_for_content(rel_path, current_text)
+    current = _file_local_error_violations_for_content(worktree, rel_path, current_text)
     if not current:
         return []
     old_result = run_argv(
@@ -3867,7 +3950,7 @@ def _new_file_local_errors_in_file(
     )
     if old_result.is_ok and old_result.danger_ok.returncode == 0:
         old = _file_local_error_violations_for_content(
-            rel_path, old_result.danger_ok.stdout
+            worktree, rel_path, old_result.danger_ok.stdout
         )
     else:
         old = ()
@@ -3892,18 +3975,29 @@ def _new_file_local_errors_in_file(
     return findings
 
 
+#: T-2285: relative paths (beyond `*.py`) a registered file-local checker
+#: cares about -- DOC005 targets `README.md` specifically. Kept as an
+#: explicit allowlist alongside the `.py` suffix check rather than
+#: opening `_new_file_local_errors_in_diff` to every touched path: most
+#: checkers ARE python-only (`_render001_checker` self-filters on `.py`
+#: internally too, this is belt-and-suspenders), and a bare allowlist
+#: keeps the loop's own cost bounded without a full-repo file-type scan.
+_FILE_LOCAL_NON_PY_PATHS = frozenset({"README.md"})
+
+
 # frob:ticket T-2280
 def _new_file_local_errors_in_diff(
     worktree: Path, merge_base: str, touched_paths: frozenset[str]
 ) -> list[Violation]:
-    """Every NEW file-local ERROR `Violation` (T-2280) across every
-    touched `.py` file, generated/test paths excluded -- the diff-scoped
-    entry point `_assert_diff_does_not_add_new_file_local_errors_pre_land`
-    calls, mirroring `_new_or_worsened_long_functions_in_diff`'s own
+    """Every NEW file-local ERROR `Violation` (T-2280/T-2285) across every
+    touched `.py` file plus `_FILE_LOCAL_NON_PY_PATHS`, generated/test
+    paths excluded -- the diff-scoped entry point
+    `_assert_diff_does_not_add_new_file_local_errors_pre_land` calls,
+    mirroring `_new_or_worsened_long_functions_in_diff`'s own
     per-touched-file loop exactly."""
     findings: list[Violation] = []
     for rel_path in sorted(touched_paths):
-        if not rel_path.endswith(".py"):
+        if not (rel_path.endswith(".py") or rel_path in _FILE_LOCAL_NON_PY_PATHS):
             continue
         if _is_generated_or_test_path(worktree, rel_path):
             continue
@@ -3969,6 +4063,9 @@ def _log_file_local_error_refusals(ticket_id: str, unwaived: list[Violation]) ->
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_clean_land_is_unaffected  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_a_waived_new_finding_does_not_refuse  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_unmeasurable_diff_reports_skipped_unmeasured_and_lands  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_new_stale_row_refuses_the_land  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_pre_existing_stale_row_merely_touched_does_not_refuse  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_no_docblocks_config_is_a_no_op  # noqa: E501
 def _assert_diff_does_not_add_new_file_local_errors_pre_land(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:

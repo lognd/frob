@@ -1146,6 +1146,96 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         )
 
 
+# frob:ticket T-2285
+_FAKE_DOC005_CONFIG = (
+    '[[docblocks.commands]]\nprog = "acme"\n'
+    'parser = "tests.test_docblocks_gate:_fake_parser_factory"\n'
+)
+
+
+# frob:ticket T-2285
+class TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005:
+    """`_doc005_checker` wired into `_FILE_LOCAL_ERROR_CHECKERS` (T-2285):
+    a NEW STALE README.md row (naming a subcommand that no longer exists
+    in the live tree) refuses the land the same way a new RENDER001 does
+    -- reuses `tests.test_docblocks_gate`'s own `_fake_parser_factory`
+    synthetic two-command CLI so this never depends on frob's own live
+    command count drifting underneath it."""
+
+    def test_a_new_stale_row_refuses_the_land(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_new_stale_row_refuses_the_land  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        (repo / "frob.toml").write_text(_FAKE_DOC005_CONFIG)
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+        )
+        _commit_all(repo, "add doc005 config and a clean table")
+
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+            "| `acme thingamajig` | no longer exists |\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_diff_does_not_add_new_file_local_errors_pre_land(
+                repo, "T-2285", frozenset({"README.md"})
+            )
+        assert exc_info.value.code == 1
+
+    def test_a_pre_existing_stale_row_merely_touched_does_not_refuse(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_a_pre_existing_stale_row_merely_touched_does_not_refuse  # noqa: E501
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        (repo / "frob.toml").write_text(_FAKE_DOC005_CONFIG)
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n"
+            "| `acme thingamajig` | no longer exists |\n"
+        )
+        _commit_all(repo, "pre-existing stale row")
+
+        (repo / "README.md").write_text(
+            (repo / "README.md").read_text() + "\n<!-- trailing comment -->\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2285", frozenset({"README.md"})
+        )  # must not raise
+
+    def test_no_docblocks_config_is_a_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005.test_no_docblocks_config_is_a_no_op  # noqa: E501
+        # No `[[docblocks.commands]]` configured at all -- `_doc005_checker`
+        # must degrade to no-op (matching `doc005_gate`'s own fail-open
+        # posture for an unconfigured repo), never raise.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_diff_does_not_add_new_file_local_errors_pre_land,
+        )
+
+        (repo / "README.md").write_text(
+            "## Commands\n\n| Command | Description |\n|---|---|\n"
+            "| `acme thingamajig` | anything at all |\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_diff_does_not_add_new_file_local_errors_pre_land(
+            repo, "T-2285", frozenset({"README.md"})
+        )  # must not raise
+
+
 # frob:ticket T-1907
 class TestReverifyDoneReportClaimsDisclosesUnknownGateState:
     """T-1907 proposal (2): a Done report with no `### Captured claims`

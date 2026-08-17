@@ -1,7 +1,7 @@
 ---
 id: T-2285
 title: Extend T-2280's file-local pre-land error gate to DOC005/SELFAUDIT001/ARCH103
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -12,9 +12,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: new DOC005 checker + tests live in the module's existing land test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_new_stale_row_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_pre_existing_stale_row_merely_touched_does_not_refuse
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_no_docblocks_config_is_a_no_op
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors::test_a_new_render001_refuses_the_land
+- tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotWorsenLongFunctions::test_a_new_over_threshold_function_refuses_the_land
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrorsDoc005::test_a_new_stale_row_refuses_the_land
 threat: null
 component: null
 anchor: false
