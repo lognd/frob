@@ -56,7 +56,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6edc437de9ca0977783b81be55946fc3d5fdae6c
 ---
 # `frob ticket new` does not warn when other QUEUED tickets already scope the same file, so filings silently pile up into a serial queue
 
