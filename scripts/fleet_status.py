@@ -589,63 +589,88 @@ def scope_lease_collisions(
     return collisions
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_scope_diverges_from_lease
 # frob:ticket T-2196
-def ticket_readiness(ticket_id: str) -> dict:
-    """T-2133: the single per-ticket answer to "given T-####, is it
-    actually dispatchable?" -- `fleet_status.py` already answers the
-    fleet-wide half of pre-dispatch safety (root cleanliness, quarantine,
-    idle worktrees); this is the missing per-ticket half, combining
-    `ticket_lease`, `ticket_frontmatter_on_main`, and
-    `worktrees_touching_ticket` into one dict:
-
-    - `lease`: the live lease record (`ticket_lease`), or `None`.
-    - `main`: `ticket_frontmatter_on_main`'s `{"state", "scope",
-      "blocked_by"}`, or `None` if the ticket does not exist on `main`
-      yet.
-    - `scope_diverges`: `True` when a live lease exists AND its `scope`
-      differs from `main`'s declared scope -- T-2133's own "single
-      highest-value signal": a coordinator reading `main:tickets/<id>/
-      ticket.md` alone, while a lease has since narrowed (or widened) the
-      real working scope inside a worktree, draws a stale conclusion
-      about what the ticket actually touches (observed twice: once nearly
-      releasing a healthy lease, once asking an agent to redo a narrowing
-      it had already done).
-    - `worktrees_with_commits`: from `worktrees_touching_ticket`, checked
-      against the LIVE lease's scope when one is held (else `main`'s
-      declared scope, same "trust the lease" rule `scope_diverges` above
-      already applies) -- a non-empty list means the ticket is already
-      implemented elsewhere (a real commit touching declared-scope files),
-      not merely a ledger edit or a lease.
-    - `open_blockers`: ids from `main`'s `blocked_by` that are not yet
-      `done`/`dropped` on `main` (`_open_blocker_ids`) -- `[]` when the
-      ticket does not exist on `main` (nothing to read `blocked_by` off
-      of yet).
-    - `scope_lease_collisions` (T-2225, own docstring has the full
-      incident/rationale): OTHER live leases whose scope files, once
-      expanded against the real filesystem, overlap this ticket's own.
-    - `dispatchable`: T-2196 fixed the defect class this field used to
-      embody -- "the report knows more than the verdict uses". Every
-      fact this function MEASURES now gates the verdict, not a subset:
-      `main` must actually EXIST (a ticket absent from `main` is never
-      dispatchable, no matter how clean everything else looks -- the
-      T-2195 incident this ticket was filed from: a coordinator dispatched
-      an agent to a ticket id that did not exist on `main` yet, and the
-      old verdict endorsed it), no live lease may be held, no sibling
-      worktree may already carry scope-matching commits, `main`'s own
-      state must not be `done`/`dropped`/`in-progress`, `blocked_by` must
-      have no open blocker, the lease's scope must not have diverged from
-      `main`'s declared scope, and (T-2225) no OTHER live lease's scope
-      files may overlap this ticket's own. `True` only when every one of
-      those checks passes. This is the field a caller (or `main`'s own
-      exit code) gates dispatch on."""
-    lease = ticket_lease(ticket_id)
-    main_info = ticket_frontmatter_on_main(ticket_id)
-    main_scope = main_info["scope"] if main_info is not None else None
-    scope_diverges = (
+# frob:ticket T-2213
+def _scope_diverges_from_lease(
+    lease: dict | None, main_scope: list[str] | None
+) -> bool:
+    """`True` when a live `lease` exists AND its `scope` differs from
+    `main_scope` (`main`'s declared scope) -- T-2133's own "single
+    highest-value signal": a coordinator reading `main:tickets/<id>/
+    ticket.md` alone, while a lease has since narrowed (or widened) the
+    real working scope inside a worktree, draws a stale conclusion about
+    what the ticket actually touches (observed twice: once nearly
+    releasing a healthy lease, once asking an agent to redo a narrowing
+    it had already done)."""
+    return (
         lease is not None
         and main_scope is not None
         and set(lease.get("scope", [])) != set(main_scope)
     )
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_ticket_dispatchable
+# frob:ticket T-2196
+# frob:ticket T-2213
+def _ticket_dispatchable(
+    *,
+    main_exists: bool,
+    lease: dict | None,
+    worktrees_with_commits: list[str],
+    state_on_main: str | None,
+    open_blockers: list[str],
+    scope_diverges: bool,
+    scope_collisions: list[dict],
+) -> bool:
+    """T-2196 fixed the defect class this predicate embodies -- "the
+    report knows more than the verdict uses". Every fact `ticket_
+    readiness` measures gates the verdict here, not a subset:
+    `main_exists` (a ticket absent from `main` is never dispatchable, no
+    matter how clean everything else looks -- the T-2195 incident T-2196
+    was filed from: a coordinator dispatched an agent to a ticket id that
+    did not exist on `main` yet, and the old verdict endorsed it), no
+    live `lease` may be held, no sibling worktree may already carry
+    scope-matching commits, `state_on_main` must not be
+    `done`/`dropped`/`in-progress`, `open_blockers` must be empty,
+    `scope_diverges` must be `False`, and (T-2225) `scope_collisions`
+    must be empty. `True` only when every one of those checks passes."""
+    return (
+        main_exists
+        and lease is None
+        and not worktrees_with_commits
+        and state_on_main not in ("done", "dropped", "in-progress")
+        and not open_blockers
+        and not scope_diverges
+        and not scope_collisions
+    )
+
+
+# frob:doc docs/guides/coordinator-scripts.md#ticket_readiness
+# frob:ticket T-2196
+# frob:ticket T-2213
+def ticket_readiness(ticket_id: str) -> dict:
+    """T-2133's single per-ticket answer to "given T-####, is it actually
+    dispatchable?" -- combines `ticket_lease`, `ticket_frontmatter_on_main`,
+    `worktrees_touching_ticket`, `_open_blocker_ids`, and
+    `scope_lease_collisions` into one dict, gathering the distinct
+    questions those functions already answer independently: is it leased
+    (`lease`), does it exist on `main` and in what state (`main`), does
+    the live lease's scope diverge from `main`'s declared scope
+    (`scope_diverges`, via `_scope_diverges_from_lease`), has a sibling
+    branch already implemented it (`worktrees_with_commits`), is it
+    blocked (`open_blockers`), and does another live lease's scope
+    collide with this one's (`scope_lease_collisions`, T-2225). The
+    `dispatchable` verdict (`_ticket_dispatchable`) is the ONLY field
+    that combines these facts; see its own docstring for exactly which
+    combination it requires. T-2213 (ARCH001 split): this function stays
+    the thin orchestrator that gathers the facts and calls the two
+    extracted predicates above -- see them for the actual decision logic
+    each answers."""
+    lease = ticket_lease(ticket_id)
+    main_info = ticket_frontmatter_on_main(ticket_id)
+    main_scope = main_info["scope"] if main_info is not None else None
+    scope_diverges = _scope_diverges_from_lease(lease, main_scope)
     # T-draft-05563e8d: the LIVE scope (lease, if held) is what a real
     # implementation commit would actually touch -- mirrors the "trust
     # the lease, not the ticket file" rule `scope_diverges` already
@@ -661,14 +686,14 @@ def ticket_readiness(ticket_id: str) -> dict:
     scope_collisions = scope_lease_collisions(
         ticket_id, effective_scope or (), leases()
     )
-    dispatchable = (
-        main_info is not None
-        and lease is None
-        and not worktrees_with_commits
-        and state_on_main not in ("done", "dropped", "in-progress")
-        and not open_blockers
-        and not scope_diverges
-        and not scope_collisions
+    dispatchable = _ticket_dispatchable(
+        main_exists=main_info is not None,
+        lease=lease,
+        worktrees_with_commits=worktrees_with_commits,
+        state_on_main=state_on_main,
+        open_blockers=open_blockers,
+        scope_diverges=scope_diverges,
+        scope_collisions=scope_collisions,
     )
     return {
         "ticket_id": ticket_id,
@@ -1268,9 +1293,7 @@ def _print_ticket_rot() -> None:
     the different action it needs."""
     rotting = rotting_tickets()
     print(f"TICKET ROT: {len(rotting)}")
-    leaves = [
-        t for t in rotting if t["tier"] == "ticket" and not t.get("runs_last")
-    ]
+    leaves = [t for t in rotting if t["tier"] == "ticket" and not t.get("runs_last")]
     deferred = [t for t in rotting if t["tier"] == "ticket" and t.get("runs_last")]
     non_leaves = [t for t in rotting if t["tier"] != "ticket"]
     if leaves:

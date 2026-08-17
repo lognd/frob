@@ -299,20 +299,40 @@ the old readiness answered `lease: none` / `dispatchable: True` for both
 because it only ever asked "does THIS ticket hold a lease", never
 "does some OTHER live lease already cover the files it needs".
 
+### `_scope_diverges_from_lease`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_scope_diverges_from_lease -->
+
+T-2213 (ARCH001 split off `ticket_readiness`). `True` when a live lease's
+`scope` differs from `main`'s declared scope -- the single highest-value
+signal `ticket_readiness` exists to add.
+
+### `_ticket_dispatchable`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_ticket_dispatchable -->
+
+T-2213 (ARCH001 split off `ticket_readiness`). The `dispatchable` verdict
+predicate: `False` whenever a live lease is held, another worktree
+already carries commits for this ticket, `main` shows a
+`done`/`dropped`/`in-progress` state (or does not exist on `main` at
+all), an open blocker remains, the lease's scope has diverged from
+`main`'s, or another live lease's scope files collide (T-2225); `True`
+only when every one of those checks passes.
+
 ### `ticket_readiness`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#ticket_readiness -->
 
 T-2133's actual answer to "given T-####, is it dispatchable right now?" --
 combines the functions above into one dict: `lease`, `main`
-(state/scope on `main`), `scope_diverges` (`True` when a live lease's
-scope differs from `main`'s declared scope -- the single highest-value
-signal this ticket exists to add), `worktrees_with_commits`, `scope_
-lease_collisions` (T-2225, other live leases whose scope files overlap
-this ticket's own), and `dispatchable` (`False` whenever a live lease is
-held, another worktree already carries commits for this ticket, `main`
-shows a `done`/`dropped`/`in-progress` state, or another live lease's
-scope files collide; `True` otherwise).
+(state/scope on `main`), `scope_diverges` (`_scope_diverges_from_lease`),
+`worktrees_with_commits`, `scope_lease_collisions` (T-2225, other live
+leases whose scope files overlap this ticket's own), and `dispatchable`
+(`_ticket_dispatchable`, T-2213). T-2213 split the two decision
+predicates (`scope_diverges`, `dispatchable`) out of this function's own
+body -- it stays the thin orchestrator that gathers the facts from the
+functions above and hands them to those two predicates; see their own
+entries for the exact decision logic each answers.
 
 ### `effective_scope`
 
