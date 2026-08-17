@@ -15,6 +15,7 @@ scope:
 - /home/logan/projects/frob/scripts/fleet_status.py
 - /home/logan/projects/frob/src/frob/lang/_nodes.py
 - /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py
+- /home/logan/projects/frob/tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -22,6 +23,12 @@ scope_changes:
   glob: /home/logan/projects/frob/tests/test_ticket_land.py
   reason: F841 unused variable in test_ticket_land.py reproduces on re-measure; keeping
     it in scope actually -- retracting this remove
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: /home/logan/projects/frob/tests/test_ticket_land.py
+  reason: 'correcting accidental removal: F841 tests/test_ticket_land.py is a genuine,
+    currently-reproducing finding, re-adding'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
