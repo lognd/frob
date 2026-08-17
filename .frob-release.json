@@ -2215,6 +2215,7 @@
     "src/frob/verify/_backpressure.py::block_until_watermark_advances": "ade7bac9dab69bdb4b0b472025a933d750e71ca6f09c7480669946f3c55778bd",
     "src/frob/verify/_backpressure.py::ceilings_for_profile": "719f410d654ba71c8e2c1cc98de0fe28e78b7784e1f0c0651871ccd73afe7b36",
     "src/frob/verify/_backpressure.py::current_status": "a1158cc174ac3c62cdcc650f73bac3ac23c9ba5c34c0c14a5d47253f055134bd",
+    "src/frob/verify/_backpressure.py::rapid_soft_warning": "88fa8264db930bb987c16d91b8b968b5906688a727dbf3f09137748614c01f0d",
     "src/frob/verify/_quarantine.py::QuarantineError": "9bb4e2ac11958b6fe775d07a753bd5ca7dfdf77279f87c2908770cc6e238b3d0",
     "src/frob/verify/_quarantine.py::QuarantineRecord": "2b6d0ff1b4014568a34a03cdcb8118ecbedc6c60ece4c03fa3ee55ec9e23abb8",
     "src/frob/verify/_quarantine.py::QuarantinedFinding": "0e36dd35febd2a90e0a318eb7adba7bb84c350e82d692b66605e53c948634fcb",
@@ -2233,6 +2234,7 @@
     "src/frob/verify/_watermark.py::Watermark": "7810697da265322eb8226dcaaea505f685e9af06bf928c550053a08ffc557150",
     "src/frob/verify/_watermark.py::WatermarkError": "6055dfb8b84fdb5ffb4a9d855a2f45c1a80f5e42af0c0afa7d9d3d6ce969efdc",
     "src/frob/verify/_watermark.py::advance_watermark": "f1658a8896280a2c93b9bd2e5761c7e255072c3aae35c993f365f9562718507c",
+    "src/frob/verify/_watermark.py::commits_since_watermark": "d8e16bd00068e6ceaaaf81494fd560de8aeb25b1ddd913104db78c6ba1896cc7",
     "src/frob/verify/_watermark.py::compact_queue": "1b79700449e2997209ad1178f76e48ca912eff59f8b62f702136d77121d97290",
     "src/frob/verify/_watermark.py::load_watermark": "eed776fa45134dd2fb5f108883a74f0310538f572a9af4f833f269af392f2c2f",
     "src/frob/verify/_watermark.py::queue_status": "8d407f3ac34fb8f38a6d3dc35363afa078f8ffc93ecbd72d2050106e0e71ba56",
@@ -2337,5 +2339,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.491.0"
+  "version": "0.492.0"
 }

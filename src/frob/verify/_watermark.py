@@ -428,12 +428,71 @@ def compact_queue(root: Path) -> Result[int, WatermarkError]:
         return Ok(removed)
 
 
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#verification-watermark-t-1687-foundation-of-the-\
+# t-1686-epic
+# frob:ticket T-2290
+# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_counts_raw_git_commits_not_queue_entries  # noqa: E501
+# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_none_when_watermark_commit_unresolvable  # noqa: E501
+# frob:tests tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark.test_zero_at_the_watermark_itself  # noqa: E501
+def commits_since_watermark(root: Path, watermark_commit: str) -> int | None:
+    """The real number of `git` commits between `watermark_commit` and
+    `HEAD` at `root` (`git rev-list --count <watermark_commit>..HEAD`),
+    the ground truth T-2290 was filed to reconcile the RAPID-profile
+    `unverified depth` reading against: `queue_status`'s own depth is a
+    count of QUEUE ENTRIES (one per `frob ticket land` intent), which can
+    be far smaller than the real commit gap once any commit reaches
+    `main` without going through a queued land (a merge commit, a direct
+    coordinator commit, or -- the common case -- a batch of ordinary
+    commits squashed under one land's single queued intent). Returns
+    `None` (never a fabricated number) when the watermark commit cannot
+    be resolved in this checkout's history (a corrupt/foreign sha, or a
+    root that is not a git checkout at all) rather than raising -- this
+    is a best-effort RECONCILIATION reading, not a mutating operation, so
+    it degrades the same permissive way `_parse_iso`/`_parse_enqueued_at`
+    already do elsewhere in this package rather than returning a
+    `Result`."""
+    from frob.gitio import run_argv
+
+    spawned = run_argv(
+        ("git", "-C", str(root), "rev-list", "--count", f"{watermark_commit}..HEAD")
+    )
+    if spawned.is_err:
+        _log.warning(
+            "watermark: commits_since_watermark: git spawn failed for %s..HEAD (%s)",
+            watermark_commit,
+            spawned.danger_err,
+        )
+        return None
+    result = spawned.danger_ok
+    if result.returncode != 0:
+        _log.warning(
+            "watermark: commits_since_watermark: git rev-list %s..HEAD failed "
+            "(returncode=%d, stderr=%s) -- watermark commit likely unresolvable "
+            "in this checkout's history",
+            watermark_commit,
+            result.returncode,
+            result.stderr.strip(),
+        )
+        return None
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        _log.warning(
+            "watermark: commits_since_watermark: unparseable git rev-list "
+            "output %r",
+            result.stdout,
+        )
+        return None
+
+
 __all__ = [
     "SCHEMA_VERSION",
     "VerifyQueueEntry",
     "Watermark",
     "WatermarkError",
     "advance_watermark",
+    "commits_since_watermark",
     "compact_queue",
     "load_watermark",
     "queue_status",

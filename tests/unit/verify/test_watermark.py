@@ -2,16 +2,91 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 
 from frob.verify._watermark import (
     WatermarkError,
     advance_watermark,
+    commits_since_watermark,
     compact_queue,
     load_watermark,
     queue_status,
     record_intent,
 )
+
+
+def _init_git_repo_with_commits(root: Path, n: int) -> list[str]:
+    """T-2290 test fixture: a REAL git checkout at `root` with `n`
+    sequential commits, returning each commit sha oldest-first -- so
+    `TestCommitsSinceWatermark` exercises the actual `git rev-list
+    --count` mechanism against a genuine multi-commit gap (the repro
+    shape T-2290's own acceptance note requires: "verified against a
+    REAL stale watermark ... not a synthetic one-commit gap"), never a
+    mocked git call."""
+    env = {
+        "GIT_AUTHOR_NAME": "test",
+        "GIT_AUTHOR_EMAIL": "test@example.com",
+        "GIT_COMMITTER_NAME": "test",
+        "GIT_COMMITTER_EMAIL": "test@example.com",
+    }
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    shas = []
+    for i in range(n):
+        (root / "file.txt").write_text(f"commit {i}\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(root), "add", "file.txt"], check=True)
+        subprocess.run(
+            ["git", "-C", str(root), "commit", "-q", "-m", f"commit {i}"],
+            check=True,
+            env={**os.environ, **env},
+        )
+        sha = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        shas.append(sha)
+    return shas
+
+
+class TestCommitsSinceWatermark:
+    """`commits_since_watermark`: T-2290's real `git rev-list --count`
+    reconciliation, exercised against a genuine multi-commit gap (not a
+    synthetic one-commit gap -- the failure this ticket was filed from
+    only shows up at depth)."""
+
+    def test_counts_raw_git_commits_not_queue_entries(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_watermark.py::commits_since_watermark kind="unit"
+        shas = _init_git_repo_with_commits(tmp_path, 12)
+        # Only ONE queue intent was ever recorded for this whole span --
+        # mirrors the real repo's own shape (403 raw commits, 84 queued
+        # intents): the queue-entry count structurally cannot be trusted
+        # as a commit count.
+        record_intent(
+            tmp_path,
+            commit_sha=shas[-1],
+            ticket_id="T-0001",
+            touched_symbols=("a::b",),
+            profile="rapid",
+        )
+        queued_depth = len(queue_status(tmp_path).danger_ok)
+        assert queued_depth == 1
+
+        gap = commits_since_watermark(tmp_path, shas[0])
+        assert gap == 11  # shas[0]..HEAD is 11 commits, not 1
+        assert gap != queued_depth
+
+    def test_zero_at_the_watermark_itself(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_watermark.py::commits_since_watermark kind="unit"
+        shas = _init_git_repo_with_commits(tmp_path, 3)
+        assert commits_since_watermark(tmp_path, shas[-1]) == 0
+
+    def test_none_when_watermark_commit_unresolvable(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_watermark.py::commits_since_watermark kind="unit"
+        _init_git_repo_with_commits(tmp_path, 2)
+        assert commits_since_watermark(tmp_path, "0" * 40) is None
 
 
 class TestQueueStatus:

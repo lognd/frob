@@ -67,6 +67,20 @@ class VerifyStatus(BaseModel):
     watermark_commit: str | None
     watermark_age_s: float | None
     depth: int
+    #: T-2290: the real `git rev-list --count <watermark>..HEAD` commit
+    #: gap, computed independently of `depth` (a QUEUE-ENTRY count, one
+    #: per land intent, which understates this figure whenever a commit
+    #: reaches `main` without its own queued intent). `None` when there
+    #: is no watermark yet or the watermark commit is unresolvable in
+    #: this checkout's history -- never a fabricated number.
+    commits_since_watermark: int | None
+    #: T-2290: set once `commits_since_watermark` (or, absent a resolvable
+    #: git count, `depth`) crosses the rapid-profile soft-warning
+    #: threshold (`frob.verify._backpressure.rapid_soft_warning`) --
+    #: `None` when not applicable (non-rapid profile, or nothing to warn
+    #: about). Never blocks a land; this is the "warn loudly at a surface
+    #: an operator already reads" half of the rapid-profile fix.
+    rapid_soft_warning: str | None
     oldest_unverified_age_s: float | None
     oldest_unverified_commit: str | None
     oldest_unverified_ticket: str | None
@@ -149,6 +163,16 @@ def build_status(root: Path) -> VerifyStatus | None:
         if parsed is not None:
             watermark_age_s = max(0.0, now - parsed)
 
+    commit_gap: int | None = None
+    if wm is not None:
+        from frob.verify import commits_since_watermark
+
+        commit_gap = commits_since_watermark(root, wm.commit_sha)
+
+    from frob.verify import rapid_soft_warning
+
+    soft_warning = rapid_soft_warning(root)
+
     oldest_age_s = None
     oldest_commit = None
     oldest_ticket = None
@@ -170,6 +194,8 @@ def build_status(root: Path) -> VerifyStatus | None:
         watermark_commit=wm.commit_sha if wm else None,
         watermark_age_s=watermark_age_s,
         depth=len(entries),
+        commits_since_watermark=commit_gap,
+        rapid_soft_warning=soft_warning,
         oldest_unverified_age_s=oldest_age_s,
         oldest_unverified_commit=oldest_commit,
         oldest_unverified_ticket=oldest_ticket,
@@ -198,13 +224,17 @@ def _print_status_human(r: Renderer, status: VerifyStatus) -> None:
     r.line(f"watermark:        {status.watermark_commit or '(none yet)'}")
     if status.watermark_age_s is not None:
         r.line(f"watermark age:    {status.watermark_age_s:.0f}s")
-    r.line(f"unverified depth: {status.depth}")
+    r.line(f"unverified depth (queued land-intents): {status.depth}")
+    if status.commits_since_watermark is not None:
+        r.line(f"commits since watermark:  {status.commits_since_watermark}")
     if status.oldest_unverified_age_s is not None:
         r.line(
             f"oldest unverified: {status.oldest_unverified_commit} "
             f"(ticket {status.oldest_unverified_ticket}, "
             f"{status.oldest_unverified_age_s:.0f}s old)"
         )
+    if status.rapid_soft_warning is not None:
+        r.line(f"WARNING:          {status.rapid_soft_warning}")
     if status.quarantine_raised:
         n = len(status.quarantine_findings)
         r.line(f"quarantine:       RAISED ({n} finding(s))")

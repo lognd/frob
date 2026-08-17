@@ -4401,7 +4401,20 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
     if cfg.ticket_dry_run:
         return
 
-    from frob.verify import ceilings_for_profile, block_until_watermark_advances
+    from frob.tickets._profile import ProfileName
+    from frob.verify import (
+        block_until_watermark_advances,
+        ceilings_for_profile,
+        rapid_soft_warning,
+    )
+
+    if profile is ProfileName.RAPID:
+        # T-2290: rapid's ceilings are unbounded by construction (never
+        # blocks) -- this is the soft half, a loud WARNING at a surface
+        # every land already prints to, never a block/refuse.
+        warning = rapid_soft_warning(root)
+        if warning is not None:
+            _log.warning("ticket land: %s", warning)
 
     ceilings = ceilings_for_profile(profile, root)
     _auto_clear_synthetic_quarantine(root, ceilings)

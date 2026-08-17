@@ -111,3 +111,36 @@ class TestApplyBackpressure:
         # Must not raise -- a timed-out block logs at ERROR and the land
         # proceeds anyway (see `_apply_backpressure`'s own docstring).
         _apply_backpressure(tmp_path, cfg, ProfileName.STANDARD)
+
+    def test_rapid_profile_calls_soft_warning_never_blocks(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure.test_rapid_profile_calls_soft_warning_never_blocks  # noqa: E501
+        # T-2290: rapid's own soft ceiling -- `rapid_soft_warning` is
+        # consulted (and, when it fires, logged) but `ceilings_for_profile`
+        # still resolves to the unbounded rapid ceilings, so
+        # `block_until_watermark_advances` is never reached for a rapid
+        # land regardless of what the soft warning says.
+        calls: list[str] = []
+        monkeypatch.setattr(
+            verify_mod,
+            "ceilings_for_profile",
+            lambda profile, root: BackpressureCeilings(max_depth=None, max_age_s=None),
+        )
+        monkeypatch.setattr(
+            verify_mod,
+            "rapid_soft_warning",
+            lambda root: calls.append("warned") or "rapid profile verification debt is stale",
+        )
+        monkeypatch.setattr(
+            verify_mod,
+            "block_until_watermark_advances",
+            lambda root, ceilings, ticket_id, **kw: calls.append("blocked") or Ok(None),
+        )
+        cfg = AppConfig(ticket_id="T-9000", ticket_dry_run=False)
+        _apply_backpressure(tmp_path, cfg, ProfileName.RAPID)
+        # The soft warning fires, but the ceilings block_until_watermark_
+        # advances receives stay unbounded (rapid never blocks by
+        # construction) -- the warning is purely informational.
+        assert "warned" in calls
+        assert calls.index("warned") < calls.index("blocked")

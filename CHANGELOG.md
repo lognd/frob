@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.492.0] - unreleased
+
+- T-2290: rapid profile defers verification with no drain: watermark 6 days and 403 commits stale, and reported unverified depth (84) understates it ~5x
+
 ## [0.491.0] - unreleased
 
 - T-2068: xdist retry serial fix does not neutralise pyproject addopts -n auto

@@ -38,6 +38,7 @@ from frob.verify._backpressure import (
     block_until_watermark_advances,
     ceilings_for_profile,
     current_status,
+    rapid_soft_warning,
 )
 from frob.verify._watermark import (
     SCHEMA_VERSION,
@@ -45,6 +46,7 @@ from frob.verify._watermark import (
     Watermark,
     WatermarkError,
     advance_watermark,
+    commits_since_watermark,
     compact_queue,
     load_watermark,
     queue_status,
@@ -82,10 +84,12 @@ __all__ = [
     "load_attribution_context",
     "block_until_watermark_advances",
     "ceilings_for_profile",
+    "commits_since_watermark",
     "compact_queue",
     "current_status",
     "load_watermark",
     "queue_status",
+    "rapid_soft_warning",
     "record_intent",
     "run_coalesced_verification",
 ]

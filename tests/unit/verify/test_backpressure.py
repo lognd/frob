@@ -14,8 +14,10 @@ from frob.verify._backpressure import (
     block_until_watermark_advances,
     ceilings_for_profile,
     current_status,
+    rapid_soft_warning,
 )
 from frob.verify._watermark import advance_watermark, record_intent
+from tests.unit.verify.test_watermark import _init_git_repo_with_commits
 
 
 # frob:waive WIRE001 reason="a private test-seed helper used only by this file's own \
@@ -217,3 +219,48 @@ class TestBlockUntilWatermarkAdvances:
         )
         assert result.is_ok
         assert calls == []
+
+
+class TestRapidSoftWarning:
+    """`rapid_soft_warning` (T-2290): the rapid profile's own soft
+    ceiling -- never blocks, but names a message once real verification
+    debt (measured via the real `git rev-list` commit gap, not the
+    understating queue-entry depth) crosses a threshold."""
+
+    def test_no_watermark_yet_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_backpressure.py::rapid_soft_warning kind="unit"
+        assert rapid_soft_warning(tmp_path) is None
+
+    def test_below_threshold_is_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_backpressure.py::rapid_soft_warning kind="unit"
+        shas = _init_git_repo_with_commits(tmp_path, 2)
+        advance_watermark(
+            tmp_path, commit_sha=shas[0], run_id="r1", baseline_digest="d1"
+        )
+        assert rapid_soft_warning(tmp_path) is None
+
+    def test_stale_watermark_trips_the_soft_warning(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_backpressure.py::rapid_soft_warning kind="unit"
+        # A REAL multi-commit gap (12 commits), well past the default
+        # soft-warning depth threshold -- the exact shape T-2290 measured
+        # in this repo itself (403 raw commits behind a 6-day-old
+        # watermark), not a synthetic one-commit gap.
+        shas = _init_git_repo_with_commits(tmp_path, 12)
+        advance_watermark(
+            tmp_path, commit_sha=shas[0], run_id="r1", baseline_digest="d1"
+        )
+        warning = rapid_soft_warning(tmp_path)
+        assert warning is not None
+        assert "11" in warning
+        assert "never blocks" in warning
+
+    def test_toml_override(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/verify/_backpressure.py::rapid_soft_warning kind="unit"
+        shas = _init_git_repo_with_commits(tmp_path, 3)
+        advance_watermark(
+            tmp_path, commit_sha=shas[0], run_id="r1", baseline_digest="d1"
+        )
+        (tmp_path / "frob.toml").write_text(
+            "[profile]\nrapid_soft_warn_depth = 1\n", encoding="utf-8"
+        )
+        assert rapid_soft_warning(tmp_path) is not None

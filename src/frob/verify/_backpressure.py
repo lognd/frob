@@ -357,6 +357,105 @@ def block_until_watermark_advances(
         sleep_fn(poll_interval_s)
 
 
+#: `rapid`'s own soft-warning defaults (T-2290) -- deliberately the SAME
+#: numbers `_STANDARD_DEFAULT_MAX_DEPTH`/`_STANDARD_DEFAULT_MAX_AGE_S`
+#: use, not a second pair to keep in sync by hand, but read from separate
+#: `frob.toml` keys (`rapid_soft_warn_depth`/`rapid_soft_warn_age_s`) so
+#: an owner can tune the warning threshold independently of `standard`'s
+#: real (blocking) ceiling without the two accidentally diverging by
+#: default.
+_RAPID_SOFT_WARN_DEPTH = _STANDARD_DEFAULT_MAX_DEPTH
+_RAPID_SOFT_WARN_AGE_S = _STANDARD_DEFAULT_MAX_AGE_S
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
+# frob:ticket T-2290
+def _rapid_soft_warn_thresholds(root: Path) -> tuple[int, float]:
+    """T-2290: `(warn_depth, warn_age_s)` for `rapid_soft_warning` --
+    `frob.toml`'s `[profile] rapid_soft_warn_depth`/`rapid_soft_warn_
+    age_s` overrides if present and well-typed, else `_RAPID_SOFT_WARN_
+    DEPTH`/`_RAPID_SOFT_WARN_AGE_S`. Split out of `rapid_soft_warning`
+    (ARCH001) so that function's own body stays the read-and-compare
+    sequence."""
+    table = _read_frob_toml_profile_table(root)
+    warn_depth = table.get("rapid_soft_warn_depth", _RAPID_SOFT_WARN_DEPTH)
+    warn_age_s = table.get("rapid_soft_warn_age_s", _RAPID_SOFT_WARN_AGE_S)
+    if not isinstance(warn_depth, int):
+        warn_depth = _RAPID_SOFT_WARN_DEPTH
+    if not isinstance(warn_age_s, (int, float)):
+        warn_age_s = _RAPID_SOFT_WARN_AGE_S
+    return warn_depth, float(warn_age_s)
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
+# frob:ticket T-2290
+# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_no_watermark_yet_is_none  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_below_threshold_is_none  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_stale_watermark_trips_the_soft_warning  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestRapidSoftWarning.test_toml_override  # noqa: E501
+def rapid_soft_warning(
+    root: Path,
+    *,
+    now_fn: Callable[[], float] = time.time,
+) -> str | None:
+    """T-2290: the `rapid` profile's own soft ceiling -- NEVER blocks a
+    land (rapid's "never blocks, by construction" contract, T-1692's own
+    docstring, is preserved unconditionally: this function only ever
+    returns a message or `None`, it has no BLOCK/refuse code path at
+    all), but names a message once real verification debt crosses a
+    threshold, so the deferred-forever failure mode T-2290 was filed from
+    (a watermark stuck 6 days / 403 commits behind, `ceilings_for_profile`
+    returning `None`/`None` for rapid meaning nothing ever forces a
+    drain) is at least LOUD at every surface an operator already reads
+    (`frob verify status`, and the land log via `_apply_backpressure`)
+    instead of silent.
+
+    Measures against `frob.verify._watermark.commits_since_watermark` (the
+    real git commit gap T-2290 found `queue_status`'s own queue-entry
+    depth undercounting by roughly 5x at real staleness), falling back to
+    the queue's own depth only when the git count is unavailable (a
+    non-git root, or an unresolvable watermark commit) -- never silently
+    treating "commit count unavailable" as "zero debt". Returns `None`
+    when there is no watermark yet (a fresh repo has nothing to warn
+    about) or when both axes stay under threshold."""
+    watermark = load_watermark(root)
+    if watermark.is_err or watermark.danger_ok is None:
+        return None
+    wm = watermark.danger_ok
+
+    from frob.verify._watermark import commits_since_watermark
+
+    commit_gap = commits_since_watermark(root, wm.commit_sha)
+
+    queue = queue_status(root)
+    queue_depth = len(queue.danger_ok) if queue.is_ok else 0
+    depth = commit_gap if commit_gap is not None else queue_depth
+
+    age_s: float | None = None
+    parsed_verified_at = _parse_enqueued_at(wm.verified_at)
+    if parsed_verified_at is not None:
+        age_s = max(0.0, now_fn() - parsed_verified_at)
+
+    warn_depth, warn_age_s = _rapid_soft_warn_thresholds(root)
+
+    reasons = []
+    if depth > warn_depth:
+        gap_label = "commits" if commit_gap is not None else "queued land-intents"
+        reasons.append(
+            f"{depth} {gap_label} since watermark (warn threshold {warn_depth})"
+        )
+    if age_s is not None and age_s > warn_age_s:
+        reasons.append(f"watermark age {age_s:.0f}s (warn threshold {warn_age_s:.0f}s)")
+    if not reasons:
+        return None
+    return (
+        "rapid profile verification debt is stale: "
+        + "; ".join(reasons)
+        + " -- rapid never blocks a land on this, but the deferred work "
+        "still needs draining (`frob verify now`)"
+    )
+
+
 __all__ = [
     "BackpressureCeilings",
     "BackpressureError",
@@ -364,4 +463,5 @@ __all__ = [
     "block_until_watermark_advances",
     "ceilings_for_profile",
     "current_status",
+    "rapid_soft_warning",
 ]

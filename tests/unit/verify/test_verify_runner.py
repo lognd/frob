@@ -19,6 +19,7 @@ from frob.verify._quarantine import (
 )
 from frob.verify._watermark import advance_watermark, record_intent
 from tests.unit.verify.conftest import make_queue_entry, make_symbol
+from tests.unit.verify.test_watermark import _init_git_repo_with_commits
 
 
 class TestBuildStatus:
@@ -69,6 +70,32 @@ class TestBuildStatus:
         assert status is not None
         assert status.watermark_commit == "deadbeef"
         assert status.watermark_age_s is not None
+
+    def test_commits_since_watermark_reflects_real_git_gap_not_queue_depth(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        # T-2290: a real, multi-commit gap (12 commits) recorded under a
+        # single queued intent -- the exact shape that made this repo's
+        # own `unverified depth` (84) understate the real 403-commit
+        # backlog behind a 6-day-old watermark.
+        shas = _init_git_repo_with_commits(tmp_path, 12)
+        record_intent(
+            tmp_path,
+            commit_sha=shas[-1],
+            ticket_id="T-0001",
+            touched_symbols=("a::b",),
+            profile="rapid",
+        )
+        advance_watermark(
+            tmp_path, commit_sha=shas[0], run_id="r1", baseline_digest="d1"
+        )
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.depth == 1
+        assert status.commits_since_watermark == 11
+        assert status.commits_since_watermark != status.depth
+        assert status.rapid_soft_warning is not None
 
 
 # frob:waive WIRE001 reason="test-only fixture helper, exercised by every test in TestDispose's retire-unidentifiable trio -- not production code to wire; follow_up points at T-2246 (WIRE002 requires a live open ticket, not because that ticket is expected to remove the waiver itself), same posture as tests/unit/verify/test_quarantine.py::_seed_stuck_store's own waiver" follow_up="T-2246"  # noqa: E501

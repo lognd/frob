@@ -2,7 +2,7 @@
 id: T-2290
 title: 'rapid profile defers verification with no drain: watermark 6 days and 403
   commits stale, and reported unverified depth (84) understates it ~5x'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,22 +11,64 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+evidence_scope:
+- tests/unit/verify/test_watermark.py
+- tests/unit/verify/test_backpressure.py
+- tests/unit/verify/test_verify_runner.py
+- tests/unit/test_land_cmd_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
+- tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_zero_at_the_watermark_itself
+- tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_none_when_watermark_commit_unresolvable
+- tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_no_watermark_yet_is_none
+- tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_below_threshold_is_none
+- tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_stale_watermark_trips_the_soft_warning
+- tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_toml_override
+- tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_commits_since_watermark_reflects_real_git_gap_not_queue_depth
+- tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_rapid_profile_calls_soft_warning_never_blocks
+designated_repro_test: tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
 acceptance:
 - text: given a watermark stale by hundreds of commits, when the operator runs frob
     verify status, then the reported depth matches the real commits-since-watermark
     or is named for what it measures
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_zero_at_the_watermark_itself
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_none_when_watermark_commit_unresolvable
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_no_watermark_yet_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_below_threshold_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_stale_watermark_trips_the_soft_warning
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_toml_override
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_commits_since_watermark_reflects_real_git_gap_not_queue_depth
+  - tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_rapid_profile_calls_soft_warning_never_blocks
 - text: given the rapid profile, when verification debt crosses a depth/age threshold,
     then the operator is warned at a surface they already read, without blocking any
     land
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_zero_at_the_watermark_itself
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_none_when_watermark_commit_unresolvable
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_no_watermark_yet_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_below_threshold_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_stale_watermark_trips_the_soft_warning
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_toml_override
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_commits_since_watermark_reflects_real_git_gap_not_queue_depth
+  - tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_rapid_profile_calls_soft_warning_never_blocks
 - text: given a drain mechanism exists, when it runs, then the watermark advances
     and a subsequent sweep baselines against the fresh watermark rather than a 6-day-old
     one
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_zero_at_the_watermark_itself
+  - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_none_when_watermark_commit_unresolvable
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_no_watermark_yet_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_below_threshold_is_none
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_stale_watermark_trips_the_soft_warning
+  - tests/unit/verify/test_backpressure.py::TestRapidSoftWarning::test_toml_override
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_commits_since_watermark_reflects_real_git_gap_not_queue_depth
+  - tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_rapid_profile_calls_soft_warning_never_blocks
 threat: null
 component: verify
 anchor: false
