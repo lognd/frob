@@ -2167,6 +2167,120 @@ class TestQuarantineState:
         assert fleet_status.quarantine_state() == ("unknown", 0)
 
 
+# frob:ticket T-2126
+class TestVerifyQueueState:
+    """`fleet_status.verify_queue_state` (T-2126, symmetric to
+    `quarantine_state`/T-2049)."""
+
+    # frob:ticket T-2126
+    def test_reports_depth_and_oldest_age(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_reports_dep\
+        # th_and_oldest_age
+        """(MUST FAIL FIRST on main -- `verify_queue_state` does not exist
+        yet): depth is the entry count, oldest_age_s is the OLDEST
+        `enqueued_at` entry's age (the entry a coordinator most needs to
+        know about, not the newest)."""
+        store = tmp_path / "verify-queue.json"
+        now = datetime(2026, 1, 1, tzinfo=UTC)
+        store.write_text(
+            json.dumps(
+                [
+                    {"enqueued_at": "2026-01-01T00:00:00+00:00"},  # 0s old
+                    {"enqueued_at": "2025-12-31T23:00:00+00:00"},  # 3600s old
+                ]
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(fleet_status, "VERIFY_QUEUE", store)
+        depth, oldest_age_s = fleet_status.verify_queue_state(now=now)
+        assert depth == 2
+        assert oldest_age_s == pytest.approx(3600.0)
+
+    # frob:ticket T-2126
+    def test_zero_depth_when_no_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_zero_depth_\
+        # when_no_file
+        """MUST-STILL-PASS control: no queue file at all means nothing is
+        queued -- `(0, None)`, not `(-1, None)` (the unreadable case)."""
+        monkeypatch.setattr(
+            fleet_status, "VERIFY_QUEUE", tmp_path / "does-not-exist.json"
+        )
+        assert fleet_status.verify_queue_state() == (0, None)
+
+    # frob:ticket T-2126
+    def test_unreadable_queue_is_unknown_never_zero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_unreadable_\
+        # queue_is_unknown_never_zero
+        """Malformed JSON is `(-1, None)`, never misread as `(0, None)` --
+        mirrors `quarantine_state`'s own "cannot verify is never
+        verified" posture: an unreadable store must never look like an
+        empty, safe-to-dispatch queue."""
+        store = tmp_path / "verify-queue.json"
+        store.write_text("{not json", encoding="utf-8")
+        monkeypatch.setattr(fleet_status, "VERIFY_QUEUE", store)
+        assert fleet_status.verify_queue_state() == (-1, None)
+
+
+# frob:ticket T-2126
+class TestFleetStatusMainVerifyQueue:
+    """`fleet_status.main`'s VERIFY QUEUE line (T-2126)."""
+
+    # frob:ticket T-2126
+    def test_prints_depth_and_age_when_nonempty(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue.test_p\
+        # rints_depth_and_age_when_nonempty
+        """A nonzero queue depth is printed with its age, next to
+        QUARANTINE -- symmetric to T-2049's own quarantine-line placement
+        test above."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(
+            fleet_status, "verify_queue_state", lambda: (3, 1234.0)
+        )
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert "VERIFY QUEUE depth=3" in out
+        assert "1234s old" in out
+
+    # frob:ticket T-2126
+    def test_prints_empty_when_zero_depth(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue.test_p\
+        # rints_empty_when_zero_depth
+        """MUST-STILL-PASS control: a zero-depth queue is reported as
+        empty, not silently omitted."""
+        monkeypatch.setattr(fleet_status, "root_dirt", lambda: [])
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(fleet_status, "verify_queue_state", lambda: (0, None))
+        monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
+        fleet_status.main()
+        out = capsys.readouterr().out
+        assert "VERIFY QUEUE empty" in out
+
+
 class TestFleetStatusMainQuarantine:
     """`fleet_status.main`'s quarantine line (T-2049)."""
 

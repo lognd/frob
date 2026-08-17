@@ -110,6 +110,14 @@ def root_dirt() -> list[str]:
 #: `LEASES`'s own pattern, so this script stays import-light rather than
 #: depending on the `frob` package being installed.
 QUARANTINE = REPO / ".frob" / "quarantine.json"
+# frob:ticket T-2126
+#: The verify-queue/watermark stores `frob.verify._watermark` owns --
+#: read directly as raw JSON, mirroring QUARANTINE's own raw-file
+#: convention immediately above (this script never imports frob.* by
+#: design, so it stays usable even when the native extensions/venv are
+#: not built).
+VERIFY_QUEUE = REPO / ".frob" / "verify-queue.json"
+VERIFY_WATERMARK = REPO / ".frob" / "verify-watermark.json"
 
 
 # frob:doc docs/guides/coordinator-scripts.md#leases
@@ -1664,6 +1672,77 @@ def quarantine_state() -> tuple[str, int]:
     return "raised", undisposed
 
 
+# frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
+# frob:ticket T-2126
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_reports_depth_and_o\
+# ldest_age
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_zero_depth_when_no_\
+# file
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestVerifyQueueState.test_unreadable_queue_is\
+# _unknown_never_zero
+def verify_queue_state(*, now: datetime | None = None) -> tuple[int, float | None]:
+    """`(depth, oldest_age_s)` for `.frob/verify-queue.json` -- T-2126,
+    symmetric to `quarantine_state` immediately above: queue depth/age
+    feeds `frob.verify._backpressure.block_until_watermark_advances`
+    (the same function `_apply_backpressure` calls right after the
+    quarantine override), so a deep/stale queue silently lengthens every
+    land the same "silently changes land cost, and nothing prints it
+    where a coordinator already looks before dispatch" way T-2049's own
+    QUARANTINE line already fixed for the quarantine case -- this ticket
+    was filed to measure whether the symmetry argument alone (T-2049's
+    acceptance[4]) justifies adding it without waiting for a documented
+    incident first, and concluded it does now that `frob verify status`
+    (T-2290) already surfaces the identical depth/commits-since-watermark
+    pair for the same reason.
+
+    Depth alone (`len(entries)`) is a QUEUE-ENTRY count -- one per `frob
+    ticket land` intent, which `frob verify status`'s own T-2290 docstring
+    notes can undercount the real commit gap once a commit reaches `main`
+    without going through a queued land. This script deliberately reports
+    only depth/oldest-age here, not the full commit-gap reconciliation
+    `commits_since_watermark` computes (a `git rev-list` spawn) -- adding
+    that would duplicate `frob verify status`'s own number rather than
+    add a distinct, ALWAYS-available-before-dispatch signal; a coordinator
+    who wants the reconciled commit count already has `frob verify
+    status` for that.
+
+    A MISSING file means nothing is queued: `(0, None)`. An UNREADABLE or
+    malformed file returns `(-1, None)` -- never a silent `(0, None)`,
+    matching `quarantine_state`'s own "cannot verify is never verified"
+    posture: misreading unknown as empty would tell a coordinator it is
+    safe to dispatch when the real depth could not be determined at
+    all."""
+    if not VERIFY_QUEUE.exists():
+        return 0, None
+    try:
+        entries = json.loads(VERIFY_QUEUE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return -1, None
+    if not isinstance(entries, list):
+        return -1, None
+    oldest_age_s: float | None = None
+    current = now if now is not None else datetime.now(UTC)
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        enqueued_at = entry.get("enqueued_at")
+        if not isinstance(enqueued_at, str):
+            continue
+        try:
+            enqueued = datetime.fromisoformat(enqueued_at)
+        except ValueError:
+            continue
+        if enqueued.tzinfo is None:
+            enqueued = enqueued.replace(tzinfo=UTC)
+        age = (current - enqueued).total_seconds()
+        if oldest_age_s is None or age > oldest_age_s:
+            oldest_age_s = age
+    return len(entries), oldest_age_s
+
+
 # frob:doc docs/guides/coordinator-scripts.md#_ticket_readiness_lines
 # frob:ticket T-2172
 # frob:tests \
@@ -1878,6 +1957,38 @@ def _print_land_status() -> None:
 # frob:doc docs/guides/coordinator-scripts.md#_print_fleet_report
 # frob:ticket T-2172
 # frob:ticket T-2180
+# frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
+# frob:ticket T-2126
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue.test_prints_de\
+# pth_and_age_when_nonempty
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue.test_prints_em\
+# pty_when_zero_depth
+def _print_verify_queue_line() -> None:
+    """Print the VERIFY QUEUE line `_print_fleet_report` places right
+    after QUARANTINE (T-2126) -- split into its own function (ARCH001,
+    same reasoning as every other `_print_*` helper this module already
+    factors out) rather than inlined."""
+    depth, oldest_age_s = verify_queue_state()
+    if depth < 0:
+        # frob:waive RENDER001 reason="this whole script deliberately never imports \
+        # frob.* (must stay usable without a built venv/native extensions) -- every \
+        # other print() in this file is the same bare-stdout style, grandfathered by \
+        # RENDER001's does-not-worsen gate only because it predates T-2280; this is a \
+        # NEW site in the identical, already-established style, not a new exception"
+        print("VERIFY QUEUE UNKNOWN -- .frob/verify-queue.json unreadable")
+    elif depth == 0:
+        # frob:waive RENDER001 reason="same as above -- established bare-print style"
+        print("VERIFY QUEUE empty")
+    else:
+        age_note = (
+            f", oldest {oldest_age_s:.0f}s old" if oldest_age_s is not None else ""
+        )
+        # frob:waive RENDER001 reason="same as above -- established bare-print style"
+        print(f"VERIFY QUEUE depth={depth}{age_note}")
+
+
 # frob:ticket T-2182
 # frob:ticket T-2222
 # frob:tests \
@@ -1907,7 +2018,12 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     live count -- a lease that reads as reclaimable or root-resident is
     never silently indistinguishable from a live agent's own lease here,
     the same fix `_land_status_lines`'s LOAD line above already applies
-    to the concurrency guidance clause."""
+    to the concurrency guidance clause.
+
+    T-2126 added the VERIFY QUEUE line right after QUARANTINE, same
+    reasoning: queue depth/age silently changes land cost the same way
+    a raised quarantine does, and belongs where a coordinator already
+    looks before dispatch."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
@@ -1930,6 +2046,8 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     else:
         print("QUARANTINE clear")
 
+    _print_verify_queue_line()
+
     held = leases()
     live_count = live_lease_count(held)
     print(f"LEASES {len(held)} ({live_count} live)")
@@ -1941,6 +2059,11 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     print("WORKTREES")
     for name, age, idle in worktrees(idle_seconds):
         mins = "unknown" if age < 0 else f"{age // 60}m"
+        # frob:waive RENDER001 reason="pre-existing bare print, unchanged text -- \
+        # T-2126's own new _print_verify_queue_line() insertion above shifted this \
+        # line's number relative to merge-base, which the does-not-worsen gate reads \
+        # as a new site; same established bare-stdout style as every other print in \
+        # this deliberately frob.*-import-free script"
         print(f"  {name:28} last-commit {mins:>9}{'  IDLE?' if idle else ''}")
 
 
@@ -1967,11 +2090,15 @@ def _print_scope_intersections(tickets: list[str]) -> None:
     branch, pulled out (ARCH103) alongside `_print_all_ticket_readiness`
     above."""
     collisions = scope_intersections(tickets)
+    # frob:waive RENDER001 reason="pre-existing bare print, unchanged text -- shifted \
+    # by T-2126's own new _print_verify_queue_line() insertion above, same line-drift \
+    # false-positive as the WORKTREES print in _print_fleet_report"
     print(f"SCOPE INTERSECTIONS: {len(collisions)}")
     for collision in collisions:
         globs = ", ".join(
             f"{ga!r}<->{gb!r}" for ga, gb in collision["overlapping_globs"]
         )
+        # frob:waive RENDER001 reason="same line-drift false-positive as above"
         print(f"  {collision['a']} x {collision['b']}: {globs}")
 
 

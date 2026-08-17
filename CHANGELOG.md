@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.495.0] - unreleased
+
+- T-2126: Consider surfacing verify queue depth/age in fleet_status.py, symmetric to T-2049's quarantine line
+
 ## [0.494.0] - unreleased
 
 - T-2310: rapid profile needs a real verification-debt drain mechanism (design decision deferred from T-2290)

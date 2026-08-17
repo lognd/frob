@@ -2,7 +2,7 @@
 id: T-2126
 title: Consider surfacing verify queue depth/age in fleet_status.py, symmetric to
   T-2049's quarantine line
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-11'
@@ -13,8 +13,16 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
+- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_zero_depth_when_no_file
+- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_unreadable_queue_is_unknown_never_zero
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue::test_prints_depth_and_age_when_nonempty
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusMainVerifyQueue::test_prints_empty_when_zero_depth
 designated_repro_test: null
 threat: null
 component: null
