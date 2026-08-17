@@ -2,7 +2,7 @@
 id: T-2231
 title: 'Break gates/lang/graph import cycle: _docblocks<->_docblocks_refs split plus
   lang<->graph.cache lazy-break not recognized by static cycle check'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -21,6 +21,12 @@ scope:
 - docs/modules/gates.md
 - docs/modules/graph.md
 - docs/modules/cli.md
+- src/frob/gates/_docblocks_shared.py
+- src/frob/lang/_models.py
+- docs/modules/lang.md
+- tests/unit/test_gates_lang_graph_cycle_regression.py
+evidence_scope:
+- tests/unit/test_gates_lang_graph_cycle_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -42,19 +48,49 @@ scope_changes:
     scoped source files'
   actor: logan
   at: '2026-08-16'
-designated_repro_test: null
+- op: add
+  glob: src/frob/gates/_docblocks_shared.py
+  reason: case-a fix extracts shared docblocks/docblocks_refs symbols into a new leaf
+    module; case-b fix moves GRAMMAR_FINGERPRINT_PACKAGES to the existing lang/_models.py
+    leaf alongside SymbolKind to fully invert the lang<->graph.cache dependency
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: src/frob/lang/_models.py
+  reason: case-a fix extracts shared docblocks/docblocks_refs symbols into a new leaf
+    module; case-b fix moves GRAMMAR_FINGERPRINT_PACKAGES to the existing lang/_models.py
+    leaf alongside SymbolKind to fully invert the lang<->graph.cache dependency
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: docs/modules/lang.md
+  reason: case-a fix extracts shared docblocks/docblocks_refs symbols into a new leaf
+    module; case-b fix moves GRAMMAR_FINGERPRINT_PACKAGES to the existing lang/_models.py
+    leaf alongside SymbolKind to fully invert the lang<->graph.cache dependency
+  actor: logan
+  at: '2026-08-16'
+- op: add
+  glob: tests/unit/test_gates_lang_graph_cycle_regression.py
+  reason: new repro/regression test for the import-cycle fix
+  actor: logan
+  at: '2026-08-16'
+evidence:
+- tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
+designated_repro_test: tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
 acceptance:
 - text: Given current main, when 'uv run frob check --only cycle' runs, then this
     cluster (_docblocks_refs.py -> _docblocks.py -> lang/_support.py -> graph/cache.py
     -> lang/__init__.py -> graph/_models.py -> _docblocks_refs.py) no longer appears
     in the FAIL output. This test MUST currently fail (the cluster is in today's output).
-  evidence: []
+  evidence:
+  - tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
 - text: 'MUST-STILL-PASS CONTROL: after the fix, ''uv run frob check --only cycle''
     still reports the dup/_pipeline cluster, the vet warning cluster, and the tickets/app/serve/verify
     mega-cluster (or their post-fix equivalents) -- a fix that makes frob-cycle report
     fewer TOTAL clusters than it found before this leaf''s own fix is a narrowing
     of the detector, not a fix, and must be rejected.'
-  evidence: []
+  evidence:
+  - tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
 - text: 'DESIGN NOTE (not mechanical-only): this cluster merges two distinct issues
     and needs a design decision before implementation. (1) gates/_docblocks.py and
     gates/_docblocks_refs.py mutually import each other (docblocks.py line ~773+ imports
@@ -75,10 +111,12 @@ acceptance:
     lazy-import readers? Do not silently narrow the cycle detector to make this vanish
     -- if the checker-side option is chosen it needs its own ticket/discussion, not
     a quiet loosening.'
-  evidence: []
+  evidence:
+  - tests/unit/test_gates_lang_graph_cycle_regression.py::TestGatesLangGraphCycleRegression::test_gates_lang_graph_cluster_is_not_an_error_cycle
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 Leaf of T-2202 (epic). Measured directly from 'uv run frob check --only cycle' on 2026-08-16, which now differs from T-2202's originally recorded cluster (T-2202 described a 5-file cluster ending at graph/cache.py; today's is 6 files and also includes graph/_models.py). The growth is attributable to T-2211 (landed after T-2202 was filed), which fixed resolve_local_import to stop dropping imported names for the 'from X import submodule' idiom -- previously-invisible edges through that idiom are now real graph edges. Not a regression; do not revert anything.

@@ -23,6 +23,33 @@ class SymbolKind(StrEnum):
     TYPE = "type"
 
 
+# frob:ticket T-0433
+# frob:ticket T-2231
+# frob:doc docs/modules/lang.md#dependencies
+# frob:tests tests/test_graph.py::TestBuildIncremental.test_fingerprint_packages_derived_from_lang_registry  # noqa: E501
+# T-0433 (G6): the installed-distribution names whose VERSION changing can
+# change what every non-`.strata` grammar in `frob.lang._EXTENSION_TABLE`
+# parses to. `tree_sitter_language_pack.get_parser` is the ONE loading
+# mechanism every tree-sitter language in `frob.lang` goes through -- so
+# it, plus the `tree-sitter` core library it is built on, are the entire
+# fingerprint surface for ALL six grammars today, not a per-language
+# package. `frob.graph.cache._compute_fingerprint` derives its
+# cache-invalidation fingerprint from this set (plus its own non-language
+# packages, `frob` and `strata-core`) instead of hand-copying a tuple there
+# -- adding a new `_EXTENSION_TABLE` grammar via `tree_sitter_language_pack`
+# needs no fingerprint update at all; a language added through some OTHER
+# package (a standalone `tree-sitter-<lang>` binding imported directly,
+# bypassing the language pack) must be added here too, or a cache row for
+# it can go stale exactly like the T-0243 incident this mechanism exists
+# to prevent. T-2231: lives here (a pure leaf) rather than `frob.lang.
+# __init__` -- `frob.graph.cache` needs this at module level, and
+# `frob.lang.__init__` lazily imports `frob.graph.cache` back (T-1464), so
+# defining it in the package body closed a real import cycle even though
+# neither side ever runs its lazy import eagerly. Re-exported from `frob.
+# lang.__init__` under this same name -- see that module's own comment.
+GRAMMAR_FINGERPRINT_PACKAGES = frozenset({"tree-sitter", "tree-sitter-language-pack"})
+
+
 # frob:doc docs/modules/lang.md#data-models
 class RawSymbol(BaseModel):
     """One extracted declaration: identity, publicness, span, and tokens.

@@ -25,7 +25,7 @@ from frob.graph._models import (
     SymbolId,
     SymbolRecord,
 )
-from frob.lang import GRAMMAR_FINGERPRINT_PACKAGES, SymbolKind
+from frob.lang._models import GRAMMAR_FINGERPRINT_PACKAGES, SymbolKind
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

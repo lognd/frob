@@ -56,7 +56,14 @@ from frob.lang._common import flatten_tree
 from frob.lang._extract import COMMENT_TYPES, extract
 from frob.lang._extract import extract_imports as _extract_imports
 from frob.lang._extract import iter_identifiers as _iter_identifiers
-from frob.lang._models import ParsedFile, RawComment, RawSymbol, SymbolKind, TreeNode
+from frob.lang._models import (
+    GRAMMAR_FINGERPRINT_PACKAGES,
+    ParsedFile,
+    RawComment,
+    RawSymbol,
+    SymbolKind,
+    TreeNode,
+)
 from frob.lang._nodes import (
     child_by_field,
     cpp_function_nodes,
@@ -143,25 +150,16 @@ _SUPPORTED_EXTENSIONS = frozenset(_EXTENSION_TABLE) | {_STRATA_EXTENSION}
 # each escape hatch's own `.strata` handling for the precise boundary.
 _TREE_SITTER_EXTENSIONS = frozenset(_EXTENSION_TABLE)
 
-# frob:ticket T-0433
-# frob:doc docs/modules/lang.md#dependencies
-# frob:tests tests/test_graph.py::TestBuildIncremental.test_fingerprint_packages_derived_from_lang_registry  # noqa: E501
-# T-0433 (G6): the installed-distribution names whose VERSION changing can
-# change what every non-`.strata` grammar in `_EXTENSION_TABLE` parses to.
-# `tree_sitter_language_pack.get_parser` is the ONE loading mechanism every
-# tree-sitter language in this module goes through (see the module
-# docstring) -- so it, plus the `tree-sitter` core library it is built on,
-# are the entire fingerprint surface for ALL six grammars today, not a
-# per-language package. `frob.graph.cache._compute_fingerprint` derives its
-# cache-invalidation fingerprint from this set (plus its own non-language
-# packages, `frob` and `strata-core`) instead of hand-copying a tuple here
-# -- adding a new `_EXTENSION_TABLE` grammar via `tree_sitter_language_pack`
-# needs no fingerprint update at all; a language added through some OTHER
-# package (a standalone `tree-sitter-<lang>` binding imported directly,
-# bypassing the language pack) must be added here too, or a cache row for
-# it can go stale exactly like the T-0243 incident this mechanism exists
-# to prevent.
-GRAMMAR_FINGERPRINT_PACKAGES = frozenset({"tree-sitter", "tree-sitter-language-pack"})
+# T-2231: GRAMMAR_FINGERPRINT_PACKAGES moved to `frob.lang._models` (a pure
+# leaf, zero frob.* imports) alongside `SymbolKind` -- `frob.graph.cache`
+# needed both at module level, and importing them from THIS package
+# (`frob.lang`, whose own `__init__.py` lazily imports `frob.graph.cache`
+# back, T-1464) closed a real import cycle even though neither side ever
+# runs it eagerly. Imported at the top of this file alongside `SymbolKind`
+# and re-exported under its original name here, so every existing
+# `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` reference (this package's own
+# re-export contract, same as `SymbolKind`) keeps working unchanged; see
+# `frob.lang._models` for the definition and its directives.
 
 
 # frob:doc docs/modules/graph.md#public-api
@@ -991,6 +989,7 @@ __all__ = [
     "FACETS",
     "FacetState",
     "FacetStatus",
+    "GRAMMAR_FINGERPRINT_PACKAGES",
     "LangError",
     "LanguageSupport",
     "ParsedFile",

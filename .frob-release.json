@@ -931,7 +931,6 @@
     "src/frob/graph/summary.py::SCCTimeout": "68d1e03229a940eb9884f81c58f1f3d157a995f1d12b045710d380234bc6089f",
     "src/frob/graph/summary.py::SummaryResult": "42532b2360e9e1298570a30916ca8d96b09d9893b6c56e8ccfdde37f59b4e10c",
     "src/frob/graph/summary.py::compute_protocol_summaries": "7fc0990476fbed473150809319d75281a3d2be610a842012ff3c1101549faa8d",
-    "src/frob/lang/__init__.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/__init__.py::LangError": "072a7cff3ec199ba5ba83d23c6473cc17b5862ff6b4aa480769541a7ce60761c",
     "src/frob/lang/__init__.py::PARSE_ARTIFACT_CACHE_ENV": "47008d86b51428a66121658d132d322635b5795633d256b7826fd21cc0b0fe8f",
     "src/frob/lang/__init__.py::extract_imports": "0e91c882e7c7bec98c9d74869e23a294eff906767fe3f73bad31003bcab1e331",
@@ -953,6 +952,7 @@
     "src/frob/lang/_extract.py::extract": "3f8f30ba5faeaf42ad29ad798559c3e06b47f6483dc3ed12e88a6296381f5ed0",
     "src/frob/lang/_extract.py::extract_imports": "ba9aa09a3d29c457fff5f0c1460995e8797f75a7be1a79ccb48eb290cb540142",
     "src/frob/lang/_extract.py::iter_identifiers": "2798f2485b4e4b4cb048b65386a6e287573de91af8e92c5717b65ad058879d8f",
+    "src/frob/lang/_models.py::GRAMMAR_FINGERPRINT_PACKAGES": "0fb7c91d3df53b4aec4312a2c97e716487a17e6b8f10f6b2a3dcadb121d14623",
     "src/frob/lang/_models.py::ParsedFile": "31be770dd59266c6a012a66e0ea01de569d578a7d3ac2c66c25207e665c382dd",
     "src/frob/lang/_models.py::RawComment": "0afc9e525ac09b5befe10fd355895daefc3294fd33f04e9e067e9614019c4be1",
     "src/frob/lang/_models.py::RawSymbol": "05b811e463802be06405362ced0998094c383634b542c0742ad0a14d9a6190b0",
@@ -2327,5 +2327,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.481.0"
+  "version": "0.482.0"
 }

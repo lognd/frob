@@ -104,15 +104,14 @@ registry-reading mechanism.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from frob.gates._docblocks_shared import _ProjectNamespaces, _read_toml
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot
 from frob.logging import get_logger
-from frob.tomlio import read_toml_lenient
 
 if TYPE_CHECKING:
     from frob.gates._docblocks_refs import _ConsoleCommandSource
@@ -125,28 +124,18 @@ __all__ = ["doc004_gate", "doc005_gate"]
 # ---------------------------------------------------------------------------
 # Manifest-derived project namespaces (T-0436 refinement 3)
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class _ProjectNamespaces:
-    """This project's own import/crate namespaces, derived from manifests."""
-
-    python: frozenset[str] = field(default_factory=frozenset)
-    rust: frozenset[str] = field(default_factory=frozenset)
-    ts: frozenset[str] = field(default_factory=frozenset)
-    # rust namespace -> crate source directory (repo-relative), used to
-    # resolve a `use <crate>::path::Item` token to the .rs files that
-    # could plausibly define `Item`.
-    rust_crate_dirs: dict[str, str] = field(default_factory=dict)
-
-
-def _read_toml(path: Path) -> dict | None:
-    """Best-effort TOML load: `None` on any missing/unreadable/malformed file,
-    never a crash -- a missing manifest just means that language contributes
-    no namespaces, not a gate failure. Thin wrapper over `frob.tomlio.
-    read_toml_lenient` (extracted T-0861) that fixes this module's own
-    `log_prefix`."""
-    return read_toml_lenient(path, log_prefix="doc004")
+#
+# T-2231: `_ProjectNamespaces`, `_read_toml`, and `_doc004_violation` moved
+# to `frob.gates._docblocks_shared` -- both this module (for
+# `_ProjectNamespaces`/`_read_toml`, used below) and `_docblocks_refs.py`
+# (for all three, including `_doc004_violation`, which this module never
+# calls directly) need them, and this module importing the bulk of
+# DOC004's parsing/checking logic back from `_docblocks_refs.py` (below)
+# while `_docblocks_refs.py` imported these three names from here made the
+# pair a real, module-level import cycle. `_ProjectNamespaces`/`_read_toml`
+# re-imported above under their original names so every existing
+# `_read_toml(...)`/`_ProjectNamespaces(...)` call site in this file keeps
+# working unchanged.
 
 
 def _python_namespaces(root: Path) -> frozenset[str]:
@@ -269,27 +258,6 @@ def _project_namespaces(root: Path) -> _ProjectNamespaces:
     _log.debug("doc004: namespaces python=%s rust=%s ts=%s", python, rust, ts)
     return _ProjectNamespaces(
         python=python, rust=rust, ts=ts, rust_crate_dirs=rust_dirs
-    )
-
-
-# frob:enforces CHK-GATE-DOC004
-def _doc004_violation(doc_path: str, line: int, *, tier: str, detail: str) -> Violation:
-    """Build one DOC004 `Violation` -- `tier` is `"stale"` (error, a named
-    reference does not resolve) or `"unbound"` (warn, a valid reference has
-    no nearby binding directive)."""
-    severity = Severity.ERROR if tier == "stale" else Severity.WARN
-    label = "stale" if tier == "stale" else "unbound"
-    return Violation(
-        rule="DOC004",
-        severity=severity,
-        file=doc_path,
-        line=line,
-        message=(
-            f"DOC004: {label} code block in {doc_path}:{line} -- {detail}; "
-            f"add a frob:doc/frob:describes/frob:tests anchor, fix the stale "
-            f'reference, or `frob:waive DOC004 reason="..."` if this is an '
-            f"intentional external/illustrative example"
-        ),
     )
 
 

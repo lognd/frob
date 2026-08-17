@@ -443,6 +443,14 @@ if a future grammar is ever loaded through some OTHER package (bypassing
 `tree_sitter_language_pack`); every grammar loaded through the language
 pack needs no update here at all.
 
+T-2231: defined in `frob.lang._models` (a pure leaf, alongside
+`SymbolKind`) rather than `frob.lang.__init__` -- `frob.graph.cache` needs
+it at module level, and `frob.lang.__init__` lazily imports `frob.graph.
+cache` back (T-1464), so defining it in the package body closed a real
+import cycle even though neither side ever runs its lazy import eagerly.
+Still reachable as `frob.lang.GRAMMAR_FINGERPRINT_PACKAGES` -- `frob.lang.
+__init__` re-exports it under its original name, same as `SymbolKind`.
+
 ## Language support contract
 
 T-0405: `frob.lang._support` gives each registered language ONE typed

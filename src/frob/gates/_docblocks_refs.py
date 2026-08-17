@@ -6,14 +6,17 @@ ts/c-cpp reference-resolution checkers `doc004_gate` dispatches to per
 block language (docs/modules/gates.md#doc004).
 """
 
-
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-from frob.gates._docblocks import _doc004_violation, _ProjectNamespaces, _read_toml
+from frob.gates._docblocks_shared import (
+    _doc004_violation,
+    _ProjectNamespaces,
+    _read_toml,
+)
 from frob.gates._models import Violation
 from frob.gitio import run_argv
 from frob.graph._models import GraphSnapshot

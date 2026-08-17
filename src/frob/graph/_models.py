@@ -14,7 +14,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
-from frob.lang import SymbolKind
+from frob.lang._models import SymbolKind
 
 __all__ = [
     "AckAuditEntry",

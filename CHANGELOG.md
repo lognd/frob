@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.482.0] - unreleased
+
+- T-2231: Break gates/lang/graph import cycle: _docblocks<->_docblocks_refs split plus lang<->graph.cache lazy-break not recognized by static cycle check
+
 ## [0.481.0] - unreleased
 
 - T-2242: Add frob release publish subcommand; retire Makefile upload bash recipe
