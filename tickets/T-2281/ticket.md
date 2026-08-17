@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 97f526b11061b2d124eb52fe303c46983033a717
 ---
 Filed while investigating T-2271. T-2271 suspected a lease-RECORDING defect in _sync_cross_worktree_lease/_evidence.py (a ticket driven to in-progress after a scope change while queued, in the same worktree, ends up with no lease). Reproduced that exact sequence directly (tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_change_while_queued_then_start_leases_with_post_change_scope) -- it records correctly, with the post-change scope. No defect there.
 
