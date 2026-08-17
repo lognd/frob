@@ -35,10 +35,9 @@ from frob.gates import (
     deprecated_current_references,
     deprecated_gate,
     drift_gate,
+    env_var_doc_gate,
     exclude_hazard_gate,
     fmt_gate,
-    root_asset_dir_gate,
-    env_var_doc_gate,
     generated_fixability,
     inv003_gate,
     inv004_gate,
@@ -51,6 +50,7 @@ from frob.gates import (
     load_coverage,
     prework_gate,
     record_prework,
+    root_asset_dir_gate,
     run_gates,
     scope_gate,
     stamp_baseline,
@@ -67,7 +67,7 @@ from frob.gates._deprecated_baseline import (
     DeprecatedBaselineLock,
     save_deprecated_baseline,
 )
-from frob.gates._docblocks import doc004_gate
+from frob.gates._docblocks import doc004_gate, doc012_gate
 from frob.gates._fixability_scan import FixabilityConflict
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._rule_id_scan import (
@@ -15692,6 +15692,101 @@ class TestDoc004ConsoleCommandDrift:
         violations = doc004_gate(tmp_path, snapshot)
 
         assert _by_rule(violations, "DOC004") == []
+
+
+# frob:waive DEAD001 reason="loaded dynamically via importlib.import_module by \
+# doc012_gate's shared _load_parser_factory (dotted-path config value), never a direct \
+# call-graph caller"
+def _doc012_fake_parser_factory():
+    """A tiny synthetic `argparse.ArgumentParser` with two top-level
+    subcommands (`widget`, `gadget`) -- importable via
+    `tests.test_gates:_doc012_fake_parser_factory` (`tests/` is a real
+    package), kept independent of frob's own live command count for the
+    same reason `tests/test_docblocks_gate.py::_fake_parser_factory`
+    (DOC005's own fixture) is."""
+    import argparse
+
+    parser = argparse.ArgumentParser(prog="acme")
+    sub = parser.add_subparsers(dest="subcommand")
+    sub.add_parser("widget", help="widget things")
+    sub.add_parser("gadget", help="gadget things")
+    return parser
+
+
+_DOC012_FAKE_CONFIG = (
+    '[[docblocks.commands]]\nprog = "acme"\n'
+    'parser = "tests.test_gates:_doc012_fake_parser_factory"\n'
+)
+
+
+# frob:ticket T-1783
+class TestDoc012CommandSectionGate:
+    """T-1783: DOC012 requires a dedicated `## `-level (or deeper) doc
+    section for every live top-level subcommand, not just a DOC005
+    command-table row -- driven by the same `[[docblocks.commands]]`
+    config DOC004/DOC005 already read, walked via a synthetic two-command
+    CLI so these tests never depend on frob's own live command count."""
+
+    def test_undocumented_subcommand_fails(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
+        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+        violations = doc012_gate(tmp_path)
+
+        stale = _by_rule(violations, "DOC012")
+        assert any(
+            v.severity == Severity.WARN and "gadget" in v.message for v in stale
+        )
+        assert not any("widget" in v.message for v in stale)
+
+    def test_documented_subcommand_passes(self, tmp_path: Path) -> None:
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
+        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        _write(
+            tmp_path,
+            "docs/modules/gadget.md",
+            "## `acme gadget` (CLI verb, T-9999)\n\nDoes gadget things.\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+        violations = doc012_gate(tmp_path)
+
+        assert _by_rule(violations, "DOC012") == []
+
+    def test_table_row_alone_does_not_satisfy(self, tmp_path: Path) -> None:
+        """A DOC005-satisfying README table row is not a dedicated
+        section -- DOC012 still fires (the whole point of the rule)."""
+        _git_init(tmp_path)
+        _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
+        _write(
+            tmp_path,
+            "README.md",
+            "## Commands\n\n| Command | Description |\n"
+            "|---|---|\n"
+            "| `acme widget` | does widget things |\n"
+            "| `acme gadget` | does gadget things |\n",
+        )
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+        violations = doc012_gate(tmp_path)
+
+        stale = _by_rule(violations, "DOC012")
+        assert any("widget" in v.message for v in stale)
+        assert any("gadget" in v.message for v in stale)
+
+    def test_no_config_means_no_checking(self, tmp_path: Path) -> None:
+        """No `[[docblocks.commands]]` entries at all -- fail-open, same
+        posture as DOC004/DOC005: a project that has not opted in gets
+        zero DOC012 checking, never a crash."""
+        _git_init(tmp_path)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+
+        violations = doc012_gate(tmp_path)
+
+        assert _by_rule(violations, "DOC012") == []
 
 
 # frob:ticket T-0499

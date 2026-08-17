@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.489.0] - unreleased
+
+- T-1783: New rule: every top-level CLI verb needs a dedicated doc section, not just a table row
+
 ## [0.488.0] - unreleased
 
 - T-2282: Agents strand themselves ending a turn with a pending background task: the guard enumerates slow commands instead of catching the stranding (3 stalls this session)

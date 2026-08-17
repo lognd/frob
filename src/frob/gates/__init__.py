@@ -90,7 +90,7 @@ from frob.gates._debt_deprecated import (
 )
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
-from frob.gates._docblocks import doc004_gate, doc005_gate
+from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
 from frob.gates._docenum import docenum001_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
@@ -6371,12 +6371,18 @@ def _build_thread_jobs(
         # rides alongside DOC004/DOC005/DOC006/DOCENUM001 under the same
         # "docblocks" gate name -- same repo-wide doc-drift concern, no
         # new stage-group registration needed (DOCENUM001's own precedent).
+        # T-1783: DOC012 (every live top-level subcommand needs its own
+        # dedicated doc section, not just a DOC005 table row) rides
+        # alongside the rest under the same "docblocks" gate name -- same
+        # `_console_command_sources`/`_console_trees` config surface,
+        # repo_root-scoped like DOC005's README half is.
         "docblocks": lambda: (
             *doc004_gate(st.repo_root, st.snapshot),
             *doc005_gate(st.repo_root),
             *doc006_gate(st.repo_root, st.snapshot),
             *docenum001_gate(st.repo_root, st.snapshot),
             *negexist001_gate(st.snapshot, st.queue),
+            *doc012_gate(st.repo_root),
         ),
         "fuzz": lambda: fuzz_gate(st.root, st.snapshot),
         # T-1340: SUPPRESS001, evidence-driven suppression-dialect

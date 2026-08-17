@@ -595,6 +595,11 @@ _KNOWN_GATE_RULES = frozenset(
         # at ERROR from birth (the other ~700 live DOC006 findings stay
         # WARN, a separate burn-down) (frob.gates._docptr).
         "DOC007",
+        # T-1783: a live top-level subcommand with no dedicated `## `-level
+        # (or deeper) doc section under docs/commands/ or docs/modules/ --
+        # a DOC005 table-row mention alone does not satisfy this
+        # (frob.gates._docblocks.doc012_gate).
+        "DOC012",
         # T-1227: `frob:enumerates` doc-claimed member-list AST-diff, ack-
         # immune (frob.gates._docenum).
         "DOCENUM001",

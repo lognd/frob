@@ -99,6 +99,26 @@ count claim is checked the same way, against the live top-level command
 count. See `doc005_gate` for the full mechanism -- it reuses
 `_console_command_sources`/`_console_trees` rather than a second
 registry-reading mechanism.
+
+DOC012 (T-1783): a DEEPER obligation than DOC005 -- a command-table row
+mentioning a subcommand is not the same as that subcommand having its own
+documentation. Motivating case (T-1611/T-1610's docs-completeness sweep):
+`frob coverage` had a README/cli.md table row (satisfying DOC005) but no
+dedicated section anywhere describing its own flags/behavior in depth --
+its content lived only as a passing aside inside a different doc's
+section about a different topic. DOC012 requires, for every top-level
+subcommand the SAME live `_console_trees` walk exposes, at least one
+`## `-level (or deeper) markdown heading somewhere under `docs/commands/`
+or `docs/modules/` whose heading text names that subcommand (a `#
+frob <name>` / a backtick-quoted `frob <name>` heading, see
+`_doc012_heading_command` --
+the first two heading tokens after stripping markup must be `<prog>
+<name>`; trailing parenthetical ticket refs and inline code backticks
+around the whole phrase are both tolerated). A table-row mention alone
+never satisfies it -- only a dedicated heading does. WARN at first-turn-
+on (T-0688's new-gate-at-WARN precedent, same posture DOC006 shipped
+under -- this repo carries real DOC012 debt at ship time). See
+`doc012_gate`.
 """
 
 from __future__ import annotations
@@ -118,7 +138,7 @@ if TYPE_CHECKING:
 
 _log = get_logger(__name__)
 
-__all__ = ["doc004_gate", "doc005_gate"]
+__all__ = ["doc004_gate", "doc005_gate", "doc012_gate"]
 
 
 # ---------------------------------------------------------------------------
@@ -730,6 +750,138 @@ def _doc005_cli_table_freshness_violations(root: Path) -> list[Violation]:
             f"docs --sync-commands` to regenerate it",
         )
     ]
+
+
+# ---------------------------------------------------------------------------
+# DOC012 (T-1783): every top-level CLI verb needs a dedicated doc section,
+# not just a command-table row.
+# ---------------------------------------------------------------------------
+
+# A markdown ATX heading of any depth ("#".."######"), capturing the text
+# after the hashes.
+_DOC012_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
+
+# The heading text's first two whitespace-separated tokens, after stripping
+# a leading/trailing backtick from each token and any trailing parenthetical
+# (" (T-1234)", " (CLI verb, T-1516/T-1525)") from the whole heading text
+# first -- `_doc012_heading_command` does the parenthetical strip; this
+# regex only pulls the two bare tokens once that's done.
+_DOC012_HEADING_COMMAND_RE = re.compile(r"^`?(\S+)`?\s+`?(\S+)`?")
+
+
+def _doc012_heading_command(heading_text: str) -> tuple[str, str] | None:
+    """`(prog, name)` if `heading_text` (already stripped of its leading
+    `#`s) names a subcommand in the `# frob <name>` shape (a backtick-
+    quoted `frob <name>` heading also resolves) DOC012 recognizes, else
+    `None`. A trailing parenthetical (ticket ref, "(CLI verb, ...)") is
+    stripped before matching so `## frob coverage (T-1516/T-1525)` still
+    resolves to `("frob", "coverage")`."""
+    text = re.sub(r"\s*\([^)]*\)\s*$", "", heading_text).strip()
+    match = _DOC012_HEADING_COMMAND_RE.match(text)
+    if match is None:
+        return None
+    prog, name = match.group(1).strip("`"), match.group(2).strip("`,.:")
+    if not prog or not name:
+        return None
+    return (prog, name)
+
+
+# T-1783
+def _doc012_documented_commands(
+    root: Path, prog: str
+) -> frozenset[str]:
+    """Every subcommand `prog` has a dedicated `## `-or-deeper heading for,
+    anywhere under `docs/commands/**.md` or `docs/modules/**.md` (T-1783) --
+    scanned once per gate run, not per subcommand."""
+    documented: set[str] = set()
+    for doc_path in _tracked_md_files(root):
+        if not (
+            doc_path.startswith("docs/commands/")
+            or doc_path.startswith("docs/modules/")
+        ):
+            continue
+        text = _read_md(root, doc_path)
+        if text is None:
+            continue
+        for line in text.splitlines():
+            heading_match = _DOC012_HEADING_RE.match(line)
+            if heading_match is None:
+                continue
+            command = _doc012_heading_command(heading_match.group(2))
+            if command is not None and command[0] == prog:
+                documented.add(command[1])
+    return frozenset(documented)
+
+
+def _doc012_violation(name: str, prog: str) -> Violation:
+    """Build one DOC012 finding -- WARN at first-turn-on, per the T-0688
+    new-gate-at-WARN precedent DOC006 already established: this repo
+    itself has a real, non-trivial DOC012 debt (measured: 24 top-level
+    subcommands with no dedicated section, T-1783's own investigation) at
+    the moment this rule ships, so an immediate ERROR would red every
+    land fleet-wide over pre-existing content, not new drift this diff
+    introduced. See "DOC012 dedicated command-section drift-lock" in
+    docs/modules/gates.md for the burn-down disclosure."""
+    return Violation(
+        rule="DOC012",
+        severity=Severity.WARN,
+        file="docs/commands/",
+        line=0,
+        message=(
+            f"DOC012: real subcommand `{prog} {name}` has a command-table "
+            f"row (or is otherwise live) but no dedicated `## `-level (or "
+            f"deeper) doc section anywhere under docs/commands/ or "
+            f"docs/modules/ naming it -- a table row alone does not "
+            f"document its flags/behavior; add a `# {prog} {name}` (or "
+            f"`## `) heading somewhere under one of those two trees"
+        ),
+    )
+
+
+# frob:doc docs/modules/gates.md#doc012-dedicated-command-section-drift-lock-t-1783
+# frob:tests \
+# tests/test_gates.py::TestDoc012CommandSectionGate.test_undocumented_subcommand_fails
+# frob:tests \
+# tests/test_gates.py::TestDoc012CommandSectionGate.test_documented_subcommand_passes
+# frob:tests \
+# tests/test_gates.py::TestDoc012CommandSectionGate.test_table_row_alone_does_not_satis\
+# fy
+# frob:tests \
+# tests/test_gates.py::TestDoc012CommandSectionGate.test_no_config_means_no_checking
+def doc012_gate(root: Path) -> tuple[Violation, ...]:
+    """DOC012 (T-1783): for every top-level subcommand the SAME live
+    `[[docblocks.commands]]`-configured registry DOC004/DOC005 already
+    walk exposes, require at least one dedicated `## `-level (or deeper)
+    markdown heading somewhere under `docs/commands/` or `docs/modules/`
+    whose text names it (`_doc012_heading_command`) -- a DOC005 table-row
+    mention alone does not satisfy this, deliberately: DOC005 asks "is the
+    command listed", DOC012 asks "is the command's own behavior actually
+    documented somewhere". WARN at first-turn-on (T-0688 precedent, same
+    posture DOC006 shipped under -- see `_doc012_violation`). No
+    `[[docblocks.commands]]` entries configured means no checking happens
+    -- fail-open, same posture as DOC004/DOC005."""
+    root = Path(root)
+    console_sources = _console_command_sources(root)
+    if not console_sources:
+        return ()
+    console_trees = _console_trees(root, console_sources)
+    if not console_trees:
+        return ()
+
+    violations: list[Violation] = []
+    for source in console_sources:
+        tree = console_trees.get(source.parser)
+        if tree is None:
+            continue
+        live_commands = frozenset(tree.keys())
+        documented = _doc012_documented_commands(root, source.prog)
+        # frob:waive PERF004 reason="own distinct missing-set per console source, not \
+        # a shared re-sort"
+        for name in sorted(live_commands - documented):
+            violations.append(_doc012_violation(name, source.prog))
+
+    _log.info("doc012: %d violation(s) over docs/commands+modules", len(violations))
+    return tuple(violations)
 
 
 # T-1195 (LARGE001 residue split): the fenced-block parser, console-command

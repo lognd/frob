@@ -2,7 +2,7 @@
 id: T-1783
 title: 'New rule: every top-level CLI verb needs a dedicated doc section, not just
   a table row'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-07'
@@ -12,11 +12,49 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/_docblocks.py
+- src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_gates.py
+  reason: narrow package glob to the specific files DOC012 (new gate) touches
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_gates.py::TestDoc012CommandSectionGate::test_undocumented_subcommand_fails
+- tests/test_gates.py::TestDoc012CommandSectionGate::test_documented_subcommand_passes
+- tests/test_gates.py::TestDoc012CommandSectionGate::test_table_row_alone_does_not_satisfy
+- tests/test_gates.py::TestDoc012CommandSectionGate::test_no_config_means_no_checking
 designated_repro_test: null
 threat: null
 component: null
