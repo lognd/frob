@@ -1538,6 +1538,7 @@ def _write_ticket(
     created: str = "2026-01-01",
     tier: str = "ticket",
     runs_last: bool = False,
+    parent: str | None = None,
 ) -> None:
     """Write a minimal `tickets/<id>/ticket.md` fixture file with just the
     frontmatter fields `_parse_ticket_ledger_file` reads. `runs_last`
@@ -1545,9 +1546,13 @@ def _write_ticket(
     `frob ticket` output uses (`runs_last: true`/`runs_last: false`), the
     STRUCTURED field the parser reads -- never inferred from `title`, so a
     fixture whose title happens to say 'RUNS LAST' (mirroring T-1614's
-    real title) with `runs_last=False` must NOT be treated as deferred."""
+    real title) with `runs_last=False` must NOT be treated as deferred.
+    `parent` (T-2229), when given, is written the same way real `frob
+    ticket new --parent` output is; omitted entirely when `None` (mirrors
+    a ledger row with no `parent:` line at all, not a literal 'null')."""
     ticket_dir = tickets_dir / ticket_id
     ticket_dir.mkdir(parents=True)
+    parent_line = f"parent: {parent}\n" if parent is not None else ""
     (ticket_dir / "ticket.md").write_text(
         f"---\n"
         f"id: {ticket_id}\n"
@@ -1558,6 +1563,7 @@ def _write_ticket(
         f"priority: {priority}\n"
         f"tier: {tier}\n"
         f"runs_last: {'true' if runs_last else 'false'}\n"
+        f"{parent_line}"
         f"---\n",
         encoding="utf-8",
     )
@@ -1661,6 +1667,64 @@ class TestRottingTickets:
         flags = {t["id"]: t["runs_last"] for t in rotting}
         assert flags == {"T-0007": True, "T-0008": False}
 
+    # frob:ticket T-2229
+    def test_epic_with_active_child_is_flagged_has_active_child(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2229's measured incident: T-1623 (epic, rotting) had children
+        T-2223/T-2224 in-progress on main. `has_active_child` must read
+        `True` for the epic -- the child need not itself be rotting."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-1623", state="queued", priority="critical",
+            created="2020-01-01", tier="epic",
+        )
+        _write_ticket(
+            tickets_dir, "T-2223", state="in-progress", priority="high",
+            created=date.today().isoformat(), parent="T-1623",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        by_id = {t["id"]: t for t in rotting}
+        assert by_id["T-1623"]["has_active_child"] is True
+
+    # frob:ticket T-2229
+    def test_epic_with_no_children_at_all_is_not_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STILL-PASS: a genuinely undecomposed epic (no children at
+        all) must still read `has_active_child=False` -- it keeps rotting
+        under the ordinary message."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0009", state="queued", priority="critical",
+            created="2020-01-01", tier="epic",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        assert rotting[0]["has_active_child"] is False
+
+    # frob:ticket T-2229
+    def test_epic_whose_only_child_is_terminal_is_not_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A child that is `done`/`dropped` does NOT count as active --
+        an epic whose decomposition is fully finished (or whose only
+        child was dropped) is not 'being worked', it is either finished
+        or genuinely stalled again."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir, "T-0010", state="queued", priority="critical",
+            created="2020-01-01", tier="epic",
+        )
+        _write_ticket(
+            tickets_dir, "T-0011", state="done", priority="high",
+            created=date.today().isoformat(), parent="T-0010",
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        assert rotting[0]["has_active_child"] is False
+
 
 class TestPrintTicketRot:
     """`fleet_status._print_ticket_rot` (T-2182)."""
@@ -1703,6 +1767,47 @@ class TestPrintTicketRot:
         assert "NEEDS DECOMPOSITION (1):" in out
         assert "T-0004" in out.split("NEEDS DECOMPOSITION")[0]
         assert "T-0005" in out.split("NEEDS DECOMPOSITION")[1]
+
+    # frob:ticket T-2229
+    def test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2229's measured incident: an epic already decomposed (a
+        non-terminal child ticket exists) must print under 'DECOMPOSED,
+        BEING WORKED', never under 'NEEDS DECOMPOSITION' -- and must
+        still be reported (never dropped), same as the runs_last
+        precedent."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-0005",
+                    "priority": "critical",
+                    "tier": "epic",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                    "has_active_child": False,
+                },
+                {
+                    "id": "T-1623",
+                    "priority": "critical",
+                    "tier": "epic",
+                    "state": "queued",
+                    "age_days": 11,
+                    "threshold_days": 3,
+                    "has_active_child": True,
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 2" in out
+        assert "NEEDS DECOMPOSITION (1):" in out
+        assert "DECOMPOSED, BEING WORKED (1):" in out
+        assert "T-0005" in out.split("DECOMPOSED, BEING WORKED")[0]
+        assert "T-1623" in out.split("DECOMPOSED, BEING WORKED")[1]
 
     def test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]

@@ -16,6 +16,7 @@ from frob.tickets import (
     TicketKind,
     TicketQueue,
     TicketState,
+    TicketTier,
     doable,
     set_priority,
 )
@@ -28,6 +29,8 @@ def _ticket(
     priority: Priority = Priority.MEDIUM,
     created: date = date(2026, 1, 1),
     runs_last: bool = False,
+    tier: TicketTier = TicketTier.TICKET,
+    parent: str | None = None,
 ) -> Ticket:
     return Ticket(
         id=ticket_id,
@@ -38,7 +41,8 @@ def _ticket(
         created=created,
         priority=priority,
         blocked_by=(),
-        parent=None,
+        parent=parent,
+        tier=tier,
         scope=(),
         evidence=(),
         attachments=(),
@@ -167,3 +171,78 @@ class TestTick004QueueRot:
         assert "runs_last" in matches[0].message
         assert "RunsLastBlocked" in matches[0].message
         assert "work it" not in matches[0].message
+
+    # frob:ticket T-2229
+    def test_decomposed_epic_gets_a_distinct_message_not_work_it(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2229's measured incident: T-1623 (epic, rotting) had children
+        T-2223/T-2224 in-progress on main -- `parent` read as a
+        STRUCTURED field off the child ticket record. The message must
+        name the real state (already decomposed, being worked), never
+        'work it'. Must-still-pass: `test_stale_critical_ticket_flags`
+        above still gets the ordinary message for a plain leaf ticket."""
+        epic = _ticket(
+            ticket_id="T-1623",
+            priority=Priority.CRITICAL,
+            created=date.today() - timedelta(days=11),
+            tier=TicketTier.EPIC,
+        )
+        child = _ticket(
+            ticket_id="T-2223",
+            state=TicketState.IN_PROGRESS,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-1623",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [v for v in violations if v.rule == "TICK004" and "T-1623" in v.message]
+        assert len(matches) == 1
+        assert "already decomposed" in matches[0].message
+        assert "work it" not in matches[0].message
+
+    # frob:ticket T-2229
+    def test_undecomposed_epic_with_no_children_still_gets_work_it(
+        self, tmp_path: Path
+    ) -> None:
+        """MUST-STILL-PASS CONTROL: an epic/story with NO children at all
+        must still rot under the ordinary 'work it' message -- T-2229
+        explicitly forbids silencing rot for every epic/story tier."""
+        epic = _ticket(
+            ticket_id="T-3003",
+            priority=Priority.CRITICAL,
+            created=date.today() - timedelta(days=10),
+            tier=TicketTier.EPIC,
+        )
+        queue = TicketQueue(tickets={epic.id: epic})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [v for v in violations if v.rule == "TICK004" and "T-3003" in v.message]
+        assert len(matches) == 1
+        assert "work it" in matches[0].message
+
+    # frob:ticket T-2229
+    def test_epic_whose_only_child_is_terminal_still_gets_work_it(
+        self, tmp_path: Path
+    ) -> None:
+        """A `done`/`dropped` child does not count as active decomposition
+        -- an epic whose only child already finished (or was dropped)
+        keeps the ordinary rot message, not the 'being worked' one."""
+        epic = _ticket(
+            ticket_id="T-3004",
+            priority=Priority.CRITICAL,
+            created=date.today() - timedelta(days=10),
+            tier=TicketTier.EPIC,
+        )
+        child = _ticket(
+            ticket_id="T-3005",
+            state=TicketState.DONE,
+            priority=Priority.HIGH,
+            created=date.today(),
+            parent="T-3004",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = _tick004_queue_rot(tmp_path, queue)
+        matches = [v for v in violations if v.rule == "TICK004" and "T-3004" in v.message]
+        assert len(matches) == 1
+        assert "work it" in matches[0].message

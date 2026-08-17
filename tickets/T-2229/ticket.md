@@ -3,7 +3,7 @@ id: T-2229
 title: 'TICK004/fleet_status rot report tells an operator to ''work it'' on an already-decomposed
   epic (T-1623: children T-2223/T-2224 in-progress, epic still reported rotting with
   no acknowledgment)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -15,9 +15,28 @@ runs_last: false
 scope:
 - scripts/fleet_status.py
 - src/frob/gates/_tickets_gate.py
+- tests/test_tickets_priority.py
+- tests/unit/test_coordinator_scripts.py
+evidence_scope:
+- tests/test_tickets_priority.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: new repro/regression tests for the decomposed-epic rot fix
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: new repro/regression tests for the decomposed-epic rot fix
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_gets_a_distinct_message_not_work_it
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_decomposed_epic_prints_under_its_own_heading_not_needs_decomposition
+designated_repro_test: tests/test_tickets_priority.py::TestTick004QueueRot::test_decomposed_epic_gets_a_distinct_message_not_work_it
 threat: null
 component: null
 anchor: false

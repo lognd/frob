@@ -37,7 +37,7 @@ from frob.gates._mutation_evidence import (
     _quoted_char_ranges,
 )
 from frob.logging import get_logger
-from frob.tickets import Ticket, TicketQueue, TicketState, closed_ticket_ids
+from frob.tickets import Ticket, TicketQueue, TicketState, TicketTier, closed_ticket_ids
 from frob.tickets._models import Priority, TicketError
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _dir_glob as _tickets_dir_glob
@@ -280,8 +280,27 @@ def _tick004_rot_thresholds(root: Path) -> dict[Priority, int]:
         return dict(_TICK004_DEFAULT_ROT_DAYS)
 
 
+# frob:ticket T-2229
+def _has_active_child(t: Ticket, queue: TicketQueue) -> bool:
+    """Whether some OTHER ticket in `queue` carries `parent == t.id` AND
+    is non-terminal (state not `done`/`dropped`) -- read as a STRUCTURED
+    field off each candidate ticket record (`Ticket.parent`), never
+    inferred from title text or a hand-authored epic-id allowlist (T-2229:
+    do not fix it this way). `False` for a genuinely undecomposed
+    epic/story (no children at all, or every child already terminal) --
+    that case must still rot under `_tick004_queue_rot`'s ordinary
+    message, the ticket's own must-still-pass control."""
+    return any(
+        other.parent == t.id
+        and other.state not in (TicketState.DONE, TicketState.DROPPED)
+        for other in queue.tickets.values()
+        if other.id != t.id
+    )
+
+
 # frob:ticket T-0411
 # frob:ticket T-2200
+# frob:ticket T-2229
 # frob:enforces CHK-GATE-TICK004
 def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK004 (T-0411): WARN (escalating to ERROR at 2x threshold) per
@@ -318,7 +337,26 @@ def _tick004_queue_rot(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         if age_days <= threshold:
             continue
         severity = Severity.ERROR if age_days > threshold * 2 else Severity.WARN
-        if t.runs_last:
+        # T-2229: an epic/story that has already been decomposed (at least
+        # one non-terminal child ticket carries `parent == t.id`) has
+        # effectively already had "work it" taken -- the recommended
+        # action is a lie for it, the same defect SHAPE T-2200 fixed for
+        # runs_last tickets. Checked before runs_last since decomposition
+        # only applies to EPIC/STORY tier, disjoint from the leaf-only
+        # runs_last flag.
+        if t.tier in (TicketTier.EPIC, TicketTier.STORY) and _has_active_child(
+            t, queue
+        ):
+            message = (
+                f"TICK004: {t.id} ({t.priority.value} priority, {t.tier.value}) "
+                f"has sat {t.state.value} for {age_days}d (threshold {threshold}d) "
+                f"-- already decomposed and being worked (a non-terminal child "
+                f"ticket carries parent={t.id}); the age is real and still worth "
+                f"noting, but the recommended action is checking the children's "
+                f"own progress instead, or dropping/re-prioritizing this epic if "
+                f"the decomposition itself has stalled"
+            )
+        elif t.runs_last:
             message = (
                 f"TICK004: {t.id} ({t.priority.value} priority) has sat "
                 f"{t.state.value} for {age_days}d (threshold {threshold}d) "

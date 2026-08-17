@@ -479,11 +479,40 @@ PATH" contract.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file -->
 
-T-2182. `{"id", "state", "priority", "tier", "created"}` hand-parsed
-directly from a `tickets/<id>/ticket.md` file on disk (never `git show
-main:...` -- the live, uncommitted ledger is what a dispatch decision
-actually depends on). `None` if the file is unreadable or any required
-field is missing.
+T-2182. `{"id", "state", "priority", "tier", "created", "runs_last",
+"parent"}` hand-parsed directly from a `tickets/<id>/ticket.md` file on
+disk (never `git show main:...` -- the live, uncommitted ledger is what a
+dispatch decision actually depends on). `None` if the file is unreadable
+or any required field is missing. `tier` defaults to `ticket`, matching
+`TicketTier`'s own default for a ledger row written before tiers
+existed.
+
+T-2200: `runs_last` is read as the STRUCTURED `runs_last:` ledger line
+`frob ticket new --runs-last` writes, never inferred from `title` text --
+T-1614's own title happens to start with the literal string 'RUNS LAST',
+which is exactly the lexical shortcut that would silently miss every
+OTHER `runs_last` ticket whose title does not happen to say so. Missing
+defaults to `False`.
+
+T-2229: `parent` is read the same way, as the STRUCTURED `parent:`
+ledger line (`None` for a missing line or the YAML-null spellings this
+repo's writer emits, never the literal string "null"), never inferred
+from title text -- the field `_epics_with_active_children` compares
+against.
+
+### `_epics_with_active_children`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_epics_with_active_children -->
+
+T-2229. Ticket ids that have at least one OTHER ticket under
+`TICKETS_DIR` carrying `parent == <this id>` in a non-terminal state
+(`_TERMINAL_STATES`, mirrors `TicketState.DONE`/`DROPPED`) -- ONE scan
+over every ticket dir (not just rotting ones), shared by `rotting_
+tickets` so its "already decomposed" bucket agrees with `frob.gates.
+_tickets_gate._has_active_child`'s own predicate exactly (same field,
+same terminal-state definition). Measured incident: T-1623 (epic,
+rotting) had children T-2223/T-2224 in-progress on main, but the report
+told the operator to "work it" -- an action already effectively taken.
 
 ### `rotting_tickets`
 
@@ -496,22 +525,49 @@ ledger's own structured fields compared against configured thresholds,
 never by parsing `frob check`'s rendered TICK004 text. Mirrors
 `_tick004_queue_rot`'s own selection exactly. Each entry carries `tier`
 so a caller can distinguish a rotting leaf ticket (needs dispatch) from
-a rotting epic/story (needs decomposition).
+a rotting epic/story (needs decomposition), plus (T-2229)
+`has_active_child` (`_epics_with_active_children`) so a caller can
+further distinguish a genuinely undecomposed epic/story from one that
+has already been decomposed and is being worked.
+
+### `_rotting_entry`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_rotting_entry -->
+
+T-2229 (ARCH001 split off `rotting_tickets`). One `rotting_tickets`
+entry for a single `ticket_dir`, or `None` if it is unreadable/malformed,
+not QUEUED/PLANNED, or still under its priority's threshold -- the
+per-file half of `rotting_tickets`, letting the directory-walk/sort half
+stay readable on its own.
+
+### `_print_rot_bucket`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_rot_bucket -->
+
+T-2229 (ARCH001 split off `_print_ticket_rot`). Prints one TICKET ROT
+bucket -- a `  HEADING (N):` line plus one `    id ...` line per ticket,
+optional trailing `detail` text (a `{id}`-format string) -- shared by all
+four buckets `_print_ticket_rot` renders, replacing what used to be four
+near-identical inline loops.
 
 ### `_print_ticket_rot`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot -->
 
 T-2182. Prints the TICKET ROT section: `rotting_tickets`'s count, split
-under two headings naming the required action -- 'NEEDS DISPATCH' for
-`tier=ticket`, 'NEEDS DECOMPOSITION' for `tier=epic`/`tier=story`.
-Epics are NOT exempted, only reported under their own action heading
-(measured incident: 10 of 15 rotting tickets were epics, 1 a story, only
-4 leaf tickets -- one undifferentiated count told a coordinator to do
-something impossible for two thirds of the set, which is why the alarm
-read as noise for a whole session). Printed unconditionally inside
-`_print_fleet_report`; TICK004 already fires in `frob check`'s gate
-layer but sat as 11 lines inside a 19-error list there.
+under headings naming the required action -- 'NEEDS DISPATCH' for
+`tier=ticket`, 'NEEDS DECOMPOSITION' for a genuinely undecomposed
+`tier=epic`/`tier=story`, and (T-2229) 'DECOMPOSED, BEING WORKED' for an
+epic/story that already has a non-terminal child (`has_active_child`) --
+'work it'/'needs decomposition' is a lie for it, the action is already
+effectively taken. Epics are NOT exempted from the report either way,
+only reported under their own action heading (measured incident: 10 of
+15 rotting tickets were epics, 1 a story, only 4 leaf tickets -- one
+undifferentiated count told a coordinator to do something impossible for
+two thirds of the set, which is why the alarm read as noise for a whole
+session). Printed unconditionally inside `_print_fleet_report`; TICK004
+already fires in `frob check`'s gate layer but sat as 11 lines inside a
+19-error list there.
 
 ### `_ticket_readiness_lines`
 
