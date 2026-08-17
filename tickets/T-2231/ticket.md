@@ -117,6 +117,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 18ce2088a7234357fa4b2c9c838bfdc24b65abae
 ---
 Leaf of T-2202 (epic). Measured directly from 'uv run frob check --only cycle' on 2026-08-16, which now differs from T-2202's originally recorded cluster (T-2202 described a 5-file cluster ending at graph/cache.py; today's is 6 files and also includes graph/_models.py). The growth is attributable to T-2211 (landed after T-2202 was filed), which fixed resolve_local_import to stop dropping imported names for the 'from X import submodule' idiom -- previously-invisible edges through that idiom are now real graph edges. Not a regression; do not revert anything.
