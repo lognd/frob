@@ -2399,7 +2399,7 @@ class TestCommittedWaiveDeletionRefusal:
         filtered out because the file never appears in this branch's own
         `_branch_changed_files` set."""
         (repo / "src" / "other.py").write_text(
-            '# frob:waive PERF001 reason="old wording"\n' "def g():\n    pass\n"
+            '# frob:waive PERF001 reason="old wording"\ndef g():\n    pass\n'
         )
         _commit_all(repo, "add other.py with a live PERF001 waiver")
 
@@ -2443,7 +2443,7 @@ class TestCommittedWaiveDeletionRefusal:
             "def g():\n    pass\n"
         )
         (repo / "src" / "third.py").write_text(
-            '# frob:waive DUP001 reason="old wording"\n' "def h():\n    pass\n"
+            '# frob:waive DUP001 reason="old wording"\ndef h():\n    pass\n'
         )
         _commit_all(repo, "add other.py and third.py, each with a live waiver")
 
@@ -5285,6 +5285,105 @@ class TestDirtOwnedByNoOpenTicket:
         assert _dirt_owned_by_no_open_ticket(repo, ("src/finished.py",)) is True
 
 
+# frob:ticket T-2118
+class TestDirtOwnerTickets:
+    """T-2118: `_dirt_owner_tickets` -- names WHICH other open ticket(s)
+    own dirt that does not belong to the landing ticket's own scope, the
+    refinement `_dirt_owned_by_no_open_ticket`'s binary signal cannot
+    provide (T-2071's measured incident shape: dirt belongs to some
+    OTHER open ticket, just not the landing one)."""
+
+    # frob:ticket T-2118
+    def test_path_owned_by_another_open_ticket_names_it(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_another_op\
+        # en_ticket_names_it
+        from frob.tickets._land import _dirt_owner_tickets
+
+        created = new_ticket(repo, _spec("Other work", scope=("src/other.py",)))
+        assert created.is_ok
+        other_id = created.danger_ok.id
+        assert transition(repo, other_id, TicketState.PLANNED).is_ok
+
+        landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        assert transition(repo, landing_id, TicketState.PLANNED).is_ok
+
+        owners = _dirt_owner_tickets(repo, ("src/other.py",), landing_id)
+        assert owners == {"src/other.py": [other_id]}
+
+    # frob:ticket T-2118
+    def test_path_owned_by_landing_ticket_itself_is_excluded(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_landing_ti\
+        # cket_itself_is_excluded
+        from frob.tickets._land import _dirt_owner_tickets
+
+        landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        assert transition(repo, landing_id, TicketState.PLANNED).is_ok
+
+        owners = _dirt_owner_tickets(repo, ("src/mine.py",), landing_id)
+        assert owners == {}
+
+    # frob:ticket T-2118
+    def test_path_owned_by_no_open_ticket_is_excluded(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_path_owned_by_no_open_ti\
+        # cket_is_excluded
+        from frob.tickets._land import _dirt_owner_tickets
+
+        landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        assert transition(repo, landing_id, TicketState.PLANNED).is_ok
+
+        owners = _dirt_owner_tickets(repo, ("src/coordinator_edit.py",), landing_id)
+        assert owners == {}
+
+    # frob:ticket T-2118
+    def test_dirty_main_refusal_names_the_owning_ticket(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestDirtOwnerTickets.test_dirty_main_refusal_names\
+        # _the_owning_ticket
+        """T-2071's own measured incident shape: dirt in root belongs to
+        SOME other open ticket's declared scope, not the landing ticket's.
+        The refusal log line must name that other ticket explicitly rather
+        than falling through to the generic 'has uncommitted changes in:'
+        message with no hint who to ask."""
+        from frob.tickets._land import _log_dirty_main_refusal
+
+        created = new_ticket(repo, _spec("Other work", scope=("src/other_owned.py",)))
+        assert created.is_ok
+        other_id = created.danger_ok.id
+        assert transition(repo, other_id, TicketState.PLANNED).is_ok
+
+        landing = new_ticket(repo, _spec("Landing work", scope=("src/mine.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        assert transition(repo, landing_id, TicketState.PLANNED).is_ok
+
+        (repo / "src").mkdir(exist_ok=True)
+        (repo / "src" / "other_owned.py").write_text("dirty\n")
+        _run(["git", "add", "src/other_owned.py"], repo)
+
+        # T-2118: clear the setup-phase log records (ticket creation itself
+        # logs INFO lines naming both ticket ids) so the assertion below can
+        # only be satisfied by the REFUSAL message itself naming the owner,
+        # not by an unrelated earlier log line that happens to mention the
+        # same id.
+        caplog.clear()
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            _log_dirty_main_refusal(repo, repo / "worktree", landing_id)
+
+        assert other_id in caplog.text
+        assert "src/other_owned.py" in caplog.text
+
+
 # frob:ticket T-0338
 class TestRebuildNatives:
     """T-0338: `land`'s optional `rebuild_natives` callback -- invoked only
@@ -7529,9 +7628,7 @@ class TestCommittedDiffGuardRegistryCompleteness:
         # entry, or removed from source without removing its entry):
         # cross-references the FIXED expected call-site set above against
         # the registry's own tracked names, in both directions.
-        registered = frozenset(
-            guard.name for guard in _land_mod._COMMITTED_DIFF_GUARDS
-        )
+        registered = frozenset(guard.name for guard in _land_mod._COMMITTED_DIFF_GUARDS)
         missing_from_registry = self._EXPECTED_CALL_SITES - registered
         assert not missing_from_registry, (
             f"guard(s) called in the land preflight sequence but not "
@@ -7639,7 +7736,13 @@ class TestLandRepairMarker:
         (repo / "advance.txt").write_text("a real commit landed since the marker\n")
         _run(["git", "add", "advance.txt"], repo)
         _run(
-            ["git", "commit", "-q", "-m", "advance main past the marker's recorded tip"],
+            [
+                "git",
+                "commit",
+                "-q",
+                "-m",
+                "advance main past the marker's recorded tip",
+            ],
             repo,
         )
         drifted = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
@@ -9404,7 +9507,9 @@ class TestLandPlan:
         # type` (CHECK001) before the `tickets` gate family ever runs --
         # this designated repro needs a REAL `gate:TICK` evaluation, so
         # give it one.
-        (repo / "pyproject.toml").write_text('[project]\nname = "x"\nversion = "0.0.0"\n')
+        (repo / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.0.0"\n'
+        )
         _commit_all(repo, "chore: add pyproject.toml so frob check can dispatch")
 
         # A pre-existing, already-rotten ticket on `root` -- CRITICAL

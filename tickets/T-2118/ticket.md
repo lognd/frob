@@ -2,7 +2,7 @@
 id: T-2118
 title: DirtyMain refusal should name the OWNING ticket when dirt belongs to another
   open ticket, not just no-ticket
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'
@@ -13,9 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land.py
+- tests/test_ticket_land.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: COV002/BUG002 evidence for T-2118 lives in this test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
+- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_another_open_ticket_names_it
+- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_landing_ticket_itself_is_excluded
+- tests/test_ticket_land.py::TestDirtOwnerTickets::test_path_owned_by_no_open_ticket_is_excluded
+designated_repro_test: tests/test_ticket_land.py::TestDirtOwnerTickets::test_dirty_main_refusal_names_the_owning_ticket
 threat: null
 component: null
 anchor: false

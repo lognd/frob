@@ -2158,6 +2158,46 @@ def _dirt_owned_by_no_open_ticket(root: Path, dirty_paths: tuple[str, ...]) -> b
     return True
 
 
+# frob:ticket T-2118
+def _dirt_owner_tickets(
+    root: Path, dirty_paths: tuple[str, ...], ticket_id: str
+) -> dict[str, list[str]]:
+    """Per dirty path, the ids of every currently open (non-terminal)
+    ticket OTHER than `ticket_id` whose declared `scope` covers it --
+    the T-2071/T-2118 refinement of `_dirt_owned_by_no_open_ticket`'s
+    binary signal. That function only tells "owned by no ticket at all"
+    apart from everything else; this one names WHICH other ticket(s) own
+    dirt that does not belong to the landing ticket, so `_log_dirty_main_
+    refusal` can say "this belongs to T-XXXX" instead of falling through
+    to the generic "has uncommitted changes in: ..." message that gave
+    no hint who to ask (T-2071's measured incident shape: dirt DOES
+    belong to some other open ticket's scope, just not the landing
+    ticket's).
+
+    Best-effort and fail-CLOSED like its sibling: an unreadable ledger
+    yields an empty mapping (every path reported as owned-by-nobody-named,
+    the caller's generic message is always safe)."""
+    from frob.tickets._models import scope_matches
+    from frob.tickets._store import load_all
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return {}
+    owners: dict[str, list[str]] = {}
+    for path in dirty_paths:
+        matched: list[str] = []
+        for other_id, ticket in loaded.danger_ok.items():
+            if other_id == ticket_id:
+                continue
+            if ticket.state not in _NON_TERMINAL_TICKET_STATES:
+                continue
+            if scope_matches(path, ticket.scope, kind=ticket.kind, ticket_id=other_id):
+                matched.append(other_id)
+        if matched:
+            owners[path] = matched
+    return owners
+
+
 # frob:ticket T-2026
 _ORPHANED_NEW_TICKET_DIR_RE = re.compile(rf"^tickets/({_TICKET_ID_RE})/$")
 
@@ -2414,7 +2454,13 @@ def _log_dirty_main_refusal(root: Path, worktree: Path, ticket_id: str) -> None:
     in-progress edits, most often). Three agents this session each
     misdiagnosed that exact shape as "a crashed land left dirt" and
     burned their budget looking for one; naming the real cause
-    explicitly is the fix."""
+    explicitly is the fix.
+
+    T-2118: when the dirt instead DOES belong to some OTHER open
+    ticket's declared scope (just not `ticket_id`'s own), name that
+    ticket explicitly rather than falling through to the generic
+    "has uncommitted changes in: ..." message -- T-2071's own measured
+    incident shape."""
     from frob.tickets._land_git_ops import _porcelain_dirty_paths, describe_root_dirt
 
     dirty_paths = _porcelain_dirty_paths(root)
@@ -2429,6 +2475,27 @@ def _log_dirty_main_refusal(root: Path, worktree: Path, ticket_id: str) -> None:
             ticket_id,
             root,
             describe_root_dirt(root),
+            root,
+            ticket_id,
+            worktree,
+        )
+        return
+    owners = _dirt_owner_tickets(root, dirty_paths, ticket_id)
+    if owners:
+        owned_desc = "; ".join(
+            f"{path} (owned by {', '.join(owner_ids)})"
+            for path, owner_ids in owners.items()
+        )
+        _log.error(
+            "land: %s refused -- %s has uncommitted changes belonging to "
+            "ANOTHER open ticket's declared scope, not %s's own: %s; that "
+            "ticket's own worktree must commit or land its work first "
+            "(git -C %s status), then retry `frob ticket land %s "
+            "--worktree %s`",
+            ticket_id,
+            root,
+            ticket_id,
+            owned_desc,
             root,
             ticket_id,
             worktree,
