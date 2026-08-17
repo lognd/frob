@@ -9,6 +9,7 @@ priority: critical
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - Makefile
 - src/frob/testing/**
@@ -122,8 +123,8 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
-- tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
+- tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
+- tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 designated_repro_test: null
 attachments:
@@ -141,14 +142,38 @@ acceptance:
     WHEN the bounded deadline elapses THEN the run fails loudly with a diagnostic
     instead of hanging indefinitely
   evidence:
-  - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
-  - tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
+  - tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
+  - tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
 - text: GIVEN the futex-owner root cause is identified WHEN the fix lands THEN back-to-back
     make coverage runs complete without a wedge
   evidence:
   - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
+evidence_changes:
+- old_node: tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout
+  new_node: tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
+  reason: 'T-2256: T-2240 retired the Makefile-text-slicing coverage tests. Shared
+    claim: a subprocess spawned by the coverage recipe is wrapped in a bounded wall-clock
+    deadline that kills a wedged/never-finishing child instead of hanging forever
+    (T-1433''s own field incident shape). The bounded-timeout mechanism moved from
+    Makefile-level ''timeout -k 30 '' text into native_coverage_refresh''s _spawn_with_watchdog,
+    which wraps every subprocess this module spawns including serial reruns; this
+    node proves the wall-clock deadline kill directly against real spawned subprocesses.'
+  actor: logan
+  at: '2026-08-17'
+- old_node: tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging
+  new_node: tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
+  reason: 'T-2256: T-2240 retired the Makefile-text-slicing coverage tests. Shared
+    claim: ground-truth proof the deadline-wrapping mechanism actually kills a wedged
+    child (a silent futex_wait-style hang, the exact 2026-08-06 field incident shape)
+    within a small bounded window instead of hanging, not just decorative recipe text.
+    Successor proves the no-progress watchdog trips and kills a real subprocess that
+    goes silent mid-run.'
+  actor: logan
+  at: '2026-08-17'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
 ---
 Two independent full `make coverage` runs wedged identically in the serial
 rerun phase (the `-n 0 --cov-append --junitxml=.frob/last-coverage-rerun.xml`
@@ -188,3 +213,47 @@ deadline and kill-and-report instead of hanging forever), and the root
 cause futex owner must be identified and fixed. Reproduction: run
 make coverage twice back-to-back; observe the second (or even first)
 run's rerun-phase CPU flatline via ps -o cputimes.
+
+## Done report
+
+Final causal chain, established across four instrumented reproductions
+on 2026-08-02/03:
+
+1. At COVERAGE_WORKERS=4 on this 4-core WSL box, one coverage-traced
+   xdist worker is reproducibly killed by an uncatchable signal
+   (OOM-shaped: no faulthandler trace despite faulthandler being
+   enabled, "node down: Not properly terminated", kill point varies
+   from 21 percent to 99 percent of the run -- systemic memory
+   pressure, not one heavy test).
+2. After the death, pytest-xdist's scheduler deadlocks: SIGUSR1 stack
+   dumps (tests/conftest.py instrumentation built by this ticket) show
+   the master parked in dsession.loop_once queue.get and every
+   surviving worker parked in remote.run_one_test waiting for the next
+   command -- a protocol deadlock, no lock involved.
+
+Delivered by this ticket across its sessions: the serial-rerun timeout
+bound; the xdist-phase COVERAGE_XDIST_DEADLINE bound; SIGUSR1
+all-thread stack-dump instrumentation (FROB_COVERAGE_STACKDUMP=1) plus
+faulthandler_timeout; xdist_group serialization of the three known
+full-repo self-scan tests; and the operational fix -- COVERAGE_WORKERS
+defaults to 2, the measured-safe width (the 2026-08-03 2-worker run
+completed with zero worker deaths, the first clean completion after
+four consecutive 4-worker wedges).
+
+Remainder is tracked, not lost: T-1472 (capture direct kernel OOM
+evidence; broaden the heavy-test allowlist) stays the follow-up for
+proving the kill mechanism at the kernel level and for any future
+attempt to raise the width back to 4.
+
+### Changed
+(no changed files detected)
+
+### Evidence
+- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_both_serial_reruns_are_wrapped_in_a_bounded_timeout` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestSerialRerunHasABoundedDeadline::test_timeout_wrapping_kills_a_wedged_child_instead_of_hanging` (pytest node id, verified passing when recorded)
+- `tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group` (pytest node id, verified passing when recorded)
+
+### Captured claims
+- tests: 3 passed (from 3 evidence id(s))
+- gates: 0 error(s), 2134 warning(s), 740 waived
+- error-findings: none (measured, zero errors)

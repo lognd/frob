@@ -2,7 +2,7 @@
 id: T-2256
 title: Repoint the 28 orphaned COV003 evidence ids from T-2240's legitimate test retirement
   (47% of the error floor, 11 archived tickets)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -13,29 +13,52 @@ sprint: null
 runs_last: false
 scope:
 - tickets/archive
+evidence_scope:
+- tests/unit/test_app_runners_batch6.py
+- tests/test_coverage.py
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+- tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
+- tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
+- tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
 designated_repro_test: null
 acceptance:
 - text: An unscoped frob check reports 0 COV003 findings naming tests/unit/test_makefile_coverage.py
     (currently 28)
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
 - text: Every repointed citation names a test carrying the SAME claim as the deleted
     node; state old node, new node, and shared claim per ticket
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
+  - tests/test_coverage.py::TestSpawnWithWatchdog::test_wall_clock_deadline_kills_and_reports
+  - tests/test_coverage.py::TestSpawnWithWatchdog::test_no_progress_deadline_kills_a_silent_hang
 - text: Any orphaned citation with no surviving equivalent is reported explicitly,
     never repointed to an approximation
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 - text: 'MUST-STILL-PASS: the surviving 195-line test file is unchanged, and the floor
     drops by the number cleared -- verified by unscoped check with gate-summary present
     both times'
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
 - text: No production code path changes
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestCoverageRecipeDelegatesToFrobCoverageFull::test_recipe_calls_frob_coverage_full
+  - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_coverage_failure_exits_1
+  - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 threat: null
 component: null
 anchor: false
 anchor_reason: null
+land_commit: null
 ---
 # Repoint the 28 orphaned COV003 evidence ids left by T-2240's legitimate test retirement -- 47% of the current error floor
 
@@ -130,3 +153,5 @@ Ledger-only: `tickets/archive/**` and `tickets.md`, driven through
 already documents the deletion-filter land rule; the guard that should have
 PREVENTED this is T-2255 (critical, filed) -- this ticket is the cleanup, not
 the prevention. Do not conflate them.
+
+<!-- frob:no-behavior-change reason="this ticket only rebinds/re-points stale ticket evidence (frob ticket evidence --replace) on archived tickets -- no production code path changed, only tickets.md/tickets/archive/**/ticket.md ledger content plus this ticket's own evidence binding. There is no defect for a designated repro test to reproduce; this is the same posture T-1941 recorded for the identical defect class." -->
