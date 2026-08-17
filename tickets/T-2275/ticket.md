@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8973e88837ca28a322fa8069a3268681f56c7bbb
 ---
 T-2255 gave `_check_orphaned_evidence_deletion` a process-local
 `_OrphanEvidenceCheckOutcome` record (`_LAST_ORPHAN_EVIDENCE_OUTCOME` in
