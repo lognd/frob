@@ -79,7 +79,7 @@ threat: null
 component: verify
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b592fdd93a23630ad7c5041204c7dcc3d6ca3a7e
 ---
 MEASURED 2026-08-17 evening: the whole 5-agent fleet was deadlocked for
 ~90 minutes. Zero lands completed. Root cause was a pinned verify
