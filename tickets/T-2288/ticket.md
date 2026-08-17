@@ -2,7 +2,7 @@
 id: T-2288
 title: 'Recover three confirmed stranded lands: T-2097 (t-2097), T-1479 (t1539-series),
   T-1238 explore slice (532799ac)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,23 +11,39 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- tickets/T-2288/**
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-2288/**
+  reason: ledger-only recovery/investigation ticket, no code scope needed
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given branch t-2097, when its T-2097 work is landed, then T-2097 is terminal
     on main and git show --stat confirms the test fix arrived
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given branch t1539-series, when its T-1479 work is landed, then the frob map
     --json daemon proxy feature is present on main
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given commit 532799ac, when T-1238's explore slice is landed or explicitly
     re-scoped, then T-1238's state on main matches its Done report rather than reading
     queued
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given all three are resolved, when frob ticket reconcile runs, then none of
     these three branches is reported as carrying unlanded work
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: tickets
 anchor: false
