@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 632bc2d02c89d179614690a3d4f80bafac69170f
 ---
 T-2310 implemented the automatic watermark-drain machinery in full
 (frob.verify._drain: spawn_deferred_drain, run_drain_async, DrainError;
