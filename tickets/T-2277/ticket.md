@@ -2,7 +2,7 @@
 id: T-2277
 title: 'REL001: pyproject.toml release-readiness finding has no owning ticket (T-2268
   triage)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
