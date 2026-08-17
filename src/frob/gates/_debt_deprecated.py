@@ -14,6 +14,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from tree_sitter import Node, Tree
+
 from frob.exports import _IMPORT_LINE_RE
 from frob.gates._deprecated_baseline import (
     file_reference_counts,
@@ -21,7 +23,7 @@ from frob.gates._deprecated_baseline import (
 )
 from frob.gates._models import DebtEntry, DeprecatedEntry, Severity, Violation
 from frob.graph import Edge, EdgeKind, GraphSnapshot
-from frob.lang import iter_identifiers, parse_file
+from frob.lang import iter_identifiers, parse_file, raw_tree
 from frob.logging import get_logger
 from frob.tickets import TicketQueue
 from frob.xref import _collect_source_files, _definition_symbols
@@ -484,23 +486,80 @@ def _bare_symbol_name(edge_src: str) -> str:
     return qualname.rsplit(".", 1)[-1]
 
 
-#: Matches a call-shaped usage of a bare identifier (`name(` or `name (`,
-#: allowing a preceding `.` for a qualified call like `mod.run(`) but not
-#: a `def name(...)`/`class name(...)` declaration line itself -- narrows
-#: `deprecated_current_references`'s xref side to actual invocations,
-#: since a bare short identifier (e.g. a runner module's `run`) is
-#: otherwise reused as a completely unrelated function name/parameter/
-#: attribute across an unrelated part of the tree (T-0639).
-def _looks_like_call(symbol: str, context: str) -> bool:
-    """Whether `context` (one source line) looks like it CALLS `symbol`,
-    rather than merely mentioning or (re)declaring it -- a lightweight
-    textual heuristic, not a parse: a `def `/`class ` prefix is excluded
-    outright, otherwise the line must contain `symbol` immediately
-    followed by `(` (whitespace allowed in between)."""
-    stripped = context.strip()
-    if stripped.startswith(("def ", "class ", "async def ")):
-        return False
-    return bool(re.search(rf"\b{re.escape(symbol)}\s*\(", context))
+def _call_node_text(node: Node, source: bytes) -> str:
+    """Decode `node`'s own source bytes (T-2178's local escape-hatch
+    helper -- `frob.lang._extract`'s equivalent is private to that module,
+    and `raw_tree`'s whole point is handing back real tree-sitter `Node`s
+    for a caller to read directly rather than exposing a second normalized
+    API for it)."""
+    return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
+
+
+def _callee_bare_name(func_node: Node, source: bytes) -> str | None:
+    """The bare identifier a `call` node's `function` field resolves to:
+    the name itself for a bare call (`run(...)`), or the trailing
+    `.attribute` for a qualified call (`mod.run(...)` -> `"run"`),
+    mirroring `_bare_symbol_name`'s own last-segment convention. `None`
+    for any other callee shape (a call on a call result, a subscript,
+    etc.) -- those cannot resolve to a bare deprecated-symbol name at all."""
+    if func_node.type == "identifier":
+        return _call_node_text(func_node, source)
+    if func_node.type == "attribute":
+        attr = func_node.child_by_field_name("attribute")
+        return _call_node_text(attr, source) if attr is not None else None
+    return None
+
+
+def _python_call_and_alias_sites(
+    tree: Tree, source: bytes
+) -> tuple[dict[str, list[int]], dict[str, str]]:
+    """AST-derived call sites and import aliases for one parsed python tree
+    (T-2178): resolves `deprecated_current_references`'s "is this a call"
+    and "was this symbol imported under another name" questions from real
+    tree-sitter structure instead of `_looks_like_call`'s former raw-line
+    regex, which decided from the WHOLE source line's text and so matched a
+    `symbol(` sequence sitting inside a same-line trailing comment or
+    string literal just as readily as a genuine call (T-2178 acceptance
+    [1]) -- a comment/string is an opaque tree-sitter leaf with no `call`
+    or `identifier` children inside it, so this walk structurally cannot
+    see into one.
+
+    Returns `(calls, aliases)`:
+    - `calls[name]` -- every 1-based line where `name` (a bare identifier,
+      or a qualified call's trailing attribute segment) is the CALLEE of a
+      real `call` node.
+    - `aliases[local_name]` -- for `from mod import real as local`, the
+      locally-bound name mapped back to the imported bare name, so a call
+      reached only through the alias (`local(...)`) can still be
+      recognised as a reference to `real` (T-2178 acceptance [2] -- the
+      former bare-identifier index had no notion of an alias at all, since
+      it indexed literal identifier TEXT and an aliased call site never
+      contains the original name as a token anywhere)."""
+    calls: dict[str, list[int]] = {}
+    aliases: dict[str, str] = {}
+
+    def visit(node: Node) -> None:
+        node_type = node.type
+        if node_type == "call":
+            func = node.child_by_field_name("function")
+            if func is not None:
+                name = _callee_bare_name(func, source)
+                if name:
+                    calls.setdefault(name, []).append(node.start_point[0] + 1)
+        elif node_type == "import_from_statement":
+            for name_node in node.children_by_field_name("name"):
+                if name_node.type == "aliased_import":
+                    real = name_node.child_by_field_name("name")
+                    alias = name_node.child_by_field_name("alias")
+                    if real is not None and alias is not None:
+                        aliases[_call_node_text(alias, source)] = _call_node_text(
+                            real, source
+                        )
+        for child in node.children:
+            visit(child)
+
+    visit(tree.root_node)
+    return calls, aliases
 
 
 @dataclass(frozen=True)
@@ -525,6 +584,85 @@ class _DeprecatedRefIndex:
     identifier_hits: dict[str, list[tuple[str, int, str]]] = field(default_factory=dict)
     definition_sites: dict[str, set[tuple[str, int]]] = field(default_factory=dict)
     first_definition_file: dict[str, str] = field(default_factory=dict)
+    #: T-2178: per-file `{callee_bare_name: [line, ...]}`, from a real
+    #: `call` node's `function` field -- never a raw-text regex match, so a
+    #: same-line comment or string mentioning `name(` cannot register.
+    file_calls: dict[str, dict[str, list[int]]] = field(default_factory=dict)
+    #: T-2178: per-file `{local_alias_name: real_bare_name}` from
+    #: `from mod import real as local` -- lets a call reached only through
+    #: an import alias still resolve back to the deprecated symbol it
+    #: actually calls.
+    file_aliases: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
+def _index_identifier_hits(path: Path, rel: str, index: _DeprecatedRefIndex) -> None:
+    """`_build_deprecated_ref_index`'s identifier-hit pass for one file
+    (T-2178 split, keeping that function under ARCH001's threshold):
+    populates `index.identifier_hits[name]` with every `(rel, line,
+    context)` occurrence, used for import-line detection (`_IMPORT_LINE_RE`)
+    -- the actual "is this a call" decision has moved to
+    `_index_call_and_alias_sites`, which reads real AST structure instead
+    of this raw-line context text."""
+    ids_result = iter_identifiers(path)
+    if not ids_result.is_ok:
+        return
+    try:
+        src_lines = path.read_bytes().decode(errors="replace").splitlines()
+    except OSError:
+        src_lines = []
+    try:
+        for name, line in ids_result.danger_ok:
+            ctx = src_lines[line - 1] if 0 < line <= len(src_lines) else ""
+            index.identifier_hits.setdefault(name, []).append((rel, line, ctx))
+    except Exception:
+        # A single file's identifier/line data being surprising (an
+        # out-of-range span, unexpected shape) must not abort the
+        # whole-tree index build for every OTHER file (EXHAUST001/
+        # EXHAUST002, T-1371) -- same "one bad input, keep going" posture
+        # every pass in this module's index build shares.
+        _log.debug("_index_identifier_hits: skipping %s (bad identifiers)", rel)
+
+
+def _index_definition_sites(path: Path, rel: str, index: _DeprecatedRefIndex) -> None:
+    """`_build_deprecated_ref_index`'s definition-site pass for one file
+    (T-2178 split): populates `index.definition_sites`/`first_definition_file`
+    from `parse_file`'s own symbol table."""
+    parsed_result = parse_file(path)
+    if not parsed_result.is_ok:
+        return
+    try:
+        for sym in _definition_symbols(parsed_result.danger_ok.symbols):
+            _, _, name = sym.qualname.rpartition(".")
+            index.definition_sites.setdefault(name, set()).add((rel, sym.span[0]))
+            index.first_definition_file.setdefault(name, rel)
+    except Exception:
+        _log.debug("_index_definition_sites: skipping %s (bad symbols)", rel)
+
+
+def _index_call_and_alias_sites(
+    path: Path, rel: str, index: _DeprecatedRefIndex
+) -> None:
+    """`_build_deprecated_ref_index`'s call/alias-site pass for one file
+    (T-2178 split): populates `index.file_calls`/`file_aliases` from real
+    tree-sitter structure, replacing the former raw-line regex
+    (`_looks_like_call`) that decided "is this a call" from the WHOLE
+    source line's text."""
+    tree_result = raw_tree(path)
+    if not tree_result.is_ok:
+        return
+    try:
+        tree, source, _lang = tree_result.danger_ok
+        calls, aliases = _python_call_and_alias_sites(tree, source)
+        if calls:
+            index.file_calls[rel] = calls
+        if aliases:
+            index.file_aliases[rel] = aliases
+    except Exception:
+        # Same "one bad input, keep going" posture as the two passes
+        # above (EXHAUST001/EXHAUST002, T-1371) -- a surprising tree shape
+        # in one file must not abort the whole-tree index build for every
+        # other file.
+        _log.debug("_index_call_and_alias_sites: skipping %s (bad call sites)", rel)
 
 
 def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
@@ -533,7 +671,10 @@ def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
     symbol in the run answers `deprecated_current_references` from --
     instead of each symbol independently re-walking the whole tree via
     `exports_consumers`+`xref` (the O(files * symbols) cost this ticket
-    exists to collapse to O(files + symbols))."""
+    exists to collapse to O(files + symbols)). T-2178 split the per-file
+    work into `_index_identifier_hits`/`_index_definition_sites`/
+    `_index_call_and_alias_sites`, each a separate pass over the same file
+    (still one `_collect_source_files` walk overall)."""
     index = _DeprecatedRefIndex()
     for path in _collect_source_files(root, "python"):
         try:
@@ -541,40 +682,9 @@ def _build_deprecated_ref_index(root: Path) -> _DeprecatedRefIndex:
         except ValueError:
             rel = str(path)
 
-        ids_result = iter_identifiers(path)
-        if ids_result.is_ok:
-            try:
-                src_lines = path.read_bytes().decode(errors="replace").splitlines()
-            except OSError:
-                src_lines = []
-            try:
-                for name, line in ids_result.danger_ok:
-                    ctx = src_lines[line - 1] if 0 < line <= len(src_lines) else ""
-                    index.identifier_hits.setdefault(name, []).append((rel, line, ctx))
-            except Exception:
-                # A single file's identifier/line data being surprising
-                # (out-of-range span, unexpected shape) must not abort the
-                # whole-tree index build for every OTHER file (EXHAUST001/
-                # EXHAUST002, T-1371) -- same "one bad input, keep going"
-                # posture this loop already has for `_collect_source_files`
-                # and `parse_file` failures via `.is_ok` checks.
-                _log.debug(
-                    "_build_deprecated_ref_index: skipping %s (bad identifiers)", rel
-                )
-
-        parsed_result = parse_file(path)
-        if parsed_result.is_ok:
-            try:
-                for sym in _definition_symbols(parsed_result.danger_ok.symbols):
-                    _, _, name = sym.qualname.rpartition(".")
-                    index.definition_sites.setdefault(name, set()).add(
-                        (rel, sym.span[0])
-                    )
-                    index.first_definition_file.setdefault(name, rel)
-            except Exception:
-                _log.debug(
-                    "_build_deprecated_ref_index: skipping %s (bad symbols)", rel
-                )
+        _index_identifier_hits(path, rel, index)
+        _index_definition_sites(path, rel, index)
+        _index_call_and_alias_sites(path, rel, index)
     return index
 
 
@@ -584,36 +694,50 @@ def _references_from_index(symbol: str, index: _DeprecatedRefIndex) -> frozenset
     tree -- see that function's docstring for the exact semantics this
     reproduces.
 
-    T-1338 (PERF003): a single pass over `hits` both collects import-line
-    references and buckets call-shaped candidates by their OWN file (a dict
-    keyed on `file`, `_looks_like_call`/`definition_file` already applied) --
-    the second pass then only iterates `importing_files` and looks each up
-    by that same key, instead of re-scanning the full `hits` list a second
-    time to re-derive which lines belong to which file (the O(n) rescan
-    PERF003 flagged as the nested-loop-shaped equality-join pattern)."""
+    T-1338 (PERF003): a single pass over `hits` collects import-line
+    references and the set of importing files; a second pass then only
+    iterates `importing_files` and looks each up in `index.file_calls` (T-2178:
+    real `call`-node sites, not a raw-text regex), instead of re-scanning
+    the full `hits` list a second time to re-derive which lines belong to
+    which file (the O(n) rescan PERF003 flagged as the nested-loop-shaped
+    equality-join pattern).
+
+    T-2178: a file that imports `symbol` under an alias (`from mod import
+    symbol as local`) is folded into `importing_files` too, even though the
+    bare identifier `symbol` never appears there as a token -- its calls
+    are read from `file_calls[file][local]` and reported the same as a
+    direct call."""
     hits = index.identifier_hits.get(symbol, ())
     def_sites = index.definition_sites.get(symbol, frozenset())
     definition_file = index.first_definition_file.get(symbol)
 
     refs: set[str] = set()
     importing_files: set[str] = set()
-    call_candidates_by_file: dict[str, list[int]] = {}
     for file, line, ctx in hits:
         if (file, line) in def_sites:
             continue
         if _IMPORT_LINE_RE.match(ctx):
             refs.add(f"{file}:{line}")
             importing_files.add(file)
-            continue
-        if definition_file is not None and file == definition_file:
-            continue
-        if not _looks_like_call(symbol, ctx):
-            continue
-        call_candidates_by_file.setdefault(file, []).append(line)
+
+    alias_locals_by_file: dict[str, set[str]] = {}
+    for file, aliases in index.file_aliases.items():
+        locals_for_symbol = {local for local, real in aliases.items() if real == symbol}
+        if locals_for_symbol:
+            importing_files.add(file)
+            alias_locals_by_file[file] = locals_for_symbol
 
     for file in importing_files:
-        for line in call_candidates_by_file.get(file, ()):
-            refs.add(f"{file}:{line}")
+        if definition_file is not None and file == definition_file:
+            continue
+        file_calls = index.file_calls.get(file, {})
+        for line in file_calls.get(symbol, ()):
+            if (file, line) not in def_sites:
+                refs.add(f"{file}:{line}")
+        for local in alias_locals_by_file.get(file, ()):
+            for line in file_calls.get(local, ()):
+                if (file, line) not in def_sites:
+                    refs.add(f"{file}:{line}")
     return frozenset(refs)
 
 
@@ -625,7 +749,8 @@ def deprecated_current_references(symbol: str, root: Path) -> frozenset[str]:
     under `root` (T-0639, callgraph-resolved as of T-1052, index-backed as
     of T-1207): the union of import-statement consumers (T-0876, what
     `frob.exports.exports_consumers` used to answer standalone) and
-    Python-scoped, call-shaped identifier usages (`_looks_like_call`) --
+    Python-scoped, call-shaped identifier usages (`_python_call_and_alias_sites`,
+    AST-derived as of T-2178) --
     but a call-shaped usage only counts when it falls in a file that
     itself imports `symbol`, excluding any usage in the symbol's own
     defining file (its declaration line and any purely internal same-file

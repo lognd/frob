@@ -86,6 +86,45 @@ class TestDeprecatedCurrentReferencesImportGating:
         assert any(r.startswith("src/importer.py:") for r in refs)
         assert not any(r.startswith("src/subprocess_caller.py:") for r in refs)
 
+    def test_non_call_mention_with_trailing_comment_call_shape_is_not_a_call(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2178 acceptance [1]: a line whose REAL identifier occurrence
+        is not a call (here, a bare reference passed to another function)
+        must not be reported as a call site just because a trailing
+        comment on that same line happens to contain `old_run(`. The
+        former `_looks_like_call` regexed the WHOLE raw source line's
+        text, so this comment-shaped tail matched exactly like a real call
+        would; comments/strings are opaque tree-sitter leaves with no
+        `call`/`identifier` children, so an AST-based decision cannot see
+        into one. Must FAIL against pre-fix main."""
+        # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating.test_non_call_mention_with_trailing_comment_call_shape_is_not_a_call  # noqa: E501
+        _write(tmp_path, "src/runner.py", "def old_run(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "src/importer.py",
+            "from runner import old_run\n"
+            "register(old_run)  # NOT old_run(x) -- see runner.py\n",
+        )
+        refs = deprecated_current_references("old_run", tmp_path)
+        assert not any(r.startswith("src/importer.py:2") for r in refs)
+
+    def test_call_through_import_alias_is_reported(self, tmp_path: Path) -> None:
+        """T-2178 acceptance [2]: a deprecated symbol imported under an
+        alias (`from mod import real as local`) and called only through
+        that alias IS reported -- the former bare-identifier-text index had
+        no notion of an alias, since an aliased call site never contains
+        the original name as a token anywhere."""
+        # frob:tests tests/unit/gates/test_deprecated_baseline.py::TestDeprecatedCurrentReferencesImportGating.test_call_through_import_alias_is_reported  # noqa: E501
+        _write(tmp_path, "src/runner.py", "def old_run(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "src/importer.py",
+            "from runner import old_run as legacy_run\nlegacy_run(1)\n",
+        )
+        refs = deprecated_current_references("old_run", tmp_path)
+        assert any(r.startswith("src/importer.py:2") for r in refs)
+
 
 class TestFileReferenceCounts:
     """`file_reference_counts`: projects a `file:line` reference set down
