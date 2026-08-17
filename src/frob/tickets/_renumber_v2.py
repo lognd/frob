@@ -115,6 +115,94 @@ def _scan_v2_reference_files(
     return changed
 
 
+# frob:ticket T-2096
+def _unrewritten_source_citations(
+    root: Path,
+    old_id: str,
+    ref_changes: dict[Path, tuple[str, int]],
+    code_changes: dict[Path, tuple[str, int]],
+    *,
+    exclude: Path,
+) -> dict[Path, int]:
+    """T-2096: every file `renumber_one_v2` scanned (or could have scanned)
+    that STILL whole-word-cites `old_id` after `ref_changes`/`code_changes`
+    are applied -- the surfacing half of the fix direction this ticket's
+    own description named. `_rewrite_body_prose_references`/`_scan_code_
+    references` only rewrite `tickets/**/*.md` prose and `frob:` directive
+    /registry-disposition lines respectively (by design -- see each
+    function's own docstring); a citation of `old_id` in ordinary
+    docstring prose OUTSIDE a directive line, or in ANY text the renumber
+    never scans at all, is silently left stale (T-2079/T-2060's own
+    hand-fix incident, and commit messages are immutable history this
+    command could never rewrite regardless). Rather than widen the
+    rewrite itself (real risk of a false-positive prose rewrite mangling
+    unrelated text), this reports every leftover citation so it is never
+    silently forgotten -- the operator fixes what remains by hand, now
+    with a complete list instead of discovering gaps one at a time.
+
+    Reuses the rewritten text already computed for a file present in
+    `ref_changes`/`code_changes` (never re-reads it) -- a file can carry
+    BOTH a directive line (rewritten) and separate prose (not), so a
+    present-but-nonzero-hit entry is not itself proof the file is fully
+    clean. Every OTHER tracked file (`_v2_reference_files`'s ticket-ledger
+    glob plus `_scan_code_references`'s own tracked-file walk, the same
+    search space renumber already covers) is read fresh and checked for
+    residual whole-word occurrences. Read/decode failures are skipped
+    (EXHAUST001/EXHAUST002 posture, matching `_scan_v2_reference_files`/
+    `_scan_code_references`'s own per-file try/except) -- one unreadable
+    file must not abort the whole surfacing scan.
+
+    `exclude` (the renamed ticket's OWN pre-rename `ticket.md` path,
+    mirroring `_scan_v2_reference_files`'s identical parameter) is always
+    skipped: at the point this runs the file still sits at its OLD path on
+    disk with the OLD id in its `id:` frontmatter (the rename/rewrite has
+    not been persisted yet), which would otherwise always false-positive
+    as an unrewritten citation of itself."""
+    from frob.tickets._new_renumber import _tracked_files
+    from frob.tickets._store import archive_path, ledger_path
+
+    id_re = re.compile(rf"\b{re.escape(old_id)}\b")
+    skip_names = {ledger_path(root).name, archive_path(root).name}
+    already: dict[Path, tuple[str, int]] = {**ref_changes, **code_changes}
+    candidates = {*already, *_v2_reference_files(root), *_tracked_files(root)}
+
+    stale: dict[Path, int] = {}
+    for path in sorted(candidates):
+        if path == exclude or path.name in skip_names:
+            continue
+        if path in already:
+            text = already[path][0]
+        else:
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (UnicodeDecodeError, OSError):
+                continue
+        n = len(id_re.findall(text))
+        if n:
+            stale[path] = n
+    return stale
+
+
+def _log_unrewritten_citations(root: Path, old_id: str, stale: dict[Path, int]) -> None:
+    """T-2096: log every entry `_unrewritten_source_citations` found, one
+    line per file, so a renumber's citation gap is surfaced immediately
+    instead of discovered later by hand (the exact T-2079/T-2060
+    incident this ticket exists to close)."""
+    if not stale:
+        return
+    _log.warning(
+        "tickets: renumber_one_v2 %s -> ... left %d file(s) with a "
+        "citation of %s that was NOT rewritten (docstring prose or other "
+        "text outside a tickets/**/*.md file or a frob: directive/"
+        "registry-disposition line is never auto-rewritten) -- fix these "
+        "by hand: %s",
+        old_id,
+        len(stale),
+        old_id,
+        {str(p.relative_to(root)): n for p, n in sorted(stale.items())},
+    )
+
+
 def _git_mv_ticket_dir(
     root: Path, old_dir: Path, new_dir: Path
 ) -> Result[None, TicketError]:
@@ -334,8 +422,13 @@ def renumber_one_v2(
             report = _build_v2_renumber_report(
                 root, old_id, new_id, old_dir, ref_changes, code_changes, dry_run
             )
+            # frob:ticket T-2096
+            stale_citations = _unrewritten_source_citations(
+                root, old_id, ref_changes, code_changes, exclude=ticket_path
+            )
             if dry_run:
                 _log_renumber_dry_run(old_id, new_id, report)
+                _log_unrewritten_citations(root, old_id, stale_citations)
                 return Ok(report)
 
             persisted = _persist_v2_renumber(
@@ -346,4 +439,5 @@ def renumber_one_v2(
 
     rename_lease(root, old_id, new_id)
     _log_renumber_done(old_id, new_id, {**ref_changes, **code_changes}, report)
+    _log_unrewritten_citations(root, old_id, stale_citations)
     return Ok(report)

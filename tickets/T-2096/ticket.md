@@ -2,7 +2,7 @@
 id: T-2096
 title: 'Citation-rewrite gap: renumber only rewrites tickets/**/*.md and frob:ticket
   directives, not docstring prose or commit messages'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,9 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_renumber_v2.py
+- tests/test_tickets_collision.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: BUG002 evidence for T-2096 lives in this test file
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_unrewritten_docstring_prose_citation_is_surfaced
+- tests/test_tickets_collision.py::TestRenumberOneV2::test_fully_rewritten_renumber_surfaces_nothing
+designated_repro_test: tests/test_tickets_collision.py::TestRenumberOneV2::test_unrewritten_docstring_prose_citation_is_surfaced
 threat: null
 component: null
 anchor: false

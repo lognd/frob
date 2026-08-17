@@ -839,3 +839,68 @@ class TestRenumberOneV2:
         assert not thread_b.is_alive(), "renumber_one_v2 deadlocked (thread B)"
         assert len(results) == 2
         assert all(r.is_ok for r in results)
+
+    # frob:ticket T-2096
+    def test_unrewritten_docstring_prose_citation_is_surfaced(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_collision.py::TestRenumberOneV2.test_unrewritten_docstring\
+        # _prose_citation_is_surfaced
+        """T-2096 (MUST FAIL FIRST on main): a plain-prose citation of the
+        renumbered id in an ordinary source file -- NOT a `frob:` directive
+        line, NOT `tickets/**/*.md` -- is never rewritten (by design: see
+        `_rewrite_directive_references`'s own docstring), and today it is
+        also never DISCLOSED. After the fix, `renumber_one_v2` logs a
+        WARNING naming the file and the leftover citation count."""
+        import logging
+
+        self._v2_ticket(tmp_path, "T-0042")
+        stray = tmp_path / "some_module.py"
+        stray.write_text(
+            "def helper():\n    '''See T-0042 for background.'''\n", encoding="utf-8"
+        )
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets"):
+            result = renumber_one(tmp_path, "T-0042", "T-0099")
+        assert result.is_ok, result.err
+
+        # The stray docstring prose citation is untouched (fix direction is
+        # disclosure, not a risky blanket prose rewrite).
+        assert "T-0042" in stray.read_text(encoding="utf-8")
+
+        surfaced = [
+            rec.message
+            for rec in caplog.records
+            if "NOT rewritten" in rec.message and "some_module.py" in rec.message
+        ]
+        assert surfaced, (
+            f"expected a WARNING surfacing the unrewritten some_module.py "
+            f"citation; got: {[r.message for r in caplog.records]}"
+        )
+
+    # frob:ticket T-2096
+    def test_fully_rewritten_renumber_surfaces_nothing(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_collision.py::TestRenumberOneV2.test_fully_rewritten_renum\
+        # ber_surfaces_nothing
+        """MUST-STILL-PASS control: a renumber whose only citations are the
+        renamed ticket's own `id:` field plus a sibling's `tickets/**/*.md`
+        prose (both fully rewritten by the existing mechanism) surfaces NO
+        unrewritten-citation warning -- the new disclosure only fires on a
+        genuine gap, never on ordinary clean renumbers."""
+        import logging
+
+        self._v2_ticket(tmp_path, "T-0042")
+        self._v2_ticket(
+            tmp_path, "T-0043", body="## Done report\n\nFiled: T-0042\n"
+        )
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets"):
+            result = renumber_one(tmp_path, "T-0042", "T-0099")
+        assert result.is_ok, result.err
+
+        surfaced = [rec.message for rec in caplog.records if "NOT rewritten" in rec.message]
+        assert surfaced == []
