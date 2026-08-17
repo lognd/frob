@@ -1,7 +1,7 @@
 ---
 id: T-2056
 title: _vet_examined_sites' docstring wrongly claims OPAQUE001 uses scan_file_capabilities
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
