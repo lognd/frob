@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0a66a328a3a06aed1a2027e7637c748f109d7c80
 ---
 T-2268 holding-ticket triage (2026-08-17): PERF004 fires on
 scripts/fleet_status.py with no owning ticket in the unscoped floor.
