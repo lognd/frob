@@ -34,7 +34,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fff7a7de2a0285aa618fcc1911ff16daa73fe248
 ---
 MEASURED 2026-08-17, reproduced as a real incident on main.
 
