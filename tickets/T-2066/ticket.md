@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a52c6ef8cd1f42cc1b9be24b14e17a8a28224b7c
 ---
 Attempting to land T-1959 (`fix(gates): DEAD001 recurses into with/async-with
 bodies for constant-fold`, 2 files: `src/frob/gates/_dead_symbols.py`,
