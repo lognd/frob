@@ -561,6 +561,70 @@ def spawn_deferred_post_land_sweep(
     return Ok(proc.pid)
 
 
+#: T-2261: minimum HEAD-commit age before an idle worktree is swept
+#: automatically. Matches the measured precedent in T-2261's own body
+#: (`frob worktree sweep --dry-run --min-age 4`); a lower floor risks
+#: sweeping a worktree between two active bursts of the same agent, a
+#: higher one lets sprawl accumulate for longer between lands.
+_AUTO_SWEEP_MIN_AGE_HOURS = 4.0
+
+
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#automatic-stale-worktree-reclamation-t-2261
+# frob:ticket T-2261
+# frob:tests tests/unit/test_rapid_sweep.py::TestSweepStaleWorktreesAfterLand.test_logs_one_line_per_verdict  # noqa: E501
+def sweep_stale_worktrees_after_land(root: Path) -> None:
+    """T-2261: reclaim stale agent worktrees automatically, hooked into
+    the SAME detached, off-critical-path child `spawn_deferred_post_land_
+    sweep` already spawns per land (`_sweep_async`, below) -- never inside
+    the land itself (T-1684 deliberately moved post-land work off that
+    critical path; adding a filesystem sweep back onto it would
+    re-lengthen exactly what that work shortened). Measured before this
+    ticket: 107 worktrees / 67GB accumulated because the only existing
+    caller of `sweep_worktrees` was `frob worktree sweep`, a command an
+    operator has to remember to run (`src/frob/app/ticket_runner/
+    _land_cmd.py` printed 'run `frob worktree sweep` later to clean it
+    up' and nothing ever acted on it).
+
+    Calls `sweep_worktrees` with `dry_run=False`, `force=False` (T-1739's
+    override is NEVER used by this automatic path -- a scheduled sweep
+    must not bypass the liveness gate), and `min_age_hours=
+    _AUTO_SWEEP_MIN_AGE_HOURS`, reusing its own five keep verdicts
+    (`kept:live`/`kept:dirty`/`kept:unlanded`/`kept:lease`/`kept:age`)
+    unmodified -- this function REUSES `sweep_worktrees`'s decisions, it
+    does not reimplement or narrow them. Every verdict is logged (removed
+    or kept, with its reason) so a later operator can reconstruct what
+    happened; a fully-failed sweep (`sweep_worktrees` itself returning
+    `Err`, e.g. `root` is not a git repository) is logged and swallowed --
+    this runs in a detached child nobody is waiting on, and must never
+    raise back into `_sweep_async`."""
+    from frob.tickets._leases import sweep_worktrees
+
+    result = sweep_worktrees(
+        root, min_age_hours=_AUTO_SWEEP_MIN_AGE_HOURS, dry_run=False, force=False
+    )
+    if result.is_err:
+        _log.warning(
+            "rapid sweep: automatic worktree sweep failed: %s",
+            result.danger_err.value,
+        )
+        return
+    verdicts = result.danger_ok
+    removed = [v for v in verdicts if v.verdict == "removed"]
+    for verdict in verdicts:
+        _log.info(
+            "rapid sweep: worktree %s -> %s%s",
+            verdict.path,
+            verdict.verdict,
+            f" ({verdict.detail})" if verdict.detail else "",
+        )
+    _log.info(
+        "rapid sweep: automatic worktree sweep removed %d of %d worktree(s)",
+        len(removed),
+        len(verdicts),
+    )
+
+
 # frob:doc docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690
 # frob:ticket T-1690
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
@@ -2265,11 +2329,18 @@ def _sweep_async(root: Path, cfg) -> None:  # noqa: ANN001 -- AppConfig, deferre
     is nobody's gate (the land that spawned it finished minutes ago); the
     filed ticket and the log are the outputs. Only an UNMEASURABLE sweep
     exits non-zero, so a human re-running this by hand can tell "verified"
-    from "could not verify"."""
+    from "could not verify".
+
+    T-2261: also runs `sweep_stale_worktrees_after_land` -- unconditionally,
+    regardless of the gate-check sweep's own outcome above, since the two
+    are independent concerns (a red gate-check sweep is not a reason to
+    also let worktree sprawl accumulate). Exit status is unaffected by
+    it; a worktree-sweep failure is logged, never escalated here."""
     if cfg.ticket_id is None or not getattr(cfg, "ticket_sweep_commit", None):
         _log.error("frob ticket sweep-async requires <id> and --commit <sha>")
         sys.exit(1)
     result = run_deferred_post_land_sweep(root, cfg.ticket_id, cfg.ticket_sweep_commit)
+    sweep_stale_worktrees_after_land(root)
     if result.is_err:
         sys.exit(1)
 
@@ -2279,4 +2350,5 @@ __all__ = [
     "revalidate_dispatchable_sweep_tickets",
     "run_deferred_post_land_sweep",
     "spawn_deferred_post_land_sweep",
+    "sweep_stale_worktrees_after_land",
 ]

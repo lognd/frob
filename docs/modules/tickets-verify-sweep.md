@@ -1249,6 +1249,30 @@ determined from staged content)" -- a deliberate refusal to report a
 plausible-but-wrong ticket id (the T-1795/T-1799 incident this guards
 against was exactly a confident wrong guess).
 
+### Automatic stale-worktree reclamation (T-2261)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::sweep_stale_worktrees_after_land -->
+
+Before T-2261, `frob worktree sweep` (`sweep_worktrees`, `src/frob/
+tickets/_leases.py`) was sound but never invoked automatically -- every
+call site was advisory (`frob.app.ticket_runner._land_cmd` printed "run
+`frob worktree sweep` later to clean it up") or the CLI wiring itself.
+Measured: 107 worktrees / 67GB accumulated, with `--dry-run --min-age 4`
+showing 71 safely removable by the tool's own verdicts.
+
+`_sweep_async` (the detached child `spawn_deferred_post_land_sweep`
+already spawns per land, above) now also calls `sweep_stale_worktrees_
+after_land` after the gate-check sweep, unconditionally -- STILL off the
+land's own critical path (T-1684's whole point), never a second spawn.
+It is a thin, faithful wrapper: `sweep_worktrees(root, min_age_hours=4.0,
+dry_run=False, force=False)`, reusing its five keep verdicts
+(`kept:live`/`kept:dirty`/`kept:unlanded`/`kept:lease`/`kept:age`, each
+already covered by real fixtures in `tests/test_ticket_leases.py`)
+unmodified rather than reimplementing or narrowing them -- `force` is
+never `True` on this path. Every verdict (removed or kept, with its
+reason) is logged. `min_age_hours=4.0` matches the ticket's own measured
+`--dry-run --min-age 4` precedent.
+
 ### Doable-time revalidation of sweep-filed tickets (T-2006)
 
 <!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::revalidate_dispatchable_sweep_tickets -->
