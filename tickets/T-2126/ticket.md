@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c266468f1ca44d5cf78d4498d566194720a74292
 ---
 T-2049's acceptance criterion 4 asked to measure (not speculatively add)
 whether other state that silently changes land cost belongs in
