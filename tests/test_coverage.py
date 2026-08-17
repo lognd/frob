@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import textwrap
 import time
 from pathlib import Path
@@ -1188,6 +1189,49 @@ class TestWorkerCrashRetryRealSubprocessRecoversFromAddopts:
         xml_result = _refresh_mod._run(["coverage", "xml", "-i"], cwd=tmp_path)
         assert xml_result.is_ok
         assert (tmp_path / "coverage.xml").exists()
+
+
+# frob:ticket T-2068
+class TestNeutralizedAddoptsPytest11Entrypoint:
+    """T-2068: the OPERATOR-facing half of T-2032's addopts-reinjection
+    hole -- `pytest ... -p no:xdist` typed directly at a shell, not
+    routed through `_retry_after_worker_crash` at all. Unlike
+    `TestWorkerCrashRetryRealSubprocessRecoversFromAddopts` above (which
+    calls this module's own retry function directly), this drives a
+    REAL, separate `pytest` subprocess with `-p no:xdist` on its own
+    command line against a synthetic project's `pyproject.toml` --
+    proving the `pytest11` entry point (`pyproject.toml`'s
+    `[project.entry-points.pytest11]`, pointing at this module's
+    `pytest_load_initial_conftests`) actually fires for a plain CLI
+    invocation, not just when this module's own code calls itself."""
+
+    def test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint.test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override  # noqa: E501
+        (tmp_path / "pyproject.toml").write_text(
+            "[tool.pytest.ini_options]\n"
+            'addopts = "-q -n auto --dist=loadgroup"\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "test_widget.py").write_text(
+            "def test_ok():\n    assert 1 + 1 == 2\n",
+            encoding="utf-8",
+        )
+
+        # This module's own `frob` install must be importable from the
+        # subprocess for the entry point to load at all -- run it with
+        # THIS process's own interpreter/site-packages (no `uv run`
+        # re-resolve), the same way `_run`'s siblings above invoke a
+        # real pytest.
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "-p", "no:xdist", "test_widget.py"],
+            cwd=tmp_path,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "unrecognized arguments" not in result.stdout + result.stderr
 
 
 # frob:ticket T-1677

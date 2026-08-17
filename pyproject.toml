@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frob"
-version = "0.490.0"
+version = "0.491.0"
 description = "The enforcement layer for agentic development: obligation graph, ticket queue, and gates."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -75,6 +75,24 @@ smt = ["z3-solver>=4.13,<4.15.5"]
 
 [project.scripts]
 frob = "frob.__main__:main"
+
+# frob:ticket T-2068
+# T-2068: closes the operator-facing half of T-2032's addopts-reinjection
+# hole -- `pyproject.toml`'s own `addopts = "-n auto --dist=loadgroup ..."`
+# below is merged into EVERY pytest invocation regardless of argv, so a
+# plain `pytest ... -p no:xdist` (this playbook's own documented way to run
+# a scoped subset serially) previously died with "unrecognized arguments:
+# -n --dist=loadgroup" once the xdist plugin it disabled stopped
+# recognising those tokens. `frob.testing._coverage_refresh`'s
+# `pytest_load_initial_conftests` strips them from `args` in place --
+# registered as a `pytest11` entry point (not a `tests/conftest.py`
+# hookimpl) because entry-point plugins autoload strictly BEFORE this same
+# hook is called on `args`, the only ordering that can actually see and
+# mutate the merged addopts before argparse chokes on it. See that
+# function's own docstring for why a conftest-based hookimpl cannot work
+# here at all.
+[project.entry-points.pytest11]
+frob_addopts_neutralizer = "frob.testing._coverage_refresh"
 
 [project.urls]
 Homepage = "https://github.com/lognd/frob"

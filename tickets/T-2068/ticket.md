@@ -1,7 +1,7 @@
 ---
 id: T-2068
 title: xdist retry serial fix does not neutralise pyproject addopts -n auto
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -13,8 +13,69 @@ runs_last: false
 scope:
 - src/frob/testing/_coverage_refresh.py
 - pyproject.toml
+- tests/test_coverage.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-2032/T-2086 fixed the addopts-reinjection hole only for frob''s OWN
+
+    internal coverage-refresh retry path (explicit argv it builds itself).
+
+    The operator-facing surface this ticket''s acceptance criteria target
+
+    (plain `pytest ... -p no:xdist` typed at a shell) is a different code
+
+    path: pytest merges pyproject.toml''s addopts into argv BEFORE any of
+
+    this repo''s own Python code runs, so nothing in
+
+    src/frob/testing/_coverage_refresh.py can intercept it. The only hook
+
+    point pytest exposes early enough to strip the xdist tokens before
+
+    argparse chokes on them is pytest_load_initial_conftests, which must
+
+    live in a conftest.py loaded for the invocation -- there is currently
+
+    no root-level conftest.py, only tests/conftest.py. Adding the guard
+
+    there (loaded for any invocation naming a path under tests/, which is
+
+    every documented scoped-pytest workflow this playbook tells agents to
+
+    use) is the smallest correct fix; pyproject.toml/tests/conftest.py
+
+    together are the real minimal scope for this ticket''s stated
+
+    acceptance criterion.
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_coverage.py
+  reason: adding a regression test alongside the existing coverage-refresh test suite
+    for this exact operator-facing addopts/-p no:xdist interaction
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tests/conftest.py
+  reason: conftest-based hookimpl proven not to work (registered too late relative
+    to its own hook call); replaced with a pytest11 entry-point plugin in _coverage_refresh.py
+    + pyproject.toml instead, so conftest.py is no longer touched
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/testing.md
+  reason: T-2114 requires a frob:doc edge for the new public pytest_load_initial_conftests
+    symbol; adding the one doc file it targets
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint::test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override
 designated_repro_test: null
 acceptance:
 - text: 'Operator-side reproduction (2026-08-10), stronger evidence than this ticket''s
@@ -27,7 +88,8 @@ acceptance:
     via _neutralized_addopts/-o addopts=<stripped>; this ticket may be a duplicate
     of already-landed work -- flagging for a coordinator pass rather than dropping
     it unilaterally.'
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint::test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override
 - text: 'MEASURED ON MAIN AFTER T-2086 LANDED (f843ad7ed): this ticket is NOT redundant
     with T-2086. T-2086 fixed frob coverage internal xdist retry path (_strip_xdist_tokens
     in _coverage_refresh.py), but the OPERATOR-FACING surface still fails identically:
@@ -38,7 +100,8 @@ acceptance:
     agent brief tells agents to run scoped pytest subsets, this costs a wasted cycle
     per agent that reaches for the documented -p no:xdist flag. Acceptance: running
     pytest with -p no:xdist on any subset succeeds without a manual -o addopts override.'
-  evidence: []
+  evidence:
+  - tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint::test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override
 acceptance_amendments:
 - op: remove
   index: 11

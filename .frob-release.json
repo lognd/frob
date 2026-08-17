@@ -1908,6 +1908,7 @@
     "src/frob/testing/_coverage_cache.py::update_file_cache": "46118d514528794027f2f5424805b1aef9a0478d0212fcf4829c76d7a533365e",
     "src/frob/testing/_coverage_refresh.py::CoverageRefreshError": "6bcc07d0643f2dca5567714705e91e9af4ec74ca4cc3403d14b7e13d8b3c3df1",
     "src/frob/testing/_coverage_refresh.py::native_coverage_refresh": "7a4b180553b9bf6968e931608f31ab0ffe6593e3f6a04c0849081e56e37f8412",
+    "src/frob/testing/_coverage_refresh.py::pytest_load_initial_conftests": "29dac6dccc30f0492b48f0dce4a70d3b6be88135e936668f5a8911f6341a768e",
     "src/frob/testing/_coverage_wait.py::CoverageWaitError": "b6edc0934bbc2ffb9b11259a4fe36b8dd33ee2fc7ccc2936dfca5e967e730db9",
     "src/frob/testing/_coverage_wait.py::CoverageWaitOutcome": "5c673dd2d06d7e5469a445522a8ad01c93cd0cc3757583ceef2b1d363c957fda",
     "src/frob/testing/_coverage_wait.py::SharedCoverageResult": "b06b24c2786b8d65a2715c34a0944991320dcdb1decf418cf232874b98bc27d8",
@@ -2336,5 +2337,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.490.0"
+  "version": "0.491.0"
 }

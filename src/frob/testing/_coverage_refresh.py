@@ -77,6 +77,8 @@ from frob.process._guard import exec_enabled
 from frob.testing._incremental_coverage import python_coverage_targets
 
 if TYPE_CHECKING:
+    import pytest
+
     from frob.graph import GraphSnapshot
 
 _log = get_logger(__name__)
@@ -798,6 +800,61 @@ def _neutralized_addopts(cwd: Path) -> str | None:
     if neutralized_tokens == tokens:
         return None
     return shlex.join(neutralized_tokens)
+
+
+# frob:ticket T-2068
+# frob:tests tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint.test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override  # noqa: E501
+# frob:doc docs/modules/testing.md#public-api
+def pytest_load_initial_conftests(
+    early_config: "pytest.Config",
+    parser: object,
+    args: list[str],
+) -> None:
+    """`pytest11` entry-point hook (registered in `pyproject.toml`'s
+    `[project.entry-points.pytest11]`) that closes the OPERATOR-facing
+    half of T-2032's addopts-reinjection hole (T-2068). T-2032/T-2086
+    already fixed `frob coverage`'s own internal worker-crash retry
+    (`_retry_after_worker_crash`'s explicit argv + `_neutralized_addopts`
+    override) -- but that fix lives entirely inside this module's own
+    subprocess-argv construction, which never runs for a plain CLI
+    invocation. An operator typing `pytest ... -p no:xdist` (this
+    playbook's own documented way to run a scoped subset serially) hits
+    the identical shape: `pyproject.toml`'s `addopts = "-n auto --dist=
+    loadgroup ..."` is merged into pytest's own argv BEFORE this hook
+    runs but AFTER `-p no:xdist` has already unregistered the xdist
+    plugin (`Config.parse`'s own ordering: `consider_preparse` runs
+    before `pytest_load_initial_conftests`), so a leftover `-n`/`--dist`
+    token from `addopts` reaches argparse as an option nothing
+    recognises anymore (`unrecognized arguments: -n --dist=loadgroup`).
+
+    Registered via `pytest11` (not a `tests/conftest.py` hookimpl)
+    because entry-point plugins are autoloaded (`Config.parse`'s
+    `load_setuptools_entrypoints("pytest11")`) strictly BEFORE this same
+    hook is called on `args` -- a hookimpl defined inside a conftest.py
+    file cannot see its own hook call at all, since that conftest is
+    itself only imported as a SIDE EFFECT of the very
+    `pytest_load_initial_conftests` call already in progress by the time
+    it would run (measured directly: an equivalent conftest-based
+    hookimpl left `args` untouched and the CLI repro kept failing
+    identically). Safe to import unconditionally only because pytest11
+    entry points are exclusively loaded from within a live `pytest`
+    process (`pytest` is a `dev`-group-only dependency, never a runtime
+    one of `frob` itself) -- the `pytest.Config`/`pytest.Parser` type
+    hints above stay TYPE_CHECKING-only (this module keeps `from
+    __future__ import annotations`) so nothing here adds a hard `pytest`
+    import for a plain `frob coverage` CLI invocation outside a test
+    run.
+
+    Reuses `_strip_xdist_tokens` (T-2032) -- the identical token list,
+    one home, applied to `args` in place instead of duplicating it. A
+    no-op whenever `-p no:xdist`/`-pno:xdist` is not present in `args`
+    at all, or `addopts` carries no xdist token to begin with."""
+    if "-p no:xdist" not in " ".join(args) and "-pno:xdist" not in args:
+        return
+    stripped = _strip_xdist_tokens(args)
+    if stripped == args:
+        return
+    args[:] = stripped
 
 
 #: pytest exit codes that mean "no test outcome was produced at all" --

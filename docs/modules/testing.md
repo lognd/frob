@@ -329,6 +329,7 @@ advice, which is not the remedy for that case).
 <!-- frob:describes src/frob/testing/_coverage_cache.py::update_file_cache -->
 <!-- frob:describes src/frob/testing/_coverage_refresh.py::native_coverage_refresh -->
 <!-- frob:describes src/frob/testing/_coverage_refresh.py::CoverageRefreshError -->
+<!-- frob:describes src/frob/testing/_coverage_refresh.py::pytest_load_initial_conftests -->
 
 ```python
 # frob/gitio.py -- the ONE git subprocess seam (shared with frob.gates)
@@ -637,6 +638,38 @@ a hang in either subprocess is the same "verification never returns an
 answer" defect class), and every caller mocking `_spawn` wholesale in a
 test is unaffected -- the watchdog/crash-retry machinery lives entirely
 inside the real implementation, invisible to a full replacement.
+
+### Operator-facing `-p no:xdist` and the `pytest11` addopts neutralizer (T-2068)
+
+T-2032/T-2086 closed the addopts-reinjection hole (`pyproject.toml`'s
+`addopts = "-n auto --dist=loadgroup ..."` getting merged back into a
+retry's argv even after a leftover explicit `-n`/`--dist` had been
+stripped) only for `native_coverage_refresh`'s OWN internal worker-crash
+retry. An operator typing `pytest ... -p no:xdist` directly at a shell
+(this repo's own documented way to run a scoped subset serially) hits
+the identical shape from a completely different code path: pytest
+merges `addopts` into its argv before any of this repo's own Python
+runs at all, so nothing inside `_coverage_refresh.py`'s subprocess
+construction could ever see or fix it for a plain CLI invocation.
+
+`pytest_load_initial_conftests` closes that operator-facing half,
+registered as a `pytest11` entry point
+(`pyproject.toml`'s `[project.entry-points.pytest11]`) rather than a
+`tests/conftest.py` hookimpl -- entry-point plugins autoload strictly
+BEFORE this same hook is called on `args` (`Config.parse`'s own
+ordering), the only point early enough to strip a leftover xdist token
+before argparse errors on it. A conftest-based hookimpl was tried first
+and measured NOT to work: a conftest file is only imported as a side
+effect of pytest's own default implementation of this same hook, so a
+hookimpl the conftest itself defines cannot retroactively join that same
+hook call's already-fixed execution list. Reuses `_strip_xdist_tokens`
+(T-2032) -- one token list, applied to `args` in place; a no-op whenever
+`-p no:xdist`/`-pno:xdist` is absent from `args` entirely. Type hints on
+`early_config`/`parser` stay `TYPE_CHECKING`-only (this module already
+carries `from __future__ import annotations`), so this adds no hard
+`pytest` import for a plain `frob coverage` CLI invocation outside an
+actual pytest process -- `pytest11` entry points are only ever loaded
+from within a live `pytest` run to begin with.
 
 ### Memory-aware xdist worker sizing (T-1672 item 1)
 
