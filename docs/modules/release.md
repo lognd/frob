@@ -145,6 +145,69 @@ def rewrite_pyproject_version(root, version) -> Result[bool, ReleaseError]
 def changelog_skeleton_entry(root, version, note=None) -> bool
 ```
 
+## frob release publish (T-2242)
+
+<!-- frob:describes src/frob/release/_publish.py::PublishPlan -->
+<!-- frob:describes src/frob/release/_publish.py::PublishReport -->
+<!-- frob:describes src/frob/release/_publish.py::publish -->
+
+`frob release publish` composes the whole release sequence -- bump the
+patch version, `stamp`, sync the derived artifacts (`uv lock` +
+`changelog_skeleton_entry`), `git add`/`commit`/`push`, `uv build`, `uv
+publish` -- replacing Makefile's old `upload:` bash recipe (`set -a && .
+./.env && set +a` dotenv sourcing, a bare `uv run python scripts/
+bump_version.py` bump, a hand-rolled `git add`/`commit`/`push`).
+
+**Every subprocess call is an argv list** (`frob.gitio.run_argv`, the
+same primitive `sync` already used for `uv lock` -- never `shell=True`,
+never `bash -c`), so this runs identically on Windows.
+
+**`.env` is loaded via `python-dotenv`'s `load_dotenv()`**, at the top of
+a REAL run only -- never bash sourcing, never read/echoed/logged by this
+module. A `--dry-run` call never touches `.env` at all, since it never
+needs a token it will never use (a missing token would only ever matter
+at the final `uv publish` step, which `--dry-run` never reaches).
+
+**`--dry-run` is the acceptance-provable path.** It computes and returns
+the exact `PublishPlan` -- the version this would bump to
+(`current_version`, `next_patch_version`, both pure/read-only) and the
+files it would commit (`pyproject.toml`, `uv.lock`, `CHANGELOG.md`,
+`.frob-release.json`) -- WITHOUT writing anything, without a git commit,
+without a push, without a build, and without a publish. This is how
+T-2242 itself was verified: never by a real push or a real PyPI publish,
+only by `--dry-run` plus a fully argv-stubbed test of the real-run path
+(`tests/test_release.py::TestPublish`).
+
+```python
+class PublishPlan(BaseModel):
+    current_version: str
+    new_version: str
+    files_to_commit: tuple[str, ...]
+    would_push: bool
+    would_build: bool
+    would_publish: bool
+
+class PublishReport(BaseModel):
+    plan: PublishPlan
+    dry_run: bool
+    executed_steps: tuple[str, ...]      # empty for a dry run
+
+def publish(root, snapshot, *, dry_run: bool) -> Result[PublishReport, ReleaseError]
+def current_version(root) -> Result[str, ReleaseError]        # read-only
+def next_patch_version(version) -> Result[str, ReleaseError]  # pure, no I/O
+def bump_patch_version(root) -> Result[str, ReleaseError]     # writes pyproject.toml
+```
+
+`bump_patch_version` is also `scripts/bump_version.py`'s own
+implementation now (T-2242) -- that script is a thin CLI wrapper over it,
+so the unconditional-patch-bump rule has exactly one home instead of two.
+
+**CLI wiring is a direct-dispatch special case**, not an extension of
+`frob release stamp|check|sync`'s existing `AppConfig`-routed dispatch --
+see `src/frob/release/_cli.py`'s own module docstring for why (mirrors
+`bind`/`agent`/`worktree`/`sync-skills`/`refactor`'s own precedent,
+`frob.__main__._dispatch`).
+
 ## Stamp refuses an un-bumped API change (T-1381)
 
 `stamp` rebaselines the recorded public API at whatever version is current.

@@ -45,6 +45,11 @@
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
     },
+    "core::env.write": {
+      "accepted_count": 1,
+      "reason": "T-2001 auto-baseline: this land's own diff grew env.write on core from 0 to 1 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
+    },
     "core::eval": {
       "accepted_count": 4,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
@@ -146,8 +151,8 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 2,
-      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on testsuite from 0 to 2 site(s) (fix_sys111_capability_ratchet_sync)",
+      "accepted_count": 3,
+      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on testsuite from 2 to 3 site(s) (fix_sys111_capability_ratchet_sync)",
       "ticket": "T-2001"
     },
     "testsuite::eval": {

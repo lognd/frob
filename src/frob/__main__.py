@@ -453,6 +453,20 @@ def _is_quality_bind(argv: list[str]) -> bool:
     return bool(argv) and argv[0] == "quality" and len(argv) > 1 and argv[1] == "bind"
 
 
+# frob:ticket T-2242
+def _is_release_publish(argv: list[str]) -> bool:
+    """`True` for `frob release publish ...` (T-2242) -- mirrors
+    `_is_quality_bind` above; `frob.release._cli.run_release_publish_
+    command` takes a parsed `argparse.Namespace` from its OWN dedicated
+    parser (same shape as `refactor`'s special case below), not
+    `frob.app.release_runner`'s existing `AppConfig`-routed `stamp`/
+    `check`/`sync` dispatch -- see `frob.release._cli`'s own module
+    docstring for why."""
+    return (
+        bool(argv) and argv[0] == "release" and len(argv) > 1 and argv[1] == "publish"
+    )
+
+
 # frob:ticket T-0355
 # frob:ticket T-1218
 # frob:ticket T-1483
@@ -502,6 +516,22 @@ def _dispatch(argv: list[str]) -> None:
         from frob.scaffold._skills_sync import run as _sync_skills_run
 
         _sync_skills_run(argv[1:])
+    elif _is_release_publish(argv):
+        # T-2242: `frob release publish` is dispatched directly, mirroring
+        # `refactor` below -- own dedicated parser, `argparse.Namespace`
+        # in, exit code out. See `frob.release._cli`'s own module
+        # docstring for why this bypasses `release_runner.py`'s existing
+        # `stamp`/`check`/`sync` dispatch.
+        from frob.release._cli import (
+            add_release_publish_parser,
+            run_release_publish_command,
+        )
+
+        release_parser = argparse.ArgumentParser(prog="frob")
+        release_sub = release_parser.add_subparsers(dest="subcommand")
+        add_release_publish_parser(release_sub)
+        release_args = release_parser.parse_args(argv)
+        _sys.exit(run_release_publish_command(release_args))
     elif argv and argv[0] == "refactor":
         # T-1483: `frob refactor` is dispatched directly, mirroring
         # `bind`/`agent`/`worktree` above -- `frob.refactor._cli.

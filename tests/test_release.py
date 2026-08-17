@@ -12,16 +12,20 @@ from frob.release import (
     BumpClass,
     ReleaseError,
     authoritative_version,
+    bump_patch_version,
     changelog_skeleton_entry,
+    current_version,
     diff_class,
     load_manifest,
     manifest_path,
+    next_patch_version,
     required_version,
     rewrite_pyproject_version,
     satisfies,
     set_manifest_version,
     stamp,
 )
+from frob.release._publish import publish
 
 
 def _snap(root: Path):
@@ -418,3 +422,253 @@ class TestCrashSafeReleaseWrites:
         assert result.is_err
         assert result.danger_err == ReleaseError.WriteFailed
         assert manifest_path(tmp_path).read_text(encoding="utf-8") == original
+
+
+def _write_pyproject(root: Path, version: str) -> None:
+    (root / "pyproject.toml").write_text(
+        f'[project]\nname = "demo"\nversion = "{version}"\n', encoding="utf-8"
+    )
+
+
+class TestCurrentVersion:
+    """`current_version` (T-2242): read-only pyproject.toml version read."""
+
+    def test_reads_pyproject_version(self, tmp_path):
+        _write_pyproject(tmp_path, "1.2.3")
+        result = current_version(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == "1.2.3"
+
+    def test_missing_pyproject_is_bad_version(self, tmp_path):
+        result = current_version(tmp_path)
+        assert result.is_err
+        assert result.danger_err == ReleaseError.BadVersion
+
+    def test_never_mutates_the_file(self, tmp_path):
+        _write_pyproject(tmp_path, "1.2.3")
+        before = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
+        current_version(tmp_path)
+        after = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
+        assert before == after
+
+
+class TestNextPatchVersion:
+    """`next_patch_version` (T-2242): pure X.Y.Z -> X.Y.(Z+1)."""
+
+    def test_increments_patch_component(self):
+        result = next_patch_version("1.2.3")
+        assert result.is_ok
+        assert result.danger_ok == "1.2.4"
+
+    def test_malformed_version_is_bad_version(self):
+        result = next_patch_version("not-a-version")
+        assert result.is_err
+        assert result.danger_err == ReleaseError.BadVersion
+
+
+class TestBumpPatchVersion:
+    """`bump_patch_version` (T-2242): the canonical, single-home patch bump
+    `scripts/bump_version.py` and `frob release publish` both call."""
+
+    def test_bumps_and_writes_pyproject(self, tmp_path):
+        _write_pyproject(tmp_path, "0.1.0")
+        result = bump_patch_version(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok == "0.1.1"
+        assert current_version(tmp_path).danger_ok == "0.1.1"
+
+
+class _StubProc:
+    """Minimal stand-in for `frob.gitio.ProcResult` -- only the fields
+    `_run_step`/`_sync_derived_artifacts` actually read."""
+
+    def __init__(self, returncode: int = 0, stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+class TestPublish:
+    """`publish` (T-2242): the bump+stamp+sync+commit+push+build+publish
+    composition, with every git/uv step stubbed via `frob.gitio.run_argv`
+    -- never a real git push or a real PyPI publish (T-2242's own
+    non-negotiable safety constraint)."""
+
+    def test_dry_run_does_not_mutate_anything(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # tests/test_release.py::TestPublish.test_dry_run_does_not_mutate_anything
+        _write_pyproject(tmp_path, "1.0.0")
+        calls: list[list[str]] = []
+
+        def _spy(argv, **kwargs):  # noqa: ANN001, ANN003
+            calls.append(list(argv))
+            raise AssertionError("dry-run must never spawn a subprocess")
+
+        monkeypatch.setattr("frob.gitio.run_argv", _spy)
+        monkeypatch.delenv("FROB_ENV_LOAD_MARKER", raising=False)
+
+        result = publish(tmp_path, snapshot=None, dry_run=True)
+
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.dry_run is True
+        assert report.executed_steps == ()
+        assert report.plan.current_version == "1.0.0"
+        assert report.plan.new_version == "1.0.1"
+        assert calls == []
+        # pyproject.toml itself is untouched
+        assert current_version(tmp_path).danger_ok == "1.0.0"
+        assert not (tmp_path / ".frob-release.json").exists()
+
+    def test_real_run_composes_every_step_in_order(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # tests/test_release.py::TestPublish.test_real_run_composes_every_step_in_order
+        _write_pyproject(tmp_path, "1.0.0")
+        calls: list[list[str]] = []
+
+        def _stub_run_argv(argv, *, cwd=None, timeout_s=60.0, env=None):  # noqa: ANN001
+            calls.append(list(argv))
+            from typani import Ok as _Ok
+
+            return _Ok(_StubProc(returncode=0))
+
+        monkeypatch.setattr("frob.gitio.run_argv", _stub_run_argv)
+
+        from frob.graph import GraphSnapshot
+
+        empty_snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+
+        result = publish(tmp_path, empty_snapshot, dry_run=False)
+
+        assert result.is_ok, result.danger_err if result.is_err else None
+        report = result.danger_ok
+        assert report.dry_run is False
+        assert report.executed_steps == (
+            "bump",
+            "stamp",
+            "sync",
+            "git-add",
+            "git-commit",
+            "git-push",
+            "uv-build",
+            "uv-publish",
+        )
+        assert current_version(tmp_path).danger_ok == "1.0.1"
+        # the git/uv steps ran in order, argv lists only (never shell=True)
+        argv_heads = [c[0] for c in calls]
+        assert argv_heads == ["uv", "git", "git", "git", "uv", "uv"]
+
+    def test_step_failure_stops_the_sequence_and_reports_the_error(
+        self, tmp_path, monkeypatch
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestPublish.test_step_failure_stops_the_sequence_and_r\
+        # eports_the_error
+        _write_pyproject(tmp_path, "1.0.0")
+
+        def _stub_run_argv(argv, *, cwd=None, timeout_s=60.0, env=None):  # noqa: ANN001
+            from typani import Ok as _Ok
+
+            if argv[0] == "uv" and argv[1] == "lock":
+                return _Ok(_StubProc(returncode=1, stderr="simulated uv lock failure"))
+            return _Ok(_StubProc(returncode=0))
+
+        monkeypatch.setattr("frob.gitio.run_argv", _stub_run_argv)
+
+        from frob.graph import GraphSnapshot
+
+        result = publish(tmp_path, GraphSnapshot(root=str(tmp_path), symbols={}, edges=()), dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == ReleaseError.SyncFailed
+        # the version WAS bumped (that step ran before the failing one) --
+        # this proves the sequence stops rather than silently continuing
+        assert current_version(tmp_path).danger_ok == "1.0.1"
+
+    def test_env_only_loaded_on_a_real_run(self, tmp_path, monkeypatch):
+        # frob:tests \
+        # tests/test_release.py::TestPublish.test_env_only_loaded_on_a_real_run
+        """T-2242 safety requirement: `--dry-run` must never touch `.env`
+        at all. A fake `.env` here uses a placeholder token, never a real
+        secret, per the ticket's own instruction."""
+        _write_pyproject(tmp_path, "1.0.0")
+        (tmp_path / ".env").write_text(
+            "UV_PUBLISH_TOKEN=pypi-XXXX\n", encoding="utf-8"
+        )
+        monkeypatch.delenv("UV_PUBLISH_TOKEN", raising=False)
+
+        publish(tmp_path, snapshot=None, dry_run=True)
+        assert "UV_PUBLISH_TOKEN" not in os.environ
+
+        def _stub_run_argv(argv, *, cwd=None, timeout_s=60.0, env=None):  # noqa: ANN001
+            from typani import Ok as _Ok
+
+            return _Ok(_StubProc(returncode=0))
+
+        monkeypatch.setattr("frob.gitio.run_argv", _stub_run_argv)
+        from frob.graph import GraphSnapshot
+
+        publish(tmp_path, GraphSnapshot(root=str(tmp_path), symbols={}, edges=()), dry_run=False)
+        assert os.environ.get("UV_PUBLISH_TOKEN") == "pypi-XXXX"
+        monkeypatch.delenv("UV_PUBLISH_TOKEN", raising=False)
+
+
+class TestRunReleasePublishCommand:
+    """`frob.release._cli.run_release_publish_command` -- the CLI-facing
+    wrapper `frob.__main__._dispatch` calls for `frob release publish`."""
+
+    def test_dry_run_prints_the_plan_and_exits_0(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        # frob:tests \
+        # tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_p\
+        # lan_and_exits_0
+        import argparse
+
+        from frob.release._cli import run_release_publish_command
+
+        _write_pyproject(tmp_path, "2.0.0")
+        args = argparse.Namespace(path=str(tmp_path), dry_run=True)
+
+        exit_code = run_release_publish_command(args)
+
+        assert exit_code == 0
+        out = capsys.readouterr().out
+        assert "would bump 2.0.0 -> 2.0.1" in out
+
+    def test_publish_failure_exits_nonzero(self, tmp_path, monkeypatch, capsys):
+        # frob:tests \
+        # tests/test_release.py::TestRunReleasePublishCommand.test_publish_failure_exit\
+        # s_nonzero
+        import argparse
+
+        from frob.release._cli import run_release_publish_command
+
+        args = argparse.Namespace(path=str(tmp_path), dry_run=True)
+        # no pyproject.toml at all -> current_version fails -> Err path
+        exit_code = run_release_publish_command(args)
+
+        assert exit_code == 1
+        err = capsys.readouterr().err
+        assert "release publish" in err
+
+
+class TestAddReleasePublishParser:
+    """`add_release_publish_parser` (T-2242): the argparse builder
+    `frob.__main__._dispatch`'s special case constructs its own throwaway
+    parser from."""
+
+    # frob:tests \
+    # tests/test_release.py::TestAddReleasePublishParser.test_registers_release_publish\
+    # _with_dry_run_flag
+    def test_registers_release_publish_with_dry_run_flag(self):
+        import argparse
+
+        from frob.release._cli import add_release_publish_parser
+
+        parser = argparse.ArgumentParser(prog="frob")
+        sub = parser.add_subparsers(dest="subcommand")
+        add_release_publish_parser(sub)
+
+        args = parser.parse_args(["release", "publish", "some/path", "--dry-run"])
+        assert args.path == "some/path"
+        assert args.dry_run is True

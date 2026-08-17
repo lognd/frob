@@ -87,6 +87,13 @@ class ReleaseError(ErrorSet):
         "the crash-safe write of a release-owned file failed (see logs for the "
         "underlying OSError)"
     )
+    # frob:ticket T-2242
+    SyncFailed = "release publish's inline sync step (uv lock) failed"
+    GitAddFailed = "git add of the release-owned files failed"
+    GitCommitFailed = "git commit of the version bump failed"
+    GitPushFailed = "git push failed"
+    BuildFailed = "uv build failed"
+    PublishFailed = "uv publish failed"
 
 
 # frob:ticket T-1359
@@ -359,6 +366,66 @@ def rewrite_pyproject_version(root: Path, version: str) -> Result[bool, ReleaseE
 
 
 # frob:doc docs/modules/release.md#public-api
+# frob:ticket T-2242
+# frob:tests tests/test_release.py::TestCurrentVersion.test_reads_pyproject_version  # noqa: E501
+def current_version(root: Path) -> Result[str, ReleaseError]:
+    """`root/pyproject.toml`'s `[project].version`, read-only (T-2242) --
+    never mutates anything, unlike `rewrite_pyproject_version`. `Err(
+    BadVersion)` if the file is missing, unparsable, or has no string
+    `version` field."""
+    import tomllib
+
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return Err(ReleaseError.BadVersion)
+    try:
+        with path.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return Err(ReleaseError.BadVersion)
+    version = data.get("project", {}).get("version")
+    if not isinstance(version, str):
+        return Err(ReleaseError.BadVersion)
+    return Ok(version)
+
+
+# frob:doc docs/modules/release.md#public-api
+# frob:ticket T-2242
+# frob:tests tests/test_release.py::TestNextPatchVersion.test_increments_patch_component  # noqa: E501
+def next_patch_version(version: str) -> Result[str, ReleaseError]:
+    """`X.Y.Z -> X.Y.(Z+1)` (T-2242), pure -- no I/O, no mutation. The same
+    unconditional-patch-bump rule `scripts/bump_version.py` implemented
+    inline before this ticket; that script is now a thin wrapper over this
+    plus `bump_patch_version` below, so the rule has exactly one home."""
+    parts = version.split(".")
+    if len(parts) != 3 or not parts[-1].isdigit():
+        return Err(ReleaseError.BadVersion)
+    parts[-1] = str(int(parts[-1]) + 1)
+    return Ok(".".join(parts))
+
+
+# frob:doc docs/modules/release.md#public-api
+# frob:ticket T-2242
+# frob:tests tests/test_release.py::TestBumpPatchVersion.test_bumps_and_writes_pyproject  # noqa: E501
+def bump_patch_version(root: Path) -> Result[str, ReleaseError]:
+    """Bump `root/pyproject.toml`'s patch version unconditionally, in
+    place (T-2242) -- the canonical implementation `scripts/bump_
+    version.py` and `frob release publish` both call, so the rule has one
+    home instead of two (the script used to hand-roll this same regex
+    substitution independently). Returns the NEW version on success."""
+    current = current_version(root)
+    if current.is_err:
+        return current
+    nxt = next_patch_version(current.danger_ok)
+    if nxt.is_err:
+        return nxt
+    rewritten = rewrite_pyproject_version(root, nxt.danger_ok)
+    if rewritten.is_err:
+        return Err(rewritten.danger_err)
+    return Ok(nxt.danger_ok)
+
+
+# frob:doc docs/modules/release.md#public-api
 # frob:ticket T-1009
 def changelog_skeleton_entry(root: Path, version: str, note: str | None = None) -> bool:
     """Insert a `## [version] - unreleased` skeleton entry at the top of
@@ -491,10 +558,13 @@ __all__ = [
     "ReleaseError",
     "ReleaseManifest",
     "authoritative_version",
+    "bump_patch_version",
     "changelog_skeleton_entry",
+    "current_version",
     "diff_class",
     "load_manifest",
     "manifest_path",
+    "next_patch_version",
     "required_version",
     "rewrite_pyproject_version",
     "satisfies",

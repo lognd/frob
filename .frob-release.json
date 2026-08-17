@@ -1224,15 +1224,23 @@
     "src/frob/release/__init__.py::ReleaseError": "aa4c9a02d46af5ed10a463784c1198a040aaabf70493b5c71d5e2a849fda9ad2",
     "src/frob/release/__init__.py::ReleaseManifest": "6c167cd237c5d1782b51ff2d563443662c073e751424517979dc33f8c66604d0",
     "src/frob/release/__init__.py::authoritative_version": "35a8b7413144445429ca0b30b78525b5619cf282bcb28ae92a5251e2bd57499a",
+    "src/frob/release/__init__.py::bump_patch_version": "589c11690e9482f374210ebb904d9ab95dd8cc412fb0f7a3c332e90ec8f85767",
     "src/frob/release/__init__.py::changelog_skeleton_entry": "db62c2db917877841fbfc61a5d9140dd2bf2c7a6c36d246bc3fdd8d80329fa44",
+    "src/frob/release/__init__.py::current_version": "ced60f25ccc03a30b8f73cf11d33a33281ea5294afe5b673736cc723d2c25b96",
     "src/frob/release/__init__.py::diff_class": "1a998c5976ce86c5e125be241d1287aa3c080135c787617c3a71ccae07742b81",
     "src/frob/release/__init__.py::load_manifest": "a6b7afad1e2359546d9465ba62064bd4f21b964f256806fe21b0e180460da06f",
     "src/frob/release/__init__.py::manifest_path": "ed8439b4c99f5bc4111d2435fe9d4bf4517ce035d2492447c278b65ef6e1e3aa",
+    "src/frob/release/__init__.py::next_patch_version": "91011f5b541fca51aefb2d87139250c597e18031646087b9eb6dc542d899750e",
     "src/frob/release/__init__.py::required_version": "7a738279d89efb9a850534220f76d33ba9eed3306fbc58fa2c20a534715b5316",
     "src/frob/release/__init__.py::rewrite_pyproject_version": "2f8b4af9f2a28277e5e4c37e4220b9ccba50906a50596bb3edd027eec81f182b",
     "src/frob/release/__init__.py::satisfies": "96bf71bc7e49cfd989d1314b27c47da286e525fe21f38f4829104d0dff750bf7",
     "src/frob/release/__init__.py::set_manifest_version": "93981fb90b3d1ae527c4883a76f2d43a997658c2a8dd782427d3f7e80ec65acc",
     "src/frob/release/__init__.py::stamp": "1d74b40b9cc448592803987ec23e886cc461892dd080cfe8d967b218d02b09dd",
+    "src/frob/release/_cli.py::add_release_publish_parser": "8fb6ccbe171c2b13885eebed803f3b526b4e3455d02e7cec7c3d4120081ad707",
+    "src/frob/release/_cli.py::run_release_publish_command": "e2bb7af1446ab352020742cd59f2bed941e8cbad20707c2d32e2c7ffe81c0fb9",
+    "src/frob/release/_publish.py::PublishPlan": "53b11503f9d9bc1a8f1b5d7bd936300d782cb47632f05370d4c41f0ca5bd60c2",
+    "src/frob/release/_publish.py::PublishReport": "2162743c1c456cd790675c1c9c33a1086073b47e2e2e69fb3b73ed079ccdb378",
+    "src/frob/release/_publish.py::publish": "6c1dcfe00d5515284cf5c7c18d5fede94aa73291d3c6010e23122b1445abe7cc",
     "src/frob/render/_color.py::ColorFlag": "44a7f61bf7f217bfd87267daf039daa7646a19ede5c09cf21d910051d71cac3c",
     "src/frob/render/_color.py::resolve_color": "4ae7ef6dcf0c712e6d9f9c82802c94217331326dd162788aa64126a97014f9be",
     "src/frob/render/_elements.py::Status": "f652823de2640bd2750b8134158b37329808ffd82820bcc2916efba2c5e7c529",
@@ -2319,5 +2327,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.480.0"
+  "version": "0.481.0"
 }

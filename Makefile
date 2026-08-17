@@ -527,24 +527,19 @@ clean: $(STAMP)
 	uv run frob clean --all -y
 	rm -f .testmondata
 
-# T-0789: bumping pyproject.toml's version without re-locking leaves
-# uv.lock's own recorded frob version stale relative to pyproject.toml.
-# `uv run` silently re-syncs that stale line on every subsequent
-# invocation in every worktree cut from this commit, producing a
-# working-tree uv.lock diff no agent hand-edited -- SCOPE001 then fires
-# on that diff unless someone remembers to `git checkout -- uv.lock`
-# first. Running `uv lock` here and committing the result closes the gap
-# at the source: a worktree cut from this commit starts with uv.lock
-# already in sync, so `uv run` has nothing left to silently rewrite.
+# T-2242: `frob release publish` now owns the whole sequence (version
+# bump, stamp, sync, commit, push, build, publish) in pure Python --
+# `.env` is loaded via python-dotenv at runtime (never bash `set -a && .
+# ./.env && set +a` sourcing), every git/uv step is an argv-list
+# subprocess call (never shell=True), and `--dry-run` proves the whole
+# sequence without ever pushing or publishing for real. See
+# src/frob/release/_publish.py and docs/commands/release.md.
+#
+# T-0789 (still true): `uv lock` runs as part of this sequence (T-1009's
+# `frob release sync` step, now inlined into `publish`), so uv.lock never
+# goes stale relative to the version this bump just wrote.
 upload: clean
-	@set -a && . ./.env && set +a; \
-	NEW=$$(uv run python scripts/bump_version.py); \
-	uv run frob release stamp; \
-	uv run frob release sync; \
-	git add pyproject.toml uv.lock CHANGELOG.md .frob-release.json; \
-	git commit -m "chore: bump version to $$NEW"; \
-	git push; \
-	uv build && uv publish
+	uv run frob release publish
 
 # frob:managed-block BEGIN makefile-core-shim (frob scaffold apply -- do not hand-edit within markers)
 # Build and install every declared [[native]] extension into the venv

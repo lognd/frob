@@ -1,7 +1,7 @@
 ---
 id: T-2242
 title: Add frob release publish subcommand; retire Makefile upload bash recipe
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -52,20 +52,73 @@ scope_changes:
     as a residual caveat in the ticket body rather than chased further
   actor: logan
   at: '2026-08-16'
+evidence:
+- tests/test_release.py::TestCurrentVersion::test_reads_pyproject_version
+- tests/test_release.py::TestCurrentVersion::test_missing_pyproject_is_bad_version
+- tests/test_release.py::TestCurrentVersion::test_never_mutates_the_file
+- tests/test_release.py::TestNextPatchVersion::test_increments_patch_component
+- tests/test_release.py::TestNextPatchVersion::test_malformed_version_is_bad_version
+- tests/test_release.py::TestBumpPatchVersion::test_bumps_and_writes_pyproject
+- tests/test_release.py::TestPublish::test_dry_run_does_not_mutate_anything
+- tests/test_release.py::TestPublish::test_real_run_composes_every_step_in_order
+- tests/test_release.py::TestPublish::test_step_failure_stops_the_sequence_and_reports_the_error
+- tests/test_release.py::TestPublish::test_env_only_loaded_on_a_real_run
+- tests/test_release.py::TestRunReleasePublishCommand::test_dry_run_prints_the_plan_and_exits_0
+- tests/test_release.py::TestRunReleasePublishCommand::test_publish_failure_exits_nonzero
+- tests/test_release.py::TestAddReleasePublishParser::test_registers_release_publish_with_dry_run_flag
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN a repo with no Makefile WHEN a maintainer wants to cut a release THEN
     ''uv run frob release publish'' bumps the version, stamps/syncs the release, commits
     pyproject.toml/uv.lock/CHANGELOG.md/.frob-release.json, pushes, builds, and publishes
     -- the same net effect as today''s upload: recipe'
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestCurrentVersion::test_reads_pyproject_version
+  - tests/test_release.py::TestCurrentVersion::test_missing_pyproject_is_bad_version
+  - tests/test_release.py::TestCurrentVersion::test_never_mutates_the_file
+  - tests/test_release.py::TestNextPatchVersion::test_increments_patch_component
+  - tests/test_release.py::TestNextPatchVersion::test_malformed_version_is_bad_version
+  - tests/test_release.py::TestBumpPatchVersion::test_bumps_and_writes_pyproject
+  - tests/test_release.py::TestPublish::test_dry_run_does_not_mutate_anything
+  - tests/test_release.py::TestPublish::test_real_run_composes_every_step_in_order
+  - tests/test_release.py::TestPublish::test_step_failure_stops_the_sequence_and_reports_the_error
+  - tests/test_release.py::TestPublish::test_env_only_loaded_on_a_real_run
+  - tests/test_release.py::TestRunReleasePublishCommand::test_dry_run_prints_the_plan_and_exits_0
+  - tests/test_release.py::TestRunReleasePublishCommand::test_publish_failure_exits_nonzero
+  - tests/test_release.py::TestAddReleasePublishParser::test_registers_release_publish_with_dry_run_flag
 - text: GIVEN the workflow needs a real secret (PyPI token) THEN it is loaded via
     python-dotenv's load_dotenv(), never bash 'set -a && . ./.env && set +a' sourcing
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestCurrentVersion::test_reads_pyproject_version
+  - tests/test_release.py::TestCurrentVersion::test_missing_pyproject_is_bad_version
+  - tests/test_release.py::TestCurrentVersion::test_never_mutates_the_file
+  - tests/test_release.py::TestNextPatchVersion::test_increments_patch_component
+  - tests/test_release.py::TestNextPatchVersion::test_malformed_version_is_bad_version
+  - tests/test_release.py::TestBumpPatchVersion::test_bumps_and_writes_pyproject
+  - tests/test_release.py::TestPublish::test_dry_run_does_not_mutate_anything
+  - tests/test_release.py::TestPublish::test_real_run_composes_every_step_in_order
+  - tests/test_release.py::TestPublish::test_step_failure_stops_the_sequence_and_reports_the_error
+  - tests/test_release.py::TestPublish::test_env_only_loaded_on_a_real_run
+  - tests/test_release.py::TestRunReleasePublishCommand::test_dry_run_prints_the_plan_and_exits_0
+  - tests/test_release.py::TestRunReleasePublishCommand::test_publish_failure_exits_nonzero
+  - tests/test_release.py::TestAddReleasePublishParser::test_registers_release_publish_with_dry_run_flag
 - text: GIVEN --dry-run THEN the subcommand reports the version it would bump to and
     the files it would touch/push/publish without mutating anything, so this workflow
     is provable in CI/tests without a real git push or PyPI publish
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestCurrentVersion::test_reads_pyproject_version
+  - tests/test_release.py::TestCurrentVersion::test_missing_pyproject_is_bad_version
+  - tests/test_release.py::TestCurrentVersion::test_never_mutates_the_file
+  - tests/test_release.py::TestNextPatchVersion::test_increments_patch_component
+  - tests/test_release.py::TestNextPatchVersion::test_malformed_version_is_bad_version
+  - tests/test_release.py::TestBumpPatchVersion::test_bumps_and_writes_pyproject
+  - tests/test_release.py::TestPublish::test_dry_run_does_not_mutate_anything
+  - tests/test_release.py::TestPublish::test_real_run_composes_every_step_in_order
+  - tests/test_release.py::TestPublish::test_step_failure_stops_the_sequence_and_reports_the_error
+  - tests/test_release.py::TestPublish::test_env_only_loaded_on_a_real_run
+  - tests/test_release.py::TestRunReleasePublishCommand::test_dry_run_prints_the_plan_and_exits_0
+  - tests/test_release.py::TestRunReleasePublishCommand::test_publish_failure_exits_nonzero
+  - tests/test_release.py::TestAddReleasePublishParser::test_registers_release_publish_with_dry_run_flag
 threat: null
 component: null
 anchor: false
