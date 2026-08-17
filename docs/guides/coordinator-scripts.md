@@ -321,6 +321,17 @@ bare `**` also tries `<pattern>/*`, since pathlib's own `**` semantics
 match directories recursively but not the files inside the deepest one
 without a further path segment.
 
+### `_land_ticket_collisions`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_land_ticket_collisions -->
+
+T-2281 (ARCH001 split off `scope_lease_collisions`). Which of
+`land_invocations()`'s own ticket ids (a live process genuinely landing
+that ticket right now) collide with a ticket's own scope files,
+excluding any id already reported via a live lease. Each id's scope is
+read from `main` -- see `scope_lease_collisions`'s own entry for the
+full incident this closes.
+
 ### `scope_lease_collisions`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#scope_lease_collisions -->
@@ -335,6 +346,18 @@ tickets/_land.py`) were already held by another agent's LIVE lease, and
 the old readiness answered `lease: none` / `dispatchable: True` for both
 because it only ever asked "does THIS ticket hold a lease", never
 "does some OTHER live lease already cover the files it needs".
+
+T-2281: `land_ticket_ids` (`land_invocations()`'s own ticket ids) is a
+SECOND, independent occupancy source, joined alongside `held` -- `held`
+alone is blind to the window between a land's local worktree close
+(which releases the shared lease immediately) and its squash reaching
+the primary checkout, during which a ticket whose files are genuinely
+still contended holds no lease at all. Measured: `LANDS IN FLIGHT:
+T-2254 ... elapsed=454s` printed in the same run as `T-2254 -> t-2254
+[reclaimable]`. Each such ticket's scope is read from `main` (no lease
+exists to read it from); never inferred from ticket STATE (`in-progress`
+during this window is normal and intentional). A ticket already reported
+via a live lease is never double-counted.
 
 ### `_scope_diverges_from_lease`
 

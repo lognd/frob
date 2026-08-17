@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.485.0] - unreleased
+
+- T-2281: fleet_status scope-collision check misses tickets whose land is in flight (in-progress + no lease is not a lease-recording bug)
+
 ## [0.484.0] - unreleased
 
 - T-2236: Documented invocation of coordinator scripts (bare python3) violates requires-python >=3.11, and the failure is a raw ImportError -- broke fleet_status the minute a legal 3.11 feature landed

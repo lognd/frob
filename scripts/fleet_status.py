@@ -547,8 +547,50 @@ def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
     return paths
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_land_ticket_collisions
+# frob:ticket T-2281
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_land_in_progres\
+# s_ticket_with_no_lease_still_collides
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_land_ticket_dis\
+# joint_scope_is_not_a_collision
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_land_ticket_id_\
+# matching_a_live_lease_is_not_double_reported
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_the_ticket_s_ow\
+# n_id_in_land_ticket_ids_is_never_self_collision
+def _land_ticket_collisions(
+    my_files: set[Path],
+    land_ticket_ids: Sequence[str],
+    exclude_ids: set[str],
+) -> list[dict]:
+    """`scope_lease_collisions`'s T-2281 half: which of `land_ticket_ids`
+    (`land_invocations()`'s own ticket ids -- a live process genuinely
+    landing that ticket right now) collide with `my_files`, EXCLUDING
+    `exclude_ids` (ids already reported via a live lease -- checked at
+    more precise, lease-recorded scope, never double-counted here). Each
+    id's scope is read from `main` since no lease exists to read it from
+    during this window -- see `scope_lease_collisions`'s own docstring
+    for the incident this closes."""
+    collisions: list[dict] = []
+    for other_id in land_ticket_ids:
+        if other_id in exclude_ids:
+            continue
+        other_main = ticket_frontmatter_on_main(other_id)
+        if other_main is None:
+            continue
+        other_files = _expand_scope_globs_to_paths(REPO, other_main.get("scope", []))
+        overlap = my_files & other_files
+        if overlap:
+            collisions.append({"ticket_id": other_id, "paths": overlap})
+    return collisions
+
+
 # frob:doc docs/guides/coordinator-scripts.md#scope_lease_collisions
 # frob:ticket T-2225
+# frob:ticket T-2281
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_glob_scope_coll\
 # ides_with_a_literal_lease_file
@@ -559,7 +601,10 @@ def _expand_scope_globs_to_paths(root: Path, globs: Sequence[str]) -> set[Path]:
 # tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions.test_a_reclaimable_l\
 # ease_is_never_a_collision
 def scope_lease_collisions(
-    ticket_id: str, effective_scope: Sequence[str], held: Sequence[dict]
+    ticket_id: str,
+    effective_scope: Sequence[str],
+    held: Sequence[dict],
+    land_ticket_ids: Sequence[str] = (),
 ) -> list[dict]:
     """T-2225: which OTHER held leases collide with `effective_scope` (a
     ticket's own scope globs) at the RESOLVED-FILE level, restricted to
@@ -573,6 +618,13 @@ def scope_lease_collisions(
     _land.py` are lexically unrelated strings but genuinely overlapping
     file sets.
 
+    T-2281: `land_ticket_ids` (`_land_ticket_collisions`, own docstring
+    has the full incident/rationale) is a SECOND, independent occupancy
+    source -- `held` (`leases()`) alone is BLIND to the window between a
+    land's local worktree close and its squash reaching the primary
+    checkout, during which a ticket whose files are genuinely still
+    contended holds no lease at all.
+
     Returns one dict per colliding OTHER ticket:
     `{"ticket_id": ..., "paths": [str, ...]}` (sorted, deduplicated) --
     `[]` means no collision (the must-still-pass case)."""
@@ -580,6 +632,7 @@ def scope_lease_collisions(
     if not my_files:
         return []
     collisions: list[dict] = []
+    seen_ids: set[str] = set()
     for record in held:
         other_id = record.get("ticket_id")
         if other_id is None or other_id == ticket_id:
@@ -590,6 +643,10 @@ def scope_lease_collisions(
         overlap = my_files & other_files
         if overlap:
             collisions.append({"ticket_id": other_id, "paths": overlap})
+            seen_ids.add(other_id)
+    collisions.extend(
+        _land_ticket_collisions(my_files, land_ticket_ids, seen_ids | {ticket_id})
+    )
     # PERF004: sort each collision's paths once, outside the per-lease loop
     # above, rather than calling sorted() per iteration inside it.
     for collision in collisions:
@@ -692,7 +749,10 @@ def ticket_readiness(ticket_id: str) -> dict:
         else []
     )
     scope_collisions = scope_lease_collisions(
-        ticket_id, effective_scope or (), leases()
+        ticket_id,
+        effective_scope or (),
+        leases(),
+        [inv["ticket_id"] for inv in land_invocations()],
     )
     dispatchable = _ticket_dispatchable(
         main_exists=main_info is not None,

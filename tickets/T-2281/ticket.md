@@ -2,7 +2,7 @@
 id: T-2281
 title: fleet_status scope-collision check misses tickets whose land is in flight (in-progress
   + no lease is not a lease-recording bug)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,27 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: new repro/regression tests for the land-in-flight collision fix
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'doc closure: scope_lease_collisions''s new land_ticket_ids param needs
+    its anchor updated'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_land_in_progress_ticket_with_no_lease_still_collides
 threat: null
 component: null
 anchor: false

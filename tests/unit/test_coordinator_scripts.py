@@ -1382,6 +1382,92 @@ class TestScopeLeaseCollisions:
         )
         assert collisions == []
 
+    # frob:ticket T-2281
+    def test_land_in_progress_ticket_with_no_lease_still_collides(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """(MUST FAIL FIRST) T-2281's measured incident: a ticket whose
+        land is actively running holds NO lease (released locally before
+        the squash reaches main) but its scope files are genuinely still
+        contended. `land_ticket_ids` (from `land_invocations()`) is a
+        SECOND occupancy source, independent of `held`; its scope is read
+        from `main` since no lease exists to read it from."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
+            if tid == "T-2254"
+            else None,
+        )
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/**"], [], land_ticket_ids=["T-2254"]
+        )
+        assert len(collisions) == 1
+        assert collisions[0]["ticket_id"] == "T-2254"
+        assert any("_land.py" in p for p in collisions[0]["paths"])
+
+    # frob:ticket T-2281
+    def test_land_ticket_disjoint_scope_is_not_a_collision(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STILL-PASS: a ticket with a land in flight whose scope
+        does NOT overlap must still report no collision -- a fix that
+        treats every in-flight land as blocking every dispatch would
+        recreate an unreclaimable-lease-class defect from the opposite
+        side."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
+            if tid == "T-2254"
+            else None,
+        )
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/app/config.py"], [], land_ticket_ids=["T-2254"]
+        )
+        assert collisions == []
+
+    # frob:ticket T-2281
+    def test_land_ticket_id_matching_a_live_lease_is_not_double_reported(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket present in BOTH a live lease AND `land_ticket_ids`
+        (a lease that has not yet been released, mid-land) is reported
+        ONCE, from the lease path -- never twice."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        monkeypatch.setattr(fleet_status, "lease_classification", lambda record: "live")
+        held = [
+            {
+                "ticket_id": "T-2254",
+                "worktree": str(root),
+                "scope": ["src/frob/tickets/_land.py"],
+                "recorded_at": "2026-08-01T00:00:00+00:00",
+            }
+        ]
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/**"], held, land_ticket_ids=["T-2254"]
+        )
+        assert len(collisions) == 1
+
+    # frob:ticket T-2281
+    def test_the_ticket_s_own_id_in_land_ticket_ids_is_never_self_collision(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A ticket's own id appearing in `land_ticket_ids` (it is itself
+        actively landing right now) must never be reported as colliding
+        with itself."""
+        root = self._make_tree(tmp_path)
+        monkeypatch.setattr(fleet_status, "REPO", root)
+        collisions = fleet_status.scope_lease_collisions(
+            "T-2220", ["src/frob/**"], [], land_ticket_ids=["T-2220"]
+        )
+        assert collisions == []
+
 
 class TestTicketReadinessScopeCollision:
     """`fleet_status.ticket_readiness`'s scope-collision integration
@@ -1421,6 +1507,7 @@ class TestTicketReadinessScopeCollision:
             ],
         )
         monkeypatch.setattr(fleet_status, "lease_classification", lambda record: "live")
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
         readiness = fleet_status.ticket_readiness("T-2220")
         assert readiness["scope_lease_collisions"] != []
         assert readiness["dispatchable"] is False
@@ -1449,6 +1536,7 @@ class TestTicketReadinessScopeCollision:
             fleet_status, "worktrees_touching_ticket", lambda tid, globs: []
         )
         monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
         readiness = fleet_status.ticket_readiness("T-2114")
         assert readiness["scope_lease_collisions"] == []
         assert readiness["dispatchable"] is True
