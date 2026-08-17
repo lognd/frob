@@ -2,7 +2,7 @@
 id: T-2297
 title: 'post-land sweep regression from T-1783: 6 new (rule, file) identit(ies), 15
   finding(s) (, E402, E501, F541)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -16,6 +16,8 @@ scope:
 - /home/logan/projects/frob/src/frob/lang/_nodes.py
 - /home/logan/projects/frob/tests/test_ticket_work_and_land_finish.py
 - /home/logan/projects/frob/tests/test_ticket_land.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -31,6 +33,8 @@ scope_changes:
     currently-reproducing finding, re-adding'
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/test_ticket_land.py::TestRecordLandCommit::test_record_land_commit_never_absorbs_a_bystanders_dirty_file
 designated_repro_test: null
 threat: null
 component: null
