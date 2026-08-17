@@ -38,7 +38,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b7e69ec7a6b9fa39921d58254466838bcdf2df5a
 ---
 DISCOVERED 2026-08-17 by an implementer agent working T-1783, self-corrected
 before it reached main, and therefore never tracked.
