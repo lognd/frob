@@ -31,6 +31,74 @@ from frob.strata import Verdict, elaborate, evaluate_claims, parse_module
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MODEL_PATH = _REPO_ROOT / "design" / "frob.strata"
 
+# T-2109 (coordinator decision, 2026-08-17, superseding T-2109 attempts 1/2's
+# derived-count approach -- see the ticket's own Failure log for why a count
+# derived from the SAME raw design source under validation is tautological: an
+# unintended addition moves both sides of the equation together and the check
+# never fires): the exact, committed set of `design/frob.strata`'s elaborated
+# node ids. Unlike a count (which only shrinks or grows) or a derived formula
+# (which cannot distinguish an intentional addition from an unintended one),
+# an explicit SET catches BOTH directions of drift -- an addition shows up as
+# an unexplained extra id, a removal as a missing one, each named by
+# `_node_id_diff_message` below -- and updating this fixture is itself a
+# deliberate, reviewable diff (the whole point: the fixture only moves when a
+# ticket's own change explains the new line, never silently).
+_EXPECTED_NODE_IDS = frozenset(
+    {
+        "checker",
+        "claude_hooks",
+        "cli",
+        "core",
+        "deploy",
+        "fleet",
+        "frob_core_native",
+        "gates",
+        "graph_cache",
+        "graphlang",
+        "mutate",
+        "natives",
+        "refactor",
+        "registry",
+        "registry_model",
+        "scripts_ops",
+        "security",
+        "serve",
+        "strata_core_native",
+        "stratamod",
+        "telemetry",
+        "testsuite",
+        "tickets_ledger",
+        "verify",
+        "vet",
+    }
+)
+
+
+def _node_id_diff_message(actual: frozenset[str], expected: frozenset[str]) -> str | None:
+    """Compare an actual node-id set against the golden `expected` set (T-2109),
+    returning `None` when they match exactly or a message naming every
+    symmetric-difference id (both directions) otherwise -- unlike a bare `==`
+    assertion, this names WHICH ids are unexpectedly present or unexpectedly
+    missing rather than just reporting inequality, so a failure is
+    immediately actionable without a manual diff."""
+    extra = sorted(actual - expected)
+    missing = sorted(expected - actual)
+    if not extra and not missing:
+        return None
+    parts = []
+    if extra:
+        parts.append(f"unexpected (present but not in the golden set): {extra}")
+    if missing:
+        parts.append(f"missing (in the golden set but not present): {missing}")
+    return (
+        "design/frob.strata's elaborated node-id set diverged from the "
+        "committed golden set in tests/system/test_frob_self_model.py::"
+        "_EXPECTED_NODE_IDS -- " + "; ".join(parts) + ". If this divergence "
+        "is an intentional model change, update _EXPECTED_NODE_IDS in the "
+        "same diff as a deliberate, reviewable edit; if not, it is an "
+        "unintended addition/removal this check exists to catch."
+    )
+
 
 @pytest.fixture(scope="module")
 def _model():
@@ -198,7 +266,18 @@ class TestFrobSelfModel:
         # paragraph above for why. 23/44/1 was the pre-T-2102 count;
         # measured 25/44/1 as of this ticket (2 organic node additions,
         # 0 new flows/boundaries).
-        assert len(_model.nodes) >= 25
+        # T-2109 (coordinator decision, 2026-08-17): the node count's own
+        # `>=` floor is replaced with an exact golden-SET comparison against
+        # `_EXPECTED_NODE_IDS` above -- see that constant's own docstring for
+        # why a set (not a count, not a formula derived from the same source
+        # under validation) is the only one of the three that catches an
+        # unintended ADDITION, not just shrinkage. flows/boundaries/claims
+        # keep T-2102's floor: T-2109's scope is the node-count assertion
+        # specifically (see the ticket body), and no derivable-formula/
+        # golden-set case was made for those three.
+        actual_node_ids = frozenset(node.id for node in _model.nodes)
+        diff_message = _node_id_diff_message(actual_node_ids, _EXPECTED_NODE_IDS)
+        assert diff_message is None, diff_message
         assert len(_model.flows) >= 44
         assert len(_model.boundaries) >= 1
         # T-0150: 3 original PROVED architecture claims + 3 `assume
@@ -247,6 +326,56 @@ class TestFrobSelfModel:
         # measured 34 as of this ticket (see the T-2102 docstring
         # paragraph above).
         assert len(_model.claims) >= 31
+
+    # T-2109's own positive controls for `_node_id_diff_message` (the
+    # comparison mechanism `test_parses_and_elaborates` binds to the real
+    # elaborated model above) -- exercised directly against synthetic sets
+    # rather than by mutating `design/frob.strata` itself (out of T-2109's
+    # declared scope, `tests/system/test_frob_self_model.py` only). Per the
+    # coordinator's decision: an injected node must fail naming it, a
+    # removed node must fail naming it, and an unchanged set must pass --
+    # all three are required, not just the happy path, because a check that
+    # only ever catches one direction is exactly the asymmetric floor this
+    # ticket replaces.
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_c\
+    # atches_an_injected_node kind="unit"
+    # frob:ticket T-2109
+    def test_golden_node_id_set_catches_an_injected_node(self) -> None:
+        """An id present in `actual` but absent from `_EXPECTED_NODE_IDS`
+        (an unintended addition, the exact failure mode a `>=` floor could
+        never catch) fails and names the extra id."""
+        actual = _EXPECTED_NODE_IDS | {"unintended_extra_node"}
+        message = _node_id_diff_message(actual, _EXPECTED_NODE_IDS)
+        assert message is not None
+        assert "unintended_extra_node" in message
+        assert "unexpected" in message
+
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_c\
+    # atches_a_removed_node kind="unit"
+    # frob:ticket T-2109
+    def test_golden_node_id_set_catches_a_removed_node(self) -> None:
+        """An id present in `_EXPECTED_NODE_IDS` but absent from `actual`
+        (a real regression -- the shrinkage direction T-2102's floor already
+        caught) still fails and names the missing id, so the golden-set
+        replacement does not regress that coverage."""
+        removed = next(iter(_EXPECTED_NODE_IDS))
+        actual = _EXPECTED_NODE_IDS - {removed}
+        message = _node_id_diff_message(actual, _EXPECTED_NODE_IDS)
+        assert message is not None
+        assert removed in message
+        assert "missing" in message
+
+    # frob:tests \
+    # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_golden_node_id_set_p\
+    # asses_when_unchanged kind="unit"
+    # frob:ticket T-2109
+    def test_golden_node_id_set_passes_when_unchanged(self) -> None:
+        """An `actual` set identical to `_EXPECTED_NODE_IDS` passes with no
+        message -- the must-still-pass control proving this check is not
+        merely a check that always fails."""
+        assert _node_id_diff_message(_EXPECTED_NODE_IDS, _EXPECTED_NODE_IDS) is None
 
     # frob:tests \
     # tests/system/test_frob_self_model.py::TestFrobSelfModel.test_every_claim_proves \

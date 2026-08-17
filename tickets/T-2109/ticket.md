@@ -2,7 +2,7 @@
 id: T-2109
 title: Self-model node-count floor should be a derived expectation, not a >= floor
   (unintended growth passes silently)
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-10'
@@ -15,14 +15,52 @@ scope:
 - tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_an_injected_node
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_catches_a_removed_node
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_golden_node_id_set_passes_when_unchanged
 designated_repro_test: null
 acceptance:
-- text: Given design/frob.strata's raw pre-elaboration node/store/cache/queue/cdn/balancer
+- text: Given design/frob.strata's elaborated node-id set, when test_parses_and_elaborates
+    runs, then the actual node-id set is asserted EQUAL (exact symmetric difference)
+    to a committed golden set (_EXPECTED_NODE_IDS), naming every unexpectedly-present
+    or unexpectedly-missing id on failure, so both an unintended ADDITION and a real
+    REMOVAL fail loudly; positive controls (inject/remove/unchanged) verify both directions
+    and the pass case.
+  evidence:
+  - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: Given design/frob.strata's raw pre-elaboration node/store/cache/queue/cdn/balancer
     declaration counts, when test_parses_and_elaborates runs, then the elaborated
     node count is asserted equal to the SUM of those raw counts (a derived, recomputed
     expectation) rather than a hardcoded floor, so an unintended node addition fails
     loudly
-  evidence: []
+  new_text: Given design/frob.strata's elaborated node-id set, when test_parses_and_elaborates
+    runs, then the actual node-id set is asserted EQUAL (exact symmetric difference)
+    to a committed golden set (_EXPECTED_NODE_IDS), naming every unexpectedly-present
+    or unexpectedly-missing id on failure, so both an unintended ADDITION and a real
+    REMOVAL fail loudly; positive controls (inject/remove/unchanged) verify both directions
+    and the pass case.
+  reason: 'Coordinator decision (2026-08-17), superseding the original derived-count
+
+    criterion: attempt 1 (2026-08-10) empirically proved a count derived from
+
+    the SAME raw design/frob.strata source under validation is tautological --
+
+    an unintended addition moves both sides of the equation together and the
+
+    check never fires. Replaced with an explicit, committed golden node-id SET
+
+    compared for exact symmetric difference (both additions and removals named
+
+    in the failure message), per the coordinator''s own stated shape.
+
+    '
+  actor: logan
+  at: '2026-08-17'
 threat: null
 component: null
 anchor: false
