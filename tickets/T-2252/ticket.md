@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b0d7976beffb15dca582cc151526ca65cf9d986e
 ---
 T-2244 (repoint trivial Makefile aliases at frob quality/fmt) premise-checked
 and found broken for 4 of its 9 target lines. Investigated directly against
