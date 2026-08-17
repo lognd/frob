@@ -12,21 +12,110 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- design
-- docs/design/gate-semantics-classification.md
-- docs/guides/coordinator-scripts.md
-- src/frob/app/telemetry.py
-- src/frob/app/ticket_runner/_land_cmd.py
-- src/frob/app/ticket_runner/_new.py
-- src/frob/lang/_nodes.py
 - tests/test_lang.py
 - tests/test_ticket_work_and_land_finish.py
-- tickets.md
-- tickets/T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
-- tickets/T-draft-0bd874ac/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
-- tickets/T-draft-0bd874ac/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: design
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/design/gate-semantics-classification.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/guides/coordinator-scripts.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/telemetry.py
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/lang/_nodes.py
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-draft-0bd874ac/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-draft-0bd874ac/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
+  reason: narrowing to the one genuinely-new, cheaply-fixable finding (TEST010 malformed
+    directive in tests/test_ticket_work_and_land_finish.py); ARCH001/ARCH103/PERF004/SELFAUDIT001
+    findings are genuine but real function-level refactors, filed separately; COV004/DOC011/DRIFT001(_land_cmd.py)/TEST010(test_lang.py)
+    did not reproduce on re-measure; TICK004/E501/DRIFT001(_nodes.py) already resolved
+    by T-2260's land
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
