@@ -2,7 +2,7 @@
 id: T-2264
 title: 'Lease liveness misses in-flight lands: frob ticket land runs from the ROOT
   with --worktree, so a lease 454s into a live land is classified reclaimable'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,23 +13,41 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-2264 fix requires new regression tests for the land-in-flight lease-liveness
+    fix; test file is the required evidence location for _leases.py changes
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_land_shields_lease
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_holder_dead
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_in_progress_lease_on_a_live_worktree_is_not_stale
+- tests/test_ticket_leases.py::TestLeaseStalenessReason::test_other_land_no_shield
+designated_repro_test: tests/test_ticket_leases.py::TestLeaseStalenessReason::test_land_shields_lease
 acceptance:
 - text: 'A lease whose ticket has a land in flight is not classified reclaimable and
     is not reclaimable by release-lease (fails today: measured at 454s into a live
     land)'
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_land_shields_lease
 - text: 'MUST-STILL-PASS: a genuinely dead holder is still reclaimable, and a live
     in-worktree agent is still live'
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_holder_dead
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_in_progress_lease_on_a_live_worktree_is_not_stale
 - text: fleet_status's classifier and _leases.py staleness give the same verdict for
     the same lease; state how they are kept in sync
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_land_shields_lease
 - text: Detection derives from structured land state, never from text-matching process
     arguments
-  evidence: []
+  evidence:
+  - tests/test_ticket_leases.py::TestLeaseStalenessReason::test_other_land_no_shield
 threat: null
 component: null
 anchor: false

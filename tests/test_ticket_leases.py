@@ -2119,6 +2119,7 @@ class TestReleaseOrphanedLease:
 
 
 # frob:ticket T-1806
+# frob:ticket T-2264
 class TestLeaseStalenessReason:
     """`lease_staleness_reason` -- the single predicate `orphaned_leases`/
     `release_orphaned_lease` now both build on, unifying the three
@@ -2172,6 +2173,97 @@ class TestLeaseStalenessReason:
             recorded_at=stale_time,
         )
         assert lease_staleness_reason(repo, record) == "holder-dead"
+
+    # frob:ticket T-2264
+    def test_land_shields_lease(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_land_shields_lease
+        """(MUST FAIL FIRST, T-2264 acceptance 1) Reproduces the measured
+        incident: a lease with an expired TTL and NO live process cwd'd
+        into its worktree (`second_worktree` -- nothing running there)
+        must still NOT read `"holder-dead"` when `land.lock` is
+        genuinely held, right now, by a live process landing THIS
+        lease's own ticket (T-1003's real shape: `frob ticket land`
+        holds the lock from the REPO ROOT, never cwd'd into the
+        worktree it is landing)."""
+        import fcntl
+        import json
+        from datetime import timedelta
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LEASE_TTL_SECONDS,
+            _LeaseRecord,
+            lease_staleness_reason,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-0001"}) + "\n").encode(),
+        )
+        try:
+            stale_time = (
+                datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+            ).isoformat()
+            record = _LeaseRecord(
+                ticket_id="T-0001",
+                scope=("src/feature.py",),
+                worktree=str(second_worktree),
+                branch="main",
+                recorded_at=stale_time,
+            )
+            assert lease_staleness_reason(repo, record) is None
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+    # frob:ticket T-2264
+    def test_other_land_no_shield(self, repo: Path, second_worktree: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_other_land_no_shie\
+        # ld
+        """A live land.lock held for a DIFFERENT ticket must not shield
+        THIS ticket's holder-dead lease -- `_land_in_progress_for_ticket`
+        must match on `ticket_id`, never treat any held lock as covering
+        every lease."""
+        import fcntl
+        import json
+        from datetime import timedelta
+
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LEASE_TTL_SECONDS,
+            _LeaseRecord,
+            lease_staleness_reason,
+        )
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+        try:
+            stale_time = (
+                datetime.now(UTC) - timedelta(seconds=LEASE_TTL_SECONDS + 60)
+            ).isoformat()
+            record = _LeaseRecord(
+                ticket_id="T-0001",
+                scope=("src/feature.py",),
+                worktree=str(second_worktree),
+                branch="main",
+                recorded_at=stale_time,
+            )
+            assert lease_staleness_reason(repo, record) == "holder-dead"
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
 
     def test_live_lease_is_not_stale(self, repo: Path, second_worktree: Path) -> None:
         # frob:tests src/frob/tickets/_leases.py::lease_staleness_reason kind="unit"

@@ -675,7 +675,63 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
     return Ok(None)
 
 
+# frob:ticket T-2264
+def _land_in_progress_for_ticket(root: Path, ticket_id: str) -> bool:
+    """True iff a LIVE process is currently landing `ticket_id` against
+    `root` (T-2264) -- an ADDITIONAL liveness source, layered onto (never
+    replacing) `scan_for_live_worktree_process`'s cwd-inside-the-worktree
+    check.
+
+    Measured incident this closes: `frob ticket land T-#### --worktree
+    <path>` runs with `root` defaulted to the PRIMARY checkout (T-1003),
+    so NONE of a land's own processes are ever cwd'd inside the worktree
+    it is landing -- a lease 454s into a genuinely live land (real,
+    climbing CPU time) read `reclaimable` because the only liveness
+    check this module ran was scoped to the worktree path itself.
+
+    Two structured (never text-matched) signals, the SAME dual check
+    `refuse_if_land_in_progress`/`_probe_land_once` already use for a
+    different caller (refusing a sibling ledger-writing verb), joined
+    here against a lease's own `ticket_id` instead of re-derived from
+    scratch:
+
+    1. `_land_flock_probe`'s non-blocking `flock` acquire attempt --
+       fails if and only if the kernel still considers some OTHER live
+       process the holder (a dead holder's `flock` is released by the
+       kernel the instant it exits, SIGKILL included, so this needs no
+       separate `os.kill` probe of its own). `frob ticket land`
+       serializes on this SINGLE root-level lock (`_land_lock`), so at
+       most one ticket can hold it at any moment -- matching THIS
+       ticket's id against the lock's own recorded holder metadata
+       (`_read_land_lock_holder_json`) is therefore an exact match, not
+       a heuristic.
+    2. `_scan_for_live_land_process`'s `/proc`-based belt-and-braces
+       backstop -- independent of flock acquisition timing (covers the
+       narrow window before a land has written its own holder metadata,
+       and any platform where `fcntl` degrades to a no-op). Parses each
+       live pid's `/proc/<pid>/cmdline` as discrete NUL-split argv
+       elements and matches the exact tokens `"ticket"`/`"land"` plus a
+       `T-\\d+`-shaped element, never a substring search across a single
+       concatenated `ps` line -- the token/grammar discipline this
+       repo's standing directive requires, and the same primitive this
+       module already trusted before this ticket.
+
+    Either signal naming `ticket_id` is sufficient; a lock held by (or a
+    live process running) a DIFFERENT ticket's land does not count."""
+    holder = _read_land_lock_holder_json(root / LAND_LOCK_REL)
+    if holder is not None and holder.get("ticket_id") == ticket_id:
+        if _land_flock_probe(root, quiet=True).is_err:
+            return True
+
+    found = _scan_for_live_land_process(root)
+    if found is not None and found[1] == ticket_id:
+        return True
+
+    return False
+
+
 # frob:ticket T-1806
+# frob:ticket T-2264
 # frob:doc \
 # docs/modules/tickets-landing.md#orphaned-lease-detection-and-release-t-1779-finding-7
 # frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_path_gone
@@ -683,6 +739,8 @@ def release_lease(root: Path, ticket_id: str) -> Result[None, LeaseError]:
 # frob:tests tests/test_ticket_leases.py::TestLeaseStalenessReason.test_holder_dead
 # frob:tests \
 # tests/test_ticket_leases.py::TestLeaseStalenessReason.test_live_lease_is_not_stale
+# frob:tests \
+# tests/test_ticket_leases.py::TestLeaseStalenessReason.test_land_shields_lease
 def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     """Unifies the four independent orphaned-lease shapes T-1806/T-2048
     found (the coordinator hit each one in a real session, every one
@@ -702,11 +760,16 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     lease survived its own drop and suppressed the doable queue for
     every other ticket declaring the same files), and `"holder-dead"`
     (path and ticket both exist, the ticket is NOT terminal, the lease
-    has gone past `is_lease_ttl_expired`'s horizon, AND no live process
-    is cwd'd into the worktree -- `scan_for_live_worktree_process`,
-    already built for T-1739's sweep gate, just never run against a
-    HELD lease before this). Returns `None` if none of the four holds --
-    the lease is genuinely live, by every check this repo can make.
+    has gone past `is_lease_ttl_expired`'s horizon, no live process is
+    cwd'd into the worktree -- `scan_for_live_worktree_process`, already
+    built for T-1739's sweep gate, just never run against a HELD lease
+    before this -- AND no live process is currently landing this ticket
+    from elsewhere, e.g. the repo root via `--worktree` -- T-2264's
+    `_land_in_progress_for_ticket`, an ADDITIONAL liveness source the
+    cwd scan alone cannot see, since `frob ticket land` runs with `root`
+    defaulted to the primary checkout, not cwd'd into the worktree it is
+    landing). Returns `None` if none of the four holds -- the lease is
+    genuinely live, by every check this repo can make.
 
     Deliberately ONE predicate, not four special cases bolted together
     (T-1806's own framing, extended by T-2048): every caller that needs
@@ -769,6 +832,7 @@ def lease_staleness_reason(root: Path, record: _LeaseRecord) -> str | None:
     if (
         is_lease_ttl_expired(record)
         and scan_for_live_worktree_process(Path(record.worktree)) is None
+        and not _land_in_progress_for_ticket(root, record.ticket_id)
     ):
         return "holder-dead"
 
