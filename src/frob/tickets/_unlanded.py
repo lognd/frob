@@ -468,6 +468,59 @@ def _done_report_and_local_state_signals(
 
 
 # frob:ticket T-1948
+# frob:ticket T-2300
+def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | None:
+    """T-2300: `_directive_anchored_ticket_ids`'s real-parse path -- parse
+    `text` (a blob's content, `path`'s own suffix for language dispatch)
+    with this repo's own comment-DSL parser (`frob.lang.parse_file` +
+    `frob.graph.dsl.parse_directives`, the SAME machinery a normal `frob
+    check` gate run uses to resolve `frob:ticket`/`frob:tests`/... edges)
+    and return every `frob:ticket T-####` edge's target id, or `None` if
+    `path`'s language is unsupported or the blob fails to parse at all --
+    the caller falls back to the bare regex in that case (T-2300 narrows
+    a false-positive source, it must not silently DROP coverage for a
+    language this repo's parser does not (yet) handle).
+
+    `frob.lang.parse_file` only reads from a real filesystem path (no
+    text-in API exists, by design -- tree-sitter's own grammar dispatch
+    keys off the path's suffix), so this writes `text` to a throwaway
+    temp file with the SAME suffix as `path` before parsing it, then
+    discards the temp file immediately -- `_unlanded`'s own no-checkout
+    posture (this module's docstring) is about never touching the
+    WORKING TREE or writing anything the caller could mistake for real
+    repo state; a private, immediately-deleted scratch file outside the
+    repo satisfies that same intent.
+
+    A real parse distinguishes a directive-POSITION comment from the
+    identical text sitting inside a string literal or prose comment by
+    STRUCTURE (`parsed.comments` only ever contains genuine comment
+    nodes the grammar itself identified), which the bare regex this
+    replaces cannot do at all -- the exact gap this ticket exists to
+    close (a commented-out mention of a real id previously matched with
+    equal confidence to a live directive)."""
+    import tempfile
+
+    from frob.graph import EdgeKind
+    from frob.graph.dsl import parse_directives
+    from frob.lang import parse_file
+
+    suffix = Path(path).suffix
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=suffix, delete=True, encoding="utf-8"
+    ) as tmp:
+        tmp.write(text)
+        tmp.flush()
+        parsed_result = parse_file(Path(tmp.name))
+        if parsed_result.is_err:
+            return None
+        edges, _malformed = parse_directives(parsed_result.danger_ok)
+    return frozenset(
+        edge.target for edge in edges if edge.kind is EdgeKind.TICKET
+    )
+
+
+# frob:ticket T-1948
+# frob:ticket T-2300
 def _directive_anchored_ticket_ids(
     root: Path, branch: str, own_changed: frozenset[str]
 ) -> frozenset[str]:
@@ -478,7 +531,18 @@ def _directive_anchored_ticket_ids(
     ticket's own ledger files legitimately cite their own id and every
     other id they reference; that is not a "code exists for this ticket"
     signal, `_finished_signals_on_branch`'s existing two already own that
-    surface)."""
+    surface).
+
+    T-2300: tries the REAL comment-DSL parser first
+    (`_directive_ids_via_real_parser`) -- it can tell a directive-
+    position comment apart from the identical text sitting in a string
+    literal or prose comment, which `_TICKET_DIRECTIVE_RE`'s bare regex
+    structurally cannot (the "token/grammar fixes, never lexical"
+    lesson this repo already applies elsewhere). Falls back to the old
+    regex extraction only when the real parser cannot handle `path` at
+    all (unsupported language, or the blob fails to parse) -- narrowing
+    a false-positive source must never also narrow COVERAGE for a
+    language this repo's parser does not yet support."""
     ids: set[str] = set()
     for path in own_changed:
         if path.startswith("tickets/"):
@@ -486,7 +550,11 @@ def _directive_anchored_ticket_ids(
         text = _blob_text(root, branch, path)
         if text is None:
             continue
-        ids.update(_TICKET_DIRECTIVE_RE.findall(text))
+        real_ids = _directive_ids_via_real_parser(text, path)
+        if real_ids is not None:
+            ids.update(real_ids)
+        else:
+            ids.update(_TICKET_DIRECTIVE_RE.findall(text))
     return frozenset(ids)
 
 

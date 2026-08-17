@@ -2,7 +2,7 @@
 id: T-2300
 title: unlanded-branch directive signal should reuse the real comment-DSL parser instead
   of a bare regex
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_unlanded.py
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_unlanded_branch_work.py
+  reason: T-2300 repro/positive-control tests for the real comment-DSL parser switch
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_real_directive_anchor_still_flagged_via_real_parser
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_real_ticket_id_inside_a_string_literal_is_not_flagged
+designated_repro_test: tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_real_ticket_id_inside_a_string_literal_is_not_flagged
 threat: null
 component: null
 anchor: false

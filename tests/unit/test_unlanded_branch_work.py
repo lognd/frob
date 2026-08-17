@@ -445,6 +445,66 @@ class TestUnlandedBranchWork:
         assert findings[0].branch == "genuine-specimen-branch"
         assert findings[0].signal == "directive-anchored"
 
+    # frob:ticket T-2300
+    def test_real_ticket_id_inside_a_string_literal_is_not_flagged(
+        self, repo: Path
+    ) -> None:
+        """T-2300's own acceptance criterion: a `frob:ticket T-####`-shaped
+        string embedded inside a STRING LITERAL (not a directive-position
+        comment) must NOT resolve to a finding even when the id names a
+        REAL, resolvable, non-terminal ticket -- the exact gap T-2287's
+        resolve-check narrowing left open, since a resolvable id is no
+        longer enough to tell a real directive apart from a commented-out
+        or quoted mention once the id itself is real. The old bare-regex
+        `_TICKET_DIRECTIVE_RE` cannot see the difference (it greps blob
+        text with no notion of comment vs. string); the real comment-DSL
+        parser (`_directive_ids_via_real_parser`) can, because `frob:`
+        directives only ever parse out of actual COMMENT nodes."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_tic\
+        # ket_id_inside_a_string_literal_is_not_flagged
+        _branch(repo, "string-literal-mention-branch")
+        _write_ticket_md(repo, "T-9402", state="queued")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_quoting.py").write_text(
+            "def render_example() -> str:\n"
+            '    # this is prose ABOUT the directive, not one:\n'
+            '    return "see frob:ticket T-9402 for context"\n',
+            encoding="utf-8",
+        )
+        _commit_all(repo, "unrelated real work quoting T-9402's id in a string")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert findings == ()
+
+    # frob:ticket T-2300
+    def test_real_directive_anchor_still_flagged_via_real_parser(
+        self, repo: Path
+    ) -> None:
+        """Positive control paired with the string-literal test above: a
+        GENUINE directive-position comment (the real parser's
+        `parsed.comments`, not a lexical grep) for a real, non-terminal
+        ticket must still be reported -- the real-parser switch narrows
+        the string-literal false positive without also losing the
+        genuine T-1948 shape."""
+        # frob:tests \
+        # tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork.test_real_dir\
+        # ective_anchor_still_flagged_via_real_parser
+        _branch(repo, "real-directive-comment-branch")
+        _write_ticket_md(repo, "T-9403", state="queued")
+        (repo / "src").mkdir(parents=True, exist_ok=True)
+        (repo / "src" / "_anchored.py").write_text(
+            "# frob:ticket T-9403\ndef anchored() -> None: ...\n", encoding="utf-8"
+        )
+        _commit_all(repo, "genuine anchored work for T-9403")
+        _back_to_main(repo)
+
+        findings = _unlanded_branch_work(repo)
+        assert len(findings) == 1
+        assert findings[0].ticket_id == "T-9403"
+        assert findings[0].signal == "directive-anchored"
+
     def test_findings_for_one_branch_matches_the_aggregate(self, repo: Path) -> None:
         """`_unlanded_findings_for_branch` (the single-branch entry
         `frob.tickets._leases.sweep_worktrees`'s new `kept:unlanded` gate
