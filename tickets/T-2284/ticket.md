@@ -3,7 +3,7 @@ id: T-2284
 title: Land's Tier-A auto-fix edits files outside the landing ticket's scope (and
   under other tickets' live leases), forcing CrossTicketLeakage refusals and manual
   reverts
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -14,26 +14,76 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_scope.py
+- tests/test_gates.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_scope.py
+  reason: 'T-2284: the scope/lease filter needs its own module (_fix_engine_scope.py),
+    its tests live in the existing tests/test_gates.py, and its frob:doc anchors point
+    at gates.md''s existing Tier-A section'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-2284: the scope/lease filter needs its own module (_fix_engine_scope.py),
+    its tests live in the existing tests/test_gates.py, and its frob:doc anchors point
+    at gates.md''s existing Tier-A section'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-2284: the scope/lease filter needs its own module (_fix_engine_scope.py),
+    its tests live in the existing tests/test_gates.py, and its frob:doc anchors point
+    at gates.md''s existing Tier-A section'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+- tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+- tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
+designated_repro_test: tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
 acceptance:
 - text: 'A Tier-A handler that would modify a file outside the landing ticket''s scope
     is skipped, with the skip reported naming handler/file/reason (fails today: it
     writes and the land is refused afterwards)'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: A file under another ticket's live lease is never modified; state which check
     takes precedence and why
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: 'MUST-STILL-PASS: a handler fixing a file the landing ticket owns still runs
     and commits (SYS111 ratchet bump is the shape); a land with no out-of-scope activity
     is byte-identical to today'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: The skip is visible in the land's own output, not only in a log
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 - text: State whether any handler is inherently repo-wide (REL002 is the candidate)
     and what it should do instead of being silently exempt
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+  - tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+  - tests/test_gates.py::TestFixEngineScopeLease::test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass
+  - tests/test_gates.py::TestFixEngineTierA::test_sys111_ratchet_bump_still_applies_through_scope_lease_filter
 threat: null
 component: null
 anchor: false

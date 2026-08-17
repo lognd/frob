@@ -4427,6 +4427,8 @@ site -- no new mechanism needed.
 <!-- frob:describes src/frob/gates/_fix_engine.py::TIER_A_HANDLERS -->
 <!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys111_capability_ratchet_sync -->
 <!-- frob:describes src/frob/gates/_fix_engine_shared.py::FixApplied -->
+<!-- frob:describes src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease -->
+<!-- frob:describes src/frob/gates/_fix_engine_scope.py::SkippedFix -->
 
 First concrete slice of the T-1137 `--fix` epic ("tiered auto-fix
 engine"): `frob.gates._fix_engine` implements exactly the three fix
@@ -5032,6 +5034,62 @@ auto-insertion, ClaimDivergence done-report re-run, TICK006
 phantom-draft-citation refile/renumber, and E501-from-merge targeted
 `ruff format` are real, filed as separate follow-up tickets rather than
 guessed at inside this ticket's own budget.
+
+### Scope/lease enforcement on Tier-A output (T-2284)
+
+No individual handler above consults the landing ticket's declared scope
+or another ticket's live lease -- each one scans its OWN full domain
+(the whole repo, or the whole `.strata` design tree) and writes wherever
+it finds a fixable finding. During a land this used to be a real defect:
+`apply_tier_a_fixes` auto-commits everything it wrote alongside the
+landing ticket's own diff, so a handler that touched a file OUTSIDE the
+landing ticket's scope either shipped as an undisclosed passenger of the
+wrong ticket, or -- since `CrossTicketLeakage`
+(`frob.tickets._land._check_cross_ticket_leakage`) does catch it --
+refused the whole land and forced a manual revert (T-2274's own land hit
+exactly this against `scripts/fleet_status.py`, a file under a live
+lease at the time).
+
+`frob.gates._fix_engine_scope.filter_fixes_by_scope_and_lease` closes
+this: `apply_tier_a_fixes` calls it once per handler, right after that
+handler runs, on its own return value. A fix outside the landing
+ticket's scope, or on a file another ticket holds a live lease on
+(`frob.tickets._leases.is_effectively_in_progress`), is reverted on disk
+(`git checkout --`) and reported as a `SkippedFix` at WARNING -- visible
+in `frob ticket land`'s own output, never only a debug log (T-2255's
+"a silent skip is worse than a loud one" precedent). **Lease always wins
+over scope**: a file under another ticket's live lease is skipped even
+when the landing ticket's OWN declared scope also covers it -- two
+tickets' scopes can legitimately overlap by declaration (T-2225's own
+`src/frob/**` vs. `src/frob/tickets/_land.py` example) without either
+being wrong to have written it that way, but a live lease is a real-time
+fact that someone is actively editing that file RIGHT NOW; declared
+scope is a static intention recorded once, which can be stale or
+overbroad. Outside a land (`ticket_id=None`, the bare `frob check --fix`
+CLI path) every fix passes through unfiltered -- there is no landing
+ticket to scope against, and that command's existing repo-wide behavior
+is unchanged.
+
+Only `TIER_A_HANDLERS`/`apply_tier_a_fixes` (this section) goes through
+this filter. `frob.gates._fix_engine_tier_b`'s Tier-B engine
+(`apply_tier_b_fixes`) is called ONLY from `frob check --fix`
+(`frob.app.check_runner`), never from the land path at all -- it cannot
+leak an out-of-scope edit into a land's committed changeset the way
+Tier-A could, so it does not share this defect and was not touched here.
+
+**Repo-wide handlers.** `REL002`/`fix_rel002_release_sync` genuinely has
+no single file to scope-check against -- it resyncs the release manifest
+against `pyproject.toml`/`CHANGELOG.md` project-wide by design, and
+`pyproject.toml`/`CHANGELOG.md`/`uv.lock` are already land-owned files no
+worktree ticket declares in its own scope at all (docs/guides/
+agent-playbook.md section 4b). `scope_matches` already carries an
+always-in-scope exemption for exactly this shape (`LEDGER_PATH`, the
+ticket-ledger analog); REL002's own handler is exempted from this
+filter by NAME, not silently -- `_REPO_WIDE_EXEMPT_RULES` in
+`_fix_engine_scope.py` names it explicitly, with the same reasoning
+recorded at the exemption site, rather than that handler's fix quietly
+passing every scope/lease check by never having a scopeable file to
+fail one against.
 
 ## Unresolved (T-1664)
 

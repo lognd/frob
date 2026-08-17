@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.487.0] - unreleased
+
+- T-2284: Land's Tier-A auto-fix edits files outside the landing ticket's scope (and under other tickets' live leases), forcing CrossTicketLeakage refusals and manual reverts
+
 ## [0.486.0] - unreleased
 
 - T-2261: Nothing ever invokes frob worktree sweep: 107 worktrees / 67GB / 95 idle accumulated, and the land prints 'run it later' instead of acting

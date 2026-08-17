@@ -11616,6 +11616,57 @@ class TestFixEngineTierA:
         assert lock["entries"]["Api::fs.write"]["accepted_count"] == 2
         assert lock["entries"]["Api::fs.write"]["reason"]
 
+    # frob:ticket T-2284
+    def test_sys111_ratchet_bump_still_applies_through_scope_lease_filter(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        """T-2284's MUST-STILL-PASS control: run the SAME SYS111 ratchet
+        bump through `apply_tier_a_fixes`'s full dispatch loop (not the
+        handler directly, unlike the test above) with a real landing
+        ticket whose scope covers the lock file -- the fix must still
+        apply and land in `applied`, exactly as before T-2284."""
+        from frob.gates import apply_tier_a_fixes
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        (root / "app").mkdir()
+        (root / "app" / "a.py").write_text('open("x", "w")\n', encoding="utf-8")
+        self._write_strata(root, ("app/a.py",))
+        self._write_ratchet_lock(
+            root, {"Api::fs.write": {"accepted_count": 1, "reason": "T-0000 baseline"}}
+        )
+        self._init_git_repo(root)
+        self._commit_all(root, "init: 1 via site, ceiling at 1")
+        self._write_strata(root, ("app/a.py", "app/b.py"))
+
+        landing = _ticket(
+            ticket_id="T-2284",
+            state=TicketState.IN_PROGRESS,
+            scope=("docs/design/**",),
+        )
+        queue = TicketQueue(tickets={"T-2284": landing})
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+        applied = apply_tier_a_fixes(
+            root, snapshot, queue, exclude=("COV002",), ticket_id="T-2284"
+        )
+
+        assert any(a.rule == "SYS111" for a in applied)
+        import json
+
+        lock = json.loads(
+            (
+                root
+                / "docs"
+                / "design"
+                / "registry"
+                / "capability-via-ratchet.lock.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert lock["entries"]["Api::fs.write"]["accepted_count"] == 2
+
     # frob:ticket T-2001
     def test_sys111_leaves_a_pre_existing_breach_untouched(
         self, tmp_path: Path
@@ -12317,6 +12368,180 @@ class TestFixEngineTierABatch2:
         from frob.graph import build_graph
 
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
+
+
+# frob:ticket T-2284
+class TestFixEngineScopeLease:
+    """`frob.gates._fix_engine_scope.filter_fixes_by_scope_and_lease`
+    (T-2284): a Tier-A handler's own return value, filtered against the
+    landing ticket's declared scope and every other ticket's live lease,
+    BEFORE the caller (`apply_tier_a_fixes`) counts a fix as applied."""
+
+    def _repo(self, tmp_path: Path) -> Path:
+        root = tmp_path / "repo"
+        root.mkdir()
+        _git_init(root)
+        return root
+
+    def test_out_of_scope_fix_is_reverted_and_reported(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "scripts" / "unrelated.py"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed unrelated.py"], cwd=root, check=True
+        )
+        # Simulate a handler having already written to this file.
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2284", state=TicketState.IN_PROGRESS, scope=("src/frob/**",)
+        )
+        queue = TicketQueue(tickets={"T-2284": landing})
+        fixes = [
+            FixApplied(
+                rule="FMT001", file="scripts/unrelated.py", line=1, detail="x"
+            )
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
+
+        assert kept == []
+        assert len(skipped) == 1
+        assert skipped[0].file == "scripts/unrelated.py"
+        assert "outside T-2284's declared scope" in skipped[0].reason
+        assert target.read_text(encoding="utf-8") == "original\n"
+
+    def test_live_leased_file_skipped_even_when_in_landing_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "src" / "frob" / "widget.py"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed widget.py"], cwd=root, check=True
+        )
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        # Landing ticket's OWN scope covers the file broadly...
+        landing = _ticket(
+            ticket_id="T-2284", state=TicketState.IN_PROGRESS, scope=("src/frob/**",)
+        )
+        # ...but another ticket, IN_PROGRESS, narrowly scopes the same
+        # file: its live lease must win regardless.
+        other = _ticket(
+            ticket_id="T-9999",
+            state=TicketState.IN_PROGRESS,
+            scope=("src/frob/widget.py",),
+        )
+        queue = TicketQueue(tickets={"T-2284": landing, "T-9999": other})
+        fixes = [
+            FixApplied(rule="FMT001", file="src/frob/widget.py", line=1, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
+
+        assert kept == []
+        assert len(skipped) == 1
+        assert "T-9999" in skipped[0].reason
+        assert "live lease" in skipped[0].reason
+        assert target.read_text(encoding="utf-8") == "original\n"
+
+    def test_in_scope_fix_is_kept_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "src" / "frob" / "widget.py"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed widget.py"], cwd=root, check=True
+        )
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2284", state=TicketState.IN_PROGRESS, scope=("src/frob/**",)
+        )
+        queue = TicketQueue(tickets={"T-2284": landing})
+        fixes = [
+            FixApplied(rule="FMT001", file="src/frob/widget.py", line=1, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
+
+        assert kept == fixes
+        assert skipped == []
+        assert target.read_text(encoding="utf-8") == "handler rewrote this\n"
+
+    def test_no_ticket_id_passes_every_fix_through_unfiltered(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        queue = TicketQueue(tickets={})
+        fixes = [
+            FixApplied(rule="FMT001", file="anywhere/at/all.py", line=1, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, None, fixes)
+
+        assert kept == fixes
+        assert skipped == []
+
+    def test_rel002_is_a_named_repo_wide_exemption_not_a_silent_pass(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        """T-2284 acceptance[4]: REL002 -- pyproject.toml/CHANGELOG.md/
+        uv.lock, none of which any ticket ever declares in its own scope
+        (docs/guides/agent-playbook.md section 4b) -- is exempted by
+        NAME, so it is kept and NEVER reverted even though the landing
+        ticket's own (narrow, unrelated) scope obviously does not cover
+        it and no other ticket holds a lease on it either."""
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "pyproject.toml"
+        target.write_text('version = "0.1.0"\n', encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed pyproject.toml"], cwd=root, check=True
+        )
+        target.write_text('version = "0.2.0"\n', encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2284",
+            state=TicketState.IN_PROGRESS,
+            scope=("src/frob/gates/_fix_engine.py",),
+        )
+        queue = TicketQueue(tickets={"T-2284": landing})
+        fixes = [
+            FixApplied(rule="REL002", file="pyproject.toml", line=1, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
+
+        assert kept == fixes
+        assert skipped == []
+        assert target.read_text(encoding="utf-8") == 'version = "0.2.0"\n'
 
 
 # frob:ticket T-1323

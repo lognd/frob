@@ -39,6 +39,7 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
+from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
 from frob.gates._fix_engine_shared import (
     FixApplied,
     _write_text,
@@ -605,13 +606,35 @@ def apply_tier_a_fixes(
     `fix_cov002_ticket_directive_insertion` ignores it, matching this
     module's existing precedent of a uniform handler call shape even when
     most handlers do not need every argument (`queue` itself is ignored
-    by most pure-`.strata`/doc rewrites already)."""
+    by most pure-`.strata`/doc rewrites already).
+
+    T-2284: every handler's own return value is filtered through
+    `filter_fixes_by_scope_and_lease` (`frob.gates._fix_engine_scope`)
+    BEFORE it is added to `applied`/the manifest -- a fix outside the
+    landing ticket's declared scope, or on a file another ticket holds a
+    live lease on, is reverted on disk right here and never counted as
+    applied. Reported at WARNING (visible in `frob ticket land`'s own
+    output, not only a debug log) so a skip is disclosed exactly as
+    loudly as an applied fix. A no-op, byte-identical to pre-T-2284
+    behavior, whenever `ticket_id` is `None` (bare `frob check --fix`,
+    no landing ticket to scope against) or nothing a handler touched
+    happens to be out of bounds."""
     applied: list[FixApplied] = []
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)
             continue
-        applied.extend(handler(root, snapshot, queue, ticket_id))
+        fixes = handler(root, snapshot, queue, ticket_id)
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, ticket_id, fixes)
+        for skip in skipped:
+            _log.warning(
+                "tier-a fixes: SKIPPED %s %s:%d -- %s",
+                skip.rule,
+                skip.file,
+                skip.line,
+                skip.reason,
+            )
+        applied.extend(kept)
         write_autofix_manifest(root, applied)
     clear_autofix_manifest(root)
     return applied
