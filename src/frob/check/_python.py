@@ -38,13 +38,22 @@ if TYPE_CHECKING:
 def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
     """ruff lint + ruff format --check, as two ToolResults. A missing
     `ruff` binary (T-0142: bare-wheel installs may lack it) is a typed
-    failing ToolResult for both stages, never a raw FileNotFoundError."""
+    failing ToolResult for both stages, never a raw FileNotFoundError.
+
+    T-2252: invoked via `uv run ruff` (the project-pinned version), never
+    a bare `ruff` off PATH -- playbook section 12's documented pinned-vs-
+    PATH ruff drift hazard ("a change that's clean under one and dirty
+    under the other is not actually clean") applies to this exact call
+    site: a bare `ruff` can silently disagree with the version this
+    repo's own `pyproject.toml` pins, so `frob quality check`'s own
+    ruff-check/ruff-format verdict could drift from what `uv run ruff`
+    reports by hand."""
     from frob.process.parsers import parse_ruff_json
 
     out: list[ToolResult] = []
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "check", "--output-format", "json", str(root)],
+            ["uv", "run", "ruff", "check", "--output-format", "json", str(root)],
             capture_output=True,
             text=True,
         )
@@ -71,10 +80,14 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
 # boundary; the only fallible step (the guarded subprocess call) is caught below"
 def _ruff_format_result(root: Path) -> ToolResult:
     """The `ruff format --check` outcome as one ToolResult, or a typed
-    failure (T-0142) if `ruff` is not on PATH."""
+    failure (T-0142) if `ruff` is not on PATH.
+
+    T-2252: invoked via `uv run ruff` (pinned), matching `_run_ruff`'s own
+    reasoning above -- both ruff sub-invocations must agree on which
+    `ruff` they are running."""
     try:
         run_result = guarded_subprocess_run(
-            ["ruff", "format", "--check", str(root)],
+            ["uv", "run", "ruff", "format", "--check", str(root)],
             capture_output=True,
             text=True,
         )

@@ -1634,6 +1634,39 @@ class TestRunRuffRealPaths:
         assert not results[0].passed
         assert not results[1].passed
 
+    # frob:ticket T-2252
+    def test_invokes_pinned_ruff_via_uv_run_not_bare_ruff(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_check.py::TestRunRuffRealPaths.test_invokes_pinned_ruff_via_u\
+        # v_run_not_bare_ruff
+        """T-2252 (MUST FAIL FIRST on main): playbook section 12's own
+        pinned-vs-PATH ruff drift hazard applies to `_run_ruff`'s call
+        site -- a bare `ruff` off PATH can silently disagree with the
+        version this repo's `pyproject.toml` pins. Both the ruff-check
+        and ruff-format subprocess invocations must go through `uv run
+        ruff`, never a bare `ruff` argv[0]."""
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        seen_argvs: list[list[str]] = []
+
+        def _fake_run(cmd, **kw):
+            seen_argvs.append(list(cmd))
+            if "check" in cmd:
+                return Ok(_FakeProc("[]", 0))
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        results = python_mod._run_ruff(tmp_path, None)
+        assert len(results) == 2
+        assert len(seen_argvs) == 2, seen_argvs
+        for argv in seen_argvs:
+            assert argv[:2] == ["uv", "run"], argv
+            assert argv[2] == "ruff", argv
+
 
 def _FakeProc(stdout: str = "", returncode: int = 0, stderr: str = ""):  # noqa: N802
     """Minimal `subprocess.CompletedProcess`-shaped stand-in for `_python.py`

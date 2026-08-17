@@ -2,7 +2,7 @@
 id: T-2252
 title: frob quality check/test lack the granularity T-2244's Makefile leaf needs (ruff-format
   bundling, no dir-scoped test selection, no autofix write mode)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -13,10 +13,31 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/check/_python.py
-- src/frob/app/test_runner.py
-- src/frob/gates/_fix_engine*.py
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/test_runner.py
+  reason: this pass implements only the uv-run-ruff pinning half; the test-selection
+    and ruff-write-mode halves are filed as separate residue tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/gates/_fix_engine*.py
+  reason: this pass implements only the uv-run-ruff pinning half; the test-selection
+    and ruff-write-mode halves are filed as separate residue tickets
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: this pass implements only the uv-run-ruff pinning half; the test-selection
+    and ruff-write-mode halves are filed as separate residue tickets
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_pinned_ruff_via_uv_run_not_bare_ruff
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_success_parses_ruff_json_and_appends_format_result
 designated_repro_test: null
 threat: null
 component: null
