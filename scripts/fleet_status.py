@@ -650,6 +650,10 @@ def scope_lease_collisions(
     # PERF004: sort each collision's paths once, outside the per-lease loop
     # above, rather than calling sorted() per iteration inside it.
     for collision in collisions:
+        # frob:waive PERF004 reason="paths is this collision's own distinct overlap \
+        # set (a different ticket's file intersection each iteration), not a shared \
+        # collection re-sorted identically across iterations -- same posture as every \
+        # other per-key-distinct-set PERF004 waiver in this codebase"
         collision["paths"] = sorted(str(p) for p in collision["paths"])
     return collisions
 
