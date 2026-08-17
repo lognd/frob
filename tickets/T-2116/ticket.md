@@ -68,6 +68,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f05d6ae9da2dcac5063858e3ca8b2a11d85494c3
 ---
 T-2105 added detect_duplicate_ticket_id_collisions (src/frob/tickets/_land_git_ops.py) as a public COV001-obligated symbol. docs/modules/tickets.md is this module's doc home but was under live-lease contention (T-1780's own subject) at fix time, so COV001 is waived there citing this ticket per the T-2003/T-1999 precedent (src/frob/tickets/_leases.py::is_effectively_in_progress). Add the frob:doc anchor once the file frees, and remove the waiver.
