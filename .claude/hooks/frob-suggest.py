@@ -10,17 +10,32 @@ command that bypasses it (`make`, hand-editing the ledger, an unscoped
 `pytest`) silently opts out of that accounting. The failure is never loud;
 it just means the graph no longer describes reality.
 
-BLOCK ONCE, THEN GET OUT OF THE WAY. The first attempt at a matching command
-is denied with a concrete suggestion. Re-running the IDENTICAL command is
-allowed, because the caller may have a reason the hook cannot see -- a
-suggestion that cannot be overridden is a policy, and this is deliberately
-not one.
+BLOCK ONCE, THEN GET OUT OF THE WAY -- BUT ESCALATE ON A REPEATED HABIT
+(T-2164). The first attempt at a matching command is denied with a concrete
+suggestion. Re-running the IDENTICAL command a second time is allowed,
+because the caller may have a reason the hook cannot see -- a suggestion
+that cannot be overridden is a policy, and this is deliberately not one.
+But a THIRD (or later) run of the exact same command within one marker's
+TTL window is not a one-off anymore -- it is the caller repeating work the
+suggested tool already had the answer to (T-2164's own measured incident:
+a confident-but-wrong re-run of a raw probe cost a wasted dispatch, a false
+"orphaned lease" conclusion, and a wrong "agent died" diagnosis, three
+separate times in one session). From the third attempt onward this asks
+for an explicit, typed acknowledgement (`FROB_SUGGEST_ACK=1 <command>`)
+rather than allowing silently -- a habit gets interrupted without turning a
+single legitimate raw command into a hard, unconditional block.
 
 The marker is created with O_EXCL, so exactly one denial is emitted even
 when this script is registered in BOTH project and user settings (both
 instances run for the same tool call; whichever creates the marker denies,
 the other allows, and a deny wins). A single registration behaves
-identically -- the design does not depend on how many copies fire.
+identically -- the design does not depend on how many copies fire. The
+repeat COUNT recorded in the marker (see `_claim`/`_record_attempt`) is a
+best-effort tally, not a linearizable counter -- two sibling registrations
+racing the same tool call can each read-then-write once, undercounting by
+at most one per call. That is acceptable here: the count only gates a
+nudge, never a hard policy, and undercounting by one merely delays the
+escalation by a single extra call.
 
 Anchoring follows frob-timeout-guard.py's hard-won lesson: match only at
 COMMAND POSITION (line start, after a shell connector, or after `uv run`)
@@ -287,33 +302,73 @@ def _prune(now: float) -> None:
         pass
 
 
-def _claim(command: str) -> bool:
-    """Atomically claim the right to deny `command`.
+#: A leading `FROB_SUGGEST_ACK=1 ` on the command is the explicit
+#: acknowledgement T-2164's escalation asks for on a third-or-later repeat
+#: -- stripped before digesting/matching so the SAME underlying command
+#: (acked or not) still maps to the same marker and the same repeat count.
+_ACK_PREFIX = re.compile(r"^\s*FROB_SUGGEST_ACK=1\s+")
 
-    `True` means this invocation created the marker and OWNS the single
-    denial for this exact command. `False` means it was already nudged (an
-    earlier attempt, or the sibling registration racing this one for the
-    same tool call) and must be allowed through.
+#: From this many total attempts at the identical command onward, a bare
+#: repeat is no longer let through silently -- T-2164 acceptance [1]:
+#: "allow the first exact-rerun, refuse or require an explicit
+#: acknowledgement on the third within a session."
+_ESCALATE_AT_ATTEMPT = 3
 
-    O_CREAT|O_EXCL is the whole mechanism: the one filesystem primitive that
-    makes "exactly one of us wins" true without a lock."""
+
+def _marker_path(command: str) -> Path:
+    """The O_EXCL marker path for `command` (ack prefix stripped first, so
+    an acked and an un-acked run of the same underlying command share one
+    counter -- T-2164)."""
     digest = hashlib.sha256(command.encode("utf-8", "replace")).hexdigest()[:32]
-    marker = _STATE_DIR / f"{digest}.marker"
+    return _STATE_DIR / f"{digest}.marker"
+
+
+def _record_attempt(command: str) -> int:
+    """Atomically record one more attempt at `command` and return the
+    resulting total attempt count (T-2164, generalizing the old boolean
+    `_claim` this replaces).
+
+    O_CREAT|O_EXCL is still the mechanism for the FIRST attempt: exactly one
+    of any racing sibling registrations creates the marker and gets count=1,
+    the other reads count=2 -- the same "exactly one of us wins the first
+    denial" guarantee the old `_claim` provided. Every attempt after the
+    first increments a small JSON payload in place; a corrupt/unreadable
+    marker is treated as attempt 1 of a fresh count (best-effort, never
+    fatal -- see the module docstring's note on undercounting)."""
+    marker = _marker_path(command)
     try:
         _STATE_DIR.mkdir(parents=True, exist_ok=True)
         fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    except FileExistsError:
-        return False
     except OSError:
-        # Cannot record state -> cannot promise the re-run will succeed.
-        # Allow: a nudge that can trap the caller in a loop it cannot escape
-        # is strictly worse than a missed nudge.
-        return False
+        pass
+    else:
+        try:
+            os.write(
+                fd,
+                json.dumps({"count": 1, "command": command[:4096]}).encode("utf-8"),
+            )
+        finally:
+            os.close(fd)
+        return 1
+
     try:
-        os.write(fd, command.encode("utf-8", "replace")[:4096])
-    finally:
-        os.close(fd)
-    return True
+        payload = json.loads(marker.read_text(encoding="utf-8"))
+        count = int(payload.get("count", 1)) + 1
+    except (OSError, ValueError, TypeError):
+        # Unreadable/corrupt marker: cannot trust a prior count, but the
+        # marker's mere EXISTENCE still means this is at least the second
+        # attempt (the O_EXCL branch above already handles "first ever").
+        count = 2
+    try:
+        marker.write_text(
+            json.dumps({"count": count, "command": command[:4096]}),
+            encoding="utf-8",
+        )
+    except OSError:
+        # Cannot persist the new count -- next attempt undercounts by one,
+        # same accepted best-effort tradeoff the module docstring names.
+        pass
+    return count
 
 
 def _match(raw: str, root: Path) -> tuple[str, str] | None:
@@ -341,36 +396,10 @@ def _match(raw: str, root: Path) -> tuple[str, str] | None:
     return None
 
 
-# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
-def main() -> None:
-    try:
-        payload = json.load(sys.stdin)
-    except Exception:  # noqa: BLE001 -- a malformed payload must never block
-        return
-    command = (payload.get("tool_input") or {}).get("command") or ""
-    if not command.strip():
-        return
-    root = _repo_root(payload.get("cwd") or os.getcwd())
-    if root is None:
-        return
-
-    hit = _match(command, root)
-    if hit is None:
-        return
-    name, suggestion = hit
-
-    _prune(time.time())
-    if not _claim(command):
-        return  # already nudged for this exact command -- let it through
-
-    reason = (
-        f"BLOCKED ONCE by frob-suggest [{name}] -- this looks like work frob "
-        f"should account for.\n\n{suggestion}\n\n"
-        "If you are SURE the raw command is right, re-run it EXACTLY as "
-        "written and it will be allowed; this hook blocks only the first "
-        "attempt at a given command. Do not paraphrase to get around the "
-        "block -- a reworded command is a new command and blocks again."
-    )
+def _deny(reason: str) -> None:
+    """Emit the PreToolUse deny payload with `reason` (T-2164 split out of
+    `main` so both the first-attempt nudge and the third-attempt escalation
+    share one emission path)."""
     print(
         json.dumps(
             {
@@ -382,6 +411,62 @@ def main() -> None:
             }
         )
     )
+
+
+# frob:doc docs/guides/claude-hooks.md#frob-suggestpy
+def main() -> None:
+    try:
+        payload = json.load(sys.stdin)
+    except Exception:  # noqa: BLE001 -- a malformed payload must never block
+        return
+    raw_command = (payload.get("tool_input") or {}).get("command") or ""
+    if not raw_command.strip():
+        return
+    root = _repo_root(payload.get("cwd") or os.getcwd())
+    if root is None:
+        return
+
+    # T-2164: an explicit `FROB_SUGGEST_ACK=1 ` prefix is the escalation
+    # acknowledgement -- stripped before matching so its presence never
+    # changes which rule (if any) fires, only whether attempt >=
+    # _ESCALATE_AT_ATTEMPT is allowed through.
+    acked = bool(_ACK_PREFIX.match(raw_command))
+    command = _ACK_PREFIX.sub("", raw_command, count=1) if acked else raw_command
+
+    hit = _match(command, root)
+    if hit is None:
+        return
+    name, suggestion = hit
+
+    _prune(time.time())
+    attempt = _record_attempt(command)
+
+    if attempt == 1:
+        reason = (
+            f"BLOCKED ONCE by frob-suggest [{name}] -- this looks like work frob "
+            f"should account for.\n\n{suggestion}\n\n"
+            "If you are SURE the raw command is right, re-run it EXACTLY as "
+            "written and it will be allowed; this hook blocks only the first "
+            "attempt at a given command. Do not paraphrase to get around the "
+            "block -- a reworded command is a new command and blocks again."
+        )
+        _deny(reason)
+        return
+
+    if attempt < _ESCALATE_AT_ATTEMPT or acked:
+        return  # first exact-rerun (or an acknowledged later one): let it through
+
+    reason = (
+        f"BLOCKED (repeat #{attempt}) by frob-suggest [{name}] -- this exact "
+        "command has now run several times in this session. The suggested "
+        f"tool likely already had the answer:\n\n{suggestion}\n\n"
+        "If this genuinely is not a repeated habit and the raw command is "
+        "still the right call, prefix it with `FROB_SUGGEST_ACK=1 ` (e.g. "
+        f"`FROB_SUGGEST_ACK=1 {command}`) to run it anyway -- that "
+        "acknowledgement is checked every time, so later repeats need it "
+        "again too, not just once."
+    )
+    _deny(reason)
 
 
 if __name__ == "__main__":

@@ -56,6 +56,16 @@ A PreToolUse hook that blocks-once on a raw linter/formatter invocation
 `main` reads the tool-input payload from stdin and decides whether this
 exact command was already allowed once (block-once, not block-forever).
 
+T-2164: block-once was, on its own, block-forever from the SECOND attempt
+onward -- a caller who re-ran an identical raw command out of habit (not a
+one-off) never got interrupted again. `_record_attempt` now tracks a real
+count per marker instead of a boolean, and `main` escalates from the third
+identical attempt (`_ESCALATE_AT_ATTEMPT`) onward: it denies again unless
+the command is prefixed with `FROB_SUGGEST_ACK=1 ` (`_ACK_PREFIX`, stripped
+before rule matching so the prefix itself never changes which rule fires).
+The acknowledgement is checked every time, not consumed once -- a fourth
+un-acked repeat is blocked again even if the third was acked through.
+
 ## `frob-timeout-guard.py`
 
 A PreToolUse hook that refuses a long-running frob verb (`ticket land`,

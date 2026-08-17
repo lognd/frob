@@ -153,6 +153,63 @@ def test_second_identical_fleet_probe_is_allowed_through(tmp_path: Path):
 
 
 # frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_third_identical_command_is_blocked_again(tmp_path: Path):
+    """T-2164 acceptance [1]: block-once-then-allow-FOREVER means a THIRD
+    (and every later) run of the exact same command is silently let
+    through, exactly like the second -- the suggested tool already had the
+    answer, and nothing interrupts the habit. Must FAIL against pre-fix
+    main (pre-fix, `second.stdout.strip() == ""` AND a third run's stdout
+    would ALSO be empty; this test's second assertion is the one that
+    catches the missing escalation)."""
+    # frob:tests tests/test_hook_frob_suggest.py::test_third_identical_command_is_blocked_again  # noqa: E501
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    first = _run_hook(command, home=home, cwd=root)
+    assert _denial_reason(first) is not None
+    second = _run_hook(command, home=home, cwd=root)
+    assert second.stdout.strip() == ""
+    third = _run_hook(command, home=home, cwd=root)
+    reason = _denial_reason(third)
+    assert reason is not None, "expected the third identical attempt to be blocked"
+    assert "FROB_SUGGEST_ACK=1" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_ack_prefixed_third_attempt_is_allowed_through(tmp_path: Path):
+    """T-2164 acceptance [1]'s escalation is an acknowledgement, not a hard
+    block: prefixing the third attempt with `FROB_SUGGEST_ACK=1 ` lets it
+    through."""
+    # frob:tests tests/test_hook_frob_suggest.py::test_ack_prefixed_third_attempt_is_allowed_through  # noqa: E501
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    _run_hook(command, home=home, cwd=root)
+    _run_hook(command, home=home, cwd=root)
+    third = _run_hook(f"FROB_SUGGEST_ACK=1 {command}", home=home, cwd=root)
+    assert third.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+def test_fourth_attempt_needs_the_ack_again(tmp_path: Path):
+    """T-2164: the acknowledgement is checked every time, not consumed
+    once -- a fourth, un-acked attempt is blocked again even though the
+    third was acked through."""
+    # frob:tests tests/test_hook_frob_suggest.py::test_fourth_attempt_needs_the_ack_again  # noqa: E501
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "git status --porcelain && ps aux | grep frob"
+    _run_hook(command, home=home, cwd=root)
+    _run_hook(command, home=home, cwd=root)
+    _run_hook(f"FROB_SUGGEST_ACK=1 {command}", home=home, cwd=root)
+    fourth = _run_hook(command, home=home, cwd=root)
+    assert _denial_reason(fourth) is not None
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
 def test_plain_check_only_gates_is_not_blocked(tmp_path: Path):
     """`uv run frob check --only gates` alone, with no counting pipeline,
     must NOT be blocked -- T-2031 acceptance criterion 4/7 (the
