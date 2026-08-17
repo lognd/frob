@@ -80,7 +80,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 20a25832cc5c7c6dc63278f291a392fddcd924fc
 ---
 # `frob agent env` writes diagnostics to STDOUT alongside the export block, so the documented `eval "$(...)"` fails with a shell syntax error
 
