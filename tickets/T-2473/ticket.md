@@ -142,7 +142,7 @@ threat: null
 component: process
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6aeae27f3f2eac82d775c9fb3e1b8a50a1d5162f
 ---
 `frob ticket land` serializes on `land.lock` -- only one land runs
 repo-wide. `frob check` has NO equivalent global limit, so N agents can
