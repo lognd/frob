@@ -67,7 +67,7 @@ unrelated to the two-comment removal; not introduced by this change.
 ### Changed
 ```
  tickets/T-1614/ticket.md           | 11 ++++++++++-
- tickets/T-draft-f5d192ed/ticket.md | 26 ++++++++++++++++++++++++++
+ tickets/T-2493/ticket.md | 26 ++++++++++++++++++++++++++
  2 files changed, 36 insertions(+), 1 deletion(-)
 ```
 
