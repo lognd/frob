@@ -17,6 +17,12 @@ scope:
 - docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: probe scope/lease status
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
