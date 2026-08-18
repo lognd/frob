@@ -1,7 +1,7 @@
 ---
 id: T-2377
 title: Burn EXHAUST002/EXHAUST003 WARN gates to zero, then promote to error
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'
