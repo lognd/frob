@@ -1159,6 +1159,68 @@ def _tree_state_key(root: Path) -> str | None:
     return f"{head.danger_ok.stdout.strip()}:{status_digest}"
 
 
+# frob:ticket T-2165
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_unchanged_files_same_key_across_a_head_move  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_editing_a_named_file_changes_the_key  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_editing_an_unrelated_file_does_not_change_the_key  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_uncommitted_edit_to_a_named_file_changes_the_key  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_missing_file_has_a_stable_sentinel_digest  # noqa: E501
+def _identity_scoped_state_key(root: Path, pairs: frozenset[tuple[str, str]]) -> str:
+    """T-2165: `_tree_state_key`'s replacement for
+    `_reproducing_identities_cached`'s cache key -- narrowed from "has
+    the WHOLE tree's HEAD+status changed at all" to "has anything
+    relevant to THESE SPECIFIC (rule, file) `pairs` changed", per this
+    ticket's own body.
+
+    `_tree_state_key` (committed HEAD sha + a `git status --porcelain`
+    digest) was CORRECTLY WIRED but too narrow to ever hit under
+    concurrent-land load: HEAD advances on essentially every land in a
+    busy multi-agent session, so two `revalidate_dispatchable_sweep_
+    tickets` calls a minute apart against a tree that is IDENTICAL from
+    THIS candidate set's own point of view (no file any of `pairs`
+    names has changed) still got different keys and the cache could
+    never hit (T-2106's own Done report measured this live: a doable-
+    time re-verification reported UNMEASURABLE rather than served from
+    cache, on a tree that had almost certainly not moved relative to the
+    candidate files).
+
+    Reads the CURRENT on-disk content of every distinct file named in
+    `pairs` directly (never `git show`/blob lookups) and hashes it --
+    this is deliberately content-based, not git-state-based, so it is
+    correct whether the file's current content is committed or still
+    sitting uncommitted in the working tree: an agent's own uncommitted
+    fix to one of the revalidated files changes that file's content,
+    which changes this key, which correctly invalidates the cache for
+    exactly that candidate set (the "must not mask a genuine fix"
+    requirement this ticket's own body calls out, the same class of
+    care T-1436's gate-cache staleness bug paid for elsewhere). A file
+    that no longer exists (deleted, or renamed away) hashes to a stable
+    sentinel string rather than raising -- "this file is now absent" is
+    itself a real, cache-relevant state change, and must produce a
+    DIFFERENT key from when the file existed, not crash the caller.
+
+    Never `None`: unlike `_tree_state_key` (which can fail if `root` is
+    not a git repository at all, or a git spawn errors), this function
+    does no git spawn and reads plain files -- an unreadable individual
+    file degrades to its own sentinel entry, never a total failure, so
+    every call produces a real, usable key. Cost is O(number of DISTINCT
+    files named in `pairs`), always small in practice: `pairs` is a
+    doable-time candidate identity set, not a full-repo sweep."""
+    import hashlib
+
+    _ABSENT_SENTINEL = "<absent-or-unreadable>"
+    files = sorted({file for _, file in pairs})
+    parts: list[str] = []
+    for file in files:
+        try:
+            content = (root / file).read_bytes()
+        except OSError:
+            parts.append(f"{file}:{_ABSENT_SENTINEL}")
+            continue
+        parts.append(f"{file}:{hashlib.sha256(content).hexdigest()}")
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
 def _revalidation_cache_path(root: Path) -> Path:
     """`.frob/doable-revalidation-cache.json` for a checkout rooted at
     `root` -- T-2089's doable-time revalidation cache file."""
@@ -2199,31 +2261,41 @@ def revalidate_dispatchable_sweep_tickets(
 
 
 # frob:ticket T-2089
+# frob:ticket T-2165
 # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_second_call_same_tree_reuses_cache_no_second_spawn  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged  # noqa: E501
 def _reproducing_identities_cached(
     root: Path, n_candidates: int, all_pairs: frozenset[tuple[str, str]]
 ) -> frozenset[tuple[str, str]] | None:
     """T-2089 (ARCH001 split of `revalidate_dispatchable_sweep_tickets`):
-    which of `all_pairs` still reproduce right now, reusing T-2089's
-    tree-state-keyed cache when available (logged as a HIT, `%.3fs`, 0
-    spawns) and falling back to a real `_identities_still_reproducing`
-    spawn otherwise (logged as a fresh measurement, writing the cache for
-    the NEXT call). `None` on an unmeasurable re-check (matching T-1983's
-    "never treat unmeasurable as resolved" rule) -- the caller must never
-    read `None` as an empty reproducing set. T-2106: the re-measure spawn
-    (when the cache misses) is budgeted at `_DOABLE_REVALIDATION_BUDGET_S`
-    (20s), not `_TRUE_COUNT_BUDGET_S` (300s) -- this call sits on an
-    interactive query path (`frob ticket doable`), not the deferred sweep
+    which of `all_pairs` still reproduce right now, reusing a cache when
+    available (logged as a HIT, `%.3fs`, 0 spawns) and falling back to a
+    real `_identities_still_reproducing` spawn otherwise (logged as a
+    fresh measurement, writing the cache for the NEXT call). `None` on
+    an unmeasurable re-check (matching T-1983's "never treat unmeasurable
+    as resolved" rule) -- the caller must never read `None` as an empty
+    reproducing set. T-2106: the re-measure spawn (when the cache misses)
+    is budgeted at `_DOABLE_REVALIDATION_BUDGET_S` (20s), not
+    `_TRUE_COUNT_BUDGET_S` (300s) -- this call sits on an interactive
+    query path (`frob ticket doable`), not the deferred sweep
     `_TRUE_COUNT_BUDGET_S` was sized for; an unmeasurable-after-20s result
     is handled exactly like any other unmeasurable outcome (drops
-    nothing, never read as resolved)."""
+    nothing, never read as resolved).
+
+    T-2165: keyed on `_identity_scoped_state_key(root, all_pairs)`, NOT
+    T-2089's original `_tree_state_key(root)` -- the whole-tree key was
+    correctly wired but too narrow to ever hit under concurrent-land
+    load (HEAD moves on essentially every land in a busy multi-agent
+    session, so a whole-tree key almost never repeats even when nothing
+    relevant to THIS candidate set changed). The identity-scoped key
+    only changes when a file actually named in `all_pairs` changes
+    (committed OR uncommitted), so a cache HIT is now reachable across
+    an unrelated land in between -- see `_identity_scoped_state_key`'s
+    own docstring for the full reasoning and the "must not mask a
+    genuine fix" soundness argument."""
     started = time.monotonic()
-    tree_key = _tree_state_key(root)
-    cached = (
-        _read_revalidation_cache(root, tree_key, all_pairs)
-        if tree_key is not None
-        else None
-    )
+    tree_key = _identity_scoped_state_key(root, all_pairs)
+    cached = _read_revalidation_cache(root, tree_key, all_pairs)
     if cached is not None:
         reproducing, cache_age_s = cached
         _log.info(
@@ -2264,8 +2336,7 @@ def _reproducing_identities_cached(
         len(all_pairs),
         elapsed_s,
     )
-    if tree_key is not None:
-        _write_revalidation_cache(root, tree_key, all_pairs, reproducing)
+    _write_revalidation_cache(root, tree_key, all_pairs, reproducing)
     return reproducing
 
 

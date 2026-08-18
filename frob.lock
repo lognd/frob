@@ -683,6 +683,42 @@
       "old_digest": null,
       "reason": "T-2345 land-time follow-up: further split to satisfy ARCH001 (still 64 lines after the first split). Extracted _collect_error_findings. No behavior change -- same 3 tests still pass.\n",
       "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "caff3d46501a1c56083140132cd08f2569f6ecec28975133b64b37d8b16009be",
+      "old_digest": null,
+      "reason": "T-2165: new symbol replacing _tree_state_key as the doable-revalidation cache key -- content-hashes only the files named in the candidate (rule, file) pairs, so a cache hit survives an unrelated land's HEAD move but still invalidates on any relevant committed OR uncommitted edit. Verified via TestIdentityScopedStateKey (6 tests: unchanged-across-head-move, named-file-edit-invalidates, unrelated-file-edit-does-not, uncommitted-edit-invalidates, missing-file-sentinel-stable) plus two end-to-end tests in TestRevalidateDispatchableSweepTickets confirming the real spawn-count behavior both ways.\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "ceb45486e5176bb89c906e4e5361532c5e562fd1312ae0b9b2347eebfa6ab6ab",
+      "old_digest": null,
+      "reason": "T-2165: new symbol replacing _tree_state_key as the doable-revalidation cache key -- content-hashes only the files named in the candidate (rule, file) pairs, so a cache hit survives an unrelated land's HEAD move but still invalidates on any relevant committed OR uncommitted edit. Verified via TestIdentityScopedStateKey (6 tests: unchanged-across-head-move, named-file-edit-invalidates, unrelated-file-edit-does-not, uncommitted-edit-invalidates, missing-file-sentinel-stable) plus two end-to-end tests in TestRevalidateDispatchableSweepTickets confirming the real spawn-count behavior both ways.\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "a6af13abf5ee7fb6fe75b9a8e848ae79d5ba338618ccdd1759a950aa7852258d",
+      "old_digest": null,
+      "reason": "T-2165: rewired to key on _identity_scoped_state_key instead of _tree_state_key. Verified via TestRevalidateDispatchableSweepTickets: the new test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged confirms only 1 spawn across 2 calls with an intervening unrelated land, and the new test_uncommitted_edit_to_candidate_file_still_forces_a_respawn confirms the pre-existing test_second_call_same_tree_reuses_cache_no_second_spawn's soundness guarantee still holds (2 spawns when the candidate's own file genuinely changes, even uncommitted).\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "890d16f90361f90484a99c99924a13b5c55335d849e32706b30d20dadf6e704a",
+      "old_digest": null,
+      "reason": "T-2165: rewired to key on _identity_scoped_state_key instead of _tree_state_key. Verified via TestRevalidateDispatchableSweepTickets: the new test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged confirms only 1 spawn across 2 calls with an intervening unrelated land, and the new test_uncommitted_edit_to_candidate_file_still_forces_a_respawn confirms the pre-existing test_second_call_same_tree_reuses_cache_no_second_spawn's soundness guarantee still holds (2 spawns when the candidate's own file genuinely changes, even uncommitted).\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
     }
   ],
   "entries": [
@@ -765,6 +801,26 @@
       "digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "digest": "caff3d46501a1c56083140132cd08f2569f6ecec28975133b64b37d8b16009be",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key"
+    },
+    {
+      "digest": "ceb45486e5176bb89c906e4e5361532c5e562fd1312ae0b9b2347eebfa6ab6ab",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_identity_scoped_state_key"
+    },
+    {
+      "digest": "a6af13abf5ee7fb6fe75b9a8e848ae79d5ba338618ccdd1759a950aa7852258d",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
+    },
+    {
+      "digest": "890d16f90361f90484a99c99924a13b5c55335d849e32706b30d20dadf6e704a",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
     },
     {
       "digest": "f8dc3d8b3b8f93c1a383789fb57761176956f5f0de01c9d500c6f6c35c110f9f",

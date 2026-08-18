@@ -17,6 +17,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _file_regression_ticket,
     _relativize_regression_scope_file,
     _identities_still_reproducing,
+    _identity_scoped_state_key,
     _land_ids_between,
     _parse_sweep_ticket_identities,
     _read_baseline,
@@ -194,6 +195,118 @@ class TestTreeStateKey:
         dirty_key = _tree_state_key(tmp_path)
         assert dirty_key is not None
         assert dirty_key != clean_key
+
+
+# frob:ticket T-2165
+class TestIdentityScopedStateKey:
+    """T-2165: `_identity_scoped_state_key`'s replacement for
+    `_tree_state_key` as the doable-revalidation cache's key -- narrowed
+    from whole-tree state to just the files named in a candidate
+    identity set, so a cache HIT survives an unrelated land."""
+
+    # frob:ticket T-2165
+    def test_unchanged_files_same_key_across_a_head_move(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_unchanged_files_same_key_across_a_head_move  # noqa: E501
+        """The core fix: two calls against a tree whose HEAD moved (an
+        unrelated land happened in between) but whose CANDIDATE files
+        did not change must produce the SAME key -- this is exactly the
+        case `_tree_state_key` could never hit under concurrent-land
+        load."""
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("original\n", encoding="utf-8")
+        (tmp_path / "unrelated.py").write_text("original\n", encoding="utf-8")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: init")
+        pairs = frozenset({("RULE1", "a.py")})
+        before_key = _identity_scoped_state_key(tmp_path, pairs)
+
+        # An unrelated land: a file NOT in `pairs` changes and is
+        # committed, moving HEAD -- `_tree_state_key` would change here.
+        (tmp_path / "unrelated.py").write_text("changed by another land\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: unrelated land")
+
+        after_key = _identity_scoped_state_key(tmp_path, pairs)
+        assert after_key == before_key
+
+    # frob:ticket T-2165
+    def test_editing_a_named_file_changes_the_key(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_editing_a_named_file_changes_the_key  # noqa: E501
+        """Soundness control: editing a file that IS named in `pairs`
+        (committed or not) MUST change the key -- this is the "must not
+        mask a genuine fix" requirement this ticket's own body calls
+        out."""
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("original\n", encoding="utf-8")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: init")
+        pairs = frozenset({("RULE1", "a.py")})
+        before_key = _identity_scoped_state_key(tmp_path, pairs)
+
+        (tmp_path / "a.py").write_text("fixed\n", encoding="utf-8")
+
+        after_key = _identity_scoped_state_key(tmp_path, pairs)
+        assert after_key != before_key
+
+    # frob:ticket T-2165
+    def test_editing_an_unrelated_file_does_not_change_the_key(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_editing_an_unrelated_file_does_not_change_the_key  # noqa: E501
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("original\n", encoding="utf-8")
+        (tmp_path / "b.py").write_text("original\n", encoding="utf-8")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: init")
+        pairs = frozenset({("RULE1", "a.py")})
+        before_key = _identity_scoped_state_key(tmp_path, pairs)
+
+        (tmp_path / "b.py").write_text("edited, but not in pairs\n", encoding="utf-8")
+
+        after_key = _identity_scoped_state_key(tmp_path, pairs)
+        assert after_key == before_key
+
+    # frob:ticket T-2165
+    def test_uncommitted_edit_to_a_named_file_changes_the_key(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_uncommitted_edit_to_a_named_file_changes_the_key  # noqa: E501
+        """The key must be content-based, not commit-based -- an agent's
+        own UNCOMMITTED fix to a candidate file must invalidate the
+        cache exactly like a committed one would."""
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("original\n", encoding="utf-8")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: init")
+        pairs = frozenset({("RULE1", "a.py")})
+        before_key = _identity_scoped_state_key(tmp_path, pairs)
+
+        # Uncommitted edit -- deliberately no `git add`/commit.
+        (tmp_path / "a.py").write_text("fixed but not committed\n", encoding="utf-8")
+
+        after_key = _identity_scoped_state_key(tmp_path, pairs)
+        assert after_key != before_key
+
+    # frob:ticket T-2165
+    def test_missing_file_has_a_stable_sentinel_digest(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_missing_file_has_a_stable_sentinel_digest  # noqa: E501
+        """A file named in `pairs` that does not exist on disk must not
+        raise -- it degrades to a stable sentinel entry, and calling
+        twice with the same absent file produces the same key."""
+        pairs = frozenset({("RULE1", "does_not_exist.py")})
+        key1 = _identity_scoped_state_key(tmp_path, pairs)
+        key2 = _identity_scoped_state_key(tmp_path, pairs)
+        assert key1 == key2
 
 
 # frob:ticket T-2089
@@ -1619,6 +1732,149 @@ class TestRevalidateDispatchableSweepTickets:
         # The tree did not move between the two calls -- the second call
         # must reuse the cached result rather than spawning again.
         assert len(spawn_calls) == 1
+
+    # frob:ticket T-2165
+    def test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged  # noqa: E501
+        # T-2165's own fix, end to end: T-2089's cache (keyed on whole
+        # tree state) could NEVER hit here -- an intervening land moves
+        # HEAD even though it never touches `a.py`, the candidate's own
+        # file. The identity-scoped key must still hit.
+        from frob.tickets import load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        _init_git_repo(tmp_path)
+        _git_commit(tmp_path, "chore: init")
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "a.py", "severity": "error"}
+                    ],
+                }
+            ]
+        }
+        spawn_calls: list[int] = []
+
+        def _fake_spawn(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN202
+            spawn_calls.append(1)
+            return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run", _fake_spawn
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+
+        first = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert first == ()
+        assert len(spawn_calls) == 1
+
+        # An UNRELATED land: commits a file the candidate identity never
+        # named, moving HEAD -- T-2089's own whole-tree key would change
+        # here and force a second spawn; the identity-scoped key must
+        # not.
+        import subprocess
+
+        (tmp_path / "unrelated.py").write_text("changed\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: an unrelated land happened")
+
+        second = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert second == ()
+        assert len(spawn_calls) == 1
+
+    # frob:ticket T-2165
+    def test_uncommitted_edit_to_candidate_file_still_forces_a_respawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRevalidateDispatchableSweepTickets.test_uncommitted_edit_to_candidate_file_still_forces_a_respawn  # noqa: E501
+        # Must-still-pass soundness control: an agent's OWN uncommitted
+        # fix to the candidate's own file must NOT be masked by the
+        # cache, even though HEAD never moved -- T-2165's ticket body's
+        # own explicit non-negotiable ("the narrowing has to be
+        # identity-scoped, not blanket-relaxed").
+        from frob.tickets import load_queue, new_ticket
+        from frob.tickets._models import Origin, TicketKind, TicketSpec
+
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("broken\n", encoding="utf-8")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "chore: init")
+
+        spec = TicketSpec(
+            title=f"{_rapid_sweep._REGRESSION_TITLE_PREFIX}T-1001: 1 new "
+            "(rule, file) identit(ies) (COV003)",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("a.py",),
+            body=(
+                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
+                "- COV003  a.py\n"
+            ),
+        )
+        created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
+        assert created.is_ok
+
+        payload = {
+            "results": [
+                {
+                    "tool": "gate-summary",
+                    "diagnostics": [
+                        {"code": "COV003", "file": "a.py", "severity": "error"}
+                    ],
+                }
+            ]
+        }
+        spawn_calls: list[int] = []
+
+        def _fake_spawn(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003, ANN202
+            spawn_calls.append(1)
+            return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
+
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run", _fake_spawn
+        )
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        tickets = list(queue.danger_ok.tickets.values())
+
+        first = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert first == ()
+        assert len(spawn_calls) == 1
+
+        # An agent fixes a.py IN PLACE, uncommitted -- HEAD does not
+        # move, but the candidate's own file content does.
+        (tmp_path / "a.py").write_text("fixed\n", encoding="utf-8")
+
+        second = _rapid_sweep.revalidate_dispatchable_sweep_tickets(tmp_path, tickets)
+        assert second == ()
+        # Must re-measure, never serve a stale cached result that would
+        # mask the agent's own uncommitted fix.
+        assert len(spawn_calls) == 2
 
 
 # frob:ticket T-2077
