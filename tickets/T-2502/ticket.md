@@ -12,11 +12,17 @@ sprint: null
 runs_last: false
 scope:
 - strata-core/src/parse/
-- src/frob/strata/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/
+  reason: 'over-broad: 1915 closure warnings would lease most of the strata package;
+    the grammar+loader change lives in the parser and the two parse-layer modules'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
