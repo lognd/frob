@@ -1,0 +1,15 @@
+CLARIFICATION (does not reopen this ticket -- adding for the record so
+the queue is not misread as "handled"): this ticket's own landed fix
+(d0e6b5644e11c782859fb39431becd9cfc60f4a3) closed a REAL, adjacent bug
+(a stale declared-scope read in the Tier-A lease-collision check), but
+it did NOT close the work-loss defect named in this ticket's own title.
+Three further live reproductions (T-2194, T-2329, and a discriminating
+T-2323 comparison, the latter two documented in this ticket's own
+attachments/01.../02...md notes) show the destructive revert fires
+against UNCOMMITTED working-tree state regardless of whether the
+scope/lease read is stale or correct -- a pre-committed identical edit
+survives land untouched; an uncommitted one is silently discarded. That
+mechanism (the pre-land Tier-A SKIPPED-fix revert path,
+_revert_fix_file/apply_tier_a_fixes) is UNFIXED. T-2351 carries it
+forward with the narrowed root cause and the discriminating-experiment
+evidence already in hand.

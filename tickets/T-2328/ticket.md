@@ -77,6 +77,9 @@ attachments:
   caption: 'third reproduction (T-2323) + confirmed workaround: pre-commit the file
     yourself before land'
   sha256: a9e172f79a71d994d2e3200c0b340cf406eb4e55589a94f964a298bd6fb956ac
+- path: T-2328/attachments/03-clarification-titled-work-loss-defect-remains-open-carried-by-t-2351.txt
+  caption: 'clarification: titled work-loss defect remains open, carried by T-2351'
+  sha256: 9191aa0dc68bd7bdda5e87ab8704d95e2edcc9d74ac0e030d99394c543159b73
 threat: null
 component: null
 anchor: false
