@@ -1,7 +1,7 @@
 ---
 id: T-2467
 title: 'Reshape T-1614: periodic watermark-based waiver audit, drop runs_last'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -14,6 +14,17 @@ scope:
 - tickets/T-1614/**
 - src/frob/gates/_waive_audit_watermark.py
 - src/frob/app/ticket_runner/_waive_audit.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- docs/modules/app.md
+- docs/modules/tickets.md
+- docs/modules/cli.md
+- src/frob/app/config.py
+- src/frob/_config_schema.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/app/_config_external.py
+- tests/unit/test_waive_audit_watermark.py
+- tests/unit/test_waive_audit_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +54,81 @@ scope_changes:
     wiring point per playbook narrow-scope discipline
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: wiring the new frob:waive audit subcommand into the ticket CLI dispatch
+    table and argparse subparser -- the standalone runner module alone is unreachable
+    from the CLI without these two wiring points
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: wiring the new frob:waive audit subcommand into the ticket CLI dispatch
+    table and argparse subparser -- the standalone runner module alone is unreachable
+    from the CLI without these two wiring points
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/app.md
+  reason: doc coverage for the new waive-audit runner/subcommand
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: doc coverage for the new waive-audit runner/subcommand
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/cli.md
+  reason: doc coverage for the new waive-audit runner/subcommand
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/config.py
+  reason: AppConfig fields for the new waive-audit subcommand (subcommand name, reviewed-count,
+    cop-outs-found flags)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_config_schema.py
+  reason: AppConfig fields for the new waive-audit subcommand (subcommand name, reviewed-count,
+    cop-outs-found flags)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: register the new waive-audit subparser in the ticket subcommand tree builder
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: register the three new AppConfig fields (waive_audit_subcommand/reviewed_count/cop_outs)
+    with _build_external_config_kwargs's known-field tuples so the CLI args actually
+    reach AppConfig
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_waive_audit_watermark.py
+  reason: the two new test files this ticket adds
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_waive_audit_runner.py
+  reason: the two new test files this ticket adds
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_waive_audit_watermark.py::TestLoadWatermark::test_missing_file_is_not_found
+- tests/unit/test_waive_audit_watermark.py::TestLoadWatermark::test_malformed_json_is_malformed
+- tests/unit/test_waive_audit_watermark.py::TestLoadWatermark::test_valid_file_round_trips
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_round_trips_through_load
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_creates_frob_dir_if_missing
+- tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
+- tests/unit/test_waive_audit_runner.py::TestRunScan::test_watermark_malformed_is_unreadable
+- tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_new_waivers_when_nothing_changed_since_watermark
+- tests/unit/test_waive_audit_runner.py::TestCompletePass::test_reviewed_count_mismatch_refuses
+- tests/unit/test_waive_audit_runner.py::TestCompletePass::test_catchup_incomplete_refuses_full_completion
+- tests/unit/test_waive_audit_runner.py::TestCompletePass::test_matching_reviewed_count_advances_watermark
 designated_repro_test: null
 threat: null
 component: null

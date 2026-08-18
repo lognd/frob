@@ -404,6 +404,41 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   added `--force` and the `kept:live` verdict -- see docs/modules/
   tickets.md#worktree-liveness-scan-t-1715-t-1739 for the liveness scan
   this now runs before the dirty/lease/age gates.
+- `ticket_runner._waive_audit.run` -- `frob ticket waive-audit {scan,
+  complete}` (T-2467): see "Waive audit (T-2467)" below.
+
+## Waive audit (T-2467)
+
+T-1614's `frob:waive` honesty audit used to be `runs_last` --
+undispatchable while any other ticket in the repo was queued/in-progress,
+a precondition that structurally never holds in a repo with continuous
+ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
+
+- `frob.gates._waive_audit_watermark` -- persisted progress marker.
+  `WaiveAuditWatermark` (`commit_sha`, `audited_at`, `waivers_audited`,
+  `catchup_remaining`) round-trips through `.frob/waive-audit-watermark.
+  json` via `load_watermark`/`save_watermark`, both returning a typani
+  `Result` keyed on `WaiveAuditWatermarkError` (`NotFound` vs
+  `Malformed` vs `WriteFailed` -- kept distinct so a genuinely unreadable
+  watermark is never treated as "never audited"). `watermark_path`/
+  `utc_now` are the two small seams (path resolution, injectable clock)
+  the rest of the module builds on.
+- `frob.app.ticket_runner._waive_audit` -- the CLI-facing runner.
+  `run_scan` is the read-only `scan` subcommand: it determines the scan
+  set (incremental-since-watermark, or a bounded first-run/continuing
+  catch-up pass capped at `_CATCHUP_BOUND`) and returns a
+  `WaiveAuditScanReport` carrying an `AuditVerdict` --
+  `WATERMARK_UNREADABLE` / `NO_NEW_WAIVERS` / `NEEDS_REVIEW` / `CLEAN`,
+  deliberately kept as four DISTINCT states (a `scan` can never itself
+  report `CLEAN` -- only `complete` can, since only a human/agent
+  reviewer's classification against T-1614's own rubric can establish
+  that). `complete_pass` records a finished pass (refusing on a
+  reviewed-count mismatch or an incomplete catch-up) and advances the
+  watermark to current HEAD via `frob.gitio`.
+- Each `ScannedWaiver` surfaced by `scan` names the file/line/rule/reason/
+  follow_up a human/agent classifies per T-1614's original rubric (STILL
+  NECESSARY AND HONEST / OBSOLETE / COP-OUT / PERMANENT BY DESIGN) --
+  this module supplies the SCOPE and PERSISTENCE, not the judgment.
 
 ## Shared graph-snapshot helper (T-1085)
 

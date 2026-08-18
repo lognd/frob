@@ -13,13 +13,23 @@ blocked_by:
 parent: T-1609
 tier: ticket
 sprint: null
-runs_last: true
+runs_last: false
 scope:
 - src/frob/**
 - tests/**
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'T-2467: reshape from unreachable runs_last one-shot to periodic watermark-scoped
+    audit'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 2480
+  new_length: 4199
 designated_repro_test: null
 threat: null
 component: null
@@ -48,3 +58,32 @@ Specific things this drive learned to look for:
 - A waiver on a rule that structurally cannot fire (a diff-scoped rule judged on a full run) is noise, not an exception, and belongs in that rule's exemption list instead.
 
 Deliverable: every waiver classified, obsolete and cop-out waivers removed, and a count reported by category. A waiver left unexamined defeats the exercise.
+
+RESHAPED (T-2467, 2026-08-18): this ticket's `runs_last` precondition
+("after all other work is complete") is unreachable by construction in a
+repo with continuous ticket inflow -- it sat rot-flagged for 13+ days
+with nobody legally able to start it despite all three of its blockers
+(T-1611/T-1612/T-1613) being done. `runs_last` is now OFF.
+
+This ticket's operating mode is now PERIODIC and WATERMARK-SCOPED instead
+of one-shot-after-queue-empty: `frob ticket waive-audit scan` (T-2467,
+`frob.app.ticket_runner._waive_audit`) reports which `frob:waive`
+directives need classification since the last completed pass (tracked in
+`.frob/waive-audit-watermark.json` via `frob.gates._waive_audit_watermark`),
+bounded on a first run or a still-catching-up run rather than demanding
+the whole corpus at once. `frob ticket waive-audit complete
+--reviewed-count N --cop-outs N` records a finished pass and advances the
+watermark -- refusing if the reviewed count does not match the scan, or
+if a bounded catch-up pass still has uncovered waivers.
+
+The classification rubric below (STILL NECESSARY AND HONEST / OBSOLETE /
+COP-OUT / PERMANENT BY DESIGN) and the specific patterns this drive
+learned to look for (reason-restates-rule, orphaned follow_up,
+bulk-waiver clustering, structurally-unfireable-rule noise) are UNCHANGED
+-- only the triggering/scoping mechanism changed. A reviewer runs `scan`,
+classifies each `ScannedWaiver` per the rubric below, removes/replaces
+obsolete or cop-out waivers, then runs `complete` with the count reviewed.
+
+This ticket now represents the STANDING PROCESS, not a single terminal
+audit -- it stays open/queued as the periodic mechanism's home rather
+than closing once one pass finishes.

@@ -34,6 +34,8 @@ from typing import Any
 # frob:ticket T-1150
 _STRING_FIELDS = (
     "color",
+    # frob:ticket T-2467
+    "waive_audit_subcommand",
     "explore_command",
     # frob:ticket T-1567
     "quality_command",
@@ -287,6 +289,9 @@ _PATH_FIELDS = (
 
 _INT_FIELDS = (
     "map_depth",
+    # frob:ticket T-2467
+    "waive_audit_reviewed_count",
+    "waive_audit_cop_outs",
     "dup_min_lines",
     "arch_max_function_lines",
     "arch_max_class_methods",

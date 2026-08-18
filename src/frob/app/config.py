@@ -543,6 +543,10 @@ class AppConfig(BaseModel):
     #: (default: dry-run report only, same shape as `ticket reconcile`).
     ticket_attach_backfill_apply: bool = False
     ticket_json: bool = False
+    # frob:ticket T-2467
+    waive_audit_subcommand: str | None = None
+    waive_audit_reviewed_count: int | None = None
+    waive_audit_cop_outs: int | None = None
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
     # frob:ticket T-0810

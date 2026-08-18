@@ -569,6 +569,53 @@ def _add_ticket_done_report_parser(ticket_sub):
 
 
 # frob:ticket T-1684
+# frob:ticket T-2467
+def _add_ticket_waive_audit_parser(ticket_sub):
+    """Register `frob ticket waive-audit {scan,complete}` -- T-2467's
+    watermark-scoped successor to T-1614's unreachable one-shot audit.
+    `scan` is read-only; `complete` records a finished pass's verdict and
+    advances the persisted watermark (see `frob.gates._waive_audit_watermark`
+    and `frob.app.ticket_runner._waive_audit` for the fail-loudly
+    verdict shape this deliberately does not collapse)."""
+    waive_audit_p = ticket_sub.add_parser(
+        "waive-audit",
+        help="periodic, watermark-scoped frob:waive honesty audit (T-1614/T-2467)",
+    )
+    waive_audit_sub = waive_audit_p.add_subparsers(
+        dest="waive_audit_subcommand", required=True
+    )
+    scan_p = waive_audit_sub.add_parser(
+        "scan",
+        help="read-only: report frob:waive directives needing classification "
+        "since the last watermark (or a bounded first-run catch-up set)",
+    )
+    scan_p.add_argument("--json", dest="ticket_json", action="store_true")
+    complete_p = waive_audit_sub.add_parser(
+        "complete",
+        help="record a finished pass's verdict and advance the watermark",
+    )
+    complete_p.add_argument("--json", dest="ticket_json", action="store_true")
+    complete_p.add_argument(
+        "--reviewed-count",
+        dest="waive_audit_reviewed_count",
+        type=int,
+        required=True,
+        metavar="N",
+        help="how many waivers were actually classified this pass -- must "
+        "match the scan's own count or the watermark is not advanced",
+    )
+    complete_p.add_argument(
+        "--cop-outs",
+        dest="waive_audit_cop_outs",
+        type=int,
+        default=0,
+        metavar="N",
+        help="how many of the reviewed waivers were cop-outs (0 means the "
+        "pass was genuinely clean, not merely unexamined)",
+    )
+    return waive_audit_p
+
+
 def _add_ticket_sweep_async_parser(ticket_sub):
     """Register `frob ticket sweep-async <id> --commit <sha>` -- the
     detached child half of the rapid profile's deferred post-land sweep

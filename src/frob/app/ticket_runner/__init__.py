@@ -137,6 +137,7 @@ from ._query import (
     _wave,
 )
 from ._rapid_sweep import _sweep_async
+from ._waive_audit import run as _waive_audit
 from ._verify import (
     _apply_cmd_evidence,
     _apply_evidence,
@@ -204,6 +205,7 @@ __all__ = [
     "_drop",
     "_epic",
     "_evidence",
+    "_waive_audit",
     "_exclude_scoped_run_flaky",
     "_explicit_ticket_path",
     "_fail",
@@ -358,6 +360,8 @@ def _ticket_dispatch_table() -> dict:
         "drop": _drop,
         "evidence": _evidence,
         "done-report": _done_report,
+        # frob:ticket T-2467
+        "waive-audit": _waive_audit,
         "review": _review,
         "scope": _scope,
         # frob:ticket T-1484
