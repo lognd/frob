@@ -267,6 +267,58 @@ cmdline+ppid detection in plain form (that script's own "no `frob` import"
 contract) and surfaces the live count in `_print_land_status`'s report,
 next to the existing swap-pressure guidance line.
 
+<!-- frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473 -->
+## Concurrent check advisory (T-2473)
+
+RELATED BUT DISTINCT from the forkserver leak above: T-2443 fixed dead
+workers holding memory after their parent died; this is about LIVE,
+legitimate `frob check` processes -- normal fleet activity -- exceeding
+the machine's capacity when too many run at once. Measured at six
+implementer agents: 12 concurrent `frob check` processes at 0.5-1.1GB
+each, swap climbing 2.1GB -> 7.8GB, load 15.7 -> 21.0, and completed
+lands per hour going DOWN (9 -> 6) as agent count went UP -- overflow
+into swap slows every check, which lengthens the window in which they
+overlap, a self-reinforcing degradation with no equivalent to `frob
+ticket land`'s own `land.lock` serialization.
+
+The chosen fix is ADVISORY, not an enforced limit: a hard concurrency
+cap risks turning a busy fleet into a queue of stalled agents if the
+cap is chosen badly, and this repo consistently prefers surfacing over
+commanding. Two read-only, best-effort pieces, both matching a live
+`frob check` process by its `frob`/`check` argv token pair (as
+SEPARATE tokens -- never a substring, which would also fire on `frob
+ticket check-repro` or a path containing "check"):
+
+- `count_running_checks` (`frob.process._reap`) -- called from `frob.
+  __main__`'s own `_report_concurrent_check_advisory_best_effort`, at
+  the same startup seam as T-2443's forkserver reap, right before a
+  `check` subcommand dispatches. Counts every OTHER live `frob check`
+  process (excludes its own pid, so a single check on an idle machine
+  reads 0 others -- the must-not-stall acceptance's own "no added
+  latency, no new failure mode" requirement). Logs at INFO when others
+  ARE running (so it shows in a normal log-level run without `-v`),
+  WARNING at 4 or more (this host's own measured degradation point),
+  and silently skips logging at 0 -- an idle machine's check gets no
+  extra log noise. Best-effort and NEVER fatal: any exception (an
+  unreadable `/proc` entry) is caught, logged at DEBUG, and swallowed,
+  exactly like the forkserver reaper immediately before it. Returns
+  `None` (unknown) on an unreadable `/proc`, mirroring `orphaned_
+  forkserver_count`'s own contract.
+- `scripts/fleet_status.py`'s `concurrent_check_count` -- the
+  coordinator-facing counterpart: every live check on the host (no
+  self-exclusion, since `fleet_status.py` itself is never a `frob
+  check` process), surfaced as a `CONCURRENT CHECKS: N` line in
+  `_print_land_status`'s standing report, the number a coordinator
+  needs to decide whether to dispatch another agent -- previously
+  invisible short of a manual `ps` scan.
+
+Neither piece blocks, queues, or refuses a check -- there is currently
+no case where a check is "deferred" under this fix, so the fail-loudly
+"a deferred check must be visible" requirement is satisfied vacuously:
+nothing is silently skipped because nothing is skipped at all. A future
+enforced-limit direction, if one is chosen later, would need its own
+visible-deferral mechanism at that point.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

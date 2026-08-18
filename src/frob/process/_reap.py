@@ -141,8 +141,8 @@ def reap_active_multiprocessing_children(
 
 
 # frob:ticket T-2443
-# frob:waive WIRE001 follow_up="T-2451" reason="genuinely wired -- passed as \
-# the handler argument to signal.signal(sigterm, _sigterm_handler) in install_sigterm_ \
+# frob:waive WIRE001 follow_up="T-2451" reason="genuinely wired -- passed as the \
+# handler argument to signal.signal(sigterm, _sigterm_handler) in install_sigterm_ \
 # reaper immediately below, then invoked by the interpreter's own signal dispatch \
 # machinery on a real SIGTERM, never called directly by name from Python code -- the \
 # same class of gap as this repo's other WIRE001 waivers for a callback stored as a \
@@ -352,3 +352,81 @@ def reap_orphaned_forkservers(
         )
         reaped.append(pid)
     return reaped
+
+
+# frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473
+# frob:ticket T-2473
+#: `cmdline` shape identifying a live `frob check` invocation -- matches
+#: the two argv tokens `frob`/`check` appearing as SEPARATE tokens (never
+#: a substring match, which would also fire on `frob ticket check-repro`
+#: or a path containing the word "check"). `frob`/`check` are matched
+#: independently rather than as one fixed substring because the CLI entry
+#: point varies by invocation shape (`frob check ...`, `uv run frob check
+#: ...`, `.venv/bin/frob check ...`) but the token pair is constant across
+#: all of them. Compiled against RAW cmdline bytes (NUL-separated argv,
+#: kept as-is rather than replaced with spaces) so token-boundary matching
+#: is exact.
+_FROB_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")
+_CHECK_TOKEN_RE = re.compile(rb"\x00check\x00|\x00check$")
+
+
+# frob:ticket T-2473
+def _is_frob_check_process(pid: int, proc: Path, self_pid: int) -> bool:
+    """`True` when `<proc>/<pid>/cmdline` names a live `frob check`
+    invocation, excluding `self_pid` (a process never counts itself as
+    "another" concurrent check, T-2473's own must-not-stall acceptance:
+    a single check on an idle machine must read 0 others running, not
+    1). Any read failure (already exited, permission denied) reads as
+    `False` -- never guesses from partial data, matching `_is_orphaned_
+    forkserver`'s own posture."""
+    if pid == self_pid:
+        return False
+    try:
+        raw = (proc / str(pid) / "cmdline").read_bytes()
+    except OSError:
+        return False
+    if not raw.endswith(b"\x00"):
+        raw += b"\x00"
+    return bool(_FROB_TOKEN_RE.search(raw)) and bool(_CHECK_TOKEN_RE.search(raw))
+
+
+# frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473
+# frob:ticket T-2473
+# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_counts_other_check_processes  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_excludes_self  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_ignores_non_check_processes  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
+def count_running_checks(
+    proc: Path = Path("/proc"), self_pid: int | None = None
+) -> int | None:
+    """How many OTHER live `frob check` processes are running on this host
+    right now (T-2473) -- read-only, no lock, no enforcement: this is the
+    ADVISORY half of T-2473's fix (the coordinator's chosen direction over
+    an enforced concurrency limit, which risks turning a busy fleet into a
+    queue of stalled agents if the limit is chosen badly). Counts, never
+    blocks or defers anything itself -- a caller (`frob check`'s own
+    startup log line, `scripts/fleet_status.py`'s LAND status block) is
+    free to act on the number, but this function's own contract is
+    read-and-report only, so it can never be the thing that adds latency
+    or a new failure mode to a single check on an idle machine (T-2473's
+    own must-not-stall acceptance).
+
+    `self_pid` defaults to `os.getpid()` -- overridable for tests.
+    Returns `None` (unknown, never "0 others running") if `/proc` is
+    missing/unreadable, mirroring `orphaned_forkserver_count`'s own
+    best-effort-degrades-to-None contract exactly."""
+    if sys.platform == "win32" or not proc.is_dir():
+        return None
+    if self_pid is None:
+        self_pid = os.getpid()
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    count = 0
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        if _is_frob_check_process(int(entry.name), proc, self_pid):
+            count += 1
+    return count

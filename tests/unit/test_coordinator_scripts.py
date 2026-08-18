@@ -1272,6 +1272,37 @@ class TestOrphanedForkserverCount:
         assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
 
 
+# frob:ticket T-2473
+class TestConcurrentCheckCount:
+    """`fleet_status.concurrent_check_count` (T-2473)."""
+
+    @staticmethod
+    def _write_entry(proc: Path, pid: int, *, cmdline: bytes) -> None:
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(cmdline)
+
+    def test_counts_check_processes(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_counts_check_processes  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(proc, 100, cmdline=b"frob\x00check\x00")
+        self._write_entry(proc, 101, cmdline=b"/x/.venv/bin/frob\x00check\x00--json\x00")
+        assert fleet_status.concurrent_check_count(proc) == 2
+
+    def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_ignores_non_check_processes  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(proc, 200, cmdline=b"frob\x00ticket\x00land\x00")
+        self._write_entry(proc, 201, cmdline=b"frob\x00checkpointer\x00")
+        assert fleet_status.concurrent_check_count(proc) == 0
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_missing_proc_returns_none  # noqa: E501
+        assert fleet_status.concurrent_check_count(tmp_path / "no-proc") is None
+
+
 class TestSwapGuidance:
     """`fleet_status._swap_guidance` (T-2249)."""
 

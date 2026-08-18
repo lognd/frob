@@ -16,6 +16,7 @@ from frob.process import _reap
 from frob.process._reap import (
     _is_orphaned_forkserver,
     _process_start_age_s,
+    count_running_checks,
     install_sigterm_reaper,
     reap_active_multiprocessing_children,
     reap_orphaned_forkservers,
@@ -231,3 +232,43 @@ class TestProcessStartAge:
 
     def test_missing_entry_returns_none(self, tmp_path: Path) -> None:
         assert _process_start_age_s(999999, tmp_path, time.time()) is None
+
+
+# frob:ticket T-2473
+class TestCountRunningChecks:
+    """`count_running_checks` -- T-2473's advisory concurrent-check
+    counter: matches a live `frob check` process by its `frob`/`check`
+    argv token pair, excludes the caller's own pid, degrades to `None`
+    on an unreadable `/proc`."""
+
+    def test_counts_other_check_processes(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_counts_other_check_processes  # noqa: E501
+        _write_proc_entry(
+            tmp_path, 100, cmdline=b"/home/x/.venv/bin/frob\x00check\x00", ppid=1
+        )
+        _write_proc_entry(
+            tmp_path, 101, cmdline=b"frob\x00check\x00--json\x00", ppid=1
+        )
+        assert count_running_checks(proc=tmp_path, self_pid=1) == 2
+
+    def test_excludes_self(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_excludes_self  # noqa: E501
+        _write_proc_entry(tmp_path, 200, cmdline=b"frob\x00check\x00", ppid=1)
+        assert count_running_checks(proc=tmp_path, self_pid=200) == 0
+
+    def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_ignores_non_check_processes  # noqa: E501
+        # A different frob subcommand -- must NOT count as a check.
+        _write_proc_entry(tmp_path, 300, cmdline=b"frob\x00ticket\x00land\x00", ppid=1)
+        # A path containing "check" as a substring of a longer word, not
+        # a whole argv token -- must NOT count either.
+        _write_proc_entry(
+            tmp_path, 301, cmdline=b"frob\x00checkpointer\x00", ppid=1
+        )
+        # "check" present but no "frob" token at all.
+        _write_proc_entry(tmp_path, 302, cmdline=b"pytest\x00check\x00", ppid=1)
+        assert count_running_checks(proc=tmp_path, self_pid=1) == 0
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
+        assert count_running_checks(proc=tmp_path / "does-not-exist") is None

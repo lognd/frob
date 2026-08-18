@@ -650,6 +650,27 @@ Returns `None` (never a fabricated zero) when `/proc` is unreadable. See
 number makes actionable -- the fix itself lives in `frob.process._reap`,
 not here; this function only reports.
 
+### `concurrent_check_count`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count -->
+
+T-2473. How many live `frob check` processes are running on this host
+right now -- the number a coordinator needs to decide whether to
+dispatch another agent, previously invisible short of a manual `ps`
+scan (the ticket's own filed measurement: 12 concurrent checks went
+unnoticed until someone checked by hand while swap climbed from 2.1GB
+to 7.8GB and lands/hour fell from 9 to 6 as agent count rose). Matches
+the `frob`/`check` argv token pair as SEPARATE tokens (never a
+substring, which would also fire on `frob ticket check-repro` or a path
+containing "check"), duplicated in plain form from `frob.process.
+_reap`'s own matcher (this script's "no `frob` import" contract, same
+posture `orphaned_forkserver_count` above already takes). ADVISORY
+ONLY -- this script reports the count, it never limits, queues, or
+refuses anything; see `docs/modules/process.md#count-running-checks-t-2473`
+for `frob check`'s own companion advisory log line (a separate, self-
+excluding counter used from inside a running check). Returns `None`
+(never a fabricated zero) when `/proc` is unreadable.
+
 ### `_land_status_lines`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_land_status_lines -->
@@ -679,6 +700,13 @@ positive count names the T-2443 leak signature directly so a coordinator
 seeing an unexplained `_swap_guidance` '1 agent (SWAP ...)' clause knows
 immediately whether this specific, fixable leak is the cause.
 
+T-2473: also renders a `CONCURRENT CHECKS: N (T-2473, advisory)` line
+from `concurrent_check_count`'s own reading -- the same "unknown"-vs-
+real-zero contract as the forkserver line above, and, unlike that line,
+never itself a leak signature: any positive count here is ordinary,
+legitimate concurrent demand, the number this ticket exists to make
+visible rather than derived by hand.
+
 ### `_print_land_status`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_land_status -->
@@ -688,7 +716,8 @@ elapsed, cpu, child cpu), `land.lock` holder liveness, and a LOAD line
 (`host_load`'s load average and available memory, `swap_pressure`
 (T-2249), plus the live/total held-lease counts, T-2222) against this
 host's recorded concurrency guidance (`_swap_guidance`), followed by
-`orphaned_forkserver_count`'s own line (T-2443). Printed unconditionally
+`orphaned_forkserver_count`'s own line (T-2443) and `concurrent_check_
+count`'s own line (T-2473). Printed unconditionally
 inside `_print_fleet_report`, in the standing report a coordinator
 already runs -- not behind a separate command (the
 "automatic over commands"

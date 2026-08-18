@@ -1455,6 +1455,61 @@ def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     return count
 
 
+# frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
+# frob:ticket T-2473
+#: `cmdline` token-pair identifying a live `frob check` invocation --
+#: duplicated in plain form from `frob.process._reap._FROB_TOKEN_RE`/
+#: `_CHECK_TOKEN_RE` (this script's own "no `frob` import" contract, the
+#: same posture `_FORKSERVER_CMDLINE_RE` above already takes for T-2443).
+_FROB_CHECK_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")
+_CHECK_TOKEN_RE = re.compile(rb"\x00check\x00|\x00check$")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
+# frob:ticket T-2473
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_counts_check_pr\
+# ocesses
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_ignores_non_che\
+# ck_processes
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount.test_missing_proc_re\
+# turns_none
+def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
+    """How many live `frob check` processes are running on this host right
+    now (T-2473) -- the number a coordinator needs to decide whether to
+    dispatch another agent, previously invisible short of deriving it by
+    hand with `ps` (T-2473's own filed measurement: 12 concurrent checks
+    went unnoticed until someone checked manually). Unlike `frob.process.
+    _reap.count_running_checks` (T-2473's advisory log line INSIDE a
+    running check, which excludes itself), this counts EVERY live check
+    process including any this script's own invocation might overlap with
+    -- `fleet_status.py` is not itself a `frob check` process, so there is
+    no self-exclusion case here. Returns `None` if `/proc` is missing/
+    unreadable, mirroring `orphaned_forkserver_count`'s own best-effort-
+    degrades-to-None contract exactly."""
+    if not proc.is_dir():
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    count = 0
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw.endswith(b"\x00"):
+            raw += b"\x00"
+        if _FROB_CHECK_TOKEN_RE.search(raw) and _CHECK_TOKEN_RE.search(raw):
+            count += 1
+    return count
+
+
 # frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
 # frob:ticket T-2249
 # frob:tests \
@@ -2219,6 +2274,7 @@ def _land_status_lines(
     live_lease_count_: int,
     swap: tuple[int, int] | None = None,
     orphaned_forkservers: int | None = None,
+    concurrent_checks: int | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -2299,6 +2355,10 @@ def _land_status_lines(
         )
     else:
         lines.append("ORPHANED FORKSERVERS: 0")
+    if concurrent_checks is None:
+        lines.append("CONCURRENT CHECKS: unknown (/proc unreadable)")
+    else:
+        lines.append(f"CONCURRENT CHECKS: {concurrent_checks} (T-2473, advisory)")
     return lines
 
 
@@ -2312,7 +2372,13 @@ def _print_land_status() -> None:
     `land_lock_holder_pids`'s `/proc` scan, followed by a LOAD line
     (`host_load`'s 1-minute load average and `MemAvailable`, alongside the
     live-vs-total held-lease counts, T-2222) against this host's recorded
-    3-4 concurrent agent operational guidance. Printed unconditionally
+    3-4 concurrent agent operational guidance, followed by a CONCURRENT
+    CHECKS line (`concurrent_check_count`, T-2473) -- the number of live
+    `frob check` processes on this host, previously invisible short of a
+    manual `ps` scan (T-2473's own filed measurement: 12 concurrent
+    checks went unnoticed until someone checked by hand). Advisory only:
+    this script reports the count, it never limits or queues anything.
+    Printed unconditionally
     inside `_print_fleet_report`, in the standing report a coordinator
     already runs before every dispatch and every land -- acceptance [4]'s
     own 'automatic over commands' requirement: `frob ticket wave --agents
@@ -2340,6 +2406,7 @@ def _print_land_status() -> None:
         live_lease_count(held),
         swap,
         orphaned_forkserver_count(),
+        concurrent_check_count(),
     ):
         print(line)
 

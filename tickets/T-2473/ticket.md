@@ -2,7 +2,7 @@
 id: T-2473
 title: frob check has no global concurrency limit, so a busy fleet swaps and throughput
   drops as agents are added
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,26 +13,131 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- src/frob/process/_reap.py
+- src/frob/__main__.py
+- tests/unit/test_process_reap.py
+- tests/unit/test_main_entry.py
+- docs/guides/coordinator-scripts.md
+- docs/modules/process.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/_reap.py
+  reason: advisory concurrency reporting needs a shared /proc scan (src/frob/process/_reap.py,
+    mirrors the T-2443 forkserver-scan precedent) called from frob check's startup
+    hook in __main__.py, plus their own regression tests
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/__main__.py
+  reason: advisory concurrency reporting needs a shared /proc scan (src/frob/process/_reap.py,
+    mirrors the T-2443 forkserver-scan precedent) called from frob check's startup
+    hook in __main__.py, plus their own regression tests
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: advisory concurrency reporting needs a shared /proc scan (src/frob/process/_reap.py,
+    mirrors the T-2443 forkserver-scan precedent) called from frob check's startup
+    hook in __main__.py, plus their own regression tests
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: advisory concurrency reporting needs a shared /proc scan (src/frob/process/_reap.py,
+    mirrors the T-2443 forkserver-scan precedent) called from frob check's startup
+    hook in __main__.py, plus their own regression tests
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: new symbols (concurrent_check_count, count_running_checks) need frob:doc
+    anchors in the same docs these modules already point at
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/process.md
+  reason: new symbols (concurrent_check_count, count_running_checks) need frob:doc
+    anchors in the same docs these modules already point at
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
+- tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_never_raises_on_a_broken_count
 designated_repro_test: null
 acceptance:
 - text: Given more simultaneous frob check requests than the machine can support,
     when they run, then the number actually executing concurrently is bounded, or
     is accurately reported for a caller to act on.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_never_raises_on_a_broken_count
 - text: Given a single frob check on an idle machine, when it runs, then it completes
     with no added latency and no new failure mode.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_never_raises_on_a_broken_count
 - text: Given a check that is queued or refused under the limit, when it is deferred,
     then the deferral is visible rather than the work being silently skipped.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_never_raises_on_a_broken_count
 - text: Given fleet_status.py, when it reports machine conditions, then it includes
     the count of concurrently running frob check processes alongside its existing
     swap and orphaned-forkserver lines.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_counts_other_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_excludes_self
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_ignores_non_check_processes
+  - tests/unit/test_process_reap.py::TestCountRunningChecks::test_missing_proc_returns_none
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_ignores_non_check_processes
+  - tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_missing_proc_returns_none
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_no_other_checks_logs_nothing
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_other_checks_logs_info_below_four
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_four_or_more_checks_logs_warning
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_never_raises_on_a_broken_count
 threat: null
 component: process
 anchor: false
