@@ -1668,6 +1668,307 @@ class TestRunRuffRealPaths:
             assert argv[2] == "ruff", argv
 
 
+# frob:ticket T-2320
+class TestDispatchCheckPythonThreadsRuffSplit:
+    """`_dispatch_check_python` (T-2320) must thread `cfg.check_skip_ruff_
+    check`/`check_skip_ruff_format` through to `run_check`, same shape as
+    `TestDispatchCheckThreadsGateSelectors` above for the cpp dispatcher's
+    own selector set."""
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckPythonThreadsRuffSplit.test_python_dispatch_threads_ruff_split  # noqa: E501
+    def test_python_dispatch_threads_ruff_split(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check", _fake_run_check)
+        cfg = AppConfig(
+            check_path=tmp_path,
+            check_type="python",
+            check_skip_ruff_check=True,
+            check_skip_ruff_format=False,
+        )
+        runner_mod._dispatch_check_python(cfg, tmp_path)
+        assert captured["skip_ruff_check"] is True
+        assert captured["skip_ruff_format"] is False
+
+    # frob:tests tests/unit/test_check.py::TestDispatchCheckPythonThreadsRuffSplit.test_default_ruff_split_flags_unchanged  # noqa: E501
+    def test_default_ruff_split_flags_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        captured: dict[str, object] = {}
+
+        def _fake_run_check(root: Path, **kw: object) -> CheckResult:
+            captured.update(kw)
+            return CheckResult(path=str(root), results=[])
+
+        monkeypatch.setattr(runner_mod, "run_check", _fake_run_check)
+        cfg = AppConfig(check_path=tmp_path, check_type="python")
+        runner_mod._dispatch_check_python(cfg, tmp_path)
+        assert captured["skip_ruff_check"] is False
+        assert captured["skip_ruff_format"] is False
+
+
+# frob:ticket T-2320
+class TestRuffFixModeDispatch:
+    """`frob check --fix-ruff` (T-2320): the CLI's `--fix-ruff` flag routes
+    through `_handle_early_exit_modes` -> `_run_ruff_fix_mode`, mirroring
+    `--stamp-coverage`/`--stamp-baseline`'s own early-return shape."""
+
+    # frob:tests tests/unit/test_check.py::TestRuffFixModeDispatch.test_fix_ruff_flag_short_circuits_run kind="unit"  # noqa: E501
+    def test_fix_ruff_flag_short_circuits_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        called = {}
+        monkeypatch.setattr(
+            runner_mod,
+            "_run_ruff_fix_mode",
+            lambda root, cfg: called.setdefault("root", root),
+        )
+        cfg = AppConfig(check_path=tmp_path, check_ruff_fix=True)
+        assert runner_mod._handle_early_exit_modes(tmp_path, cfg) is True
+        assert called["root"] == tmp_path
+
+    # frob:tests tests/unit/test_check.py::TestRuffFixModeDispatch.test_without_the_flag_falls_through kind="unit"  # noqa: E501
+    def test_without_the_flag_falls_through(self, tmp_path: Path) -> None:
+        import frob.app.check_runner as runner_mod
+        from frob.app.config import AppConfig
+
+        cfg = AppConfig(check_path=tmp_path)
+        assert runner_mod._handle_early_exit_modes(tmp_path, cfg) is False
+
+    # frob:tests tests/unit/test_check.py::TestRuffFixModeDispatch.test_reports_results_and_exits_clean kind="unit"  # noqa: E501
+    def test_reports_results_and_exits_clean(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        import frob.check._python as python_mod
+        from frob.app.config import AppConfig
+        from frob.process.parsers.common import ToolResult
+
+        monkeypatch.setattr(
+            python_mod,
+            "_run_ruff_autofix",
+            lambda root: [
+                ToolResult(tool="ruff-check-fix", exit_code=0, summary="ok"),
+                ToolResult(tool="ruff-format-write", exit_code=0, summary="ok"),
+            ],
+        )
+        cfg = AppConfig(check_path=tmp_path, check_ruff_fix=True)
+        with caplog.at_level("INFO"):
+            runner_mod._run_ruff_fix_mode(tmp_path, cfg)
+        assert any("ruff-check-fix" in r.message for r in caplog.records)
+
+    # frob:tests tests/unit/test_check.py::TestRuffFixModeDispatch.test_unavailable_tool_exits_nonzero kind="unit"  # noqa: E501
+    def test_unavailable_tool_exits_nonzero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import frob.app.check_runner as runner_mod
+        import frob.check._python as python_mod
+        from frob.app.config import AppConfig
+        from frob.process.parsers.common import tool_unavailable_result
+
+        monkeypatch.setattr(
+            python_mod,
+            "_run_ruff_autofix",
+            lambda root: [
+                tool_unavailable_result("ruff-check-fix", "ruff"),
+                tool_unavailable_result("ruff-format-write", "ruff"),
+            ],
+        )
+        cfg = AppConfig(check_path=tmp_path, check_ruff_fix=True)
+        with pytest.raises(SystemExit) as exc:
+            runner_mod._run_ruff_fix_mode(tmp_path, cfg)
+        assert exc.value.code == 1
+
+    # frob:tests tests/unit/test_check.py::TestRuffFixModeDispatch.test_remaining_lint_violations_do_not_fail_the_command kind="unit"  # noqa: E501
+    def test_remaining_lint_violations_do_not_fail_the_command(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A nonzero `ruff check --fix` exit for remaining non-auto-fixable
+        violations is reported, not raised -- this write-mode pass is not
+        a gate, so it must not fail on ruff's own remaining-findings exit
+        code."""
+        import frob.app.check_runner as runner_mod
+        import frob.check._python as python_mod
+        from frob.app.config import AppConfig
+        from frob.process.parsers.common import ToolResult
+
+        monkeypatch.setattr(
+            python_mod,
+            "_run_ruff_autofix",
+            lambda root: [
+                ToolResult(
+                    tool="ruff-check-fix", exit_code=1, summary="E501 remaining"
+                ),
+                ToolResult(tool="ruff-format-write", exit_code=0, summary="ok"),
+            ],
+        )
+        cfg = AppConfig(check_path=tmp_path, check_ruff_fix=True)
+        runner_mod._run_ruff_fix_mode(tmp_path, cfg)  # must not raise SystemExit
+
+
+# frob:ticket T-2320
+class TestRunRuffSplitSkip:
+    """`_run_ruff`'s `skip_check`/`skip_format` params (T-2320): the two
+    ruff sub-invocations must be independently skippable, and an
+    unqualified call keeps running both exactly as before the split."""
+
+    def test_skip_check_runs_only_format(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("", 0)),
+        )
+        results = python_mod._run_ruff(tmp_path, None, skip_check=True)
+        assert [r.tool for r in results] == ["ruff-format"]
+
+    def test_skip_format_runs_only_check(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Ok(_FakeProc("[]", 0)),
+        )
+        results = python_mod._run_ruff(tmp_path, None, skip_format=True)
+        assert [r.tool for r in results] == ["ruff-check"]
+
+    def test_skip_both_returns_empty(self, tmp_path: Path, monkeypatch) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        import frob.check._python as python_mod
+
+        def _fail_if_called(*a, **kw):
+            raise AssertionError("guarded_subprocess_run must not be called")
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fail_if_called)
+        results = python_mod._run_ruff(
+            tmp_path, None, skip_check=True, skip_format=True
+        )
+        assert results == []
+
+    def test_neither_skipped_runs_both_unchanged(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda cmd, **kw: Ok(_FakeProc("[]" if "check" in cmd else "", 0)),
+        )
+        results = python_mod._run_ruff(tmp_path, None)
+        assert [r.tool for r in results] == ["ruff-check", "ruff-format"]
+
+
+# frob:ticket T-2320
+class TestRunRuffAutofix:
+    """`_run_ruff_autofix` (T-2320): the genuine `ruff check --fix` +
+    `ruff format` WRITE pass, distinct from the Tier-A/B/C fixers."""
+
+    def test_success_runs_fix_then_format_via_uv_run(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        seen_argvs: list[list[str]] = []
+
+        def _fake_run(cmd, **kw):
+            seen_argvs.append(list(cmd))
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        results = python_mod._run_ruff_autofix(tmp_path)
+        assert [r.tool for r in results] == ["ruff-check-fix", "ruff-format-write"]
+        assert all(r.exit_code == 0 for r in results)
+        assert len(seen_argvs) == 2
+        assert seen_argvs[0] == ["uv", "run", "ruff", "check", "--fix", str(tmp_path)]
+        assert seen_argvs[1] == ["uv", "run", "ruff", "format", str(tmp_path)]
+
+    def test_missing_binary_yields_two_typed_results(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
+        import frob.check._python as python_mod
+
+        def _raise(*a, **kw):
+            raise FileNotFoundError()
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _raise)
+        results = python_mod._run_ruff_autofix(tmp_path)
+        assert len(results) == 2
+        assert not results[0].passed
+        assert not results[1].passed
+
+    def test_kill_switch_disabled_yields_two_typed_results(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
+        from typani import Err
+
+        import frob.check._python as python_mod
+        from frob.process._guard import ProcessGuardError
+
+        monkeypatch.setattr(
+            python_mod,
+            "guarded_subprocess_run",
+            lambda *a, **kw: Err(ProcessGuardError.ExecDisabled),
+        )
+        results = python_mod._run_ruff_autofix(tmp_path)
+        assert len(results) == 2
+        assert not results[0].passed
+        assert not results[1].passed
+
+    def test_check_fix_nonzero_exit_still_runs_format(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_ruff_autofix kind="unit"
+        """`ruff check --fix` exiting 1 for remaining non-auto-fixable
+        violations must not short-circuit the format stage -- both are
+        real, independent write operations a caller needs to see."""
+        from typani import Ok
+
+        import frob.check._python as python_mod
+
+        def _fake_run(cmd, **kw):
+            if "check" in cmd:
+                return Ok(_FakeProc("E501 remaining", 1))
+            return Ok(_FakeProc("", 0))
+
+        monkeypatch.setattr(python_mod, "guarded_subprocess_run", _fake_run)
+        results = python_mod._run_ruff_autofix(tmp_path)
+        assert [r.tool for r in results] == ["ruff-check-fix", "ruff-format-write"]
+        assert results[0].exit_code == 1
+        assert results[1].exit_code == 0
+
+
 def _FakeProc(stdout: str = "", returncode: int = 0, stderr: str = ""):  # noqa: N802
     """Minimal `subprocess.CompletedProcess`-shaped stand-in for `_python.py`
     runner tests (T-1507)."""

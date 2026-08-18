@@ -351,7 +351,34 @@ class AppConfig(BaseModel):
     # loggers clamped to WARNING), 1+=full INFO/DEBUG diagnostic firehose.
     ticket_verbose: int = 0
     # check (python)
+    # frob:ticket T-2320
+    #: `frob check --skip-ruff`: bundled skip of BOTH ruff-check and
+    #: ruff-format (T-2252/pre-T-2320 shape) -- kept as a back-compat alias.
+    #: A caller wanting only one half now reaches for the two split flags
+    #: below instead; setting this still skips both, matching every
+    #: existing invocation byte-for-byte.
     check_skip_ruff: bool = False
+    # frob:ticket T-2320
+    #: `frob check --skip-ruff-check`: skip the `ruff check` lint stage
+    #: only, independent of `--skip-ruff-format` -- splits the single
+    #: bundled `--skip-ruff` flag (T-2320's measured gap: no way to skip
+    #: just one of the two ruff sub-invocations `_run_ruff` performs).
+    check_skip_ruff_check: bool = False
+    # frob:ticket T-2320
+    #: `frob check --skip-ruff-format`: skip the `ruff format --check`
+    #: stage only, independent of `--skip-ruff-check` (see
+    #: `check_skip_ruff_check` above -- same split, other half).
+    check_skip_ruff_format: bool = False
+    # frob:ticket T-2320
+    #: `frob check --fix-ruff`: a genuine `ruff check --fix` + `ruff
+    #: format` WRITE pass (src/frob/check/_python.py::run_ruff_autofix) --
+    #: distinct from `--fix`'s narrow Tier-A/B/C deterministic fixers
+    #: (T-1260/T-1481), which never runs a general ruff autofix across all
+    #: fixable rule categories. Runs standalone and exits, mirroring
+    #: `--stamp-coverage`/`--stamp-baseline`'s early-return shape
+    #: (`_handle_stamp_modes`). `False` (default) leaves `frob check`
+    #: unaffected.
+    check_ruff_fix: bool = False
     check_skip_ty: bool = False
     check_skip_arch: bool = False
     check_skip_cycle: bool = False

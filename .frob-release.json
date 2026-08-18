@@ -420,7 +420,7 @@
     "src/frob/check/__init__.py::CheckResult.total_warnings": "dc70eef2f3ff81042cc0439dd4e6f7d0479d6539a7f0995c5ca4c9fa76d91984",
     "src/frob/check/__init__.py::available_stages": "41fbd9f0369cec1c2d9a1bf3d966fdfbc5d737e2739febc35b55afae44ba7f77",
     "src/frob/check/__init__.py::detect_project_type": "48bd406c21b0c81a12df5ac052b505e946861d1ed3629d643c385ab5e8be8d25",
-    "src/frob/check/__init__.py::run_check": "9378d2e7c9fb9d4c37d0f15c6e1e2e6627faec36b84afd9885bb4f1a778db398",
+    "src/frob/check/__init__.py::run_check": "5c756f591e662acdcefc05d76e24da2fae93361039fa8dd2efe1425602f9fbc8",
     "src/frob/check/__init__.py::run_check_cpp": "ae98b8b3325ce11d89fd787b3b4cdbe73c919e55bae1704f996bb0ef7e780c64",
     "src/frob/check/__init__.py::run_check_rust": "e14cafedb22d5e0a2cee0be2191d1501851312604e3bf05dc4428dcf4b2e33c0",
     "src/frob/check/__init__.py::run_check_ts": "9805dff5446638d9e1f633a5a4201c6901dfe2c0b23a884cdd639043c430884b",
@@ -2345,5 +2345,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.496.0"
+  "version": "0.497.0"
 }

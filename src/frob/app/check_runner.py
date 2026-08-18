@@ -299,6 +299,8 @@ def _dispatch_check_python(cfg: AppConfig, root: Path):
     return run_check(
         root,
         skip_ruff=cfg.check_skip_ruff,
+        skip_ruff_check=cfg.check_skip_ruff_check,
+        skip_ruff_format=cfg.check_skip_ruff_format,
         skip_ty=cfg.check_skip_ty,
         skip_arch=cfg.check_skip_arch,
         skip_cycle=cfg.check_skip_cycle,
@@ -1080,7 +1082,47 @@ def _handle_early_exit_modes(root: Path, cfg: AppConfig) -> bool:
     if cfg.check_census:
         _run_census(root, cfg)
         return True
+    if cfg.check_ruff_fix:
+        _run_ruff_fix_mode(root, cfg)
+        return True
     return False
+
+
+# frob:ticket T-2320
+def _run_ruff_fix_mode(root: Path, cfg: AppConfig) -> None:
+    """`frob check --fix-ruff`: run `frob.check._python._run_ruff_autofix`'s
+    genuine `ruff check --fix` + `ruff format` WRITE pass and report,
+    exiting nonzero if either sub-invocation itself failed to run (T-0142:
+    a missing `ruff` binary, or `EXEC_KILL_SWITCH_ENV`) -- a nonzero exit
+    from `ruff check --fix` for violations it could not auto-fix is
+    reported but does NOT fail this command (matching `ruff check --fix`'s
+    own convention of leaving remaining violations for a normal lint pass
+    to report, not this write-mode pass)."""
+    import json
+
+    from frob.check._python import _run_ruff_autofix
+
+    results = _run_ruff_autofix(root)
+    if cfg.check_json:
+        payload = [
+            {"tool": r.tool, "exit_code": r.exit_code, "summary": r.summary}
+            for r in results
+        ]
+        _log.info(json.dumps(payload, indent=2))
+    else:
+        for r in results:
+            _log.info("[%s] exit=%d  %s", r.tool, r.exit_code, r.summary)
+    # A ruff subprocess reporting remaining (non-auto-fixable) violations
+    # is NOT this command's own failure -- `ruff check --fix` exits
+    # nonzero for exactly that, by design, and a normal `frob check` lint
+    # pass still reports them. Only fail here when a stage never actually
+    # ran at all (`tool_unavailable_result`/`tool_disabled_result`'s fixed
+    # summary text, both defined in `frob.process.parsers.common`).
+    if any(
+        r.summary.startswith(("tool unavailable:", "exec disabled via"))
+        for r in results
+    ):
+        sys.exit(1)
 
 
 # frob:ticket T-1535

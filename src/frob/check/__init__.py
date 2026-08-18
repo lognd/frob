@@ -404,10 +404,20 @@ def _python_skip_flags(
     skip_bind: bool,
     skip_exports: bool,
     skip_gates: bool,
+    skip_ruff_check: bool = False,
+    skip_ruff_format: bool = False,
 ) -> dict[str, bool]:
-    """The per-tool skip-flag mapping `_python_tasks` consults."""
+    """The per-tool skip-flag mapping `_python_tasks` consults.
+
+    T-2320: `skip_ruff` (the bundled legacy flag) skips BOTH ruff-check and
+    ruff-format, matching its pre-T-2320 behavior unchanged;
+    `skip_ruff_check`/`skip_ruff_format` skip just their own half,
+    independent of each other and of `skip_ruff` -- either the bundled
+    flag or the matching split flag is enough to skip a given stage
+    (`or`'d together, never a silent override of one by the other)."""
     return {
-        "ruff": skip_ruff,
+        "ruff_check": skip_ruff or skip_ruff_check,
+        "ruff_format": skip_ruff or skip_ruff_format,
         "ty": skip_ty,
         "cycle": skip_cycle,
         "dup": skip_dup,
@@ -440,8 +450,21 @@ def _python_tasks(
         return only is None or name in only
 
     tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
-    if not skips["ruff"] and wanted("ruff"):
-        tasks.append(lambda: _run_ruff(root, ruff_args))
+    # T-2320: the "ruff" --only/stage name still selects the combined job
+    # (both sub-invocations run in the SAME task/thread, same as before
+    # T-2320) -- only the skip decision is now independent per half, via
+    # `_run_ruff`'s own `skip_check`/`skip_format` params. A caller that
+    # wants JUST one half still skips the other through
+    # `--skip-ruff-check`/`--skip-ruff-format`, not via `--only`.
+    if (not skips["ruff_check"] or not skips["ruff_format"]) and wanted("ruff"):
+        tasks.append(
+            lambda: _run_ruff(
+                root,
+                ruff_args,
+                skip_check=skips["ruff_check"],
+                skip_format=skips["ruff_format"],
+            )
+        )
     if not skips["ty"] and wanted("ty"):
         tasks.append(lambda: _run_ty(root))
     if not skips["cycle"] and wanted("cycle"):
@@ -547,6 +570,8 @@ def run_check(
     root: Path,
     *,
     skip_ruff: bool = False,
+    skip_ruff_check: bool = False,
+    skip_ruff_format: bool = False,
     skip_ty: bool = False,
     skip_arch: bool = False,
     skip_cycle: bool = False,
@@ -571,9 +596,15 @@ def run_check(
     in full, bypassing T-0602's gate-result cache -- the default (`False`)
     now serves cacheable gates from `.frob/gate-cache.db` when their inputs
     are unchanged; see `_run_gates`'s docstring.
+
+    T-2320: `skip_ruff_check`/`skip_ruff_format` independently skip just
+    one of the two ruff sub-stages; `skip_ruff` (unchanged) still skips
+    both. See `_python_skip_flags`'s docstring for how the three combine.
     """
     skips = _python_skip_flags(
         skip_ruff=skip_ruff,
+        skip_ruff_check=skip_ruff_check,
+        skip_ruff_format=skip_ruff_format,
         skip_ty=skip_ty,
         skip_arch=skip_arch,
         skip_cycle=skip_cycle,

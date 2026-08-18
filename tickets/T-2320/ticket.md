@@ -2,7 +2,7 @@
 id: T-2320
 title: 'frob quality check: split ruff-check/ruff-format skip flags + add a real ruff-autofix/format
   write mode'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -17,8 +17,44 @@ scope:
 - src/frob/gates/_fix_engine*.py
 - src/frob/_cli_parsers/_check.py
 - src/frob/app/config.py
+- tests/unit/test_check.py
+- src/frob/app/check_runner.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_check.py
+  reason: unit tests for the ruff-check/ruff-format skip split and the new ruff-autofix
+    write mode
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: CLI dispatch wiring for --fix-ruff / split skip flags, and their doc coverage
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/commands/check.md
+  reason: CLI dispatch wiring for --fix-ruff / split skip flags, and their doc coverage
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_check.py::TestRunRuffSplitSkip::test_skip_check_runs_only_format
+- tests/unit/test_check.py::TestRunRuffSplitSkip::test_skip_format_runs_only_check
+- tests/unit/test_check.py::TestRunRuffSplitSkip::test_skip_both_returns_empty
+- tests/unit/test_check.py::TestRunRuffSplitSkip::test_neither_skipped_runs_both_unchanged
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_uv_run
+- tests/unit/test_check.py::TestRunRuffAutofix::test_missing_binary_yields_two_typed_results
+- tests/unit/test_check.py::TestRunRuffAutofix::test_kill_switch_disabled_yields_two_typed_results
+- tests/unit/test_check.py::TestRunRuffAutofix::test_check_fix_nonzero_exit_still_runs_format
+- tests/unit/test_check.py::TestDispatchCheckPythonThreadsRuffSplit::test_python_dispatch_threads_ruff_split
+- tests/unit/test_check.py::TestDispatchCheckPythonThreadsRuffSplit::test_default_ruff_split_flags_unchanged
+- tests/unit/test_check.py::TestRuffFixModeDispatch::test_fix_ruff_flag_short_circuits_run
+- tests/unit/test_check.py::TestRuffFixModeDispatch::test_without_the_flag_falls_through
+- tests/unit/test_check.py::TestRuffFixModeDispatch::test_reports_results_and_exits_clean
+- tests/unit/test_check.py::TestRuffFixModeDispatch::test_unavailable_tool_exits_nonzero
+- tests/unit/test_check.py::TestRuffFixModeDispatch::test_remaining_lint_violations_do_not_fail_the_command
 designated_repro_test: null
 threat: null
 component: null

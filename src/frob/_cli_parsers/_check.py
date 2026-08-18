@@ -9,8 +9,25 @@ from __future__ import annotations
 
 
 def _add_check_skip_args_python(check_p) -> None:
-    """Register `frob check`'s Python-toolchain stage-skip flags."""
+    """Register `frob check`'s Python-toolchain stage-skip flags.
+
+    T-2320: `--skip-ruff` used to bundle ruff-check and ruff-format under
+    one flag with no way to skip them independently. It stays as a
+    back-compat alias (skips both, unchanged); `--skip-ruff-check`/
+    `--skip-ruff-format` are the new split flags for skipping just one."""
     check_p.add_argument("--skip-ruff", dest="check_skip_ruff", action="store_true")
+    check_p.add_argument(
+        "--skip-ruff-check",
+        dest="check_skip_ruff_check",
+        action="store_true",
+        help="skip the `ruff check` lint stage only (T-2320)",
+    )
+    check_p.add_argument(
+        "--skip-ruff-format",
+        dest="check_skip_ruff_format",
+        action="store_true",
+        help="skip the `ruff format --check` stage only (T-2320)",
+    )
     check_p.add_argument("--skip-ty", dest="check_skip_ty", action="store_true")
     check_p.add_argument("--skip-arch", dest="check_skip_arch", action="store_true")
     check_p.add_argument("--skip-cycle", dest="check_skip_cycle", action="store_true")
@@ -91,6 +108,18 @@ def _add_check_selection_args(check_p) -> None:
             "reporting fixed/rolled-back/fix-its; never writes a waiver, "
             "never touches frob.toml or ratchet state (T-1137 design, "
             "docs/design/check-fix-engine.md)"
+        ),
+    )
+    # frob:ticket T-2320
+    check_p.add_argument(
+        "--fix-ruff",
+        dest="check_ruff_fix",
+        action="store_true",
+        help=(
+            "run a genuine `ruff check --fix` + `ruff format` WRITE pass "
+            "(src/frob/check/_python.py::run_ruff_autofix) and exit -- "
+            "distinct from --fix's narrow Tier-A/B/C deterministic "
+            "fixers, which never run a general ruff autofix (T-2320)"
         ),
     )
     check_p.add_argument(

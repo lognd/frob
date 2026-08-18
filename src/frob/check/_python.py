@@ -35,10 +35,22 @@ if TYPE_CHECKING:
 # cross-module import the resolver cannot follow) and _ruff_format_result's own call \
 # graph; every locally-visible fallible step here is the guarded subprocess call, \
 # already caught below"
-def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
-    """ruff lint + ruff format --check, as two ToolResults. A missing
+# frob:ticket T-2320
+# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_check_runs_only_format  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_format_runs_only_check  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_skip_both_returns_empty  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffSplitSkip.test_neither_skipped_runs_both_unchanged  # noqa: E501
+def _run_ruff(
+    root: Path,
+    extra_args: list[str] | None,
+    *,
+    skip_check: bool = False,
+    skip_format: bool = False,
+) -> list[ToolResult]:
+    """ruff lint + ruff format --check, as up to two ToolResults. A missing
     `ruff` binary (T-0142: bare-wheel installs may lack it) is a typed
-    failing ToolResult for both stages, never a raw FileNotFoundError.
+    failing ToolResult for each requested stage, never a raw
+    FileNotFoundError.
 
     T-2252: invoked via `uv run ruff` (the project-pinned version), never
     a bare `ruff` off PATH -- playbook section 12's documented pinned-vs-
@@ -47,29 +59,37 @@ def _run_ruff(root: Path, extra_args: list[str] | None) -> list[ToolResult]:
     site: a bare `ruff` can silently disagree with the version this
     repo's own `pyproject.toml` pins, so `frob quality check`'s own
     ruff-check/ruff-format verdict could drift from what `uv run ruff`
-    reports by hand."""
+    reports by hand.
+
+    T-2320: `skip_check`/`skip_format` let a caller run just one of the
+    two sub-invocations (the split `--skip-ruff-check`/`--skip-ruff-
+    format` CLI flags) -- before this, the single `_python_tasks` job
+    covering "ruff" ran (or skipped) both stages together, so there was
+    no way to keep one running while dropping the other. Both default
+    `False`, so an unqualified call still runs both stages exactly as
+    before."""
     from frob.process.parsers import parse_ruff_json
 
     out: list[ToolResult] = []
-    try:
-        run_result = guarded_subprocess_run(
-            ["uv", "run", "ruff", "check", "--output-format", "json", str(root)],
-            capture_output=True,
-            text=True,
-        )
-    except FileNotFoundError:
-        out.append(tool_unavailable_result("ruff-check", "ruff"))
-        out.append(tool_unavailable_result("ruff-format", "ruff"))
-        return out
-    if run_result.is_err:
-        out.append(tool_disabled_result("ruff-check", EXEC_KILL_SWITCH_ENV))
-        out.append(tool_disabled_result("ruff-format", EXEC_KILL_SWITCH_ENV))
-        return out
-    proc = run_result.danger_ok
-    r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
-    r.tool = "ruff-check"
-    out.append(r)
-    out.append(_ruff_format_result(root))
+    if not skip_check:
+        try:
+            run_result = guarded_subprocess_run(
+                ["uv", "run", "ruff", "check", "--output-format", "json", str(root)],
+                capture_output=True,
+                text=True,
+            )
+        except FileNotFoundError:
+            out.append(tool_unavailable_result("ruff-check", "ruff"))
+        else:
+            if run_result.is_err:
+                out.append(tool_disabled_result("ruff-check", EXEC_KILL_SWITCH_ENV))
+            else:
+                proc = run_result.danger_ok
+                r = parse_ruff_json(proc.stdout, exit_code=proc.returncode)
+                r.tool = "ruff-check"
+                out.append(r)
+    if not skip_format:
+        out.append(_ruff_format_result(root))
     return out
 
 
@@ -122,6 +142,76 @@ def _reformat_diagnostics(reformat_lines: list[str]) -> list[Diagnostic]:
         )
         for ln in reformat_lines
     ]
+
+
+# frob:ticket T-2320
+# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_success_runs_fix_then_format_via_uv_run  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_missing_binary_yields_two_typed_results  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_kill_switch_disabled_yields_two_typed_results  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestRunRuffAutofix.test_check_fix_nonzero_exit_still_runs_format  # noqa: E501
+def _run_ruff_autofix(root: Path) -> list[ToolResult]:
+    """`frob check --fix-ruff`: a genuine `ruff check --fix` followed by a
+    real `ruff format` WRITE pass -- distinct from `--fix`'s narrow Tier-A/
+    B/C deterministic fixers (`frob.gates._fix_engine*`, T-1260/T-1481),
+    which apply only frob's own registered, individually-reviewed fix
+    tables and never a general `ruff --fix` across every fixable rule
+    category. This is the CLI-facing primitive `format:`/`lint-fix:`
+    Makefile leaves need to repoint to (T-2244) -- unlike `_run_ruff`
+    (`--check` mode, read-only), both sub-invocations here actually
+    rewrite files on disk.
+
+    Same pinned-`uv run ruff`-not-bare-`ruff` reasoning as `_run_ruff`/
+    `_ruff_format_result` (T-2252) applies here too -- both stages route
+    through `uv run ruff` so the version doing the rewrite matches the one
+    `frob check` verifies against. A missing `ruff` binary (T-0142) is a
+    typed failing ToolResult for both stages, never a raw
+    FileNotFoundError; the second stage still runs even if the first
+    fails to invoke, so a caller sees the real state of both rather than
+    a short-circuited guess."""
+    out: list[ToolResult] = []
+    try:
+        run_result = guarded_subprocess_run(
+            ["uv", "run", "ruff", "check", "--fix", str(root)],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        out.append(tool_unavailable_result("ruff-check-fix", "ruff"))
+    else:
+        if run_result.is_err:
+            out.append(tool_disabled_result("ruff-check-fix", EXEC_KILL_SWITCH_ENV))
+        else:
+            proc = run_result.danger_ok
+            msg = (proc.stdout + proc.stderr).strip()
+            out.append(
+                ToolResult(
+                    tool="ruff-check-fix",
+                    exit_code=proc.returncode,
+                    summary=msg or "no fixable violations",
+                )
+            )
+    try:
+        format_result = guarded_subprocess_run(
+            ["uv", "run", "ruff", "format", str(root)],
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        out.append(tool_unavailable_result("ruff-format-write", "ruff"))
+    else:
+        if format_result.is_err:
+            out.append(tool_disabled_result("ruff-format-write", EXEC_KILL_SWITCH_ENV))
+        else:
+            proc = format_result.danger_ok
+            msg = (proc.stdout + proc.stderr).strip()
+            out.append(
+                ToolResult(
+                    tool="ruff-format-write",
+                    exit_code=proc.returncode,
+                    summary=msg or "no files reformatted",
+                )
+            )
+    return out
 
 
 # frob:ticket T-0142
