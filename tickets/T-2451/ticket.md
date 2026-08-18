@@ -14,11 +14,31 @@ scope:
 - src/frob/process/_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
-anchor: false
-anchor_reason: null
+anchor: true
+anchor_reason: 'Permanent WIRE001 follow_up anchor for frob.process._reap._sigterm_handler.
+
+  The waive directive at src/frob/process/_reap.py:144 cites T-2451 as its
+
+  follow_up target because the best-effort callgraph cannot trace a name
+
+  passed into signal.signal() as a caller (same gap class as T-1831/T-1024).
+
+  There is nothing to implement -- the handler is genuinely wired and covered
+
+  by tests/unit/test_process_reap.py::TestInstallSigtermReaper. WIRE002
+
+  requires a real, non-terminal ticket id as the follow_up target, so this
+
+  ticket must stay open forever rather than land to done/dropped -- landing
+
+  it would orphan the citation (LiveTrackerCited, T-1853''s precedent).
+
+  '
 land_commit: null
 ---
 `frob.process._reap._sigterm_handler` is genuinely wired -- passed as the
