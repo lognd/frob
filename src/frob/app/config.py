@@ -547,6 +547,8 @@ class AppConfig(BaseModel):
     waive_audit_subcommand: str | None = None
     waive_audit_reviewed_count: int | None = None
     waive_audit_cop_outs: int | None = None
+    # frob:ticket T-2485
+    waive_audit_partial: bool = False
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
     # frob:ticket T-0810

@@ -416,25 +416,50 @@ ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
 
 - `frob.gates._waive_audit_watermark` -- persisted progress marker.
   `WaiveAuditWatermark` (`commit_sha`, `audited_at`, `waivers_audited`,
-  `catchup_remaining`) round-trips through `.frob/waive-audit-watermark.
-  json` via `load_watermark`/`save_watermark`, both returning a typani
-  `Result` keyed on `WaiveAuditWatermarkError` (`NotFound` vs
-  `Malformed` vs `WriteFailed` -- kept distinct so a genuinely unreadable
-  watermark is never treated as "never audited"). `watermark_path`/
-  `utc_now` are the two small seams (path resolution, injectable clock)
-  the rest of the module builds on.
+  `catchup_remaining`, `catchup_covered`) round-trips through `.frob/
+  waive-audit-watermark.json` via `load_watermark`/`save_watermark`, both
+  returning a typani `Result` keyed on `WaiveAuditWatermarkError`
+  (`NotFound` vs `Malformed` vs `WriteFailed` -- kept distinct so a
+  genuinely unreadable watermark is never treated as "never audited").
+  `watermark_path`/`utc_now` are the two small seams (path resolution,
+  injectable clock) the rest of the module builds on. T-2485:
+  `catchup_covered` is the set of `"file:line:rule"` waiver identities
+  (`_waiver_identity` in the runner module) a BANKED PARTIAL catch-up
+  pass has already reviewed -- it lets the next bounded scan's window
+  advance past them instead of re-offering the same leading slice of the
+  corpus forever, and it is cleared the moment `catchup_remaining` hits
+  0 (the covered-set means nothing once catch-up mode itself ends).
 - `frob.app.ticket_runner._waive_audit` -- the CLI-facing runner.
   `run_scan` is the read-only `scan` subcommand: it determines the scan
   set (incremental-since-watermark, or a bounded first-run/continuing
-  catch-up pass capped at `_CATCHUP_BOUND`) and returns a
-  `WaiveAuditScanReport` carrying an `AuditVerdict` --
-  `WATERMARK_UNREADABLE` / `NO_NEW_WAIVERS` / `NEEDS_REVIEW` / `CLEAN`,
-  deliberately kept as four DISTINCT states (a `scan` can never itself
-  report `CLEAN` -- only `complete` can, since only a human/agent
-  reviewer's classification against T-1614's own rubric can establish
-  that). `complete_pass` records a finished pass (refusing on a
-  reviewed-count mismatch or an incomplete catch-up) and advances the
-  watermark to current HEAD via `frob.gitio`.
+  catch-up pass capped at `_CATCHUP_BOUND`, skipping any waivers already
+  recorded in `catchup_covered`) and returns a `WaiveAuditScanReport`
+  carrying an `AuditVerdict` -- `WATERMARK_UNREADABLE` /
+  `NO_NEW_WAIVERS` / `NEEDS_REVIEW` / `CLEAN` /
+  `PARTIAL_PROGRESS_BANKED`, deliberately kept as DISTINCT states (a
+  `scan` can never itself report `CLEAN` -- only `complete` can, since
+  only a human/agent reviewer's classification against T-1614's own
+  rubric can establish that; and neither `scan` nor a plain `complete`
+  can ever report `PARTIAL_PROGRESS_BANKED` -- only `complete --partial`
+  can, and it can NEVER report `CLEAN`, even when the reviewed batch
+  itself had zero cop-outs). `complete_pass` records a finished pass
+  (refusing on a reviewed-count mismatch, and refusing an incomplete
+  catch-up UNLESS `partial=True`) and advances the watermark to current
+  HEAD via `frob.gitio`.
+- T-2485: `complete --partial` (`complete_pass(..., partial=True)`) is
+  the fix for a real gap T-1614's own first live pass against this
+  repo's corpus (100 scanned, 857 not covered) surfaced -- before this,
+  a bounded catch-up pass could NEVER bank progress: `complete_pass`
+  refused unconditionally whenever `not_covered_count > 0`, and nothing
+  ever wrote a watermark with nonzero `catchup_remaining`, so the only
+  way to ever advance the watermark was reviewing the entire backlog in
+  one sitting (exactly what bounding the pass to `_CATCHUP_BOUND` was
+  meant to avoid). `--partial` is required explicitly, never inferred,
+  so a caller cannot bank a partial pass by accident while believing
+  they completed the audit; the resulting watermark's
+  `catchup_remaining`/`catchup_covered` make a banked-but-incomplete
+  pass structurally indistinguishable-from-complete impossible to
+  produce (T-2391 fail-loudly doctrine).
 - Each `ScannedWaiver` surfaced by `scan` names the file/line/rule/reason/
   follow_up a human/agent classifies per T-1614's original rubric (STILL
   NECESSARY AND HONEST / OBSOLETE / COP-OUT / PERMANENT BY DESIGN) --

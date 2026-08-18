@@ -58,7 +58,7 @@ class WaiveAuditWatermarkError(ErrorSet):
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_round_trips_through_\
 # load kind="unit"
 class WaiveAuditWatermark(BaseModel):
-    """One completed audit pass's stopping point.
+    """One completed (or partially banked) audit pass's stopping point.
 
     `commit_sha` is the repo HEAD the pass covered UP TO AND INCLUDING --
     the next incremental pass scans `frob:waive` directives introduced in
@@ -67,6 +67,21 @@ class WaiveAuditWatermark(BaseModel):
     did not cover the entire pre-watermark backlog in one go; a nonzero
     value here means the next pass must continue catch-up rather than
     treat the repo as fully audited-to-date.
+
+    T-2485: `catchup_remaining > 0` is a BANKED PARTIAL PASS, never a
+    completed one -- a caller reading this watermark must be able to tell
+    "audited N of M so far, M-N remain" from "audited everything, found
+    nothing" without cross-referencing anything else (T-2391's
+    fail-loudly doctrine: those two must never render the same way).
+    `catchup_covered` is the set of already-reviewed waiver identities
+    (`"file:line:rule"`, see `frob.app.ticket_runner._waive_audit.
+    _waiver_identity`) accumulated across banked partial passes so the
+    NEXT catch-up scan's bounded window advances past what was already
+    reviewed instead of re-offering the same waivers forever. Both fields
+    reset to their zero/empty defaults the moment a catch-up run finally
+    covers the whole backlog (`catchup_remaining` hits 0) -- at that
+    point the watermark reverts to plain incremental-since-`commit_sha`
+    mode and the covered-set no longer means anything.
     """
 
     model_config = {}
@@ -75,6 +90,7 @@ class WaiveAuditWatermark(BaseModel):
     audited_at: datetime
     waivers_audited: int
     catchup_remaining: int = 0
+    catchup_covered: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467

@@ -613,6 +613,18 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         help="how many of the reviewed waivers were cop-outs (0 means the "
         "pass was genuinely clean, not merely unexamined)",
     )
+    complete_p.add_argument(
+        "--partial",
+        dest="waive_audit_partial",
+        action="store_true",
+        help="T-2485: explicit acknowledgement that this batch does NOT "
+        "cover a bounded catch-up pass's whole backlog -- banks exactly "
+        "the reviewed batch (advancing catchup_remaining/catchup_covered "
+        "in the watermark) instead of refusing outright. Without this "
+        "flag, complete still refuses on an incomplete catch-up exactly "
+        "as before; passing it never yields a CLEAN verdict while "
+        "waivers remain uncovered",
+    )
     return waive_audit_p
 
 

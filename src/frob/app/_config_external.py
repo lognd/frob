@@ -356,6 +356,8 @@ _LIST_FIELDS = (
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_absent_ruff_flags_default_false  # noqa: E501
 # frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 _BOOL_FLAGS = (
+    # frob:ticket T-2485
+    "waive_audit_partial",
     "scaffold_force",
     "cycle_suggest",
     "outline_json",

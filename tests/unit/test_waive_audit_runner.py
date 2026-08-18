@@ -147,4 +147,100 @@ class TestCompletePass:
         assert result.is_ok
         watermark = result.danger_ok
         assert watermark.waivers_audited == 1
+        assert watermark.catchup_remaining == 0
         assert watermark_path(tmp_path).exists()
+
+
+class TestPartialCatchup:
+    """T-2485: a bounded catch-up pass must be able to bank exactly the
+    batch it reviewed -- without `partial=True` it still refuses
+    (unchanged from before), and the NEXT scan must advance past what
+    was already banked rather than re-offering the same window."""
+
+    def test_partial_without_flag_still_refuses(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(_waive_audit, "_CATCHUP_BOUND", 1)
+        _init_git_repo(tmp_path)
+        _write_waiver(tmp_path, "m1.py", "DUP001")
+        _write_waiver(tmp_path, "m2.py", "DUP001")
+        _commit_all(tmp_path, "add waivers")
+
+        result = complete_pass(tmp_path, reviewed_count=1, cop_outs_found=0)
+
+        assert result.is_err
+        assert result.err is WaiveAuditError.CatchupIncomplete
+        assert not watermark_path(tmp_path).exists()
+
+    def test_partial_banks_batch_and_advances_watermark(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(_waive_audit, "_CATCHUP_BOUND", 1)
+        _init_git_repo(tmp_path)
+        _write_waiver(tmp_path, "m1.py", "DUP001")
+        _write_waiver(tmp_path, "m2.py", "DUP001")
+        _commit_all(tmp_path, "add waivers")
+
+        result = complete_pass(
+            tmp_path, reviewed_count=1, cop_outs_found=0, partial=True
+        )
+
+        assert result.is_ok
+        watermark = result.danger_ok
+        assert watermark.waivers_audited == 1
+        assert watermark.catchup_remaining == 1
+        assert len(watermark.catchup_covered) == 1
+        assert watermark_path(tmp_path).exists()
+
+    def test_next_scan_skips_already_banked_waivers(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(_waive_audit, "_CATCHUP_BOUND", 1)
+        _init_git_repo(tmp_path)
+        _write_waiver(tmp_path, "m1.py", "DUP001")
+        _write_waiver(tmp_path, "m2.py", "DUP001")
+        _commit_all(tmp_path, "add waivers")
+
+        first = complete_pass(
+            tmp_path, reviewed_count=1, cop_outs_found=0, partial=True
+        )
+        assert first.is_ok
+        first_covered = first.danger_ok.catchup_covered
+
+        report = run_scan(tmp_path)
+
+        assert report.mode == "catchup"
+        assert report.verdict == AuditVerdict.NEEDS_REVIEW
+        assert len(report.scanned) == 1
+        assert report.not_covered_count == 0
+        scanned_identity = f"{report.scanned[0].file}:{report.scanned[0].line}:{report.scanned[0].rule}"
+        assert scanned_identity not in first_covered
+
+    def test_banking_the_final_batch_clears_catchup_state(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(_waive_audit, "_CATCHUP_BOUND", 1)
+        _init_git_repo(tmp_path)
+        _write_waiver(tmp_path, "m1.py", "DUP001")
+        _write_waiver(tmp_path, "m2.py", "DUP001")
+        _commit_all(tmp_path, "add waivers")
+
+        first = complete_pass(
+            tmp_path, reviewed_count=1, cop_outs_found=0, partial=True
+        )
+        assert first.is_ok
+
+        second = complete_pass(
+            tmp_path, reviewed_count=1, cop_outs_found=0, partial=True
+        )
+
+        assert second.is_ok
+        watermark = second.danger_ok
+        assert watermark.catchup_remaining == 0
+        assert watermark.catchup_covered == ()
+
+        # A now-fully-caught-up watermark reverts to plain incremental
+        # scanning -- no more waivers to review until something new lands.
+        report = run_scan(tmp_path)
+        assert report.mode == "incremental"
+        assert report.verdict == AuditVerdict.NO_NEW_WAIVERS
