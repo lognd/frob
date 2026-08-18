@@ -44,7 +44,7 @@ class TestBindRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """A stray `print()` inside `bind.check` (the risky span `run`
         guards under `--json`) must land on stderr, never corrupt the
@@ -83,7 +83,7 @@ class TestFmtRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """A stray `print()` inside `format_paths` must land on stderr,
         never corrupt the JSON payload on stdout."""
@@ -124,7 +124,7 @@ class TestCleanRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """A stray `print()` inside `clean` must land on stderr, never
         corrupt the JSON payload on stdout."""
@@ -174,7 +174,7 @@ class TestMapRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """`_daemon_proxy.query`'s real "daemon disabled, computing ...
         in-process" INFO log (this ticket's actual execution-confirmed
@@ -220,7 +220,7 @@ class TestDocsRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """A stray `print()` inside `_collect_docstrings` must land on
         stderr, never corrupt the JSON payload on stdout."""
@@ -267,7 +267,7 @@ class TestGraphQueryRunnerJsonGuard:
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys,
-        _real_console_handlers,
+        _real_console_handlers,  # noqa: F811 -- cross-module fixture import (DUP001), not a real redefinition
     ) -> None:
         """The real `_daemon_proxy.query` "daemon disabled" INFO log must
         land on stderr, never corrupt the `--load-snapshot` fallback's
