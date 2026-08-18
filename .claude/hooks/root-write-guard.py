@@ -204,13 +204,24 @@ def main() -> None:
     target_real = os.path.realpath(
         file_path if os.path.isabs(file_path) else os.path.join(cwd, file_path)
     )
+    # T-2412: a linked worktree may live INSIDE the primary checkout (this
+    # repo nests them under `.claude/worktrees/`), so the `..` relpath test
+    # below does NOT catch them -- it only catches worktrees sited as
+    # siblings, which is what the original fixture happened to create.
+    # Check membership in the ACTUAL registered worktree list instead of
+    # inferring it from path shape, so no directory convention is assumed.
+    for linked in paths[1:]:
+        linked_real = os.path.realpath(linked)
+        if target_real == linked_real or target_real.startswith(linked_real + os.sep):
+            return
+
     try:
         rel = os.path.relpath(target_real, primary_real)
     except ValueError:
         return
     if rel.startswith(".."):
-        # Target is not under the primary checkout at all (e.g. genuinely
-        # inside the agent's own leased worktree) -- never refuse this.
+        # Target is not under the primary checkout at all (a worktree sited
+        # outside it) -- never refuse this.
         return
     rel = rel.replace(os.sep, "/")
     if _is_ledger_path(rel):
