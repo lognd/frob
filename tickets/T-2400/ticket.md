@@ -98,7 +98,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fbc12178ec2f1b4c1e1e933df3c840b531edc1ac
 ---
 TWICE TODAY, a Tier-A `TICK006` auto-fix during land filed spurious
 "phantom citation recovery" tickets for ticket ids that GENUINELY EXIST
