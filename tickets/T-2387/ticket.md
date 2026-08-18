@@ -2,7 +2,7 @@
 id: T-2387
 title: check_skip_ruff_check/check_skip_ruff_format/check_ruff_fix silently dropped
   by CLI layer -- _BOOL_FLAGS never updated for T-2320's new flags
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,8 +13,14 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/_config_external.py
+evidence_scope:
+- tests/unit/test_app_config_flag_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::test_current_tree_has_zero_dropped_flags
+- tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig::test_from_external_carries_all_three_ruff_flags_from_parsed_argv
+- tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig::test_absent_ruff_flags_default_false
 designated_repro_test: null
 threat: null
 component: null

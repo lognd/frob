@@ -2,7 +2,7 @@
 id: T-2385
 title: frob --help renders grouped-subcommand section headers at the same indent as
   the commands they label
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-17'
@@ -13,18 +13,50 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/__main__.py
+- src/frob/_cli_parsers/_ops.py
+- tests/unit/test_main_entry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ops.py
+  reason: 'T-2385 acceptance[0]: narrower description column from the header-indent
+    fix breaks ops help mid-word; shortening that help string is the ticket''s own
+    second-order nit'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: test coverage for the header-indent fix lives here per existing frob:tests
+    directives on this class
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 designated_repro_test: null
 acceptance:
 - text: Given frob --help, when the grouped subcommand listing renders, then each
     section header sits at a strictly smaller indent than every command entry beneath
     it, and no help-text line breaks inside a word.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 - text: Given the two header-emitting branches, when the fix lands, then they are
     a single loop rather than two near-identical blocks, and the existing WIRE001/DEAD001
     waivers on both methods are preserved unchanged.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 threat: null
 component: cli
 anchor: false

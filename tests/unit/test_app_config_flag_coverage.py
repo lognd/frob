@@ -124,3 +124,55 @@ class TestFindDroppedCliFlags:
             f"{len(dropped)}/{len(candidates)} CLI flag(s) parse but never "
             f"reach AppConfig: {sorted(dropped)}"
         )
+
+
+# frob:ticket T-2387
+class TestT2320RuffFlagsReachAppConfig:
+    """T-2387 regression: T-2320's three ruff-substage flags
+    (`--skip-ruff-check`, `--skip-ruff-format`, `--fix-ruff`) parsed
+    correctly into argparse's Namespace but were never added to
+    `_BOOL_FLAGS`, so `_apply_bool_flags` silently dropped all three
+    before `AppConfig(**d)` -- the field always kept its `False` default
+    regardless of the CLI flag. Same shape as T-0749's `TestAcceptsCliWiring`:
+    goes through the REAL parser and `AppConfig.from_external`, not a
+    direct `AppConfig(...)` construction, so this exact class of gap
+    (parses + has coverage on the function it configures, but the config
+    layer never carries it there) cannot regress silently again."""
+
+    def test_from_external_carries_all_three_ruff_flags_from_parsed_argv(
+        self,
+    ) -> None:
+        """Each of the three T-2320 flags, parsed via the real CLI
+        parser, reaches its corresponding `AppConfig` field as `True`."""
+        from pathlib import Path
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "check",
+                "--skip-ruff-check",
+                "--skip-ruff-format",
+                "--fix-ruff",
+            ]
+        )
+        cfg = AppConfig.from_external(args, Path("frob.toml"))
+        assert cfg.check_skip_ruff_check is True
+        assert cfg.check_skip_ruff_format is True
+        assert cfg.check_ruff_fix is True
+
+    def test_absent_ruff_flags_default_false(self) -> None:
+        """Without the flags, the fields stay at their `False` default --
+        confirms the previous test is really observing the flag's
+        effect, not a field that was always `True`."""
+        from pathlib import Path
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(["check"])
+        cfg = AppConfig.from_external(args, Path("frob.toml"))
+        assert cfg.check_skip_ruff_check is False
+        assert cfg.check_skip_ruff_format is False
+        assert cfg.check_ruff_fix is False

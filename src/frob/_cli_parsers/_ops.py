@@ -44,8 +44,11 @@ def _add_ops_parser(sub) -> None:
     delegate straight into the existing runner logic."""
     ops_p = sub.add_parser(
         "ops",
-        help="release/fleet/infra plumbing: release/natives/doctor/clean/"
-        "fleet/deploy/scaffold/gitlog/stats grouped under one verb (T-1569)",
+        # T-2385: kept short and word-break-safe -- the grouped-subparser
+        # header fix narrows this column, and the old wording broke
+        # "clean" mid-word ("c\nlean") at that width.
+        help="release/fleet/infra plumbing: release, natives, doctor, "
+        "clean, fleet, deploy, scaffold, gitlog, stats (T-1569)",
     )
     ops_sub = ops_p.add_subparsers(dest="ops_command")
 

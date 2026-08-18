@@ -246,6 +246,8 @@ _VERB_GROUP_NAMES = frozenset(
 # frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_verb_groups_listed_before_also_available_directly_section  # noqa: E501
 # frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_non_group_verb_listed_after_also_available_directly  # noqa: E501
 # frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_nested_subparser_help_is_unaffected  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_section_headers_indent_strictly_less_than_entries  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestGroupedHelpFormatter.test_no_help_text_breaks_inside_a_word  # noqa: E501
 # frob:waive WIRE001 follow_up="T-1831" reason="genuinely wired -- passed as \
 # formatter_class=_GroupedHelpFormatter to the root argparse parser (_build_parser) \
 # and invoked internally by argparse's own help-rendering machinery -- but the \
@@ -302,12 +304,22 @@ class _GroupedHelpFormatter(argparse.HelpFormatter):
         group_acts = [a for a in subactions if a.dest in _VERB_GROUP_NAMES]
         rest_acts = [a for a in subactions if a.dest not in _VERB_GROUP_NAMES]
         parts: list[str] = []
-        if group_acts:
-            parts.append("  verb groups (each also usable standalone):\n")
-            parts.extend(base_format_action(self, a) for a in group_acts)
-        if rest_acts:
-            parts.append("  also available directly:\n")
-            parts.extend(base_format_action(self, a) for a in rest_acts)
+        # T-2385: emit each section header at the formatter's OWN current
+        # indent, then render that section's entries one level DEEPER via
+        # _indent()/_dedent() -- a hardcoded two-space header prefix used to
+        # match the entry indent exactly, so headers rendered indistinguishable
+        # from the commands they label. argparse recomputes the description
+        # column from the deeper indent automatically.
+        for header, acts in (
+            ("verb groups (each also usable standalone):", group_acts),
+            ("also available directly:", rest_acts),
+        ):
+            if not acts:
+                continue
+            parts.append("%*s%s\n" % (self._current_indent, "", header))
+            self._indent()
+            parts.extend(base_format_action(self, a) for a in acts)
+            self._dedent()
         return "".join(parts)
 
 
