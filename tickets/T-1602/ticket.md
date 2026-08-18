@@ -14,10 +14,88 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/lang/**
-- tests/**
-- docs/**
+- src/frob/lang/_walk_cuda.py
+- src/frob/lang/_walk_c.py
+- tests/fixtures/lang/**
+- tests/test_lang.py
+- tests/test_lang_conformance_gate.py
+- tests/test_lang_support.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/**
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_walk_cuda.py
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_walk_c.py
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/fixtures/lang/**
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'T-2446: same convention as the other per-language leaves, PLUS the existing
+    C walker (src/frob/lang/_walk_c.py) since the ticket''s own body says ''decide
+    explicitly whether CUDA is a distinct adapter or a C++ dialect flag'' -- either
+    resolution touches one of these two named files, not a guess'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
