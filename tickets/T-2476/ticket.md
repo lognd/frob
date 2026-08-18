@@ -2,7 +2,7 @@
 id: T-2476
 title: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001
   has a doc entry
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-18'
@@ -17,6 +17,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run pytest tests/gates/test_rule_id_scan_branches.py -q exit=0 sha256=8999741613eb
 designated_repro_test: null
 threat: null
 component: null

@@ -417,10 +417,7 @@ def find_unregistered_rule_ids(
 
 
 # frob:ticket T-2448
-# frob:waive COV001 reason="docs/modules/gates.md's rule catalog is the natural home \
-# for GATERULE001's own entry, but that file is under another T-2390-epic sibling's \
-# live lease as of this ticket's own land -- not in T-2448's declared scope. \
-# Follow-up: add the catalog entry once the lease clears."
+# frob:doc docs/modules/gates.md#gaterule001-t-2448
 # frob:tests \
 # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clean_repo_is_silent  # noqa: E501
 # frob:tests \
