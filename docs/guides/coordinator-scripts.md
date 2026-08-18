@@ -756,6 +756,24 @@ same terminal-state definition). Measured incident: T-1623 (epic,
 rotting) had children T-2223/T-2224 in-progress on main, but the report
 told the operator to "work it" -- an action already effectively taken.
 
+### `_epics_with_any_children`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_epics_with_any_children -->
+
+T-2468. Ticket ids that have at least one child ticket ANYWHERE --
+active `TICKETS_DIR` or `tickets/archive/**` -- in ANY state, not just a
+non-terminal one. Distinct from `_epics_with_active_children`, which
+never looks in `archive/` at all: an epic whose every child has landed
+and archived reads as zero active children under that predicate even
+though it plainly has children. Measured incident: T-1135/T-1137/T-1219
+each had every child done-and-archived, but read as `has_active_child:
+False` and landed in NEEDS DECOMPOSITION -- indistinguishable from an
+epic that had never been decomposed at all -- for three weeks. `_print_
+ticket_rot` combines this with `has_active_child` to tell three states
+apart: no children at all (still NEEDS DECOMPOSITION), children exist
+but none active (NEEDS CLOSE), an active child exists (DECOMPOSED, BEING
+WORKED).
+
 ### `rotting_tickets`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#rotting_tickets -->
@@ -770,7 +788,10 @@ so a caller can distinguish a rotting leaf ticket (needs dispatch) from
 a rotting epic/story (needs decomposition), plus (T-2229)
 `has_active_child` (`_epics_with_active_children`) so a caller can
 further distinguish a genuinely undecomposed epic/story from one that
-has already been decomposed and is being worked.
+has already been decomposed and is being worked, and (T-2468) `has_any_
+child` (`_epics_with_any_children`) so a caller can further distinguish
+"no children ever filed" from "children exist, all terminal -- needs a
+close, not more decomposition".
 
 ### `_local_ledger_state`
 
@@ -791,7 +812,10 @@ not QUEUED/PLANNED, or still under its priority's threshold -- the
 per-file half of `rotting_tickets`, letting the directory-walk/sort half
 stay readable on its own. T-2449: also carries `open_blockers`/
 `unresolved_blockers` (`_classify_blockers_local`) so `_print_ticket_rot`
-can keep a still-blocked leaf out of NEEDS DISPATCH.
+can keep a still-blocked leaf out of NEEDS DISPATCH. T-2468: also
+carries `has_any_child` (`_epics_with_any_children`) alongside `has_
+active_child` so `_print_ticket_rot` can split NEEDS CLOSE out of NEEDS
+DECOMPOSITION.
 
 ### `_print_rot_bucket`
 
@@ -811,18 +835,35 @@ T-2182. Prints the TICKET ROT section: `rotting_tickets`'s count, split
 under headings naming the required action -- 'NEEDS DISPATCH' for a leaf
 ticket with NO open/unresolved blocker (T-2449), 'BLOCKED (dependency
 not yet resolved)' (T-2449) for a leaf ticket whose `blocked_by` still
-names an open or unresolved id, 'NEEDS DECOMPOSITION' for a genuinely
-undecomposed `tier=epic`/`tier=story`, and (T-2229) 'DECOMPOSED, BEING
-WORKED' for an epic/story that already has a non-terminal child
-(`has_active_child`) -- 'work it'/'needs decomposition' is a lie for it,
-the action is already effectively taken. Epics are NOT exempted from the
-report either way, only reported under their own action heading
-(measured incident: 10 of 15 rotting tickets were epics, 1 a story, only
-4 leaf tickets -- one undifferentiated count told a coordinator to do
-something impossible for two thirds of the set, which is why the alarm
-read as noise for a whole session). Printed unconditionally inside
-`_print_fleet_report`; TICK004 already fires in `frob check`'s gate
-layer but sat as 11 lines inside a 19-error list there.
+names an open or unresolved id, 'NEEDS CLOSE' (T-2468) for an epic/story
+that has at least one child ANYWHERE (active or archived) but none of
+them non-terminal -- the epic's own work is done, it only needs a
+rollup Done report and a close -- 'NEEDS DECOMPOSITION' for a genuinely
+undecomposed `tier=epic`/`tier=story` (no child exists yet, anywhere),
+and (T-2229) 'DECOMPOSED, BEING WORKED' for an epic/story that already
+has a non-terminal child (`has_active_child`) -- 'work it'/'needs
+decomposition' is a lie for it, the action is already effectively taken.
+Epics are NOT exempted from the report either way, only reported under
+their own action heading (measured incident: 10 of 15 rotting tickets
+were epics, 1 a story, only 4 leaf tickets -- one undifferentiated count
+told a coordinator to do something impossible for two thirds of the
+set, which is why the alarm read as noise for a whole session). Printed
+unconditionally inside `_print_fleet_report`; TICK004 already fires in
+`frob check`'s gate layer but sat as 11 lines inside a 19-error list
+there.
+
+T-2468's own incident: T-1135/T-1137/T-1219 (three epics, every child
+done-and-archived) and T-1599 (a story genuinely blocked but never
+linked via `blocked_by`) and T-1614 (`runs_last`, structurally
+unreachable) all raised the identical undifferentiated NEEDS
+DECOMPOSITION alarm for 13-21 days -- four different actions
+(close/close/close/link-a-blocker/reshape) hiding behind one label that
+named none of them. The NEEDS CLOSE split is derived purely from
+`has_any_child`/`has_active_child` (never from title text or a
+hand-authored epic-id allowlist), and structurally cannot go empty by
+reclassification: an epic with genuinely zero children anywhere still
+satisfies neither `has_active_child` nor `has_any_child` and stays under
+NEEDS DECOMPOSITION.
 
 T-2449's own incident: T-1696 (high priority, queued 12 days, blocked_by
 naming two DONE-AND-ARCHIVED tickets) appeared under NEEDS DISPATCH on

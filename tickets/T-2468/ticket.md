@@ -2,7 +2,7 @@
 id: T-2468
 title: fleet_status NEEDS DECOMPOSITION conflates finished epics, unlinked blockers
   and unreachable tickets
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,22 +13,33 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_epic_all_terminal_children_prints_under_needs_close
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_epic_with_no_children_at_all_still_prints_under_needs_decomposition
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_leaf_never_appears_under_needs_dispatch
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_unresolved_blocker_also_keeps_leaf_out_of_needs_dispatch
 designated_repro_test: null
 acceptance:
 - text: Given an epic whose children are all terminal, when the rot report runs, then
     it appears under a close-shaped bucket naming the rollup-and-close remedy, not
     NEEDS DECOMPOSITION -- using T-1135's shape as the fixture.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_epic_all_terminal_children_prints_under_needs_close
 - text: Given an epic with no children at all, when the rot report runs, then it still
     appears under NEEDS DECOMPOSITION, proving the bucket was not emptied by reclassification.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_epic_with_no_children_at_all_still_prints_under_needs_decomposition
 - text: Given T-2449's BLOCKED bucket and its NEEDS DISPATCH consistency invariant,
     when this change lands, then both still hold.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_leaf_never_appears_under_needs_dispatch
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_unresolved_blocker_also_keeps_leaf_out_of_needs_dispatch
 threat: null
 component: tooling
 anchor: false

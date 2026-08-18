@@ -2378,6 +2378,69 @@ class TestPrintTicketRot:
         assert "T-0005" in out.split("DECOMPOSED, BEING WORKED")[0]
         assert "T-1623" in out.split("DECOMPOSED, BEING WORKED")[1]
 
+    # frob:ticket T-2468
+    def test_epic_all_terminal_children_prints_under_needs_close(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2468 acceptance [0]: an epic whose children are all terminal
+        (T-1135's exact shape -- one child, T-1197, done and archived)
+        must print under 'NEEDS CLOSE', never under 'NEEDS
+        DECOMPOSITION' -- the epic's own work is finished, it needs a
+        rollup Done report and a close, not more decomposition."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-1135",
+                    "priority": "high",
+                    "tier": "epic",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                    "has_active_child": False,
+                    "has_any_child": True,
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 1" in out
+        assert "NEEDS CLOSE (1):" in out
+        assert "T-1135" in out
+        assert "NEEDS DECOMPOSITION" not in out
+
+    # frob:ticket T-2468
+    def test_epic_with_no_children_at_all_still_prints_under_needs_decomposition(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2468 acceptance [1]: an epic with NO children at all (never
+        decomposed) still reports under 'NEEDS DECOMPOSITION' -- the
+        NEEDS CLOSE split must not empty this bucket by
+        reclassification, only siphon off the genuinely-finished case."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-9000",
+                    "priority": "high",
+                    "tier": "epic",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                    "has_active_child": False,
+                    "has_any_child": False,
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 1" in out
+        assert "NEEDS DECOMPOSITION (1):" in out
+        assert "T-9000" in out
+        assert "NEEDS CLOSE" not in out
+
     def test_runs_last_ticket_gets_its_own_deferred_bucket_not_needs_dispatch(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:

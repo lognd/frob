@@ -1,7 +1,7 @@
 ---
 id: T-1219
 title: 'perf: migrate tree-extraction layer to frob_core (Rust)'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-07-29'
@@ -13,8 +13,29 @@ runs_last: false
 scope:
 - src/frob/lang/**
 - frob-core/**
+evidence_scope:
+- tests/unit/test_extract_native.py
+- tests/unit/test_capability_native.py
+- tests/unit/test_arch_python_native.py
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic-rollup close: T-1219''s 4 children (T-1220..T-1223)
+    already shipped and archived done; this ticket only records the rollup Done report
+    and closes the umbrella, no new code'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 6942
+  new_length: 7152
+evidence:
+- tests/unit/test_extract_native.py::TestExtractTreePythonParity::test_this_repos_own_lang_module_matches_byte_for_byte
+- tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity::test_this_repos_own_capability_python_module_matches
+- tests/unit/test_arch_python_native.py::TestPyFunctionMetricsParity::test_this_repos_own_arch_python_module_matches
+- tests/test_vet.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
 designated_repro_test: null
 threat: null
 component: null

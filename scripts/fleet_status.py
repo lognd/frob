@@ -1643,6 +1643,46 @@ def _epics_with_active_children() -> set[str]:
     return active_parents
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_epics_with_any_children
+# frob:ticket T-2468
+def _epics_with_any_children() -> set[str]:
+    """Ticket ids that have AT LEAST ONE child ticket ANYWHERE -- active
+    `TICKETS_DIR` or `tickets/archive/**` -- regardless of that child's
+    state. Distinct from `_epics_with_active_children`, which only counts
+    a NON-terminal child and never looks in `archive/` at all: an epic
+    whose every child has landed and archived (T-1135's shape) reads as
+    zero active children under that predicate even though it plainly has
+    children, which is exactly why it was misclassified as NEEDS
+    DECOMPOSITION (T-2468) instead of NEEDS CLOSE. `_print_ticket_rot`
+    combines this with `has_active_child` to tell three states apart:
+    no children at all (still NEEDS DECOMPOSITION), children exist but
+    none active (NEEDS CLOSE), and an active child exists (DECOMPOSED,
+    BEING WORKED, unchanged)."""
+    parents: set[str] = set()
+    if TICKETS_DIR.is_dir():
+        for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
+            if ticket_dir.name == "archive":
+                continue
+            ledger_path = ticket_dir / "ticket.md"
+            if not ledger_path.is_file():
+                continue
+            parsed = _parse_ticket_ledger_file(ledger_path)
+            if parsed is None or parsed["parent"] is None:
+                continue
+            parents.add(parsed["parent"])
+    archive_dir = TICKETS_DIR / "archive"
+    if archive_dir.is_dir():
+        for ticket_dir in sorted(p for p in archive_dir.iterdir() if p.is_dir()):
+            ledger_path = ticket_dir / "ticket.md"
+            if not ledger_path.is_file():
+                continue
+            parsed = _parse_ticket_ledger_file(ledger_path)
+            if parsed is None or parsed["parent"] is None:
+                continue
+            parents.add(parsed["parent"])
+    return parents
+
+
 # frob:doc docs/guides/coordinator-scripts.md#rotting_tickets
 # frob:ticket T-2182
 # frob:ticket T-2229
@@ -1666,8 +1706,9 @@ def rotting_tickets() -> list[dict]:
     `frob.gates._tickets_gate._tick004_queue_rot`'s own selection exactly
     so this script's count agrees with the gate's own finding. Each
     entry: `id`, `priority`, `tier`, `state`, `age_days`,
-    `threshold_days`, `runs_last` (T-2200), `has_active_child` (T-2229);
-    see docs/guides/coordinator-scripts.md#rotting_tickets for the exact
+    `threshold_days`, `runs_last` (T-2200), `has_active_child` (T-2229),
+    `has_any_child` (T-2468); see
+    docs/guides/coordinator-scripts.md#rotting_tickets for the exact
     field semantics. Malformed `created` dates are skipped rather than
     guessed at."""
     if not TICKETS_DIR.is_dir():
@@ -1675,11 +1716,14 @@ def rotting_tickets() -> list[dict]:
     thresholds = _rot_day_thresholds()
     today = date.today()
     active_parents = _epics_with_active_children()
+    any_child_parents = _epics_with_any_children()
     rotting: list[dict] = []
     for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
         if ticket_dir.name == "archive":
             continue
-        entry = _rotting_entry(ticket_dir, thresholds, today, active_parents)
+        entry = _rotting_entry(
+            ticket_dir, thresholds, today, active_parents, any_child_parents
+        )
         if entry is not None:
             rotting.append(entry)
     rotting.sort(key=lambda t: (_PRIORITY_RANK.get(t["priority"], 99), -t["age_days"]))
@@ -1740,11 +1784,13 @@ def _classify_blockers_local(
 # frob:doc docs/guides/coordinator-scripts.md#_rotting_entry
 # frob:ticket T-2229
 # frob:ticket T-2449
+# frob:ticket T-2468
 def _rotting_entry(
     ticket_dir: Path,
     thresholds: dict[str, int],
     today: date,
     active_parents: set[str],
+    any_child_parents: set[str],
 ) -> dict | None:
     """One `rotting_tickets` entry for `ticket_dir`, or `None` if it is
     unreadable/malformed, not QUEUED/PLANNED, or still under its
@@ -1752,7 +1798,11 @@ def _rotting_entry(
     split out to keep the directory-walk/sort half readable on its own.
     T-2449: also carries `open_blockers`/`unresolved_blockers`
     (`_classify_blockers_local`) so `_print_ticket_rot` can keep a
-    still-blocked leaf out of NEEDS DISPATCH (acceptance [3])."""
+    still-blocked leaf out of NEEDS DISPATCH (acceptance [3]). T-2468:
+    also carries `has_any_child` (`_epics_with_any_children`, active +
+    archived, any state) alongside `has_active_child` so `_print_ticket_
+    rot` can tell 'no children ever filed' (still NEEDS DECOMPOSITION)
+    apart from 'children exist but all terminal' (NEEDS CLOSE)."""
     ledger_path = ticket_dir / "ticket.md"
     if not ledger_path.is_file():
         return None
@@ -1781,6 +1831,7 @@ def _rotting_entry(
         "threshold_days": threshold,
         "runs_last": parsed["runs_last"],
         "has_active_child": parsed["id"] in active_parents,
+        "has_any_child": parsed["id"] in any_child_parents,
         "open_blockers": open_blockers,
         "unresolved_blockers": unresolved_blockers,
     }
@@ -1832,6 +1883,12 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_decomposed_epic_print\
 # s_under_its_own_heading_not_needs_decomposition
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_epic_all_terminal_chi\
+# ldren_prints_under_needs_close
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_epic_with_no_children\
+# _at_all_still_prints_under_needs_decomposition
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
     into headings by required ACTION -- 'NEEDS DISPATCH' (a leaf ticket,
@@ -1843,11 +1900,19 @@ def _print_ticket_rot() -> None:
     T-1696 was flagged for dispatch on three consecutive coordinator ticks
     while every attempt was refused), 'DEFERRED (RUNS LAST)' (T-2200:
     `frob ticket start` structurally refuses a `runs_last` ticket, so
-    'NEEDS DISPATCH' is an action the tool itself rejects), 'NEEDS
-    DECOMPOSITION' (a genuinely undecomposed epic/story), and 'DECOMPOSED,
-    BEING WORKED' (T-2229: an epic/story with a non-terminal child already
-    -- 'work it' has already effectively been done). No bucket is ever
-    silently dropped: a ticket's age past threshold is always real,
+    'NEEDS DISPATCH' is an action the tool itself rejects), 'NEEDS CLOSE'
+    (T-2468: an epic/story with at least one child ANYWHERE -- active or
+    archived -- but none of them non-terminal; the epic's own work is
+    done, it just needs a rollup Done report and a close, not more
+    decomposition -- T-1135/T-1137/T-1219 sat here mislabelled for three
+    weeks before this bucket existed), 'NEEDS DECOMPOSITION' (a
+    genuinely undecomposed epic/story -- no child ticket exists yet,
+    anywhere, for it; T-2468 acceptance [1]: this bucket must NOT go
+    empty just because NEEDS CLOSE now siphons off the finished-epic
+    case), and 'DECOMPOSED, BEING WORKED' (T-2229: an epic/story with a
+    non-terminal child already -- 'work it' has already effectively been
+    done). No bucket is ever silently dropped: a ticket's age past
+    threshold is always real,
     disclosed information, even when the recommended action is 'wait' or
     'check the children' rather than 'dispatch it'. See docs/guides/
     coordinator-scripts.md#_print_ticket_rot for the measured incidents
@@ -1867,8 +1932,22 @@ def _print_ticket_rot() -> None:
     leaves = [t for t in ticket_tier if t not in still_blocked]
     deferred = [t for t in rotting if t["tier"] == "ticket" and t.get("runs_last")]
     non_leaves = [t for t in rotting if t["tier"] != "ticket"]
-    undecomposed = [t for t in non_leaves if not t.get("has_active_child")]
+    # T-2468: split non-leaves into three, not two -- 'no children at all
+    # yet' (still NEEDS DECOMPOSITION, acceptance [1]) is a different
+    # action from 'children exist but every one is terminal' (NEEDS
+    # CLOSE, acceptance [0]); an active (non-terminal) child still wins
+    # first as DECOMPOSED, BEING WORKED, unchanged from before.
     decomposed = [t for t in non_leaves if t.get("has_active_child")]
+    needs_close = [
+        t
+        for t in non_leaves
+        if not t.get("has_active_child") and t.get("has_any_child")
+    ]
+    undecomposed = [
+        t
+        for t in non_leaves
+        if not t.get("has_active_child") and not t.get("has_any_child")
+    ]
     _print_rot_bucket("NEEDS DISPATCH", leaves)
     _print_rot_bucket(
         "BLOCKED (dependency not yet resolved)",
@@ -1883,6 +1962,13 @@ def _print_ticket_rot() -> None:
         "not dispatchable via `frob ticket start` while other tickets are "
         "open (RunsLastBlocked); re-prioritize or clear runs_last if this "
         "is stuck",
+    )
+    _print_rot_bucket(
+        "NEEDS CLOSE",
+        needs_close,
+        "every child ticket is terminal (done/dropped, active ledger + "
+        "archive) but {id} itself is still open; write a rollup Done "
+        "report and close it, not decompose further",
     )
     _print_rot_bucket("NEEDS DECOMPOSITION", undecomposed)
     _print_rot_bucket(

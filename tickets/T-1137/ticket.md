@@ -2,7 +2,7 @@
 id: T-1137
 title: 'EPIC frob check --fix: tiered auto-fix engine (auto / verified-auto / assisted
   fix-its)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -13,6 +13,9 @@ sprint: null
 runs_last: false
 scope:
 - tickets/T-1137/**
+evidence_scope:
+- tests/test_gates.py
+- tests/test_check_runner.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -28,6 +31,8 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/**
@@ -64,25 +69,45 @@ scope_changes:
     shard, real file scopes belong to the not-yet-filed children'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic-rollup close: T-1137''s 6 children (T-1177,T-1260..T-1264)
+    already shipped and archived done; all 4 acceptance criteria bind cleanly to existing
+    evidence, no code change needed here'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 7321
+  new_length: 7541
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
+- tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
+- tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
+- tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --fix WHEN Tier-A findings exist THEN deterministic semantics-preserving
     fixes are applied (directive-form rewrite, unique anchor-slug correction, fmt,
     draft renumber, generated-registry regeneration, release sync, full-run-verified
     stale-waiver removal) and the affected gates re-run clean in the same invocation
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+  - tests/test_check_runner.py::TestApplyTierAAndReverify::test_doc007_finding_fixed_and_reverified_clean
 - text: 'GIVEN a Tier-B fix WHEN applied THEN it is transactional: affected gates
     plus the finding''s bound tests re-run per fix and any regression rolls that fix
     back with a disclosed report'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierB::test_clean_fix_commits_and_is_reported_fixed
 - text: GIVEN a Tier-C (content-required) finding THEN --fix never edits it and never
     inserts a waiver; it emits a structured fix-it (file, line, proposed patch) for
     explicit acceptance -- an obligation can never be auto-discharged by waiver
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierC::test_todo001_emits_a_fixit_with_no_proposed_patch
 - text: GIVEN the generated rule registry THEN every rule id carries a fixability
     tier (auto/verified/assisted/manual) that is generated-verified against the fix
     engine's actual handler table, so an unwired fixability claim is a check failure
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestRuleFixability::test_every_known_rule_id_maps_to_exactly_one_tier
 threat: null
 component: null
 anchor: false

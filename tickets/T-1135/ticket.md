@@ -2,7 +2,7 @@
 id: T-1135
 title: 'EPIC frob refactor: transactional move/rename/split with full reference, directive,
   and obligation rewrite'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 scope:
 - tickets/T-1135/**
+evidence_scope:
+- tests/test_refactor.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -28,6 +30,8 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/**
@@ -61,6 +65,26 @@ scope_changes:
     children'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic-rollup close: T-1135''s only child T-1197
+    is shipped and archived done; re-verification confirmed the code (refactor/_repointer.py,
+    _directives.py, _prose.py, _alias_policy.py, _transaction.py) satisfies the epic''s
+    own wider acceptance wording, no amendment or code change needed'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 9774
+  new_length: 10092
+evidence:
+- tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+- tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten
+- tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move
+- tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten
+- tests/test_refactor.py::TestRepointer::test_archived_per_ticket_ledger_file_evidence_rewritten
+- tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
+- tests/test_refactor.py::TestApplyPlan::test_overlapping_ops_refuse_before_write
+- tests/test_refactor.py::TestProseCarrier::test_docs_prose_and_code_block_rewritten
+- tests/test_refactor.py::TestRunRefactor::test_run_refactor_does_not_roll_back_on_ticket_md_evidence_carrier
 designated_repro_test: null
 acceptance:
 - text: 'GIVEN frob refactor move/rename/split on a symbol or module family WHEN it
@@ -70,11 +94,18 @@ acceptance:
     target forms, waiver symrefs including path:: prefixes, PII012 (file,token) allowlist
     entries, check-coverage registry citations, and archived-ticket evidence node
     ids'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestScanReferences::test_auto_alias_on_call_site_name_collision
+  - tests/test_refactor.py::TestDirectiveCarrier::test_directive_target_elsewhere_rewritten
+  - tests/test_refactor.py::TestRepointer::test_pii_allowlist_entry_rekeyed_on_move
+  - tests/test_refactor.py::TestRepointer::test_registry_cross_ref_rewritten
+  - tests/test_refactor.py::TestRepointer::test_archived_per_ticket_ledger_file_evidence_rewritten
 - text: GIVEN a refactor that cannot complete every rewrite THEN it refuses and rolls
     back rather than leaving a half-move; post-conditions verified in-command (import
     graph resolves, tests collect, gate findings diff-clean vs pre-refactor)
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestApplyPlan::test_apply_then_rollback_restores_tree
+  - tests/test_refactor.py::TestApplyPlan::test_overlapping_ops_refuse_before_write
 - text: 'GIVEN a moved or renamed symbol WHEN the refactor completes THEN every mention
     of it in prose is rewritten too: docstrings and comments naming the dotted path
     (including all frob: comment-DSL directive targets anywhere in the repo, not just
@@ -82,7 +113,9 @@ acceptance:
     whose heading slugs embed the symbol or module name -- auto-documentation updating
     is part of the transaction, with unresolvable prose mentions listed in the disclosed
     report rather than silently skipped'
-  evidence: []
+  evidence:
+  - tests/test_refactor.py::TestProseCarrier::test_docs_prose_and_code_block_rewritten
+  - tests/test_refactor.py::TestRunRefactor::test_run_refactor_does_not_roll_back_on_ticket_md_evidence_carrier
 threat: null
 component: null
 anchor: false
