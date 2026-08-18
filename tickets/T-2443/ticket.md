@@ -18,6 +18,10 @@ scope:
 - tests/unit/test_process_reap.py
 - tests/unit/test_main_entry.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
+- docs/modules/process.md
+- docs/modules/main-entry.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -55,6 +59,26 @@ scope_changes:
   glob: tests/unit/test_coordinator_scripts.py
   reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
     CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: doc anchors for new fleet_status/process/__main__ symbols
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/process.md
+  reason: doc anchors for new fleet_status/process/__main__ symbols
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/main-entry.md
+  reason: doc anchors for new fleet_status/process/__main__ symbols
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/app.md
+  reason: doc anchors for new fleet_status/process/__main__ symbols
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
