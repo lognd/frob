@@ -42,6 +42,7 @@ acceptance:
     and a reversible migration plan with a compatibility window
   evidence:
   - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
+  - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 - text: GIVEN the migration lands THEN tickets.md/tickets-archive.md are deleted,
     a v2-mode repo with a lingering monofile errors (LEDGERV1001), two agents landing
     disjoint tickets produce no ledger merge conflict, and the TICK002/TICK006 draft-death
@@ -50,6 +51,7 @@ acceptance:
     residue (design section 5 corrected accordingly)
   evidence:
   - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
+  - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
 acceptance_amendments:
 - op: replace
   index: 1
