@@ -15,13 +15,34 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
 acceptance:
-- text: given a fresh SYS003 measurement, when findings are grouped by (from_component,
-    to_component), then one or more disjoint-scope children are filed covering the
-    full 4834
+- text: GIVEN the corrected architecture model (testsuite->component Flows declared
+    explicitly per T-2380's investigation, frob.excludes/yaml_io/tomlio reclassified
+    from cli to core, refactor/registry_model/verify->core Flows added) THEN a fresh
+    unscoped frob check reports the TRUE production-only SYS003 count, and that count
+    is either burned down in one dispatch or split into disjoint children
   evidence: []
 - text: given every SYS003 child, when all have landed clean, then SYS003 is promoted
     from warning to error
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given a fresh SYS003 measurement, when findings are grouped by (from_component,
+    to_component), then one or more disjoint-scope children are filed covering the
+    full 4834
+  new_text: GIVEN the corrected architecture model (testsuite->component Flows declared
+    explicitly per T-2380's investigation, frob.excludes/yaml_io/tomlio reclassified
+    from cli to core, refactor/registry_model/verify->core Flows added) THEN a fresh
+    unscoped frob check reports the TRUE production-only SYS003 count, and that count
+    is either burned down in one dispatch or split into disjoint children
+  reason: criterion 0 assumed 4834 genuine findings needing distribution across children;
+    the coordinator-accepted verdict is that ~95%+ of that count is gate over-firing
+    (testsuite importing tested production code, plus 3 misplaced leaf utilities),
+    so 'file children covering the full 4834' is now the wrong instruction -- the
+    model must be corrected FIRST, then the true remainder measured and only then
+    decomposed
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false
