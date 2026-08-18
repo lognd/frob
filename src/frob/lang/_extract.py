@@ -302,10 +302,101 @@ def _imports_c_family(root: Node) -> tuple[str, ...]:
     return tuple(results)
 
 
+# frob:ticket T-2408
+def _imports_typescript(root: Node) -> tuple[str, ...]:
+    """Every `from '...'` module specifier on an `import`/`export ... from`
+    statement (T-2408).
+
+    Bare side-effect imports (`import './x'`) and `import type {...} from
+    '...'` share the same `import_statement` shape as a value import in
+    this grammar, so both fall out of the same walk with no extra case.
+    A re-export (`export {...} from '...'`) is included too -- it is a
+    real module dependency edge (frob.cycle's own concern, T-2211's own
+    "unresolved specifier" convention), even though it declares no local
+    binding."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type in ("import_statement", "export_statement"):
+            for child in n.named_children:
+                if child.type == "string":
+                    fragment = child.named_children[0] if child.named_children else None
+                    text = _child_text(fragment) if fragment is not None else ""
+                    if text:
+                        results.append(text)
+                    break
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
+# frob:ticket T-2408
+def _imports_rust(root: Node) -> tuple[str, ...]:
+    """Every `use` declaration's raw path (T-2408), unresolved -- mirrors
+    `_imports_c_family`'s "one specifier per statement, let the caller
+    resolve it" shape rather than python's per-name expansion: rust's
+    `use a::{b, c}` grouped-import form does not cleanly decompose into
+    independently resolvable specifiers the way python's `from X import
+    Y` does (the group shares one base path frob.cycle only needs once),
+    so the whole `a::{b, c}`-shaped text is emitted as one specifier."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "use_declaration":
+            path_node = next(
+                (
+                    c
+                    for c in n.named_children
+                    if c.type not in ("visibility_modifier",)
+                ),
+                None,
+            )
+            if path_node is not None:
+                text = _child_text(path_node)
+                if text:
+                    results.append(text)
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
+# frob:ticket T-2408
+def _imports_kotlin(root: Node) -> tuple[str, ...]:
+    """Every `import_header`'s dotted path (T-2408) -- a wildcard
+    (`import kotlin.io.*`) or an aliased import (`import X as Y`) both
+    still carry their own real dotted path as the `identifier` child;
+    the `wildcard_import`/`import_alias` siblings are display-only
+    decoration this walker does not need."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "import_header":
+            path_node = next(
+                (c for c in n.named_children if c.type == "identifier"), None
+            )
+            if path_node is not None:
+                text = _child_text(path_node)
+                if text:
+                    results.append(text)
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
 _IMPORT_WALKERS = {
     "python": _imports_python,
     "c": _imports_c_family,
     "cpp": _imports_c_family,
+    "typescript": _imports_typescript,
+    "tsx": _imports_typescript,
+    "rust": _imports_rust,
+    "kotlin": _imports_kotlin,
 }
 
 

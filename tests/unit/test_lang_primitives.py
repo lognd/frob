@@ -254,6 +254,33 @@ def test_extract_imports_tree_and_path(tmp_path: Path):
     assert any("os" in s for s in path_specs)
 
 
+def test_extract_imports_typescript_rust_kotlin(tmp_path: Path):
+    # frob:tests src/frob/lang/_extract.py::extract_imports kind="unit"
+    # T-2408: typescript/rust/kotlin previously had no `_IMPORT_WALKERS`
+    # entry at all -- extract_imports silently returned () for them.
+    ts_path = tmp_path / "sample.ts"
+    ts_path.write_text(
+        "import foo from 'bar';\n"
+        "export { x } from './reexport';\n"
+    )
+    ts_tree, _src, ts_lang = raw_tree(ts_path).danger_ok
+    ts_specs = extract_imports_tree(ts_tree, ts_lang)
+    assert "bar" in ts_specs
+    assert "./reexport" in ts_specs
+
+    rust_path = tmp_path / "sample.rs"
+    rust_path.write_text("use std::collections::HashMap;\n")
+    rust_tree, _src, rust_lang = raw_tree(rust_path).danger_ok
+    rust_specs = extract_imports_tree(rust_tree, rust_lang)
+    assert "std::collections::HashMap" in rust_specs
+
+    kotlin_path = tmp_path / "sample.kt"
+    kotlin_path.write_text("import kotlin.collections.List\n")
+    kotlin_tree, _src, kotlin_lang = raw_tree(kotlin_path).danger_ok
+    kotlin_specs = extract_imports_tree(kotlin_tree, kotlin_lang)
+    assert "kotlin.collections.List" in kotlin_specs
+
+
 def test_iter_identifiers_tree_and_path(tmp_path: Path):
     # frob:tests src/frob/lang/_extract.py::iter_identifiers kind="unit"
     # frob:tests src/frob/lang/__init__.py::iter_identifiers kind="unit"

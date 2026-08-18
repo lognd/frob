@@ -2,7 +2,7 @@
 id: T-2408
 title: frob.lang.extract_imports has no typescript/rust/kotlin walker (import_graph
   capability gap)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,8 +13,20 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/lang/_extract.py
+- tests/unit/test_lang_primitives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_lang_primitives.py
+  reason: add import-walker unit tests for the three new typescript/rust/kotlin _IMPORT_WALKERS
+    entries, TEST001 evidence
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_lang_primitives.py::test_extract_imports_typescript_rust_kotlin
 designated_repro_test: null
 threat: null
 component: null
