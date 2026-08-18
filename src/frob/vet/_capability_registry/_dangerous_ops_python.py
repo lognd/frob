@@ -714,6 +714,121 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("boto3.client(", "boto3.resource("),
         (),
     ),
+    # T-2479: split out of the coarse "boto3.client(/resource(" needle above
+    # -- boto3's mutating operation names are PER-SERVICE (S3's put_object/
+    # delete_object vs DynamoDB's put_item/delete_item vs IAM's
+    # create_user/delete_user) and only ever called on the object a
+    # `.client("service")`/`.resource("service")` call returns, with no
+    # library-name prefix at the call site itself -- a flat needle cannot
+    # distinguish these from a read (get_object/get_item/list_users)
+    # without a binding-aware resolver. `frob.vet._capability_python`'s
+    # `_resolve_py_boto3_client_call` (T-2479) resolves
+    # `x = boto3.client("s3")` to the synthetic identity
+    # `boto3.client(s3)`, so `x.put_object(...)` resolves all the way to
+    # `boto3.client(s3).put_object` and matches the needles below.
+    # Additive: the coarse "boto3.client(" / "boto3.resource(" needle
+    # above is UNCHANGED and still fires on every boto3 usage including
+    # these calls -- this is a strictly more precise SECOND observation.
+    # Scope disclosed, matching T-2464's own precedent: this covers three
+    # HIGH-VALUE services (S3, DynamoDB, IAM) with a representative, not
+    # exhaustive, mutating-verb list for each -- a full per-service survey
+    # across boto3's ~350 services is out of scope here (filed as a
+    # follow-up, see T-2479's Done report).
+    _op(
+        "python",
+        "boto3",
+        "boto3 S3 mutating verb (put/delete/create on client/resource(\"s3\"))",
+        "net-mutate",
+        "issues a state-changing AWS S3 API call (put/delete/create an "
+        "object, bucket, or ACL/policy) -- may destroy or expose data",
+        "scope credentials via IAM least privilege; treat as a mutating "
+        "operation for authorization/audit purposes; never accept "
+        "attacker-controlled bucket/key names unvalidated",
+        "high",
+        tuple(
+            f'boto3.{factory}(s3).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "put_object",
+                "delete_object",
+                "delete_objects",
+                "create_bucket",
+                "delete_bucket",
+                "put_object_acl",
+                "put_bucket_acl",
+                "put_bucket_policy",
+                "delete_bucket_policy",
+                "copy_object",
+                "upload_file",
+                "upload_fileobj",
+                "restore_object",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3 DynamoDB mutating verb (put/delete/update/create on "
+        'client/resource("dynamodb"))',
+        "net-mutate",
+        "issues a state-changing AWS DynamoDB API call (put/delete/update "
+        "an item or table) -- may destroy or corrupt data",
+        "scope credentials via IAM least privilege; treat as a mutating "
+        "operation for authorization/audit purposes; validate item "
+        "keys/attributes before writing",
+        "high",
+        tuple(
+            f'boto3.{factory}(dynamodb).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "put_item",
+                "delete_item",
+                "update_item",
+                "create_table",
+                "delete_table",
+                "update_table",
+                "batch_write_item",
+                "transact_write_items",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        'boto3 IAM mutating verb (create/delete/attach/put on client/resource("iam"))',
+        "net-mutate",
+        "issues a state-changing AWS IAM API call (create/delete a "
+        "user/role/policy or attach/detach a policy) -- a cloud-privilege "
+        "escalation surface, the single most consequential class this "
+        "needle table models",
+        "scope credentials via IAM least privilege; require a human "
+        "review/approval gate before any IAM-mutating call path executes",
+        "critical",
+        tuple(
+            f'boto3.{factory}(iam).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "create_user",
+                "delete_user",
+                "update_user",
+                "create_role",
+                "delete_role",
+                "put_role_policy",
+                "delete_role_policy",
+                "attach_role_policy",
+                "detach_role_policy",
+                "create_policy",
+                "delete_policy",
+                "attach_user_policy",
+                "detach_user_policy",
+                "create_access_key",
+                "delete_access_key",
+            )
+        ),
+        (),
+    ),
     _op(
         "python",
         "stripe",

@@ -455,12 +455,12 @@ def _resolve_py_expr(
         # recursion" measure="not applicable, non-recursive"
         return _resolve_py_subscript(node, alias_table)
     if node.type == "call":
-        # frob:invariant terminates reason="mutually recurses with \
-        # _resolve_py_partial_call, which only calls back here with node's own \
-        # 'function' field child or a child of node's own 'arguments' field, both \
-        # proper descendants of node in the finite tree-sitter parse tree" \
-        # measure="node's subtree depth strictly decreases"
-        return _resolve_py_partial_call(node, import_table, scope_cache, alias_table)
+        # frob:invariant terminates reason="mutually recurses with _resolve_py_call, \
+        # which only calls back here with node's own 'function' field child or a child \
+        # of node's own 'arguments' field, both proper descendants of node in the \
+        # finite tree-sitter parse tree" measure="node's subtree depth strictly \
+        # decreases"
+        return _resolve_py_call(node, import_table, scope_cache, alias_table)
     if node.type == "assignment":
         # T-0659: a CHAINED assignment's right-hand side (`a = b = target`)
         # parses as a nested `assignment` node (`b = target`), not an
@@ -551,6 +551,34 @@ def _resolve_py_attribute(
     return None
 
 
+#: `boto3.client(...)`/`boto3.resource(...)`'s own fully-qualified import-
+#: table identities (T-2479) -- the two recognized service-binding
+#: factories `_resolve_py_boto3_client_call` matches the callee against.
+_BOTO3_CLIENT_FACTORIES = frozenset({"boto3.client", "boto3.resource"})
+
+
+def _resolve_py_call(
+    node,  # noqa: ANN001
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None,
+) -> str | None:
+    """Dispatch a `call` node across the small set of recognized wrapper-
+    call shapes this module resolves -- split out of `_resolve_py_expr`'s
+    `call` branch to keep that function under ARCH001's line threshold,
+    and split again from the single `functools.partial` case (T-1626) to
+    add `boto3.client`/`boto3.resource` service binding (T-2479) without
+    growing either check's own body. Any other callee -- an ordinary
+    function call like `Job()` -- returns `None`, matching
+    `_resolve_py_expr`'s pre-existing "a `call` node is not a resolvable
+    object" posture for everything except these two recognized wrapper
+    shapes."""
+    resolved = _resolve_py_partial_call(node, import_table, scope_cache, alias_table)
+    if resolved is not None:
+        return resolved
+    return _resolve_py_boto3_client_call(node, import_table, scope_cache, alias_table)
+
+
 def _resolve_py_partial_call(
     node,  # noqa: ANN001
     import_table: dict[str, str],
@@ -558,24 +586,21 @@ def _resolve_py_partial_call(
     alias_table: dict[int, dict[str, str]] | None,
 ) -> str | None:
     """Resolve a `call` node through the `functools.partial(dangerous, ...)`
-    evasion (T-1626, split out of `_resolve_py_expr`'s `call` branch to keep
-    that function under ARCH001's line threshold): resolve the CALLEE
-    first, and if it is (an alias of) `functools.partial` itself, the
-    call's own resolved identity is whatever its first positional argument
-    resolves to (`p = functools.partial(os.system, cmd)` makes `p` an
-    alias for `os.system`, handled by the ordinary assignment/alias-table
-    path once THIS resolves; `functools.partial(os.system, cmd)()` called
-    directly also resolves here). Any other callee -- an ordinary function
-    call like `Job()` -- returns `None`, matching `_resolve_py_expr`'s
-    pre-existing "a `call` node is not a resolvable object" posture for
-    everything except this one recognized wrapper shape."""
+    evasion (T-1626, split out of `_resolve_py_call` above): resolve the
+    CALLEE first, and if it is (an alias of) `functools.partial` itself,
+    the call's own resolved identity is whatever its first positional
+    argument resolves to (`p = functools.partial(os.system, cmd)` makes
+    `p` an alias for `os.system`, handled by the ordinary assignment/
+    alias-table path once THIS resolves; `functools.partial(os.system,
+    cmd)()` called directly also resolves here)."""
     func = node.child_by_field_name("function")
     if func is None:
         return None
     # frob:invariant terminates reason="func is node's own 'function' field child, a \
     # proper descendant of node in the finite tree-sitter parse tree; mutually \
     # recurses with _resolve_py_expr, which only descends into the 'call' branch by \
-    # calling back here" measure="node's subtree depth strictly decreases"
+    # calling back here (via _resolve_py_call)" measure="node's subtree depth strictly \
+    # decreases"
     resolved_func = _resolve_py_expr(func, import_table, scope_cache, alias_table)
     if resolved_func != "functools.partial":
         return None
@@ -588,8 +613,58 @@ def _resolve_py_partial_call(
     # frob:invariant terminates reason="target is a child of node's own 'arguments' \
     # field, a proper descendant of node in the finite tree-sitter parse tree; \
     # mutually recurses with _resolve_py_expr, which only descends into the 'call' \
-    # branch by calling back here" measure="node's subtree depth strictly decreases"
+    # branch by calling back here (via _resolve_py_call)" measure="node's subtree \
+    # depth strictly decreases"
     return _resolve_py_expr(target, import_table, scope_cache, alias_table)
+
+
+# frob:ticket T-2479
+def _resolve_py_boto3_client_call(
+    node,  # noqa: ANN001
+    import_table: dict[str, str],
+    scope_cache: dict[int, dict[str, int]],
+    alias_table: dict[int, dict[str, str]] | None,
+) -> str | None:
+    """Resolve a `boto3.client("service")`/`boto3.resource("service")` call
+    site to a synthetic `boto3.client(service)`/`boto3.resource(service)`
+    identity (T-2479) when the call's first positional argument is a
+    STRING LITERAL -- lets a variable later bound to this call's result
+    (`s3 = boto3.client("s3")`) resolve `s3.put_object(...)` through the
+    ordinary alias-table copy-propagation path
+    (`_resolve_py_attribute`/`_record_py_alias`) all the way to
+    `boto3.client(s3).put_object`, which the per-service mutating-verb
+    needle entries in the registry (`_dangerous_ops_python.py`) match
+    against. Boto3's mutating method names are PER-SERVICE (S3's
+    `put_object` vs DynamoDB's `put_item` vs IAM's `create_user`) and
+    always called on a `.client("service")`/`.resource("service")` object
+    with no library-name prefix visible at the call site itself -- a flat
+    `boto3.` needle cannot distinguish a read from a write, which is
+    exactly the gap T-2479 (following T-2464's disclosed boto3 exclusion)
+    closes via this binding-aware resolution instead of an unreliable
+    flat needle survey. A non-literal service name
+    (`boto3.client(service_var)`) resolves to `None` -- fail-closed, the
+    same posture as every other literal-key alias in this module (T-1626's
+    `_py_literal_key_text`)."""
+    func = node.child_by_field_name("function")
+    if func is None:
+        return None
+    # frob:invariant terminates reason="func is node's own 'function' field child, a \
+    # proper descendant of node in the finite tree-sitter parse tree; mutually \
+    # recurses with _resolve_py_expr, which only descends into the 'call' branch by \
+    # calling back here (via _resolve_py_call)" measure="node's subtree depth strictly \
+    # decreases"
+    resolved_func = _resolve_py_expr(func, import_table, scope_cache, alias_table)
+    if resolved_func not in _BOTO3_CLIENT_FACTORIES:
+        return None
+    arguments = node.child_by_field_name("arguments")
+    if arguments is None:
+        return None
+    target = _first_py_positional_arg(arguments)
+    if target is None or target.type != "string":
+        return None
+    service = _string_content_bytes(target).decode("utf-8", errors="replace")
+    factory = resolved_func.rsplit(".", 1)[-1]
+    return f"boto3.{factory}({service})"
 
 
 def _py_scope_alias_lookup(

@@ -724,3 +724,108 @@ class TestNetMutateVerbSplit:
         observed = scan_file_capabilities(path)
         assert "net-mutate" not in observed
         assert "net-connect" not in observed
+
+
+class TestBoto3ServiceBindingResolution:
+    """T-2479: boto3's mutating verbs are PER-SERVICE and only ever called
+    on the object `.client("service")`/`.resource("service")` returns --
+    `frob.vet._capability_python._resolve_py_boto3_client_call` resolves
+    that binding so `x.put_object(...)` on `x = boto3.client("s3")` joins
+    against the per-service needle table in
+    `_dangerous_ops_python.py`. Covers: client and resource factories, at
+    least one verb from each of the three covered services (S3/DynamoDB/
+    IAM), a read-only verb NOT firing (proving the split is a real
+    distinction), a non-literal service name NOT resolving (fail-closed),
+    and the pre-T-2479 coarse `net-connect` needle staying additive."""
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_s3_client_put_object_reports_net_mutate_and_net_connect(
+        self, tmp_path: Path
+    ) -> None:
+        """A `boto3.client("s3")` binding's `put_object` call resolves to
+        the S3 mutating-verb needle -- additive to the pre-existing
+        coarse `net-connect` signal, never a replacement."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    s3 = boto3.client('s3')\n"
+            "    s3.put_object(Bucket='b', Key='k', Body=b'x')\n"
+        )
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" in observed
+        assert "net-connect" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_s3_resource_delete_object_reports_net_mutate(
+        self, tmp_path: Path
+    ) -> None:
+        """Same resolution through the `boto3.resource(...)` factory, not
+        just `boto3.client(...)`."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    s3 = boto3.resource('s3')\n"
+            "    s3.delete_object(Bucket='b', Key='k')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_s3_get_object_does_not_report_net_mutate(self, tmp_path: Path) -> None:
+        """A read-only S3 verb (`get_object`) does NOT report
+        `net-mutate` -- proving the per-verb split is a real distinction,
+        not a needle that fires on any S3 method call."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    s3 = boto3.client('s3')\n"
+            "    s3.get_object(Bucket='b', Key='k')\n"
+        )
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" not in observed
+        assert "net-connect" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_dynamodb_put_item_reports_net_mutate(self, tmp_path: Path) -> None:
+        """The second covered service, DynamoDB, resolves the same way."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    table = boto3.resource('dynamodb')\n"
+            "    table.put_item(Item={'id': '1'})\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_iam_create_user_reports_net_mutate(self, tmp_path: Path) -> None:
+        """The third covered service, IAM -- the highest-consequence class
+        this table models (privilege escalation)."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    iam = boto3.client('iam')\n"
+            "    iam.create_user(UserName='attacker')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_non_literal_service_name_does_not_resolve(self, tmp_path: Path) -> None:
+        """`boto3.client(service_var)` with a non-literal service name
+        does NOT resolve through the binding-aware path (fail-closed,
+        same posture as every other literal-key alias in this module) --
+        `net-mutate` correctly does not fire on a verb this resolver
+        cannot actually attribute to a specific service."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f(service_name):\n"
+            "    c = boto3.client(service_name)\n"
+            "    c.put_object(Bucket='b', Key='k', Body=b'x')\n"
+        )
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" not in observed
+        assert "net-connect" in observed

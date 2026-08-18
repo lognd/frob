@@ -2,7 +2,7 @@
 id: T-2479
 title: boto3/aiohttp/asyncpg mutating-verb split not covered by T-2464's net-mutate
   scanner signal
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -14,11 +14,32 @@ runs_last: false
 scope:
 - src/frob/vet/_capability_registry/**
 - src/frob/vet/_capability_python.py
+- tests/test_capability_registry.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: T-2479 adds boto3 service-binding resolution tests to this file (TestBoto3ServiceBindingResolution)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/vet.md
+  reason: documenting the boto3 net-mutate binding-resolver extension in the net-mutate
+    capability description
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_s3_client_put_object_reports_net_mutate_and_net_connect
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_s3_resource_delete_object_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_s3_get_object_does_not_report_net_mutate
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_dynamodb_put_item_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_iam_create_user_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_non_literal_service_name_does_not_resolve
+designated_repro_test: tests/test_capability_registry.py::TestBoto3ServiceBindingResolution::test_s3_client_put_object_reports_net_mutate_and_net_connect
 threat: null
 component: null
 anchor: false
