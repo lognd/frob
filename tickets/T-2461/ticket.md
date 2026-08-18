@@ -1,7 +1,7 @@
 ---
 id: T-2461
 title: Recovered from T-2394's phantom TICK006 citation of T-draft-b08172a8
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -28,3 +28,6 @@ giving each a real one-file scope; re-ran the touched set clean
 afterward. Also found and filed T-draft-b08172a8 (out of scope: the
 related-title duplicate detector false-positiving "holder"/"collider" at
 71%, breaking a pre-existing TestTicketSt
+
+## Drop reason
+- 2026-08-18: stale recovery artifact -- duplicate of T-2459 (both recovered identical text from T-2394's phantom TICK006 citation of T-draft-b08172a8); the quoted defect (related-title duplicate detector false-positiving holder/collider at 71%, breaking a pre-existing TestTicketStart test) is exactly T-2455, filed and landed independently at commit 525baabf2412a68f2499fbccb3dc241a41f7688e. No remaining work. (absorbed by T-2455)
