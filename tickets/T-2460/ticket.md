@@ -2,7 +2,7 @@
 id: T-2460
 title: Bump capability-via-ratchet.lock.json ceilings for T-2390 series (gates fs.write
   37->40, testsuite exec 185->186, testsuite fs.write 345->348)
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-18'
@@ -17,6 +17,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:bash /tmp/t2460_verify.sh exit=0 sha256=054d8bbd1270
 designated_repro_test: null
 threat: null
 component: null

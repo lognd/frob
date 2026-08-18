@@ -91,9 +91,9 @@
       "ticket": "T-2001"
     },
     "gates::fs.write": {
-      "accepted_count": 37,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on gates from 36 to 37 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 40,
+      "reason": "T-2460: ratchet had fallen behind 4 already-landed via-list additions (measured via git diff of design/frob.strata's via-list file sets, before=36/committed-ceiling=37 -> after=40): src/frob/gates/_gates_schema.py (T-2435), src/frob/gates/_test_runner_schema.py (T-2436), src/frob/gates/_dup_graph_schema.py (T-2437), src/frob/gates/_port_selfcheck.py (T-2388, unrelated). 3 of the 4 new sites are FALSE declarations forced by T-2457's detector bug (bare open(\"rb\") matches the fs.write needle regardless of mode) -- not genuine writes. Bumping to exactly the current measured count, not padded, so the ceiling is expected to FALL again (by up to 3, alongside 4 pre-existing T-2390-sibling false declarations already baked into this ceiling) once T-2457 lands and removes all seven false declarations. Do not treat 40 as a new permanent floor.",
+      "ticket": "T-2460"
     },
     "graphlang::env.read": {
       "accepted_count": 1,
@@ -161,9 +161,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 185,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 183 to 185 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 186,
+      "reason": "T-2460: ratchet had fallen behind 3 already-landed via-list additions (before=183/committed-ceiling=185 -> after=186): tests/unit/test_process_reap.py (T-2443), tests/unit/gates/test_port_selfcheck.py (T-2388), tests/test_tickets_no_scope.py (T-2394). All three are genuine, already-reviewed exec sites in already-landed tickets, not new scope; bumping the stale ceiling to match.",
+      "ticket": "T-2460"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -181,9 +181,9 @@
       "ticket": "T-2407"
     },
     "testsuite::fs.write": {
-      "accepted_count": 345,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 343 to 345 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 348,
+      "reason": "T-2460: ratchet had fallen behind 5 already-landed via-list additions (before=343/committed-ceiling=345 -> after=348): tests/unit/gates/test_port_selfcheck.py (T-2388), tests/unit/test_process_reap.py (T-2443), tests/unit/test_gates_table_schema.py (T-2435), tests/unit/test_test_table_schema.py (T-2436), tests/unit/test_dup_graph_table_schema.py (T-2437). All five are genuine test-fixture write_text()/similar sites in already-landed tickets, not new scope; bumping the stale ceiling to match.",
+      "ticket": "T-2460"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
