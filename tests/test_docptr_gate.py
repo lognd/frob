@@ -756,6 +756,122 @@ class TestDoc006BareIdentifierNarrowing:
         assert not _by_rule(violations, "docs/guide.md")
 
 
+def _write_ticket(
+    tmp_path: Path, ticket_id: str, state: str, filename: str, body: str
+) -> None:
+    """Write a minimally-valid `tickets/<ticket_id>/<filename>` ticket
+    frontmatter doc with `state` and prose `body` -- shared by
+    TestDoc006TicketHistoricalExclusion's terminal/non-terminal cases."""
+    frontmatter = (
+        "---\n"
+        f"id: {ticket_id}\n"
+        "title: placeholder\n"
+        f"state: {state}\n"
+        "kind: bug\n"
+        "origin: human\n"
+        "created: '2026-08-18'\n"
+        "---\n"
+    )
+    _write(tmp_path, f"tickets/{ticket_id}/{filename}", frontmatter + body)
+
+
+class TestDoc006TicketHistoricalExclusion:
+    """T-2505: `tickets/<id>/ticket.md`/`done-report.md` is a historical
+    record ONLY once the ticket is TERMINAL (done/dropped) -- keyed on
+    ticket STATE, never on the bare `tickets/` path prefix, so an OPEN
+    ticket's body (work still to be done) keeps being checked exactly
+    like any other live doc. Positive control both directions."""
+
+    def test_done_ticket_body_not_flagged(self, tmp_path: Path) -> None:
+        """A DONE ticket's `ticket.md` is an immutable record of what was
+        true when it was written -- a dangling pointer there must NOT
+        fire (must-not-fire half of the positive control)."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(
+            tmp_path,
+            "T-9001",
+            "done",
+            "ticket.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9001/ticket.md")
+
+    def test_dropped_ticket_body_not_flagged(self, tmp_path: Path) -> None:
+        """Same exemption for DROPPED -- the other terminal state."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(
+            tmp_path,
+            "T-9002",
+            "dropped",
+            "ticket.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9002/ticket.md")
+
+    def test_open_ticket_body_still_flagged(self, tmp_path: Path) -> None:
+        """An OPEN (queued/in-progress/etc) ticket's body is NOT a
+        historical record -- it describes work still to be done, and a
+        dangling pointer there is real (must-FIRE half of the positive
+        control). This is the exact case a blanket `tickets/` prefix
+        exemption would silently stop checking."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(
+            tmp_path,
+            "T-9003",
+            "in-progress",
+            "ticket.md",
+            "Plan: touch `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-9003/ticket.md")
+
+    def test_done_report_not_flagged_even_if_state_lookup_fails(
+        self, tmp_path: Path
+    ) -> None:
+        """A `done-report.md` is written once, at close, and never edited
+        again -- it is exempt outright, without needing a successful
+        ticket-state lookup (e.g. even if the sibling `ticket.md` is
+        absent/malformed in this fixture)."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write(
+            tmp_path,
+            "tickets/T-9004/done-report.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9004/done-report.md")
+
+
 class TestDoc006LedgerExclusion:
     """T-1228 round-2: ticket-ledger prose (`tickets.md`/`tickets-archive.
     md`) routinely quotes illustrative syntax examples that are never live

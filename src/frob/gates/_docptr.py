@@ -1328,6 +1328,59 @@ def _is_archival_doc(doc_path: str) -> bool:
     )
 
 
+# frob:ticket T-2505
+_TICKET_DOC_RE = re.compile(r"^tickets/(T-\d+)/(ticket\.md|done-report\.md)$")
+
+
+# frob:ticket T-2505
+def _terminal_ticket_ids(root: Path) -> frozenset[str]:
+    """Ids (active store, not the already-exempt archive) whose state is
+    DONE or DROPPED -- the TERMINAL-state boundary `_is_historical_ticket_
+    doc` needs to tell a closed ticket's body (an immutable historical
+    record, exempt from DOC006 the same way `_is_archival_doc` exempts
+    `tickets/archive/`) from an OPEN ticket's body (describes work still
+    to be done; a dangling pointer there is a real, live finding and must
+    keep firing). Keying on ticket STATE rather than the bare `tickets/`
+    path prefix is deliberate (T-2505): getting this permissive on an
+    open ticket silently stops checking live docs, the silent-zero shape
+    T-2391 is burning down. A queue load failure fails CLOSED (empty set,
+    i.e. nothing gets the historical exemption) rather than silently
+    exempting everything."""
+    from frob.tickets import TicketState, load_queue
+
+    loaded = load_queue(root)
+    if loaded.is_err:
+        _log.warning(
+            "doc006: ticket queue load failed (%s), no terminal-ticket "
+            "doc exemption applied this run",
+            loaded.danger_err,
+        )
+        return frozenset()
+    return frozenset(
+        ticket_id
+        for ticket_id, ticket in loaded.danger_ok.tickets.items()
+        if ticket.state in (TicketState.DONE, TicketState.DROPPED)
+    )
+
+
+# frob:ticket T-2505
+def _is_historical_ticket_doc(doc_path: str, terminal_ids: frozenset[str]) -> bool:
+    """Whether `doc_path` is a historical ticket record DOC006 must never
+    check against the current tree: a `done-report.md` (always historical
+    -- it is written once, at close, and never edited again) under any
+    `tickets/<id>/`, or that id's `ticket.md` specifically when `<id>` is
+    in `terminal_ids` (T-2505). An OPEN ticket's `ticket.md` is NOT
+    exempt -- it describes work still to be done, so a dangling pointer
+    there is real and must still fire (the mandatory positive control)."""
+    match = _TICKET_DOC_RE.match(doc_path)
+    if match is None:
+        return False
+    ticket_id, filename = match.group(1), match.group(2)
+    if filename == "done-report.md":
+        return True
+    return ticket_id in terminal_ids
+
+
 def _tracked_all_files(root: Path) -> frozenset[str]:
     """Every git-tracked file in `root`, repo-relative POSIX paths."""
     spawned = run_argv(("git", "-C", str(root), "ls-files"))
@@ -1421,6 +1474,18 @@ def _tracked_all_files(root: Path) -> frozenset[str]:
 # frob:tests \
 # tests/test_docptr_gate.py::TestDoc006LedgerExclusion.test_ledger_bare_identifier_plac\
 # eholder_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_ticket_body_\
+# not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_dropped_ticket_bo\
+# dy_not_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_open_ticket_body_\
+# still_flagged
+# frob:tests \
+# tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion.test_done_report_not_f\
+# lagged_even_if_state_lookup_fails
 def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC006: doc-pointer resolution over a closed set of recognized,
     mechanically resolvable pointer shapes (see this module's docstring)
@@ -1439,10 +1504,13 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     anchor_cache: dict[str, set[str] | None] = {}
     doc_anchor_modules = _anchor_modules_by_doc(root, snapshot)
     all_project_names = _all_project_symbol_names(symbol_names_by_path)
+    terminal_ticket_ids = _terminal_ticket_ids(root)
 
     violations: list[Violation] = list(_tests_target_shape_violations(snapshot))
     for doc_path in _tracked_md_files(root):
-        if _is_archival_doc(doc_path):
+        if _is_archival_doc(doc_path) or _is_historical_ticket_doc(
+            doc_path, terminal_ticket_ids
+        ):
             continue
         text = _read_md(root, doc_path)
         if text is None:

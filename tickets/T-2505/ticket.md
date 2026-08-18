@@ -1,7 +1,7 @@
 ---
 id: T-2505
 title: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,10 +12,24 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
+evidence_scope:
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: T-2505 fix's own tests live here (SCOPE002)
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion::test_done_ticket_body_not_flagged
+- tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion::test_dropped_ticket_body_not_flagged
+- tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion::test_open_ticket_body_still_flagged
+- tests/test_docptr_gate.py::TestDoc006TicketHistoricalExclusion::test_done_report_not_flagged_even_if_state_lookup_fails
 designated_repro_test: null
 threat: null
 component: null

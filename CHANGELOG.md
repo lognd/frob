@@ -50,6 +50,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2490: T-2490: SYS100: T-2411's wiring test in test_lang_conformance_gate.py declares no exec capability
 - T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
 - T-2494: T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
+- T-2505: T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
 
 ## [0.530.0] - unreleased
 
