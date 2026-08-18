@@ -507,18 +507,36 @@ def _py_raise_exception_type(node: Node) -> str | None:
     return None
 
 
+# frob:ticket T-2539
+def _py_except_exception_types(node: Node) -> tuple[str, ...]:
+    """EVERY caught exception type name of an `except_clause`, in source
+    order -- one entry for `except X:`/`except pkg.X:`, one per member for
+    a multi-type `except (A, B):`, and empty for a bare `except:`.
+
+    T-2539: `_py_except_exception_type` below kept only the tuple's FIRST
+    member, so every later member read as uncaught downstream
+    (`frob.arch._mayraise._catches`, EXHAUST002) even though the source
+    visibly handles it. This returns the whole set; the single-value
+    accessor stays as the representative member for consumers that model
+    a clause as one type."""
+    for c in node.named_children:
+        if c.type in ("identifier", "attribute"):
+            return (_node_text(c),)
+        if c.type == "tuple":
+            return tuple(
+                _node_text(m)
+                for m in c.named_children
+                if m.type in ("identifier", "attribute")
+            )
+    return ()
+
+
 def _py_except_exception_type(node: Node) -> str | None:
     """The caught exception type name of an `except_clause`, or `None` for a
     bare `except:` catch-all or a multi-type `except (A, B):` tuple's first
     member being taken as the representative type."""
-    for c in node.named_children:
-        if c.type in ("identifier", "attribute"):
-            return _node_text(c)
-        if c.type == "tuple":
-            first = next(iter(c.named_children), None)
-            if first is not None:
-                return _node_text(first)
-    return None
+    names = _py_except_exception_types(node)
+    return names[0] if names else None
 
 
 # frob:ticket T-0632
@@ -596,14 +614,24 @@ def _py_collect_body_events(
                 )
             )
         if c.type == "except_clause":
+            _caught = _py_except_exception_types(c)
             catches.append(
                 NormalizedCatch(
                     line=c.start_point[0] + 1,
-                    exception_type=_py_except_exception_type(c),
+                    exception_type=_caught[0] if _caught else None,
+                    exception_types=_caught,
                 )
             )
         if c.type == "subscript":
-            subscripts.append(NormalizedSubscript(line=c.start_point[0] + 1))
+            _sub_children = c.children_by_field_name("subscript")
+            subscripts.append(
+                NormalizedSubscript(
+                    line=c.start_point[0] + 1,
+                    # T-2539: slice-only, so it cannot raise KeyError/IndexError.
+                    is_slice=bool(_sub_children)
+                    and all(sc.type == "slice" for sc in _sub_children),
+                )
+            )
         _py_collect_body_events(
             c,
             branches,

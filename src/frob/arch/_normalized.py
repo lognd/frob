@@ -190,12 +190,45 @@ class NormalizedRaise(BaseModel):
 class NormalizedCatch(BaseModel):
     """One `except`/`catch` clause's source line and the caught type name
     where present (a bare `except:`/`catch (...)` catch-all leaves this
-    `None`)."""
+    `None`).
+
+    T-2539: `exception_types` carries EVERY type a multi-type clause
+    (`except (OSError, ValueError):`) discharges; `exception_type` stays
+    the single representative first member every pre-existing consumer
+    already reads, so an adapter that has not been taught the multi-type
+    shape (rust/typescript/kotlin, all single-type by grammar) needs no
+    change. Read it through `caught_type_names`, never directly, so the
+    two fields can never disagree at a call site."""
 
     model_config = {}
 
     line: int
     exception_type: str | None = None
+    exception_types: tuple[str, ...] = ()
+
+
+# frob:doc docs/modules/arch.md#normalized-code-model
+# frob:tests tests/unit/test_arch.py::TestCaughtTypeNames.test_tuple_clause_reports_every_member  # noqa: E501
+# frob:ticket T-2539
+def caught_type_names(catch: NormalizedCatch) -> tuple[str | None, ...]:
+    """Every exception type name `catch` discharges -- the single-element
+    `(exception_type,)` for an ordinary clause (`None` inside it for a
+    bare `except:`), and the full member tuple for a multi-type
+    `except (A, B):`.
+
+    WHY (T-2539): `NormalizedCatch` models a clause with ONE
+    `exception_type`, and `frob.arch._python._py_except_exception_type`
+    resolved a tuple clause to its FIRST member only. Every consumer that
+    asked "does this function catch T?" therefore answered NO for every
+    member after the first -- `except (OSError, ValueError):` read as
+    catching `OSError` alone, so `ValueError` (and, through the subtype
+    map, `JSONDecodeError`) were reported as escaping uncaught. That is a
+    false positive in the direction that costs the most: it demands a
+    handler for an exception the source visibly already handles. This
+    accessor is the single place the two fields are reconciled."""
+    if catch.exception_types:
+        return catch.exception_types
+    return (catch.exception_type,)
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model
@@ -207,11 +240,20 @@ class NormalizedSubscript(BaseModel):
     curated builtin-raiser: it may raise `KeyError`/`IndexError` depending
     on the subscripted value's runtime type, which this model cannot
     resolve; see `frob.arch._mayraise`'s own docstring for the disclosed
-    dict-shaped default this ambiguity resolves to)."""
+    dict-shaped default this ambiguity resolves to).
+
+    T-2539: `is_slice` marks a SLICE expression (`xs[a:b]`, `xs[:]`) as
+    opposed to an index (`d[k]`, `xs[i]`). A slice can raise neither
+    `KeyError` nor `IndexError` on ANY builtin sequence -- out-of-range
+    slice bounds clamp, they do not raise -- so treating one as a
+    `KeyError` raiser (as this model did before T-2539) was a false
+    positive by construction, and it was the single largest contributor
+    to EXHAUST002 in this repo (56 of 74 findings named `KeyError`)."""
 
     model_config = {}
 
     line: int
+    is_slice: bool = False
 
 
 # frob:doc docs/modules/arch.md#normalized-code-model

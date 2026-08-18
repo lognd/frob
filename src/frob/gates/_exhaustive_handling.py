@@ -99,7 +99,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.arch._mayraise import UNKNOWN, compute_may_raise
-from frob.arch._normalized import NormalizedCatch, NormalizedFunction, NormalizedModule
+from frob.arch._normalized import (
+    NormalizedCatch,
+    NormalizedFunction,
+    NormalizedModule,
+    caught_type_names,
+)
 from frob.excludes import is_excluded, is_test_file, iter_files, load_exclude_globs
 from frob.gates._models import Severity, Violation
 from frob.lang import raw_tree
@@ -181,7 +186,9 @@ def _has_catch_all(func: NormalizedFunction) -> bool:
     """True when `func` has at least one catch-all clause (T-0688,
     `_CATCH_ALL_TYPES`) -- the only thing broad enough to discharge a
     leaked `UNKNOWN`."""
-    return any(c.exception_type in _CATCH_ALL_TYPES for c in func.catches)
+    return any(
+        name in _CATCH_ALL_TYPES for c in func.catches for name in caught_type_names(c)
+    )
 
 
 def _nearest_preceding_catch(

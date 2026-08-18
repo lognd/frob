@@ -10,13 +10,6 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
-scope:
-- src/frob/arch/_normalized.py
-- src/frob/arch/_python.py
-- src/frob/arch/_mayraise.py
-- src/frob/gates/_exhaustive_handling.py
-- docs/modules/arch.md
-- tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -56,6 +49,42 @@ scope_changes:
   glob: tests/unit/test_arch.py
   reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
     exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/arch/_normalized.py
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/arch/_python.py
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/arch/_mayraise.py
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/modules/arch.md
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/unit/test_arch.py
+  reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
+    are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null

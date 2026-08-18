@@ -6405,6 +6405,158 @@ class TestRunFallibilityChecks:
         assert "over-broad-except" in categories
 
 
+# frob:ticket T-2539
+class TestCaughtTypeNames:
+    """`frob.arch._normalized.caught_type_names` (T-2539): a multi-type
+    `except (A, B):` clause discharges EVERY member, not just the first
+    one `NormalizedCatch.exception_type` can hold."""
+
+    # frob:ticket T-2539
+    def test_tuple_clause_reports_every_member(self) -> None:
+        # frob:tests src/frob/arch/_normalized.py::caught_type_names kind="unit"
+        from frob.arch._normalized import NormalizedCatch, caught_type_names
+
+        assert caught_type_names(
+            NormalizedCatch(
+                line=1,
+                exception_type="OSError",
+                exception_types=("OSError", "ValueError"),
+            )
+        ) == ("OSError", "ValueError")
+        assert caught_type_names(NormalizedCatch(line=1, exception_type="OSError")) == (
+            "OSError",
+        )
+        assert caught_type_names(NormalizedCatch(line=1)) == (None,)
+
+    # frob:ticket T-2539
+    def test_python_adapter_records_every_tuple_member(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        # T-2539: `_py_except_exception_type` kept the tuple's FIRST member
+        # only, so `ValueError` here read as uncaught downstream.
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = tmp_path / "mod.py"
+        path.write_text(
+            "import json\n"
+            "\n"
+            "def f(path):\n"
+            "    try:\n"
+            "        return json.loads(path.read_text())\n"
+            "    except (OSError, ValueError):\n"
+            "        return None\n"
+        )
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+        module = PythonAdapter().adapt(tree, source, "mod.py")
+
+        catches = module.functions[0].catches
+        assert [c.exception_types for c in catches] == [("OSError", "ValueError")]
+
+    # frob:ticket T-2539
+    def test_tuple_except_discharges_every_member(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCatch,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+        )
+
+        # A callee's raises ARE subject to the caller's own catches (a
+        # function's OWN direct raises are not -- see
+        # `_resolve_direct_raises`), so the propagated shape is what a
+        # tuple `except` clause has to discharge.
+        g = NormalizedFunction(
+            name="g",
+            line=1,
+            body_line_count=3,
+            raises=[
+                NormalizedRaise(line=2, exception_type="ValueError"),
+                NormalizedRaise(line=3, exception_type="OSError"),
+            ],
+        )
+        f = NormalizedFunction(
+            name="f",
+            line=6,
+            body_line_count=3,
+            calls=[NormalizedCall(callee="g", line=7)],
+            catches=[
+                NormalizedCatch(
+                    line=8,
+                    exception_type="OSError",
+                    exception_types=("OSError", "ValueError"),
+                )
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[g, f]
+        )
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+
+# frob:ticket T-2539
+class TestSliceSubscriptRaisesNothing:
+    """`NormalizedSubscript.is_slice` (T-2539): `xs[a:b]` clamps
+    out-of-range bounds instead of raising, so it must not contribute the
+    curated `KeyError` default a real index (`d[k]`) does."""
+
+    # frob:ticket T-2539
+    def test_python_adapter_marks_slice_subscripts(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/arch/_python.py::PythonAdapter.adapt kind="unit"
+        from frob.arch._python import PythonAdapter
+        from frob.lang import raw_tree
+
+        path = tmp_path / "mod.py"
+        path.write_text(
+            "def f(lines, start, d, k):\n"
+            "    tail = lines[start + 1 :]\n"
+            "    value = d[k]\n"
+            "    return tail, value\n"
+        )
+        parsed = raw_tree(path)
+        assert parsed.is_ok
+        tree, source, _language = parsed.danger_ok
+        module = PythonAdapter().adapt(tree, source, "mod.py")
+
+        flags = sorted(s.is_slice for s in module.functions[0].subscripts)
+        assert flags == [False, True]
+
+    # frob:ticket T-2539
+    def test_slice_only_function_leaks_no_key_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedSubscript,
+        )
+
+        sliced = NormalizedFunction(
+            name="sliced",
+            line=1,
+            body_line_count=2,
+            subscripts=[NormalizedSubscript(line=2, is_slice=True)],
+        )
+        indexed = NormalizedFunction(
+            name="indexed",
+            line=5,
+            body_line_count=2,
+            subscripts=[NormalizedSubscript(line=6)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[sliced, indexed]
+        )
+
+        result = compute_may_raise(module)
+        assert result["pkg/mod.py::sliced"].raises == frozenset()
+        assert result["pkg/mod.py::indexed"].raises == frozenset({"KeyError"})
+
+
 # frob:ticket T-0686
 class TestMayRaiseResolver:
     """`frob.arch._mayraise.compute_may_raise` (T-0686, child 1 of T-0685):
@@ -7772,9 +7924,7 @@ class TestCppSymrefCanonicalization:
             "class Foo {\n"
             "public:\n"
             "    int bar() {\n"
-            "        int x = 1;\n"
-            + ifs
-            + "\n"
+            "        int x = 1;\n" + ifs + "\n"
             "        return x;\n"
             "    }\n"
             "};\n"
@@ -7819,9 +7969,7 @@ class TestCppSymrefCanonicalization:
             "public:\n"
             '    // frob:waive ARCH001 reason="test"\n'
             "    int bar() {\n"
-            "        int x = 1;\n"
-            + ifs
-            + "\n"
+            "        int x = 1;\n" + ifs + "\n"
             "        return x;\n"
             "    }\n"
             "};\n"

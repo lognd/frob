@@ -93,7 +93,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from frob.arch._normalized import NormalizedCatch, NormalizedFunction, NormalizedModule
+from frob.arch._normalized import (
+    NormalizedCatch,
+    NormalizedFunction,
+    NormalizedModule,
+    caught_type_names,
+)
 
 #: Sentinel raised-type name (T-0686) meaning "this function may raise
 #: something this resolver could not statically determine" -- the
@@ -403,7 +408,9 @@ def _resolve_call_contributions(
     catchable: set[str] = set()
     resolved_callees: set[str] = set()
 
-    for _ in func.subscripts:
+    # T-2539: a SLICE (`xs[a:b]`) clamps out-of-range bounds instead of
+    # raising, so it contributes nothing -- only a real index does.
+    if any(not sub.is_slice for sub in func.subscripts):
         catchable.add(_SUBSCRIPT_RAISE)
 
     for call in func.calls:
@@ -553,7 +560,11 @@ def _fixpoint_exposed(
             filtered = {
                 t
                 for t in pool
-                if not any(_catches(c.exception_type, t) for c in func.catches)
+                if not any(
+                    _catches(name, t)
+                    for c in func.catches
+                    for name in caught_type_names(c)
+                )
             }
             new_exposed = direct_by_id[fid] | filtered
             if new_exposed != exposed[fid]:

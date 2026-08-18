@@ -1753,7 +1753,29 @@ each per-grammar walker implements to produce it:
 | `NormalizedFieldAccess` | one field read/write inside a body: name, line, `is_write` |
 | `NormalizedReturn` | one `return`: line, optional value text |
 | `NormalizedRaise` | one `raise`/`throw`: line, exception type name where determinable |
-| `NormalizedCatch` | one `except`/`catch`: line, caught exception type name where present |
+| `NormalizedCatch` | one `except`/`catch`: line, caught exception type name where present, plus `exception_types` (T-2539 -- EVERY member of a multi-type `except (A, B):`; read it through `caught_type_names`, never either field directly) |
+| `NormalizedSubscript` | one subscript expression: line, plus `is_slice` (T-2539 -- `xs[a:b]` clamps instead of raising, so unlike an index `d[k]` it contributes no `KeyError` to the [may-raise resolver](#may-raise-resolver)) |
+
+**T-2539 -- two resolver false-positive classes fixed here, at the model
+layer.** Both were found burning EXHAUST002 down and both made the gate
+demand a handler for an exception the source cannot raise:
+
+- A tuple `except (A, B):` was resolved to its FIRST member only
+  (`_py_except_exception_type`), so every later member read as uncaught.
+  `except (OSError, ValueError):` therefore leaked `ValueError` -- and,
+  through the subtype map, `JSONDecodeError` -- at every site that used
+  the idiom. `NormalizedCatch.exception_types` now carries the whole
+  member tuple and `caught_type_names` is the single accessor every
+  consumer reads it through.
+- A SLICE (`lines[start + 1 :]`) was recorded as an ordinary
+  `NormalizedSubscript` and so picked up the curated dict-index
+  `KeyError` default. A slice clamps out-of-range bounds on every builtin
+  sequence; it cannot raise `KeyError` or `IndexError` at all.
+  `NormalizedSubscript.is_slice` marks it and the resolver skips it.
+
+Measured on this repo's own source: EXHAUST002 went 74 -> 69 (tuple
+clauses) -> 56 (slices), with no code outside these two model changes
+touched.
 
 `LanguageAdapter` is a `typing.Protocol` (`runtime_checkable`): one
 `language` label (a `frob.lang` grammar name) and one method,
