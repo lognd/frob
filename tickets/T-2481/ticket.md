@@ -77,7 +77,7 @@ threat: null
 component: hooks
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2e57980f29e6cb520b2eb7a95f4e835267d4a2d9
 ---
 T-2396 installed an edit-time guard refusing agent writes to the shared
 root. It is wired on `matcher: "Write|Edit|NotebookEdit"` and its
