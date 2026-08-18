@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3880e6c2aa818d3e8d0598660712133f08977ef6
 ---
 T-2388 (frob.gates._port_selfcheck, PORT001) constructs a THIRD gate
 rule id, bare "PORT001" (Violation(rule="PORT001", ...) at
