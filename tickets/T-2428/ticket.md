@@ -87,7 +87,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 56d8a90867cda04d828dbbf3ef642c29255bd288
 ---
 Validate `[[refs.entrypoint]]` (58 leaves, this repo's LARGEST config
 table -- filed as the epic's first/pattern-setting child per coordinator
