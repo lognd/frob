@@ -1146,17 +1146,6 @@ def _refuse_empty_scope_on_start(ticket) -> None:  # noqa: ANN001
 # frob:ticket T-1894
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_scope_colliding_with_other_in_progress_lease  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_allows_disjoint_scope  # noqa: E501
-# frob:waive AFFECT001 reason="T-1894: fix is a pure type-correctness change (wrap the \
-# queue Mapping in dict() before calling scope_lease_conflict, no behavior change) -- \
-# docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473 already \
-# describes scope_lease_conflict's queue param generically and needs no content \
-# update, but re-acking requires writing frob.lock, which T-1883 holds a live lease on \
-# for the duration of its own DUP001 work in this same file cluster; remove this \
-# waiver and ack normally once that lease clears"
-# frob:waive DRIFT001 reason="T-1894: same dict()-wrap type-only fix as the AFFECT001 \
-# waiver above; frob.lock is leased by T-1883 for the duration of this ticket, so the \
-# body digest cannot be re-acked here without fighting that lease; remove this waiver \
-# and ack normally once T-1883 lands"
 def _refuse_on_scope_lease_collision(root: Path, ticket_id: str, ticket) -> None:  # noqa: ANN001
     """`sys.exit(1)` if `ticket`'s declared scope (as filed, BEFORE this
     call grants its own lease) overlaps another ALREADY in-progress
