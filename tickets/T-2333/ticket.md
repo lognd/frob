@@ -15,12 +15,20 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/app/worktree_runner.py
 - docs/modules/tickets-lifecycle.md
+- src/frob/tickets/_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/_models.py
   reason: probe scope/lease status
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-2333: force_release_lease (src/frob/tickets/_leases.py) is where the
+    operator-supplied --force reason is threaded through and needs to write the new
+    ledger-persisted audit entry alongside its existing WARNING log'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
