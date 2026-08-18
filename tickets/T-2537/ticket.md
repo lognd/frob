@@ -2,7 +2,7 @@
 id: T-2537
 title: 'tool parsers report a crashed run as zero findings: attach an error diagnostic
   on unparsable output'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,35 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/process/parsers/
+- tests/unit/test_parser_failure_diagnostics.py
+- tests/unit/test_ts_parsers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_parser_failure_diagnostics.py
+  reason: the new positive-control test file, and the one existing test that locked
+    the old empty-diagnostics behavior
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ts_parsers.py
+  reason: the new positive-control test file, and the one existing test that locked
+    the old empty-diagnostics behavior
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_ruff_malformed_json
+- tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_eslint_malformed_json
+- tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_junit_malformed_xml
+- tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_valgrind_malformed_xml
+- tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_cargo_malformed_json_line
+- tests/unit/test_parser_failure_diagnostics.py::TestCleanRunsAreUnchanged::test_ruff_clean_run
+- tests/unit/test_parser_failure_diagnostics.py::TestCleanRunsAreUnchanged::test_warning_only_nonzero_exit_is_not_a_crash
+- tests/unit/test_parser_failure_diagnostics.py::TestParseFailureResult::test_attaches_error_diagnostic
+designated_repro_test: tests/unit/test_parser_failure_diagnostics.py::TestUnparsableOutputIsLoud::test_ruff_malformed_json
 threat: null
 component: null
 anchor: false

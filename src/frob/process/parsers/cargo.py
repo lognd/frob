@@ -43,6 +43,24 @@ def parse_cargo(stdout: str, exit_code: int = 0, tool: str = "cargo") -> ToolRes
     return _parse_cargo_text(lines, exit_code, tool)
 
 
+# frob:ticket T-2537
+def _cargo_unparsable_diagnostic(raw: str) -> Diagnostic | None:
+    """An error Diagnostic when `raw` is not valid JSON at all, else None.
+
+    A cargo JSON line that fails to decode means the message stream was
+    truncated or corrupted; silently skipping it (the pre-T-2537 behavior)
+    reports a broken run as a clean one.
+    """
+    try:
+        json.loads(raw)
+    except json.JSONDecodeError as exc:
+        return Diagnostic(
+            severity="error",
+            message=f"cargo output could not be parsed: malformed JSON line: {exc}",
+        )
+    return None
+
+
 # frob:ticket T-0045
 def _cargo_json_diagnostic(raw: str) -> Diagnostic | None:
     """A Diagnostic from one cargo `compiler-message` JSON line, or None."""
@@ -74,9 +92,16 @@ def _cargo_json_diagnostic(raw: str) -> Diagnostic | None:
         return None
 
 
+# frob:ticket T-2537
 def _parse_cargo_json(json_lines: list[str], exit_code: int, tool: str) -> ToolResult:
     diagnostics: list[Diagnostic] = []
     for raw in json_lines:
+        # T-2537: an undecodable line is a parse FAILURE, reported loudly,
+        # not the same thing as a well-formed line we deliberately filter.
+        broken = _cargo_unparsable_diagnostic(raw)
+        if broken is not None:
+            diagnostics.append(broken)
+            continue
         diag = _cargo_json_diagnostic(raw)
         if diag is not None:
             diagnostics.append(diag)

@@ -104,4 +104,7 @@ class TestParseEslint:
         r = parse_eslint("not json at all {{{", exit_code=1)
         assert r.tool == "eslint"
         assert "malformed JSON" in r.summary
-        assert r.diagnostics == []
+        # T-2537: a parse failure now carries a real error diagnostic --
+        # an empty list here is indistinguishable from a clean run.
+        assert r.error_count == 1
+        assert "malformed JSON" in r.diagnostics[0].message

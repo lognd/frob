@@ -10,7 +10,12 @@ from __future__ import annotations
 
 import json
 
-from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
+from frob.process.parsers.common import (
+    Diagnostic,
+    ToolResult,
+    summarize_severity,
+    tool_parse_failure_result,
+)
 
 
 # frob:ticket T-0045
@@ -32,6 +37,10 @@ def _diagnostics_for_entry(entry: dict) -> list[Diagnostic]:
     return out
 
 
+# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
+# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
+# as residue"
+# frob:ticket T-2537
 # frob:doc docs/modules/process.md#public-api
 def parse_eslint(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse `eslint --format json` output into a ToolResult."""
@@ -42,8 +51,10 @@ def parse_eslint(stdout: str, exit_code: int = 0) -> ToolResult:
     try:
         files = json.loads(stripped)
     except json.JSONDecodeError as exc:
-        return ToolResult(
-            tool="eslint",
+        # T-2537: see parse_ruff_json -- failure is never reported as silence.
+        return tool_parse_failure_result(
+            "eslint",
+            f"malformed JSON: {exc}",
             exit_code=exit_code or 1,
             summary=f"malformed JSON: {exc}",
         )

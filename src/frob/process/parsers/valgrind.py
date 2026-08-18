@@ -9,7 +9,12 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 
-from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
+from frob.process.parsers.common import (
+    Diagnostic,
+    ToolResult,
+    summarize_severity,
+    tool_parse_failure_result,
+)
 
 _ERROR_PAD = re.compile(r"^==\d+==")
 _LEAK = re.compile(
@@ -138,12 +143,16 @@ def _xml_error_diagnostic(error: ET.Element) -> Diagnostic:
 # caught below"
 # frob:waive EXHAUST002 reason="T-1062: same resolver artifact as EXHAUST001 above -- \
 # _xml_error_diagnostic's own int(ln) conversion is now guarded (T-1062)"
+# frob:ticket T-2537
 def _parse_xml(text: str, exit_code: int) -> ToolResult:
     try:
         root = ET.fromstring(text)
-    except ET.ParseError:
-        return ToolResult(
-            tool="valgrind", exit_code=exit_code, summary="XML parse error"
+    except ET.ParseError as exc:
+        # T-2537: this branch previously returned the caller's own exit code
+        # (possibly 0) with an EMPTY diagnostic list -- an unparsable
+        # valgrind report read as a clean memcheck run.
+        return tool_parse_failure_result(
+            "valgrind", f"XML parse error: {exc}", summary="XML parse error"
         )
 
     diagnostics = [_xml_error_diagnostic(error) for error in root.findall(".//error")]

@@ -8,7 +8,11 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 
-from frob.process.parsers.common import TestCase, ToolResult
+from frob.process.parsers.common import (
+    TestCase,
+    ToolResult,
+    tool_parse_failure_result,
+)
 
 
 # frob:ticket T-0045
@@ -64,15 +68,20 @@ def _summarize_cases(cases: list[TestCase]) -> tuple[int, str]:
     return failed, summary
 
 
+# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
+# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
+# as residue"
+# frob:ticket T-2537
 # frob:doc docs/modules/process.md#public-api
 def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult:
     """Parse JUnit XML into a ToolResult."""
     try:
         root = ET.fromstring(content.strip())
     except ET.ParseError as exc:
-        return ToolResult(
-            tool=tool,
-            exit_code=1,
+        # T-2537: see parse_ruff_json -- failure is never reported as silence.
+        return tool_parse_failure_result(
+            tool,
+            f"malformed JUnit XML: {exc}",
             summary=f"malformed JUnit XML: {exc}",
         )
 

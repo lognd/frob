@@ -10,7 +10,12 @@ from __future__ import annotations
 import json
 import re
 
-from frob.process.parsers.common import Diagnostic, ToolResult, summarize_severity
+from frob.process.parsers.common import (
+    Diagnostic,
+    ToolResult,
+    summarize_severity,
+    tool_parse_failure_result,
+)
 
 _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 
@@ -30,16 +35,21 @@ def _ruff_json_diagnostic(item: dict) -> Diagnostic:
     )
 
 
+# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
+# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
+# as residue"
+# frob:ticket T-2537
 # frob:doc docs/modules/process.md#public-api
 def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult:
     """Parse `ruff check --output-format json` output."""
     try:
         items = json.loads(stdout)
     except json.JSONDecodeError as exc:
-        return ToolResult(
-            tool="ruff",
-            exit_code=1,
-            summary=f"malformed JSON: {exc}",
+        # T-2537: a failed parse MUST carry an error diagnostic -- an empty
+        # diagnostic list on a nonzero exit is indistinguishable from a
+        # clean run to every caller that only reads `diagnostics`.
+        return tool_parse_failure_result(
+            "ruff", f"malformed JSON: {exc}", summary=f"malformed JSON: {exc}"
         )
 
     diagnostics = [_ruff_json_diagnostic(item) for item in items]

@@ -266,3 +266,42 @@ def tool_crash_result(tool: str, exc: BaseException) -> ToolResult:
         ],
         summary=f"{tool} crashed: {type(exc).__name__}",
     )
+
+
+# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
+# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
+# as residue"
+# frob:doc docs/modules/process.md#public-api
+# frob:ticket T-2537
+# frob:tests \
+# tests/unit/test_parser_failure_diagnostics.py::TestParseFailureResult.test_attaches_e\
+# rror_diagnostic
+def tool_parse_failure_result(
+    tool: str, detail: str, *, exit_code: int = 1, summary: str | None = None
+) -> ToolResult:
+    """Unparsable tool OUTPUT (malformed/truncated JSON or XML) is a FAILING
+    `ToolResult` carrying a real error `Diagnostic`, never an empty
+    diagnostic list -- the producer-side half of T-2521's fix.
+
+    A parser that returned `exit_code=1, diagnostics=[]` on malformed input
+    was byte-identical, to any caller that only reads `diagnostics`, to a
+    genuinely clean run; that silence auto-dropped seven sweep tickets and
+    ~66 live finding identities. This mirrors `tool_crash_result` /
+    `tool_disabled_result`'s loud-not-silent doctrine (T-0142) for the
+    "the tool ran but its output could not be parsed" case, so every
+    parser reports the same shape. `exit_code` is overridable only so a
+    parser can preserve a more specific nonzero code it already knows;
+    it is never zero-able -- a value of 0 is coerced to 1, because a run
+    whose output could not be parsed was not a passing run.
+    """
+    return ToolResult(
+        tool=tool,
+        exit_code=exit_code or 1,
+        diagnostics=[
+            Diagnostic(
+                severity="error",
+                message=f"{tool} output could not be parsed: {detail}",
+            )
+        ],
+        summary=summary if summary is not None else detail,
+    )
