@@ -1,7 +1,7 @@
 ---
 id: T-1777
 title: Wire frob.tickets._leases.force_release_lease into a CLI verb
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-07'
@@ -14,6 +14,9 @@ scope:
 - docs/modules/tickets-lifecycle.md
 - src/frob/tickets/_leases.py
 - src/frob/app/worktree_runner.py
+evidence_scope:
+- tests/test_ticket_leases_cross_worktree.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -89,6 +92,10 @@ scope_changes:
     lease on config.py/_new.py blocking them anyway'
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease::test_reason_is_included_in_the_warning_log
+- tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli::test_release_lease_cli_force_requires_reason
+- tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli::test_release_lease_cli_force_releases_a_live_looking_lease
 designated_repro_test: null
 threat: null
 component: null

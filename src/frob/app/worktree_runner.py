@@ -105,6 +105,37 @@ def _build_worktree_parser() -> argparse.ArgumentParser:
         ),
     )
     release_lease_p.add_argument("ticket_id", metavar="id")
+    # frob:ticket T-1777
+    release_lease_p.add_argument(
+        "--force",
+        dest="force",
+        action="store_true",
+        help=(
+            "T-1777: bypass the orphan-only safety gate (`lease_staleness_"
+            "reason` finding none of its known-stale shapes) and force-"
+            "release anyway, for a lease an operator has independently "
+            "judged abandoned even though it still LOOKS live to every "
+            "check this repo can make -- requires --reason, logged at "
+            "WARNING alongside it. A sharp tool: forcibly releasing a "
+            "LIVE holder's lease risks two writers on one file. Refused "
+            "without --reason."
+        ),
+    )
+    release_lease_p.add_argument(
+        "--reason",
+        dest="reason",
+        metavar="TEXT",
+        help="required with --force: why this lease is being force-"
+        "released despite not being confirmed orphaned; recorded in the "
+        "WARNING log line (T-1777)",
+    )
+    release_lease_p.add_argument(
+        "--reason-file",
+        dest="reason_file",
+        metavar="PATH",
+        help="read the --force reason verbatim from PATH instead of the "
+        "shell (T-0737 pattern); mutually exclusive with --reason",
+    )
     return p
 
 
@@ -234,10 +265,43 @@ def _lease_scope_diverged_from_ledger(root: Path, ticket_id: str) -> bool:
     return lease_scope.isdisjoint(ledger_scope)
 
 
+# frob:ticket T-1777
+def _resolve_force_release_reason(
+    reason: str | None, reason_file: str | None
+) -> str | None:
+    """Resolve `--force`'s required `--reason`/`--reason-file` (T-1777),
+    the same mutual-exclusion/verbatim-file-read shape every other
+    `--reason`/`--reason-file` pair in this repo already uses (T-0737
+    precedent, e.g. `frob ticket scope`). Exits 1 if both are given;
+    returns `None` if neither is given (the caller reports the
+    "--force requires --reason" error)."""
+    if reason_file is not None and reason:
+        _log.error(
+            "frob worktree release-lease: --reason and --reason-file are "
+            "mutually exclusive"
+        )
+        sys.exit(1)
+    if reason_file is not None:
+        try:
+            return Path(reason_file).read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob worktree release-lease: could not read --reason-file "
+                "%s: %s",
+                reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return reason
+
+
 # frob:ticket T-1789
 # frob:ticket T-1806
 # frob:ticket T-2175
-def _run_release_lease(ticket_id: str) -> None:
+# frob:ticket T-1777
+def _run_release_lease(
+    ticket_id: str, *, force: bool = False, reason: str | None = None
+) -> None:
     """`frob worktree release-lease TICKET-ID` (T-1779 finding 7): the
     safe, scoped path a coordinator now has for exactly the recovery
     T-1766's ghost lease forced by hand (`rm .git/frob-leases/T-1766.json`)
@@ -272,13 +336,23 @@ def _run_release_lease(ticket_id: str) -> None:
     points at the two real recovery paths, instead of asserting an
     unverified diagnosis.
 
+    T-1777: `force=True` is the explicit, logged escape hatch for the
+    case none of the above shapes cover -- a lease an OPERATOR has
+    independently judged abandoned even though every automated check
+    here (`lease_staleness_reason`'s four shapes plus T-2175's scope-
+    divergence check, all built on the same liveness predicates the land
+    path already trusts) still reads it as live. Refuses (exit 1) unless
+    `reason` is also given -- never a silent bypass. This is the ONLY
+    path in this function that does not first confirm staleness by
+    itself; every other branch above it stays exactly as conservative as
+    before `--force` existed.
+
     `root` is resolved from cwd, same convention as `frob worktree
     remove`."""
     root = Path(".").resolve()
     result = release_orphaned_lease(root, ticket_id)
     if result.is_ok:
-        renderer = Renderer.for_stream(sys.stdout)
-        renderer.line(f"released orphaned lease for {ticket_id}")
+        _print_released(ticket_id)
         return
     err = result.danger_err
     if err is LeaseError.NoLeaseForTicket:
@@ -287,16 +361,10 @@ def _run_release_lease(ticket_id: str) -> None:
     if err is LeaseError.LeaseWorktreeMismatch and _lease_scope_diverged_from_ledger(
         root, ticket_id
     ):
-        force_release_lease(root, ticket_id)
-        _log.warning(
-            "frob worktree release-lease: %s's lease scope shares nothing "
-            "with its current ledger scope -- id-reuse/renumber residue, "
-            "not a live holder; force-released via T-2175's scope-"
-            "divergence check",
-            ticket_id,
-        )
-        renderer = Renderer.for_stream(sys.stdout)
-        renderer.line(f"released orphaned lease for {ticket_id}")
+        _release_via_scope_divergence(root, ticket_id)
+        return
+    if err is LeaseError.LeaseWorktreeMismatch and force:
+        _release_via_force(root, ticket_id, reason)
         return
     if err is LeaseError.LeaseWorktreeMismatch:
         _log.error(
@@ -306,12 +374,61 @@ def _run_release_lease(ticket_id: str) -> None:
             "itself confirm the worktree is live or a process holds it, "
             "only that nothing here could yet prove it is not; if you have "
             "independently confirmed the holder is dead, use `frob "
-            "worktree remove` (or the ordinary ticket-close path) instead",
+            "worktree remove` (or the ordinary ticket-close path) instead, "
+            "or re-run with --force --reason TEXT if you have "
+            "independently judged this lease abandoned (T-1777)",
             ticket_id,
         )
     else:
         _log.error("frob worktree release-lease: %s (%s)", err.value, ticket_id)
     sys.exit(1)
+
+
+# frob:ticket T-1777
+def _print_released(ticket_id: str) -> None:
+    """Prints the standard `release-lease` success line -- shared between
+    `_run_release_lease`'s orphan and scope-divergence success paths
+    (T-1777 ARCH001 split, zero behavior change)."""
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.line(f"released orphaned lease for {ticket_id}")
+
+
+# frob:ticket T-1777
+def _release_via_scope_divergence(root: Path, ticket_id: str) -> None:
+    """The scope-divergence force-release branch (originally T-2175),
+    split out of `_run_release_lease` to keep it under ARCH001's
+    threshold (T-1777, zero behavior change): force-releases
+    `ticket_id`'s lease and prints the same success line the orphan path
+    uses."""
+    force_release_lease(root, ticket_id)
+    _log.warning(
+        "frob worktree release-lease: %s's lease scope shares nothing "
+        "with its current ledger scope -- id-reuse/renumber residue, "
+        "not a live holder; force-released via T-2175's scope-"
+        "divergence check",
+        ticket_id,
+    )
+    _print_released(ticket_id)
+
+
+# frob:ticket T-1777
+def _release_via_force(root: Path, ticket_id: str, reason: str | None) -> None:
+    """The `--force` escape hatch (T-1777), split out of `_run_release_
+    lease` to keep it under ARCH001's threshold: refuses (exit 1) unless
+    `reason` is given -- never a silent bypass -- then force-releases
+    unconditionally via `force_release_lease`, which folds `reason` into
+    its own WARNING log line (the audit trail for this override)."""
+    if not reason:
+        _log.error(
+            "frob worktree release-lease: --force requires --reason "
+            "TEXT (or --reason-file PATH) -- explain why this lease, "
+            "which none of the known staleness shapes confirm is "
+            "abandoned, should be released anyway",
+        )
+        sys.exit(1)
+    force_release_lease(root, ticket_id, reason=reason)
+    renderer = Renderer.for_stream(sys.stdout)
+    renderer.line(f"force-released lease for {ticket_id} ({reason})")
 
 
 # frob:doc docs/modules/app.md#runners
@@ -344,7 +461,8 @@ def run(argv: list[str]) -> None:
         _run_remove(args.path, dry_run=args.dry_run, force=args.force)
         return
     if args.worktree_command == "release-lease":
-        _run_release_lease(args.ticket_id)
+        reason = _resolve_force_release_reason(args.reason, args.reason_file)
+        _run_release_lease(args.ticket_id, force=args.force, reason=reason)
         return
     parser.print_help(sys.stderr)
     sys.exit(1)

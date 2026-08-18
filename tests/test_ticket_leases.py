@@ -2464,6 +2464,75 @@ class TestWorktreeReleaseLeaseCli:
             _os.chdir(cwd)
         assert exc_info.value.code == 1
 
+    # frob:ticket T-1777
+    def test_release_lease_cli_force_requires_reason(
+        self, repo: Path, second_worktree: Path
+    ) -> None:
+        """Must-still-pass: `--force` with no `--reason` refuses, exactly
+        like a live holder with no `--force` at all -- the override is
+        never a silent bypass."""
+        # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+
+        _write_lease(
+            repo,
+            "T-0001",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        cwd = Path.cwd()
+        _os.chdir(repo)
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                worktree_run(["release-lease", "T-0001", "--force"])
+        finally:
+            _os.chdir(cwd)
+        assert exc_info.value.code == 1
+
+    # frob:ticket T-1777
+    def test_release_lease_cli_force_releases_a_live_looking_lease(
+        self, repo: Path, second_worktree: Path, capsys
+    ) -> None:
+        """Positive control: `--force --reason TEXT` releases a lease that
+        `lease_staleness_reason`'s four shapes (plus T-2175's scope-
+        divergence check) all read as genuinely live -- this is the exact
+        real-incident shape T-1777 was filed from (a lease still blocking
+        other tickets that an operator has judged abandoned)."""
+        # frob:tests src/frob/app/worktree_runner.py::run kind="unit"
+        import os as _os
+
+        from frob.app.worktree_runner import run as worktree_run
+        from frob.tickets._leases import _lease_path, leases_dir
+
+        _write_lease(
+            repo,
+            "T-0001",
+            second_worktree,
+            recorded_at=datetime.now(UTC).isoformat(),
+        )
+        leases_root = leases_dir(repo).danger_ok
+        lease_file = _lease_path(leases_root, "T-0001")
+
+        cwd = Path.cwd()
+        _os.chdir(repo)
+        try:
+            worktree_run(
+                [
+                    "release-lease",
+                    "T-0001",
+                    "--force",
+                    "--reason",
+                    "operator confirmed the holder is dead",
+                ]
+            )
+        finally:
+            _os.chdir(cwd)
+        out = capsys.readouterr().out
+        assert "force-released" in out
+        assert not lease_file.exists()
+
 
 # frob:ticket T-1130
 class TestNewDropFailAutoCommit:

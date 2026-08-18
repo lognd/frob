@@ -1131,41 +1131,64 @@ def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
 
 
 # frob:ticket T-1743
+# frob:ticket T-1777
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists kind="unit"  # noqa: E501
-# frob:waive WIRE001 reason="the supported release path for an orphaned lease (T-1743) \
-# is a deliberate Python-API-level primitive, meant to be called by an operator or a \
-# future CLI verb -- wiring an actual 'frob ticket lease release <id>' command needs \
-# src/frob/_cli_parsers/_ticket/** and src/frob/app/config.py, neither of which \
-# T-1743's declared scope covers" follow_up="T-1777"
-def force_release_lease(root: Path, ticket_id: str) -> Result[bool, LeaseError]:
+# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_included_in_the_warning_log kind="unit"  # noqa: E501
+# frob:ticket T-1777
+def _log_force_released(ticket_id: str, path: Path, reason: str | None) -> None:
+    """The single WARNING `force_release_lease` emits once it has
+    confirmed a lease file existed and was removed (T-1777 ARCH001
+    split, zero behavior change) -- folds `reason` into the SAME log
+    line when given, so the log itself is the audit trail (`grep`-ing
+    for a ticket id surfaces both the fact of the forced release AND
+    why, in one line) rather than a second, separate mechanism."""
+    if reason:
+        _log.warning(
+            "tickets: %s lease FORCE-RELEASED (%s removed) reason=%r -- "
+            "this does not change the ticket's own ledger state; "
+            "requeue it separately (frob ticket reconcile / frob "
+            "ticket requeue) if the underlying work is abandoned",
+            ticket_id,
+            path,
+            reason,
+        )
+    else:
+        _log.warning(
+            "tickets: %s lease FORCE-RELEASED (%s removed) -- this does not "
+            "change the ticket's own ledger state; requeue it separately "
+            "(frob ticket reconcile / frob ticket requeue) if the "
+            "underlying work is abandoned",
+            ticket_id,
+            path,
+        )
+
+
+def force_release_lease(
+    root: Path, ticket_id: str, *, reason: str | None = None
+) -> Result[bool, LeaseError]:
     """The supported release path for an ORPHANED lease (T-1743): removes
     `ticket_id`'s cross-worktree lease file unconditionally, independent of
-    that ticket's own declared `scope` -- `frob ticket scope <id> --remove
-    <glob>` refuses (`ScopeRemoveNotDeclared`) the moment the glob is not
-    literally in the ticket's own scope list, which makes it structurally
-    unable to reach a lease whose holder's scope does not match what a
-    caller expected (the T-1743 incident: the real holder, T-1629, had to
-    be cleared by deleting its git worktree by hand, an operation no
-    worktree-isolated agent can perform). This function operates on the
-    lease side-channel file directly, the same primitive `release_lease`
-    already uses for a ticket's own clean exit from `IN_PROGRESS` --
-    unlike `release_lease`, this is meant to be called by an OPERATOR
-    (or a future CLI verb, T-1743's own residue) clearing SOMEONE ELSE's
-    lease, so every call is logged at WARNING, naming exactly which
-    ticket's lease was released and from where.
+    its declared `scope` -- unlike `release_lease`, this is meant to be
+    called by an OPERATOR (now `frob worktree release-lease [--force]`,
+    T-1777) clearing SOMEONE ELSE's lease, so every removal is logged at
+    WARNING via `_log_force_released` (full rationale + T-1777's incident
+    history: see that helper and docs/modules/tickets-lifecycle.md's
+    cross-worktree-lease-side-channel section).
 
-    Deliberately does NOT transition `ticket_id`'s own ledger state --
-    releasing the lease only stops it from blocking `doable`'s collision
-    filter; if the underlying work is genuinely abandoned, the caller
-    still owns requeuing the ticket itself (`frob ticket reconcile` or
-    `frob ticket requeue <id>`) as a separate, deliberate step.
+    `reason`, when given, is the operator's own justification for
+    bypassing the normal orphan-only safety gate -- folded into the SAME
+    WARNING line by `_log_force_released` rather than a second mechanism.
+    `None` is accepted for internal callers (e.g. `release_orphaned_
+    lease`'s own confirmed-stale path) with no operator reason to thread.
 
-    Returns `Ok(True)` if a lease file actually existed and was removed,
-    `Ok(False)` if there was nothing to release (idempotent -- releasing an
-    already-clear lease is not an error, matching `release_lease`'s own
-    convention)."""
+    Deliberately does NOT transition `ticket_id`'s own ledger state; the
+    caller still owns requeuing separately if abandoned.
+
+    Returns `Ok(True)` if a lease file existed and was removed, `Ok(False)`
+    if there was nothing to release (idempotent, matching `release_lease`'s
+    own convention)."""
     resolved = leases_dir(root)
     if resolved.is_err:
         return Err(resolved.danger_err)
@@ -1184,14 +1207,7 @@ def force_release_lease(root: Path, ticket_id: str) -> Result[bool, LeaseError]:
             file_cache = _lease_file_cache.get(leases_root)
             if file_cache is not None:
                 file_cache.pop(path, None)
-        _log.warning(
-            "tickets: %s lease FORCE-RELEASED (%s removed) -- this does not "
-            "change the ticket's own ledger state; requeue it separately "
-            "(frob ticket reconcile / frob ticket requeue) if the "
-            "underlying work is abandoned",
-            ticket_id,
-            path,
-        )
+        _log_force_released(ticket_id, path, reason)
     else:
         _log.info(
             "tickets: %s had no lease file to force-release (already clear)",

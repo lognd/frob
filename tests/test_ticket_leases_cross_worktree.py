@@ -393,6 +393,30 @@ class TestForceReleaseLease:
         assert released.is_ok
         assert released.danger_ok is False
 
+    # frob:ticket T-1777
+    def test_reason_is_included_in_the_warning_log(
+        self, repo: Path, second_worktree: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason\
+        # _is_included_in_the_warning_log
+        created = new_ticket(repo, _spec("Feature B", scope=("src/feature_b.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+
+        with caplog.at_level("WARNING"):
+            released = force_release_lease(
+                second_worktree, tid, reason="operator judged holder abandoned"
+            )
+        assert released.is_ok
+        assert released.danger_ok is True
+        assert any(
+            "operator judged holder abandoned" in record.getMessage()
+            for record in caplog.records
+        )
+
 
 # frob:ticket T-1868
 class TestScopeAddRefusesLiveCrossWorktreeLease:

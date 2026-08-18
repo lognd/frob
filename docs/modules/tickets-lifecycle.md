@@ -316,17 +316,39 @@ own declared scope, so it structurally cannot reach a lease whose real
 scope does not match what a caller expected -- the only prior recourse
 was deleting the holding git worktree by hand, an operation no
 worktree-isolated agent can perform. `force_release_lease(root,
-ticket_id)` (`frob.tickets._leases`) removes a ticket's lease FILE
-directly, independent of any ticket's declared scope, logs a WARNING
-naming exactly what was released, and is idempotent (`Ok(False)` if there
-was nothing to release). It deliberately does not transition the
-ticket's own ledger state -- requeuing an abandoned ticket is a separate,
-deliberate step (`frob ticket reconcile` / `frob ticket requeue <id>`).
-As of T-1743 this is a Python-API-level release path only; wiring it into
-a first-class `frob ticket lease release <id>` CLI verb is out of this
-ticket's scope (it needs `src/frob/_cli_parsers/**` and
-`src/frob/app/config.py`, neither of which T-1743 declared) and is
-tracked as a follow-up.
+ticket_id, *, reason=None)` (`frob.tickets._leases`) removes a ticket's
+lease FILE directly, independent of any ticket's declared scope, logs a
+WARNING naming exactly what was released (folding in the caller's
+`reason`, when given, so the log line is the audit trail rather than a
+separate mechanism), and is idempotent (`Ok(False)` if there was nothing
+to release). It deliberately does not transition the ticket's own ledger
+state -- requeuing an abandoned ticket is a separate, deliberate step
+(`frob ticket reconcile` / `frob ticket requeue <id>`).
+
+<!-- frob:describes src/frob/app/worktree_runner.py::_run_release_lease -->
+**`--force` (T-1777): an explicit, logged override for a lease that
+still LOOKS live.** `frob worktree release-lease TICKET-ID`
+(T-1789/T-1806/T-2175, below) already refuses by default unless
+`lease_staleness_reason`'s four shapes or T-2175's scope-divergence check
+confirm the lease is genuinely stale -- the correct default, but it left
+no sanctioned recovery for the real incident this ticket was filed from:
+a lease an operator has independently judged abandoned (e.g. a `queued`
+ticket still holding a cross-worktree lease on files blocking several
+others, confirmed by hand rather than by any automated shape this repo
+can check) that nonetheless does not match any of those shapes.
+`--force --reason TEXT` (or `--reason-file PATH`) is that escape hatch:
+it calls `force_release_lease` unconditionally, bypassing the staleness
+gate entirely -- refused (exit 1) without a reason, so the override can
+never be silent. This is deliberately the ONLY branch in `_run_
+release_lease` that does not itself confirm staleness first; every other
+branch (the four `lease_staleness_reason` shapes, T-2175's scope-
+divergence check) stays exactly as conservative as before `--force`
+existed, and the "no known shape matched" refusal message now names
+`--force --reason` as the documented recovery path instead of leaving an
+operator to discover it. Wiring `force_release_lease` into this CLI verb
+(rather than a new, competing `frob ticket lease release <id>` command)
+also avoids duplicating the `frob worktree release-lease` surface
+T-2175 had already shipped by the time this ticket was implemented.
 
 **Lease migration on renumber (T-1173).** The lease file is keyed by
 ticket id, but a `T-draft-XXXXXXXX` provisional id (T-0162) is exactly the
