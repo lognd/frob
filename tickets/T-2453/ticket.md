@@ -53,7 +53,9 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: eecd4513ae3de97653bf0343f7b0e547cb90479a
+no_scope_declared: false
+no_scope_declared_reason: null
 ---
 Coordinator-directed error-floor sweep (T-2407 series follow-up):
 frob check --json | scripts/check_summary.py reported 30-87 errors on
