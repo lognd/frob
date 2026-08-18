@@ -13,8 +13,17 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/__main__.py
+- src/frob/_cli_parsers/_ops.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ops.py
+  reason: 'T-2385 acceptance[0]: narrower description column from the header-indent
+    fix breaks ops help mid-word; shortening that help string is the ticket''s own
+    second-order nit'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given frob --help, when the grouped subcommand listing renders, then each
