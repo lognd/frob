@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8335911c239c32b3ce3a961c43ddb4569d129b75
 ---
 Found while working T-2498. `frob ticket evidence T-#### --check-repro
 NODE-ID --base-ref SHA` did not use the passed SHA consistently: with no
