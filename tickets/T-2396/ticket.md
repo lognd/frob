@@ -10,8 +10,45 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- .claude/hooks/root-write-guard.py
+- .claude/settings.json
+- .claude/hooks/sync-claude-config.py
+- docs/guides/claude-hooks.md
+- tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/root-write-guard.py
+  reason: edit-time refusal hook needs its script, wiring, sync registration, docs,
+    and its own test
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: .claude/settings.json
+  reason: edit-time refusal hook needs its script, wiring, sync registration, docs,
+    and its own test
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: edit-time refusal hook needs its script, wiring, sync registration, docs,
+    and its own test
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: edit-time refusal hook needs its script, wiring, sync registration, docs,
+    and its own test
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_hook_root_write_guard.py
+  reason: edit-time refusal hook needs its script, wiring, sync registration, docs,
+    and its own test
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given an agent with a worktree, when it attempts to WRITE a file in the shared
