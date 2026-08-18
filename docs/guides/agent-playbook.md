@@ -332,6 +332,30 @@ repo tree), then pass `--*-file <path>`. Reach for inline `--body`/
 `--reason`/`--why` only for genuinely short, single-clause text with no
 backticks, `$`, or quotes worth worrying about.
 
+**"Your scratch area" means `/tmp`, concretely -- never a path under the
+repo root, not even a gitignored one.** T-2524 found five agents' own
+`done-report-t####.md` scratch files TRACKED IN GIT at the repo root:
+the `--why-file`/`--body-file` INPUT file an agent wrote there to avoid
+shell-quoting a done report's backticks was never cleaned up, and
+because it sat in the repo root, the next `frob ticket land`'s
+"commit everything in the root" step committed it -- exactly the same
+mechanism section 1c warns about for `.git/info/exclude` (a stray root
+file becomes everyone's problem, not just yours) and the same shape as
+a DirtyMain deadlock's root cause (an agent leaves something uncommitted
+in a shared root; someone else's land trips over it). A `.gitignore`
+rule for `done-report-*.md` was added as an immediate stop, but it is a
+STOPGAP with a real cost: a gitignored file is invisible to `git status
+--porcelain`, so T-2487's root-cleanliness detector and the DirtyMain
+guards can no longer see it either -- "gets committed" was traded for
+"is invisible," not fixed. Use `/tmp/t<ticket-id>_<purpose>.md` (e.g.
+`/tmp/t2502_done_report.md`) for every `--*-file` scratch input, every
+time -- never a bare filename, which lands in whatever your shell's cwd
+happens to be, and never anywhere under the repo tree even if you intend
+to delete it after. The positive control for "did this actually work":
+after running your `--*-file` flow, both `git status --porcelain` AND
+`git ls-files` (the second matters -- the gitignore stopgap only makes
+the first one look clean) show nothing new at the repo root.
+
 ## 2. Gate-affecting source only takes effect via
 
 - `uv run frob ...` (editable install picks up local source changes on

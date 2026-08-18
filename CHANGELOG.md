@@ -69,6 +69,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2520: T-2520: post-land sweep regression from T-2507: 1 new (rule, file) identit(ies), 0 finding(s) (WIRE001)
 - T-2521: T-2521: auto-drop treats an incomplete measurement as proof of absence: 7 tickets dropped with ~66 live findings
 - T-2523: T-2523: wire check_ambient_capability_reasons into a gate and backfill the 27 reasonless ambient grants
+- T-2524: T-2524: agent scratch files in the repo root get committed by the next land
 - T-2526: T-2526: post-land sweep regression from T-2503: 5 new (rule, file) identit(ies) (E501, F401, F811)
 - T-2527: T-2527: re-add subprocess-coverage measurement to native_coverage_refresh (Loss-A regression, T-1235/T-1205/T-1397/T-1526 orphaned)
 - T-2530: T-2530: strata fragment merge is extend-only by implementation, not by type: seal the grant mapping

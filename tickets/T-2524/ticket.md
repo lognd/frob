@@ -1,7 +1,7 @@
 ---
 id: T-2524
 title: agent scratch files in the repo root get committed by the next land
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,10 +12,22 @@ sprint: null
 runs_last: false
 scope:
 - docs/guides/agent-playbook.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: add frob:waive BUG002 for the docs-only ledger-correction shape; no code
+    defect to reproduce
+  actor: logan
+  at: '2026-08-18'
+  old_length: 2733
+  new_length: 3371
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +83,5 @@ loose objects; run 'git prune'", .git/gc.log present, automatic cleanup
 disabled until the log is removed). Likely accumulated from ~30 agent
 worktrees and repeated land squashes. Not urgent, but it means git
 housekeeping has been silently off for some time.
+
+frob:waive BUG002 reason="this ticket's actual deliverable is a docs-only correction (docs/guides/agent-playbook.md, section 1d) naming /tmp explicitly for --*-file scratch inputs -- there is no code defect to reproduce, matching the documented ledger/doc-correction escape hatch (option 3: a defect that genuinely cannot be reproduced in a test). The bound evidence (tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches) is the playbook's own standing precedent for a docs-only ticket with no pytest surface of its own (section 5), recorded so evidence is not left empty, not offered as a repro of anything."
