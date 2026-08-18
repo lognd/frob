@@ -33,6 +33,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2482: T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)
 - T-2484: T-2484: T-2473's concurrent-check advisory writes to stdout, corrupting frob check --json under fleet load
 - T-2485: T-2485: waive-audit complete has no partial-catchup-progress path, defeating the 100-item bound
+- T-2488: T-2488: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001 SYS111)
 
 ## [0.530.0] - unreleased
 

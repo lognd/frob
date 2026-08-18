@@ -86,9 +86,9 @@
       "ticket": "T-1628"
     },
     "gates::fs.read": {
-      "accepted_count": 47,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on gates from 46 to 47 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 48,
+      "reason": "T-2488: ratchet had fallen behind 1 already-landed via-list addition (before=47/committed-ceiling=47 -> after=48): src/frob/gates/_waive_audit_watermark.py (T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed site in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
     },
     "gates::fs.write": {
       "accepted_count": 40,
@@ -140,6 +140,11 @@
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
     },
+    "stratamod::net.connect": {
+      "accepted_count": 1,
+      "reason": "T-2488: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). src/frob/strata/_threat_catalog_benign.py declares this grant (T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"); confirmed genuine by reading the declaring code, not assumed from the ticket title alone. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
+    },
     "testsuite::deserialize": {
       "accepted_count": 3,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
@@ -161,9 +166,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 186,
-      "reason": "T-2460: ratchet had fallen behind 3 already-landed via-list additions (before=183/committed-ceiling=185 -> after=186): tests/unit/test_process_reap.py (T-2443), tests/unit/gates/test_port_selfcheck.py (T-2388), tests/test_tickets_no_scope.py (T-2394). All three are genuine, already-reviewed exec sites in already-landed tickets, not new scope; bumping the stale ceiling to match.",
-      "ticket": "T-2460"
+      "accepted_count": 188,
+      "reason": "T-2488: ratchet had fallen behind 2 already-landed via-list additions (before=186/committed-ceiling=186 -> after=188): tests/unit/gates/test_rel001_deferred_bump.py, tests/unit/test_waive_audit_runner.py (both T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -176,14 +181,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 132,
-      "reason": "T-2407 drift sweep: measured cumulative site-count growth from this drive's many already-authorized lands (T-2390 series schema-gate children each declared into gates' via-list, T-2358's capability split, process/_reap.py-adjacent work, etc.) -- every contributing file is already a declared via-source for this (node, capability) pair, so this is accumulated legitimate growth within an existing authorization, not a newly undeclared file (SYS100 fires separately for that and is handled on its own). Bumping the ceiling to the current measured count rather than re-justifying each site individually.",
-      "ticket": "T-2407"
+      "accepted_count": 134,
+      "reason": "T-2488: ratchet had fallen behind 2 already-landed via-list additions (before=132/committed-ceiling=132 -> after=134): tests/unit/test_waive_audit_runner.py, tests/unit/test_waive_audit_watermark.py (both T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
     },
     "testsuite::fs.write": {
-      "accepted_count": 348,
-      "reason": "T-2460: ratchet had fallen behind 5 already-landed via-list additions (before=343/committed-ceiling=345 -> after=348): tests/unit/gates/test_port_selfcheck.py (T-2388), tests/unit/test_process_reap.py (T-2443), tests/unit/test_gates_table_schema.py (T-2435), tests/unit/test_test_table_schema.py (T-2436), tests/unit/test_dup_graph_table_schema.py (T-2437). All five are genuine test-fixture write_text()/similar sites in already-landed tickets, not new scope; bumping the stale ceiling to match.",
-      "ticket": "T-2460"
+      "accepted_count": 351,
+      "reason": "T-2488: ratchet had fallen behind 3 already-landed via-list additions (before=348/committed-ceiling=348 -> after=351): tests/unit/gates/test_rel001_deferred_bump.py, tests/unit/test_waive_audit_runner.py, tests/unit/test_waive_audit_watermark.py (all three T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
@@ -194,6 +199,11 @@
       "accepted_count": 12,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
+    },
+    "testsuite::net-mutate": {
+      "accepted_count": 1,
+      "reason": "T-2488: brand-new capability kind, no prior lock entry (ceiling was 0-by-absence, not a grown ceiling). tests/test_capability_registry.py declares this grant (T-2464, \"Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs\") -- the declaring code's own comment: \"TestNetMutateVerbSplit's own fire fixtures contain real requests.post(/httpx.delete( needle literals, proving the new net-mutate split actually fires\", confirming this is a real, reasoned fixture-literal declaration, not an accidental one. Traced via git log -S<file> -- design/frob.strata, not assumed.",
+      "ticket": "T-2488"
     },
     "testsuite::process-control": {
       "accepted_count": 2,
