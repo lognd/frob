@@ -29,7 +29,17 @@ def _populate_test_args(test_p) -> None:
     """Add `frob test`'s arguments onto `test_p` -- shared by the
     standalone top-level parser and `frob quality test` (T-1567) so
     neither duplicates the flag list."""
-    test_p.add_argument("test_path", metavar="path", nargs="?", default=".")
+    test_p.add_argument(
+        "test_path",
+        metavar="path",
+        nargs="?",
+        default=".",
+        help=(
+            "repo root to resolve, or a subdirectory to scope SELECTION to "
+            "directly (e.g. `frob test tests/unit`) -- matches `pytest "
+            "PATH`'s subset semantics (T-2319)"
+        ),
+    )
     test_p.add_argument("--all", dest="test_all", action="store_true")
     test_p.add_argument(
         "--fuzz",

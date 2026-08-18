@@ -97,11 +97,64 @@ def _load_test_snapshot(root: Path):
     return loaded.danger_ok
 
 
+# frob:ticket T-2319
+# frob:tests tests/unit/test_app_test_runner.py::TestExplicitPathSelection.test_relative_subdir_scopes_selection  # noqa: E501
+# frob:tests tests/unit/test_app_test_runner.py::TestExplicitPathSelection.test_none_when_path_is_root_itself  # noqa: E501
+# frob:tests tests/unit/test_app_test_runner.py::TestExplicitPathSelection.test_none_when_path_unset  # noqa: E501
+# frob:tests tests/unit/test_app_test_runner.py::TestExplicitPathSelection.test_path_outside_root_is_ignored  # noqa: E501
+def _explicit_path_selection(cfg: AppConfig, root: Path) -> tuple[str, ...] | None:
+    """The repo-relative subtree `cfg.test_path` names, when it points at a
+    real subdirectory of `root` (not root itself) -- lets `frob test PATH`
+    scope SELECTION to that subtree directly (matching `pytest PATH`'s
+    subset semantics), rather than only resolving the repo root to start
+    the touched-set diff from. Before T-2319, `cfg.test_path` was consulted
+    ONLY by `_resolve_test_root`; the diff-driven selection below and the
+    `--all` sentinel both ignored it entirely, so there was no way to
+    reproduce e.g. `pytest tests/unit/ -q` through `frob test`. Returns
+    `None` when `cfg.test_path` names the root itself (or is unset), so
+    ordinary --all / touched-set behavior is unchanged in that case."""
+    if cfg.test_path is None:
+        return None
+    resolved = cfg.test_path.resolve()
+    if resolved == root:
+        return None
+    try:
+        rel = resolved.relative_to(root)
+    except ValueError:
+        # Outside the repo entirely -- not a scopable subtree; ignore.
+        return None
+    return (rel.as_posix(),)
+
+
+# frob:ticket T-2319
+# frob:tests tests/unit/test_app_test_runner.py::TestSelectionReportPathScoping.test_path_selection_routes_to_python_only  # noqa: E501
+# frob:tests tests/unit/test_app_test_runner.py::TestSelectionReportPathScoping.test_path_selection_honors_lang_filter  # noqa: E501
+# frob:tests tests/unit/test_app_test_runner.py::TestSelectionReportPathScoping.test_root_path_falls_back_to_all  # noqa: E501
 def _selection_report(cfg: AppConfig, root: Path, snapshot, runners, base: str):
-    """The touched-set selection (or an all-runners selection with --all)."""
+    """The touched-set selection (an explicit-path selection with a real
+    PATH argument, an all-runners selection with --all, or the diff-driven
+    touched set otherwise)."""
     from frob.gitio import working_diff
     from frob.testing import SelectConfig, select_tests
     from frob.testing._models import SelectionReport
+
+    path_items = _explicit_path_selection(cfg, root)
+    if path_items is not None:
+        # T-2319: directory/path-based SELECTION scoping. Routed through
+        # the "python" language only -- this mirrors the ticket's own
+        # motivating repro (`pytest tests/unit/`, `tests/integration/`,
+        # `tests/system/`) and avoids handing a bare subtree path to a
+        # non-python runner (e.g. a `cargo test` filter), which
+        # `_route_items`/`_spec_owns_item` cannot resolve for an arbitrary
+        # repo-relative path and would refuse outright.
+        selected = {"python": path_items}
+        if cfg.test_lang:
+            selected = {
+                lang: ids for lang, ids in selected.items() if lang in cfg.test_lang
+            }
+        return SelectionReport(
+            touched=(), selected=selected, ripple=(), unbound=(), fallback="path"
+        )
 
     if cfg.test_all:
         selected = {spec.language: (_ALL_SENTINEL,) for spec in runners}

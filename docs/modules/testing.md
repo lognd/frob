@@ -55,6 +55,20 @@ the gates prove the bindings exist; `frob test` runs the bound tests.
 
 `--all` skips selection and runs every configured runner's full suite.
 
+**T-2319: an explicit subdirectory `path` argument scopes SELECTION
+directly.** `frob test tests/unit` (or `frob quality test tests/unit`)
+routes `tests/unit` straight into the "python" runner's selected item set
+(bypassing both the diff-driven touched-set walk and `--all`'s sentinel),
+matching `pytest tests/unit/`'s subset semantics -- the gap this closes is
+that `path` used to be consulted ONLY to resolve which repo root to start
+the touched-set diff from (`_resolve_test_root`), never to scope the
+selection itself. Only fires when `path` names a real subdirectory of the
+resolved root (not the root itself, which keeps the pre-T-2319 --all /
+touched-set behavior unchanged) and is routed to the "python" language
+only -- a bare repo-relative path cannot be resolved against a non-python
+runner's `cwd` (`_route_items` would refuse it outright), so this does not
+attempt to scope `cargo test`/rust selections.
+
 ## Runner registry (`frob.toml`, `[[test.runner]]`)
 
 ```toml
@@ -1240,7 +1254,8 @@ first-class target, not an afterthought:
 
 ## Integration points
 
-- CLI: `frob test [--all] [--base REF] [--lang L ...] [--fallback MODE]`.
+- CLI: `frob test [path] [--all] [--base REF] [--lang L ...] [--fallback MODE]`
+  -- `path`, when a real subdirectory, scopes selection directly (T-2319).
 - `frob.gates`: imports `working_diff`/`Diff` from `frob.gitio` and
   `collect_python_tests`/`collect_rust_tests` from `frob.testing`, merged in
   `_load_tests` into one `CollectedTests` COV003 resolves evidence against.
