@@ -141,6 +141,38 @@ def _add_ticket_close_parser(ticket_sub):
         help="skip T-1178's auto-commit of the close ledger change "
         "(parity with `new`/`drop`/`fail`'s T-1130 auto-commit)",
     )
+    # frob:ticket T-2393
+    ticket_close_p.add_argument(
+        "--no-behavior-change",
+        dest="ticket_close_no_behavior_change",
+        action="store_true",
+        help="the first-class front door (T-2393) for a doc-only/epic-"
+        "rollup/structural ticket with no runtime defect to reproduce: "
+        "writes `frob:no-behavior-change reason=\"...\"` into the ticket's "
+        "body (via `frob.tickets.set_body`, T-2392) before BUG002 runs, "
+        "the SAME remedy that previously required a hand-edit of "
+        "tickets/T-####/ticket.md. Requires --no-behavior-change-reason/"
+        "-reason-file; BUG002 itself still runs and still refuses a "
+        "genuinely confirmatory-only evidence claim -- this only lets a "
+        "ticket with no behavioral delta AT ALL declare that honestly.",
+    )
+    ticket_close_p.add_argument(
+        "--no-behavior-change-reason",
+        dest="ticket_close_no_behavior_change_reason",
+        metavar="TEXT",
+        help="why this ticket has no behavioral delta (recorded both in "
+        "the frob:no-behavior-change directive AND, via set_body, in "
+        "ticket.body_changes); required with --no-behavior-change unless "
+        "--no-behavior-change-reason-file is given",
+    )
+    ticket_close_p.add_argument(
+        "--no-behavior-change-reason-file",
+        dest="ticket_close_no_behavior_change_reason_file",
+        metavar="PATH",
+        help="read the --no-behavior-change reason verbatim from PATH "
+        "instead of the shell (T-0737); mutually exclusive with "
+        "--no-behavior-change-reason",
+    )
     return ticket_close_p
 
 

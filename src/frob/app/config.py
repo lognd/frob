@@ -745,6 +745,15 @@ class AppConfig(BaseModel):
     # only-evidence finding is logged but does not refuse the direct close.
     # For genuine false positives only.
     ticket_close_skip_mutation_evidence: bool = False
+    # frob:ticket T-2393
+    # `frob ticket close <id> --no-behavior-change --no-behavior-change-
+    # reason TEXT`: the first-class front door for BUG002's pre-existing
+    # `frob:no-behavior-change reason="..."` body directive -- writes it
+    # through `set_body` (T-2392) before the close-time BUG002 check runs,
+    # instead of requiring a hand-edit of tickets/T-####/ticket.md.
+    ticket_close_no_behavior_change: bool = False
+    ticket_close_no_behavior_change_reason: str | None = None
+    ticket_close_no_behavior_change_reason_file: Path | None = None
     # frob:ticket T-0631
     # `frob ticket land <id> --push`: after a real (non-dry-run) land
     # succeeds, push root's current branch to its upstream remote.

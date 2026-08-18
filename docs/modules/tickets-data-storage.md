@@ -426,6 +426,29 @@ exclusive group refuses more than one of the four text sources at parse
 time; the `-file` variants follow the same T-0737 shell-injection-
 avoidance precedent as every other free-text ticket input.
 
+#### `frob ticket close --no-behavior-change` (T-2393)
+
+`frob:no-behavior-change reason="..."` (T-1616, `frob.gates.
+_mutation_evidence._no_behavior_change_reason`) is BUG002's pre-existing
+remedy for a bug/security ticket with no runtime defect to reproduce (an
+epic rollup, a structural refactor, a doc change): the directive INVERTS
+BUG002's obligation for that ticket -- its designated evidence must PASS
+at the parent commit (proving nothing changed there either), and a
+genuine FAILURE at the parent becomes the violation instead. Until
+T-2393, the ONLY way to add this directive to an existing ticket was the
+hand-edit `frob ticket body` (above) itself exists to eliminate.
+
+`frob ticket close <id> --no-behavior-change --no-behavior-change-reason
+TEXT|--no-behavior-change-reason-file PATH` is the first-class front
+door: `frob.app.ticket_runner._close_cmd._apply_no_behavior_change_
+directive` writes `frob:no-behavior-change reason="TEXT"` into the
+ticket's body via `set_body` (the SAME validated path `frob ticket body`
+uses) BEFORE `_close` computes `mutation_evidence`, so BUG002 sees it
+without any hand-edit. The reason is REQUIRED (exits 1 if blank/missing)
+-- this stays prove-or-justify, never a silent escape hatch, and BUG002
+itself is completely unchanged: a ticket with genuinely confirmatory-only
+evidence and no directive is still refused exactly as before.
+
 ### `frob ticket accept` (T-1029)
 
 `frob ticket new --acceptance` was, until this ticket, the ONLY way to

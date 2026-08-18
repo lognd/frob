@@ -1,7 +1,7 @@
 ---
 id: T-2402
 title: wire frob ticket body's AppConfig fields into _config_external.py (T-2392 follow-up)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -47,3 +47,6 @@ through the ACTUAL CLI (subprocess or `App.from_args`, not a hand-built
 AppConfig) must show the body changed -- the same "test the real argv
 parse path" shape T-2387's own Description names as the gap its sibling
 defect's tests skipped.
+
+## Drop reason
+- 2026-08-18: superseded: T-2393 wired the _config_external.py fields for both T-2392 and T-2393 fields directly, since T-2387's lease released mid-session (absorbed by T-2393)
