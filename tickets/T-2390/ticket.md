@@ -2,7 +2,7 @@
 id: T-2390
 title: 'config-file keys are never validated: an unknown or misspelled frob.toml key
   is silently ignored'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,8 +13,21 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/_config_external.py
+evidence_scope:
+- tests/unit/test_native_table_schema.py
+- tests/unit/test_profile_table_schema.py
+- tests/unit/test_toplevel_scalar_schema.py
+- tests/unit/test_testing_table_schema.py
+- tests/unit/test_arch_table_schema.py
+- tests/unit/test_docblocks_table_schema.py
+- tests/unit/test_gates_table_schema.py
+- tests/unit/test_test_table_schema.py
+- tests/unit/test_dup_graph_table_schema.py
+- tests/unit/test_refs_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 triage_changes:
 - field: tier
   old_value: ticket
@@ -34,23 +47,70 @@ body_changes:
   at: '2026-08-18'
   old_length: 4383
   new_length: 9048
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic rollup ticket with no code of its own
+    -- all runtime behavior change happened in the ten already-landed children (T-2428..T-2437),
+    each with its own BUG002-satisfying evidence; T-2390 itself only carries the aggregate
+    closure-bar evidence (11 must-still-pass tests across all ten schema families)
+    proving the union of children meets acceptance[2]'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 19278
+  new_length: 19664
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic rollup ticket with no code of its own
+    -- all runtime behavior change happened in the ten already-landed children (T-2428..T-2437),
+    each with its own BUG002-satisfying evidence; T-2390 itself only carries the aggregate
+    closure-bar evidence (11 must-still-pass tests across all ten schema families)
+    proving the union of children meets acceptance[2]'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 19665
+  new_length: 20051
+evidence:
+- tests/unit/test_native_table_schema.py::TestNativeSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_arch_table_schema.py::TestArchSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_docblocks_table_schema.py::TestDocblocksSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_test_table_schema.py::TestTestRunnerSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_refs_schema.py::TestRefsSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_now_fire_reports_the_undeclared_ratchet_key
+- tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
 designated_repro_test: null
 acceptance:
 - text: Given a frob.toml containing a key no declared config schema claims, when
     any frob command loads config, then the unknown key is reported with its file
     and key name, rather than silently ignored.
-  evidence: []
+  evidence:
+  - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_now_fire_reports_the_undeclared_ratchet_key
 - text: Given a project that declares no config surface at all, when the check runs,
     then it reports that no configuration surface is declared and does not report
     a silent zero.
-  evidence: []
+  evidence:
+  - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_no_ratchet_schema_declared_is_unresolved_not_empty
 - text: 'EPIC CLOSURE BAR (not any single child''s): once every child ticket below
     has landed, this repo''s own frob.toml -- all ~121 leaf values across its 12 top-level
     tables -- reports zero unknown keys under the union of every child''s declared
     schema, proving the check was not calibrated by weakening it. A child''s OWN acceptance
     is its own table''s must-fire/must-still-pass pair (see each child''s body); this
     criterion is the epic-level aggregate, checked only once the last child lands.'
-  evidence: []
+  evidence:
+  - tests/unit/test_native_table_schema.py::TestNativeSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_arch_table_schema.py::TestArchSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_docblocks_table_schema.py::TestDocblocksSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_gates_table_schema.py::TestGatesSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_test_table_schema.py::TestTestRunnerSchemaGate::test_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_still_pass_this_repos_own_frob_toml
+  - tests/unit/test_refs_schema.py::TestRefsSchemaGate::test_must_still_pass_this_repos_own_frob_toml
 acceptance_amendments:
 - op: replace
   index: 2
