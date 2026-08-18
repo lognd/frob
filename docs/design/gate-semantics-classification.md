@@ -156,3 +156,96 @@ family -- `_docblocks_refs.py`, `_docptr.py`, `_doclink_docanchor.py`,
 declaration" substrate those four could reuse is a DSL-parser concern
 (T-1633/T-1640 lineage), not a per-rule semantics defect on its own --
 tracked there, not re-filed here.
+
+## Epic closure (T-1662, 2026-08-18)
+
+Final tally of every class-(c) (lexical and wrong) instance found across
+the epic's full lifetime, from this survey's original pass through the
+addendum's post-survey discoveries and the meta-check's own first run:
+
+1. **REF001** (`_refs.py`) -- full-path/bare-basename text mention.
+   Fixed: T-1665.
+2. **DEAD001/OPAQUE001 symref gap** (`_dead_symbols.py`, `_opaque.py`) --
+   filed as T-1683, superseded by the more direct symref fixes T-1652
+   (DEAD001) and T-1659 (OPAQUE001) landing the same guarantee without
+   waiting on T-1683 itself.
+3. **DEBT/DEPR `_looks_like_call`** (`_debt_deprecated.py`) -- regex scan
+   of raw source lines to decide whether a deprecated symbol is called.
+   Fixed: T-2178.
+4. **The callgraph substrate's bare-short-name resolution**
+   (`build_call_graph`/`build_reference_graph`/`build_ordered_call_graph`)
+   -- a cross-file candidate resolved by short name alone, no import
+   verification, inherited by three unaudited consumers (COV006, DEAD001,
+   PROTO001-005). Fixed: T-2188.
+5. **`walk_strata` parse-then-discard** -- a strata walk that reparsed
+   text it had already resolved into a graph, reintroducing a lexical
+   re-derivation of an answer the graph already had. Fixed: T-2187.
+6. **The pre-land directive substring gate** -- decided a `frob:` directive
+   was present by substring search over the pre-land diff text rather than
+   a parsed directive node. Fixed: T-2201.
+7. **TICK006 prose-as-declaration** -- the same class of defect this
+   epic's own body named for TICK006/the live-tracker scan/INV006 (T-1541,
+   T-1633, T-1640): a citation-shaped phrase inside Done-report NARRATIVE
+   read as a real ticket declaration. Fixed: T-2243.
+
+That is 7 confirmed, fixed class-(c) instances against the epic's own
+denominator: the large majority of rule families were already class (a)
+(semantic), a small named set is class (b) (legitimately lexical --
+SEC001-004, EXCL001, `frob fmt`'s directive-wrap, `_rule_id_scan.py`'s
+own rule-id-literal generator, TICK011's disclosure trigger phrase-scan,
+WAIVE004's directive-parsing half), and these 7 were the confirmed class
+(c) set requiring a real fix.
+
+**WALK001 was investigated and reclassified OUT of the defect set**, not
+fixed -- direct inspection (recorded above) found it already AST-based
+and import-alias-aware; its one real gap (attribute-name matching, e.g.
+`.rglob(`, cannot type-distinguish a `pathlib.Path` call from an
+unrelated same-named method without a type checker) is the same accepted,
+disclosed limitation class as RENDER001's `print`-shadow gap, not a
+text-match defect a graph edge would fix. Recorded here so nobody re-files
+it against this epic expecting a different verdict.
+
+**The epic's own directive #4 -- a meta-check so this class cannot
+silently return -- is its actual deliverable, not an afterthought.**
+T-2344 built `LEXCHECK001` (`src/frob/gates/_lexical_selfcheck.py`): an
+AST scan of `src/frob/gates/**` flagging any function that both calls a
+`re.search`/`match`/`fullmatch`/`findall`/`finditer` AND constructs a
+symref-less `Violation` -- the exact shape every instance above shared.
+Run against the real repo on its FIRST pass, it found 8 candidates: 6
+were legitimately class (b) and allowlisted with stated reasons
+(mirroring this doc's own table), and the 8th was a genuine, unresolved
+class-(c) instance --
+
+8. **`_wire001_cli_dest_violations`** (WIRE001 case 3, `_wire.py`) --
+   decided "is this CLI `dest=` wired into `_config_external.py`" via a
+   raw substring-membership scan over that file's text. The agent who
+   found it did NOT silently allowlist it (the exact failure mode this
+   epic exists to prevent) -- it waived it in-file with an explicit
+   `follow_up="T-2348"` citation and filed the ticket. T-2348 then raised
+   it to a real AST-parsed decision (`_config_external_forwarded_dest_
+   names`, checking membership against the file's actual module-level
+   collection literals) and removed the waiver. `LEXCHECK001` now
+   measures zero on the real repo.
+
+That eighth instance is the guard proving itself on day zero: built to
+catch a NEW lexical decider before it lands silently, and on its very
+first real run, it did exactly that -- against code that predated the
+guard itself, not a new regression.
+
+**Closure criterion actually met, verified directly before writing this
+report:**
+- `frob check --only lexcheck` reports zero `LEXCHECK001` findings on the
+  real repo.
+- `grep LEXCHECK001 src/frob/gates/_wire.py` returns nothing -- no
+  in-file waiver remains for the one instance the meta-check itself
+  found.
+- Every ticket ever filed with `parent: T-1662` (T-1663, T-1664, T-1665)
+  is `done`. The epic's own follow-on deliverables (T-2178, T-2201,
+  T-2187, T-2188, T-2243, T-2344, T-2348) are each `done` individually,
+  verified via `frob ticket show`.
+
+No open ticket anywhere in `tickets.md` traces back to this epic. This
+epic closes with the standing principle it was chartered to enforce now
+backed by a live, measured gate (`LEXCHECK001`) rather than only a
+one-time classification pass -- the difference between "we checked once"
+and "it cannot silently come back."

@@ -1,7 +1,7 @@
 ---
 id: T-1662
 title: 'EPIC: every check must decide from semantics, never a lexical match'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-06'
@@ -12,6 +12,8 @@ sprint: null
 runs_last: false
 scope:
 - docs/design/gate-semantics-classification.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -83,6 +85,8 @@ scope_changes:
     -- fixing the stale scope pointer, not the epic's content
   actor: logan
   at: '2026-08-16'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -123,3 +127,4 @@ Children should:
 2. For each (c), raise it, reusing the substrate that already exists: frob.graph.callgraph for resolution, frob.lang.raw_tree for AST, the snapshot's symbols/edges for the obligation graph. Do NOT build a second parallel analysis layer.
 3. Establish the fail-closed rule this drive learned the hard way: when semantic resolution CANNOT determine an answer (genuinely dynamic dispatch, a computed getattr), the check must report UNRESOLVED and demand a declaration -- never silently pass. Every major incident this drive traced to analysis that reported "nothing found" when it could not look.
 4. Add a meta-check if feasible: a new gate rule constructed from raw text without a symref or AST node should itself be a finding, so this class cannot silently return.
+frob:no-behavior-change reason="epic-closure bookkeeping only: this ticket's own scope is docs/design/gate-semantics-classification.md, appending the closure record; the epic's real behavior changes each landed individually under their own tickets (T-1665, T-2178, T-2188, T-2187, T-2201, T-2243, T-2344, T-2348), each with their own BUG002-satisfying evidence. There is no code defect for T-1662 itself to reproduce -- the CLI-dispatch integration test cited as evidence is the standard docs-only-ticket precedent (playbook section 5), not a claim of a killed mutant."
