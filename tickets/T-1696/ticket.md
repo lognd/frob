@@ -17,6 +17,11 @@ runs_last: false
 scope:
 - src/frob/tickets/_profile.py
 - docs/modules/tickets-verify-sweep.md
+- src/frob/tickets/_land.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/tickets/_evidence.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/verify/_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -108,6 +113,66 @@ scope_changes:
     instead of the monofile every other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'Acceptance criterion [0] measured this exact set as REQUIRED and told the
+    next dispatcher to widen before dispatching: a prior implementer used ''frob explore
+    xref ProfileName'' (semantic resolution, not grep) and found live ProfileName/effective_profile
+    branches in these five files outside the declared scope. The ticket''s own acceptance
+    demands ''no land-pipeline module branches on ProfileName'', which is unachievable
+    without them. Widening now because criterion [1]''s dispatch condition is finally
+    satisfied -- _land_cmd.py and _land.py are both currently UNLEASED (verified via
+    fleet_status.py), and that window is rare for the two busiest files in the repo.'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'Acceptance criterion [0] measured this exact set as REQUIRED and told the
+    next dispatcher to widen before dispatching: a prior implementer used ''frob explore
+    xref ProfileName'' (semantic resolution, not grep) and found live ProfileName/effective_profile
+    branches in these five files outside the declared scope. The ticket''s own acceptance
+    demands ''no land-pipeline module branches on ProfileName'', which is unachievable
+    without them. Widening now because criterion [1]''s dispatch condition is finally
+    satisfied -- _land_cmd.py and _land.py are both currently UNLEASED (verified via
+    fleet_status.py), and that window is rare for the two busiest files in the repo.'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: 'Acceptance criterion [0] measured this exact set as REQUIRED and told the
+    next dispatcher to widen before dispatching: a prior implementer used ''frob explore
+    xref ProfileName'' (semantic resolution, not grep) and found live ProfileName/effective_profile
+    branches in these five files outside the declared scope. The ticket''s own acceptance
+    demands ''no land-pipeline module branches on ProfileName'', which is unachievable
+    without them. Widening now because criterion [1]''s dispatch condition is finally
+    satisfied -- _land_cmd.py and _land.py are both currently UNLEASED (verified via
+    fleet_status.py), and that window is rare for the two busiest files in the repo.'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'Acceptance criterion [0] measured this exact set as REQUIRED and told the
+    next dispatcher to widen before dispatching: a prior implementer used ''frob explore
+    xref ProfileName'' (semantic resolution, not grep) and found live ProfileName/effective_profile
+    branches in these five files outside the declared scope. The ticket''s own acceptance
+    demands ''no land-pipeline module branches on ProfileName'', which is unachievable
+    without them. Widening now because criterion [1]''s dispatch condition is finally
+    satisfied -- _land_cmd.py and _land.py are both currently UNLEASED (verified via
+    fleet_status.py), and that window is rare for the two busiest files in the repo.'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/verify/_backpressure.py
+  reason: 'Acceptance criterion [0] measured this exact set as REQUIRED and told the
+    next dispatcher to widen before dispatching: a prior implementer used ''frob explore
+    xref ProfileName'' (semantic resolution, not grep) and found live ProfileName/effective_profile
+    branches in these five files outside the declared scope. The ticket''s own acceptance
+    demands ''no land-pipeline module branches on ProfileName'', which is unachievable
+    without them. Widening now because criterion [1]''s dispatch condition is finally
+    satisfied -- _land_cmd.py and _land.py are both currently UNLEASED (verified via
+    fleet_status.py), and that window is rare for the two busiest files in the repo.'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: 'SCOPE IS INSUFFICIENT AS FILED -- measured, do not re-derive. An implementer
