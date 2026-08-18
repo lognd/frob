@@ -13,7 +13,6 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_land_finalize.py
-- src/frob/tickets/_models.py
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -34,6 +33,17 @@ scope_changes:
   glob: tests/test_ticket_land.py
   reason: land finalizes only its own drafts, queues/skips-with-notice foreign drafts
     instead of failing the whole land, and names the owner in the refusal message
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/tickets/_models.py
+  reason: Unblocking T-2394, which is code-complete and was refused with CrossTicketLeakage
+    solely on this overlap. T-2425 is still queued and has never started work in _models.py,
+    whereas T-2394's change to it (adding no_scope_declared/no_scope_declared_reason,
+    correctly tagged frob:ticket T-2394) is finished and verified. Its core scope
+    (_land_finalize.py, test_ticket_land.py) is untouched. If T-2425's fix genuinely
+    needs _models.py once started, re-add it then -- declaring a file it has not begun
+    is what turned a benign overlap into a hard block.
   actor: logan
   at: '2026-08-18'
 evidence:
