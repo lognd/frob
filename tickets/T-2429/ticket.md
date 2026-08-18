@@ -120,7 +120,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2be5ff72a44dd3aa4dcba20d8c577f580ab460e6
 ---
 Validate `[[native]]` (6 leaves) against a declared schema: each array
 entry's known keys (crate path, cargo_target_dir-shaped options, etc --
