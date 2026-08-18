@@ -59,7 +59,7 @@ threat: null
 component: process
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1ff6bfde21f374f8d618792603babd8eee47eb18
 ---
 T-2473 (landed minutes ago) added a concurrent-check advisory that
 writes to STDOUT, corrupting `frob check --json`'s machine-readable
