@@ -13,6 +13,7 @@ runs_last: false
 scope:
 - strata-core/src/parse/
 - src/frob/strata/_parse.py
+- src/frob/strata/_ast.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,11 @@ scope_changes:
 - op: add
   glob: src/frob/strata/_parse.py
   reason: the .strata loader entrypoint the fragment/glob logic changes
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/strata/_ast.py
+  reason: fragment node types (part-of / extend) enter the AST here
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
