@@ -142,16 +142,22 @@ class TestLexcheck001:
         checkout (the same target the wired-in `lexcheck` stage evaluates
         at `frob check` time): every real instance this gate found during
         T-2344's own development is either allowlisted (a stated class-(b)
-        reason) or waived in-file with a follow-up ticket citation --
-        `_wire001_cli_dest_violations` (T-2348) is the ONE known, waived
-        exception. `lexical_selfcheck_gate` itself does not apply waivers
-        (that is `frob check`'s own outer pass, matching every other gate
-        in this repo), so this asserts the RAW finding set is exactly that
-        one known site -- a regression here means a NEW, unaccounted-for
-        lexical decider landed."""
+        reason) or fixed outright. `_wire001_cli_dest_violations` (T-2348)
+        WAS the one known, waived exception -- T-2348 raised it to a
+        semantic decision (`_config_external_forwarded_dest_names`'s
+        AST-parsed set) and split the regex-based diff-line extraction
+        into its own function (`_cli_dest_literals_in_added_lines`) so no
+        single function both regex-decides and builds a symref-less
+        `Violation` any more; the in-file `frob:waive LEXCHECK001` was
+        removed along with the fix, not left behind. `lexical_selfcheck_
+        gate` itself does not apply waivers (that is `frob check`'s own
+        outer pass, matching every other gate in this repo), so this now
+        asserts the RAW finding set is EMPTY -- a regression here means a
+        NEW, unaccounted-for lexical decider landed (or this one came
+        back)."""
         from frob.gitio import repo_root
 
         root = repo_root(Path(__file__).parent).danger_ok
         violations = lexical_selfcheck_gate(root)
         hits = [v for v in violations if v.rule == "LEXCHECK001"]
-        assert [v.file for v in hits] == ["src/frob/gates/_wire.py"]
+        assert hits == []

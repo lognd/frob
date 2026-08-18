@@ -579,32 +579,62 @@ def _wire001_rule_id_violations(
 # Path.read_text/re.search/dict.items iteration, plain pathlib/re/dict operations the \
 # resolver cannot statically bound; the one real raise path (config_external.py \
 # missing/unreadable) is caught above"
-# frob:waive LEXCHECK001 reason="known (c) candidate, this module's own docstring \
-# admits the text-membership tradeoff -- filed as T-2348 rather than silently \
-# allowlisted (T-2344)" follow_up="T-2348"
-def _wire001_cli_dest_violations(
-    root: Path, added_lines: dict[str, list[tuple[int, str]]]
-) -> list[Violation]:
-    """WIRE001 case 3: a new CLI `add_argument(..., dest="foo")` under
-    `src/frob/_cli_parsers/**` whose `dest` string never appears in
-    `_config_external.py` -- T-1422's shape, and the one the ticket brief
-    calls out as invisible to the call graph entirely: the wiring is a
-    quoted string landing inside one of `_build_external_config_kwargs`'s
-    field-name tuples, never a call token. A targeted string-membership
-    check over `_config_external.py`'s CURRENT text (not a per-tuple
-    parse) is deliberately used instead of trying to locate the exact
-    copy-loop tuple -- the six tuples are an implementation detail of one
-    function this gate should not have to keep in lockstep with; "the dest
-    string appears anywhere in that file's source" is the same signal
-    `config.py`'s own in-file warning describes (a field is either copied
-    somewhere in that file, or it is silently dropped)."""
+def _config_external_forwarded_dest_names(text: str) -> frozenset[str] | None:
+    """T-2348: parses `_config_external.py`'s AST and collects every string
+    literal element of a module-level tuple/list/set/`frozenset(...)`
+    assignment -- the six `_apply_*_fields` field-name tuples plus
+    `_AD_HOC_FORWARDED_FIELDS`, the same PARSED surface
+    `_all_forwarded_field_names` computes at runtime by importing the live
+    module (`frob.app._config_external`), but read directly from source
+    text here so this gate needs no import of (and no dependency cycle
+    onto) the target repo's own module. This replaces the old raw
+    substring-membership scan (`f'"{dest}"' in config_external_text`,
+    T-1422): a `dest` string sitting in a comment, docstring, or an
+    unrelated field elsewhere in the file no longer reads as "wired" (the
+    false-negative direction), because only string literals actually
+    INSIDE one of these collection literals are ever collected. Returns
+    `None` on a parse failure (caller then treats every `dest` as
+    unwired, the same fail-toward-flagging posture the old code's
+    unreadable-file branch already had)."""
     try:
-        config_external_text = (root / _CONFIG_EXTERNAL_PATH).read_text(
-            encoding="utf-8"
-        )
-    except (OSError, UnicodeDecodeError):
-        config_external_text = None
-    violations: list[Violation] = []
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+    names: set[str] = set()
+    for stmt in tree.body:
+        if not isinstance(stmt, ast.Assign):
+            continue
+        value = stmt.value
+        if (
+            isinstance(value, ast.Call)
+            and isinstance(value.func, ast.Name)
+            and value.func.id == "frozenset"
+            and value.args
+        ):
+            value = value.args[0]
+        if not isinstance(value, (ast.Tuple, ast.List, ast.Set)):
+            continue
+        for elt in value.elts:
+            if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                names.add(elt.value)
+    return frozenset(names)
+
+
+def _cli_dest_literals_in_added_lines(
+    added_lines: dict[str, list[tuple[int, str]]],
+) -> list[tuple[str, int, str]]:
+    """Every `(file, lineno, dest)` triple where an ADDED line under
+    `src/frob/_cli_parsers/**` spells a literal `dest="foo"` -- pure
+    extraction of what new source TEXT the diff introduced, no wiring
+    decision made here. Kept separate from `_wire001_cli_dest_violations`
+    (T-2348) so the actual decision (is `dest` forwarded) never shares a
+    function with a regex call: identifying which literal a line of new
+    source spells is a text-shape question by nature (there is no
+    resolved AST node for a line the diff just added, only its raw text);
+    whether that literal is wired is answered entirely by `_config_
+    external_forwarded_dest_names`'s AST-parsed set, downstream of this
+    helper."""
+    hits: list[tuple[str, int, str]] = []
     for file, lines in added_lines.items():
         if not file.startswith(_CLI_PARSER_DIR_PREFIX) or not file.endswith(".py"):
             continue
@@ -612,26 +642,56 @@ def _wire001_cli_dest_violations(
             match = _CLI_DEST_LITERAL_RE.search(text)
             if match is None:
                 continue
-            dest = match.group(1)
-            if config_external_text is not None and f'"{dest}"' in config_external_text:
-                continue
-            violations.append(
-                Violation(
-                    rule="WIRE001",
-                    severity=Severity.ERROR,
-                    file=file,
-                    line=lineno,
-                    message=(
-                        f"WIRE001: {file}:{lineno} adds CLI dest={dest!r}, which "
-                        f"never appears in {_CONFIG_EXTERNAL_PATH} -- argparse "
-                        "parses it and AppConfig.from_external silently drops "
-                        "it before AppConfig(**d) (T-1422's shape); copy it "
-                        "into the matching field-name tuple there, or "
-                        'frob:waive WIRE001 reason="..." follow_up="T-####" '
-                        "naming the open ticket that will wire it"
-                    ),
-                )
+            hits.append((file, lineno, match.group(1)))
+    return hits
+
+
+def _wire001_cli_dest_violations(
+    root: Path, added_lines: dict[str, list[tuple[int, str]]]
+) -> list[Violation]:
+    """WIRE001 case 3: a new CLI `add_argument(..., dest="foo")` under
+    `src/frob/_cli_parsers/**` whose `dest` string is not among the
+    field names `_config_external.py` actually forwards -- T-1422's
+    shape, and the one the ticket brief calls out as invisible to the
+    call graph entirely: the wiring is a quoted string landing inside one
+    of `_build_external_config_kwargs`'s field-name tuples, never a call
+    token. T-2348: decides this from `_config_external_forwarded_dest_
+    names`'s AST-parsed set of the six copy-loop tuples plus the ad-hoc
+    forwarded set, not a raw text-membership scan -- a `dest` string that
+    merely APPEARS somewhere in the file (a comment, an unrelated field, a
+    docstring) no longer silently reads as wired."""
+    try:
+        config_external_text = (root / _CONFIG_EXTERNAL_PATH).read_text(
+            encoding="utf-8"
+        )
+    except (OSError, UnicodeDecodeError):
+        config_external_text = None
+    forwarded = (
+        _config_external_forwarded_dest_names(config_external_text)
+        if config_external_text is not None
+        else None
+    )
+    violations: list[Violation] = []
+    for file, lineno, dest in _cli_dest_literals_in_added_lines(added_lines):
+        if forwarded is not None and dest in forwarded:
+            continue
+        violations.append(
+            Violation(
+                rule="WIRE001",
+                severity=Severity.ERROR,
+                file=file,
+                line=lineno,
+                message=(
+                    f"WIRE001: {file}:{lineno} adds CLI dest={dest!r}, which "
+                    f"never appears in {_CONFIG_EXTERNAL_PATH} -- argparse "
+                    "parses it and AppConfig.from_external silently drops "
+                    "it before AppConfig(**d) (T-1422's shape); copy it "
+                    "into the matching field-name tuple there, or "
+                    'frob:waive WIRE001 reason="..." follow_up="T-####" '
+                    "naming the open ticket that will wire it"
+                ),
             )
+        )
     return violations
 
 

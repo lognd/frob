@@ -2,7 +2,7 @@
 id: T-2348
 title: WIRE001 case 3 (_wire001_cli_dest_violations) decides wiring via raw text-membership
   search, not a parsed structure
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_wire.py
+- tests/unit/gates/test_lexical_selfcheck.py
+- tests/unit/gates/test_wire001_cli_dest_semantic.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -22,6 +24,26 @@ scope_changes:
     starts
   actor: logan
   at: '2026-08-17'
+- op: add
+  glob: tests/unit/gates/test_lexical_selfcheck.py
+  reason: 'T-2348: fixing WIRE001 case 3 changes what LEXCHECK001''s raw finding set
+    is, and needs a dedicated positive-control test for the semantic replacement'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/gates/test_wire001_cli_dest_semantic.py
+  reason: 'T-2348: fixing WIRE001 case 3 changes what LEXCHECK001''s raw finding set
+    is, and needs a dedicated positive-control test for the semantic replacement'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestConfigExternalForwardedDestNames::test_collects_tuple_and_frozenset_literals
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestConfigExternalForwardedDestNames::test_comment_and_docstring_mentions_are_not_collected
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestConfigExternalForwardedDestNames::test_unparseable_text_returns_none
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_wired_only_through_tuple_structure_is_not_flagged
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_mentioned_only_in_a_comment_is_flagged
+- tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_not_wired_at_all_is_flagged
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_gates_module_module_stays_clean
 designated_repro_test: null
 threat: null
 component: null
