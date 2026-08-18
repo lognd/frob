@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 80cae8861fbe747e299de57b4bf77533c79da3ce
 ---
 `src/frob/__main__.py::_dispatch` is already at 81 lines on `main` --
 over ARCH001's 60-line threshold (T-2443 discovered this while adding
