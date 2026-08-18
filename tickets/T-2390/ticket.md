@@ -2,7 +2,7 @@
 id: T-2390
 title: 'config-file keys are never validated: an unknown or misspelled frob.toml key
   is silently ignored'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
