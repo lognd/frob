@@ -258,6 +258,81 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
     return f"{name}: unrecognized outcome for {node_id!r} at {parent_ref}"
 
 
+# frob:ticket T-2509
+# frob:tests tests/unit/test_ticket_runner_repro_merge_base.py::TestReproMergeBaseRoot.test_prefers_frob_worktree_env_when_set  # noqa: E501
+def _repro_merge_base_root(root: Path) -> Path:
+    """The git checkout `_merge_base`'s `HEAD`-relative query should run
+    against (T-2509) -- the ACTUAL ticket worktree named by `FROB_
+    WORKTREE` (T-0574's dispatcher-set env var) when set, never the
+    possibly-unrelated `root` this command's outer dispatcher resolved.
+    T-1003 redirects a dispatched agent's `root` to the PRIMARY/shared
+    checkout regardless of the caller's own cwd -- that checkout's own
+    `HEAD` is whatever the shared checkout happens to have checked out
+    (almost always `main` itself), NOT this ticket's own in-progress,
+    unlanded work.
+
+    Root cause of T-2509: `_merge_base(root, base_ref)` computes `git
+    merge-base HEAD <base_ref>` -- with `root`'s `HEAD` wrongly pinned to
+    `main`, EVERY explicit `--base-ref` sha reachable only from the
+    ticket's own (unlanded) branch collapsed to the SAME result: the
+    merge-base of `main` and any commit on an unmerged branch is that
+    branch's single fork point, regardless of WHICH commit on the branch
+    was named -- a silent wrong answer, not an error, exactly the
+    dangerous shape this repo's T-2391 fail-loudly doctrine exists to
+    catch. Falls back to `root` unchanged when `FROB_WORKTREE` is unset
+    (a coordinator/human running this directly from whichever checkout is
+    already correct for their purpose) -- this is a targeted fix for the
+    dispatched-agent case, not a behavior change for that one."""
+    from frob.tickets._worktree_guard import FROB_WORKTREE_ENV
+
+    worktree = os.environ.get(FROB_WORKTREE_ENV, "").strip()
+    return Path(worktree) if worktree else root
+
+
+# frob:ticket T-2509
+# frob:tests tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly.test_warns_when_base_ref_is_not_an_ancestor  # noqa: E501
+def _warn_if_base_ref_not_honoured_exactly(
+    merge_base_root: Path, base_ref: str, parent_ref: str
+) -> None:
+    """Loud diagnostic (T-2509) for the one case `_repro_merge_base_root`
+    does not fully resolve on its own: `base_ref` names a real commit
+    that is NOT an ancestor of the checked HEAD (a genuinely diverged
+    ref, or a caller error), so the merge-base computed and actually
+    used (`parent_ref`) differs from the literal commit `base_ref`
+    resolves to. Logs a WARNING naming both commits and why they differ,
+    rather than silently proceeding against a ref the caller may not
+    have intended -- the same "ambiguous target gets a loud refusal/
+    warning, never a silent substitution" posture T-2498 applied to
+    `frob ticket body --append`. A no-op (nothing logged) whenever
+    `base_ref` does not resolve to a real commit at all (already handled
+    as an error by the caller) or already equals `parent_ref`."""
+    from frob.gitio import _run_git
+
+    if base_ref == parent_ref:
+        return
+    literal = _run_git(
+        ("rev-parse", "--verify", "--quiet", f"{base_ref}^{{commit}}"),
+        cwd=merge_base_root,
+    )
+    if literal.is_err:
+        return
+    literal_sha = literal.danger_ok.strip()
+    if literal_sha == parent_ref:
+        return
+    _log.warning(
+        "ticket evidence --check-repro/--designate-repro: --base-ref %s "
+        "resolved to commit %s, but the DIFF TARGET actually used is %s "
+        "(their merge-base) -- %s is not an ancestor of the checked HEAD, "
+        "so it could not be honoured exactly; pass a --base-ref that IS "
+        "an ancestor of your ticket branch's HEAD (e.g. a commit on your "
+        "own branch) if you need it diffed against verbatim",
+        base_ref,
+        literal_sha,
+        parent_ref,
+        base_ref,
+    )
+
+
 # frob:ticket T-1929
 # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_passed_at_parent  # noqa: E501
 # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestValidateDesignateReproAtParent.test_refuses_no_verdict  # noqa: E501
@@ -308,7 +383,8 @@ def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
     if ticket is None or ticket.kind not in (TicketKind.BUG, TicketKind.SECURITY):
         return
 
-    resolved = _merge_base(root, cfg.ticket_base_ref)
+    merge_base_root = _repro_merge_base_root(root)
+    resolved = _merge_base(merge_base_root, cfg.ticket_base_ref)
     if resolved.is_err:
         _log.warning(
             "ticket evidence --designate-repro: %s could not resolve "
@@ -320,6 +396,9 @@ def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
         )
         return
     parent_ref = resolved.danger_ok
+    _warn_if_base_ref_not_honoured_exactly(
+        merge_base_root, cfg.ticket_base_ref, parent_ref
+    )
 
     outcome = bug_repro_outcome_at_ref(
         root, node_id, parent_ref, timeout_s=cfg.ticket_repro_timeout_s
@@ -406,7 +485,8 @@ def _evidence_check_repro(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    resolved = _merge_base(root, cfg.ticket_base_ref)
+    merge_base_root = _repro_merge_base_root(root)
+    resolved = _merge_base(merge_base_root, cfg.ticket_base_ref)
     if resolved.is_err:
         _log.error(
             "ticket evidence --check-repro: could not resolve merge-base "
@@ -416,6 +496,9 @@ def _evidence_check_repro(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
     parent_ref = resolved.danger_ok
+    _warn_if_base_ref_not_honoured_exactly(
+        merge_base_root, cfg.ticket_base_ref, parent_ref
+    )
 
     outcome = bug_repro_outcome_at_ref(
         root, node_id, parent_ref, timeout_s=cfg.ticket_repro_timeout_s

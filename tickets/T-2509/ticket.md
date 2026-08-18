@@ -2,7 +2,7 @@
 id: T-2509
 title: frob ticket evidence --check-repro ignores explicit --base-ref, always resolves
   to a fixed unrelated commit
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,40 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_evidence.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/gitio.py
+evidence_scope:
+- tests/unit/test_ticket_runner_repro_merge_base.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'T-2509: root cause is _merge_base(root, base_ref) computing merge-base
+    against the PRIMARY checkout''s own HEAD (via _evidence_check_repro in _verify.py),
+    not the ticket worktree''s actual HEAD -- not in _evidence.py at all, the ticket''s
+    original file guess was wrong'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gitio.py
+  reason: 'T-2509: root cause is _merge_base(root, base_ref) computing merge-base
+    against the PRIMARY checkout''s own HEAD (via _evidence_check_repro in _verify.py),
+    not the ticket worktree''s actual HEAD -- not in _evidence.py at all, the ticket''s
+    original file guess was wrong'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestReproMergeBaseRoot::test_prefers_frob_worktree_env_when_set
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestReproMergeBaseRoot::test_falls_back_to_root_when_unset
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestExplicitBaseRefHonoured::test_explicit_base_ref_on_own_branch_is_honoured_not_collapsed_to_fork_point
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestExplicitBaseRefHonoured::test_distinct_ancestors_resolve_distinctly
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestExplicitBaseRefHonoured::test_root_without_fix_reproduces_the_original_bug
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly::test_no_warning_when_base_ref_already_matches
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly::test_warns_when_base_ref_is_not_an_ancestor
+designated_repro_test: tests/unit/test_ticket_runner_repro_merge_base.py::TestExplicitBaseRefHonoured::test_explicit_base_ref_on_own_branch_is_honoured_not_collapsed_to_fork_point
 threat: null
 component: null
 anchor: false
