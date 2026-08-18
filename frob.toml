@@ -459,6 +459,14 @@ cwd = "."
 # real remedy when a native is not built. `name` is the python IMPORT name
 # (resolved via importlib.util.find_spec), not a path -- so this works
 # identically for these pyo3/maturin crates and for any c/c++ extension.
+#
+# T-2390 epic child (T-2429): known_keys declares this table's own
+# known-key set for NATIVESCHEMA001 (an unknown/misspelled key in a
+# [[native]] entry, previously silently ignored), resolved through the
+# same module:symbol idiom as [refs] entrypoint_schema.
+[native_schema]
+known_keys = "frob.gates._native_schema:NATIVE_KNOWN_KEYS"
+
 [[native]]
 name = "strata_core"
 build_cmd = "make core"

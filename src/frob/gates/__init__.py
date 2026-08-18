@@ -94,6 +94,7 @@ from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
 from frob.gates._docenum import docenum001_gate
 from frob.gates._flag_coverage import flag_coverage_gate
 from frob.gates._refs_schema import refs_schema_gate
+from frob.gates._native_schema import native_schema_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
@@ -5640,6 +5641,9 @@ _ALL_GATES = frozenset(
         # T-2390 epic child T-2428: REFSCHEMA001, an unknown/
         # misspelled key in a [[refs.entrypoint]] entry.
         "refs_schema",
+        # T-2390 epic child T-2429: NATIVESCHEMA001, an unknown/
+        # misspelled key in a [[native]] entry.
+        "native_schema",
         # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
@@ -6038,6 +6042,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "lexcheck",
     "flag_coverage",
     "refs_schema",
+    "native_schema",
     "parse_failures",
     "dead_symbols",
     # frob:ticket T-1428
@@ -6585,6 +6590,10 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # flag_coverage above, always against repo_root (the declaration
         # lives at the repo root).
         "refs_schema": _ProcessJob(refs_schema_gate, (st.repo_root,)),
+        # T-2390 epic child T-2429: NATIVESCHEMA001 -- cheap (one
+        # frob.toml read plus one dotted-path import), thread-pool like
+        # refs_schema above, always against repo_root.
+        "native_schema": _ProcessJob(native_schema_gate, (st.repo_root,)),
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
@@ -7843,6 +7852,7 @@ __all__ = [
     "flag_coverage_gate",
     "lexical_selfcheck_gate",
     "refs_schema_gate",
+    "native_schema_gate",
     "perf_gate",
     "PERF_REACH_DEGRADED_SKIP_MARKER",
     "pii_structural_gate",

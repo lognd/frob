@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.514.0] - unreleased
+
+- T-2429: T-2390 child: validate [[native]] table against a declared schema
+
 ## [0.513.0] - unreleased
 
 - T-2403: Burn down the 133 genuine SYS003 findings post-calibration, then promote to error
