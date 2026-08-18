@@ -104,7 +104,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2a8c16c1770f7a7e5025c4856548a7dd6a5fa590
 ---
 Validate the `[dup]` (frob.gates._dup._dup_config) and `[graph]`
 (frob.excludes, `[graph] exclude`) tables against a declared schema.
