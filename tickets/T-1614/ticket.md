@@ -14,6 +14,8 @@ parent: T-1609
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'standing periodic audit ticket per T-2467: scope is intentionally
   repo-wide since any file may contain a frob:waive directive to review'
@@ -37,6 +39,13 @@ scope_changes:
   glob: docs/**
   reason: 'bounded scan-and-classify pass per dispatch: no source edits planned this
     pass, cop-outs filed as separate tickets rather than fixed inline'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: T-1614 audit found two AFFECT001/DRIFT001 waivers whose own text says remove
+    once T-1883 lands; T-1883 is done, so removing them per the OBSOLETE branch of
+    T-1614's rubric
   actor: logan
   at: '2026-08-18'
 body_changes:
