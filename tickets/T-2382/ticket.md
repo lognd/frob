@@ -1,7 +1,7 @@
 ---
 id: T-2382
 title: Recovered from T-2341's phantom TICK006 citation of T-2367
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -28,3 +28,6 @@ per-finding triage before a fix) -> T-2367.
 STILL OPEN in this ticket's own (narrowed) scope, not attempted this
 pass: SELFAUDIT001 (design, live but now 9 findings not 21 -- ratchet-
 b
+
+## Drop reason
+- 2026-08-17: T-2367 is a real, filed ticket (frob ticket show T-2367 confirms queued state, real body); same TICK006 phantom-citation pattern T-2350 root-caused and T-2351 fixed (stale ledger read at land time). Not a genuine phantom.
