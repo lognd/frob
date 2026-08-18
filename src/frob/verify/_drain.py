@@ -39,16 +39,21 @@ module:
     _worker.run_coalesced_verification` exactly ONCE per invocation --
     never a loop over the whole backlog. That function's own existing
     contract already IS the bounded-batch primitive this constraint
-    needs: one call verifies once at the queue's tip and, only on a
-    genuinely green result, durably advances the watermark past every
-    queued entry it covers; a red, unmeasurable, or interrupted (killed
-    mid-`verify_fn`) call leaves the watermark exactly where it already
-    was -- never corrupt, never rolled back, and MADE FURTHER progress if
-    the round completed. Repeated per-land spawns (every real rapid land
-    fires one) are what accumulate visible progress across a large
-    backlog over time, the same way T-1684's sweep already amortizes a
-    large, resumable check across many small triggers instead of one
-    monolithic one.
+    needs: one call verifies once at the queue's tip and durably advances
+    the watermark past every queued entry it covers whenever the result
+    is genuinely green OR red-but-OWNED (T-2324: a new finding that got
+    filed/disposed to a real ticket is accounted for by the ticket
+    system, not by pinning the watermark forever -- see `frob.verify.
+    _worker._resolve_verification_outcome`'s own docstring for the full
+    reasoning; this was the T-2324 fix, since advance-only-on-green alone
+    could never drain a backlog under continuous churn). An unmeasurable
+    call, an interrupted (killed mid-`verify_fn`) call, or a red result
+    whose findings could NOT even be filed leaves the watermark exactly
+    where it already was -- never corrupt, never rolled back. Repeated
+    per-land spawns (every real rapid land fires one) are what accumulate
+    visible progress across a large backlog over time, the same way
+    T-1684's sweep already amortizes a large, resumable check across many
+    small triggers instead of one monolithic one.
  5. THE SOFT WARNING (T-2290's `rapid_soft_warning`) STAYS UNCHANGED. It
     is the backstop for when the drain cannot keep pace with new commits
     -- unaffected by this module.
@@ -150,7 +155,7 @@ def spawn_deferred_drain(root: Path, land_ticket_id: str) -> Result[int, DrainEr
 # frob:doc docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-t-2310
 # frob:ticket T-2310
 # frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_declines_while_a_land_is_in_progress kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_runs_one_bounded_round_and_advances_the_watermark kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_green_round_advances_watermark_a_subsequent_round_sees kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_never_blocks_or_loops_over_the_backlog kind="unit"  # noqa: E501
 def run_drain_async(root: Path):  # noqa: ANN201 -- Result[WorkerOutcome, DrainError | WorkerError]
     """`frob verify drain-async`'s whole body -- the detached child's own

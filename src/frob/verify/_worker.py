@@ -136,8 +136,9 @@ def _write_in_flight_marker(root: Path, commit_sha: str, run_id: str) -> None:
     `_write_post_land_verify_marker`: a write failure is logged but never
     stops verification, since a MISSING marker just means this run's own
     crash window loses its recovery aid, not that anything is mutated
-    incorrectly -- the watermark is still never advanced without a real
-    green result either way."""
+    incorrectly -- the watermark is still never advanced without a real,
+    accounted-for (green, or red-with-a-durable-owner, T-2324) result
+    either way."""
     path = _in_flight_marker_path(root)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -334,8 +335,8 @@ def _worker_backpressure_reason(
     more than N foreground agents hold leases" is the primary signal;
     memory is the secondary OOM-avoidance floor). A module-level function
     (not a `CoalescingWorker` method) taking explicit arguments, matching
-    this file's own `_resolve_verification_outcome`/`_advance_on_green`
-    ARCH001-split precedent -- also the only shape `frob check`'s WIRE001
+    this file's own `_resolve_verification_outcome`/
+    `_advance_watermark_and_compact` ARCH001-split precedent -- also the only shape `frob check`'s WIRE001
     text-scan can recognize as "called" for a private helper (a bound
     `self.foo(...)` call is always dot-prefixed, which its bare-name scan
     structurally cannot match)."""
@@ -446,8 +447,14 @@ class WorkerOutcome(BaseModel):
     #: established" (first-ever run, no prior baseline to compare against
     #: -- NOT a proven-green claim, so the watermark is deliberately left
     #: untouched here too), "red" (new findings vs the rolling baseline,
-    #: filed as a ticket, watermark untouched), or "green" (no new
-    #: findings, watermark advanced and the queue compacted).
+    #: filed/disposed to `filed_ticket`), or "green" (no new findings).
+    #: T-2324: "red" no longer implies `advanced_watermark=False` -- check
+    #: that field directly, never infer it from `status`. A red result
+    #: whose findings got a durable owner (`filed_ticket` is not `None`)
+    #: still advances the watermark and compacts the queue, exactly like
+    #: green; only a red result that could not even be FILED
+    #: (`filed_ticket is None`) leaves the watermark untouched -- see
+    #: `_resolve_verification_outcome`'s own docstring for why.
     status: str
     commit_sha: str | None = None
     advanced_watermark: bool = False
@@ -499,7 +506,8 @@ def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_five_queued_entries_call_verify_exactly_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_unmeasurable_never_advances_watermark  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_first_run_establishes_baseline_without_advancing  # noqa: E501
-# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_file_a_ticket_and_do_not_advance  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_filed_to_a_real_ticket_still_advance  # noqa: E501
+# frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_new_findings_that_cannot_be_filed_still_do_not_advance  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_clean_run_advances_watermark_and_compacts_queue  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestRunCoalescedVerification.test_queue_unreadable_is_an_error  # noqa: E501
 def run_coalesced_verification(
@@ -582,7 +590,23 @@ def _resolve_verification_outcome(
     `run_coalesced_verification` (ARCH001) so that function stays focused
     on "read the queue, verify once". Only ever called after a real
     result exists, so this function structurally never sees the `None`
-    case -- it has no branch that could even represent it."""
+    case -- it has no branch that could even represent it.
+
+    T-2324: advance-only-on-green cannot drain a backlog under continuous
+    churn -- a fresh finding shows up almost every round simply because
+    new commits keep landing between rounds, so an all-clean round never
+    holds still long enough to occur, and the watermark stalls forever
+    even though every finding it ever saw got filed the moment it
+    appeared. A NEW finding that `_file_regression_ticket` successfully
+    files (or disposes to an existing owner, T-2312) is now ACCOUNTED FOR
+    -- the ticket, not the watermark, is the durable record of what was
+    found -- so the watermark advances past it exactly like a green
+    result would. The ONE case that still pins the watermark is a new
+    finding that could not even be filed (`filed_ticket is None`):
+    nothing durable records it, so nothing may certify this commit as
+    verified. This is the hard constraint T-2324's own acceptance
+    criteria require -- see `_advance_watermark_and_compact` for where
+    both the green and the red-but-owned paths converge."""
     from frob.app.ticket_runner._rapid_sweep import (
         _file_regression_ticket,
         _read_baseline,
@@ -619,33 +643,84 @@ def _resolve_verification_outcome(
         filed = _file_regression_ticket(
             root, tip.ticket_id, tip.commit_sha, new_findings
         )
-        _log.error(
-            "verify worker: %d new finding(s) at %s -- filed as %s; "
-            "watermark NOT advanced (a red batch quarantines, it does not "
-            "revert -- T-1686's own recorded decision)",
+        if filed is None:
+            # T-2324: the ONE case that must still pin the watermark --
+            # a finding with no durable owner at all (filing itself
+            # failed) cannot be "accounted for" by anything, so this
+            # commit must not be silently certified as verified. Unlike
+            # every other red-but-owned case below, there is nothing here
+            # a later reader could consult to learn what went wrong.
+            _log.error(
+                "verify worker: %d new finding(s) at %s could NOT be "
+                "filed -- watermark NOT advanced (ownerless, T-2324's own "
+                "hard constraint: never silently certify this)",
+                len(new_findings),
+                tip.commit_sha[:12],
+            )
+            return Ok(
+                WorkerOutcome(
+                    status="red",
+                    commit_sha=tip.commit_sha,
+                    filed_ticket=None,
+                    findings_count=len(new_findings),
+                )
+            )
+        # T-2324: a red result WITH a durable owner (freshly filed, or
+        # disposed to an existing duplicate -- T-2312's own fix) is
+        # ACCOUNTED FOR -- the ticket system, not the watermark, is now
+        # the durable record of what went wrong. Advance anyway: the
+        # watermark's job is to mark how far verification has REACHED
+        # (this module's own docstring), not whether everything it
+        # reached was clean. Without this, a backlog under continuous
+        # churn (a new finding shows up almost every round simply
+        # because commits keep landing between rounds) can never hold
+        # still long enough for an all-clean round to ever occur, and
+        # the drain stalls forever even though every finding it saw got
+        # a ticket the moment it appeared.
+        _log.warning(
+            "verify worker: %d new finding(s) at %s -- filed/disposed to "
+            "%s; watermark ADVANCED past this commit anyway (T-2324: an "
+            "owned finding no longer pins forward progress; %s remains "
+            "the durable record of what was found)",
             len(new_findings),
             tip.commit_sha[:12],
-            filed or "UNFILED",
+            filed,
+            filed,
         )
-        return Ok(
-            WorkerOutcome(
-                status="red",
-                commit_sha=tip.commit_sha,
-                filed_ticket=filed,
-                findings_count=len(new_findings),
-            )
+        return _advance_watermark_and_compact(
+            root,
+            tip,
+            fresh,
+            status="red",
+            filed_ticket=filed,
+            findings_count=len(new_findings),
         )
 
-    return _advance_on_green(root, tip, fresh)
+    return _advance_watermark_and_compact(
+        root, tip, fresh, status="green", filed_ticket=None, findings_count=len(fresh)
+    )
 
 
-def _advance_on_green(
-    root: Path, tip: VerifyQueueEntry, fresh: frozenset[tuple[str, str]]
+def _advance_watermark_and_compact(
+    root: Path,
+    tip: VerifyQueueEntry,
+    fresh: frozenset[tuple[str, str]],
+    *,
+    status: str,
+    filed_ticket: str | None,
+    findings_count: int,
 ) -> Result[WorkerOutcome, WorkerError]:
     """The ONLY call site of `advance_watermark` in this module (ARCH001
-    split of `_resolve_verification_outcome`) -- reached exclusively from
-    the genuinely-green branch (a real prior baseline existed AND nothing
-    new showed up against it)."""
+    split of `_resolve_verification_outcome`) -- the shared watermark-
+    advance-plus-queue-compact tail for BOTH a genuinely green result
+    (`status="green"`, `filed_ticket=None`) and a red result whose
+    findings already have a durable owner (`status="red"`, `filed_ticket`
+    the id that owns them, T-2324). `status`/`filed_ticket`/
+    `findings_count` pass straight through to the returned `WorkerOutcome`
+    unchanged, so a caller can always tell a red-but-advanced round apart
+    from a genuinely clean one -- advancing here never means "nothing was
+    found", only "everything found here is now accounted for somewhere
+    durable"."""
     advanced = advance_watermark(
         root,
         commit_sha=tip.commit_sha,
@@ -654,8 +729,9 @@ def _advance_on_green(
     )
     if advanced.is_err:
         _log.error(
-            "verify worker: green verification at %s but the watermark "
+            "verify worker: %s verification at %s but the watermark "
             "write failed (%s) -- queue left uncompacted, will retry",
+            status,
             tip.commit_sha[:12],
             advanced.danger_err,
         )
@@ -672,18 +748,20 @@ def _advance_on_green(
         )
     else:
         _log.info(
-            "verify worker: GREEN at %s (%d error(s), none new) -- watermark "
-            "advanced, %d queue entr(y/ies) compacted",
+            "verify worker: %s at %s (%d error(s)) -- watermark advanced, "
+            "%d queue entr(y/ies) compacted",
+            status.upper(),
             tip.commit_sha[:12],
-            len(fresh),
+            findings_count,
             compacted.danger_ok,
         )
     return Ok(
         WorkerOutcome(
-            status="green",
+            status=status,
             commit_sha=tip.commit_sha,
             advanced_watermark=True,
-            findings_count=len(fresh),
+            filed_ticket=filed_ticket,
+            findings_count=findings_count,
         )
     )
 

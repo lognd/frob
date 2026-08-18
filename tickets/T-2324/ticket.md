@@ -2,7 +2,7 @@
 id: T-2324
 title: 'The wired drain runs to completion and never advances the watermark: advance-only-on-green
   cannot drain a backlog that is never fully green'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,19 +11,51 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/verify/_worker.py
+- src/frob/verify/_drain.py
+- tests/unit/verify/test_worker.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_worker.py
+  reason: 'T-2324 fix: red-but-owned findings advance the watermark'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/verify/_drain.py
+  reason: 'T-2324 fix: red-but-owned findings advance the watermark'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: 'T-2324 fix: red-but-owned findings advance the watermark'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-2324 fix: red-but-owned findings advance the watermark'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_that_cannot_be_filed_still_do_not_advance
 designated_repro_test: null
 acceptance:
 - text: given a backlog whose commits include findings, when the drain runs, then
     the watermark advances past the verified prefix rather than staying put
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
 - text: given a commit carrying an unattributed finding, when the drain runs, then
     that commit is not silently certified as verified
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_that_cannot_be_filed_still_do_not_advance
 - text: given this repo's real multi-hundred-commit backlog, when the drain runs repeatedly,
     then commits-since-watermark trends down rather than up
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_filed_to_a_real_ticket_still_advance
 threat: null
 component: verify
 anchor: false

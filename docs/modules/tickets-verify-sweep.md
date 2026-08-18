@@ -1371,13 +1371,51 @@ Once clear, `run_drain_async` calls `frob.verify._worker.
 run_coalesced_verification` EXACTLY ONCE -- never a loop over the whole
 backlog. That function's own existing contract already is the bounded,
 resumable batch primitive constraint 4 needs: one call verifies once at
-the queue's tip and, only on a genuinely green result, durably advances
-the watermark past every queued entry it covers; a red, unmeasurable, or
-interrupted (killed mid-`verify_fn`) call leaves the watermark exactly
-where it already was -- never corrupt, never rolled back. Repeated
-per-land spawns (every real rapid land fires one) are what accumulate
-visible progress across a large backlog over time, the same amortized
-shape the sweep already uses for a full-repo check.
+the queue's tip and durably advances the watermark past every queued
+entry it covers whenever the result is green OR red-but-OWNED (see
+"Advance-only-on-green cannot drain a backlog" below, T-2324) -- an
+unmeasurable, interrupted (killed mid-`verify_fn`), or red-and-ownerless
+call leaves the watermark exactly where it already was -- never corrupt,
+never rolled back. Repeated per-land spawns (every real rapid land fires
+one) are what accumulate visible progress across a large backlog over
+time, the same amortized shape the sweep already uses for a full-repo
+check.
+
+**Advance-only-on-green cannot drain a backlog under continuous churn
+(T-2324, measured incident).** T-2317 wired the trigger above; within
+minutes of it landing, the coordinator measured the drain running to
+completion repeatedly -- process spawned, ran ~3.5 minutes, exited
+cleanly -- while the watermark never moved and the gap GREW (567 -> 570
+commits behind), because new lands kept arriving while each round ran.
+Running the drain in the foreground (`frob verify now --json`) against
+this repo's real multi-hundred-commit backlog confirmed the verdict
+directly: `status: "red"`, not unmeasurable -- one new `(rule, file)`
+identity at the tip, filed as a fresh ticket. The pre-T-2324 contract
+("verify once, advance ONLY on a genuinely green result") is sound for a
+single land's own one-commit step (never certify a commit you could not
+verify), but is self-defeating as a backlog drain: under continuous
+multi-agent churn, some new finding shows up at the tip almost every
+round simply because commits keep landing in the gap between rounds, so
+an all-clean round can never hold still long enough to occur, and
+forward progress stalls completely regardless of how many times the
+drain runs.
+
+The fix (`_resolve_verification_outcome`/`_advance_watermark_and_compact`
+in `frob.verify._worker`): a red result whose new findings
+`_file_regression_ticket` successfully files -- or disposes to an
+already-open owning ticket, T-2312's own fix -- is now ACCOUNTED FOR.
+The filed/disposed ticket, not the watermark, is the durable record of
+what was found, so the watermark advances past the tip and the queue
+compacts exactly as it would on green; `WorkerOutcome.status` still
+reports `"red"` so a reader can tell the difference, but
+`advanced_watermark` no longer implies `status == "green"`. The ONE case
+that still pins the watermark, unconditionally: a new finding that could
+not even be FILED (`filed_ticket is None`) -- nothing durable records it
+in that case, so nothing may certify the commit as verified. This
+preserves both hard constraints unchanged: rapid's never-block contract
+(the fix touches only what advances the watermark, never whether or when
+the drain runs) and "an unattributed/ownerless finding is never silently
+certified as verified" (the ownerless branch is untouched).
 
 `frob verify drain-async` is a real subcommand, not a `-c` code string,
 for the same reason `frob ticket sweep-async` is: inspectable,

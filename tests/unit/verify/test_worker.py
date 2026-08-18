@@ -97,10 +97,20 @@ class TestRunCoalescedVerification:
         assert watermark.is_ok
         assert watermark.danger_ok is None
 
-    def test_new_findings_file_a_ticket_and_do_not_advance(
+    # frob:ticket T-2324
+    def test_new_findings_filed_to_a_real_ticket_still_advance(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        """T-2324: a red result whose findings got a durable owner (filed,
+        or disposed to an existing one) is ACCOUNTED FOR -- the ticket is
+        the durable record, not the watermark -- so the watermark still
+        advances and the queue still compacts, exactly like a green
+        result. This is the fix for the "advance-only-on-green can never
+        drain a backlog under continuous churn" stall: see this repo's
+        T-2324 ticket for the measured incident (watermark stuck at 567,
+        then 570, commits behind while the drain ran to completion every
+        time)."""
         from frob.app.ticket_runner import _rapid_sweep
 
         _enqueue_n(tmp_path, 1)
@@ -124,8 +134,42 @@ class TestRunCoalescedVerification:
         assert result.is_ok
         assert result.danger_ok.status == "red"
         assert result.danger_ok.filed_ticket == "T-9999"
-        assert result.danger_ok.advanced_watermark is False
+        assert result.danger_ok.advanced_watermark is True
         assert len(filed_calls) == 1
+        watermark = load_watermark(tmp_path)
+        assert watermark.is_ok
+        assert watermark.danger_ok is not None
+        assert watermark.danger_ok.commit_sha == "c0"
+
+    # frob:ticket T-2324
+    def test_new_findings_that_cannot_be_filed_still_do_not_advance(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_worker.py::run_coalesced_verification kind="unit"
+        """T-2324 must-still-pass positive control: a new finding with NO
+        durable owner at all (filing itself failed -- `_file_regression_
+        ticket` returns `None`) must NOT be silently certified as
+        verified. This is the one case T-2324's fix must never relax --
+        it is the exact hard constraint the ticket body states."""
+        from frob.app.ticket_runner import _rapid_sweep
+
+        _enqueue_n(tmp_path, 1)
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "c0")
+
+        monkeypatch.setattr(
+            _rapid_sweep, "_file_regression_ticket", lambda *a, **k: None
+        )
+        result = run_coalesced_verification(
+            tmp_path,
+            verify_fn=lambda root, sha: frozenset(
+                {("RULE1", "a.py"), ("RULE2", "b.py")}
+            ),
+        )
+
+        assert result.is_ok
+        assert result.danger_ok.status == "red"
+        assert result.danger_ok.filed_ticket is None
+        assert result.danger_ok.advanced_watermark is False
         watermark = load_watermark(tmp_path)
         assert watermark.is_ok
         assert watermark.danger_ok is None
