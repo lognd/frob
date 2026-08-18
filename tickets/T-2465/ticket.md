@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cae6baf6bd7d50d32162c3f903c41f2c7d4e2f3d
 ---
 T-2445 landed src/frob/release/_fragments.py, which reads changelog.d/*.md fragments via Path.exists()/Path.read_text() (lines ~169, ~294) -- this is an fs.read capability observed by SELFAUDIT001's SYS100 self-audit but not declared for it in design/frob.strata's core node (the may "fs.read" via [...] list around design/frob.strata:406 lists gates/ files; _fragments.py needs adding to whichever via-list covers frob.release, or a new declaration if none currently covers that package).
 
