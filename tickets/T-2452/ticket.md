@@ -1,7 +1,7 @@
 ---
 id: T-2452
 title: _dispatch exceeds ARCH001 line threshold (found while T-2443 touched it)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,8 +12,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/__main__.py
+evidence_scope:
+- tests/unit/test_main_entry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: T-2452 is a pure ARCH001 line-count refactor with no behavior change; BUG002's
+    designated evidence correctly passes at both parent and fix
+  actor: logan
+  at: '2026-08-18'
+  old_length: 5117
+  new_length: 5681
+evidence:
+- tests/unit/test_main_entry.py::TestRefactorDispatch::test_refactor_subcommand_dispatches_to_run_refactor_command
+- tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
 designated_repro_test: null
 threat: null
 component: null

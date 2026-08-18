@@ -493,113 +493,159 @@ def _is_release_publish(argv: list[str]) -> bool:
     )
 
 
-# frob:ticket T-0355
-# frob:ticket T-1218
-# frob:ticket T-1483
+# frob:ticket T-0574
+def _dispatch_bind(argv: list[str]) -> None:
+    """`frob bind ...` (and, via `_dispatch_quality_bind` below, `frob
+    quality bind ...`): `bind_runner.run` takes raw argv, not an
+    `AppConfig`, so it is dispatched directly rather than through
+    `quality_runner.run`. Split out of `_dispatch` (T-2452/ARCH001) so the
+    routing table itself stays a pure list of one-line calls."""
+    from frob.app.bind_runner import run as _bind_run
+
+    _bind_run(argv)
+
+
 # frob:ticket T-1567
-# frob:ticket T-1808
-# frob:ticket T-2443
-# frob:waive ARCH001 follow_up="T-2452" reason="already 81 lines on main before this \
-# ticket touched it -- T-2443 added one 2-line branch (`if argv[0] == 'check': \
-# _reap_orphaned_forkservers_best_effort()`), which the diff-driven gate then \
-# attributed to this ticket even though the function was over threshold beforehand; \
-# splitting the whole argv-routing table is a real refactor with its own risk surface, \
-# out of scope for a critical process-leak bug fix -- filed as a follow-up rather than \
-# folded in silently"
+def _dispatch_quality_bind(argv: list[str]) -> None:
+    """`frob quality bind ...` (T-1567) -- mirrors top-level `frob bind`'s
+    own dispatch (`_dispatch_bind`) with the leading `quality` token
+    stripped before forwarding to the same `bind_runner.run`."""
+    _dispatch_bind(argv[1:])
+
+
+# frob:ticket T-0574
+def _dispatch_agent(argv: list[str]) -> None:
+    """`frob agent ...` (T-0574) -- dispatched directly, mirroring `frob
+    bind` -- see `frob.app.agent_runner`'s module docstring for why."""
+    from frob.app.agent_runner import run as _agent_run
+
+    _agent_run(argv)
+
+
+# frob:ticket T-0836
+def _dispatch_worktree(argv: list[str]) -> None:
+    """`frob worktree ...` (T-0836) -- dispatched directly, mirroring
+    `frob bind`/`agent` -- see `frob.app.worktree_runner`'s module
+    docstring for why."""
+    from frob.app.worktree_runner import run as _worktree_run
+
+    _worktree_run(argv)
+
+
+# frob:ticket T-2241
+def _dispatch_sync_skills(argv: list[str]) -> None:
+    """`frob sync-skills ...` (T-2241) -- dispatched directly, mirroring
+    `frob bind`/`agent`/`worktree` -- see
+    `frob.scaffold._skills_sync.run`'s own docstring for why."""
+    from frob.scaffold._skills_sync import run as _sync_skills_run
+
+    _sync_skills_run(argv)
+
+
+# frob:ticket T-2242
+def _dispatch_release_publish(argv: list[str]) -> None:
+    """`frob release publish ...` (T-2242) -- dispatched directly,
+    mirroring `_dispatch_refactor` below -- own dedicated parser,
+    `argparse.Namespace` in, exit code out. See `frob.release._cli`'s own
+    module docstring for why this bypasses `release_runner.py`'s existing
+    `stamp`/`check`/`sync` dispatch."""
+    import sys as _sys
+
+    from frob.release._cli import (
+        add_release_publish_parser,
+        run_release_publish_command,
+    )
+
+    release_parser = argparse.ArgumentParser(prog="frob")
+    release_sub = release_parser.add_subparsers(dest="subcommand")
+    add_release_publish_parser(release_sub)
+    release_args = release_parser.parse_args(argv)
+    _sys.exit(run_release_publish_command(release_args))
+
+
+# frob:ticket T-1483
 # frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
 # es_to_run_refactor_command kind="unit"  # noqa: E501
 # frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_exit_code_propagate\
 # s kind="unit"  # noqa: E501
+def _dispatch_refactor(argv: list[str]) -> None:
+    """`frob refactor ...` (T-1483) -- dispatched directly, mirroring
+    `frob bind`/`agent`/`worktree` -- `frob.refactor._cli.
+    run_refactor_command` takes a parsed `argparse.Namespace` and returns
+    an exit code directly (T-1197's own shape, matching every other
+    `_add_*_parser` builder for a later single-line wire-in), not the
+    uniform `run(AppConfig)` entry point every subcommand in
+    `_SUBCOMMAND_RUNNER_NAMES` (`frob.app.app`) shares -- so this
+    subcommand is routed the same way as the other direct-dispatch verbs
+    rather than added to that dict."""
+    import sys as _sys
+
+    from frob.refactor._cli import add_refactor_parser, run_refactor_command
+
+    refactor_parser = argparse.ArgumentParser(prog="frob")
+    refactor_sub = refactor_parser.add_subparsers(dest="subcommand")
+    add_refactor_parser(refactor_sub)
+    refactor_args = refactor_parser.parse_args(argv)
+    _sys.exit(run_refactor_command(refactor_args))
+
+
+# frob:ticket T-2443
+def _dispatch_default(argv: list[str]) -> None:
+    """Every subcommand NOT special-cased ahead of `_build_parser` in
+    `_dispatch`: builds the full argparse tree, parses `argv` against it,
+    and routes into `App` via `AppConfig.from_external` -- the normal,
+    uniform path every `Subcommand`-mapped runner shares. Split out of
+    `_dispatch` (T-2452/ARCH001) so the routing table itself stays a pure
+    list of one-line calls."""
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    pyproject = Path("pyproject.toml")
+    _print_startup_warnings(pyproject.parent.resolve())
+    if argv and argv[0] == "check":
+        _reap_orphaned_forkservers_best_effort()
+        # T-2484: `--json` makes stdout the machine-readable payload, so
+        # this advisory must land on stderr ONLY in that mode -- see
+        # `_report_concurrent_check_advisory_best_effort`'s own docstring
+        # for why routing this through the normal INFO/WARNING level
+        # split is not enough on its own.
+        _report_concurrent_check_advisory_best_effort(
+            force_stderr=getattr(args, "check_json", False)
+        )
+    cfg = AppConfig.from_external(args, pyproject)
+    App(cfg)()
+
+
+# frob:ticket T-0355
+# frob:ticket T-1218
+# frob:ticket T-1483
+# frob:ticket T-1567
+# frob:ticket T-1808
+# frob:ticket T-2443
+# frob:ticket T-2452
 def _dispatch(argv: list[str]) -> None:
     """`main`'s actual argv-to-`App` dispatch, split out so `main` can wrap
     only this in the `KeyboardInterrupt` handler (T-0355) without also
-    catching interrupts raised by argument parsing itself."""
-    import sys as _sys
-
+    catching interrupts raised by argument parsing itself. T-2452: the
+    body itself is now a pure argv-routing table -- each special case's
+    real work lives in its own `_dispatch_*` helper (ARCH001)."""
     if argv and argv[0] == "bind":
-        from frob.app.bind_runner import run as _bind_run
-
-        _bind_run(argv[1:])
+        _dispatch_bind(argv[1:])
     elif _is_quality_bind(argv):
-        # T-1567: `frob quality bind` mirrors top-level `bind`'s own
-        # special case just above -- `bind_runner.run` takes raw argv, not
-        # an `AppConfig`, so it is dispatched here rather than through
-        # `quality_runner.run`.
-        from frob.app.bind_runner import run as _bind_run
-
-        _bind_run(argv[2:])
+        _dispatch_quality_bind(argv[1:])
     elif argv and argv[0] == "agent":
-        # T-0574: `frob agent` is dispatched directly, mirroring `bind`
-        # above -- see `frob.app.agent_runner`'s module docstring for why.
-        from frob.app.agent_runner import run as _agent_run
-
-        _agent_run(argv[1:])
+        _dispatch_agent(argv[1:])
     elif argv and argv[0] == "worktree":
-        # T-0836: `frob worktree` is dispatched directly, mirroring
-        # `bind`/`agent` above -- see `frob.app.worktree_runner`'s module
-        # docstring for why.
-        from frob.app.worktree_runner import run as _worktree_run
-
-        _worktree_run(argv[1:])
+        _dispatch_worktree(argv[1:])
     elif argv and argv[0] == "sync-skills":
-        # T-2241: `frob sync-skills` is dispatched directly, mirroring
-        # `bind`/`agent`/`worktree` above -- see
-        # `frob.scaffold._skills_sync.run`'s own docstring for why.
-        from frob.scaffold._skills_sync import run as _sync_skills_run
-
-        _sync_skills_run(argv[1:])
+        _dispatch_sync_skills(argv[1:])
     elif _is_release_publish(argv):
-        # T-2242: `frob release publish` is dispatched directly, mirroring
-        # `refactor` below -- own dedicated parser, `argparse.Namespace`
-        # in, exit code out. See `frob.release._cli`'s own module
-        # docstring for why this bypasses `release_runner.py`'s existing
-        # `stamp`/`check`/`sync` dispatch.
-        from frob.release._cli import (
-            add_release_publish_parser,
-            run_release_publish_command,
-        )
-
-        release_parser = argparse.ArgumentParser(prog="frob")
-        release_sub = release_parser.add_subparsers(dest="subcommand")
-        add_release_publish_parser(release_sub)
-        release_args = release_parser.parse_args(argv)
-        _sys.exit(run_release_publish_command(release_args))
+        _dispatch_release_publish(argv)
     elif argv and argv[0] == "refactor":
-        # T-1483: `frob refactor` is dispatched directly, mirroring
-        # `bind`/`agent`/`worktree` above -- `frob.refactor._cli.
-        # run_refactor_command` takes a parsed `argparse.Namespace` and
-        # returns an exit code directly (T-1197's own shape, matching every
-        # other `_add_*_parser` builder for a later single-line wire-in),
-        # not the uniform `run(AppConfig)` entry point every subcommand in
-        # `_SUBCOMMAND_RUNNER_NAMES` (`frob.app.app`) shares -- so this
-        # subcommand is routed the same way as the three above rather than
-        # added to that dict.
-        from frob.refactor._cli import add_refactor_parser, run_refactor_command
-
-        refactor_parser = argparse.ArgumentParser(prog="frob")
-        refactor_sub = refactor_parser.add_subparsers(dest="subcommand")
-        add_refactor_parser(refactor_sub)
-        refactor_args = refactor_parser.parse_args(argv)
-        _sys.exit(run_refactor_command(refactor_args))
+        _dispatch_refactor(argv)
     else:
-        parser = _build_parser()
-        args = parser.parse_args(argv)
-        pyproject = Path("pyproject.toml")
-        _print_startup_warnings(pyproject.parent.resolve())
-        if argv and argv[0] == "check":
-            _reap_orphaned_forkservers_best_effort()
-            # T-2484: `--json` makes stdout the machine-readable payload,
-            # so this advisory must land on stderr ONLY in that mode --
-            # see `_report_concurrent_check_advisory_best_effort`'s own
-            # docstring for why routing this through the normal INFO/
-            # WARNING level split is not enough on its own.
-            _report_concurrent_check_advisory_best_effort(
-                force_stderr=getattr(args, "check_json", False)
-            )
-        cfg = AppConfig.from_external(args, pyproject)
-        App(cfg)()
+        _dispatch_default(argv)
 
 
 # frob:ticket T-2443
