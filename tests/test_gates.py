@@ -10958,6 +10958,39 @@ class TestFixEngineTierA:
 
         return build_graph(root, root / ".frob" / "cache.db").danger_ok
 
+    # -- T-2351: pre-fix dirty-file snapshot -------------------------------
+
+    def test_pre_fix_dirty_snapshot_captures_uncommitted_content(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine.py::_snapshot_dirty_files  # noqa: E501
+        from frob.gates._fix_engine import _snapshot_dirty_files
+
+        root = tmp_path / "repo"
+        root.mkdir()
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "t@t.t"], cwd=root, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
+
+        clean = root / "clean.py"
+        clean.write_text("clean\n", encoding="utf-8")
+        dirty = root / "dirty.py"
+        dirty.write_text("committed\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-q", "-m", "seed"], cwd=root, check=True)
+
+        # Modify one tracked file (dirty), leave the other untouched
+        # (clean), and add a brand-new untracked file -- only the dirty
+        # TRACKED file's content should be captured.
+        dirty.write_text("uncommitted edit\n", encoding="utf-8")
+        (root / "untracked.py").write_text("new\n", encoding="utf-8")
+
+        snapshot = _snapshot_dirty_files(root)
+
+        assert snapshot == {"dirty.py": b"uncommitted edit\n"}
+
     # -- acceptance [0]: DOC007 dotted-form rewrite ------------------------
 
     def test_doc007_dotted_form_rewrite_applies_and_reverifies_clean(
@@ -12538,6 +12571,138 @@ class TestFixEngineScopeLease:
         assert kept == fixes
         assert skipped == []
         assert target.read_text(encoding="utf-8") == "handler rewrote this\n"
+
+    def test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file  # noqa: E501
+        # T-2351: reproduces the T-2194/T-2329/T-2323 incident end to end.
+        # A ticket has a REAL, UNCOMMITTED, in-scope edit to a file
+        # (matching T-2194's own uncommitted design/frob.strata capability
+        # grant). A Tier-A handler then writes its OWN rewrite on top
+        # (SYS100 overwriting the file in place, same shape). That fix is
+        # disqualified (another ticket holds a genuinely live lease on the
+        # file). Before T-2351, `_revert_fix_file` ran `git checkout --`,
+        # which restores to HEAD -- discarding the ticket's own edit along
+        # with the handler's, because `apply_tier_a_fixes` always runs
+        # BEFORE `frob ticket land`'s wip-commit step, so HEAD here is
+        # still the PRE-TICKET tip. With the fix, a snapshot taken before
+        # any handler ran preserves the agent's own edit through a revert.
+        from frob.gates._fix_engine import _snapshot_dirty_files
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "design" / "frob.strata"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed design/frob.strata"],
+            cwd=root,
+            check=True,
+        )
+
+        # The ticket's OWN real, uncommitted, in-scope edit -- made before
+        # `frob ticket land` (hence `apply_tier_a_fixes`) ever runs.
+        target.write_text("agent's own capability grant\n", encoding="utf-8")
+
+        # `apply_tier_a_fixes` always captures the dirty-file snapshot
+        # BEFORE running any handler -- exactly this call, at this point.
+        pre_fix_snapshot = _snapshot_dirty_files(root)
+        assert pre_fix_snapshot["design/frob.strata"] == (
+            b"agent's own capability grant\n"
+        )
+
+        # Simulate a Tier-A handler (SYS100) having already overwritten
+        # the file in place with its own computed rewrite.
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2194", state=TicketState.IN_PROGRESS, scope=("design",)
+        )
+        other = _ticket(
+            ticket_id="T-2303", state=TicketState.IN_PROGRESS, scope=("design",)
+        )
+        queue = TicketQueue(tickets={"T-2194": landing, "T-2303": other})
+        fixes = [
+            FixApplied(rule="SYS100", file="design/frob.strata", line=0, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(
+            root, queue, "T-2194", fixes, pre_fix_snapshot
+        )
+
+        assert kept == []
+        assert len(skipped) == 1
+        assert "T-2303" in skipped[0].reason
+        # The ticket's OWN pre-handler edit survives -- neither the
+        # handler's disqualified rewrite NOR (the pre-T-2351 bug) HEAD's
+        # committed "original" content.
+        assert target.read_text(encoding="utf-8") == "agent's own capability grant\n"
+
+    def test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::_revert_fix_file  # noqa: E501
+        # T-2351: the T-2323 discriminating comparison, as a regression
+        # test -- an edit the ticket already `git commit`ed to its own
+        # branch was ALWAYS safe (the old `git checkout --` restores to
+        # HEAD, which already includes it); confirm the new snapshot path
+        # does not change this the other reproduction case.
+        from frob.gates._fix_engine import _snapshot_dirty_files
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+
+        root = self._repo(tmp_path)
+        target = root / "design" / "frob.strata"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed design/frob.strata"],
+            cwd=root,
+            check=True,
+        )
+
+        # The ticket's own edit, COMMITTED to its own branch first.
+        target.write_text("agent's own capability grant\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "T-2194: add capability grant"],
+            cwd=root,
+            check=True,
+        )
+
+        # No uncommitted dirt at this point -- the file is clean.
+        pre_fix_snapshot = _snapshot_dirty_files(root)
+        assert "design/frob.strata" not in pre_fix_snapshot
+
+        # A Tier-A handler overwrites it in place (uncommitted, on top of
+        # the committed grant).
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2194", state=TicketState.IN_PROGRESS, scope=("design",)
+        )
+        other = _ticket(
+            ticket_id="T-2303", state=TicketState.IN_PROGRESS, scope=("design",)
+        )
+        queue = TicketQueue(tickets={"T-2194": landing, "T-2303": other})
+        fixes = [
+            FixApplied(rule="SYS100", file="design/frob.strata", line=0, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(
+            root, queue, "T-2194", fixes, pre_fix_snapshot
+        )
+
+        assert kept == []
+        assert len(skipped) == 1
+        # No snapshot entry for this file -> falls back to the old
+        # HEAD-restore, which is correct here since HEAD already IS the
+        # ticket's own committed grant.
+        assert target.read_text(encoding="utf-8") == "agent's own capability grant\n"
 
     def test_no_ticket_id_passes_every_fix_through_unfiltered(
         self, tmp_path: Path

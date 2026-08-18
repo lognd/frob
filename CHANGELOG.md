@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.500.0] - unreleased
+
+- T-2351: frob ticket land's pre-land WIP-commit path silently discards uncommitted in-scope edits (T-2328 follow-up, narrower root cause)
+
 ## [0.499.0] - unreleased
 
 - T-2344: meta-check: a gate rule constructed from raw text without symref/AST binding must itself be a finding

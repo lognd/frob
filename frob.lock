@@ -539,6 +539,78 @@
       "old_digest": null,
       "reason": "T-2328: added a frob:tests edge (this docstring change) alongside the\nT-2095/T-2111-precedent fix that prefers a live lease's own scope over\na ticket's stale declared ledger scope. Verified: the new\ntest_narrowed_live_lease_wins_over_stale_declared_scope reproduces the\nincident (fails before the fix, passes after), and the three\npre-existing tests in TestFixEngineScopeLease (out-of-scope revert,\nlive-lease-wins-over-broader-landing-scope, in-scope-kept) all still\npass -- lease precedence over scope is preserved, this only fixes WHICH\nscope (declared vs live) a lease comparison reads.\n",
       "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "d59a39817374281ae6bfd07345c685e3fd515be22974e2d6ff4d77767dc91ae4",
+      "old_digest": null,
+      "reason": "T-2351: new symbol, verified against test_pre_fix_dirty_snapshot_captures_uncommitted_content -- confirms it captures only tracked, uncommitted-dirty files' current bytes, excludes clean and untracked files.\n",
+      "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "f4f5b19bbfa064646252eb72c2999564fe415141c83c7c0478f83a3eb7af6718",
+      "old_digest": null,
+      "reason": "T-2351: new symbol, verified against test_pre_fix_dirty_snapshot_captures_uncommitted_content -- confirms it captures only tracked, uncommitted-dirty files' current bytes, excludes clean and untracked files.\n",
+      "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "a2ea8248c2d64e0c51a124d4df60570579c559524c00bb438ad347371ccd53dc",
+      "old_digest": null,
+      "reason": "T-2351: verified against test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert (end-to-end incident repro) and test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert (T-2323's discriminating case, unaffected). Both must-fail-then-pass confirmed manually: failed with ImportError against the pre-fix _fix_engine.py/_fix_engine_scope.py checked out from HEAD~1, passed after restoring the fix.\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_revert_fix_file"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "b2447d33416f8fea0fec68f21eacd8733096a7153cdd31f41eecdfebd16daf9e",
+      "old_digest": null,
+      "reason": "T-2351: verified against test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert (end-to-end incident repro) and test_committed_edit_is_unaffected_by_a_disqualified_tier_a_revert (T-2323's discriminating case, unaffected). Both must-fail-then-pass confirmed manually: failed with ImportError against the pre-fix _fix_engine.py/_fix_engine_scope.py checked out from HEAD~1, passed after restoring the fix.\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_revert_fix_file"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "3b1d29b3b66b77a4c324b297c902344d74d7a99532d3074a49df582f9873a841",
+      "old_digest": null,
+      "reason": "T-2351: added optional pre_fix_snapshot parameter threaded to _revert_fix_file; verified via the same TestFixEngineScopeLease suite (43 tests, all passing) including the new snapshot-aware tests plus every pre-existing test (default None preserves old behavior byte-for-byte).\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "da4cb7d4b5685ea8bf8f52c0dd41311e8582aa6b37820862a8abb847dd3c491e",
+      "old_digest": null,
+      "reason": "T-2351: added optional pre_fix_snapshot parameter threaded to _revert_fix_file; verified via the same TestFixEngineScopeLease suite (43 tests, all passing) including the new snapshot-aware tests plus every pre-existing test (default None preserves old behavior byte-for-byte).\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "e8a44a62eb5abeebc0de948522e0e27780801660d33e356184c1f9fa1de539d3",
+      "old_digest": null,
+      "reason": "T-2351: now captures a pre-handler dirty-file snapshot once via _snapshot_dirty_files before the Tier-A handler loop, threading it to filter_fixes_by_scope_and_lease so a disqualified fix reverts to the ticket's own pre-handler state instead of HEAD. Verified via the full TestFixEngineScopeLease/TestFixEngineTierA suite (43 tests passing) plus the manual must-fail-then-pass check against the pre-fix code.\n",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
+      "old_digest": null,
+      "reason": "T-2351: now captures a pre-handler dirty-file snapshot once via _snapshot_dirty_files before the Tier-A handler loop, threading it to filter_fixes_by_scope_and_lease so a disqualified fix reverts to the ticket's own pre-handler state instead of HEAD. Verified via the full TestFixEngineScopeLease/TestFixEngineTierA suite (43 tests passing) plus the manual must-fail-then-pass check against the pre-fix code.\n",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     }
   ],
   "entries": [
@@ -763,6 +835,26 @@
       "ref": "src/frob/gates/_coverage.py::stamp_coverage"
     },
     {
+      "digest": "d59a39817374281ae6bfd07345c685e3fd515be22974e2d6ff4d77767dc91ae4",
+      "facet": "body",
+      "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
+    },
+    {
+      "digest": "f4f5b19bbfa064646252eb72c2999564fe415141c83c7c0478f83a3eb7af6718",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
+    },
+    {
+      "digest": "e8a44a62eb5abeebc0de948522e0e27780801660d33e356184c1f9fa1de539d3",
+      "facet": "body",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "digest": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
       "digest": "47762c8662bef85abfcea875e8216ba370d035b75ae6f903b0fa3541f3445219",
       "facet": "body",
       "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
@@ -771,6 +863,26 @@
       "digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
       "facet": "sig",
       "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "digest": "a2ea8248c2d64e0c51a124d4df60570579c559524c00bb438ad347371ccd53dc",
+      "facet": "body",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_revert_fix_file"
+    },
+    {
+      "digest": "b2447d33416f8fea0fec68f21eacd8733096a7153cdd31f41eecdfebd16daf9e",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_revert_fix_file"
+    },
+    {
+      "digest": "3b1d29b3b66b77a4c324b297c902344d74d7a99532d3074a49df582f9873a841",
+      "facet": "body",
+      "ref": "src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease"
+    },
+    {
+      "digest": "da4cb7d4b5685ea8bf8f52c0dd41311e8582aa6b37820862a8abb847dd3c491e",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease"
     },
     {
       "digest": "acea3454c7ae8da1675b05872696a04ab6dbc26216a57586e883f4217c5cd8f2",

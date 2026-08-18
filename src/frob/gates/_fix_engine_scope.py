@@ -147,17 +147,61 @@ def _other_ticket_holding_live_lease(
 
 
 # frob:ticket T-2284
-def _revert_fix_file(root: Path, fix: FixApplied) -> None:
+# frob:ticket T-2351
+def _revert_fix_file(
+    root: Path, fix: FixApplied, pre_fix_snapshot: dict[str, bytes] | None
+) -> None:
     """Undo a single handler-made edit `filter_fixes_by_scope_and_lease`
-    disqualified: `git checkout -- <file>` restores `fix.file` to its
-    last-committed content. Safe unconditionally -- a file scope/lease
-    disqualifies can never ALSO carry the landing ticket's own legitimate
-    uncommitted work (that work would itself be inside the landing
-    ticket's scope, which is exactly the case this function is never
-    called for). Best-effort: a checkout failure is logged loudly and
-    swallowed, never raised -- `CrossTicketLeakage` still refuses the
-    land outright if leaked content somehow survives this, so this is a
-    courtesy that narrows the common case, not the only line of defense."""
+    disqualified.
+
+    T-2351: the OLD, unconditional `git checkout -- <file>` (restore to
+    last COMMITTED content) was NOT safe. Its own reasoning ("a file
+    scope/lease disqualifies can never also carry the landing ticket's
+    own legitimate uncommitted work") is false exactly in the case this
+    function exists for: the live-lease-wins-over-declared-scope path
+    (this module's own docstring) deliberately skips a file EVEN WHEN it
+    is inside the landing ticket's own scope -- and `apply_tier_a_fixes`
+    runs BEFORE `frob ticket land`'s own pre-land wip-commit step, so at
+    this point in the pipeline `HEAD` is still the PRE-TICKET branch
+    tip. A `git checkout --` here silently discarded the ticket's own
+    real, uncommitted, in-scope edit to that same file along with the
+    disqualified Tier-A rewrite -- confirmed three times live (T-2194,
+    T-2329, T-2323's discriminating comparison, all referenced from
+    T-2328/T-2351's own ticket bodies): a PRE-COMMITTED identical edit
+    survived a land untouched, an UNCOMMITTED one was silently dropped.
+
+    Now restores to `pre_fix_snapshot[fix.file]` (the file's exact bytes
+    as they stood immediately before ANY Tier-A handler ran this land,
+    captured once by `apply_tier_a_fixes` before its handler loop) when
+    an entry exists -- so a revert undoes only the disqualified
+    handler's own write and never touches whatever the ticket itself
+    had pending there. Falls back to the old `git checkout --` behavior
+    only when no snapshot entry exists for this file (nothing was
+    uncommitted before Tier-A touched it, so HEAD and the pre-handler
+    state are identical) or `pre_fix_snapshot` is `None` (a caller
+    outside `apply_tier_a_fixes`, e.g. a direct unit test) -- in both
+    cases restoring to HEAD is provably correct, not a compromise.
+    Best-effort either way: a write/checkout failure is logged loudly
+    and swallowed, never raised -- `CrossTicketLeakage` still refuses
+    the land outright if leaked content somehow survives this, so this
+    is a courtesy that narrows the common case, not the only line of
+    defense."""
+    snapshot_bytes = (
+        pre_fix_snapshot.get(fix.file) if pre_fix_snapshot is not None else None
+    )
+    if snapshot_bytes is not None:
+        try:
+            (root / fix.file).write_bytes(snapshot_bytes)
+        except OSError as exc:
+            _log.warning(
+                "tier-a fixes: could not restore disqualified %s (rule=%s) "
+                "to its pre-handler content: %s -- CrossTicketLeakage may "
+                "still refuse this land if it survives",
+                fix.file,
+                fix.rule,
+                exc,
+            )
+        return
     result = run_argv(["git", "-C", str(root), "checkout", "--", fix.file])
     if result.is_err or result.danger_ok.returncode != 0:
         _log.warning(
@@ -191,12 +235,23 @@ def filter_fixes_by_scope_and_lease(
     queue: TicketQueue,
     ticket_id: str | None,
     fixes: list[FixApplied],
+    pre_fix_snapshot: dict[str, bytes] | None = None,
 ) -> tuple[list[FixApplied], list[SkippedFix]]:
     """Partition one handler's own `fixes` into `(kept, skipped)` -- see
     this module's own docstring for the full mechanism and the lease-
     over-scope precedence rule. `ticket_id=None` (no land in progress)
     is always a no-op: `(fixes, [])`, byte-identical to pre-T-2284
-    behavior."""
+    behavior.
+
+    T-2351: `pre_fix_snapshot`, when given, maps a repo-relative path to
+    its exact bytes as they stood immediately before ANY Tier-A handler
+    ran this land (`apply_tier_a_fixes` captures it once, up front, from
+    every file `git status` already showed dirty). Threaded through to
+    `_revert_fix_file` so a disqualified fix is undone back to the
+    ticket's OWN pre-handler state, never to `HEAD` -- see that
+    function's own docstring for why `HEAD` was unsafe here. `None`
+    (the default, and every direct test call in this module's own test
+    suite) preserves the exact pre-T-2351 `git checkout --` behavior."""
     if ticket_id is None:
         return fixes, []
     ticket = queue.tickets.get(ticket_id)
@@ -210,7 +265,7 @@ def filter_fixes_by_scope_and_lease(
             root, queue, ticket_id, fix.file
         )
         if lease_holder is not None:
-            _revert_fix_file(root, fix)
+            _revert_fix_file(root, fix, pre_fix_snapshot)
             skipped.append(
                 SkippedFix(
                     rule=fix.rule,
@@ -224,7 +279,7 @@ def filter_fixes_by_scope_and_lease(
             fix.file, ticket.scope, kind=ticket.kind, ticket_id=ticket_id
         )
         if not in_scope:
-            _revert_fix_file(root, fix)
+            _revert_fix_file(root, fix, pre_fix_snapshot)
             skipped.append(
                 SkippedFix(
                     rule=fix.rule,

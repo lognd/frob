@@ -61,6 +61,7 @@ from frob.gates._fix_engine_text import (
     fix_fmt001_directive_wrap,
     fix_suppress001_paired_suppression,
 )
+from frob.gitio import run_argv
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.tickets import Ticket, TicketQueue
 from frob.tickets._provisional import is_draft_id
@@ -566,6 +567,46 @@ TIER_A_HANDLERS: dict[
 }
 
 
+# frob:ticket T-2351
+# frob:tests tests/test_gates.py::TestFixEngineTierA.test_pre_fix_dirty_snapshot_captures_uncommitted_content kind="unit"  # noqa: E501
+def _snapshot_dirty_files(root: Path) -> dict[str, bytes]:
+    """The exact on-disk bytes, right now, of every file `git status`
+    already shows as uncommitted-dirty (modified, staged, or both) in
+    `root` -- `apply_tier_a_fixes`'s own T-2351 fix calls this ONCE,
+    before its handler loop runs any Tier-A rewrite, so a later
+    disqualified fix can be undone back to the CALLER's own pre-handler
+    state (`_fix_engine_scope._revert_fix_file`) instead of `HEAD`. Never
+    raises: a `git status`/read failure degrades to `{}` (the pre-T-2351
+    `git checkout --`-to-HEAD fallback then applies unchanged, matching
+    behavior for a repo this call cannot introspect). Untracked files are
+    deliberately excluded (`--porcelain`'s `??` entries) -- a Tier-A
+    handler acts only on TRACKED source files, so an untracked file can
+    never be the thing this snapshot needs to protect."""
+    result = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if result.is_err or result.danger_ok.returncode != 0:
+        _log.warning(
+            "tier-a fixes: pre-fix dirty snapshot: could not read git "
+            "status -- disqualified fixes will fall back to HEAD-restore"
+        )
+        return {}
+    snapshot: dict[str, bytes] = {}
+    for line in result.danger_ok.stdout.splitlines():
+        if not line or line.startswith("??"):
+            continue
+        # porcelain v1: "XY <path>" (a rename entry's "old -> new" is
+        # deliberately not split further -- renames are rare for a
+        # source file mid-ticket and the new path's own status line, if
+        # dirty, is picked up on the next iteration same as any other).
+        rel_path = line[3:].strip()
+        if not rel_path:
+            continue
+        try:
+            snapshot[rel_path] = (root / rel_path).read_bytes()
+        except OSError:
+            continue
+    return snapshot
+
+
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:tests tests/test_gates.py::TestFixEngineTierA.test_doc007_dotted_form_rewrite_applies_and_reverifies_clean kind="unit"  # noqa: E501
 def apply_tier_a_fixes(
@@ -618,14 +659,28 @@ def apply_tier_a_fixes(
     loudly as an applied fix. A no-op, byte-identical to pre-T-2284
     behavior, whenever `ticket_id` is `None` (bare `frob check --fix`,
     no landing ticket to scope against) or nothing a handler touched
-    happens to be out of bounds."""
+    happens to be out of bounds.
+
+    T-2351: `pre_fix_snapshot` is captured ONCE, here, before any
+    handler in the loop below runs -- every handler's own writes happen
+    against the SAME worktree state this snapshot was taken from, so one
+    capture up front covers the whole batch. Threaded to
+    `filter_fixes_by_scope_and_lease` so a disqualified fix is reverted
+    back to the ticket's own pre-handler state, not to `HEAD` -- see
+    `_fix_engine_scope._revert_fix_file`'s own docstring for why `HEAD`
+    silently discarded real, uncommitted, in-scope work when this
+    function runs (as it always does, T-1175) BEFORE `frob ticket
+    land`'s own pre-land wip-commit step."""
     applied: list[FixApplied] = []
+    pre_fix_snapshot = _snapshot_dirty_files(root)
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)
             continue
         fixes = handler(root, snapshot, queue, ticket_id)
-        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, ticket_id, fixes)
+        kept, skipped = filter_fixes_by_scope_and_lease(
+            root, queue, ticket_id, fixes, pre_fix_snapshot
+        )
         for skip in skipped:
             _log.warning(
                 "tier-a fixes: SKIPPED %s %s:%d -- %s",
