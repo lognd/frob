@@ -1535,3 +1535,4 @@
 {"commit": "2201d0bf193a74efb7c532048c44fbb79dd24b74", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2393"}
 {"commit": "d5168dd46dc8b36d220bbf920c6c83b873d28c29", "skipped": "land-evidence-scope-unbound", "ticket": "T-2393"}
 {"commit": "657f3c79f478db5343dde973bbc0afd7d3ff6a09", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2380"}
+{"commit": "9af864b1b9148c82c6dd5124150f714fa58880f2", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2393"}
