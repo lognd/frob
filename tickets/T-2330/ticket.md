@@ -109,7 +109,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7755f90ec53a9c6aa7e2038f5b86f6818d4be44a
 ---
 Live ERROR floor on main, surfaced by `uv run frob check --only docblocks
 --json | python3 scripts/check_summary.py` (5 errors after the
