@@ -14,15 +14,30 @@ parent: T-1609
 tier: ticket
 sprint: null
 runs_last: false
-scope:
-- src/frob/**
-- tests/**
-- docs/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'standing periodic audit ticket per T-2467: scope is intentionally
   repo-wide since any file may contain a frob:waive directive to review'
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: 'bounded scan-and-classify pass per dispatch: no source edits planned this
+    pass, cop-outs filed as separate tickets rather than fixed inline'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'bounded scan-and-classify pass per dispatch: no source edits planned this
+    pass, cop-outs filed as separate tickets rather than fixed inline'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/**
+  reason: 'bounded scan-and-classify pass per dispatch: no source edits planned this
+    pass, cop-outs filed as separate tickets rather than fixed inline'
+  actor: logan
+  at: '2026-08-18'
 body_changes:
 - mode: append
   reason: 'T-2467: reshape from unreachable runs_last one-shot to periodic watermark-scoped
