@@ -16,6 +16,11 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+attachments:
+- path: T-2350/attachments/01-diagnosis-timing-visibility-race-not-identity-matching-both-candidate-fix-files-leased-by-t-2351-no-edit-attempted.md
+  caption: 'diagnosis: timing/visibility race, not identity-matching; both candidate
+    fix files leased by T-2351, no edit attempted'
+  sha256: b3a7b8213809ef02953e6b71c57a160caf80ba3cfa2def601a6255867de200f9
 threat: null
 component: null
 anchor: false
