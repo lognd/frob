@@ -220,7 +220,7 @@ labels:
 - watermark-epic
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 62454eb7f7d31372d059d931fa8d1193186123d3
 ---
 The payoff leaf, and deliberately LAST: this is a refactor, and it must
 land on a mechanism that already works rather than being the thing that
