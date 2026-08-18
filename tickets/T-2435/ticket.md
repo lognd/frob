@@ -95,7 +95,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b8cd448de7020293854b0f1fe734a7f1409ce561
 ---
 Validate the `[gates]` table (19 leaves, includes nested
 `[gates.ratchet]`) against a declared schema. Readers span
