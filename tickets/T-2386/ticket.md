@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d95f49054e140c69f54c4e016a503001eac0b8dc
 ---
 Child of T-2384 (sync-skills half). _sync_one_kind currently rmtree's every
 ~/.claude/<kind>/<name> with no repo-side counterpart, and copytree's in
