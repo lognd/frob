@@ -13,11 +13,42 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/lang/**
-- tests/**
-- docs/**
+- tickets/T-1607/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/lang/**
+  reason: 'T-2446: explicitly a decomposition-pending placeholder (''split into further
+    child tickets rather than attempting all at once -- this ticket is the placeholder
+    the research output turns into a concrete plan''); narrowing the parent to its
+    own ledger shard, real file scopes belong to the not-yet-filed batch children'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/**
+  reason: 'T-2446: explicitly a decomposition-pending placeholder (''split into further
+    child tickets rather than attempting all at once -- this ticket is the placeholder
+    the research output turns into a concrete plan''); narrowing the parent to its
+    own ledger shard, real file scopes belong to the not-yet-filed batch children'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: explicitly a decomposition-pending placeholder (''split into further
+    child tickets rather than attempting all at once -- this ticket is the placeholder
+    the research output turns into a concrete plan''); narrowing the parent to its
+    own ledger shard, real file scopes belong to the not-yet-filed batch children'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-1607/**
+  reason: 'T-2446: explicitly a decomposition-pending placeholder (''split into further
+    child tickets rather than attempting all at once -- this ticket is the placeholder
+    the research output turns into a concrete plan''); narrowing the parent to its
+    own ledger shard, real file scopes belong to the not-yet-filed batch children'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
