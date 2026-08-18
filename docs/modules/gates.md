@@ -3131,6 +3131,36 @@ ERROR severity: a new lexical decider anywhere under `DETECTOR_PACKAGE_
 ROOTS` is exactly the failure mode this whole epic exists to prevent
 from landing quietly.
 
+## GATERULE001 (T-2448)
+
+<!-- frob:describes src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations -->
+
+`find_unregistered_rule_ids` (T-1937, `frob.gates._rule_id_scan`) scans
+every `.py` file under `root/src/` for a rule-id-shaped string literal
+constructed in code and reports any that are neither in the live
+`_KNOWN_GATE_RULES` registry (`frob.gates._waive`) nor in `RETIRED_RULE_
+IDS`. Before T-2448 that scanner only ever ran ticket-scoped, at one
+ticket's own close/land preflight (`frob.tickets._new_gate_rule_
+acceptance.unregistered_rule_ids_in_scope`, T-1956's deliberate
+narrowing) -- correct for THAT gate (a pre-existing gap a ticket never
+touched must not block an unrelated close), but it left a real blind
+spot: a rule id constructed in a branch nobody is currently landing
+stayed invisible until someone eventually tried. T-2388's bare `PORT001`
+and T-2447's `CLAUDE001` were both found only by manually re-running the
+scanner against every live worktree by hand, not by any standing check.
+
+`gate_rule_registry_violations` runs the same scan repo-wide as a
+STANDING `frob check` gate, `GATERULE001`, closing that gap: any
+unregistered rule id anywhere in the tree is now an ERROR every `frob
+check` reports, not only at the moment its own ticket tries to close.
+
+T-2391 fail-loudly: the scan's own coverage assumption is a top-level
+`root/src/` layout (T-2384's own disclosed, out-of-scope-to-remove
+hardcoding). When `src/` is absent, or the scan itself crashes (an
+unreadable file, an encoding error), `GATERULE001` reports
+`Severity.UNRESOLVED` naming exactly what could not be scanned, instead
+of letting a silent "0 unregistered" read as a false-clean pass.
+
 ## Public API
 
 <!-- frob:describes src/frob/gates/_suppress.py::SuppressionDialect -->

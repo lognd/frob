@@ -2,7 +2,7 @@
 id: T-2472
 title: add GATERULE001 catalog entry to docs/modules/gates.md, drop the T-2448 land-time
   COV001 waiver
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-18'
@@ -17,6 +17,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -c 'GATERULE001 (T-2448)' docs/modules/gates.md exit=0 sha256=4355a46b19d3
 designated_repro_test: null
 threat: null
 component: null
