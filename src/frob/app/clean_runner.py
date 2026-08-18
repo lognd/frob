@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.render import Renderer
@@ -48,9 +50,19 @@ def _print_report(r: Renderer, report, executed: bool) -> None:  # noqa: ANN001
 # frob:ticket T-0875
 # frob:doc docs/modules/clean.md#public-api
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestCleanRunnerRun.test_dry_run_reports_nothing_to_clean kind="unit"  # noqa: E501
+# frob:ticket T-2492
+# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners and \
+# docs/modules/clean.md#public-api one-line summaries are still accurate -- this \
+# change only adds an internal --json stdout-corruption guard, no user-visible \
+# contract change; filed T-2491 to sync the app.md note once its own lease clears, \
+# same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
     """`frob clean`: tiered, artifact-only workspace cleanup. Defaults to a
-    dry-run preview (`--dry-run` is implicit); pass `-y`/`--yes` to execute."""
+    dry-run preview (`--dry-run` is implicit); pass `-y`/`--yes` to execute.
+    T-2492: `clean`'s own `gitio` DEBUG logging landed unguarded on stdout
+    ahead of a `--json` payload (confirmed by execution -- corrupted the
+    JSON), so the scan now runs under `_guard_json_stdout_writes()` when
+    `--json` is set, matching `frob check`'s T-2486 precedent."""
     from pathlib import Path
 
     from frob.clean import clean
@@ -58,7 +70,11 @@ def run(cfg: AppConfig) -> None:
     root = (cfg.clean_path or Path(".")).resolve()
     tier = _resolve_tier(cfg)
 
-    result = clean(root, tier, dry_run=not cfg.clean_yes)
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.clean_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        result = clean(root, tier, dry_run=not cfg.clean_yes)
     if result.is_err:
         _log.error("frob clean: %s", result.danger_err)
         sys.exit(1)

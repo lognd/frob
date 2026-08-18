@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
@@ -177,7 +179,15 @@ def _try_query_via_daemon(root: Path, cfg: AppConfig) -> bool:
         return False
     from frob.app._daemon_proxy import query
 
-    proxied = query(root, "frob_graph_query", {"symref": cfg.graph_ref})
+    # frob:ticket T-2492
+    # T-2492: `query`'s own "daemon disabled, computing ... in-process" INFO
+    # log (emitted on a miss, right before this returns False) landed
+    # unguarded on stdout ahead of the `--json` payload -- confirmed by
+    # execution. Guard only the query call: the `_log.info(payload)` line
+    # below only runs on a genuine daemon HIT, where `query` logs nothing,
+    # so it must stay outside the guard to reach the real stdout.
+    with _guard_json_stdout_writes():
+        proxied = query(root, "frob_graph_query", {"symref": cfg.graph_ref})
     if proxied.is_err:
         return False
     import json
@@ -199,7 +209,15 @@ def _run_query(root: Path, cache: Path, cfg: AppConfig) -> None:
     if _try_query_via_daemon(root, cfg):
         return
 
-    loaded = _load_snapshot(root, cache)
+    # frob:ticket T-2492
+    # T-2492: `_load_snapshot`'s own cache-rebuild `gitio`/`load_graph`
+    # DEBUG/INFO logging landed unguarded on stdout ahead of the `--json`
+    # payload (confirmed by execution -- corrupted the JSON).
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.graph_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        loaded = _load_snapshot(root, cache)
     if loaded.is_err:
         _log.error("graph unavailable: %s", loaded.danger_err)
         sys.exit(1)
@@ -312,7 +330,14 @@ def _run_why(root: Path, cache: Path, cfg: AppConfig) -> None:
         _log.error("frob graph why requires <ref>")
         sys.exit(1)
 
-    loaded = _load_snapshot(root, cache)
+    # frob:ticket T-2492
+    # T-2492: same unguarded `_load_snapshot` leak as `_run_query` above --
+    # guarded identically.
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.graph_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        loaded = _load_snapshot(root, cache)
     if loaded.is_err:
         _log.error("graph unavailable: %s", loaded.danger_err)
         sys.exit(1)
@@ -403,7 +428,11 @@ def _try_affects_via_daemon(root: Path, cfg: AppConfig) -> bool:
         params["max_depth"] = cfg.graph_max_depth
     if cfg.graph_max_nodes is not None:
         params["max_nodes"] = cfg.graph_max_nodes
-    proxied = query(root, "frob_affects", params)
+    # frob:ticket T-2492
+    # T-2492: same unguarded-daemon-disabled-log leak as
+    # `_try_query_via_daemon` above -- guarded identically.
+    with _guard_json_stdout_writes():
+        proxied = query(root, "frob_affects", params)
     if proxied.is_err:
         return False
     import json
@@ -439,7 +468,14 @@ def _run_affects(root: Path, cache: Path, cfg: AppConfig) -> None:
         _log.error("frob graph affects requires <ref>")
         sys.exit(1)
 
-    loaded = _load_snapshot(root, cache)
+    # frob:ticket T-2492
+    # T-2492: same unguarded `_load_snapshot` leak as `_run_query`/`_run_why`
+    # above -- guarded identically.
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.graph_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        loaded = _load_snapshot(root, cache)
     if loaded.is_err:
         _log.error("graph unavailable: %s", loaded.danger_err)
         sys.exit(1)

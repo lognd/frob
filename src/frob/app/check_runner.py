@@ -8,6 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from frob.app._check_chunking import _run_budgeted_check, _run_stamp_baseline
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app._style import style_fail, style_warn
 from frob.app.config import AppConfig
 from frob.check import (
@@ -1273,97 +1274,6 @@ def _handle_stamp_modes(root: Path, cfg: AppConfig) -> bool:
         _run_stamp_baseline(root, cfg)
         return True
     return False
-
-
-# frob:ticket T-2486
-class _StderrRedirectStdout:
-    """`sys.stdout` replacement installed by `_guard_json_stdout_writes`
-    (T-2486): every `write` reaches `sys.stderr` (captured once at guard
-    entry, immune to a later stdout/stderr reassignment mid-guard)
-    instead of the real stdout, so a stray `print()`/`sys.stdout.write()`
-    anywhere in the guarded call stack surfaces to the operator
-    (must-still-inform) rather than corrupting the `--json` payload
-    building up elsewhere (must-now-protect). This is the STRUCTURAL
-    counterpart to T-2484's single-instance fix -- T-2484 fixed the one
-    known leak (a misleveled log call in `frob.__main__`); this class
-    plus `_guard_json_stdout_writes` below make a NEW leak, of any
-    shape (bare `print`, `sys.stdout.write`, a misleveled log call not
-    already wrapped in `quiet_stdout_logs`), structurally unable to
-    reach the payload for the duration the guard is active. Delegates
-    every OTHER attribute access to the real stdout object it stands in
-    for, so code that merely INSPECTS `sys.stdout` (encoding,
-    `isatty()`) during the guarded window keeps seeing the real
-    terminal's answers -- only writes are redirected."""
-
-    def __init__(self, real_stdout, real_stderr) -> None:  # noqa: ANN001
-        """Bind to the real stdout/stderr objects captured at guard
-        entry -- both fixed for this instance's lifetime, never
-        re-resolved on each write, so a later `sys.stdout`/`sys.stderr`
-        reassignment elsewhere cannot retarget an already-active guard."""
-        self._real_stdout = real_stdout
-        self._real_stderr = real_stderr
-
-    # frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
-    # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
-    def write(self, s: str) -> int:
-        """Redirect the write to the captured real stderr instead of
-        stdout -- the one behavior this whole class exists for."""
-        return self._real_stderr.write(s)
-
-    # frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
-    # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard.test_planted_print_still_reaches_stderr kind="unit"  # noqa: E501
-    def flush(self) -> None:
-        """Flush the captured real stderr (the stream writes actually
-        landed on), not the stdout this object is standing in for."""
-        self._real_stderr.flush()
-
-    # frob:waive OPAQUE001 reason="T-2486: __getattr__ here is a deliberate \
-    # pass-through delegator (encoding/isatty/etc. forwarded to the real stdout this \
-    # proxy stands in for) -- the class's own docstring states this is its whole \
-    # purpose; it never routes to an attacker- or config-controlled target, only the \
-    # one real_stdout object captured at __init__ time"
-    def __getattr__(self, name: str):
-        """Every non-write attribute (encoding, `isatty`, etc.) passes
-        through to the real stdout object unchanged -- this class only
-        ever intercepts writes, never stdout's other characteristics."""
-        # frob:waive OPAQUE001 reason="T-2486: plain attribute forwarding to the \
-        # captured real_stdout object (not a dynamic/attacker-controlled name) -- the \
-        # delegation IS this method's documented job, see the class docstring"
-        return getattr(self._real_stdout, name)
-
-
-# frob:ticket T-2486
-@contextlib.contextmanager
-def _guard_json_stdout_writes():  # noqa: ANN201
-    """Structural boundary guard (T-2486) for a `--json` run: for the
-    duration of this context, `sys.stdout` is NOT the real stdout --
-    every write anywhere in the guarded call stack (this module's own
-    code or any function it calls into, present or future) is
-    transparently redirected to `sys.stderr` instead
-    (`_StderrRedirectStdout`). This supersedes `quiet_stdout_logs` in
-    every place `--json` previously relied on it alone: that primitive
-    only raises the shared root logger's stdout-handler LEVEL, so it
-    protects against a misleveled INFO/DEBUG *log call* but does nothing
-    for a bare `print()`/`sys.stdout.write()` anywhere in the guarded
-    span -- exactly the gap a NEW leak (not caught by RENDER001's static
-    scan, e.g. from a dependency or a call this repo does not lint) could
-    exploit. `quiet_stdout_logs` is still layered underneath at the
-    existing call sites (T-0125 reentrant, so nesting is a no-op, not a
-    double-clamp) as defense in depth, not replaced.
-
-    CALLER CONTRACT: exit this context (the `with` block ends) BEFORE
-    emitting the real `--json` payload -- `_run_stages_and_report`,
-    `_try_check_delta_via_daemon`, `_run_land_parity`, `_run_census`, and
-    `_run_ruff_fix_mode` all structure their guarded span to end before
-    their own final `_log.info(json...)`/`_print_census` call, so that
-    call reaches the REAL stdout (restored in this context manager's
-    `finally`), not the stderr-redirecting proxy."""
-    real_stdout = sys.stdout
-    sys.stdout = _StderrRedirectStdout(real_stdout, sys.stderr)
-    try:
-        yield
-    finally:
-        sys.stdout = real_stdout
 
 
 def _stdout_log_ctx(cfg: AppConfig):  # noqa: ANN201

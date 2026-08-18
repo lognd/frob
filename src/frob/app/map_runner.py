@@ -4,8 +4,9 @@ import contextlib
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app.config import AppConfig
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger
 from frob.map import map_project
 from frob.render import Renderer
 
@@ -35,7 +36,15 @@ def _try_map_via_daemon(root: Path, cfg: AppConfig) -> bool:
         return False
     from frob.app._daemon_proxy import query
 
-    proxied = query(root, "frob_map", {"depth": cfg.map_depth})
+    # T-2492: `query`'s own "daemon disabled, computing ... in-process"
+    # INFO log (emitted on a miss, right before this returns False so the
+    # caller falls through to `map_project`) landed unguarded on stdout
+    # ahead of the `--json` payload -- confirmed by execution. Guard only
+    # the query call itself, not the `_log.info(payload)` line below: that
+    # line only runs on a genuine daemon HIT, where `query` logs nothing,
+    # so it must stay outside the guard to reach the real stdout.
+    with _guard_json_stdout_writes():
+        proxied = query(root, "frob_map", {"depth": cfg.map_depth})
     if proxied.is_err:
         return False
     import json
@@ -47,8 +56,14 @@ def _try_map_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:ticket T-0448
 # frob:ticket T-1238
 # frob:ticket T-1479
+# frob:ticket T-2492
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/modules/render.md#exemplar-frob-map
+# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners and \
+# docs/modules/render.md#exemplar-frob-map one-line summaries are still accurate -- \
+# this change only adds an internal --json stdout-corruption guard, no user-visible \
+# contract change; filed T-2491 to sync the app.md note once its own lease clears, \
+# same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
     """Render the `frob map` project structure summary; T-0448: migrated
     to `frob.render.Renderer` as the second FOUNDATION exemplar -- `--json`
@@ -56,11 +71,12 @@ def run(cfg: AppConfig) -> None:
     regrouped under `frob explore map` (`explore_runner.run`), this
     top-level form stays as a permanent alias, not a sunsetting shim.
     T-1479: `--json` against the daemon's own root tries the daemon proxy
-    first (`_try_map_via_daemon`)."""
+    first (`_try_map_via_daemon`, T-2492: guarded internally now -- see
+    its own docstring)."""
     root = cfg.map_path or Path(".")
     if _try_map_via_daemon(root, cfg):
         return
-    ctx = quiet_stdout_logs() if cfg.map_json else contextlib.nullcontext()
+    ctx = _guard_json_stdout_writes() if cfg.map_json else contextlib.nullcontext()
     with ctx:
         result = map_project(root, depth=cfg.map_depth)
     if cfg.map_json:

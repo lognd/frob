@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 
@@ -319,13 +321,21 @@ def _track_python_stability_and_gate(root: Path, report, test_run) -> bool:
     return other_ok and gated_python_ok
 
 
+# frob:ticket T-2492
 def _run_selected_and_report(cfg: AppConfig, report, runners, root: Path) -> None:
     """Run the selected tests, apply the flake-quarantine gate to a concrete
     python selection (`_track_python_stability_and_gate`, T-0635), report
-    PASS/FAIL, and exit 1 if the (quarantine-adjusted) result is not ok."""
+    PASS/FAIL, and exit 1 if the (quarantine-adjusted) result is not ok.
+    T-2492: `run_selected`'s own subprocess-spawn logging landed unguarded
+    on stdout ahead of a `--json` payload -- guarded when `--json` is set,
+    closed before the legitimate `test_run.model_dump_json` emission."""
     from frob.testing import run_selected
 
-    run_result = run_selected(report, runners, root)
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.test_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        run_result = run_selected(report, runners, root)
     if run_result.is_err:
         _log.error("frob test: %s", run_result.danger_err)
         sys.exit(1)
@@ -411,7 +421,19 @@ def _try_touched_via_daemon(root: Path, cfg: AppConfig) -> bool:
         return False
     from frob.app._daemon_proxy import query
 
-    proxied = query(root, "frob_run_touched_tests", {"base": cfg.test_base or "main"})
+    # frob:ticket T-2492
+    # T-2492: `query`'s own "daemon disabled, computing ... in-process" INFO
+    # log (emitted on a miss, right before this returns False) landed
+    # unguarded on stdout ahead of the `--json` payload -- confirmed by
+    # execution (a `NotARepo` early-error path leaked `gitio: spawning`
+    # lines before this daemon-proxy attempt even ran). Guard only the
+    # query call: the `_log.info` payload lines below only run on a
+    # genuine daemon HIT, where `query` logs nothing, so they must stay
+    # outside the guard to reach the real stdout.
+    with _guard_json_stdout_writes():
+        proxied = query(
+            root, "frob_run_touched_tests", {"base": cfg.test_base or "main"}
+        )
     if proxied.is_err:
         return False
     import json
@@ -435,9 +457,29 @@ def _try_touched_via_daemon(root: Path, cfg: AppConfig) -> bool:
 # frob:ticket T-0322
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_dispatches_and_exits_zero_on_success  # noqa: E501
 # frob:tests tests/test_app.py::TestWaitCoverage.test_wait_coverage_flag_exits_1_on_failure  # noqa: E501
+# frob:ticket T-2492
+# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
+# still accurate -- this change only adds an internal --json stdout-corruption guard, \
+# no user-visible contract change; filed T-2491 to sync the doc note once its own \
+# lease clears, same precedent as T-2486"
 def run(cfg: AppConfig) -> None:
-    """Compute the touched set (or run everything with --all) and run the tests."""
-    root = _resolve_test_root(cfg)
+    """Compute the touched set (or run everything with --all) and run the
+    tests. T-2492: `_resolve_test_root`'s `gitio` DEBUG spawn logging and
+    the unconditional "selection: touched=..." INFO diagnostic below both
+    landed unguarded on stdout ahead of a `--json` payload (confirmed by
+    execution -- an early `NotARepo` error path leaked `gitio: spawning`
+    lines to stdout even though nothing but JSON is meant to reach it in
+    `--json` mode). `_resolve_test_root` and the touched-set computation
+    below now run under `_guard_json_stdout_writes()` when `--json` is
+    set, matching `frob check`'s T-2486 precedent -- `_try_touched_via_
+    daemon` is deliberately called OUTSIDE this guard (it already guards
+    only its own internal `query()` probe, T-2492, so its own payload
+    emission on a daemon hit must reach the real stdout unobstructed)."""
+    root_guard_ctx = (
+        _guard_json_stdout_writes() if cfg.test_json else contextlib.nullcontext()
+    )
+    with root_guard_ctx:
+        root = _resolve_test_root(cfg)
 
     if cfg.test_wait_coverage:
         _run_wait_coverage(root)
@@ -454,17 +496,23 @@ def run(cfg: AppConfig) -> None:
     if _try_touched_via_daemon(root, cfg):
         return
 
-    runners = _loaded_runners(cfg, root)
-    snapshot = _load_test_snapshot(root)
-    report = _selection_report(cfg, root, snapshot, runners, cfg.test_base or "main")
-
-    _log.info(
-        "selection: touched=%d ripple=%d unbound=%d fallback=%s",
-        len(report.touched),
-        len(report.ripple),
-        len(report.unbound),
-        report.fallback,
+    select_guard_ctx = (
+        _guard_json_stdout_writes() if cfg.test_json else contextlib.nullcontext()
     )
+    with select_guard_ctx:
+        runners = _loaded_runners(cfg, root)
+        snapshot = _load_test_snapshot(root)
+        report = _selection_report(
+            cfg, root, snapshot, runners, cfg.test_base or "main"
+        )
+
+        _log.info(
+            "selection: touched=%d ripple=%d unbound=%d fallback=%s",
+            len(report.touched),
+            len(report.ripple),
+            len(report.unbound),
+            report.fallback,
+        )
 
     if not any(report.selected.values()):
         _log.info("nothing touched selects any test")

@@ -8,10 +8,12 @@ a Claude Code PreToolUse hook to surface to the agent.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app._style import style_fail, style_ok, style_rule
 from frob.app.config import AppConfig
 from frob.gates._models import Severity
@@ -84,19 +86,30 @@ def _cve_matches_for(report, cfg: AppConfig) -> tuple[CveMatch, ...]:
 
 
 # frob:ticket T-0562
+# frob:ticket T-2492
 def _run_scan(root: Path, cfg: AppConfig) -> None:
     """Full lockfile pass: table (or `--json`) output; exit 1 on ERROR when enforced.
 
     T-0251: `cfg.vet_timeout`/`cfg.vet_jobs` (from `--timeout`/`--jobs`)
     plumb through to `scan_tree`; `jobs` defaults to 1 (untouched behavior)
     when unset.
+
+    T-2492: `scan_tree`'s own `vet:`/`gitio` INFO logging landed unguarded
+    on stdout ahead of a `--json` payload (confirmed by execution --
+    corrupted the JSON), so the scan (and the CVE-mirror lookup right
+    after it) now run under `_guard_json_stdout_writes()` when `--json`
+    is set, matching `frob check`'s T-2486 precedent.
     """
-    result = scan_tree(root, timeout=cfg.vet_timeout, jobs=cfg.vet_jobs or 1)
-    if result.is_err:
-        _log.error("vet: %s", result.danger_err)
-        sys.exit(1)
-    report = result.danger_ok
-    cve_matches = _cve_matches_for(report, cfg)
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.vet_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        result = scan_tree(root, timeout=cfg.vet_timeout, jobs=cfg.vet_jobs or 1)
+        if result.is_err:
+            _log.error("vet: %s", result.danger_err)
+            sys.exit(1)
+        report = result.danger_ok
+        cve_matches = _cve_matches_for(report, cfg)
 
     if cfg.vet_json:
         payload = json.loads(report.model_dump_json())

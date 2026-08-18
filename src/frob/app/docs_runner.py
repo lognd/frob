@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.app.config import AppConfig
 from frob.docs import extract_docstrings, find_docs_dir, overview, search
 from frob.excludes import iter_files
@@ -21,7 +23,11 @@ def _run_search(cfg: AppConfig, path: Path) -> None:
     if not docs_dir:
         _log.error("error: no docs/ directory found")
         sys.exit(1)
-    matches = search(cfg.docs_search or "", docs_dir)
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.docs_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        matches = search(cfg.docs_search or "", docs_dir)
     if cfg.docs_json:
         import json
 
@@ -40,7 +46,11 @@ def _run_overview(cfg: AppConfig, path: Path) -> None:
     if not docs_dir:
         _log.info("no docs/ directory found")
         return
-    entries = overview(path, cfg.docs_symbol)
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.docs_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        entries = overview(path, cfg.docs_symbol)
     if cfg.docs_json:
         import json
 
@@ -62,9 +72,19 @@ def _collect_docstrings(path: Path, symbol: str | None) -> list:
     return results
 
 
+# frob:ticket T-2492
 def _run_extract(cfg: AppConfig, path: Path) -> None:
-    """Handle bare `frob docs <path>`: print extracted docstrings or JSON."""
-    results = _collect_docstrings(path, cfg.docs_symbol)
+    """Handle bare `frob docs <path>`: print extracted docstrings or JSON.
+    T-2492: `extract_docstrings`'s own per-file "dispatching path=.../
+    extracted N symbols" INFO logging landed unguarded on stdout ahead of
+    a `--json` payload (confirmed by execution -- corrupted the JSON), so
+    the collection now runs under `_guard_json_stdout_writes()` when
+    `--json` is set, matching `frob check`'s T-2486 precedent."""
+    guard_ctx = (
+        _guard_json_stdout_writes() if cfg.docs_json else contextlib.nullcontext()
+    )
+    with guard_ctx:
+        results = _collect_docstrings(path, cfg.docs_symbol)
     if cfg.docs_json:
         import json
 

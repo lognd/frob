@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from pathlib import Path
 
+from frob.app._json_guard import _guard_json_stdout_writes
 from frob.bind import check, scan_bindings, scan_sources
 from frob.render import Renderer
 
@@ -73,8 +75,19 @@ def _report_mismatches(mismatches, as_json: bool, root: Path) -> None:
 
 # frob:doc docs/modules/app.md#runners
 # frob:ticket T-0588
+# frob:ticket T-2492
+# frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
+# still accurate -- this change only adds an internal --json stdout-corruption guard, \
+# no user-visible contract change; filed T-2491 to sync the doc note once its own \
+# lease clears, same precedent as T-2486"
 # frob:tests tests/unit/test_app_runners_batch5.py::TestBindRunner.test_mismatch_json_mode_no_exit  # noqa: E501
 def run(argv=None):
+    """T-2492: `scan_bindings`/`scan_sources`/`check` all walk the tree via
+    `gitio`, whose own DEBUG spawn logging landed unguarded on stdout
+    ahead of a `--json` payload (confirmed by execution -- corrupted the
+    JSON); each scan call below now runs under
+    `_guard_json_stdout_writes()` when `--json` is set, matching `frob
+    check`'s T-2486 precedent."""
     args = _build_bind_parser().parse_args(argv)
 
     root = Path(args.path)
@@ -82,10 +95,18 @@ def run(argv=None):
         print(f"error: {root} does not exist", file=sys.stderr)
         sys.exit(1)
 
+    guard_ctx = _guard_json_stdout_writes() if args.json else contextlib.nullcontext()
+
     if args.list_bindings:
-        _print_items(scan_bindings(root), args.json)
+        with guard_ctx:
+            items = scan_bindings(root)
+        _print_items(items, args.json)
         return
     if args.list_sources:
-        _print_items(scan_sources(root), args.json)
+        with guard_ctx:
+            items = scan_sources(root)
+        _print_items(items, args.json)
         return
-    _report_mismatches(check(root), args.json, root)
+    with guard_ctx:
+        mismatches = check(root)
+    _report_mismatches(mismatches, args.json, root)
