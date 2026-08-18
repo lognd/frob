@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9b7da2f6184aafd77c120768ce9279bb67ff66e8
 ---
 Producer-side half of T-2342, deferred because src/frob/app/ticket_runner/
 _rapid_sweep.py carried a live cross-worktree lease held by T-2313 (fixing
