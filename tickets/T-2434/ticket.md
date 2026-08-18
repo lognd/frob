@@ -89,7 +89,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5d1a06090a58aa413a85bfc468537a9816f023fe
 ---
 Validate `[[docblocks.commands]]` (4 leaves in this repo currently) --
 prog/parser, PLUS T-2397's own new config=/forwarded= keys (landed on
