@@ -151,9 +151,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 4,
-      "reason": "T-2001 auto-baseline: this land's own diff grew env.read on testsuite from 3 to 4 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 5,
+      "reason": "T-2340: this ticket's own deliberate capability grant for tests/unit/verify/test_watermark.py (os.environ read in a test-fixture git-repo helper, SELFAUDIT001-flagged undeclared effect) adds one via-list site",
+      "ticket": "T-2340"
     },
     "testsuite::eval": {
       "accepted_count": 15,
@@ -161,9 +161,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 176,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 175 to 176 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 177,
+      "reason": "T-2340: this ticket's own deliberate capability grant for tests/unit/verify/test_watermark.py (subprocess.run in _init_git_repo_with_commits, a real-git tmp-repo test fixture, SELFAUDIT001-flagged undeclared effect) adds one via-list site",
+      "ticket": "T-2340"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
