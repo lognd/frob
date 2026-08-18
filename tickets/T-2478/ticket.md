@@ -60,7 +60,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 19ae14f33a5eea97a1101bb2e12dc4bbb9f7b966
 ---
 `frob verify status` raised quarantine on 5 undisposed post-land findings
 from T-1135's land -- all lint, all reached main because the land-time
