@@ -1181,6 +1181,12 @@ def _is_ancestor_with_retry(
         return True
     for delay in _LAND_PROOF_ANCESTOR_RETRY_DELAYS:
         sleep(delay)
+        # frob:waive PERF008 reason="the argv IS identical every iteration, but this \
+        # is a DELIBERATE retry against changing external state (T-1913: suspected \
+        # commit/ref visibility race) -- main's ref visibility can genuinely change \
+        # between retries even with identical git args; hoisting this call out of the \
+        # loop would collapse the retry to a single attempt and defeat its entire \
+        # purpose (T-2321)"
         retried = run_argv(
             ["git", "-C", str(root), "merge-base", "--is-ancestor", commit_sha, "main"]
         )
@@ -2138,6 +2144,11 @@ def _worktree_branch_name(root: Path, worktree: Path) -> str | None:
         lines = block.splitlines()
         if not lines or not lines[0].startswith("worktree "):
             continue
+        # frob:waive PERF008 reason="lines[0] is THIS loop's own current porcelain \
+        # block (a different worktree path each iteration of the \
+        # for-block-in-spawned.stdout.split loop) -- the genuinely invariant operand, \
+        # resolved (the comparison target), is already computed once above the loop; \
+        # there is nothing loop-invariant left to hoist here (T-2321)"
         if Path(lines[0][len("worktree ") :]).resolve() != resolved:
             continue
         for line in lines[1:]:
@@ -3491,6 +3502,11 @@ def _new_public_symbols_missing_doc_or_test_edge(
             old_names = set(_public_top_level_defs(old.danger_ok.stdout))
         lines = source.splitlines()
         genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
+        # frob:waive PERF004 reason="new_defs is recomputed fresh from THIS file's own \
+        # source two lines above (_public_top_level_defs(source)) on every outer \
+        # for-rel_path-in-touched_paths iteration -- there is no shared/invariant \
+        # collection to hoist the sort of; each iteration genuinely sorts different \
+        # data (T-2321)"
         for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
             if name in old_names:
                 continue

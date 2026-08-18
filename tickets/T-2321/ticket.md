@@ -2,7 +2,7 @@
 id: T-2321
 title: 'T-2303 child: waive the 3 non-hoistable PERF004/PERF008 sites in _land_cmd.py
   now that T-2314 makes waivers actually work'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,6 +13,8 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -26,6 +28,8 @@ scope_changes:
   reason: 'probe: confirm scope, no-op since already declared'
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
