@@ -735,3 +735,46 @@ def _needle_matches_resolved(needle: str, resolved: str) -> bool:
     despite the T-0328 origin -- lives in the core module so no per-
     language module depends on another."""
     return needle in resolved or needle in f"{resolved}("
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-0169
+#: Every language bucket `_EXT_LANGUAGE` maps at least one extension to --
+#: i.e. every language a capability-scan CALLER (self-conformance's
+#: `_selfconform.py::_sorted_capability_files`, `vet`'s dependency scan)
+#: actually reaches via `language_for`/`scan_file_capabilities`. Exists so
+#: a drift-lock test can assert this set equals
+#: `_capability_registry.LANGUAGES` (the registry's claimed-supported set)
+#: without either side hand-duplicating the other's language list -- a new
+#: registry language with no `_EXT_LANGUAGE` extension entry (or vice
+#: versa) fails that test loudly instead of silently going unscanned
+#: (T-0169: this exact class of gap is what let TS/JS self-conformance
+#: scanning go dark in the logand.app pilot).
+#:
+#: T-2358: moved here (from `_capability.py`) alongside `language_for` --
+#: `_capability_core.py` already defines `_EXT_LANGUAGE` both symbols are
+#: derived from, so this was the natural home once `_capability_scan.py`
+#: needed `language_for` back (see `language_for`'s own T-2358 note).
+SCANNED_LANGUAGES: frozenset[str] = frozenset(_EXT_LANGUAGE.values())
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-2358
+# frob:tests tests/test_vet.py::TestCapabilityScan.test_language_for_known_and_unknown_extensions kind="unit"  # noqa: E501
+def language_for(path: Path) -> str | None:
+    """The pattern-table bucket for `path`'s extension (T-0158: C/C++ is now
+    a first-class `"c-cpp"` bucket, not `None`), or `None` for an extension
+    with no registry-backed language at all.
+
+    T-2358: moved here from `_capability.py` -- `_capability_scan.py`
+    needed this back via a function-local deferred import (5 call sites,
+    all commented "T-1420: avoid a circular import"), which created a
+    genuine `_capability.py <-> _capability_scan.py` import cycle the
+    deferred imports only hid from a naive top-level-only scanner, not
+    from this repo's own function-body-aware `frob cycle` detector.
+    `_capability_core.py` already owns `_EXT_LANGUAGE` and is imported by
+    BOTH modules with no reverse edge, so this is the shared-helper split
+    the cycle gate's own guidance recommends, not a second attempt to
+    hide the same coupling. `_capability.py` re-imports and re-exports
+    this name unchanged for every external caller."""
+    return _EXT_LANGUAGE.get(path.suffix.lower())

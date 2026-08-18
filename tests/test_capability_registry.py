@@ -158,7 +158,7 @@ _FIRE_FIXTURES: tuple[tuple[str, str, str, str], ...] = (
 
 
 @pytest.mark.parametrize("language,kind,filename,source", _FIRE_FIXTURES)
-# frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+# frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
 def test_fire_fixture_flags_capability(
     tmp_path: Path, language: str, kind: str, filename: str, source: str
 ) -> None:
@@ -454,7 +454,7 @@ class TestPerOperationFireFixtures:
         )
 
     @pytest.mark.parametrize("entry", DANGEROUS_OPERATIONS, ids=_PER_OPERATION_IDS)
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_entry_fires_scan_file_capabilities(
         self, tmp_path: Path, entry: _DangerousOperation
     ) -> None:
@@ -490,13 +490,13 @@ class TestNegativeFixtures:
     """T-0151 lessons: dotted-call exclusions and self-match boundaries
     must stay locked, not just the positive fire side."""
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_re_compile_is_not_eval(self, tmp_path: Path) -> None:
         path = tmp_path / "m.py"
         path.write_text("import re\n_RE = re.compile(r'^x$')\n")
         assert "eval" not in scan_file_capabilities(path)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_signal_signal_is_process_control_not_bare_env(
         self, tmp_path: Path
     ) -> None:
@@ -517,13 +517,13 @@ class TestNegativeFixtures:
         assert "process-control" in observed
         assert "env" not in observed
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_c_socket_header_alone_is_not_net(self, tmp_path: Path) -> None:
         path = tmp_path / "m.c"
         path.write_text("#include <sys/socket.h>\n")
         assert "net" not in scan_file_capabilities(path)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_openapi_generated_ts_is_not_ffi(self, tmp_path: Path) -> None:
         """T-0019 (graphite adoption): SYS100 fired for graphite's `node
         browser` on capability `ffi`, sourced from `frontend/src/api/
@@ -555,7 +555,7 @@ class TestNegativeFixtures:
         observed = scan_file_capabilities(path)
         assert "ffi" not in observed
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_real_napi_import_still_fires_ffi(self, tmp_path: Path) -> None:
         """The positive counterpart to the openapi fixture above: a real
         `napi`-based native addon import must still be caught (T-0019 is a

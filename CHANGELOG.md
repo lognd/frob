@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.504.0] - unreleased
+
+- T-2358: Three live import cycles in src/frob (deploy, vet, serve/stats), invisible to accounting because the cycle gate emits identity-less findings
+
 ## [0.503.0] - unreleased
 
 - T-2353: priority/kind/component/tier mutations have no --reason audit trail

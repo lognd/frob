@@ -36,7 +36,9 @@ def _model_with_host_node() -> KernelModel:
 
 
 class TestSorted:
-    # frob:tests src/frob/deploy/_generate.py::sorted_manifest_entries kind="unit"
+    # frob:tests src/frob/deploy/_generate_common.py::sorted_manifest_entries \
+    # kind="unit"
+    # frob:tests src/frob/deploy/_generate_common.py::ManifestEntry kind="unit"
     def test_sorted(self):
         entries = sorted_manifest_entries(_model_with_host_node())
         assert [e.node_id for e in entries] == ["api"]
@@ -45,7 +47,8 @@ class TestSorted:
         # is only granted when a declared listens port actually needs it.
         assert "CAP_NET_BIND_SERVICE" not in entries[0].capabilities
 
-    # frob:tests src/frob/deploy/_generate.py::sorted_manifest_entries kind="unit"
+    # frob:tests src/frob/deploy/_generate_common.py::sorted_manifest_entries \
+    # kind="unit"
     def test_privileged_port_grants_cap_net_bind(self):
         """T-0281 item 8: a `may net` node binding a PRIVILEGED (<1024)
         port still gets `CAP_NET_BIND_SERVICE` -- the gate narrows the
@@ -65,12 +68,12 @@ class TestSorted:
 
 
 class TestDigest:
-    # frob:tests src/frob/deploy/_generate.py::manifest_digest kind="unit"
+    # frob:tests src/frob/deploy/_generate_common.py::manifest_digest kind="unit"
     def test_det(self):
         model = _model_with_host_node()
         assert manifest_digest(model) == manifest_digest(model)
 
-    # frob:tests src/frob/deploy/_generate.py::manifest_digest kind="unit"
+    # frob:tests src/frob/deploy/_generate_common.py::manifest_digest kind="unit"
     def test_changes_with_model(self):
         base = _model_with_host_node()
         changed = KernelModel(

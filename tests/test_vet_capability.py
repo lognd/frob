@@ -51,7 +51,7 @@ _REAL_EXEC_CALL = (
 
 
 class TestDocstringProseNotObservedSetLevel:
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_docstring_and_comment_prose_yields_no_exec_capability(
         self, tmp_path: Path
     ) -> None:
@@ -59,7 +59,7 @@ class TestDocstringProseNotObservedSetLevel:
         pkg.write_text(_DOCSTRING_AND_COMMENT_PROSE_ONLY)
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_real_exec_call_still_observed(self, tmp_path: Path) -> None:
         pkg = tmp_path / "real_exec.py"
         pkg.write_text(_REAL_EXEC_CALL)
@@ -203,7 +203,7 @@ class TestDocstringProseNotObservedLineLevel:
 # fixtures below); the T-0328/T-1626 import-and-container-alias-aware
 # resolver must.
 class TestSymbolResolvedContainerAndPartialEvasions:
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_dict_literal_dispatch_resolves(self, tmp_path: Path) -> None:
         pkg = tmp_path / "dict_dispatch.py"
         pkg.write_text(
@@ -214,7 +214,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_list_literal_dispatch_resolves(self, tmp_path: Path) -> None:
         pkg = tmp_path / "list_dispatch.py"
         pkg.write_text(
@@ -225,7 +225,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_dict_literal_dispatch_with_non_dangerous_value_not_flagged(
         self, tmp_path: Path
     ) -> None:
@@ -243,7 +243,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         )
         assert "exec" not in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_functools_partial_wrapping_dangerous_op_resolves(
         self, tmp_path: Path
     ) -> None:
@@ -257,7 +257,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_functools_partial_called_directly_resolves(
         self, tmp_path: Path
     ) -> None:
@@ -270,7 +270,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         )
         assert "exec" in scan_file_capabilities(pkg)
 
-    # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
     def test_partial_from_import_alias_resolves(self, tmp_path: Path) -> None:
         # `from functools import partial as p` -- the alias itself must
         # resolve through the ordinary import table before the

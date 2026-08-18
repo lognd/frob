@@ -475,7 +475,8 @@ class TestCapabilityScan:
         assert _scan_file_operations(missing) == ()
 
     def test_python_exec_and_net_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.py"
@@ -495,7 +496,8 @@ class TestCapabilityScan:
         assert "exec" in capabilities
 
     def test_kotlin_net_okhttp_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0170: OkHttp is the dominant Android HTTP client -- one of the
         # per-cell fire fixtures for the new kotlin column.
         from frob.vet._capability import scan_file_capabilities
@@ -507,7 +509,8 @@ class TestCapabilityScan:
         assert "net-connect" in scan_file_capabilities(kt)
 
     def test_kotlin_exec_runtime_exec_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         kt = tmp_path / "Shell.kt"
@@ -517,7 +520,8 @@ class TestCapabilityScan:
     def test_kotlin_client_storage_shared_preferences_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         kt = tmp_path / "Prefs.kt"
@@ -529,7 +533,8 @@ class TestCapabilityScan:
         assert "client_storage" in scan_file_capabilities(kt)
 
     def test_kotlin_benign_file_has_no_capabilities(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0170: a kotlin file that touches none of the patterned needles
         # observes an empty capability set -- confirms the column does not
         # over-fire on ordinary Kotlin code.
@@ -636,7 +641,7 @@ class TestCapabilityScan:
         assert _decode_to_exec_signal(pkg) is False
 
     def test_language_for_known_and_unknown_extensions(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::language_for kind="unit"
+        # frob:tests src/frob/vet/_capability_core.py::language_for kind="unit"
         from frob.vet._capability import language_for
 
         assert language_for(tmp_path / "mod.py") == "python"
@@ -800,7 +805,8 @@ class TestCapabilityScan:
         assert scan_file_capabilities(tmp_path / "b.py") == frozenset()
 
     def test_re_compile_alone_does_not_report_eval(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0151: bare `compile(` used to match `re.compile(`/`ast.compile(`
         # dotted calls, spuriously reporting "eval" for ordinary regex code.
         from frob.vet._capability import scan_file_capabilities
@@ -814,7 +820,8 @@ class TestCapabilityScan:
         assert "eval" not in scan_file_capabilities(pkg)
 
     def test_bare_compile_call_still_reports_eval(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0151: the bare builtin `compile()` (not a dotted method access) is
         # a genuine eval-adjacent primitive and must still be caught.
         from frob.vet._capability import scan_file_capabilities
@@ -824,7 +831,8 @@ class TestCapabilityScan:
         assert "eval" in scan_file_capabilities(pkg)
 
     def test_genuine_eval_still_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.py"
@@ -832,7 +840,8 @@ class TestCapabilityScan:
         assert "eval" in scan_file_capabilities(pkg)
 
     def test_comment_only_needle_does_not_fire(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0209: pilot P2 -- a needle appearing only inside a `#` comment
         # describing forbidden network calls must not be reported as an
         # observation. The file's actual code never calls requests.get.
@@ -850,7 +859,8 @@ class TestCapabilityScan:
     def test_real_code_needle_still_fires_alongside_comment(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0209: the comment-exclusion filter must not mask a genuine
         # needle hit elsewhere in real code, even when the same needle also
         # appears in a comment in the same file.
@@ -909,7 +919,8 @@ class TestCapabilityScan:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_string_literal_needle_still_fires(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0209: only COMMENT spans are filtered -- a needle inside a string
         # literal (not a comment) is deliberately left unfiltered (module
         # docstring's T-0209 note: distinguishing exec-vector strings from
@@ -921,7 +932,8 @@ class TestCapabilityScan:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_capability_module_self_scan_documented_false_positive(self) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0151: the capability scanner's own source stores every needle as
         # literal string data, so scanning IT directly (not via directory
         # aggregation) still shows the accepted false-positive class
@@ -1027,7 +1039,8 @@ class TestCapabilityScanBindingResolution:
     positives), and a bare unimported name never fires."""
 
     def test_import_as_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 1: `import subprocess as sp; sp.run(x)` -- the raw
         # text never contains "subprocess.run(" so the pre-T-0328 scanner
         # missed this entirely.
@@ -1038,7 +1051,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_from_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 2: `from subprocess import run; run(x)` -- a bare
         # call with no dotted prefix at the call site at all.
         from frob.vet._capability import scan_file_capabilities
@@ -1048,7 +1062,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_from_import_as_detected_with_correct_kind(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 3: `from os import system as e; e(x)` must resolve to
         # `os.system` -- capability "exec", NOT "eval" (the pre-T-0328
         # scanner reported nothing at all; a naive fix that just matched
@@ -1078,7 +1093,8 @@ class TestCapabilityScanBindingResolution:
         )
 
     def test_method_shadowing_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a class method named `run` on an unrelated object
         # (`Job().run()`) must NOT resolve to a dangerous `run` symbol --
         # `Job()` is a call, not an import-bound name, so resolution
@@ -1090,7 +1106,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_param_shadowing_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a function parameter named `system` shadows a
         # `from os import system` import for the duration of that function
         # -- calling the param must not resolve to `os.system`.
@@ -1101,7 +1118,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_local_variable_shadowing_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a local variable named `run` (assigned a harmless
         # value) shadows an imported dangerous `run` for the rest of that
         # function's scope.
@@ -1116,7 +1134,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_bare_name_call_with_no_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No naive bare-name false positive: calling an undefined/locally-
         # scoped `run()` with no matching import anywhere in the file must
         # not resolve to anything.
@@ -1127,7 +1146,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_direct_call_still_detected_via_resolver(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Regression: an ordinary unaliased `subprocess.run()` call (already
         # caught by the raw-text scan) must still fire once the resolver
         # path is unioned in -- no regression on the common case.
@@ -1138,7 +1158,8 @@ class TestCapabilityScanBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_attribute_only_env_access_via_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Non-call attribute access (no argument_list) through an aliased
         # import: `import os as o; o.environ` must resolve to `os.environ`.
         from frob.vet._capability import scan_file_capabilities
@@ -1158,7 +1179,8 @@ class TestCapabilityScanLocalRebindResolution:
     (benign rebind, parameter shadow) stays silent."""
 
     def test_single_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `xyz = run; xyz(...)` -- a plain local rebind of an imported
         # dangerous name must resolve through the alias to "exec".
         from frob.vet._capability import scan_file_capabilities
@@ -1168,7 +1190,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_chained_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `a = run; b = a; b(...)` -- transitive copy-propagation across
         # two hops in document order.
         from frob.vet._capability import scan_file_capabilities
@@ -1178,7 +1201,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_attribute_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `e = os.system; e("x")` -- rebind to a dangerous ATTRIBUTE chain
         # (not a bare imported name) must also resolve.
         from frob.vet._capability import scan_file_capabilities
@@ -1188,7 +1212,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_benign_rebind_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `run = lambda x: x; run()` -- a name that is never bound to any
         # dangerous target anywhere in the file must stay silent; a lambda
         # RHS is not a resolvable identifier/attribute chain, so it never
@@ -1200,7 +1225,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_parameter_shadow_still_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0328 regression guard: a parameter named `run` shadowing an
         # imported dangerous `run` must stay silent -- a parameter binds no
         # alias-table entry (it is not an assignment RHS this pass ever
@@ -1212,7 +1238,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_dangerous_then_benign_rebind_stays_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Documented may-analysis over-approximation (T-0337): once a name
         # is EVER bound to a dangerous target in a scope, a later benign
         # reassignment of that same name does not clear the flag -- a call
@@ -1227,7 +1254,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_call_before_rebinding_still_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0468: Python sibling of the T-0378 Rust ordering fix. The
         # Python `_shadowing_scope`/`_py_scope_bound_names` pair collects
         # every name bound ANYWHERE in the enclosing scope with no byte-
@@ -1246,7 +1274,8 @@ class TestCapabilityScanLocalRebindResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_call_after_rebinding_still_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0468 sibling of the ordering test above: the position-aware
         # fix must not become unconditionally permissive -- a call AFTER
         # the same `o = None` rebind is still correctly shadowed.
@@ -1269,7 +1298,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
     T-0328 no-false-positive posture."""
 
     def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `a = b = subprocess.run; a(x)` -- taxonomy "chained assignment".
         # The OUTER target (`a`) previously saw its RHS as an unresolvable
         # nested `assignment` node and gave up; `_resolve_py_expr` now
@@ -1281,7 +1311,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Same source, calling through the INNER target (`b`) instead --
         # already worked pre-T-0659 (the plain single-assignment path), a
         # regression guard alongside the outer-target fix above.
@@ -1292,7 +1323,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_tuple_unpack_destructuring_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `f, g = subprocess.run, os.system; f(x)` -- taxonomy "tuple/list
         # unpacking bind", positional correspondence over the RHS literal.
         from frob.vet._capability import scan_file_capabilities
@@ -1304,7 +1336,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_tuple_unpack_second_element_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Same source, calling through the SECOND unpacked name -- proves
         # positional correspondence, not "first name always wins".
         from frob.vet._capability import scan_file_capabilities
@@ -1316,7 +1349,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_starred_unpack_leading_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `f, *rest = [subprocess.run]; f(x)` -- taxonomy "starred
         # unpacking bind"; `f` binds to the FIRST element regardless of how
         # many trailing elements the splat swallows.
@@ -1327,7 +1361,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_starred_unpack_trailing_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `*rest, g = [1, subprocess.run]; g(x)` -- the splat-BEFORE case,
         # binding from the back of the sequence.
         from frob.vet._capability import scan_file_capabilities
@@ -1337,7 +1372,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_benign_destructuring_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No-false-positive guard: a destructuring bind whose RHS elements
         # are not resolvable (two lambdas) must stay silent.
         from frob.vet._capability import scan_file_capabilities
@@ -1347,7 +1383,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_default_arg_forwarding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `def h(cb=subprocess.run): cb(x)` -- taxonomy "default-arg
         # forwarding a callable".
         from frob.vet._capability import scan_file_capabilities
@@ -1357,7 +1394,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_attribute_target_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `mod.run = subprocess.run; mod.run(x)` -- taxonomy "attribute
         # rebinding" (best-effort, by-name object identity, documented on
         # `_attr_rebind_lookup`).
@@ -1374,7 +1412,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_star_import_reexport_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `from subprocess import *; run(x)` -- taxonomy "star-import
         # re-export chain", best-effort for a module `DANGEROUS_OPERATIONS`
         # curates (subprocess).
@@ -1385,7 +1424,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_star_import_untracked_module_not_claimed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No-false-positive/no-overclaim guard: a wildcard import of a
         # module NOT in `DANGEROUS_OPERATIONS` gets no best-effort binding
         # at all -- a bare `run(x)` with no matching import anywhere stays
@@ -1399,7 +1439,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
     def test_conditional_import_fallback_dangerous_first_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # taxonomy "conditional/try-except import fallback aliasing":
         # dangerous import in the `try` branch, benign fallback in
         # `except` -- the LATER (benign) binding must not silently
@@ -1419,7 +1460,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
     def test_conditional_import_fallback_dangerous_second_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Same construct with the branches swapped -- dangerous import
         # walked SECOND, proving the fix is order-independent, not just
         # "first wins" or "last wins" by coincidence of tree-walk order.
@@ -1438,7 +1480,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
     def test_conditional_import_fallback_both_safe_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No-false-positive guard: both fallback branches benign must stay
         # silent.
         from frob.vet._capability import scan_file_capabilities
@@ -1454,7 +1497,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "closure capture" row (Lang Ref 4.2 Naming and
         # binding): `def outer(): r = subprocess.run; def inner(): r(x);
         # return inner` -- the inner function's call to `r` must resolve
@@ -1475,7 +1519,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
     def test_with_as_binding_a_callable_bearing_object_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`as` in `with`/`except` binding a callable-
         # bearing object" row (Lang Ref 8.5 The with statement): the `as`
         # target of a `with` statement is part of the same bind family as
@@ -1499,7 +1544,8 @@ class TestCapabilityScanTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_walrus_operator_bind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "walrus operator bind" row (Lang Ref 6.12
         # Assignment expressions): `(f := subprocess.run)(x)` binds AND
         # calls in one expression.
@@ -1530,7 +1576,8 @@ class TestCapabilityScanTsBindingResolution:
     result here can only come from the resolver."""
 
     def test_default_import_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 1: `import ax from 'axios'; ax.get(url)` -- a
         # renamed default import; the raw text never contains "axios."
         # (only the quoted module specifier 'axios').
@@ -1541,7 +1588,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_require_bare_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 2: `const ax = require('axios'); ax.get(url)` --
         # CommonJS require bound to a renamed local, no ES `import` at all.
         from frob.vet._capability import scan_file_capabilities
@@ -1551,7 +1599,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_require_destructure_rename_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 3: `const {get: g} = require('axios'); g(url)` --
         # CommonJS destructure WITH rename (`pair_pattern`), the sharpest
         # evasion: the call site is a bare `g(url)`, matching no needle at
@@ -1563,7 +1612,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_namespace_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 4: `import * as ax from 'axios'; ax.get(url)` --
         # namespace import, member access through the namespace alias.
         from frob.vet._capability import scan_file_capabilities
@@ -1573,7 +1623,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_ts_import_require_clause_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case 5: `import ax = require('axios'); ax.get(url)` --
         # TS-only import-equals-require form.
         from frob.vet._capability import scan_file_capabilities
@@ -1599,7 +1650,8 @@ class TestCapabilityScanTsBindingResolution:
         )
 
     def test_param_named_get_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No false positive: a LOCAL function parameter named `get` (never
         # imported from anywhere dangerous) must not be flagged.
         from frob.vet._capability import scan_file_capabilities
@@ -1609,7 +1661,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_param_shadowing_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a function parameter named `ax` shadows a `import
         # ax from 'axios'` default import for the duration of that
         # function -- calling `ax.get(...)` inside must not resolve to
@@ -1621,7 +1674,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_method_on_unrelated_object_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a class method named `get` on an unrelated object
         # (`new Job().get()`) must NOT resolve to a dangerous `get` symbol
         # -- `new Job()` is a `new_expression`, not an import-bound name,
@@ -1633,7 +1687,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_bare_name_call_with_no_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No naive bare-name false positive: calling an undefined `get()`
         # with no matching import anywhere in the file must not resolve.
         from frob.vet._capability import scan_file_capabilities
@@ -1643,7 +1698,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_direct_unaliased_call_still_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Regression: the pre-existing raw-text lexical scan (needle
         # "child_process") is unaffected by adding the TS resolver pass --
         # an ordinary unaliased `require('child_process').exec()` call
@@ -1655,7 +1711,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_bracket_access_inline_require_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0377 reviewer round 2: bracket/computed-member access,
         # `require('axios')['get'](url)` -- a plain bracket-access RCE
         # shape the round-1 resolver missed entirely (it only ever
@@ -1668,7 +1725,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_bracket_access_aliased_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0377 reviewer round 2: bracket access through an aliased
         # `require()` rebind -- `const ax = require('axios'); ax['get']
         # (url)`.
@@ -1679,7 +1737,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_dynamic_import_then_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0377 reviewer round 2: `import('axios').then(ax => ax.get(url))`
         # -- dynamic import is the STANDARD way to conditionally load a
         # module in TS/JS, a natural place to hide a dangerous one; the
@@ -1692,7 +1751,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_await_dynamic_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0377 reviewer round 2: `const ax = await import('axios');
         # ax.get(url)` -- the `async`/`await` sibling of `.then(cb)`.
         from frob.vet._capability import scan_file_capabilities
@@ -1709,7 +1769,8 @@ class TestCapabilityScanTsBindingResolution:
     def test_child_process_bracket_and_dynamic_import_caught(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Realism confirmation (reviewer-requested): both new evasion
         # classes against the ACTUAL exec-family library, not just the
         # isolation proxy above. Note the raw-text lexical scan ALSO
@@ -1730,7 +1791,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "exec" in scan_file_capabilities(dynamic_pkg)
 
     def test_computed_subscript_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Documented conservative limitation (module docstring, T-draft-e7c8b53c
         # follow-up filed): a FULLY COMPUTED (non-string-literal) subscript
         # whose key has no resolvable single-literal binding anywhere in
@@ -1748,7 +1810,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_static_template_literal_subscript_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0377 reviewer round 3: a NO-INTERPOLATION template-literal
         # subscript -- `` ax[`get`](url) `` -- carries identical static
         # text to `ax['get'](url)` and must resolve the same. Template
@@ -1762,7 +1825,8 @@ class TestCapabilityScanTsBindingResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_interpolated_template_subscript_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Documented conservative limitation (module docstring, T-draft-
         # e7c8b53c follow-up filed): an INTERPOLATED template-literal
         # subscript whose substituted name has no resolvable single-
@@ -1785,7 +1849,8 @@ class TestCapabilityScanTsBindingResolution:
         # `const key = 'get'; ax[key](url)` -- is a local name bound to
         # exactly one string literal in the file, so the light dataflow
         # pass resolves it the same as `ax['get'](url)`.
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
@@ -1800,7 +1865,8 @@ class TestCapabilityScanTsBindingResolution:
         # T-0432: the same trivial indirection through a single-
         # substitution template literal -- `` ax[`${key}`](url) `` where
         # `key` is a local single-literal constant.
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
@@ -1818,7 +1884,8 @@ class TestCapabilityScanTsBindingResolution:
         # subscript site, so it stays silent (same as an unresolved
         # computed subscript) rather than risk resolving to the wrong
         # value.
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
@@ -1837,7 +1904,8 @@ class TestCapabilityScanTsBindingResolution:
         # excluded from the local-constant table entirely -- resolving it
         # would need real reaching-definitions dataflow, not the light
         # single-literal-binding heuristic this ticket implements.
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
@@ -1857,7 +1925,8 @@ class TestCapabilityScanTsBindingResolution:
         # when every piece happens to be a single-literal-bound local --
         # only the exact `` `${key}` `` (one substitution, no other
         # content) shape resolves.
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         from frob.vet._capability import scan_file_capabilities
 
         pkg = tmp_path / "pkg.ts"
@@ -1881,7 +1950,8 @@ class TestCapabilityScanRustBindingResolution:
     (no false positives)."""
 
     def test_use_as_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case: `use std::process::Command as C; C::new(cmd)` -- the
         # raw text never contains "Command::new(", only the `use` line's
         # own "std::process::Command" text.
@@ -1906,7 +1976,8 @@ class TestCapabilityScanRustBindingResolution:
         )
 
     def test_bare_use_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # An unaliased `use` (no rename) still resolves through the same
         # binding table -- `Command::new(cmd)` after `use std::process::
         # Command;`.
@@ -1917,7 +1988,8 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_param_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a function parameter named `C` shadows a `use
         # std::process::Command as C` alias for the duration of that
         # function -- calling `C::new(...)` inside must not resolve to
@@ -1931,7 +2003,8 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_let_shadowing_use_alias_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a local `let C = ...` binding shadows the `use`
         # alias for the rest of that function body.
         from frob.vet._capability import scan_file_capabilities
@@ -1943,7 +2016,8 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_bare_name_call_with_no_use_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No naive bare-name false positive: calling `C::new(...)` with no
         # `use` binding anywhere in the file must not resolve.
         from frob.vet._capability import scan_file_capabilities
@@ -1953,7 +2027,8 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_call_before_rebinding_still_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0378 round 2 (reviewer REJECT, T-0339 fail-closed): round 1's
         # shadow check was ORDER-INSENSITIVE -- it collected every name
         # bound ANYWHERE in the scope regardless of position, so a call
@@ -1975,7 +2050,8 @@ class TestCapabilityScanRustBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_call_after_rebinding_still_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0378 round 2 sibling of the ordering test above: the position-
         # aware fix must not become UNCONDITIONALLY permissive -- a call
         # AFTER the same `let C = 5` rebinding is still correctly shadowed
@@ -2011,7 +2087,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     `TestCapabilityScanRustBindingResolution`."""
 
     def test_grouped_use_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "use path::{a, b}" (grouped/nested) row, combined with
         # an `as` rename inside the group: `use std::process::{Command as
         # C, Stdio}; C::new(cmd)`.
@@ -2024,7 +2101,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_nested_grouped_use_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A further-nested group (`a::{b, c::{d as e}}`) recurses correctly.
         from frob.vet._capability import scan_file_capabilities
 
@@ -2035,7 +2113,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_pub_use_reexport_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "pub use re-export" row, combined with an `as` rename so
         # the raw text never contains "Command::new(".
         from frob.vet._capability import scan_file_capabilities
@@ -2047,7 +2126,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_glob_use_let_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "use path::*" (glob) row: `use std::process::*;` binds
         # the wildcard-fallback sentinel, and a further `let`-bound alias
         # off the glob-brought-in name resolves through it.
@@ -2060,7 +2140,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_let_binding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "let binding" row: `let f = std::process::Command::new;
         # f("sh").spawn();`.
         from frob.vet._capability import scan_file_capabilities
@@ -2072,7 +2153,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_chained_shadowed_let_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "chained/shadowed let" row: `let f = cmd_new; let f = f;`.
         from frob.vet._capability import scan_file_capabilities
 
@@ -2084,7 +2166,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_tuple_destructure_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "tuple/struct destructuring bind" row: `let (f, _) =
         # (Command::new, 0); f("sh");`.
         from frob.vet._capability import scan_file_capabilities
@@ -2097,7 +2180,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "closure capturing a bound path" row: `let f =
         # Command::new; let c = move |a| f(a).spawn();`.
         from frob.vet._capability import scan_file_capabilities
@@ -2110,7 +2194,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_glob_use_untracked_module_not_claimed(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No false claim: a glob `use` of a module `DANGEROUS_OPERATIONS`
         # does NOT curate must not resolve any bare name (honest
         # under-approximation, mirrors `_RUST_WILDCARD_DANGEROUS_MODULES`).
@@ -2123,7 +2208,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     def test_closure_param_shadowing_let_alias_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No regression: a CLOSURE parameter of the same name as an
         # enclosing `let`-aliased dangerous target shadows it FOR THE
         # CLOSURE'S OWN BODY -- the alias table must not resolve through a
@@ -2143,7 +2229,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_let_binding_benign_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No regression: a `let` binding to an ORDINARY (non-`use`-bound)
         # value must stay silent.
         from frob.vet._capability import scan_file_capabilities
@@ -2155,7 +2242,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     def test_function_pointer_coercion_from_named_fn_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "function-pointer coercion from a named fn" row:
         # `let f: fn(&str) -> _ = Command::new; f("sh");` -- an explicit
         # `fn(...)` type annotation on the `let` target does not change the
@@ -2175,7 +2263,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     def test_type_alias_for_function_pointer_type_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`type` alias (data, not routing by itself, but
         # aliases the function-pointer type)" row: `type Spawner = fn(&str)
         # -> Child;` then `let f: Spawner = Command::new; f("sh");` -- the
@@ -2194,7 +2283,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_struct_update_field_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666/T-1063: taxonomy "field rebinding via struct update" row:
         # `let h = Handlers { run: Command::new, ..default }; (h.run)
         # ("sh");`. Closed by T-1063's `_record_rust_field_alias`/`_build_
@@ -2218,7 +2308,8 @@ class TestCapabilityScanRustTaxonomyClosureResolution:
     def test_macro_rules_expansion_emitting_fixed_call_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`macro_rules!` expansion emitting a fixed call"
         # row. Honest documented limitation: this module's own comment
         # ("`macro`-free language has no analog to Rust's `macro_rules!`
@@ -2256,7 +2347,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
     needle), same isolation rationale as `TestCapabilityScanTsBindingResolution`."""
 
     def test_simple_assignment_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "simple assignment": `const f = require("child_process")
         # .exec; f(x)` -- here `const f = require('axios').get; f(url);`.
         from frob.vet._capability import scan_file_capabilities
@@ -2266,7 +2358,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_chained_assignment_outer_target_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "chained assignment": `let a, b; a = b = cp.exec; b(x);`
         # -- here the OUTER target `a` is called.
         from frob.vet._capability import scan_file_capabilities
@@ -2278,7 +2371,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_chained_assignment_inner_target_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Same chained assignment, INNER target `b` called instead.
         from frob.vet._capability import scan_file_capabilities
 
@@ -2289,7 +2383,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_array_destructure_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "destructuring bind (array)": `const [f] = [cp.exec];
         # f(x);`.
         from frob.vet._capability import scan_file_capabilities
@@ -2299,7 +2394,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_default_param_forwarding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "default parameter forwarding": `function f(cb = cp.exec)
         # { cb(x); }`.
         from frob.vet._capability import scan_file_capabilities
@@ -2311,7 +2407,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_member_rebind_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "member rebinding": `obj.run = cp.exec; obj.run(x);`.
         from frob.vet._capability import scan_file_capabilities
 
@@ -2325,7 +2422,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_closure_capture_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy "closure capture": `function outer(){ const r = cp.exec;
         # return function(){ r(x); }; }`.
         from frob.vet._capability import scan_file_capabilities
@@ -2341,7 +2439,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_default_param_benign_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No regression: a default parameter forwarding an ORDINARY (non-
         # dangerous) callable must stay silent.
         from frob.vet._capability import scan_file_capabilities
@@ -2351,7 +2450,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net" not in scan_file_capabilities(pkg)
 
     def test_member_rebind_benign_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No regression: rebinding a member to an ORDINARY value must stay
         # silent.
         from frob.vet._capability import scan_file_capabilities
@@ -2363,7 +2463,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
     def test_reassigned_alias_call_via_chained_target_still_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Sanity check on the alias table's own resolution chain, not just
         # the raw bare-member-expression finding a plain `const f =
         # ax.get;` already produces on its own (this scanner treats ANY
@@ -2379,7 +2480,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "net-connect" in scan_file_capabilities(pkg)
 
     def test_named_import_with_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`import { name as alias } from`" row (ECMA-262
         # 16.2.2 ImportSpecifier) -- distinct from the CommonJS destructure-
         # rename case (`test_require_destructure_rename_detected` on the
@@ -2392,7 +2494,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_export_from_reexport_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`export ... from` re-export" row. `_capability.py`
         # documents that TRUE cross-module linking of the re-export's own
         # USE site is not attempted (single-file scope) -- but the scanner's
@@ -2408,7 +2511,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_export_star_from_reexport_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`export * from` re-export" row -- the taxonomy
         # doc tags this row "best-effort; needs source-module
         # enumerability"; the scanner's raw operations scan still flags the
@@ -2420,7 +2524,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_export_default_binding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`export default` binding" row. True resolution
         # at the import USE site (`import run from './m'; run(x)`) needs
         # cross-module linking this single-file scanner does not attempt --
@@ -2436,7 +2541,8 @@ class TestCapabilityScanTsTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_class_field_holding_bound_reference_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "class field/method holding a bound reference"
         # row (`class C { run = cp.exec; }`). `_capability.py` documents
         # that TRUE points-to tracking through a later `new C().run(x)` call
@@ -2717,7 +2823,8 @@ class TestCapabilityScanCBindingResolution:
     positives)."""
 
     def test_macro_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Evasion case: `#define SYS system` then `SYS("sh")` -- the raw
         # text never contains "system(", only the `#define` line's own
         # "system" token.
@@ -2742,7 +2849,8 @@ class TestCapabilityScanCBindingResolution:
         assert any(op.capability_kind == "exec" and op.library == "libc" for op in ops)
 
     def test_transitive_macro_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A chained rename (`#define A B` + `#define B system`) still
         # resolves `A(...)` all the way through to `system`.
         from frob.vet._capability import scan_file_capabilities
@@ -2752,7 +2860,8 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_bare_macro_no_define_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # No naive bare-name false positive: calling `SYS(...)` with no
         # `#define` anywhere in the file must not resolve.
         from frob.vet._capability import scan_file_capabilities
@@ -2762,7 +2871,8 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_param_shadowing_macro_alias_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a function parameter named `SYS` shadows the macro
         # alias for the duration of that function -- calling `SYS(...)`
         # inside must not resolve to `system`. (`SYS` as a parameter name is
@@ -2776,7 +2886,8 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_local_shadowing_macro_alias_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Shadow case: a local variable declaration named `SYS` shadows the
         # macro alias for the rest of that function body.
         from frob.vet._capability import scan_file_capabilities
@@ -2786,7 +2897,8 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_call_before_local_shadow_still_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0379 mirrors the T-0378 round 2 ordering fix: a call textually
         # BEFORE the same-named local declaration must still resolve
         # through the macro alias -- the C preprocessor's own textual
@@ -2802,7 +2914,8 @@ class TestCapabilityScanCBindingResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_function_like_macro_not_resolved(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Documented limitation: a function-like macro (`#define SYS(x)
         # system(x)`) is a structurally different `preproc_function_def`
         # node and is not resolved by this pass -- its own expansion
@@ -2828,7 +2941,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
     array of function pointers read at a CONSTANT index."""
 
     def test_fn_ptr_var_init_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `void (*f)(const char*) = system_wrapper; f(x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -2837,7 +2951,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_typedef_fn_ptr_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `typedef void (*Handler)(const char*); Handler f = do_exec; f(x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -2851,7 +2966,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
     # frob:waive PII012 reason="'address_of' names the C `&` address-of operator, not \
     # a mailing/contact address"
     def test_assignment_address_of_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `f = &do_exec; f(x);` -- plain assignment, not a
         # declaration init.
         from frob.vet._capability import scan_file_capabilities
@@ -2861,7 +2977,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_assignment_bare_name_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Same row, without the `&` (a bare function name decays to a
         # pointer in an assignment context too).
         from frob.vet._capability import scan_file_capabilities
@@ -2871,7 +2988,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_struct_field_static_init_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `struct Ops ops = { .run = system }; ops.run(x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -2884,7 +3002,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_array_fn_ptr_constant_index_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `void (*tbl[])(const char*) = { system }; tbl[0](x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -2895,7 +3014,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_array_fn_ptr_nonconstant_index_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # The taxonomy's own "runtime-opaque" sibling row: a non-constant
         # index must NOT resolve (no false positive claiming static
         # resolution of what is genuinely a runtime read).
@@ -2909,7 +3029,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_chained_var_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `f` aliases `system`; `g` (a second function-pointer var) is
         # initialized FROM `f` -- resolves transitively, document-order.
         from frob.vet._capability import scan_file_capabilities
@@ -2923,7 +3044,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_param_shadowing_var_alias_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A function parameter named `f` (an `int`, not a function pointer,
         # no alias entry recorded for it) shadows the file-scope alias `f`
         # for the duration of that function -- must not resolve (T-0339
@@ -2941,7 +3063,8 @@ class TestCapabilityScanCTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_unaliased_local_shadow_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A locally-declared function-pointer variable with NO resolvable
         # initializer (a forward declaration `void (*f)(const char*);`
         # inside a function, never assigned) must not be treated as
@@ -3225,7 +3348,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_using_declaration_needs_no_special_resolution(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `using std::system; system(x);` -- a `using`
         # declaration imports a name AS-IS (no rename), so the call site's
         # own text already contains the literal needle "system(" -- caught
@@ -3240,7 +3364,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_namespace_alias_qualified_call_needs_no_special_resolution(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `namespace fs = std; fs::system(x);` -- the
         # registry's own needle is the bare substring "system(", which
         # still occurs verbatim INSIDE a namespace-qualified call
@@ -3253,7 +3378,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_fn_ptr_var_init_detected_on_cpp_extension(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0662's fn-ptr-var-init resolver applies unchanged to the "cpp"
         # language label (same tree-sitter-c grammar fragment).
         from frob.vet._capability import scan_file_capabilities
@@ -3265,7 +3391,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_using_alias_declaration_fn_ptr_typedef_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `using Handler = void(*)(const char*); Handler f =
         # do_exec; f(x);` -- C++11's `using` alias-declaration spelling of
         # a typedef'd function-pointer type; needs no separate branch (the
@@ -3282,7 +3409,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_std_function_init_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `std::function<void(const char*)> f = system; f(x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -3293,7 +3421,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_default_arg_forwarding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `void call(void(*cb)(const char*) = system) { cb(x); }`
         from frob.vet._capability import scan_file_capabilities
 
@@ -3304,7 +3433,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_default_arg_param_shadowing_call_site_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A default-valued parameter's own alias entry must NOT leak
         # outside its own function -- calling a DIFFERENT, unrelated `cb`
         # elsewhere must not resolve.
@@ -3323,7 +3453,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" in result
 
     def test_structured_binding_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `auto [a, b] = std::pair{system, 0}; a(x);`
         from frob.vet._capability import scan_file_capabilities
 
@@ -3334,7 +3465,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_structured_binding_non_literal_rhs_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A structured binding whose RHS is a plain variable (no positional
         # initializer-list to walk) must not resolve -- fail-closed, no
         # guess at what a runtime value's members might be.
@@ -3345,7 +3477,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_lambda_capturing_fn_ptr_var_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: a lambda capturing a bound function-pointer name
         # resolves the call inside its own body -- needs NO special lambda-
         # scope handling: a `lambda_expression`'s body is not itself a
@@ -3366,7 +3499,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_using_namespace_directive_qualified_call_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`using namespace` directive" row (distinct from
         # "`using` declaration" above -- a directive opens a whole
         # namespace rather than importing one name): `using namespace std;
@@ -3382,7 +3516,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_define_macro_aliasing_detected_on_cpp_extension(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`#define` macro aliasing" row, C++'s copy of the
         # same construct C's `test_macro_alias_detected` already locks --
         # the preprocessor is shared grammar, so the ".cpp" language label
@@ -3396,7 +3531,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
     def test_member_function_pointer_bound_to_named_member_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "member-function pointer bound to a named member"
         # row: `auto p = &Ops::run; (obj.*p)(x);`. Genuine, currently
         # UNRESOLVED gap: there is no pointer-to-member (`&Ops::run`,
@@ -3419,7 +3555,8 @@ class TestCapabilityScanCppTaxonomyClosureResolution:
         assert "exec" not in scan_file_capabilities(pkg)
 
     def test_argument_dependent_lookup_call_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "argument-dependent lookup (ADL)" row: `run(x);`
         # resolves to `ns::run` purely via ADL, no `using` in scope. Same
         # "no special resolution needed" shape as the other qualified-call
@@ -3571,7 +3708,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     ticket -- only the pre-existing raw-text needle scan)."""
 
     def test_plain_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `import java.lang.Runtime; Runtime.getRuntime().exec(x)`
         from frob.vet._capability import scan_file_capabilities
 
@@ -3582,7 +3720,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_import_as_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `import java.lang.Runtime as Rt; Rt.getRuntime().exec(x)`
         from frob.vet._capability import scan_file_capabilities
 
@@ -3593,7 +3732,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_import_as_bare_constructor_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Simpler `import ... as` shape (no chained method call): a bare
         # constructor-call needle ("ProcessBuilder(") through an alias.
         from frob.vet._capability import scan_file_capabilities
@@ -3603,7 +3743,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_bare_callable_reference_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `val f = ::runCmd; f(x)` -- an UNTYPED `::` callable
         # reference to a plain top-level name.
         from frob.vet._capability import scan_file_capabilities
@@ -3613,7 +3754,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_typed_callable_reference_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `val f = Runtime::exec; f(x)` -- a receiver-typed
         # `::` bound-member reference.
         from frob.vet._capability import scan_file_capabilities
@@ -3629,7 +3771,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     def test_typealias_for_function_type_needs_no_special_resolution(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `typealias Handler = (String) -> Unit; val f:
         # Handler = ::runCmd; f(x)` -- the `typealias` only renames the
         # DECLARED TYPE (never touched by this resolver); the `val`'s own
@@ -3645,7 +3788,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_chained_val_alias_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # `f` aliases `ProcessBuilder` via `::`; `g` (a second `val`) is
         # initialized FROM `f` -- resolves transitively, document-order.
         from frob.vet._capability import scan_file_capabilities
@@ -3655,7 +3799,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_curated_wildcard_import_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # Taxonomy row: `import java.lang.*; Runtime.getRuntime().exec(x)`
         # -- a wildcard import of a CURATED dangerous package resolves an
         # unqualified name through it.
@@ -3666,7 +3811,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_uncurated_wildcard_import_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A wildcard import of a package NOT in the curated set must not
         # resolve an otherwise-unrelated unqualified name -- fail-closed,
         # no false claim of resolving an untracked package's contents.
@@ -3679,7 +3825,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert scan_file_capabilities(pkg) == frozenset()
 
     def test_unaliased_bare_reference_not_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # A `val` bound to an ordinary (non-callable-reference, non-chained)
         # expression must not resolve -- fail-closed, no guess.
         from frob.vet._capability import scan_file_capabilities
@@ -3689,7 +3836,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert scan_file_capabilities(pkg) == frozenset()
 
     def test_destructuring_declaration_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666/T-1063: taxonomy "destructuring declaration" row: `val (a,
         # b) = Pair(::runCmd, 0); a(x)`. Closed by T-1063's `_record_kt_
         # destructure_alias`/`_kt_destructure_value_elements` (positional
@@ -3702,7 +3850,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
         assert "exec" in scan_file_capabilities(pkg)
 
     def test_lambda_closure_capturing_bound_name_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "lambda/closure capturing a bound name" row:
         # `val f = ::runCmd; val g = { x: String -> f(x) }; g(x)`. The
         # kotlin var-alias table is built file-wide (no per-function scope
@@ -3720,7 +3869,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     def test_default_parameter_forwarding_callable_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666/T-1063: taxonomy "default parameter forwarding a callable"
         # row: `fun call(cb: (String) -> Unit = ::runCmd) { cb(x) }`. Closed
         # by T-1063's `_record_kt_param_default_aliases` -- kotlin's grammar
@@ -3740,7 +3890,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     def test_extension_function_reference_bound_via_import_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "extension function reference bound via import"
         # row: `import kotlin.io.path.exists` -- the pattern for binding a
         # top-level callable via an ordinary import. This reduces to the
@@ -3758,7 +3909,8 @@ class TestCapabilityScanKotlinTaxonomyClosureResolution:
     def test_operator_fun_invoke_making_object_directly_callable_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0666: taxonomy "`operator fun invoke` making an object directly
         # callable" row: `class Handler { operator fun invoke(x: String) =
         # Runtime.getRuntime().exec(x) }; val h = Handler(); h(x)`. The
@@ -3960,7 +4112,8 @@ class TestEmbeddedCodeCapability:
     re-scan of the region's own text."""
 
     def test_embedded_html_script_string_detected(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0244: a large HTML/JS-shaped string literal inside a python
         # module (the malmberg pilot P3 shape) surfaces `embedded_code`
         # AND, since the embedded script itself calls `eval(`, the
@@ -3989,7 +4142,8 @@ class TestEmbeddedCodeCapability:
     def test_embedded_code_region_below_size_threshold_not_detected(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0244: a short string that merely mentions an HTML tag (e.g. an
         # error message fragment) must not fire -- the heuristic requires
         # both the size floor and a signal token, not either alone.
@@ -4002,7 +4156,8 @@ class TestEmbeddedCodeCapability:
     def test_embedded_code_declared_even_when_content_opaque_to_needles(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/vet/_capability.py::scan_file_capabilities kind="unit"
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
         # T-0244 fail-closed guarantee: a large embedded HTML region whose
         # content matches no specific typescript needle (plain markup, no
         # script) still declares `embedded_code` -- the region is never

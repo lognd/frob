@@ -28,20 +28,32 @@ from frob.graph.callgraph import CallGraph
 from frob.lang import parse_file, raw_tree
 from frob.logging import get_logger
 
+from ._capability_c import _c_binding_capabilities, _c_resolved_candidates
 from ._capability_core import (
     _EXT_LANGUAGE,
     _PATTERNS,
     ByteSpan,
+    _embedded_capabilities,
     _fully_in_any_span,
+    _matched_capabilities,
     _needle_hits_outside_comments_ws,
     _needle_matches_resolved,
     _non_executable_byte_spans,
+    language_for,
+)
+from ._capability_kotlin import _kt_binding_capabilities
+from ._capability_python import (
+    _python_binding_capabilities,
+    _python_local_wrapper_capabilities,
+    _python_resolved_candidates,
 )
 from ._capability_registry import (
     RUNTIME_OPAQUE_CONSTRUCTS,
     RUNTIME_OPAQUE_STRUCTURAL_CONSTRUCTS,
     _OpaqueStructuralConstruct,
 )
+from ._capability_rust import _rust_binding_capabilities, _rust_resolved_candidates
+from ._capability_typescript import _ts_binding_capabilities, _ts_resolved_candidates
 
 if TYPE_CHECKING:
     from tree_sitter import Node, Tree
@@ -251,10 +263,6 @@ def _binding_fingerprints(
     even though the literal text `pickle.loads(` never appears. Mirrors
     `_python_binding_operations`'s shape exactly, against `CVE_FINGERPRINTS`
     instead of `DANGEROUS_OPERATIONS`."""
-    from ._capability import (  # T-1420: avoid a circular import
-        _resolved_candidates_for_language,
-    )
-
     candidates = _resolved_candidates_for_language(path, language)
     if not candidates:
         return ()
@@ -377,8 +385,6 @@ def _scan_file_fingerprints(path: Path) -> tuple[CveFingerprint, ...]:
     scan alone would miss."""
     from frob.strata import CVE_FINGERPRINTS
 
-    from ._capability import language_for  # T-1420: avoid a circular import
-
     language = language_for(path)
     if language is None:
         return ()
@@ -427,8 +433,6 @@ def _decode_to_exec_signal(path: Path) -> bool:
     Uses `frob.lang` symbol extraction so the two tokens must co-occur inside
     the SAME function body, not merely the same file.
     """
-    from ._capability import language_for  # T-1420: avoid a circular import
-
     language = language_for(path)
     if language is None:
         return False
@@ -473,6 +477,124 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
     has_decode = any(needle in body for needle in _DECODE_NEEDLES)
     has_exec = any(needle in body for needle in _EXEC_NEEDLES)
     return has_decode and has_exec
+
+
+# frob:doc docs/modules/vet.md#public-api
+# frob:ticket T-2358
+# frob:tests tests/test_vet.py::TestCapabilityScan.test_python_exec_and_net_detected kind="unit"  # noqa: E501
+def scan_file_capabilities(path: Path) -> frozenset[str]:
+    """Capability tokens observed in one source file's raw text (T-0209:
+    needle hits fully inside a tree-sitter comment span are excluded --
+    see `_capability.py`'s module docstring).
+
+    T-2358: moved here from `_capability.py` -- `_scan_directory_
+    capabilities` below (this module's own directory-walk orchestrator)
+    called this via a function-local deferred import ("T-1420: avoid a
+    circular import"), which was a genuine `_capability.py <->
+    _capability_scan.py` import cycle the deferred import only hid from a
+    naive scanner. Every dependency this function needs (the per-language
+    binding-capability functions, `_matched_capabilities`/
+    `_non_executable_byte_spans`/`_embedded_capabilities`/`_PATTERNS`)
+    is already reachable from this module without going back through
+    `_capability.py`, confirming `_capability.py` is the right place for
+    the ONE-DIRECTION dependency (it is already documented, in its own
+    `__all__`, as re-exporting most of this module's public surface --
+    a facade over this module's implementation, not the other way
+    around) -- so moving the implementation here and re-exporting it from
+    `_capability.py` matches the architecture that already existed,
+    rather than inverting it."""
+    language = language_for(path)
+    if language is None:
+        _log.debug("vet: no capability pattern table for %s; treating as opaque", path)
+        return frozenset()
+    table = _PATTERNS[language]
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        _log.warning("vet: could not read %s for capability scan: %s", path, exc)
+        return frozenset()
+
+    comment_spans = _non_executable_byte_spans(path)
+    found = _matched_capabilities(raw, table, language, comment_spans)
+    if language == "python":
+        # T-0328: import/binding-aware resolution catches aliased/from-
+        # import evasions the raw-text needle scan above structurally
+        # cannot (`import subprocess as sp; sp.run(x)`), without touching
+        # the lexical path's own behavior at all.
+        found |= _python_binding_capabilities(path, table, comment_spans)
+        # T-2223: one-hop cross-file wrapper resolution -- catches a
+        # PUBLIC same-directory sibling wrapper (`from a import run;
+        # run(x)` where `a.run` itself execs) that T-1752's own call-
+        # graph attribution structurally cannot reach (private-callee-
+        # only edges) and that neither binding pass above can see (both
+        # only ever resolve within THIS file's own text).
+        found |= _python_local_wrapper_capabilities(path, table)
+        # T-0244: embedded HTML/JS string literals are invisible to the
+        # lexical/binding passes above (both scan the file's OWN python
+        # grammar text); this always adds `embedded_code` (fail-closed
+        # declaration) plus any typescript-needle re-scan hits.
+        found |= _embedded_capabilities(path)
+    elif language == "typescript":
+        # T-0377: TS/JS sibling of the T-0328 python binding pass above --
+        # catches aliased/destructured/namespaced import evasions
+        # (`import {run as r} from 'child_process'; r(x)`, `const {exec} =
+        # require('child_process')`) the raw-text needle scan structurally
+        # cannot.
+        found |= _ts_binding_capabilities(path, table, comment_spans)
+    elif language == "rust":
+        # T-0378: Rust sibling of the T-0328/T-0377 binding passes above --
+        # catches an `as`-aliased `use` import evasion (`use std::process::
+        # Command as C; C::new(x)`) the raw-text needle scan structurally
+        # cannot.
+        found |= _rust_binding_capabilities(path, table, comment_spans)
+    elif language == "c-cpp":
+        # T-0379/T-0662/T-0663: C/C++ sibling of the T-0328/T-0377/T-0378
+        # binding passes above -- catches a macro-renamed dangerous call
+        # (`#define SYS system; SYS(x)`) and (T-0662/T-0663) a function-
+        # pointer variable/assignment/struct-field/array/default-arg/
+        # structured-binding alias the raw-text needle scan structurally
+        # cannot.
+        found |= _c_binding_capabilities(path, table, comment_spans)
+    elif language == "kotlin":
+        # T-0664: kotlin sibling of the binding passes above -- catches an
+        # `import ... as`-aliased or `::`-referenced dangerous call the
+        # raw-text needle scan structurally cannot.
+        found |= _kt_binding_capabilities(path, table, comment_spans)
+    if found:
+        _log.info("vet: %s: capabilities observed: %s", path, sorted(found))
+    return frozenset(found)
+
+
+# T-0380: `_resolved_candidates_for_language` dispatches to whichever
+# language's `_python_resolved_candidates`/`_ts_resolved_candidates`/
+# `_rust_resolved_candidates`/`_c_resolved_candidates` binding table was
+# already built for capability resolution (T-0328/T-0377/T-0378/T-0379) --
+# one shared dispatch point so fingerprint scanning reuses the SAME
+# resolver tables rather than growing its own copy (charter: no
+# duplication). Kotlin is deliberately excluded: no `CVE_FINGERPRINTS`
+# entry is tagged `language="kotlin"` today, so there is nothing for a
+# `_kt_resolved_candidates` branch here to resolve against.
+#
+# frob:ticket T-2358
+# moved here alongside `scan_file_capabilities`, same reason (see its own
+# T-2358 docstring note).
+def _resolved_candidates_for_language(
+    path: Path, language: str
+) -> tuple[tuple[str, int, int], ...]:
+    """The binding-resolved `(resolved_dotted_target, start, end)` triples
+    for `path`, using whichever language's resolver table
+    `_scan_file_fingerprints` needs -- empty for a language with no
+    binding-aware resolver (returns () safely, degrading that language to
+    lexical-only matching)."""
+    if language == "python":
+        return _python_resolved_candidates(path)
+    if language == "typescript":
+        return _ts_resolved_candidates(path)
+    if language == "rust":
+        return _rust_resolved_candidates(path)
+    if language == "c-cpp":
+        return _c_resolved_candidates(path)
+    return ()
 
 
 # frob:doc docs/modules/vet.md#public-api
@@ -685,10 +807,6 @@ def _aggregate_capabilities(
                 break
             if _is_test_path(path) or _is_self_path(path, source_dir):
                 continue
-            from ._capability import (  # T-1420: avoid a circular import
-                scan_file_capabilities,
-            )
-
             capabilities |= scan_file_capabilities(path)
             if ext == ".py" and python_paths:
                 wrapper_found, wrapper_graph = _wrapper_capabilities_for_file(
@@ -1302,8 +1420,6 @@ def _opaque_indirection_findings(path: Path) -> tuple[_OpaqueFinding, ...]:
     keep the deliberately-broad bare `.get(` needle from firing on every
     unrelated `HashMap`/`Vec` `.get(` call in a rust file that never
     touches dynamic symbol loading."""
-    from ._capability import language_for  # T-1420: avoid a circular import
-
     language = language_for(path)
     if language is None:
         return ()

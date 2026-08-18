@@ -2,7 +2,7 @@
 id: T-2358
 title: Three live import cycles in src/frob (deploy, vet, serve/stats), invisible
   to accounting because the cycle gate emits identity-less findings
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,17 +11,153 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/deploy/_generate.py
+- src/frob/deploy/_generate_windows.py
+- src/frob/deploy/_generate_common.py
+- src/frob/vet/_capability.py
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_scan.py
+- tests/unit/deploy/test_generate.py
+- tests/test_vet.py
+- tests/test_vet_capability.py
+- tests/test_capability_registry.py
+- tests/unit/test_capability_and_deploy_cycle_regression.py
+evidence_scope:
+- tests/unit/test_capability_and_deploy_cycle_regression.py
+- tests/unit/test_vet_cycle_regression.py
+- tests/unit/deploy/test_generate.py
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/deploy/_generate.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/deploy/_generate_windows.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/deploy/_generate_common.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/vet/_capability.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/deploy/test_generate.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_vet.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_vet_capability.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_capability_and_deploy_cycle_regression.py
+  reason: T-2358 was created with empty scope; adding the files actually touched,
+    discovered when frob ticket land's out-of-scope waive-deletion check refused
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_generate_windows_no_longer_imports_generate
+- tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_capability_scan_no_longer_imports_capability
+- tests/unit/test_capability_and_deploy_cycle_regression.py::TestPlantedCycleStillDetected::test_planted_two_node_cycle_is_detected
+- tests/unit/test_vet_cycle_regression.py::TestVetCycleRegression::test_vet_cluster_is_not_a_cycle
+- tests/unit/deploy/test_generate.py::TestSorted::test_sorted
+- tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+designated_repro_test: tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_generate_windows_no_longer_imports_generate
 acceptance:
-- text: given src/frob, when frob cycle runs, then it reports zero import cycles
-  evidence: []
+- text: given src/frob, when frob cycle runs, then the deploy/_generate<->_generate_windows
+    and vet/_capability<->_capability_scan cycles are gone (the 5-package serve/stats/tickets/testing/app
+    cycle is escalated separately as T-2363, an architectural decision this ticket
+    does not make implicitly)
+  evidence:
+  - tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_generate_windows_no_longer_imports_generate
+  - tests/unit/test_capability_and_deploy_cycle_regression.py::TestDeployAndCapabilityCycleRegression::test_capability_scan_no_longer_imports_capability
 - text: given a deliberately planted 2-node cycle, when the detector runs, then it
     is still reported (fix did not blind the detector)
-  evidence: []
+  evidence:
+  - tests/unit/test_capability_and_deploy_cycle_regression.py::TestPlantedCycleStillDetected::test_planted_two_node_cycle_is_detected
 - text: given the touched packages, when their test suites run, then they pass
-  evidence: []
+  evidence:
+  - tests/unit/deploy/test_generate.py::TestSorted::test_sorted
+  - tests/test_vet.py::TestCapabilityScan::test_scan_file_operations_names_registry_entry
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given src/frob, when frob cycle runs, then it reports zero import cycles
+  new_text: given src/frob, when frob cycle runs, then the deploy/_generate<->_generate_windows
+    and vet/_capability<->_capability_scan cycles are gone (the 5-package serve/stats/tickets/testing/app
+    cycle is escalated separately as T-2363, an architectural decision this ticket
+    does not make implicitly)
+  reason: 'Investigation found the "zero cycles" criterion covers TWO structurally
+
+    different problems: two isolated 2-module cycles (deploy, vet) that were
+
+    genuinely fixable within this ticket''s own scope, and a 5-package
+
+    cross-package strongly-connected component (serve/stats/tickets/testing/
+
+    app, ~175 nodes) whose fix requires choosing which of five packages''
+
+    dependency directions to invert -- an architectural call the brief
+
+    explicitly said to escalate rather than guess at ("if that decision is
+
+    not obvious, stop and tell me rather than guessing; I would rather own
+
+    that call than have it made implicitly"). Narrowing this criterion to
+
+    the two cycles actually fixed here, and filing the pentagon as its own
+
+    ticket (T-2363) with the exact edge chain measured, keeps this ticket''s
+
+    acceptance honest about what it delivered rather than forcing a false
+
+    "zero cycles" claim or leaving the criterion permanently unbound.
+
+    '
+  actor: logan
+  at: '2026-08-17'
 threat: null
 component: gates
 anchor: false

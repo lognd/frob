@@ -70,7 +70,7 @@ from frob.strata import HostPlatform, KernelModel, KrbDelegationKind
 from frob.strata._host import HostAcl
 from frob.strata._krb import krb_manifest_for
 
-from ._generate import (
+from ._generate_common import (
     DIGEST_HEADER_PREFIX,
     ManifestEntry,
     manifest_digest,
