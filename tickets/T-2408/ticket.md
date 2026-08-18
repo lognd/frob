@@ -32,6 +32,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 52a5e2413c768639aed6d227b1d2bbba38d59a57
 ---
 T-2365's adapter-capability conformance axis (frob.lang._support.derive_capability_registry) marks import_graph KNOWN_GAP for typescript/rust/kotlin: _IMPORT_WALKERS only has python/c/cpp entries. frob.graph.callgraph's cross-file import-verification path (verify_imports=True) and frob.xref both only work for languages with a real extract_imports walker. Add _imports_typescript/_imports_rust/_imports_kotlin walkers mirroring _imports_python/_imports_c_family's shape.
