@@ -91,6 +91,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/root-cleanliness-detector.py",
+            "timeout": 10,
+            "statusMessage": "root-cleanliness-detector"
+          }
+        ]
+      }
     ]
   }
 }

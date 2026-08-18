@@ -2,7 +2,7 @@
 id: T-2487
 title: add a post-Bash root-cleanliness detector for agent context (complementary
   to T-2481's guard)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,78 @@ sprint: null
 runs_last: false
 scope:
 - .claude/hooks/
+- .claude/settings.json
+- docs/guides/claude-hooks.md
+- tests/test_hook_root_cleanliness_detector.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/settings.json
+  reason: 'Wiring the new PostToolUse hook requires .claude/settings.json (matcher
+
+    registration); docs/guides/claude-hooks.md needs a new section per the
+
+    hook''s own frob:doc anchors; tests/test_hook_root_cleanliness_detector.py
+
+    is the test file covering it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: 'Wiring the new PostToolUse hook requires .claude/settings.json (matcher
+
+    registration); docs/guides/claude-hooks.md needs a new section per the
+
+    hook''s own frob:doc anchors; tests/test_hook_root_cleanliness_detector.py
+
+    is the test file covering it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_hook_root_cleanliness_detector.py
+  reason: 'Wiring the new PostToolUse hook requires .claude/settings.json (matcher
+
+    registration); docs/guides/claude-hooks.md needs a new section per the
+
+    hook''s own frob:doc anchors; tests/test_hook_root_cleanliness_detector.py
+
+    is the test file covering it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: design/frob.strata
+  reason: 'The new test file (tests/test_hook_root_cleanliness_detector.py) calls
+
+    subprocess.run and Path.write_text, exercising the testsuite node''s
+
+    exec/fs.write capabilities the same way tests/test_hook_root_write_guard.py
+
+    already does -- design/frob.strata''s testsuite node declares those per-file
+
+    via/lists, so the new file needs the same two capability declarations
+
+    added or SELFAUDIT001/strata-effects flags it as undeclared.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_hook_root_cleanliness_detector.py::test_clean_root_in_agent_context_is_silent
+- tests/test_hook_root_cleanliness_detector.py::test_dirty_root_in_agent_context_is_reported
+- tests/test_hook_root_cleanliness_detector.py::test_dirty_root_from_human_or_coordinator_shell_is_silent
+- tests/test_hook_root_cleanliness_detector.py::test_dirty_root_reported_even_when_cwd_is_the_worktree
+- tests/test_hook_root_cleanliness_detector.py::test_frob_land_internal_exempts_dirty_root
+- tests/test_hook_root_cleanliness_detector.py::test_non_bash_tool_is_ignored
 designated_repro_test: null
 threat: null
 component: null

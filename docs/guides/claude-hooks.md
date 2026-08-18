@@ -199,6 +199,66 @@ discriminates: it fires under a simulated agent env and does not fire
 under a plain coordinator/human env, both against the identical target
 path.
 
+## `_agent_context.py`
+
+Shared, non-hook module (T-2487): the git-worktree + agent-context
+discriminator (`_git`/`_worktree_paths`/`_worktree_fact`/`_is_agent_
+context`) `root-cleanliness-detector.py` imports rather than re-deriving.
+Extracted the first time a SECOND hook needed the identical logic
+`root-write-guard.py` (T-2481) already carried as module-private helpers
+-- `root-write-guard.py` itself was deliberately left unmigrated (a
+just-landed, independently-tested PreToolUse guard is not worth touching
+purely for reuse with no behavior change), so this module and `root-
+write-guard.py`'s own copy currently coexist; treat this module as the
+one to extend if a THIRD hook needs the same discriminator.
+
+## `root-cleanliness-detector.py`
+
+A PostToolUse hook, matcher `Bash` (T-2487): REPORTS -- never blocks --
+when the shared root (the primary git checkout) is dirty immediately
+after a Bash tool call in agent context. Complementary to `root-write-
+guard.py` (T-2481), a different mechanism entirely: instead of inferring
+a Bash command's write target from its TEXT (necessarily narrow, since
+that target is not a declared field), this hook asks the one question
+that actually matters AFTER the command has already run -- `git status
+--porcelain` against the primary checkout -- sidestepping every shape a
+text-based guard would have to enumerate. Motivated by a fourth root-
+dirtying incident during T-2481's own dispatch window: three agents that
+day were caught LATE, at land time, via a DirtyMain refusal naming files
+they did not recognise; the fourth ran `git status` on its own initiative
+right after the mistake, saw it within a minute, and reverted with `git
+checkout --` before anything was staged. Same mistake, wildly different
+blast radius -- only the TIMING of noticing differed. This hook makes
+that noticing automatic.
+
+Reuses `_agent_context.py`'s `_is_agent_context` unchanged for the same
+fire-for-agent/silent-for-coordinator-or-human discriminator T-2396/T-2481
+already established, verified again in both directions for this hook.
+`_dirty_entries` runs `git status --porcelain` against `paths[0]` (the
+PRIMARY checkout, from `_worktree_paths` -- never a linked worktree,
+regardless of which directory the triggering Bash call actually ran
+from); `[]` (silence) on a clean tree or any git failure. `FROB_LAND_
+INTERNAL=1` exempts everything, matching `root-write-guard.py`'s own
+precedent -- a land in progress legitimately dirties the primary checkout
+as part of its own commit machinery.
+
+Because `PostToolUse` cannot block a tool call that already ran (Claude
+Code's hooks contract: no `decision`/`hookSpecificOutput` fields for this
+event, confirmed against the official hooks reference), this hook has no
+overblock failure mode at all -- the worst case is an unneeded message,
+never obstructed work. `_report` names every dirtied path with its exact
+one-line recovery command (`git checkout --` for a tracked change, `git
+clean -fd --` for something untracked) via the universal, non-blocking
+`systemMessage` field, so an agent can self-correct in the same turn
+rather than diagnosing from scratch at land time. `main` reads the JSON
+payload from stdin and fails open (silent exit 0) on any parse or lookup
+failure. Tested end-to-end via `tests/test_hook_root_cleanliness_detector.py`,
+including the same both-directions positive control T-2396/T-2481 already
+established, against a fixture replicating this repo's real nested-
+worktree topology AND its `.claude/worktrees/` `.gitignore` entry (omitting
+the latter produces a fixture-only false positive, not a real one --
+confirmed empirically against this repo's own checkout).
+
 ## `sync-claude-config.py`
 
 Materialises the git-tracked canonical `.claude/hooks/**` /

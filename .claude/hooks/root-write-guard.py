@@ -111,12 +111,41 @@ REASON = (
 #: with no guarantee `frob` is even installed in the invoking shell.
 _MUTATING_TICKET_VERBS = frozenset(
     {
-        "new", "plan", "requeue", "start", "work", "sweep", "reconcile",
-        "migrate", "renumber", "promote", "land", "attach", "block",
-        "close", "fail", "evidence", "drop", "archive", "reverify",
-        "sweep-async", "done-report", "scope", "scope-ack", "anchor",
-        "priority", "kind", "component", "label", "accept", "review",
-        "sprint", "tier", "body", "debt", "deprecated",
+        "new",
+        "plan",
+        "requeue",
+        "start",
+        "work",
+        "sweep",
+        "reconcile",
+        "migrate",
+        "renumber",
+        "promote",
+        "land",
+        "attach",
+        "block",
+        "close",
+        "fail",
+        "evidence",
+        "drop",
+        "archive",
+        "reverify",
+        "sweep-async",
+        "done-report",
+        "scope",
+        "scope-ack",
+        "anchor",
+        "priority",
+        "kind",
+        "component",
+        "label",
+        "accept",
+        "review",
+        "sprint",
+        "tier",
+        "body",
+        "debt",
+        "deprecated",
     }
 )
 
@@ -207,6 +236,9 @@ def _worktree_fact(cwd: str) -> bool:
     a registered linked worktree in `git worktree list` -- the fact-based
     half of the discriminator (T-2071's lesson: an env var alone can be
     unset in a real agent shell, or in principle stale/spoofed)."""
+    # frob:waive SEC110 reason="FROB_WORKTREE is a dispatch-context path marker \
+    # (T-0574), carries no sensitive value -- same posture as FROB_AGENT's own \
+    # precedent at src/frob/tickets/_leases.py"
     worktree_env = os.environ.get("FROB_WORKTREE")
     if not worktree_env:
         return False
@@ -223,6 +255,9 @@ def _is_agent_context(cwd: str) -> bool:
     """The paired discriminator: `FROB_AGENT` truthy OR the independent
     `_worktree_fact` check -- either disjunct alone covers the case where
     the other is unset, per this module's docstring."""
+    # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker (T-0574), \
+    # carries no sensitive value -- same precedent as src/frob/tickets/_leases.py's \
+    # own waiver on this exact read"
     if os.environ.get("FROB_AGENT"):
         return True
     return _worktree_fact(cwd)
@@ -529,6 +564,9 @@ def main() -> None:
     tool_name = payload.get("tool_name") or ""
     if tool_name not in _GUARDED_TOOLS:
         return
+    # frob:waive SEC110 reason="FROB_LAND_INTERNAL is a dispatch-context marker, \
+    # carries no sensitive value -- same posture as the FROB_AGENT/FROB_WORKTREE \
+    # waivers above"
     if os.environ.get("FROB_LAND_INTERNAL"):
         return
     tool_input = payload.get("tool_input") or {}
