@@ -1,7 +1,7 @@
 ---
 id: T-2349
 title: Recovered from T-2313's phantom TICK006 citation of T-2345
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -26,3 +26,6 @@ ticket_runner/_verify.py, OUT of this ticket's declared scope, filed
 separately as T-2345) does `findings.add((d.get("code") or "", d.get(
 "file") or ""))` for every error-severity diagnostic -- a diagnostic
 missing BOTH fields becom
+
+## Drop reason
+- 2026-08-17: duplicate: TICK006 auto-filed this from a stale ledger read during T-2313's land -- T-2345 is real and queued (verified: tickets/T-2345/ticket.md, state=queued), created moments before this land ran. Same TICK006 false-positive pattern already seen once this session (T-2343, also dropped) -- possibly a land-time ledger-staleness bug worth its own ticket if it recurs a third time
