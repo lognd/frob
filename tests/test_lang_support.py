@@ -210,6 +210,56 @@ class TestDeriveCapabilityRegistry:
             assert status.state == FacetState.KNOWN_GAP
             assert "absent from frob.lang._extract._IMPORT_WALKERS" in status.detail
 
+    # frob:ticket T-2499
+    def test_kotlin_test_discovery_is_implemented(self) -> None:
+        """T-2499: kotlin has a real `frob.testing.collect_kotlin_tests`
+        collector (T-2409) -- this capability derives its implemented-
+        language set from `_TEST_DISCOVERY_COLLECTORS`' own keys, so it
+        reports IMPLEMENTED, not KNOWN_GAP, the moment a collector
+        exists. Anti-regression for the exact T-2408/T-2494 incident
+        class repeating here: a collector landed the same day this
+        status function's own hardcoded `{"python", "rust", "typescript",
+        "c", "cpp"}` membership set still reported kotlin KNOWN_GAP."""
+        registry = derive_capability_registry()
+        status = registry["kotlin"].capabilities["test_discovery"]
+        assert status.state == FacetState.IMPLEMENTED
+
+    # frob:ticket T-2499
+    def test_test_discovery_known_gap_tracks_a_language_absent_from_registry(
+        self,
+    ) -> None:
+        """A language genuinely absent from `_TEST_DISCOVERY_COLLECTORS`
+        still reports KNOWN_GAP (never silently IMPLEMENTED) -- proves
+        the derivation is a real membership check against the live
+        dict, not a function that always returns IMPLEMENTED."""
+        from unittest.mock import patch
+
+        with patch("frob.lang._support._TEST_DISCOVERY_COLLECTORS", {}):
+            registry = derive_capability_registry()
+            status = registry["kotlin"].capabilities["test_discovery"]
+            assert status.state == FacetState.KNOWN_GAP
+            assert (
+                "absent from frob.lang._support._TEST_DISCOVERY_COLLECTORS"
+                in status.detail
+            )
+
+    # frob:ticket T-2499
+    def test_test_discovery_known_gap_when_registry_entry_is_stale(self) -> None:
+        """A `_TEST_DISCOVERY_COLLECTORS` entry naming a `frob.testing`
+        attribute that no longer exists reports KNOWN_GAP, not a stale
+        IMPLEMENTED -- the registry entry itself is verified LIVE against
+        `frob.testing`, not trusted as a string alone."""
+        from unittest.mock import patch
+
+        with patch(
+            "frob.lang._support._TEST_DISCOVERY_COLLECTORS",
+            {"kotlin": "frob.testing.collect_nonexistent_tests"},
+        ):
+            registry = derive_capability_registry()
+            status = registry["kotlin"].capabilities["test_discovery"]
+            assert status.state == FacetState.KNOWN_GAP
+            assert "no longer resolves" in status.detail
+
 
 # frob:ticket T-2365
 class TestCapabilityConformanceViolations:

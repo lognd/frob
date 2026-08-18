@@ -1,7 +1,7 @@
 ---
 id: T-2499
 title: capability_test_discovery_status hardcodes language set, stale after T-2409
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,11 +12,36 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/lang/_support.py
+- tests/test_lang_support.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_lang_support.py
+  reason: T-2499's fix needs a regression test in the file that already covers _support.py's
+    capability-status helpers, plus the doc anchor its docstring points at
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/lang.md
+  reason: T-2499's fix needs a regression test in the file that already covers _support.py's
+    capability-status helpers, plus the doc anchor its docstring points at
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'AFFECT001: KNOWN_GAP_TRACKING_TICKETS edit needs its own affects-closure
+    doc touched'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_kotlin_test_discovery_is_implemented
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_test_discovery_known_gap_tracks_a_language_absent_from_registry
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_test_discovery_known_gap_when_registry_entry_is_stale
+designated_repro_test: tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_kotlin_test_discovery_is_implemented
 threat: null
 component: null
 anchor: false

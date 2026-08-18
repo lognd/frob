@@ -405,9 +405,12 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_arch_status`'s known-gap detail for every language frob.arch has
     # no per-language dispatch branch for yet (c/rust/typescript today).
     "T-0329": True,
-    # T-2365: `_capability_test_discovery_status`'s known-gap detail for
-    # kotlin -- `frob.testing` has no `collect_kotlin_tests` entrypoint yet.
-    "T-2409": True,
+    # T-2409 (`_capability_test_discovery_status`'s prior kotlin
+    # KNOWN_GAP) removed -- the gap is closed, T-2409 landed a real
+    # `frob.testing.collect_kotlin_tests` collector and T-2499's
+    # `_TEST_DISCOVERY_COLLECTORS` registry now derives kotlin as
+    # IMPLEMENTED from that live entry; no detail string cites T-2409
+    # any more.
     # T-2410 (`_capability_publicness_status`'s prior strata KNOWN_GAP)
     # removed -- the gap is closed, `_walk_strata.py` now derives a real
     # clearance-based `public` value; no live tracking ticket references
@@ -752,28 +755,96 @@ def _capability_import_graph_status(language: str) -> CapabilityStatus:
     )
 
 
+# T-2499: unlike `_capability_import_graph_status` above, there was no
+#: existing single-source-of-truth table this status function could
+#: import and derive from -- `frob.testing` exports `collect_python_
+#: tests`/`collect_rust_tests`/`collect_ts_tests`/`collect_cpp_tests`/
+#: `collect_kotlin_tests` as five independent module-level functions with
+#: no language-keyed dispatch dict joining them (confirmed: no caller in
+#: this repo dispatches a collector by language string). This is that
+#: exact T-2408 incident class repeating -- `collect_kotlin_tests` landed
+#: (T-2409) and this function's own hardcoded `{"python", "rust",
+#: "typescript", "c", "cpp"}` set silently did not know about it, reading
+#: kotlin as `KNOWN_GAP` the same day its real collector shipped. Building
+#: the missing registry (rather than just adding "kotlin" to the hardcoded
+#: set, which only fixes today's drift and repeats the identical failure
+#: on the NEXT new collector) is the actual fix: this dict's own KEYS are
+#: now the single source of truth `_capability_test_discovery_status`
+#: derives from, so a future collector only needs one new entry here, in
+#: the same table any other caller wanting a by-language collector
+#: dispatch would also want -- not a second hardcoded set to forget.
+_TEST_DISCOVERY_COLLECTORS: dict[str, str] = {
+    "python": "frob.testing.collect_python_tests",
+    "rust": "frob.testing.collect_rust_tests",
+    "typescript": "frob.testing.collect_ts_tests",
+    "c": "frob.testing.collect_cpp_tests",
+    "cpp": "frob.testing.collect_cpp_tests",
+    "kotlin": "frob.testing.collect_kotlin_tests",
+}
+
+
+# frob:ticket T-2499
+# frob:tests \
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_kotlin_test_discovery_i\
+# s_implemented
+# frob:tests \
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_ga\
+# p_tracks_a_language_absent_from_registry
+# frob:tests \
+# tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_test_discovery_known_ga\
+# p_when_registry_entry_is_stale
 def _capability_test_discovery_status(language: str) -> CapabilityStatus:
-    """`frob.testing` has `collect_python_tests`/`collect_rust_tests`/
-    `collect_ts_tests`/`collect_cpp_tests` (the last covering `c` too, one
-    shared cmake/ctest build); kotlin has no collector yet (a real,
-    ticketed gap); `.strata` design files have no runnable-test concept."""
+    """IMPLEMENTED iff `language` has a real entry in
+    `_TEST_DISCOVERY_COLLECTORS` (T-2499, mirroring
+    `_capability_import_graph_status`'s T-2494 fix: derived from a real
+    registry's keys, never a second hand-maintained membership set that
+    can silently drift out of sync with the first) -- `frob.testing`
+    itself exposes each collector as an independent function with no
+    language-keyed dispatch dict of its own yet, so this module-level
+    dict IS that missing registry (see its own comment for the T-2408/
+    T-2409 incident this replaces). `.strata` design files have no
+    runnable-test concept at all -- checked first, same as every other
+    facet above, since strata's own module-dependency/test-discovery
+    story is handled entirely outside this walker-shaped machinery."""
     if language == "strata":
         return _cap_not_applicable(
             CapabilityRequirement.OPTIONAL,
             "strata design files declare no runnable test suite of "
             "their own -- there is nothing for a test collector to find",
         )
-    if language in {"python", "rust", "typescript", "c", "cpp"}:
-        return _cap_implemented(
+    qualname = _TEST_DISCOVERY_COLLECTORS.get(language)
+    if qualname is not None:
+        # T-2499: resolve the named collector LIVE rather than trusting
+        # the string alone -- a renamed/removed `frob.testing` function
+        # this table's own entry still names would otherwise silently
+        # read as IMPLEMENTED against a dead reference, exactly the kind
+        # of drift this whole module exists to catch.
+        import frob.testing as _testing_mod
+
+        attr_name = qualname.rsplit(".", 1)[-1]
+        # frob:waive OPAQUE001 reason="deliberate dynamic lookup, not a fail-closed \
+        # blind spot -- attr_name only ever comes from this module's own \
+        # _TEST_DISCOVERY_COLLECTORS dict literal (never external/attacker input), and \
+        # the point of resolving it dynamically IS the drift check: a static literal \
+        # getattr would defeat catching a renamed/removed frob.testing function, which \
+        # is exactly the staleness bug this whole function exists to prevent"
+        if getattr(_testing_mod, attr_name, None) is not None:
+            return _cap_implemented(
+                CapabilityRequirement.REQUIRED,
+                f"{qualname} (frob.lang._support._TEST_DISCOVERY_"
+                "COLLECTORS entry)",
+            )
+        return _cap_known_gap(
             CapabilityRequirement.REQUIRED,
-            "frob.testing collect_python_tests/collect_rust_tests/"
-            "collect_ts_tests/collect_cpp_tests (c shares cpp's cmake/"
-            "ctest collector)",
+            f"{language}'s _TEST_DISCOVERY_COLLECTORS entry names "
+            f"{qualname}, which no longer resolves on frob.testing -- "
+            f"the registry entry is stale, fix it or remove it",
         )
     return _cap_known_gap(
         CapabilityRequirement.REQUIRED,
-        f"{language} has no frob.testing collect_*_tests entrypoint -- "
-        f"tracked by T-2409",
+        f"{language} absent from frob.lang._support._TEST_DISCOVERY_"
+        f"COLLECTORS -- no frob.testing collect_*_tests entrypoint "
+        f"registered for it yet",
     )
 
 

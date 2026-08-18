@@ -626,12 +626,21 @@ The seven capabilities, and what each one actually checks:
   (T-2408); `.strata` is `NOT_APPLICABLE` (module dependencies
   resolve through strata-core's own parser, not this tree-sitter-only
   table).
-- **`test_discovery`** -- `frob.testing` has a `collect_*_tests`
-  entrypoint for this language. `IMPLEMENTED` for
-  python/rust/typescript/c/cpp (c and cpp share one cmake/ctest
-  collector); kotlin is a real, ticketed `KNOWN_GAP` (T-2409);
-  `.strata` is `NOT_APPLICABLE` (design files declare no runnable test
-  suite of their own).
+- **`test_discovery`** -- T-2499: `IMPLEMENTED` iff `language` has a
+  real entry in `frob.lang._support._TEST_DISCOVERY_COLLECTORS`, a
+  language -> `frob.testing.collect_*_tests` qualname registry this
+  module owns (unlike `import_graph` above, `frob.testing` exposes each
+  collector as an independent function with no language-keyed dispatch
+  table of its own to derive from -- this dict IS that missing
+  registry). Each entry is verified LIVE against `frob.testing` (a
+  stale/renamed qualname reports `KNOWN_GAP`, not a dead
+  `IMPLEMENTED`). Currently `IMPLEMENTED` for python/rust/typescript/c/
+  cpp/kotlin (c and cpp share one cmake/ctest collector; kotlin's
+  collector landed T-2409, the exact T-2408 staleness pattern
+  `import_graph` above hit first, repeating here until T-2499 replaced
+  the hardcoded membership set with this registry); `.strata` is
+  `NOT_APPLICABLE` (design files declare no runnable test suite of
+  their own).
 
 ### Behavioral conformance (LANG004, T-2365)
 
