@@ -16,9 +16,74 @@ scope:
 - src/frob/perf/**
 - src/frob/gates/_pii_structural/**
 - src/frob/gates/_taint_gate.py
-- tests/**
+- tests/test_ticket_work_and_land_finish.py
+- tests/test_app.py
+- tests/test_gates.py
+- tests/unit/strata/**
+- tests/unit/test_ticket_runner_land_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_app.py
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/strata/**
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'T-2446: partial narrow only -- the ticket''s own body enumerates the top
+    5 files by finding count (30/14/12/11/10) but explicitly says ''10+ more files
+    with 1-9 each'' are NOT individually named; these 5 plus the unit/strata/ directory
+    cover the enumerated majority, the remainder needs a follow-up scope --add once
+    the full 142-finding breakdown is actually triaged (out of this pass''s scope
+    to re-derive that list)'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
