@@ -1,11 +1,13 @@
 ---
 id: T-2366
 title: 'COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
 priority: medium
+blocked_by:
+- T-2527
 parent: null
 tier: ticket
 sprint: null
@@ -18,6 +20,8 @@ scope:
 - tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
