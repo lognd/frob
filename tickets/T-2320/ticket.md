@@ -60,7 +60,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ccbf43756717c1d9d72a6e82a1adfb2837efa97a
 ---
 Split from T-2252. `_run_ruff` (src/frob/check/_python.py) bundles
 ruff-check and ruff-format under one `--skip-ruff` flag with no way to
