@@ -21,6 +21,7 @@ scope:
 - src/frob/check/__init__.py
 - frob.toml
 - tests/unit/test_flag_coverage_gate.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -92,6 +93,12 @@ scope_changes:
   reason: 'narrowing the umbrella glob to the actual files this gate touches: new
     gate module + shared resolver + registration + this repo self-declaration + docs
     + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: frob registry audit --sync-gate-rules writes the CHK-GATE-FLAGCOV001 entry
+    here as part of registering the new rule
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
