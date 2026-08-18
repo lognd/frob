@@ -23,6 +23,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1c87fd2a746cbfcb87f797877623541acf7e0d93
 ---
 T-2486 added _guard_json_stdout_writes (a structural boundary guard redirecting any stray stdout write to stderr during --json execution) and applied it in run()/_run_census()/_run_land_parity()/_run_stages_and_report()/_try_check_delta_via_daemon()/_run_ruff_fix_mode(), all in src/frob/app/check_runner.py. AFFECT001 flagged run and _run_census as needing their docs/modules/app.md#runners one-line index entries touched, but that file was held by T-2485's live cross-worktree scope lease at T-2486 land time, so T-2486 waived AFFECT001 there with a reason pointing at this ticket. Once T-2485 lands and the lease clears, add a short note to the check_runner.py::run / _run_census one-line entries (or a short blurb nearby) describing the new guard, mirroring what T-2486 already added to docs/modules/tickets-landing.md for _run_land_parity.
