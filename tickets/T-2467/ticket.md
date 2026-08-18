@@ -11,13 +11,38 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
-- src/frob/app/**
 - tickets/T-1614/**
+- src/frob/gates/_waive_audit_watermark.py
+- src/frob/app/ticket_runner/_waive_audit.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow from 91/63-file globs down to the new watermark module and its CLI
+    wiring point per playbook narrow-scope discipline
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/app/**
+  reason: narrow from 91/63-file globs down to the new watermark module and its CLI
+    wiring point per playbook narrow-scope discipline
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive_audit_watermark.py
+  reason: narrow from 91/63-file globs down to the new watermark module and its CLI
+    wiring point per playbook narrow-scope discipline
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: narrow from 91/63-file globs down to the new watermark module and its CLI
+    wiring point per playbook narrow-scope discipline
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
