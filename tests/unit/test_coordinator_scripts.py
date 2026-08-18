@@ -301,6 +301,123 @@ class TestTicketFrontmatterOnMain:
         monkeypatch.setattr(fleet_status, "_git", lambda args, cwd: "")
         assert fleet_status.ticket_frontmatter_on_main("T-9999") is None
 
+    # frob:ticket T-2449
+    def test_falls_back_to_archive_when_active_ledger_has_no_such_ticket(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2449's own fix: the ACTIVE `tickets/<id>/ticket.md` path
+        resolves to nothing (empty git show), so this must fall back to
+        `tickets/archive/<id>/ticket.md` before giving up -- the exact
+        shape a completed-and-archived blocker has. Confirms the SECOND
+        `_git` call (not the first) is what supplies the archived text."""
+        archived_text = (
+            "---\nid: T-1692\nstate: done\nscope:\n- src/a.py\n---\n"
+        )
+        calls: list[list[str]] = []
+
+        def fake_git(args: list[str], cwd) -> str:  # noqa: ANN001
+            calls.append(args)
+            if "tickets/archive/" in args[-1]:
+                return archived_text
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        result = fleet_status.ticket_frontmatter_on_main("T-1692")
+        assert result == {"state": "done", "scope": ["src/a.py"], "blocked_by": []}
+        assert any("tickets/T-1692/ticket.md" in c[-1] for c in calls)
+        assert any("tickets/archive/T-1692/ticket.md" in c[-1] for c in calls)
+
+
+# frob:ticket T-2449
+class TestClassifyBlockers:
+    """`fleet_status._classify_blockers` (T-2449): the `main:`-committed
+    resolver, archive-aware via `ticket_frontmatter_on_main`."""
+
+    def test_done_blocker_is_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            fleet_status, "ticket_frontmatter_on_main",
+            lambda tid: {"state": "done", "scope": [], "blocked_by": []},
+        )
+        open_ids, unresolved_ids = fleet_status._classify_blockers(["T-0001"])
+        assert open_ids == []
+        assert unresolved_ids == []
+
+    def test_archived_done_blocker_is_closed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2449's own measured incident: a blocker that only resolves
+        via the archive fallback (`ticket_frontmatter_on_main` handles
+        that internally) must still classify as closed, not unresolved
+        and not open."""
+        monkeypatch.setattr(
+            fleet_status, "ticket_frontmatter_on_main",
+            lambda tid: {"state": "done", "scope": [], "blocked_by": []},
+        )
+        open_ids, unresolved_ids = fleet_status._classify_blockers(["T-1692", "T-1693"])
+        assert open_ids == []
+        assert unresolved_ids == []
+
+    def test_in_progress_blocker_is_open(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STILL-BLOCK control: a genuinely open blocker still reports
+        open -- this fix must never simply stop checking blocked_by."""
+        monkeypatch.setattr(
+            fleet_status, "ticket_frontmatter_on_main",
+            lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
+        )
+        open_ids, unresolved_ids = fleet_status._classify_blockers(["T-0002"])
+        assert open_ids == ["T-0002"]
+        assert unresolved_ids == []
+
+    def test_missing_blocker_is_unresolved_not_open(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Acceptance [2]: a blocker id that resolves nowhere is reported
+        in its OWN list, distinct from a genuinely open one."""
+        monkeypatch.setattr(
+            fleet_status, "ticket_frontmatter_on_main", lambda tid: None
+        )
+        open_ids, unresolved_ids = fleet_status._classify_blockers(["T-9999"])
+        assert open_ids == []
+        assert unresolved_ids == ["T-9999"]
+
+
+# frob:ticket T-2449
+class TestClassifyBlockersLocal:
+    """`fleet_status._classify_blockers_local` (T-2449): the local-disk
+    twin used by `_rotting_entry` so NEEDS DISPATCH agrees with
+    `ticket_readiness`."""
+
+    def test_done_archived_blocker_is_closed(self, tmp_path: Path) -> None:
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir / "archive", "T-1692", state="done", priority="critical",
+        )
+        open_ids, unresolved_ids = fleet_status._classify_blockers_local(
+            ["T-1692"], tickets_dir
+        )
+        assert open_ids == []
+        assert unresolved_ids == []
+
+    def test_queued_blocker_is_open(self, tmp_path: Path) -> None:
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-0002", state="queued", priority="high")
+        open_ids, unresolved_ids = fleet_status._classify_blockers_local(
+            ["T-0002"], tickets_dir
+        )
+        assert open_ids == ["T-0002"]
+        assert unresolved_ids == []
+
+    def test_missing_blocker_is_unresolved(self, tmp_path: Path) -> None:
+        tickets_dir = tmp_path / "tickets"
+        tickets_dir.mkdir(parents=True)
+        open_ids, unresolved_ids = fleet_status._classify_blockers_local(
+            ["T-9999"], tickets_dir
+        )
+        assert open_ids == []
+        assert unresolved_ids == ["T-9999"]
+
 
 # frob:ticket T-2179
 class TestWorktreesTouchingTicket:
@@ -1862,6 +1979,7 @@ def _write_ticket(
     tier: str = "ticket",
     runs_last: bool = False,
     parent: str | None = None,
+    blocked_by: tuple[str, ...] = (),
 ) -> None:
     """Write a minimal `tickets/<id>/ticket.md` fixture file with just the
     frontmatter fields `_parse_ticket_ledger_file` reads. `runs_last`
@@ -1872,10 +1990,19 @@ def _write_ticket(
     real title) with `runs_last=False` must NOT be treated as deferred.
     `parent` (T-2229), when given, is written the same way real `frob
     ticket new --parent` output is; omitted entirely when `None` (mirrors
-    a ledger row with no `parent:` line at all, not a literal 'null')."""
+    a ledger row with no `parent:` line at all, not a literal 'null').
+    `blocked_by` (T-2449), when non-empty, is written as the same `- item`
+    list-block shape real `frob ticket new --blocked-by` output uses;
+    omitted entirely when empty (mirrors a ledger row with no
+    `blocked_by:` key at all)."""
     ticket_dir = tickets_dir / ticket_id
     ticket_dir.mkdir(parents=True)
     parent_line = f"parent: {parent}\n" if parent is not None else ""
+    blocked_by_block = (
+        "blocked_by:\n" + "".join(f"- {b}\n" for b in blocked_by)
+        if blocked_by
+        else ""
+    )
     (ticket_dir / "ticket.md").write_text(
         f"---\n"
         f"id: {ticket_id}\n"
@@ -1887,6 +2014,7 @@ def _write_ticket(
         f"tier: {tier}\n"
         f"runs_last: {'true' if runs_last else 'false'}\n"
         f"{parent_line}"
+        f"{blocked_by_block}"
         f"---\n",
         encoding="utf-8",
     )
@@ -2048,9 +2176,127 @@ class TestRottingTickets:
         rotting = fleet_status.rotting_tickets()
         assert rotting[0]["has_active_child"] is False
 
+    # frob:ticket T-2449
+    def test_archived_done_blockers_do_not_keep_a_ticket_permanently_blocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2449's own reproduction of the T-1696 incident: a rotting
+        leaf ticket names two blockers that are both DONE and ARCHIVED.
+        MUST-NOW-DISPATCH: `open_blockers`/`unresolved_blockers` must
+        both read empty, exactly reversing the pre-fix 'BLOCKED BY (still
+        open): T-1692, T-1693' misdiagnosis."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(
+            tickets_dir / "archive", "T-1692", state="done", priority="critical",
+        )
+        _write_ticket(
+            tickets_dir / "archive", "T-1693", state="done", priority="critical",
+        )
+        _write_ticket(
+            tickets_dir, "T-1696", state="queued", priority="high",
+            created="2020-01-01", blocked_by=("T-1692", "T-1693"),
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        assert len(rotting) == 1
+        assert rotting[0]["id"] == "T-1696"
+        assert rotting[0]["open_blockers"] == []
+        assert rotting[0]["unresolved_blockers"] == []
+
+    # frob:ticket T-2449
+    def test_a_genuinely_open_blocker_still_blocks(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-STILL-BLOCK control: a blocker that is neither done nor
+        dropped still reports as open -- this fix must never simply stop
+        checking blocked_by."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-5000", state="in-progress", priority="critical")
+        _write_ticket(
+            tickets_dir, "T-5001", state="queued", priority="high",
+            created="2020-01-01", blocked_by=("T-5000",),
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        rotting = fleet_status.rotting_tickets()
+        assert rotting[0]["open_blockers"] == ["T-5000"]
+        assert rotting[0]["unresolved_blockers"] == []
+
 
 class TestPrintTicketRot:
     """`fleet_status._print_ticket_rot` (T-2182)."""
+
+    # frob:ticket T-2449
+    def test_blocked_leaf_never_appears_under_needs_dispatch(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2449 acceptance [3]: a leaf ticket with a still-open (or
+        unresolved) blocker must print under 'BLOCKED (dependency not
+        yet resolved)', never under 'NEEDS DISPATCH' -- this is the exact
+        structural shape T-1696 had (rot alarm demanding dispatch while
+        `ticket_readiness` refused it three ticks running)."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-1696",
+                    "priority": "high",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 12,
+                    "threshold_days": 7,
+                    "open_blockers": ["T-1692"],
+                    "unresolved_blockers": [],
+                },
+                {
+                    "id": "T-2000",
+                    "priority": "high",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 12,
+                    "threshold_days": 7,
+                    "open_blockers": [],
+                    "unresolved_blockers": [],
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 2" in out
+        assert "NEEDS DISPATCH (1):" in out
+        assert "BLOCKED (dependency not yet resolved) (1):" in out
+        assert "T-1696" not in out.split("BLOCKED (dependency")[0]
+        assert "T-1696" in out.split("BLOCKED (dependency")[1]
+        assert "T-2000" in out.split("BLOCKED (dependency")[0]
+
+    # frob:ticket T-2449
+    def test_unresolved_blocker_also_keeps_leaf_out_of_needs_dispatch(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """An UNRESOLVED (not just open) blocker also excludes a leaf from
+        NEEDS DISPATCH -- fail-loudly, T-2391: 'cannot confirm' is never
+        treated as 'safe to dispatch'."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-3000",
+                    "priority": "high",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 12,
+                    "threshold_days": 7,
+                    "open_blockers": [],
+                    "unresolved_blockers": ["T-9999"],
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "NEEDS DISPATCH" not in out
+        assert "BLOCKED (dependency not yet resolved) (1):" in out
+        assert "T-3000" in out
 
     def test_splits_by_tier_under_distinct_action_headings(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]

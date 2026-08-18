@@ -188,42 +188,21 @@ def ticket_lease(ticket_id: str) -> dict | None:
         return {"ticket_id": ticket_id, "worktree": "<unreadable>"}
 
 
-# frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
-# frob:ticket T-2133
-# frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_reads_state_\
-# and_scope
-# frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_missing_tick\
-# et_returns_none
-def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
-    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
-    `main:tickets/<id>/ticket.md`'s YAML frontmatter, or `None` if the
-    ticket does not exist on `main` at all. Hand-parsed (no `import yaml`,
-    matching this script's own "no `frob` import, plain stdlib" contract
-    from its module docstring) against the narrow shape `frob ticket`
-    actually writes: a flat `key: value` line for `state`, and `scope:`/
+# frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text
+# frob:ticket T-2449
+def _parse_ticket_frontmatter_text(text: str) -> dict:
+    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from a
+    ticket.md's own YAML frontmatter TEXT -- the pure-parse half of
+    `ticket_frontmatter_on_main`, split out (T-2449) so the SAME parser
+    runs regardless of which `git show` path (active or archived) supplied
+    the text; previously this logic lived inline in `ticket_frontmatter_
+    on_main` and only ever ran against the active-ledger path. Hand-parsed
+    (no `import yaml`, matching this script's own 'no frob import' module-
+    docstring contract) against the narrow shape `frob ticket` actually
+    writes: a flat `key: value` line for `state`, and `scope:`/
     `blocked_by:` blocks of `- item` list lines directly beneath each key
     (a ticket with no blockers omits the `blocked_by:` key entirely rather
-    than writing an empty block, so its absence parses to `[]`, same as
-    the tests' own mocked shape that never sets the key at all -- see
-    `ticket_readiness`'s `.get("blocked_by", [])` read of this dict).
-    T-2133's own incident: a coordinator read `main:tickets/<id>/
-    ticket.md`'s scope twice believing it was the ticket's LIVE scope,
-    when the authoritative live value (if a lease is held) is the lease
-    record's own `scope` field, which can have diverged via `frob ticket
-    scope` inside a worktree that has not landed yet -- this function
-    reads the STATIC, main-committed side of that comparison;
-    `ticket_readiness` below is what actually compares the two.
-
-    T-2196: `blocked_by` is read here (not just `state`/`scope`) so
-    `ticket_readiness` can factor open blockers into its `dispatchable`
-    verdict -- previously this function never even looked at the field,
-    so a blocked ticket's own edges were invisible to the readiness
-    check no matter what."""
-    text = _git(["show", f"main:tickets/{ticket_id}/ticket.md"], REPO)
-    if not text:
-        return None
+    than writing an empty block, so its absence parses to `[]`)."""
     lines = text.splitlines()
     state = None
     scope: list[str] = []
@@ -250,6 +229,61 @@ def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
                 item = item[1:-1]
             block.append(item)
     return {"state": state, "scope": scope, "blocked_by": blocked_by}
+
+
+# frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
+# frob:ticket T-2133
+# frob:ticket T-2449
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_reads_state_\
+# and_scope
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_missing_tick\
+# et_returns_none
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_falls_back_t\
+# o_archive_when_active_ledger_has_no_such_ticket
+def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
+    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
+    `main:tickets/<id>/ticket.md`'s YAML frontmatter, falling back to
+    `main:tickets/archive/<id>/ticket.md` (T-2449) when the active path
+    resolves to nothing, or `None` if the ticket exists in NEITHER
+    location. T-2449's own measured incident: a ticket whose blockers had
+    been completed AND ARCHIVED read as permanently blocked forever --
+    this function used to only ever look in the active ledger directory,
+    so a completed-and-archived blocker was indistinguishable from a
+    missing one, and `_open_blocker_ids` resolved that ambiguity as
+    'still blocking'. `frob.tickets.load_queue` (the real ledger resolver,
+    pinned by `tests/test_ticket_land.py::TestArchiveV2::
+    test_archived_v2_ticket_still_resolves_as_blocker`) already merges
+    both locations -- this mirrors that exact two-location resolution
+    order in plain form rather than `import frob` (this script's own 'no
+    frob import' module-docstring contract, load-bearing: the script must
+    stay usable under any `python3` on PATH, not just this project's own
+    built venv/editable install -- verified via `scripts/
+    _require_python.py`'s own module docstring, which requires this
+    script run correctly even under an interpreter far older than what
+    `frob` itself needs).
+
+    T-2133's own incident: a coordinator read `main:tickets/<id>/
+    ticket.md`'s scope twice believing it was the ticket's LIVE scope,
+    when the authoritative live value (if a lease is held) is the lease
+    record's own `scope` field, which can have diverged via `frob ticket
+    scope` inside a worktree that has not landed yet -- this function
+    reads the STATIC, main-committed side of that comparison;
+    `ticket_readiness` below is what actually compares the two.
+
+    T-2196: `blocked_by` is read here (not just `state`/`scope`) so
+    `ticket_readiness` can factor open blockers into its `dispatchable`
+    verdict -- previously this function never even looked at the field,
+    so a blocked ticket's own edges were invisible to the readiness
+    check no matter what."""
+    text = _git(["show", f"main:tickets/{ticket_id}/ticket.md"], REPO)
+    if not text:
+        text = _git(["show", f"main:tickets/archive/{ticket_id}/ticket.md"], REPO)
+    if not text:
+        return None
+    return _parse_ticket_frontmatter_text(text)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#lease-classification-constants
@@ -503,24 +537,47 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_flags_scope_divergen\
 # ce_between_the_live_lease_and_main
-def _open_blocker_ids(blocked_by: Sequence[str]) -> list[str]:
-    """Which of `blocked_by`'s ticket ids are still OPEN on `main` -- not
-    `done`/`dropped`. An id that does not resolve on `main` at all (a
-    typo, or a blocker cited before it was ever filed) counts as open
-    too: it is certainly not `done`/`dropped`, and treating "cannot even
-    confirm this blocker is resolved" as "resolved" would recreate the
-    exact `dispatchable: True` overclaim T-2196 exists to close, one
-    level removed. T-2196: this is the "blocked_by edges" half of the
-    audit its own acceptance criterion [2] asks for -- previously
-    `ticket_readiness` never looked at `blocked_by` at all, so a ticket
-    correctly blocked on an open dependency still read as dispatchable."""
+
+# frob:doc docs/guides/coordinator-scripts.md#_classify_blockers
+# frob:ticket T-2449
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockers.test_done_blocker_is_clo\
+# sed
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockers.test_archived_done_block\
+# er_is_closed
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockers.test_in_progress_blocker\
+# _is_open
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockers.test_missing_blocker_is_\
+# unresolved_not_open
+def _classify_blockers(blocked_by: Sequence[str]) -> tuple[list[str], list[str]]:
+    """`(open_ids, unresolved_ids)` -- T-2449's replacement for the old
+    `_open_blocker_ids`, which collapsed two distinct facts into one
+    'still open' bucket: a blocker whose id resolves to a real, non-
+    terminal ticket (genuinely OPEN, must keep blocking dispatch) and a
+    blocker id that resolves NOWHERE -- neither the active ledger nor
+    `tickets/archive/**` (UNRESOLVED: a typo, a blocker cited before it
+    was ever filed, or -- before this ticket's `ticket_frontmatter_on_
+    main` archive fallback -- a completed-and-archived blocker
+    misdiagnosed as missing). Fail-loudly (T-2391): an unresolved id is
+    UNMEASURED, not blocked -- it is reported in its own list rather than
+    silently merged into `open_ids`, even though (acceptance [2]'s own
+    wording is about REPORTING, not about safety) the caller still
+    treats a non-empty `unresolved_ids` as dispatch-blocking, same as
+    `open_ids` -- 'cannot confirm this blocker is resolved' must never
+    be read as 'resolved'."""
     open_ids: list[str] = []
+    unresolved_ids: list[str] = []
     for blocker_id in blocked_by:
         blocker_info = ticket_frontmatter_on_main(blocker_id)
-        blocker_state = blocker_info["state"] if blocker_info is not None else None
-        if blocker_state not in ("done", "dropped"):
+        if blocker_info is None:
+            unresolved_ids.append(blocker_id)
+            continue
+        if blocker_info["state"] not in ("done", "dropped"):
             open_ids.append(blocker_id)
-    return open_ids
+    return open_ids, unresolved_ids
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_expand_scope_globs_to_paths
@@ -703,6 +760,7 @@ def _ticket_dispatchable(
     worktrees_with_commits: list[str],
     state_on_main: str | None,
     open_blockers: list[str],
+    unresolved_blockers: list[str],
     scope_diverges: bool,
     scope_collisions: list[dict],
 ) -> bool:
@@ -717,13 +775,21 @@ def _ticket_dispatchable(
     scope-matching commits, `state_on_main` must not be
     `done`/`dropped`/`in-progress`, `open_blockers` must be empty,
     `scope_diverges` must be `False`, and (T-2225) `scope_collisions`
-    must be empty. `True` only when every one of those checks passes."""
+    must be empty. `True` only when every one of those checks passes.
+
+    T-2449: `unresolved_blockers` (a blocker id that resolves NOWHERE,
+    `_classify_blockers`'s own second list) must ALSO be empty -- 'cannot
+    confirm this blocker is resolved' is never treated as 'safe to
+    dispatch', the same conservative posture `open_blockers` already
+    enforces, just reported under a distinct name (acceptance [2]) rather
+    than silently merged into it."""
     return (
         main_exists
         and lease is None
         and not worktrees_with_commits
         and state_on_main not in ("done", "dropped", "in-progress")
         and not open_blockers
+        and not unresolved_blockers
         and not scope_diverges
         and not scope_collisions
     )
@@ -735,15 +801,16 @@ def _ticket_dispatchable(
 def ticket_readiness(ticket_id: str) -> dict:
     """T-2133's single per-ticket answer to "given T-####, is it actually
     dispatchable?" -- combines `ticket_lease`, `ticket_frontmatter_on_main`,
-    `worktrees_touching_ticket`, `_open_blocker_ids`, and
+    `worktrees_touching_ticket`, `_classify_blockers`, and
     `scope_lease_collisions` into one dict, gathering the distinct
     questions those functions already answer independently: is it leased
     (`lease`), does it exist on `main` and in what state (`main`), does
     the live lease's scope diverge from `main`'s declared scope
     (`scope_diverges`, via `_scope_diverges_from_lease`), has a sibling
     branch already implemented it (`worktrees_with_commits`), is it
-    blocked (`open_blockers`), and does another live lease's scope
-    collide with this one's (`scope_lease_collisions`, T-2225). The
+    blocked (`open_blockers`, T-2449: plus `unresolved_blockers`, reported
+    distinctly from a genuinely open one), and does another live lease's
+    scope collide with this one's (`scope_lease_collisions`, T-2225). The
     `dispatchable` verdict (`_ticket_dispatchable`) is the ONLY field
     that combines these facts; see its own docstring for exactly which
     combination it requires. T-2213 (ARCH001 split): this function stays
@@ -761,10 +828,10 @@ def ticket_readiness(ticket_id: str) -> dict:
     effective_scope = lease.get("scope", []) if lease is not None else main_scope
     worktrees_with_commits = worktrees_touching_ticket(ticket_id, effective_scope or ())
     state_on_main = main_info["state"] if main_info is not None else None
-    open_blockers = (
-        _open_blocker_ids(main_info.get("blocked_by", []))
+    open_blockers, unresolved_blockers = (
+        _classify_blockers(main_info.get("blocked_by", []))
         if main_info is not None
-        else []
+        else ([], [])
     )
     scope_collisions = scope_lease_collisions(
         ticket_id,
@@ -778,6 +845,7 @@ def ticket_readiness(ticket_id: str) -> dict:
         worktrees_with_commits=worktrees_with_commits,
         state_on_main=state_on_main,
         open_blockers=open_blockers,
+        unresolved_blockers=unresolved_blockers,
         scope_diverges=scope_diverges,
         scope_collisions=scope_collisions,
     )
@@ -788,6 +856,7 @@ def ticket_readiness(ticket_id: str) -> dict:
         "scope_diverges": scope_diverges,
         "worktrees_with_commits": worktrees_with_commits,
         "open_blockers": open_blockers,
+        "unresolved_blockers": unresolved_blockers,
         "scope_lease_collisions": scope_collisions,
         "dispatchable": dispatchable,
     }
@@ -1449,29 +1518,33 @@ def _rot_day_thresholds() -> dict[str, int]:
         return dict(_ROT_DAYS_DEFAULT)
 
 
-# frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file
-# frob:ticket T-2182
-# frob:ticket T-2200
-def _parse_ticket_ledger_file(path: Path) -> dict | None:
-    """`{"id", "state", "priority", "tier", "created", "runs_last",
-    "parent"}` hand-parsed directly from a `tickets/<id>/ticket.md`
-    file's own frontmatter, reading a LOCAL file on disk (never `git show
-    main:...`, since `rotting_tickets` reports the live, uncommitted
-    ledger state a dispatch decision actually depends on). `None` if the
-    file is unreadable or `id`/`state`/`priority`/`created` cannot all be
-    parsed. `tier` defaults to `ticket`, `runs_last` (T-2200) to `False`,
-    `parent` (T-2229) to `None` -- all three read as STRUCTURED ledger
-    fields, never inferred from `title` text; see docs/guides/
-    coordinator-scripts.md#_parse_ticket_ledger_file for the incidents
-    each default guards against."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return None
+# frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_fields
+# frob:ticket T-2449
+def _parse_ticket_ledger_fields(text: str) -> tuple[dict[str, str], list[str]]:
+    """`({flat "key: value" fields}, blocked_by list)` -- the per-line scan
+    half of `_parse_ticket_ledger_file` (T-2449, ARCH001 split: adding
+    `blocked_by:` block parsing pushed the combined function over the
+    60-line threshold). `blocked_by:` is a `- item` list block, same
+    shape `_parse_ticket_frontmatter_text` already parses for the
+    `main:`-committed side."""
     fields: dict[str, str] = {}
+    blocked_by: list[str] = []
+    in_blocked_by = False
     for line in text.splitlines():
         if line == "---":
             continue
+        if line == "blocked_by:":
+            in_blocked_by = True
+            continue
+        if in_blocked_by:
+            stripped = line.strip()
+            if stripped.startswith("- "):
+                item = stripped[2:].strip()
+                if len(item) >= 2 and item[0] == item[-1] and item[0] in "'\"":
+                    item = item[1:-1]
+                blocked_by.append(item)
+                continue
+            in_blocked_by = False
         for key in (
             "id",
             "state",
@@ -1487,6 +1560,35 @@ def _parse_ticket_ledger_file(path: Path) -> dict | None:
                 if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
                     value = value[1:-1]
                 fields[key] = value
+    return fields, blocked_by
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file
+# frob:ticket T-2182
+# frob:ticket T-2200
+# frob:ticket T-2449
+def _parse_ticket_ledger_file(path: Path) -> dict | None:
+    """`{"id", "state", "priority", "tier", "created", "runs_last",
+    "parent", "blocked_by"}` hand-parsed directly from a `tickets/<id>/
+    ticket.md` file's own frontmatter, reading a LOCAL file on disk
+    (never `git show main:...`, since `rotting_tickets` reports the
+    live, uncommitted ledger state a dispatch decision actually depends
+    on). `None` if the file is unreadable or `id`/`state`/`priority`/
+    `created` cannot all be parsed. `tier` defaults to `ticket`,
+    `runs_last` (T-2200) to `False`, `parent` (T-2229) to `None`,
+    `blocked_by` (T-2449) to `[]` -- all read as STRUCTURED ledger
+    fields, never inferred from `title` text; see docs/guides/
+    coordinator-scripts.md#_parse_ticket_ledger_file for the incidents
+    each default guards against. `blocked_by:` is a `- item` list block
+    (same shape `_parse_ticket_frontmatter_text` already parses for the
+    `main:`-committed side) -- read here too so `rotting_tickets` can
+    exclude a genuinely-still-blocked leaf from NEEDS DISPATCH (T-2449
+    acceptance [3])."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    fields, blocked_by = _parse_ticket_ledger_fields(text)
     if not {"id", "state", "priority", "created"} <= fields.keys():
         return None
     parent = fields.get("parent", "").strip()
@@ -1495,6 +1597,7 @@ def _parse_ticket_ledger_file(path: Path) -> dict | None:
         "state": fields["state"],
         "priority": fields["priority"],
         "tier": fields.get("tier", "ticket"),
+        "blocked_by": blocked_by,
         "created": fields["created"],
         "runs_last": fields.get("runs_last", "false").strip().lower() == "true",
         # T-2229: 'null'/'~'/empty all mean "no parent" (see doc anchor).
@@ -1583,8 +1686,60 @@ def rotting_tickets() -> list[dict]:
     return rotting
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_local_ledger_state
+# frob:ticket T-2449
+def _local_ledger_state(ticket_id: str, tickets_dir: Path = TICKETS_DIR) -> str | None:
+    """`ticket_id`'s `state:` field read from the LOCAL, uncommitted
+    ledger -- `tickets_dir/<id>/ticket.md` first, then `tickets_dir/
+    archive/<id>/ticket.md` (T-2449's own archive-fallback fix, mirrored
+    here for the local-disk side the same way `ticket_frontmatter_on_
+    main` does it for the `main:`-committed side). `None` if the id
+    resolves in NEITHER location -- the caller must treat that as
+    unresolved, never as 'still open' (fail-loudly, T-2391)."""
+    for candidate in (
+        tickets_dir / ticket_id / "ticket.md",
+        tickets_dir / "archive" / ticket_id / "ticket.md",
+    ):
+        if candidate.is_file():
+            parsed = _parse_ticket_ledger_file(candidate)
+            if parsed is not None:
+                return parsed["state"]
+    return None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_classify_blockers_local
+# frob:ticket T-2449
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal.test_done_archived_\
+# blocker_is_closed
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal.test_queued_blocker\
+# _is_open
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal.test_missing_blocke\
+# r_is_unresolved
+def _classify_blockers_local(
+    blocked_by: Sequence[str], tickets_dir: Path = TICKETS_DIR
+) -> tuple[list[str], list[str]]:
+    """`(open_ids, unresolved_ids)` -- the LOCAL-disk twin of
+    `_classify_blockers` (T-2449), used by `_rotting_entry` so the NEEDS
+    DISPATCH bucket agrees with `ticket_readiness`'s own dispatchability
+    verdict (acceptance [3]) without paying for a `git show` per blocker
+    id on every rot-detector pass."""
+    open_ids: list[str] = []
+    unresolved_ids: list[str] = []
+    for blocker_id in blocked_by:
+        state = _local_ledger_state(blocker_id, tickets_dir)
+        if state is None:
+            unresolved_ids.append(blocker_id)
+        elif state not in ("done", "dropped"):
+            open_ids.append(blocker_id)
+    return open_ids, unresolved_ids
+
+
 # frob:doc docs/guides/coordinator-scripts.md#_rotting_entry
 # frob:ticket T-2229
+# frob:ticket T-2449
 def _rotting_entry(
     ticket_dir: Path,
     thresholds: dict[str, int],
@@ -1594,7 +1749,10 @@ def _rotting_entry(
     """One `rotting_tickets` entry for `ticket_dir`, or `None` if it is
     unreadable/malformed, not QUEUED/PLANNED, or still under its
     priority's threshold -- the per-file half of `rotting_tickets`,
-    split out to keep the directory-walk/sort half readable on its own."""
+    split out to keep the directory-walk/sort half readable on its own.
+    T-2449: also carries `open_blockers`/`unresolved_blockers`
+    (`_classify_blockers_local`) so `_print_ticket_rot` can keep a
+    still-blocked leaf out of NEEDS DISPATCH (acceptance [3])."""
     ledger_path = ticket_dir / "ticket.md"
     if not ledger_path.is_file():
         return None
@@ -1611,6 +1769,9 @@ def _rotting_entry(
     age_days = (today - created).days
     if age_days <= threshold:
         return None
+    open_blockers, unresolved_blockers = _classify_blockers_local(
+        parsed.get("blocked_by", []), ticket_dir.parent
+    )
     return {
         "id": parsed["id"],
         "priority": parsed["priority"],
@@ -1620,6 +1781,8 @@ def _rotting_entry(
         "threshold_days": threshold,
         "runs_last": parsed["runs_last"],
         "has_active_child": parsed["id"] in active_parents,
+        "open_blockers": open_blockers,
+        "unresolved_blockers": unresolved_blockers,
     }
 
 
@@ -1672,25 +1835,48 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
     into headings by required ACTION -- 'NEEDS DISPATCH' (a leaf ticket,
-    not `runs_last`), 'DEFERRED (RUNS LAST)' (T-2200: `frob ticket start`
-    structurally refuses a `runs_last` ticket, so 'NEEDS DISPATCH' is an
-    action the tool itself rejects), 'NEEDS DECOMPOSITION' (a genuinely
-    undecomposed epic/story), and 'DECOMPOSED, BEING WORKED' (T-2229: an
-    epic/story with a non-terminal child already -- 'work it' has
-    already effectively been done). No bucket is ever silently dropped:
-    a ticket's age past threshold is always real, disclosed information,
-    even when the recommended action is 'wait' or 'check the children'
-    rather than 'dispatch it'. See docs/guides/coordinator-scripts.md
-    #_print_ticket_rot for the measured incidents each bucket split
-    fixes. Printed unconditionally inside `_print_fleet_report`."""
+    not `runs_last`, with no unresolved blocked_by edge -- T-2449), 'BLOCKED
+    (dependency not yet resolved)' (T-2449: a leaf ticket whose
+    `blocked_by` still names an open or unresolved id -- previously such a
+    ticket appeared under NEEDS DISPATCH while `ticket_readiness` reported
+    `dispatchable: False` for the exact same id, the T-2449 incident:
+    T-1696 was flagged for dispatch on three consecutive coordinator ticks
+    while every attempt was refused), 'DEFERRED (RUNS LAST)' (T-2200:
+    `frob ticket start` structurally refuses a `runs_last` ticket, so
+    'NEEDS DISPATCH' is an action the tool itself rejects), 'NEEDS
+    DECOMPOSITION' (a genuinely undecomposed epic/story), and 'DECOMPOSED,
+    BEING WORKED' (T-2229: an epic/story with a non-terminal child already
+    -- 'work it' has already effectively been done). No bucket is ever
+    silently dropped: a ticket's age past threshold is always real,
+    disclosed information, even when the recommended action is 'wait' or
+    'check the children' rather than 'dispatch it'. See docs/guides/
+    coordinator-scripts.md#_print_ticket_rot for the measured incidents
+    each bucket split fixes. Printed unconditionally inside
+    `_print_fleet_report`."""
     rotting = rotting_tickets()
     print(f"TICKET ROT: {len(rotting)}")
-    leaves = [t for t in rotting if t["tier"] == "ticket" and not t.get("runs_last")]
+    ticket_tier = [
+        t for t in rotting if t["tier"] == "ticket" and not t.get("runs_last")
+    ]
+    # T-2449 acceptance [3]: a leaf with an open OR unresolved blocker can
+    # never land in NEEDS DISPATCH -- structurally, not incidentally, so
+    # this split can never regress independently of `ticket_readiness`.
+    still_blocked = [
+        t for t in ticket_tier if t.get("open_blockers") or t.get("unresolved_blockers")
+    ]
+    leaves = [t for t in ticket_tier if t not in still_blocked]
     deferred = [t for t in rotting if t["tier"] == "ticket" and t.get("runs_last")]
     non_leaves = [t for t in rotting if t["tier"] != "ticket"]
     undecomposed = [t for t in non_leaves if not t.get("has_active_child")]
     decomposed = [t for t in non_leaves if t.get("has_active_child")]
     _print_rot_bucket("NEEDS DISPATCH", leaves)
+    _print_rot_bucket(
+        "BLOCKED (dependency not yet resolved)",
+        still_blocked,
+        "blocked_by names an id that is still open or does not resolve "
+        "in either the active ledger or the archive; `--ticket {id}` "
+        "names exactly which",
+    )
     _print_rot_bucket(
         "DEFERRED (RUNS LAST)",
         deferred,
@@ -1884,6 +2070,17 @@ def _ticket_readiness_lines(readiness: dict) -> list[str]:
     open_blockers = readiness.get("open_blockers", [])
     if open_blockers:
         lines.append(f"  BLOCKED BY (still open): {', '.join(open_blockers)}")
+    # T-2449: reported under a DISTINCT heading from "still open" -- an
+    # unresolved id (resolves in neither the active ledger nor the
+    # archive) is unmeasured, not confirmed-blocking; conflating the two
+    # is exactly the fail-loudly violation this ticket fixes.
+    unresolved_blockers = readiness.get("unresolved_blockers", [])
+    if unresolved_blockers:
+        lines.append(
+            "  BLOCKED BY (UNRESOLVED id, cannot confirm -- resolves in "
+            f"neither the active ledger nor the archive): "
+            f"{', '.join(unresolved_blockers)}"
+        )
     commits = readiness["worktrees_with_commits"]
     if commits:
         lines.append(f"  ALREADY IMPLEMENTED on: {', '.join(commits)}")

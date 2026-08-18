@@ -2,7 +2,7 @@
 id: T-2449
 title: archived blockers read as still-open, making a ticket permanently undispatchable
   while the rot detector demands it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,23 +13,61 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- docs/guides/coordinator-scripts.md
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: doc updates for _classify_blockers/_classify_blockers_local/_parse_ticket_frontmatter_text
+    anchors
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: new/extended TestClassifyBlockers, TestClassifyBlockersLocal, TestPrintTicketRot,
+    TestRottingTickets, TestTicketFrontmatterOnMain tests
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_archived_done_blockers_do_not_keep_a_ticket_permanently_blocked
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_archived_done_blocker_is_closed
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_done_archived_blocker_is_closed
+- tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain::test_falls_back_to_archive_when_active_ledger_has_no_such_ticket
+- tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_a_genuinely_open_blocker_still_blocks
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_in_progress_blocker_is_open
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_queued_blocker_is_open
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_missing_blocker_is_unresolved_not_open
+- tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_missing_blocker_is_unresolved
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_leaf_never_appears_under_needs_dispatch
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_unresolved_blocker_also_keeps_leaf_out_of_needs_dispatch
 designated_repro_test: null
 acceptance:
 - text: Given a queued ticket whose blockers are all done and archived, when dispatchability
     is checked, then it reports dispatchable true rather than blocked.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_archived_done_blockers_do_not_keep_a_ticket_permanently_blocked
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_archived_done_blocker_is_closed
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_done_archived_blocker_is_closed
+  - tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain::test_falls_back_to_archive_when_active_ledger_has_no_such_ticket
 - text: Given a ticket with a genuinely open blocker, when dispatchability is checked,
     then it still reports not dispatchable, proving blocked_by was not simply ignored.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestRottingTickets::test_a_genuinely_open_blocker_still_blocks
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_in_progress_blocker_is_open
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_queued_blocker_is_open
 - text: Given a ticket naming a blocker id that exists in neither the active ledger
     nor the archive, when checked, then the unresolvable id is reported distinctly
     rather than silently treated as blocking.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockers::test_missing_blocker_is_unresolved_not_open
+  - tests/unit/test_coordinator_scripts.py::TestClassifyBlockersLocal::test_missing_blocker_is_unresolved
 - text: Given any ticket, when the report is produced, then it can never appear under
     NEEDS DISPATCH while also reporting dispatchable false.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_leaf_never_appears_under_needs_dispatch
+  - tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_unresolved_blocker_also_keeps_leaf_out_of_needs_dispatch
 threat: null
 component: tickets
 anchor: false

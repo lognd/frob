@@ -222,15 +222,43 @@ while another worktree still held it, mid-implementation, with its own
 Done report already written. `ticket_lease` is the one-call answer that
 makes skipping this check unnecessary.
 
+### `_parse_ticket_frontmatter_text`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text -->
+
+T-2449. The pure-parse half of `ticket_frontmatter_on_main` -- `{"state":
+..., "scope": [...], "blocked_by": [...]}` parsed from a ticket.md's own
+YAML frontmatter TEXT, regardless of which of the two `git show` paths
+(active or archived) supplied it. Split out so the SAME parser runs both
+times, rather than duplicating the parse per call site.
+
 ### `ticket_frontmatter_on_main`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main -->
 
-`{"state": ..., "scope": [...]}` parsed from `main:tickets/<id>/
-ticket.md`'s YAML frontmatter via `git show` plus a narrow hand-rolled
-parse (no `import yaml` -- this script stays plain-stdlib, matching its
-module docstring's contract), or `None` if the ticket does not exist on
-`main` at all.
+`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
+`main:tickets/<id>/ticket.md`'s YAML frontmatter via `git show` plus a
+narrow hand-rolled parse (no `import yaml` -- this script stays
+plain-stdlib, matching its module docstring's contract), falling back to
+`main:tickets/archive/<id>/ticket.md` (T-2449) when the active path
+resolves to nothing. `None` only if the ticket exists in NEITHER
+location.
+
+T-2449's own measured incident: this function used to only ever check
+the active ledger directory, so a ticket whose blockers had been
+completed AND ARCHIVED was indistinguishable from one whose blockers
+were simply missing -- both read as "cannot resolve", and the caller
+(`_classify_blockers`) resolved that ambiguity as "still open". T-1696
+sat blocked for 12 days this way, while `TICKET ROT` simultaneously
+listed it under `NEEDS DISPATCH`. `frob.tickets.load_queue` (pinned by
+`tests/test_ticket_land.py::TestArchiveV2::
+test_archived_v2_ticket_still_resolves_as_blocker`) already merges both
+locations for the real ledger -- this mirrors that exact two-location
+order in plain form rather than `import frob`, because this script's
+"no frob import" contract (module docstring) is load-bearing: it must
+run correctly under ANY `python3` on PATH per `scripts/
+_require_python.py`'s own guard, not only inside this project's built
+venv.
 
 This is deliberately the STATIC, main-committed half of a scope
 comparison, not the live one -- `main:tickets/<id>/ticket.md`'s `scope:`
@@ -241,6 +269,31 @@ scope -- once nearly releasing a healthy lease, once asking an agent to
 redo a scope-narrowing it had already done on its own branch.
 `ticket_readiness` below is what actually compares this against the
 live lease.
+
+### `_classify_blockers`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_classify_blockers -->
+
+T-2449. `(open_ids, unresolved_ids)` -- replaces the old
+`_open_blocker_ids`, which collapsed two distinct facts into one "still
+open" bucket. A blocker id that resolves (via `ticket_frontmatter_on_
+main`, archive-aware) to a real, non-terminal ticket is genuinely OPEN.
+A blocker id that resolves NOWHERE is UNRESOLVED -- reported in its own
+list (fail-loudly, T-2391: "cannot confirm" is never "resolved"), even
+though both lists are still treated as dispatch-blocking by
+`_ticket_dispatchable`; only the REPORTING is distinct (acceptance [2]).
+
+### `_classify_blockers_local`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_classify_blockers_local -->
+
+T-2449. The LOCAL-disk twin of `_classify_blockers`, used by
+`_rotting_entry` so the `TICKET ROT` section's own NEEDS DISPATCH bucket
+agrees with `ticket_readiness`'s dispatchability verdict (acceptance
+[3]) without paying for a `git show` per blocker id on every rot pass.
+`_local_ledger_state` resolves a single id (active ledger, then
+`tickets/archive/`) the same way `ticket_frontmatter_on_main` does for
+the `main:`-committed side.
 
 ### lease-classification-constants
 
@@ -654,17 +707,27 @@ exactly, duplicated in plain-dict form since importing the `frob`
 package would defeat this script's own "runs under any interpreter on
 PATH" contract.
 
+### `_parse_ticket_ledger_fields`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_fields -->
+
+T-2449 (ARCH001 split off `_parse_ticket_ledger_file`). The per-line scan
+half: `({flat "key: value" fields}, blocked_by list)` from raw ticket.md
+TEXT -- adding `blocked_by:` block parsing to the combined function
+pushed it over the 60-line threshold, so the scan loop moved here.
+
 ### `_parse_ticket_ledger_file`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_ledger_file -->
 
 T-2182. `{"id", "state", "priority", "tier", "created", "runs_last",
-"parent"}` hand-parsed directly from a `tickets/<id>/ticket.md` file on
-disk (never `git show main:...` -- the live, uncommitted ledger is what a
-dispatch decision actually depends on). `None` if the file is unreadable
-or any required field is missing. `tier` defaults to `ticket`, matching
-`TicketTier`'s own default for a ledger row written before tiers
-existed.
+"parent", "blocked_by"}` hand-parsed directly from a `tickets/<id>/
+ticket.md` file on disk (never `git show main:...` -- the live,
+uncommitted ledger is what a dispatch decision actually depends on).
+`None` if the file is unreadable or any required field is missing.
+`tier` defaults to `ticket`, matching `TicketTier`'s own default for a
+ledger row written before tiers existed. `blocked_by` (T-2449) defaults
+to `[]`.
 
 T-2200: `runs_last` is read as the STRUCTURED `runs_last:` ledger line
 `frob ticket runs-last <id> on` writes, never inferred from `title` text --
@@ -709,6 +772,15 @@ a rotting epic/story (needs decomposition), plus (T-2229)
 further distinguish a genuinely undecomposed epic/story from one that
 has already been decomposed and is being worked.
 
+### `_local_ledger_state`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_local_ledger_state -->
+
+T-2449. `ticket_id`'s `state:` field read from the LOCAL, uncommitted
+ledger -- the active `tickets/<id>/ticket.md` first, then `tickets/
+archive/<id>/ticket.md`. `None` if the id resolves in neither location
+(the caller must treat that as unresolved, never as "still open").
+
 ### `_rotting_entry`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_rotting_entry -->
@@ -717,7 +789,9 @@ T-2229 (ARCH001 split off `rotting_tickets`). One `rotting_tickets`
 entry for a single `ticket_dir`, or `None` if it is unreadable/malformed,
 not QUEUED/PLANNED, or still under its priority's threshold -- the
 per-file half of `rotting_tickets`, letting the directory-walk/sort half
-stay readable on its own.
+stay readable on its own. T-2449: also carries `open_blockers`/
+`unresolved_blockers` (`_classify_blockers_local`) so `_print_ticket_rot`
+can keep a still-blocked leaf out of NEEDS DISPATCH.
 
 ### `_print_rot_bucket`
 
@@ -734,19 +808,31 @@ near-identical inline loops.
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot -->
 
 T-2182. Prints the TICKET ROT section: `rotting_tickets`'s count, split
-under headings naming the required action -- 'NEEDS DISPATCH' for
-`tier=ticket`, 'NEEDS DECOMPOSITION' for a genuinely undecomposed
-`tier=epic`/`tier=story`, and (T-2229) 'DECOMPOSED, BEING WORKED' for an
-epic/story that already has a non-terminal child (`has_active_child`) --
-'work it'/'needs decomposition' is a lie for it, the action is already
-effectively taken. Epics are NOT exempted from the report either way,
-only reported under their own action heading (measured incident: 10 of
-15 rotting tickets were epics, 1 a story, only 4 leaf tickets -- one
-undifferentiated count told a coordinator to do something impossible for
-two thirds of the set, which is why the alarm read as noise for a whole
-session). Printed unconditionally inside `_print_fleet_report`; TICK004
-already fires in `frob check`'s gate layer but sat as 11 lines inside a
-19-error list there.
+under headings naming the required action -- 'NEEDS DISPATCH' for a leaf
+ticket with NO open/unresolved blocker (T-2449), 'BLOCKED (dependency
+not yet resolved)' (T-2449) for a leaf ticket whose `blocked_by` still
+names an open or unresolved id, 'NEEDS DECOMPOSITION' for a genuinely
+undecomposed `tier=epic`/`tier=story`, and (T-2229) 'DECOMPOSED, BEING
+WORKED' for an epic/story that already has a non-terminal child
+(`has_active_child`) -- 'work it'/'needs decomposition' is a lie for it,
+the action is already effectively taken. Epics are NOT exempted from the
+report either way, only reported under their own action heading
+(measured incident: 10 of 15 rotting tickets were epics, 1 a story, only
+4 leaf tickets -- one undifferentiated count told a coordinator to do
+something impossible for two thirds of the set, which is why the alarm
+read as noise for a whole session). Printed unconditionally inside
+`_print_fleet_report`; TICK004 already fires in `frob check`'s gate
+layer but sat as 11 lines inside a 19-error list there.
+
+T-2449's own incident: T-1696 (high priority, queued 12 days, blocked_by
+naming two DONE-AND-ARCHIVED tickets) appeared under NEEDS DISPATCH on
+every tick while `--ticket T-1696` simultaneously reported `dispatchable:
+False` -- the same tool contradicting itself. The BLOCKED bucket split
+(computed from the SAME `open_blockers`/`unresolved_blockers` fields
+`ticket_readiness` derives its own verdict from, via `_classify_blockers`/
+`_classify_blockers_local`) makes "no ticket can appear under NEEDS
+DISPATCH while reporting dispatchable: False" a structural invariant of
+the split itself, not an incidental fact that could silently regress.
 
 ### `_ticket_readiness_lines`
 
