@@ -61,7 +61,7 @@ threat: null
 component: cli
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 440fd51da01fc5dfd2c621880db7dc16acc67c6f
 ---
 User-reported, 2026-08-17. `frob --help`'s grouped subcommand listing
 renders its two section headers at the SAME indent as the command
