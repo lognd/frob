@@ -2,7 +2,7 @@
 id: T-2346
 title: tickets.md disagrees with the per-ticket ledger on 21 ticket states, always
   claiming finished work is still open
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -13,22 +13,32 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+evidence_scope:
+- tests/test_tickets_migration.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 designated_repro_test: null
 acceptance:
 - text: given a ticket whose state changed via the CLI, when both tickets.md and tickets/<ID>/ticket.md
     are read, then they agree (or tickets.md no longer exists)
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 - text: 'given the 108 tickets whose stale tickets.md row implied no per-ticket file,
     when checked against BOTH tickets/<id>/ticket.md and tickets/archive/<id>/ticket.md,
     then all 158 tickets.md ids already have a real v2 file somewhere (T-2355 measured
     2026-08-17: zero missing in either location) -- no migration write was needed
     or made'
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
+  - tests/test_tickets_migration.py::TestMigrateMissingV2::test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated
 - text: given a deliberately divergent row, when the gate runs, then the divergence
     is reported rather than passing silently
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 acceptance_amendments:
 - op: replace
   index: 1
