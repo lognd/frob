@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 32c034cb863d1e061836c455977d3e5c3fe0c403
 ---
 MEASURED 2026-08-18, live, while the fleet was healthy-looking:
 
