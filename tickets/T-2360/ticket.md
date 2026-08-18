@@ -30,7 +30,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0adf7e911dbbdcd56f3a734683b6f282a9d57395
 ---
 Split from T-1696 (queue-depth-dial collapse epic) after a re-measurement
 of the "if-rapid seams" following T-2290/T-2310/T-2317/T-2324/T-2065
