@@ -68,7 +68,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 71341c48f88747c52dcdcbf7762eb797f3f06c7d
 ---
 MEASURED TODAY: `src/frob/__main__.py` is declared by NINE queued
 tickets simultaneously (T-2385, T-1135, T-1608, T-1609, T-1614, T-1656,
