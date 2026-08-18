@@ -81,6 +81,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b6440bcea6869a208994c3d57c31362558c620bb
 ---
 T-2365's adapter-capability conformance axis (frob.lang._support.derive_capability_registry) marks test_discovery KNOWN_GAP for kotlin: frob.testing has collect_python_tests/collect_rust_tests/collect_ts_tests/collect_cpp_tests but no kotlin collector, even though frob.lang has a real kotlin grammar (T-0723). Add collect_kotlin_tests mirroring collect_ts_tests's shape (or the closest JVM-toolchain analogue) and wire it into frob.testing.__init__.
