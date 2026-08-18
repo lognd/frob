@@ -113,7 +113,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5ec4d3241c23c796c41106704bb300482206e7c6
 ---
 T-2380 (SYS003 gate-calibration investigation) reduced the SYS003 WARN
 count from 4834 to 133 (measured via `uv run frob check --only sys
