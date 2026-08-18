@@ -2,7 +2,7 @@
 id: T-2387
 title: check_skip_ruff_check/check_skip_ruff_format/check_ruff_fix silently dropped
   by CLI layer -- _BOOL_FLAGS never updated for T-2320's new flags
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
