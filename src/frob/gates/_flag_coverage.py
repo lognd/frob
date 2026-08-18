@@ -148,11 +148,10 @@ def _build_parser_or_violation(
     try:
         return cast(Any, parser_factory)(), None
     # frob:waive OPAQUE001 reason="T-2397: parser_factory is the same \
-    # repo-owner-declared, resolved-by-name callable DOC004's identical \
-    # call-site already treats this way -- a broad except here is the \
-    # fail-loudly boundary itself (a factory that raises must become an \
-    # UNRESOLVED finding, never an uncaught gate crash), not opacity \
-    # around untrusted input"
+    # repo-owner-declared, resolved-by-name callable DOC004's identical call-site \
+    # already treats this way -- a broad except here is the fail-loudly boundary \
+    # itself (a factory that raises must become an UNRESOLVED finding, never an \
+    # uncaught gate crash), not opacity around untrusted input"
     except Exception as exc:  # noqa: BLE001
         return None, _unresolved(
             f"parser factory {source.parser!r} raised {exc!r} when "
@@ -253,6 +252,10 @@ def _check_source(source: "_ConsoleCommandSource") -> tuple[Violation, ...]:
 
 # frob:enforces CHK-GATE-FLAGCOV001
 # frob:doc docs/modules/gates.md#flagcov001-t-2397
+# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_must_now_fire_reports_the_genuinely_dropped_flag  # noqa: E501
+# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_must_still_pass_when_everything_is_forwarded  # noqa: E501
+# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_this_repos_own_frob_toml_reports_zero  # noqa: E501
+# frob:tests tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_no_declared_sources_is_unresolved_not_empty  # noqa: E501
 # frob:ticket T-2397
 def flag_coverage_gate(root: Path) -> tuple[Violation, ...]:
     """FLAGCOV001: for every `[[docblocks.commands]]` entry in `root`'s
