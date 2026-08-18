@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b201534b2841b715db2da3cbc39dc1492ac60a19
 ---
 Found while auditing T-2244 (repoint trivial Makefile aliases): T-2320
 added three new boolean CLI flags (--skip-ruff-check, --skip-ruff-format,
