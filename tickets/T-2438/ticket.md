@@ -44,7 +44,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c9bd75d69c294b9b8367c47ad96413b7cb19a9ad
 ---
 A `frob:waive` directive bound to a SYMBOL can be permanently inert with
 no diagnostic. Reported live by Series AB: an inline `frob:waive DUP001`
