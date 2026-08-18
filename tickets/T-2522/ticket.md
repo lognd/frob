@@ -2,7 +2,7 @@
 id: T-2522
 title: 'post-land sweep regression from T-2389: 35 new (rule, file) identit(ies),
   73 finding(s) (ARCH103, COV001, COV003, DOC001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -134,3 +134,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH103 src/frob/release/_cli.py, COV001 src/frob/app/fmt_runner.py, COV001 src/frob/gates/_refs_schema.py, COV003 tickets/T-1205, COV003 tickets/T-1235, COV003 tickets/T-1397, COV003 tickets/T-1526, COV003 tickets/T-1688, COV003 tickets/T-2344, COV003 tickets/T-2348, COV003 tickets/T-2365, DOC001 docs/commands/release.md, DOC002 src/frob/gates/_refs_schema.py, DOC005 docs/modules/cli.md, DOC008 docs/modules/gates.md, DOC011 docs/design/gate-semantics-classification.md, E501 src/frob/graph/summary.py, E501 src/frob/testing/_collect_kotlin.py, F811 tests/unit/test_app_runners_json_guard_t2492.py, LANG004 src/frob/lang/_support.py, PERF002 tests/unit/test_main_entry.py, PERF003 src/frob/gates/_debt_deprecated.py, PERF003 src/frob/vet/_capability_core.py, PERF004 src/frob/app/ticket_runner/_new.py, PERF004 src/frob/scaffold/_skills_sync.py, PERF004 src/frob/testing/_collect_kotlin.py, PII012 tests/test_capability_registry.py, RENDER001 src/frob/release/_cli.py, SEC110 src/frob/app/verify_runner.py, SEC110 tests/test_release.py, SELFAUDIT001 design, TICK003 tickets.md, TICK004 tickets.md, WIRE002 tests/unit/test_app_runners_batch6.py, WIRE003 docs/modules/cli.md) is absent from the fresh unscoped measurement at T-2509's deferred sweep, i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
