@@ -71,7 +71,7 @@ def drift_report(repo_root: Path) -> tuple[list[str], list[str]] | None:
     """`(drifted_entries, missing_sources)` for `repo_root`'s
     `sync-claude-config.py`-managed files, or `None` if `repo_root` has no
     such script at all -- matches `stale_install_warning`'s own "not this
-    repo" `None` convention (`frob.app._config_meta`)."""
+    repo" `None` convention (`frob.repo_meta`)."""
     module = _load_sync_module(repo_root)
     if module is None:
         return None

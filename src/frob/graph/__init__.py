@@ -36,7 +36,7 @@ from pathlib import Path
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob import excludes as _excludes
+import frob.excludes as _excludes
 from frob.check._memo import memoize_per_run
 from frob.graph import cache as _cache
 from frob.graph._generated import is_generated_source

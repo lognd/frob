@@ -143,3 +143,46 @@ class TestSys003TestsuiteFlowCalibration:
         assert len(sys003) == 1
         assert sys003[0].file == "src_a/mod.py"
         assert sys003[0].severity.name == "WARN"
+
+
+class TestSys003DeclaredPairDoesNotMaskReverse:
+    """T-2403's own lesson, caught mid-ticket: `Flow` declarations are
+    per NODE PAIR, not per import site -- declaring `A -> B` for one
+    legitimate, narrow need silently permits EVERY OTHER `A -> B` import
+    too, including ones that are real drift. A `gates -> cli` declaration
+    intended only to cover the WIRE gate's genuine need to introspect the
+    live CLI parser was caught, mid-implementation, ALSO permitting an
+    unrelated `frob.app.config.load_arch_config` import that should have
+    stayed flagged -- both were filed as drift together instead. This
+    test is the generalized regression: declaring `A -> B` must still
+    catch `B -> A` (the reverse direction), proving a declared edge does
+    not accidentally widen into a bidirectional pass."""
+
+    def test_declared_forward_edge_does_not_permit_the_reverse(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        import frob.strata as strata_mod
+
+        nodes = (
+            Node(id="a", trust="trusted", attrs=("code=pkg_a/*.py",)),
+            Node(id="b", trust="trusted", attrs=("code=pkg_b/*.py",)),
+        )
+        # Only a -> b is declared, mirroring T-2403's real shape.
+        flows = (Flow(id="f_a_b", src="a", dst="b"),)
+        model = KernelModel(nodes=nodes, flows=flows)
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        _write(tmp_path, "design/.gitkeep", "")
+        # The declared direction: silent.
+        _write(tmp_path, "pkg_a/mod.py", "import pkg_b.mod\n")
+        # The reverse, undeclared direction: must still fire.
+        _write(tmp_path, "pkg_b/other.py", "import pkg_a.mod\n")
+        _write(tmp_path, "pkg_b/mod.py", "x = 1\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys003 = [v for v in violations if v.rule == "SYS003"]
+        assert len(sys003) == 1
+        assert sys003[0].file == "pkg_b/other.py"

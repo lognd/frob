@@ -46,7 +46,7 @@ from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
 from typani.result import Result
 
-from frob import gitio
+import frob.gitio as gitio
 from frob.logging import get_logger
 
 _log = get_logger(__name__)

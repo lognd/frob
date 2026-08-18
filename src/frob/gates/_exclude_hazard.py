@@ -28,7 +28,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from frob import gitio
+import frob.gitio as gitio
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _shared_tracked_files
 from frob.logging import get_logger

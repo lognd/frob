@@ -1,4 +1,4 @@
-"""T-1400 branch-gap closure for `frob.app._config_meta.stale_install_warning`.
+"""T-1400 branch-gap closure for `frob.repo_meta.stale_install_warning`.
 
 `tests/unit/test_config.py` already covers the version-mismatch,
 editable-checkout, and matching-version branches (T-0358's original
@@ -19,7 +19,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from frob.app._config_meta import stale_install_warning
+from frob.repo_meta import stale_install_warning
 
 
 def _write_frob_pyproject(root: Path, version: str) -> None:

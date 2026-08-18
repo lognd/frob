@@ -78,7 +78,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from frob.app._config_meta import stale_binary_warning
+from frob.repo_meta import stale_binary_warning
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
 from frob.process._guard import guarded_subprocess_run

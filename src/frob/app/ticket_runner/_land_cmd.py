@@ -3659,7 +3659,7 @@ def _long_function_symrefs_over_threshold(
     """`{symref: (line, n_lines)}` for every python function in the file at
     `path` that `frob.arch`'s own long-function check (ARCH001) would flag
     RIGHT NOW -- long AND structurally complex, at this repo's own
-    `[arch].max_function_lines` threshold (`frob.app._config_meta.
+    `[arch].max_function_lines` threshold (`frob.repo_meta.
     load_arch_config`, the same knob `arch_gate` itself reads, T-0373).
     `{}` for a non-python file, an unparseable one, or one with no
     over-threshold function -- never a crash (matches every other diff-
@@ -3671,7 +3671,7 @@ def _long_function_symrefs_over_threshold(
     keeping this the same "two small parses per touched file" cost T-2114's
     doc/test-edge check already pays, not the ~208s T-1684 took off the
     land critical path."""
-    from frob.app._config_meta import load_arch_config
+    from frob.repo_meta import load_arch_config
     from frob.arch import _python as arch_python
     from frob.lang import raw_tree
 

@@ -4,9 +4,9 @@
 # bundle of unrelated concerns. A line-count split would cut AppConfig's own \
 # field/validator block in half with no behavioral or consumer-set boundary to hang \
 # the cut on -- strictly worse than the warning per T-1651's own judgement standard. \
-# _config_external.py and _config_meta.py already carry off the genuinely separable \
-# parts (external-tool kwarg building, ARCH_DEFAULT_* constants); what remains here is \
-# the single cohesive model."
+# _config_external.py already carry off the genuinely separable parts (external-tool \
+# kwarg building, ARCH_DEFAULT_* constants); what remains here is the single cohesive \
+# model."
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,7 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 
 from frob.app._config_external import _build_external_config_kwargs
-from frob.app._config_meta import (
+from frob.repo_meta import (
     ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
     ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
     ARCH_DEFAULT_LCOM4_MIN_FIELD_USING_METHODS,
@@ -68,7 +68,7 @@ def _validate_enum_choice(
 
 
 #: T-1270: `load_arch_config`/`stale_install_warning` and the ARCH_DEFAULT_*
-#: constants live in `frob.app._config_meta` now (a real seam distinct from
+#: constants live in `frob.repo_meta` now (a real seam distinct from
 #: the `AppConfig` schema); re-exported here so every pre-existing `from
 #: frob.app.config import load_arch_config` (etc.) importer keeps working
 #: unmodified.

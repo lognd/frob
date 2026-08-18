@@ -131,7 +131,7 @@ node cli : trusted {
         "src/frob/_cli_parsers/**"
         "src/frob/doctor.py";
     may "eval" via "src/frob/doctor.py";
-    may "fs.write" via "src/frob/app/_check_chunking.py", "src/frob/app/_config_external.py", "src/frob/app/_config_meta.py", "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/debt_runner.py", "src/frob/app/deploy_runner.py", "src/frob/app/exports_runner.py", "src/frob/app/release_runner.py", "src/frob/app/sys_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_lifecycle.py", "src/frob/app/ticket_runner/_query.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/doctor.py";
+    may "fs.write" via "src/frob/app/_check_chunking.py", "src/frob/app/_config_external.py", "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/debt_runner.py", "src/frob/app/deploy_runner.py", "src/frob/app/exports_runner.py", "src/frob/app/release_runner.py", "src/frob/app/sys_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_lifecycle.py", "src/frob/app/ticket_runner/_query.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/doctor.py";
     may "fs.read" via "src/frob/app/_check_chunking.py", "src/frob/app/deploy_runner.py", "src/frob/app/parse_runner.py", "src/frob/app/perf_runner.py", "src/frob/app/profile_runner.py", "src/frob/app/sys_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/_close_cmd.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_mutate.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_query.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/worktree_runner.py", "src/frob/doctor.py";
     // T-0178: frob.app.telemetry reads FROB_NO_TELEMETRY/FROB_STATS_AGENTIC
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
@@ -758,6 +758,7 @@ node core : trusted {
     code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
         "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
         "src/frob/excludes.py" "src/frob/yaml_io.py" "src/frob/tomlio.py"
+        "src/frob/repo_meta.py"
         "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"
         "src/frob/perf/**" "src/frob/policy/**"
         "src/frob/release/**" "src/frob/scaffold/**"
@@ -770,7 +771,7 @@ node core : trusted {
     may "exec" via "src/frob/gitio.py", "src/frob/process/_guard.py", "src/frob/testing/_coverage_refresh.py";
     attr flag=frob_check_exec_kill_switch;
     may "fs.write" via "src/frob/clean/_core.py", "src/frob/clean/_rules.py", "src/frob/excludes.py", "src/frob/fuzz/_stamp.py", "src/frob/logging/logger.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/policy/__init__.py", "src/frob/process/_lock.py", "src/frob/release/__init__.py", "src/frob/render/_renderer.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/scaffold/_skills_sync.py", "src/frob/scaffold/project.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_runners.py", "src/frob/testing/_stability.py", "src/frob/testing/_stackdump.py", "src/frob/tomlio.py";
-    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/stats/_agentic.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py";
+    may "fs.read" via "src/frob/bind/__init__.py", "src/frob/cve/_parser.py", "src/frob/repo_meta.py", "src/frob/docs/__init__.py", "src/frob/dup/_cache.py", "src/frob/dup/_template.py", "src/frob/fuzz/_stamp.py", "src/frob/gitio.py", "src/frob/map/__init__.py", "src/frob/outline/__init__.py", "src/frob/perf/_profile.py", "src/frob/perf/_ratchet.py", "src/frob/perf/_redundancy.py", "src/frob/perf/_rules.py", "src/frob/policy/__init__.py", "src/frob/release/__init__.py", "src/frob/scaffold/_managed.py", "src/frob/scaffold/_pool.py", "src/frob/stats/_agentic.py", "src/frob/testing/_collect.py", "src/frob/testing/_collect_cpp.py", "src/frob/testing/_collect_rust.py", "src/frob/testing/_collect_shared.py", "src/frob/testing/_collect_ts.py", "src/frob/testing/_coverage_cache.py", "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_coverage_wait.py", "src/frob/testing/_stability.py", "src/frob/xref/__init__.py";
     may "env.read" via "src/frob/testing/_coverage_refresh.py", "src/frob/testing/_stackdump.py";
     // T-1466: `src/frob/testing/_stackdump.py::install_stackdump_handler`
     // registers a SIGUSR1 handler (`signal.signal`) -- a process-control
@@ -1734,6 +1735,116 @@ flow f_testsuite_fleet : testsuite -> fleet { label Internal; attr local; }
 flow f_testsuite_security : testsuite -> security { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_testsuite_telemetry : testsuite -> telemetry { label Internal; attr local; }
+
+
+// T-2403: SYS003 burn-down of the 133 genuine (post-calibration) findings.
+// Each pair below was individually verified against the actual import
+// site(s) before declaring -- real, already-in-use architecture that had
+// simply never been written down (a few discovered load-order-cycle-
+// avoidance comments already in the code, e.g. graph/affects.py's own
+// docstring explicitly naming the tickets_ledger dependency it manages
+// with a local import). This is NOT a bulk accept-everything pass -- 12
+// separate findings in the OPPOSITE direction (something depending on
+// `cli`, which no other node in this whole model still does after this
+// ticket) were judged real drift and filed as a follow-up rather than
+// declared here, INCLUDING gates -> cli (WIRE001/WIRE003's genuine need
+// to introspect the live CLI dispatch table) -- Flow declarations are
+// per NODE PAIR, not per import site, so declaring gates -> cli for
+// WIRE's narrow, justified need would have ALSO silently permitted
+// gates/_arch.py's unrelated frob.app.config.load_arch_config imports
+// (real drift, judged separately) under the exact same edge. Rather
+// than declare a pair wide enough to mask a violation it should still
+// catch, both are filed together; see the follow-up ticket for the
+// untangling plan.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_cli_verify : cli -> verify { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_cli_stratamod : cli -> stratamod { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_tickets_ledger_graphlang : tickets_ledger -> graphlang { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_verify_tickets_ledger : verify -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_tickets_ledger_gates : tickets_ledger -> gates { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_vet_stratamod : vet -> stratamod { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_refactor_graphlang : refactor -> graphlang { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_gates_vet : gates -> vet { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_verify_graphlang : verify -> graphlang { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_graphlang_checker : graphlang -> checker { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_graphlang_tickets_ledger : graphlang -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_registry_model_gates : registry_model -> gates { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_serve_verify : serve -> verify { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_stratamod_tickets_ledger : stratamod -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_tickets_ledger_mutate : tickets_ledger -> mutate { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_scripts_ops_core : scripts_ops -> core { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_scripts_ops_tickets_ledger : scripts_ops -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_cli_refactor : cli -> refactor { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_cli_security : cli -> security { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_checker_telemetry : checker -> telemetry { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_core_checker : core -> checker { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_gates_natives : gates -> natives { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_gates_security : gates -> security { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_gates_checker : gates -> checker { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_graphlang_gates : graphlang -> gates { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_graphlang_vet : graphlang -> vet { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_refactor_tickets_ledger : refactor -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_registry_model_tickets_ledger : registry_model -> tickets_ledger { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_security_core : security -> core { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_serve_checker : serve -> checker { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_stratamod_registry_model : stratamod -> registry_model { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_telemetry_core : telemetry -> core { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_telemetry_gates : telemetry -> gates { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_core_stratamod : core -> stratamod { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_tickets_ledger_verify : tickets_ledger -> verify { label Internal; attr local; }
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_tickets_ledger_stratamod : tickets_ledger -> stratamod { label Internal; attr local; }
+
+// T-2403: gates -> cli, narrowly justified -- WIRE001/WIRE003
+// (`src/frob/gates/_wire.py`) audit the LIVE CLI dispatch table for
+// dead/undocumented verbs, which structurally requires importing the
+// real argparse builder (`frob.__main__._build_parser`) it audits. This
+// is now the ONLY gates -> cli import site in the repo (the other two,
+// `frob.app.config.load_arch_config`, were resolved by relocating
+// `load_arch_config` out of the `cli`-owned `app/` tree to
+// `frob.repo_meta` -- see the same ticket's Done report) -- declaring
+// this edge no longer risks masking an unrelated violation under the
+// same node pair, the exact trap a first attempt at this declaration
+// caught mid-ticket. This is the one node in this model's whole 25-node
+// graph that inspects `cli`'s own internals as its stated job -- a
+// self-audit tool needing privileged read access to the thing it
+// audits, not ordinary layering.
+// frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
+flow f_t2403_gates_cli_wire_audit : gates -> cli { label Internal; attr local; }
 
 // -- boundary --------------------------------------------------------
 

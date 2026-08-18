@@ -628,7 +628,7 @@ def _run_arch(root: Path) -> ToolResult:
     to silently fall back to `analyze_project`'s conservative keyword
     defaults, so its suggestion counts could disagree with the ARCH001 gate
     over the same code."""
-    from frob.app.config import load_arch_config
+    from frob.repo_meta import load_arch_config
     from frob.arch import analyze_project
 
     scan_root = root if root.is_dir() else root.parent

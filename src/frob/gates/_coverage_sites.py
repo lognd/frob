@@ -159,7 +159,7 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
     cache hit off `perf_gate`'s own run, but the same cost profile
     `arch_examined_sites`'s own docstring already accepts for an
     out-of-band caller."""
-    from frob import excludes as _excludes
+    import frob.excludes as _excludes
     from frob.lang import parse_file, tree_sitter_extensions
 
     scannable = tree_sitter_extensions()
@@ -297,7 +297,7 @@ def _vet_examined_sites(root: Path) -> frozenset[str]:
     extracted source tree, never this repo's own `root`). No live rule's
     violation site corresponds to what this reporter tracks today; do not
     wire a consumer on the strength of a claimed OPAQUE001 tie."""
-    from frob import excludes as _excludes
+    import frob.excludes as _excludes
     from frob.vet._capability import language_for
 
     examined: set[str] = set()

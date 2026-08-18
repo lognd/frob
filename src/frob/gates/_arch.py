@@ -148,7 +148,7 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     of `analyze_project`'s own conservative keyword defaults -- the gate
     used to silently ignore the user's disclosed 60/800 calibration. T-0728
     extends the same threading to its own five ARCH1xx knobs."""
-    from frob.app.config import load_arch_config
+    from frob.repo_meta import load_arch_config
     from frob.arch import analyze_project
 
     result = analyze_project(root, **load_arch_config(root))
@@ -211,7 +211,7 @@ def arch_examined_sites(root: Path) -> frozenset[str]:
     same `frob check` run `arch_gate` ran in) pays one real walk, same
     cost as any other on-demand `frob.gates._coverage_sites.attach_
     examined_sites` call."""
-    from frob.app.config import load_arch_config
+    from frob.repo_meta import load_arch_config
     from frob.arch import analyze_project
 
     result = analyze_project(root, **load_arch_config(root))

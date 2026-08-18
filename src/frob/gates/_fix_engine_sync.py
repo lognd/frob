@@ -1143,7 +1143,7 @@ def _frob_toml_tracked_at_head(root: Path) -> bool:
     a repo bootstrap commit (or a consumer library repo with no
     `frob.toml` at all) must still fall back to archiving `design/`
     alone rather than losing the BEFORE snapshot entirely."""
-    from frob import gitio
+    import frob.gitio as gitio
 
     probe = gitio.run_argv(["git", "-C", str(root), "cat-file", "-e", "HEAD:frob.toml"])
     return probe.is_ok and probe.danger_ok.returncode == 0
@@ -1169,7 +1169,7 @@ def _archive_design_dir_at_head(root: Path, dest: Path) -> bool:
     (observed live: an ERROR log line naming a dozen litmus node ids on
     every land, and the BEFORE snapshot silently going empty every
     time)."""
-    from frob import gitio
+    import frob.gitio as gitio
 
     archive_path = dest / "head.tar"
     pathspec = (
