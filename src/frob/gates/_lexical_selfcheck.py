@@ -129,6 +129,12 @@ _ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
         # function -- docs/design/gate-semantics-classification.md's own
         # table already carries this exact reasoning.
         ("src/frob/gates/_tickets_gate.py", "_tick011_first_uncited_disclosure"),
+        # T-2503: an ambient (via-less) `may "ATOM";` grant needs a written
+        # `// because: "..."` reason, but `MayGrant` carries no reason
+        # field (a model change is out of T-2503's declared scope) -- the
+        # SUBJECT is `.strata` source text itself, not a resolved code
+        # symbol, matching this table's own "directive/DSL parse" class.
+        ("src/frob/strata/_effects.py", "check_ambient_capability_reasons"),
         # TODO001: deciding whether a comment LINE is a bare TODO/FIXME
         # marker vs a `frob:`-prefixed directive is a directive-vs-prose
         # text question by nature (same class as SEC004/`frob fmt`'s own

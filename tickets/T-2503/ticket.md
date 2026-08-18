@@ -2,7 +2,7 @@
 id: T-2503
 title: 'ambient vs enumerated capability grants: kill the via-list churn without losing
   the guard'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -14,10 +14,33 @@ runs_last: false
 scope:
 - design/frob.strata
 - src/frob/strata/_effects.py
+- tests/unit/strata/test_effects.py
+- src/frob/gates/_lexical_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: test file already touched with new coverage for the ambient/enumerated split;
+    SCOPE002 requires it in scope since _effects.py::check_legacy_capability_aliases's
+    frob:tests target lives there
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_lexical_selfcheck.py
+  reason: LEXCHECK001 fires on the new check_ambient_capability_reasons (T-2503) --
+    it is legitimately textual (scans .strata source comments, not a resolved code
+    symbol), requiring a one-line _ALLOWLIST entry per the gate's own instructions
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_missing_reason_is_flagged
+- tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_reason_present_is_silent
+- tests/unit/strata/test_effects.py::TestAmbientCapabilityReason::test_enumerated_grant_needs_no_reason
+- tests/unit/strata/test_effects.py::TestAmbientVsEnumeratedCapabilitySplit::test_ambient_capability_new_site_produces_no_finding
+- tests/unit/strata/test_effects.py::TestAmbientVsEnumeratedCapabilitySplit::test_enumerated_capability_new_site_still_refused
 designated_repro_test: null
 threat: null
 component: null

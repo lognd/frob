@@ -25,6 +25,7 @@ from frob.strata._effects import (
     StaleViaSymbolViolation,
     capability_ratchet_violations,
     capability_via_site_counts,
+    check_ambient_capability_reasons,
     check_stale_via_symbols,
 )
 
@@ -888,3 +889,116 @@ class TestCapabilityRatchet:
         bound (module docstring)."""
         model = _grant_model("app", "fs.write", ())
         assert capability_ratchet_violations(model, tmp_path) == ()
+
+
+class TestAmbientCapabilityReason:
+    """T-2503, GUARD 1: an ambient (via-less) `may "ATOM";` declaration must
+    carry a same-line `// because: "..."` comment -- an unjustified blanket
+    grant is exactly the exemption-that-matches-the-normal-case failure
+    (T-1967). A via-populated (enumerated) declaration is exempt: its
+    explicit site list is already its own justification."""
+
+    # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
+    # kind="unit"
+    def test_missing_reason_is_flagged(self, tmp_path: Path) -> None:
+        _write(tmp_path, "x.strata", 'node App : trusted {\n    may "exec";\n}\n')
+        found = check_ambient_capability_reasons((tmp_path / "x.strata",))
+        assert len(found) == 1
+        assert found[0].atom == "exec"
+        assert found[0].line == 2
+
+    # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
+    # kind="unit"
+    def test_reason_present_is_silent(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "x.strata",
+            'node App : trusted {\n'
+            '    may "exec";  // because: "the suite runs frob under test"\n'
+            "}\n",
+        )
+        assert check_ambient_capability_reasons((tmp_path / "x.strata",)) == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
+    # kind="unit"
+    def test_enumerated_grant_needs_no_reason(self, tmp_path: Path) -> None:
+        # a via-populated (closed-set/enumerated) declaration never matches
+        # the ambient pattern at all -- its site list is its own
+        # justification, no `because` comment required.
+        _write(
+            tmp_path,
+            "x.strata",
+            'node App : trusted {\n    may "ffi" via "src/x.py";\n}\n',
+        )
+        assert check_ambient_capability_reasons((tmp_path / "x.strata",)) == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
+    # kind="unit"
+    def test_blank_because_text_is_still_flagged(self, tmp_path: Path) -> None:
+        _write(
+            tmp_path,
+            "x.strata",
+            'node App : trusted {\n    may "exec";  // because: "   "\n}\n',
+        )
+        found = check_ambient_capability_reasons((tmp_path / "x.strata",))
+        assert len(found) == 1
+
+
+class TestAmbientVsEnumeratedCapabilitySplit:
+    """T-2503's own property, checked both directions: converting a
+    high-churn capability kind to ambient must not weaken the guard for a
+    kind that stays enumerated on the SAME node."""
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_ambient_capability_new_site_produces_no_finding(self, tmp_path: Path):
+        # a new test file exercising an AMBIENT capability (fs.write) is
+        # silent and correct -- no via-list edit needed, no finding.
+        _write(tmp_path, "tests/test_new_thing.py", "open('x').write('y')\n")
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may=("fs.write",),
+                    may_grants=(MayGrant(atom="fs.write", via=()),),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert report.violations == ()
+
+    # frob:tests src/frob/strata/_effects.py::check_capability_conformance kind="unit"
+    def test_enumerated_capability_new_site_still_refused(self, tmp_path: Path):
+        # a new test file exercising an EXCEPTIONAL capability that stays
+        # enumerated (install-hook-shaped: still closed-set, `via`-scoped)
+        # at a site NOT in the via list is still a hard finding -- the
+        # whole point GUARD 2 protects. `exec` stands in for the real
+        # install-hook/ffi kinds here because they have no tier-2 needle
+        # analog yet (module docstring); the join logic under test --
+        # via-populated grants refuse unenumerated sites -- is identical.
+        _write(tmp_path, "tests/test_scaffold.py", "subprocess.run(['x'])\n")
+        _write(
+            tmp_path,
+            "tests/test_new_undeclared_site.py",
+            "subprocess.run(['x'])\n",
+        )
+        model = KernelModel(
+            nodes=(
+                Node(
+                    id="testsuite",
+                    trust="trusted",
+                    attrs=("code=tests/**",),
+                    may=("exec",),
+                    may_grants=(
+                        MayGrant(atom="exec", via=("tests/test_scaffold.py",)),
+                    ),
+                ),
+            )
+        )
+        binding = bind_code(model, tmp_path).danger_ok
+        report = check_capability_conformance(model, binding, tmp_path)
+        assert [v.file for v in report.violations] == [
+            "tests/test_new_undeclared_site.py"
+        ]

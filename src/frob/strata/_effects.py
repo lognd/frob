@@ -354,6 +354,135 @@ def _declared_kinds_for_effect(
     return frozenset(declared)
 
 
+# ---------------------------------------------------------------------------
+# T-2503: ambient (via-less) vs enumerated (via-populated) `may` grants.
+#
+# MEASURED motivation: the `testsuite` node's enumerated `via` lists ran to
+# ~745 sites across 14 capability kinds, 91% of them (fs.write/exec/fs.read)
+# carrying zero decision content -- "a test suite reads files, writes files,
+# and runs subprocesses" is a tautology, and the enumeration bought nothing
+# but merge-conflict churn and a stale SELFAUDIT001 ratchet bump every time a
+# new test file did what every other test file already does.
+#
+# One syntax was doing two jobs, and the fix does not need a new grammar
+# keyword: the EXISTING `via`-less/`via`-populated split (T-1440) already
+# means exactly "whole-node ambient grant" vs "closed-set enumerated grant"
+# -- `_declared_kinds`/`_declared_kinds_for_file`/`_declared_kinds_for_effect`
+# already join a via-less `MayGrant` (or a flat `Node.may` atom) against
+# EVERY site, and a via-populated grant against ONLY its listed sites,
+# unconditionally REFUSING anything outside that list. Converting a node's
+# fs.write/exec/fs.read grants from enumerated to via-less collapses the
+# churn without touching the kernel join at all -- the property that must
+# survive (an unlisted/undeclared kind is still a hard finding) is preserved
+# by construction, since it was never the via-list mechanism that provided
+# it; deny-by-default on a MISSING atom is unchanged, and a via-populated
+# grant's closed-set refusal for its OWN unenumerated sites is unchanged.
+#
+# What is new here is GUARD 1: an ambient (via-less) `may` atom must carry a
+# written reason, or it is exactly the exemption-that-matches-the-normal-
+# case failure (T-1967) -- an unexplained blanket grant. Since `MayGrant`
+# has no `reason` field (a model change is out of this ticket's declared
+# scope, `src/frob/strata/_models.py` is not in `scope`), the reason lives
+# as a same-line trailing `// because: "..."` comment in the `.strata`
+# source text, checked here by a plain text scan -- the same "read the raw
+# source, not just the parsed model" posture `_line_effects` already uses
+# for needle detection, applied to the declaration side of a grant instead
+# of the observation side.
+# ---------------------------------------------------------------------------
+
+#: Matches a via-less (no `via`/`of` trailer) `may "ATOM";` declaration line,
+#: optionally followed by a same-line `// because: "REASON"` comment. A
+#: via-populated declaration never matches: any `via`/`of` trailer sits
+#: between the atom string and the terminating `;`, which this pattern
+#: requires to follow the atom directly (only whitespace between), so this
+#: regex naturally excludes enumerated grants without needing to parse them
+#: out -- absence of a match on the trailing-comment group is itself the
+#: "no reason given" finding, not a separate lookup.
+_AMBIENT_MAY_RE = re.compile(
+    r'^\s*may\s+"(?P<atom>[^"]+)"\s*;'
+    r'(?:\s*//\s*because:\s*"(?P<reason>[^"]*)"\s*)?\s*$'
+)
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is\
+# _flagged kind="unit"
+class AmbientCapabilityReasonViolation(BaseModel):
+    """One ambient (via-less) `may` capability atom declared with no
+    `// because: "..."` justification (T-2503, GUARD 1): an unexplained
+    blanket grant is the exemption-that-matches-the-normal-case failure
+    (T-1967) -- the reason is what makes an ambient grant auditable, the
+    same discipline `frob:waive reason="..."` already requires for a
+    suppressed gate finding."""
+
+    model_config = ConfigDict(frozen=True)
+
+    file: str
+    line: int
+    atom: str
+
+
+# frob:doc docs/strata/surface.md#may-scope
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_missing_reason_is\
+# _flagged kind="unit"
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_reason_present_is\
+# _silent kind="unit"
+# frob:tests \
+# tests/unit/strata/test_effects.py::TestAmbientCapabilityReason.test_enumerated_grant_\
+# needs_no_reason kind="unit"
+def check_ambient_capability_reasons(
+    paths: tuple[Path, ...],
+) -> tuple[AmbientCapabilityReasonViolation, ...]:
+    """Every via-less `may "ATOM";` declaration across `paths` (T-2503) with
+    no same-line `// because: "..."` comment (GUARD 1) -- a plain text scan
+    of the `.strata` source, not the parsed `KernelModel`, since the reason
+    is not (and by this ticket's declared scope cannot become) a modeled
+    field. A via-populated (`via`/`of`-bearing) declaration is never
+    flagged: `_AMBIENT_MAY_RE` structurally cannot match one (module-level
+    comment above explains why), matching this ticket's own framing --
+    enumerated grants are already self-documenting through their explicit
+    site list, only an ambient grant's blanket reach needs a written WHY."""
+    found: list[AmbientCapabilityReasonViolation] = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            _log.warning(
+                "strata effects: could not read %s for ambient-reason scan: %s",
+                path,
+                exc,
+            )
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            m = _AMBIENT_MAY_RE.match(line)
+            if m is None:
+                continue
+            reason = m.group("reason")
+            if reason is not None and reason.strip():
+                continue
+            _log.warning(
+                "strata effects: ambient may %r at %s:%d has no because reason",
+                m.group("atom"),
+                path,
+                lineno,
+            )
+            found.append(
+                AmbientCapabilityReasonViolation(
+                    file=str(path), line=lineno, atom=m.group("atom")
+                )
+            )
+    _log.info(
+        "strata effects: %d ambient-capability-reason violation(s) found across "
+        "%d path(s)",
+        len(found),
+        len(paths),
+    )
+    return tuple(found)
+
+
 # frob:doc docs/strata/selfconform.md#fs-read-fs-write
 class LegacyCapabilityAliasViolation(BaseModel):
     """One node `may` atom spelled with a T-0717 deprecated legacy
@@ -968,6 +1097,7 @@ def capability_ratchet_violations(
 
 __all__ = [
     "CAPABILITY_RATCHET_LOCK_REL",
+    "AmbientCapabilityReasonViolation",
     "CapabilityRatchetViolation",
     "CapabilityViolation",
     "EffectReport",
@@ -976,6 +1106,7 @@ __all__ = [
     "StaleViaSymbolViolation",
     "capability_ratchet_violations",
     "capability_via_site_counts",
+    "check_ambient_capability_reasons",
     "check_capability_conformance",
     "check_legacy_capability_aliases",
     "check_stale_via_symbols",
