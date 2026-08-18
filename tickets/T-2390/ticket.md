@@ -36,10 +36,30 @@ acceptance:
     then it reports that no configuration surface is declared and does not report
     a silent zero.
   evidence: []
-- text: Given this repo's own frob.toml with all 148 leaf values, when the check runs,
-    then it reports zero unknown keys, proving the check was not calibrated by weakening
-    it.
+- text: 'EPIC CLOSURE BAR (not any single child''s): once every child ticket below
+    has landed, this repo''s own frob.toml -- all ~121 leaf values across its 12 top-level
+    tables -- reports zero unknown keys under the union of every child''s declared
+    schema, proving the check was not calibrated by weakening it. A child''s OWN acceptance
+    is its own table''s must-fire/must-still-pass pair (see each child''s body); this
+    criterion is the epic-level aggregate, checked only once the last child lands.'
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 2
+  old_text: Given this repo's own frob.toml with all 148 leaf values, when the check
+    runs, then it reports zero unknown keys, proving the check was not calibrated
+    by weakening it.
+  new_text: 'EPIC CLOSURE BAR (not any single child''s): once every child ticket below
+    has landed, this repo''s own frob.toml -- all ~121 leaf values across its 12 top-level
+    tables -- reports zero unknown keys under the union of every child''s declared
+    schema, proving the check was not calibrated by weakening it. A child''s OWN acceptance
+    is its own table''s must-fire/must-still-pass pair (see each child''s body); this
+    criterion is the epic-level aggregate, checked only once the last child lands.'
+  reason: 'coordinator instruction: criterion[2]''s all-leaves-zero bar is the EPIC''s
+    closure bar, not a single ticket''s -- a partial-coverage child must not be able
+    to claim it'
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: config
 anchor: false
