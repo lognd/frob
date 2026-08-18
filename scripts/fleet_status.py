@@ -1833,8 +1833,8 @@ def _print_ticket_readiness(readiness: dict) -> bool:
 # tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_invocations_a\
 # nd_live_lock_holder
 # frob:tests \
-# tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_stale_lock_wh\
-# en_no_live_holder
+# tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_prints_no_live_holde\
+# r_as_normal_resting_state_not_stale
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintLandStatus.test_guidance_line_uses_l\
 # ive_count_not_raw_count

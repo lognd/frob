@@ -449,6 +449,42 @@
       "old_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
       "reason": "added --scope-breadth-ack/--scope-breadth-ack-reason flags (T-2302); the two affected doc sections describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags to this same parser-registration function",
       "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "167f55fa22d47f2baf6af124484f9a88e84aaee7cd82e765a7b312e957ed950d",
+      "old_digest": "58bc38ebae4737e94cd0cccb9b260af069b2cde2b1b4cbf75d03c17e5840b56d",
+      "reason": "re-verified: docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 still accurately describes this function's current body (T-2009 attributed_ids override, T-1791 quarantine raise, T-2208 auto-dispose all present and matching); digest moved from nearby whitespace/formatting churn in the same file, not a behavior change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "re-verified: docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 still accurately describes this function's current body (T-2009 attributed_ids override, T-1791 quarantine raise, T-2208 auto-dispose all present and matching); digest moved from nearby whitespace/formatting churn in the same file, not a behavior change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "833b3acbaf0d86549654da85b96ca37a68a1e6572f631cfea597a9331b66df2b",
+      "old_digest": "47fbe7956fc14401374c1f5eb8ad37e685b207eeac1863964138c3832c2843b2",
+      "reason": "re-verified: docstring accurately describes current body -- include_test_corpora/_is_test_corpus_path skip (T-2298) and _read_source_for_format's unsupported-language/unreadable-file skip are both present and match; body+sig digest moved from T-2298's own param addition, already correctly reflected in the docstring",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "ade4c0a8c6fe0a5bb50a9b55939a935a8627bd321219c2c0ae62671dcb71eb9d",
+      "old_digest": "8154563280adec6decbd53f05cf78ccf6244e5da39f5622de524139cb25b905e",
+      "reason": "re-verified: docstring accurately describes current body -- include_test_corpora/_is_test_corpus_path skip (T-2298) and _read_source_for_format's unsupported-language/unreadable-file skip are both present and match; body+sig digest moved from T-2298's own param addition, already correctly reflected in the docstring",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     }
   ],
   "entries": [
@@ -523,7 +559,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "58bc38ebae4737e94cd0cccb9b260af069b2cde2b1b4cbf75d03c17e5840b56d",
+      "digest": "167f55fa22d47f2baf6af124484f9a88e84aaee7cd82e765a7b312e957ed950d",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
@@ -678,12 +714,12 @@
       "ref": "src/frob/gates/_fix_engine_sync.py::_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT"
     },
     {
-      "digest": "47fbe7956fc14401374c1f5eb8ad37e685b207eeac1863964138c3832c2843b2",
+      "digest": "833b3acbaf0d86549654da85b96ca37a68a1e6572f631cfea597a9331b66df2b",
       "facet": "body",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     },
     {
-      "digest": "8154563280adec6decbd53f05cf78ccf6244e5da39f5622de524139cb25b905e",
+      "digest": "ade4c0a8c6fe0a5bb50a9b55939a935a8627bd321219c2c0ae62671dcb71eb9d",
       "facet": "sig",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     },
