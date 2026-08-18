@@ -152,7 +152,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2a18d603b5a84c6022575310ecc413fbd1333a13
 ---
 frob ticket priority <id> <level> accepts NO --reason flag, so a priority
 change leaves no audit trail of why it happened. Meanwhile frob ticket
