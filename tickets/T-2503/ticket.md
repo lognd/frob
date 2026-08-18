@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a1c49a2a504e0730fbb1afaa0cb3ea83fcdb46b1
 ---
 MEASURED 2026-08-18. The `testsuite` node enumerates ~745 capability
 sites across 14 kinds:
