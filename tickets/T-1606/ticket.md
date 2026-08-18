@@ -14,10 +14,67 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_fmt_directives.py
-- src/frob/lang/**
-- tests/**
+- src/frob/lang/_common.py
+- src/frob/lang/_models.py
+- tests/test_gates_fmt_directives.py
+- tests/test_lang.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/lang/**
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_common.py
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_models.py
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates_fmt_directives.py
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'T-2446: src/frob/gates/_fmt_directives.py was already precisely scoped;
+    the two shared (non-per-walker) lang files are where a per-language width table
+    would live given the existing module split (_common.py/_models.py vs the per-walker
+    _walk_<lang>.py files), and tests/test_gates_fmt_directives.py is the existing
+    fmt-directive test suite this ticket extends (confirmed via ls tests/)'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
