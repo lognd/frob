@@ -18,6 +18,12 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+attachments:
+- path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
+  caption: 'T-2244 audit: safe-to-repoint split (test:/typecheck: safe now; lint:
+    blocked by newly-found T-2387, not T-2359; format:/lint-fix: blocked by both;
+    test-fast: stays raw)'
+  sha256: b0ec580fcb0e0e4a77cbea888ba619fa74df8fb5884627ec35ce10a09ae47d2d
 acceptance:
 - text: 'GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck: recipes
     call ''uv run frob fmt'' / ''uv run frob quality check'' instead of raw ruff/ty
