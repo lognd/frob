@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5c70af4bfb50bd0caf9ddc2eb08c4c3b7c466f4b
 ---
 Child of T-2384/T-2388. PORT001 (T-2388) deliberately scans src/frob/gates/
 only -- do not widen inside T-2388 itself, per coordinator instruction
