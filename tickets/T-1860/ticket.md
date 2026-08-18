@@ -49,7 +49,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0961b6fe07c9c3975dbf8b607bb7faef997dfae3
 ---
 T-1855 added reason-disclosure (declared vs implicit-cli-wiring) to the
 CrossTicketLeakage refusal in _check_cross_ticket_leakage/_report_leaked_
