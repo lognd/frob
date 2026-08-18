@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 56f4c2209992b106c6da563c762ab359405b0d20
 ---
 Observed twice in one session, both self-resolved as duplicates but
 worth tracking as a pattern: TICK006's Tier-A auto-filer ("Recovered
