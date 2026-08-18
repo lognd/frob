@@ -92,7 +92,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 399df00242ed2595e595f1e9f6a1ebcf2e5e138b
 ---
 STANDING PRINCIPLE, set by the repo owner 2026-08-06: every frob and strata check must decide from SEMANTICS -- a resolved symbol, a parsed AST node, a graph edge -- and never from a lexical/textual match. A check that greps is guessing.
 
