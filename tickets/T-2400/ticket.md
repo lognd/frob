@@ -6,13 +6,26 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-18'
-priority: high
+priority: critical
 parent: null
 tier: ticket
 sprint: null
 runs_last: false
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+triage_changes:
+- field: priority
+  old_value: high
+  new_value: critical
+  reason: 'THIRD occurrence in a single day, confirming this is routine rather than
+    incidental: T-2382/T-2383 (Series U land of T-2341), T-2398/T-2399 (Series Y land
+    of T-2386), T-2404 (Series W land of T-2380). Six spurious ticket ids burned,
+    three separate agents forced into a verify-then-drop detour mid-land. Escalated
+    on frequency plus blast radius: drops are TERMINAL here (no undrop), so a filer
+    that cries wolf three times a day is one careless agent away from destroying a
+    real finding.'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a Done report citing a ticket that exists on main but was filed after
