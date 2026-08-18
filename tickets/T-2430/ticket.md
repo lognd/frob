@@ -89,7 +89,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 60a6c66ffd360cad38509bd33c03ba198d594992
 ---
 Validate the `[profile]` table (2 leaves) against a declared schema.
 Reader: frob.tickets._profile.
