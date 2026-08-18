@@ -120,6 +120,66 @@ class TestBodyAmend:
         assert blank.is_err
         assert blank.danger_err is TicketError.TriageReasonMissing
 
+    def test_append_after_done_report_targets_raw_body_not_report_file(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2498: appending to a ticket that already has a Done report
+        must persist the appended text into `ticket.md`'s TRUE raw body,
+        never into `done-report.md` -- the exact silent misroute found
+        while working T-2452. Before the fix, `set_body` operated on the
+        LOADED composite body (raw body + spliced-in Done report), so an
+        append landed textually after the `## Done report` heading and
+        `write_ticket`'s own split wrote it into `done-report.md` instead,
+        while reporting success and recording a (misleading) ledger
+        entry."""
+        from frob.tickets import set_done_report
+        from frob.tickets._store import _store_mode, v2_ticket_dir
+
+        ticket_id = _init_repo(tmp_path)
+        seeded = set_body(
+            tmp_path, ticket_id, "original plan text", mode="set", reason="seed"
+        )
+        assert seeded.is_ok
+        reported = set_done_report(tmp_path, ticket_id, why="Done. All good.")
+        assert reported.is_ok
+
+        result = set_body(
+            tmp_path,
+            ticket_id,
+            'frob:no-behavior-change reason="structural only"',
+            mode="append",
+            reason="add directive found while working T-2452",
+        )
+        assert result.is_ok
+
+        assert _store_mode(tmp_path) == "v2"
+        ticket_md = (v2_ticket_dir(tmp_path, ticket_id) / "ticket.md").read_text(
+            encoding="utf-8"
+        )
+        done_report_md = (
+            v2_ticket_dir(tmp_path, ticket_id) / "done-report.md"
+        ).read_text(encoding="utf-8")
+
+        assert "original plan text" in ticket_md
+        assert "frob:no-behavior-change" in ticket_md
+        assert "frob:no-behavior-change" not in done_report_md
+
+    def test_append_of_structural_heading_text_refused(self, tmp_path: Path) -> None:
+        """T-2498: appended text that itself contains a structural section
+        heading (`## Done report`/`## Failure log`/`## Drop reason`) is an
+        ambiguous target -- refused loudly rather than silently spliced in
+        a way a later write could misinterpret."""
+        ticket_id = _init_repo(tmp_path)
+        result = set_body(
+            tmp_path,
+            ticket_id,
+            "some text\n## Done report\nmore text",
+            mode="append",
+            reason="should be refused",
+        )
+        assert result.is_err
+        assert result.danger_err is TicketError.BodyTextAmbiguousSection
+
 
 class TestBodyCli:
     """`frob.app.ticket_runner._mutate._body`: the thin CLI-dispatch layer

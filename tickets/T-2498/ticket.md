@@ -1,7 +1,7 @@
 ---
 id: T-2498
 title: frob ticket body --append silently misroutes into done-report.md when one exists
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,15 @@ runs_last: false
 scope:
 - src/frob/tickets/_setters.py
 - src/frob/tickets/__init__.py
+evidence_scope:
+- tests/test_tickets_body.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_tickets_body.py::TestBodyAmend::test_append_after_done_report_targets_raw_body_not_report_file
+- tests/test_tickets_body.py::TestBodyAmend::test_append_of_structural_heading_text_refused
 designated_repro_test: null
 threat: null
 component: null

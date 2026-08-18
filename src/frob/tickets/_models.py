@@ -1986,6 +1986,12 @@ class TicketError(ErrorSet):
     )
     # frob:ticket T-2392
     BodyModeConflict = "body change accepts exactly one of --append or --set"
+    # frob:ticket T-2498
+    BodyTextAmbiguousSection = (
+        "body change text contains a structural section heading "
+        "(## Done report / ## Failure log / ## Drop reason) -- ambiguous "
+        "target, refused"
+    )
     ScopeLeaseConflict = (
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )

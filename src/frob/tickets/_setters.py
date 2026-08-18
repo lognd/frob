@@ -34,6 +34,9 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._models import (
+    DONE_REPORT_HEADING,
+    DROP_REASON_HEADING,
+    FAILURE_LOG_HEADING,
     BodyChangeEntry,
     DesignatedReproChangeEntry,
     Priority,
@@ -49,8 +52,10 @@ from frob.tickets._models import (
     TicketState,
     TicketTier,
     TriageChangeEntry,
+    replace_done_report_section,
 )
 from frob.tickets._store import (
+    _split_done_report,
     _store_mode,
     ledger_lock,
     load_archive,
@@ -302,6 +307,43 @@ def set_tier(
     )
 
 
+# frob:ticket T-2498
+def _validate_body_amend(mode: str, reason: str, text: str) -> TicketError | None:
+    """`set_body`'s pre-lock validation, split out to keep `set_body`
+    itself under ARCH001's length threshold (T-2498): rejects a blank
+    `reason`, an unrecognized `mode`, or `text` that contains a line
+    matching one of this package's own structural section headings (`##
+    Done report`/`## Failure log`/`## Drop reason`) -- the ambiguous-
+    target case `set_body`'s own docstring documents. Returns the
+    `TicketError` to raise, or `None` if `text`/`mode`/`reason` are all
+    acceptable."""
+    if not reason.strip():
+        return TicketError.BodyReasonMissing
+    if mode not in ("append", "set"):
+        return TicketError.BodyModeConflict
+    if any(
+        line.strip() in (DONE_REPORT_HEADING, FAILURE_LOG_HEADING, DROP_REASON_HEADING)
+        for line in text.splitlines()
+    ):
+        return TicketError.BodyTextAmbiguousSection
+    return None
+
+
+# frob:ticket T-2498
+def _amend_raw_body(raw_body: str, text: str, mode: str) -> str:
+    """The actual append/set arithmetic on a ticket's TRUE raw body (T-2498
+    -- split out of `set_body` to keep it under ARCH001's length
+    threshold): `mode="append"` adds `text` after a blank-line separator
+    (skipped if `raw_body` is empty/whitespace-only), `mode="set"`
+    replaces it outright. Operates on `raw_body`, never the composite
+    body a Done report may have been spliced into -- see `set_body`'s own
+    docstring for why that distinction is the whole point of this
+    ticket."""
+    if mode == "append":
+        return f"{raw_body}\n\n{text}" if raw_body.strip() else text
+    return text
+
+
 # frob:ticket T-2392
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_appends_text
@@ -340,11 +382,36 @@ def set_body(
     itself. Unlike those two, the entry stores lengths, not the full text,
     since a ticket body can be many KB (see `BodyChangeEntry`'s own
     docstring) -- the full before/after diff is `tickets.md`'s own git
-    history."""
-    if not reason.strip():
-        return Err(TicketError.BodyReasonMissing)
-    if mode not in ("append", "set"):
-        return Err(TicketError.BodyModeConflict)
+    history.
+
+    T-2498: `ticket.body` as loaded here is the COMPOSITE view -- v2
+    storage splices a sibling `done-report.md` back into `body`
+    (`_merge_sibling_done_report`) so every OTHER consumer (close,
+    evidence recovery, BUG002) sees one unified text. Operating on that
+    composite directly used to silently misroute: an append landed
+    textually after the spliced-in `## Done report` heading, so
+    `write_ticket`'s own `_split_done_report` (the mechanical inverse)
+    read the appended text as part of the Done report and persisted it
+    into `done-report.md` instead of `ticket.md`'s real body -- a false
+    success (the command reports the append and records a `BodyChangeEntry`)
+    with the write landing somewhere the caller never asked for. This now
+    unsplices FIRST (`_split_done_report`), amends only the true raw
+    `ticket.md` body, then re-splices the untouched report text back in
+    before handing the composite to `write_ticket` (whose own split
+    recovers the same two pieces) -- so append/set always target the real
+    body regardless of whether a Done report exists. `BodyChangeEntry`
+    lengths are computed from the raw body too, not the composite, so the
+    ledger records what actually changed on disk. If `text` itself
+    contains a line matching a structural section heading this package
+    writes programmatically (`## Done report`/`## Failure log`/`## Drop
+    reason`) the target section is ambiguous -- splicing it in unsplit
+    could again be silently reinterpreted as (or swallow) a different
+    section on the next write -- so this refuses loudly
+    (`Err(TicketError.BodyTextAmbiguousSection)`) instead of writing
+    anything."""
+    validation_error = _validate_body_amend(mode, reason, text)
+    if validation_error is not None:
+        return Err(validation_error)
     from frob.tickets import _load_ticket_and_queue
 
     leased = enforce_worktree_lease(root)
@@ -355,18 +422,20 @@ def set_body(
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket, _queue = loaded.danger_ok
-        old_body = ticket.body
-        if mode == "append":
-            new_body = f"{old_body}\n\n{text}" if old_body.strip() else text
-        else:
-            new_body = text
+        raw_body, report_text = _split_done_report(ticket.body)
+        new_raw_body = _amend_raw_body(raw_body, text, mode)
+        new_body = (
+            replace_done_report_section(new_raw_body, report_text)
+            if report_text is not None
+            else new_raw_body
+        )
         entry = BodyChangeEntry(
             mode=mode,
             reason=reason,
             actor=_current_actor(),
             at=date.today(),
-            old_length=len(old_body),
-            new_length=len(new_body),
+            old_length=len(raw_body),
+            new_length=len(new_raw_body),
         )
         update: dict[str, object] = {
             "body": new_body,
@@ -380,8 +449,8 @@ def set_body(
         "tickets: %s body %s (%d -> %d chars): %s",
         ticket_id,
         mode,
-        len(old_body),
-        len(new_body),
+        entry.old_length,
+        entry.new_length,
         reason,
     )
     return Ok(updated)
