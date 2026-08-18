@@ -845,6 +845,24 @@
       "old_digest": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
       "reason": "T-2470: symref= now uses _cpp_symref_qualname (dot-joined identity) instead of the raw func.name; message= text and the documented cpp-noexcept-throws behavior/finding shape are unchanged -- verified directly, no doc content needs updating",
       "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "bce7d64c1c2e077cd92edf495a386f2a9d8d72a62cbfd10719441a4a0d14259e",
+      "old_digest": "035a4e775b8231358a88b29bf40988f1612e1cd508f33301db6f1b49bcdc3004",
+      "reason": "T-1614 waive-audit: T-1883 (the lease this re-ack was blocked on) landed; re-acking the body digest now that nothing blocks it, no behavior change since T-1894's original dict()-wrap fix",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
+      "old_digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
+      "reason": "T-1614 waive-audit: T-1883 (the lease this re-ack was blocked on) landed; re-acking the body digest now that nothing blocks it, no behavior change since T-1894's original dict()-wrap fix",
+      "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     }
   ],
   "entries": [
@@ -919,7 +937,7 @@
       "ref": "src/frob/app/ticket_runner/_land_cmd.py::_ticket_terminal_state_on_main"
     },
     {
-      "digest": "035a4e775b8231358a88b29bf40988f1612e1cd508f33301db6f1b49bcdc3004",
+      "digest": "bce7d64c1c2e077cd92edf495a386f2a9d8d72a62cbfd10719441a4a0d14259e",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
