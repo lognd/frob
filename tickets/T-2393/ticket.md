@@ -72,7 +72,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 74904cd65d663658b50a6566f3f1298b52f1ba5f
 ---
 MEASURED TODAY: three separate tickets were blocked at close/land time
 by BUG002 (`EvidenceConfirmatoryOnly`) despite having no runtime defect
