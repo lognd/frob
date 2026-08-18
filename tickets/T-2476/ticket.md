@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: db059694b6c138afb974d97951c9c44c76804b51
 ---
 T-2472 added the GATERULE001 catalog entry to docs/modules/gates.md
 (## GATERULE001 (T-2448), with a frob:describes anchor on
