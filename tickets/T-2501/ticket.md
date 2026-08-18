@@ -12,8 +12,8 @@ sprint: null
 runs_last: false
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'epic: coordination only, children carry the scopes'
 designated_repro_test: null
 threat: null
 component: null
