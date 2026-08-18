@@ -132,7 +132,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 472bff74eb1b5784576a66e625b765a18721b7d3
 ---
 `frob ticket evidence --check-repro` / `--designate-repro` runs the
 candidate repro test in a subprocess under a FIXED 60s budget
