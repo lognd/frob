@@ -9,6 +9,7 @@ this batch: graph_runner.py, perf_runner.py, check_runner.py.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -523,6 +524,192 @@ class TestPerfRunner:
             assert "x = 1" in out
         finally:
             outside.unlink(missing_ok=True)
+
+
+# frob:ticket T-2486
+# frob:waive WIRE001 follow_up="T-2492" reason="pytest fixture -- consumed via \
+# dependency injection (declared as a test method parameter), not a direct call this \
+# repo's static call-graph resolver can see; four TestJsonStdoutStructuralGuard tests \
+# in this same file (and this same ticket) use it"
+@pytest.fixture
+def _real_console_handlers():
+    """Install real stdout/stderr `StreamHandler`s on the root logger for
+    the duration of the test (T-2486 test-only helper): under pytest,
+    `frob.logging.logger._init` installs ZERO handlers on the root logger
+    (T-1621's own fix, `_under_pytest()`-gated) -- `caplog` still sees
+    every record via pytest's OWN capture plugin, but nothing physically
+    reaches `sys.stdout`/`capsys` that way. These tests need the REAL
+    physical write to happen (through `_LazyStdoutHandler`, which
+    re-resolves `sys.stdout` on every emit, T-1385) so `capsys` can prove
+    `_guard_json_stdout_writes` actually redirected/protected it -- not
+    just that a log RECORD was produced, which `caplog` already covers
+    elsewhere and would pass even with the guard entirely absent."""
+    import logging
+
+    from frob.logging.filter import _BelowLevelFilter
+    from frob.logging.formatter import _FrobFormatter
+    from frob.logging.handler import _LazyStderrHandler, _LazyStdoutHandler
+
+    root = logging.getLogger()
+    saved_handlers = list(root.handlers)
+    saved_level = root.level
+
+    stdout_handler = _LazyStdoutHandler()
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.setFormatter(_FrobFormatter())
+    stdout_handler.addFilter(_BelowLevelFilter("WARNING"))
+    stderr_handler = _LazyStderrHandler()
+    stderr_handler.setLevel(logging.WARNING)
+    stderr_handler.setFormatter(_FrobFormatter(show_level=True))
+
+    root.handlers = [stdout_handler, stderr_handler]
+    root.setLevel(logging.DEBUG)
+    try:
+        yield
+    finally:
+        root.handlers = saved_handlers
+        root.setLevel(saved_level)
+
+
+class TestJsonSubcommandEnumeration:
+    """T-2486 acceptance [3]: enumerate every subcommand offering a
+    `--json` mode, rather than assuming `frob check` is the only one --
+    it is not. This locks the audit's own finding (27 distinct `--json`
+    destinations repo-wide) as a regression test: `check` is the ONE
+    T-2486 protected with `_guard_json_stdout_writes`; T-2492 tracks
+    auditing the rest."""
+
+    # frob:ticket T-2486
+    def test_more_than_one_subcommand_has_a_json_mode(self) -> None:
+        # frob:tests tests/unit/test_app_runners_batch6.py::TestJsonSubcommandEnumeration.test_more_than_one_subcommand_has_a_json_mode  # noqa: E501
+        import argparse
+
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        json_dests: set[str] = set()
+
+        def _walk(p: argparse.ArgumentParser) -> None:
+            for action in p._actions:  # noqa: SLF001
+                if isinstance(action, argparse._SubParsersAction):  # noqa: SLF001
+                    for sub in action.choices.values():
+                        _walk(sub)
+                elif action.option_strings == ["--json"] and action.dest:
+                    json_dests.add(action.dest)
+
+        _walk(parser)
+        # T-2486's own audit found 27; assert a floor, not an exact
+        # count, so this test does not need updating every time a new
+        # --json flag is added elsewhere -- only if the class shrinks
+        # unexpectedly, which would itself be worth investigating.
+        assert len(json_dests) >= 20, json_dests
+        assert "check_json" in json_dests
+
+
+class TestJsonStdoutStructuralGuard:
+    """T-2486: `--json`'s structural boundary guard. T-2484 fixed the ONE
+    known leak (a misleveled log call in `frob.__main__`); this class
+    proves a DIFFERENT kind of leak -- a bare `print()`, the exact shape
+    RENDER001 would catch statically but which this test exercises at
+    RUNTIME, matching how T-2484's own leak actually reached production
+    (a static gate did not stop it either, since it was a log call, not
+    a print) -- also cannot corrupt the payload."""
+
+    # frob:ticket T-2486
+    def test_planted_print_inside_json_run_does_not_corrupt_payload(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+    ) -> None:
+        """must-now-protect (T-2486 acceptance [0]): a deliberately
+        planted `print()` inside the `--json` stage-running span must not
+        appear on stdout, and the JSON payload must still parse clean."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+
+        def _poisoned_run_check(root, **kw):  # noqa: ANN001, ANN003
+            print("PLANTED LEAK: must never reach stdout under --json")
+            return _make_check_result(errors=0)
+
+        monkeypatch.setattr(check_mod, "run_check", _poisoned_run_check)
+        cfg = AppConfig(check_path=tmp_path, check_json=True)
+        check_run(cfg)
+        captured = capsys.readouterr()
+
+        assert "PLANTED LEAK" not in captured.out
+        data = json.loads(captured.out)
+        assert "results" in data
+
+    # frob:ticket T-2486
+    def test_planted_print_still_reaches_stderr(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+    ) -> None:
+        """must-still-inform (T-2486 acceptance [2]): the guard redirects
+        the planted write to stderr rather than silently swallowing it --
+        trading a parsing bug for an information-loss bug would be worse
+        than leaving the leak alone."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+
+        def _poisoned_run_check(root, **kw):  # noqa: ANN001, ANN003
+            print("PLANTED LEAK: must reach stderr under --json")
+            return _make_check_result(errors=0)
+
+        monkeypatch.setattr(check_mod, "run_check", _poisoned_run_check)
+        cfg = AppConfig(check_path=tmp_path, check_json=True)
+        check_run(cfg)
+        captured = capsys.readouterr()
+
+        assert "PLANTED LEAK" in captured.err
+
+    # frob:ticket T-2486
+    def test_legitimate_json_payload_is_byte_identical_with_guard_active(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+    ) -> None:
+        """must-still-emit (T-2486 acceptance [1]): with the guard in
+        place but nothing planted, `--json` output is unchanged from the
+        pre-T-2486 shape (same `as_json()`/`_log.info` mechanism -- the
+        guard only changes what happens to a WRITE from inside the
+        guarded span, never the final payload's own emission path)."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result(errors=0)
+        )
+        cfg = AppConfig(check_path=tmp_path, check_json=True)
+        check_run(cfg)
+        captured = capsys.readouterr()
+
+        data = json.loads(captured.out)
+        assert data["results"] == [
+            {
+                "tool": "fake",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "",
+            }
+        ]
+
+    # frob:ticket T-2486
+    def test_no_planted_print_no_stderr_noise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+    ) -> None:
+        """must-still-emit's idle-machine corollary: with nothing planted,
+        the guard itself adds no stderr noise -- only a genuine stray
+        write would ever surface there."""
+        import frob.app.check_runner as check_mod
+
+        (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+        monkeypatch.setattr(
+            check_mod, "run_check", lambda root, **kw: _make_check_result(errors=0)
+        )
+        cfg = AppConfig(check_path=tmp_path, check_json=True)
+        check_run(cfg)
+        captured = capsys.readouterr()
+
+        assert "PLANTED LEAK" not in captured.err
 
 
 def _make_check_result(errors: int = 0, warnings: int = 0) -> CheckResult:

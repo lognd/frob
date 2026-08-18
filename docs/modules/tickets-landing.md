@@ -2481,6 +2481,19 @@ pins that `land_parity_findings`'s output on a fixed raw finding set is
 byte-identical to calling `_drop_checkpoint_exempt_findings` directly
 against that same set.
 
+T-2486: `_run_land_parity`'s `land_parity_findings` call now runs inside
+`_guard_json_stdout_writes` (`src/frob/app/check_runner.py`'s own T-2486
+structural boundary guard) rather than unguarded -- a stray write from
+that spawn+parse call can no longer corrupt `--json` output the way
+T-2484's advisory leak once corrupted `frob check --json` itself. The
+guard is lifted before this function's own final `_log.info`/`_log.error`
+payload, unchanged from before. The guard's own `sys.stdout` stand-in,
+`_StderrRedirectStdout` (also `src/frob/app/check_runner.py`), redirects
+every write to the real `sys.stderr` captured at guard entry and
+delegates every other attribute (encoding, `isatty()`) to the real
+stdout it stands in for -- the same class every guarded span in that
+module shares, not one copy per call site.
+
 ## `frob ticket evidence --replace` (T-1537)
 
 <!-- frob:describes src/frob/tickets/_evidence.py::replace_evidence -->

@@ -2,7 +2,7 @@
 id: T-2486
 title: nothing structurally prevents a stdout write from corrupting --json output;
   T-2484 fixed one instance
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,25 +13,51 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/check_runner.py
+- tests/unit/test_app_runners_batch6.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: positive controls for the structural stdout guard live here, matching the
+    file's existing check_runner dispatch test convention
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'AFFECT001: _run_land_parity''s own affects()-closure doc needs the T-2486
+    guard noted'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_planted_print_inside_json_run_does_not_corrupt_payload
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_planted_print_still_reaches_stderr
+- tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_no_planted_print_no_stderr_noise
+- tests/unit/test_app_runners_batch6.py::TestJsonSubcommandEnumeration::test_more_than_one_subcommand_has_a_json_mode
 designated_repro_test: null
 acceptance:
 - text: Given a print to stdout deliberately added inside a --json code path, when
     the command runs, then the JSON payload is not corrupted.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_planted_print_inside_json_run_does_not_corrupt_payload
 - text: Given legitimate --json output, when the guard is in place, then the payload
     is byte-for-byte unchanged on both an idle and a busy machine.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_legitimate_json_payload_is_byte_identical_with_guard_active
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_no_planted_print_no_stderr_noise
 - text: Given a human-facing diagnostic emitted during a --json run, when the guard
     redirects it, then it still reaches the operator on stderr rather than being silently
     swallowed.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestJsonStdoutStructuralGuard::test_planted_print_still_reaches_stderr
 - text: Given every subcommand offering a --json mode, when the audit is complete,
     then the set is enumerated and each is reported as protected or not.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch6.py::TestJsonSubcommandEnumeration::test_more_than_one_subcommand_has_a_json_mode
 threat: null
 component: process
 anchor: false
