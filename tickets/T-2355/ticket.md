@@ -12,10 +12,31 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- tickets/**
-- tests/fixtures/tickets/**
+- tests/fixtures/tickets/golden-monofile-ledger.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tickets/**
+  reason: 'narrow: this ticket''s own implementation is a new fixture + test + the
+    migrator''s existing loop, not the whole tickets/ or fixtures tree which collided
+    with 20 other tickets'
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tests/fixtures/tickets/**
+  reason: 'narrow: this ticket''s own implementation is a new fixture + test + the
+    migrator''s existing loop, not the whole tickets/ or fixtures tree which collided
+    with 20 other tickets'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/fixtures/tickets/golden-monofile-ledger.md
+  reason: 'narrow: this ticket''s own implementation is a new fixture + test + the
+    migrator''s existing loop, not the whole tickets/ or fixtures tree which collided
+    with 20 other tickets'
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
