@@ -15,6 +15,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _build_regression_body,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
+    _relativize_regression_scope_file,
     _identities_still_reproducing,
     _land_ids_between,
     _parse_sweep_ticket_identities,
@@ -1931,6 +1932,73 @@ class TestFileRegressionTicket:
             frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
         )
         assert filed is None
+
+
+# frob:ticket T-2352
+class TestRelativizeRegressionScopeFile:
+    """T-2352: `_relativize_regression_scope_file` normalizes a regression
+    finding's `.file` at the producer's own return boundary -- the fix for
+    T-2308's real incident (an absolute path written into a filed
+    ticket's `scope:` crashed `frob ticket new` fleet-wide, T-2342's
+    reader-side half). Same posture as T-2314's
+    `_relativize_perf_violation_file`."""
+
+    # frob:ticket T-2352
+    # frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_absolute_under_root_is_relativized  # noqa: E501
+    def test_absolute_under_root_is_relativized(self, tmp_path: Path) -> None:
+        """Positive control 1 (T-2352): an absolute path under root
+        becomes a repo-relative one."""
+        abs_file = str(tmp_path / "src" / "frob" / "x.py")
+        result = _relativize_regression_scope_file(tmp_path, abs_file)
+        assert result == str(Path("src") / "frob" / "x.py")
+        assert not Path(result).is_absolute()
+
+    # frob:ticket T-2352
+    # frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_already_relative_is_unchanged  # noqa: E501
+    def test_already_relative_is_unchanged(self, tmp_path: Path) -> None:
+        """Must-still-pass control: an already-relative path is returned
+        unchanged (no double-processing, no accidental corruption)."""
+        result = _relativize_regression_scope_file(tmp_path, "scripts/fleet_status.py")
+        assert result == "scripts/fleet_status.py"
+
+    # frob:ticket T-2352
+    # frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_absolute_outside_root_is_kept_and_logged  # noqa: E501
+    def test_absolute_outside_root_is_kept_and_logged(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Positive control 2 (T-2352, must-still-pass): a genuinely
+        anomalous absolute path that does NOT resolve under root is kept
+        as-is -- never silently coerced into a wrong-but-plausible
+        relative path -- and logged loudly."""
+        import logging
+
+        outside = str(Path("/definitely/not/under/tmp_path/x.py"))
+        with caplog.at_level(logging.WARNING):
+            result = _relativize_regression_scope_file(tmp_path, outside)
+        assert result == outside
+        messages = "\n".join(r.getMessage() for r in caplog.records)
+        assert outside in messages
+
+    # frob:ticket T-2352
+    # frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_filed_ticket_scope_is_relative_end_to_end  # noqa: E501
+    def test_filed_ticket_scope_is_relative_end_to_end(self, tmp_path: Path) -> None:
+        """Positive control 3 (T-2352): a ticket filed by
+        `_file_regression_ticket` with an ABSOLUTE finding path gets a
+        RELATIVE `scope:` entry -- the actual T-2308 incident shape,
+        exercised end-to-end through the real filer, not just the helper
+        in isolation. This MUST FAIL before this ticket's fix (scope would
+        carry the raw absolute path)."""
+        from frob.tickets._store import load_all
+
+        abs_file = str(tmp_path / "src" / "frob" / "x.py")
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", abs_file)})
+        )
+        assert filed is not None
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        ticket = loaded.danger_ok[filed]
+        assert list(ticket.scope) == [str(Path("src") / "frob" / "x.py")]
 
 
 # frob:ticket T-1791

@@ -1155,9 +1155,7 @@ def _tree_state_key(root: Path) -> str | None:
     status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
     if status.is_err or status.danger_ok.returncode != 0:
         return None
-    status_digest = hashlib.sha256(
-        status.danger_ok.stdout.encode("utf-8")
-    ).hexdigest()
+    status_digest = hashlib.sha256(status.danger_ok.stdout.encode("utf-8")).hexdigest()
     return f"{head.danger_ok.stdout.strip()}:{status_digest}"
 
 
@@ -1197,9 +1195,7 @@ def _read_revalidation_cache(
         age_s = time.time() - float(raw["timestamp"])
         if age_s < 0 or age_s > _REVALIDATION_CACHE_TTL_S:
             return None
-        reproducing = frozenset(
-            (str(r), str(f)) for r, f in raw.get("reproducing", [])
-        )
+        reproducing = frozenset((str(r), str(f)) for r, f in raw.get("reproducing", []))
         return reproducing, age_s
     except Exception as exc:  # noqa: BLE001 -- json/shape, any corruption
         _log.warning(
@@ -1235,9 +1231,7 @@ def _write_revalidation_cache(
         "timestamp": time.time(),
     }
     try:
-        path.write_text(
-            json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8"
-        )
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
     except OSError as exc:
         _log.warning(
             "rapid sweep: T-2089: could not write revalidation cache %s (%s) "
@@ -1411,6 +1405,40 @@ def _dispose_to_existing_duplicate_or_none(
     return None
 
 
+# frob:ticket T-2352
+# frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_absolute_under_root_is_relativized  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_already_relative_is_unchanged  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile.test_absolute_outside_root_is_kept_and_logged  # noqa: E501
+def _relativize_regression_scope_file(root: Path, file: str) -> str:
+    """T-2352: normalize one regression finding's `.file` to a
+    repo-relative path before it becomes a filed ticket's `scope:` entry
+    -- the producer-side fix for T-2308's real incident (an ABSOLUTE path
+    written into a live ticket's scope crashed `frob ticket new`
+    fleet-wide, T-2342's reader-side half). Same posture as T-2314's
+    `_relativize_perf_violation_file` (`frob.gates.__init__`): normalize
+    once, at THIS producer's own return boundary, rather than teaching
+    every consumer of `scope:` to accept both an absolute and a relative
+    shape. A no-op for a `file` that is already relative. A `file` that is
+    absolute but does NOT resolve under `root` at all is kept as-is (never
+    silently coerced into a wrong-but-plausible relative path) and logged
+    at WARNING naming the anomalous path, since that shape should not
+    occur and deserves a diagnosable trace if it ever does."""
+    if not Path(file).is_absolute():
+        return file
+    try:
+        rel = Path(file).relative_to(root)
+    except ValueError:
+        _log.warning(
+            "rapid sweep: regression finding file %r is absolute but does "
+            "not resolve under root %r -- keeping as-is rather than "
+            "guessing a relative path",
+            file,
+            str(root),
+        )
+        return file
+    return str(rel)
+
+
 def _file_regression_ticket(
     root: Path,
     final_id: str,
@@ -1510,7 +1538,14 @@ def _file_regression_ticket(
         kind=TicketKind.BUG,
         origin=Origin.AGENT,
         priority=Priority.HIGH,
-        scope=tuple(sorted({file for _, file in unfiled_pairs})),
+        scope=tuple(
+            sorted(
+                {
+                    _relativize_regression_scope_file(root, file)
+                    for _, file in unfiled_pairs
+                }
+            )
+        ),
         body=body,
     )
     # T-1758: new_ticket now auto-commits internally by default -- opt
@@ -2018,8 +2053,7 @@ def _maybe_drop_resolved_ticket(
     result = drop_ticket(root, ticket.id, reason)
     if result.is_err:
         _log.error(
-            "rapid sweep: %s: could not auto-drop resolved regression "
-            "ticket %s (%s)",
+            "rapid sweep: %s: could not auto-drop resolved regression ticket %s (%s)",
             final_id,
             ticket.id,
             result.danger_err,
@@ -2106,7 +2140,8 @@ def _close_resolved_sweep_tickets(
 # docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-\
 # t-2006
 def revalidate_dispatchable_sweep_tickets(
-    root: Path, tickets: Sequence  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
+    root: Path,
+    tickets: Sequence,  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
 ) -> tuple[str, ...]:
     """T-2006: the residual gap T-1983 left open. T-1983's own auto-drop
     (`_close_resolved_sweep_tickets`, this module) works correctly, but

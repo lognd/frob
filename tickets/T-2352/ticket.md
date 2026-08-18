@@ -2,7 +2,7 @@
 id: T-2352
 title: 'sweep auto-filer must relativize absolute finding paths into scope: (T-2342
   producer-side half, deferred behind T-2313''s lease)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,16 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_under_root_is_relativized
+- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_already_relative_is_unchanged
+- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_absolute_outside_root_is_kept_and_logged
+- tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestRelativizeRegressionScopeFile::test_filed_ticket_scope_is_relative_end_to_end
 threat: null
 component: null
 anchor: false
