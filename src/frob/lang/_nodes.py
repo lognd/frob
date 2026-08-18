@@ -90,6 +90,74 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
     return tuple(deduped)
 
 
+# frob:ticket T-2389
+# frob:waive COV001 reason="docs/modules/lang.md is under T-2365's live cross-worktree \
+# lease for the duration of T-2389 -- cannot add the frob:doc anchor without \
+# colliding; a doc-anchor follow-up ticket adds \
+# docs/modules/lang.md#declared-source-prefixes-t-2389 once that lease clears"
+# frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
+def declared_project_package_name(root: Path) -> str | None:
+    """`root`'s own declared package name (`pyproject.toml` `[project].
+    name`), or `None` if it cannot be read/parsed (T-2389, promoted out
+    of a private per-gate copy -- ENVDOC/ROOT001/PORT001 all separately
+    needed "what is this project's own package called", the exact
+    duplication NO DUPLICATION forbids). Callers must treat `None` as
+    UNRESOLVED, never as "assume some default name" -- a missing
+    denominator is not the same claim as "this project is named X"
+    (T-2391 fail-loudly doctrine)."""
+    pyproject = root / "pyproject.toml"
+    if not pyproject.is_file():
+        return None
+    import tomllib
+
+    try:
+        with pyproject.open("rb") as fh:
+            data = tomllib.load(fh)
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    project_cfg = data.get("project") if isinstance(data, dict) else None
+    name = project_cfg.get("name") if isinstance(project_cfg, dict) else None
+    return name if isinstance(name, str) and name else None
+
+
+# frob:ticket T-2389
+# frob:waive COV001 reason="docs/modules/lang.md is under T-2365's live cross-worktree \
+# lease for the duration of T-2389 -- cannot add the frob:doc anchor without \
+# colliding; a doc-anchor follow-up ticket adds \
+# docs/modules/lang.md#declared-source-prefixes-t-2389 once that lease clears"
+# frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
+def declared_source_prefixes(root: Path) -> tuple[str, ...]:
+    """Every `root`-relative POSIX path prefix (`"src/frob/"`-shaped,
+    always ending in `/`) this project's OWN tracked source files can
+    start with, derived from `_declared_python_source_roots` (T-2195)
+    combined with `declared_project_package_name` -- the single public
+    home T-2384/T-2389 promote in place of the repeated hardcoded
+    `"src/frob/"`/`"FROB_"` literals `_env_var_docs.py`/
+    `_root_asset_dirs.py` used to carry. `()` if the package name cannot
+    be resolved (UNRESOLVED at the caller, never a silent empty-prefix
+    match-everything or match-nothing default). For THIS repo:
+    `("src/frob/",)`; for a flat-layout project with no declared `src/`
+    root: `("frob/",)` (or whatever `[project].name` says)."""
+    pkg = declared_project_package_name(root)
+    if pkg is None:
+        return ()
+    prefixes: list[str] = []
+    seen: set[str] = set()
+    for source_root in _declared_python_source_roots(root):
+        try:
+            rel = source_root.resolve().relative_to(root.resolve())
+            rel_str = rel.as_posix()
+        except ValueError:
+            rel_str = ""
+        prefix = f"{pkg}/" if rel_str in ("", ".") else f"{rel_str}/{pkg}/"
+        if prefix not in seen:
+            seen.add(prefix)
+            prefixes.append(prefix)
+    return tuple(prefixes)
+
+
 def _resolve_under(base_no_suffix: Path, root: Path) -> str | None:
     """First of `base_no_suffix.py` / `base_no_suffix/__init__.py` that
     exists, as a `root`-relative posix path, or `None` -- the shared
@@ -218,6 +286,8 @@ def resolve_local_import(
 __all__ = [
     "child_by_field",
     "cpp_function_nodes",
+    "declared_project_package_name",
+    "declared_source_prefixes",
     "node_text",
     "resolve_local_import",
 ]

@@ -47,6 +47,7 @@ from pathlib import Path
 
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _tracked_files
+from frob.lang import declared_project_package_name, declared_source_prefixes
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -101,15 +102,23 @@ def _makefile_referenced_names(
     return frozenset(name for name in candidates if name in text)
 
 
-def _referenced_in_src(root: Path, tracked: tuple[str, ...], name: str) -> bool:
-    """Check (a): does any tracked file under `src/frob/**` contain
-    `name` as a `"name/"`-shaped literal path token? Scans every tracked
-    file under that prefix, not only `.py` sources, so `frob.scaffold`'s
+def _referenced_in_src(
+    root: Path,
+    tracked: tuple[str, ...],
+    name: str,
+    *,
+    source_prefixes: tuple[str, ...],
+) -> bool:
+    """Check (a): does any tracked file under this project's own declared
+    source roots (T-2389, was hardcoded `src/frob/**` -- see
+    `frob.lang.declared_source_prefixes`, T-2195/T-2384) contain `name`
+    as a `"name/"`-shaped literal path token? Scans every tracked file
+    under those prefixes, not only `.py` sources, so `frob.scaffold`'s
     own non-Python template/data assets (check (c) in the module
     docstring) are covered by the same pass."""
     needle_variants = (f"{name}/", f'"{name}"', f"'{name}'")
     for rel in tracked:
-        if not rel.startswith("src/frob/"):
+        if not rel.startswith(source_prefixes):
             continue
         try:
             text = (root / rel).read_text(encoding="utf-8", errors="ignore")
@@ -145,53 +154,107 @@ def _external_reader_declared(root: Path, tracked: tuple[str, ...], name: str) -
     return False
 
 
+def _root001_unresolved_pkg_violation(root: Path) -> Violation:
+    """T-2391 fail-loudly: `root`'s `pyproject.toml` `[project].name`
+    could not be read/parsed, so check (a) has no source-root prefix to
+    scan under -- UNRESOLVED, never a silent clean pass (split out of
+    `root_asset_dir_gate` itself to keep it under ARCH001's complexity
+    threshold, T-2389)."""
+    _log.warning(
+        "root_asset_dirs: %s/pyproject.toml [project].name unreadable "
+        "-- ROOT001 check (a) cannot resolve a source-root prefix; "
+        "reporting UNRESOLVED, not a clean pass",
+        root,
+    )
+    return Violation(
+        rule="ROOT001",
+        severity=Severity.UNRESOLVED,
+        file="pyproject.toml",
+        line=0,
+        message=(
+            "ROOT001: could not resolve this project's own "
+            "declared package name from pyproject.toml "
+            "[project].name -- check (a) has no source-root "
+            "prefix to scan under and ROOT001 cannot report a "
+            "meaningful pass/fail; fix pyproject.toml's "
+            "[project] table"
+        ),
+    )
+
+
+def _root001_candidates(root: Path, tracked: tuple[str, ...]) -> frozenset[str]:
+    """Repo-root top-level directory names still eligible for ROOT001
+    after the structural/named/Makefile exemptions -- split out of
+    `root_asset_dir_gate` itself to keep it under ARCH001's complexity
+    threshold (T-2389)."""
+    candidates = _top_level_dirs(tracked) - _STRUCTURAL_EXEMPT - _NAMED_ALLOWLIST
+    if not candidates:
+        return frozenset()
+    return candidates - _makefile_referenced_names(root, candidates)
+
+
+def _root001_violation(name: str) -> Violation:
+    """The ROOT001 `Violation` for one flagged repo-root directory --
+    split out of `root_asset_dir_gate` itself to keep it under ARCH001's
+    complexity threshold (T-2389)."""
+    _log.debug("root_asset_dirs: %s has zero code references", name)
+    return Violation(
+        rule="ROOT001",
+        severity=Severity.WARN,
+        file=name,
+        line=0,
+        message=(
+            f"ROOT001: repo-root directory '{name}/' has zero code "
+            "references -- not under src/ or tests/, not on the "
+            "docs/tickets/design allowlist, not referenced by the "
+            "Makefile, not referenced anywhere under src/frob/**, "
+            "not referenced in pyproject.toml, and no "
+            f'<!-- frob:external-reader dir="{name}" reason="..." '
+            "--> declaration names an external process that reads "
+            "it (T-1611/T-1784: this is exactly the shape that "
+            "made agents/ and skills/ look live-read by name-"
+            "matching alone). Either wire a real reference, add "
+            "the external-reader declaration if something outside "
+            "this repo's own code genuinely reads it, or delete it."
+        ),
+    )
+
+
 # frob:doc docs/modules/gates.md#root001-t-1784
 def root_asset_dir_gate(root: Path) -> tuple[Violation, ...]:
     """ROOT001: flag every repo-root top-level directory with zero code
     references -- not `src/`/`tests/`, not on the named allowlist, not
     exempted by a Makefile reference, and satisfying none of the three
-    reference checks documented on the module. WARNING severity: this is
-    a surfacing gate (per the ticket's own "not auto-deleted, just
-    surfaced" posture), never a hard block."""
+    reference checks documented on the module. UNRESOLVED (not a silent
+    clean pass) if this project's own package name cannot be resolved
+    from pyproject.toml (T-2391 fail-loudly doctrine -- check (a) has no
+    source-root prefix to scan under without it). WARNING severity
+    otherwise: this is a surfacing gate (per the ticket's own "not
+    auto-deleted, just surfaced" posture), never a hard block."""
     tracked = _tracked_files(root, caller="root_asset_dirs")
     if not tracked:
+        # T-0705's own git-less-target contract takes priority over T-2391
+        # UNRESOLVED here -- a non-git/untracked root has NOTHING for any
+        # gate in this package to reason about, the same "not a real repo
+        # scenario" degrade WALK001/RENDER001 already give it, independent
+        # of whether pyproject.toml happens to exist.
         return ()
-    candidates = _top_level_dirs(tracked) - _STRUCTURAL_EXEMPT - _NAMED_ALLOWLIST
-    if not candidates:
-        return ()
-    candidates -= _makefile_referenced_names(root, candidates)
+    candidates = _root001_candidates(root, tracked)
     if not candidates:
         return ()
 
+    pkg = declared_project_package_name(root)
+    if pkg is None:
+        return (_root001_unresolved_pkg_violation(root),)
+    source_prefixes = declared_source_prefixes(root)
+
     violations: list[Violation] = []
     for name in sorted(candidates):
-        if _referenced_in_src(root, tracked, name):
+        if _referenced_in_src(root, tracked, name, source_prefixes=source_prefixes):
             continue
         if _referenced_in_pyproject(root, name):
             continue
         if _external_reader_declared(root, tracked, name):
             continue
-        _log.debug("root_asset_dirs: %s has zero code references", name)
-        violations.append(
-            Violation(
-                rule="ROOT001",
-                severity=Severity.WARN,
-                file=name,
-                line=0,
-                message=(
-                    f"ROOT001: repo-root directory '{name}/' has zero code "
-                    "references -- not under src/ or tests/, not on the "
-                    "docs/tickets/design allowlist, not referenced by the "
-                    "Makefile, not referenced anywhere under src/frob/**, "
-                    "not referenced in pyproject.toml, and no "
-                    f'<!-- frob:external-reader dir="{name}" reason="..." '
-                    "--> declaration names an external process that reads "
-                    "it (T-1611/T-1784: this is exactly the shape that "
-                    "made agents/ and skills/ look live-read by name-"
-                    "matching alone). Either wire a real reference, add "
-                    "the external-reader declaration if something outside "
-                    "this repo's own code genuinely reads it, or delete it."
-                ),
-            )
-        )
+        violations.append(_root001_violation(name))
     return tuple(violations)

@@ -6806,7 +6806,28 @@ class TestRootAssetDirGate:
     (`root_asset_dir_gate` wired into `_KNOWN_GATE_RULES` and the gate
     dispatch table), the exact same fixture PASSES this test's assertion
     that the violation IS reported -- proving the rule fires through the
-    production gate function, not merely a hypothetical."""
+    production gate function, not merely a hypothetical.
+
+    T-2389: every fixture writes its own `pyproject.toml` (via
+    `_pyproject`, declaring both `[project].name` and a src-layout
+    `[tool.setuptools]` block) -- check (a)'s retargeted source-root scan
+    resolves both from there (T-2391 fail-loudly: no pyproject.toml means
+    UNRESOLVED, not an assumed "frob" default)."""
+
+    @staticmethod
+    def _pyproject(tmp_path: Path, name: str = "frob", extra: str = "") -> None:
+        """`pyproject.toml` declaring `[project].name = name`, a
+        src-layout `[tool.setuptools]` block, and any `extra` TOML text
+        appended (e.g. a `[tool.hatch.build]` table for check (b)'s own
+        fixtures) -- see `TestEnvVarDocGate._pyproject`'s identical
+        reasoning for why the src-layout declaration is required."""
+        _write(
+            tmp_path,
+            "pyproject.toml",
+            f'[project]\nname = "{name}"\n\n'
+            f'[tool.setuptools]\npackages = {{ find = {{ where = ["src"] }} }}\n'
+            f"{extra}",
+        )
 
     # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
     def test_unreferenced_root_directory_fires(self, tmp_path: Path) -> None:
@@ -6815,6 +6836,7 @@ class TestRootAssetDirGate:
         got a ModuleNotFoundError); PASS after (`root_asset_dir_gate`
         reports ROOT001 for it) -- the T-1611 agents/skills incident's
         exact shape, mechanized."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "orphan/file.txt", "x\n")
         _git_init(tmp_path)
@@ -6824,12 +6846,40 @@ class TestRootAssetDirGate:
         assert violations[0].severity == Severity.WARN
         assert violations[0].file == "orphan"
 
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    def test_unreferenced_root_directory_fires_for_a_differently_named_project(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2384/T-2389 must-now-fire: check (a) still catches a
+        legitimately-unreferenced directory in a `lograder`-named
+        project's own layout -- BEFORE this retarget, the hardcoded
+        `src/frob/` prefix meant check (a) always scanned the WRONG
+        (nonexistent) directory off-repo, so its "not referenced" verdict
+        was not even a real answer, just an artifact of scanning nothing.
+        `src/frob/...` is deliberately absent from this fixture."""
+        self._pyproject(tmp_path, name="lograder")
+        _write(tmp_path, "src/lograder/x.py", "x = 1\n")
+        _write(tmp_path, "orphan/file.txt", "x\n")
+        _git_init(tmp_path)
+        violations = root_asset_dir_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ROOT001"
+        assert violations[0].file == "orphan"
+
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
     def test_directory_referenced_under_src_frob_is_silent(
         self, tmp_path: Path
     ) -> None:
         """Check (a): a repo-root directory whose name appears literally
-        as a path token anywhere under `src/frob/**` is not flagged."""
-        _write(tmp_path, "src/frob/x.py", 'REF = "known/f.txt"\n')
+        as a path token anywhere under this project's own declared
+        source roots is not flagged -- proving check (a) is genuinely
+        FALSE-POSITIVE-FIXED, not just true-positive-fixed: a
+        legitimately referenced directory in a `lograder`-named project
+        (T-2384's own measured false-positive class) is not flagged
+        either, the SAME must-now-fire/must-not-false-fire pair the
+        `frob`-named cases above already prove from the other side."""
+        self._pyproject(tmp_path, name="lograder")
+        _write(tmp_path, "src/lograder/x.py", 'REF = "known/f.txt"\n')
         _write(tmp_path, "known/f.txt", "x\n")
         _git_init(tmp_path)
         assert root_asset_dir_gate(tmp_path) == ()
@@ -6837,13 +6887,9 @@ class TestRootAssetDirGate:
     def test_directory_referenced_in_pyproject_is_silent(self, tmp_path: Path) -> None:
         """Check (b): a repo-root directory named in `pyproject.toml`'s
         own text is not flagged."""
+        self._pyproject(tmp_path, extra='[tool.hatch.build]\ninclude = ["packaged/"]\n')
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "packaged/data.txt", "x\n")
-        _write(
-            tmp_path,
-            "pyproject.toml",
-            '[tool.hatch.build]\ninclude = ["packaged/"]\n',
-        )
         _git_init(tmp_path)
         assert root_asset_dir_gate(tmp_path) == ()
 
@@ -6855,6 +6901,7 @@ class TestRootAssetDirGate:
         markdown file is not flagged -- the real, checkable-claim escape
         hatch for something genuinely read only by a process outside this
         repo's own code (the harness-config case)."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "harness_config/skill.md", "hi\n")
         _write(
@@ -6870,6 +6917,7 @@ class TestRootAssetDirGate:
         """The ticket's own "scripts a Makefile target actually invokes"
         exemption clause: a directory literally named in the Makefile is
         not flagged even with no other reference."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "scripts/run.sh", "#!/bin/sh\n")
         _write(tmp_path, "Makefile", "deploy:\n\tsh scripts/run.sh\n")
@@ -6879,6 +6927,7 @@ class TestRootAssetDirGate:
     def test_allowlisted_directories_are_silent(self, tmp_path: Path) -> None:
         """`docs/`, `tickets/`, `design/` are exempt by the ticket's own
         named allowlist, with no reference of any kind."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "docs/readme.md", "hi\n")
         _write(tmp_path, "tickets/T-0001/ticket.md", "hi\n")
@@ -6889,6 +6938,7 @@ class TestRootAssetDirGate:
     def test_src_and_tests_dirs_are_never_flagged(self, tmp_path: Path) -> None:
         """`src/` and `tests/` are the structural code/test roots -- never
         candidates for this gate regardless of reference evidence."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _write(tmp_path, "tests/test_x.py", "pass\n")
         _git_init(tmp_path)
@@ -6897,6 +6947,22 @@ class TestRootAssetDirGate:
     def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
         _write(tmp_path, "orphan/file.txt", "x\n")
         assert root_asset_dir_gate(tmp_path) == ()
+
+    # frob:tests src/frob/gates/_root_asset_dirs.py::root_asset_dir_gate
+    def test_missing_pyproject_is_unresolved_not_a_clean_pass(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2391 fail-loudly doctrine: a git-tracked repo with no
+        `pyproject.toml` (so no declared package name for check (a)'s
+        source-root prefix) produces an UNRESOLVED finding, never a
+        silent, clean-looking empty violation list."""
+        _write(tmp_path, "src/frob/x.py", "x = 1\n")
+        _write(tmp_path, "orphan/file.txt", "x\n")
+        _git_init(tmp_path)
+        violations = root_asset_dir_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ROOT001"
+        assert violations[0].severity == Severity.UNRESOLVED
 
 
 class TestEnvVarDocGate:
@@ -6909,7 +6975,31 @@ class TestEnvVarDocGate:
     `FROB_WORKER_STDOUT_LOG_LEVEL` undocumented for two weeks precisely
     because nothing FAILED on it. After (`env_var_doc_gate` wired into
     `_KNOWN_GATE_RULES` and the gate dispatch table), the exact same
-    fixture PASSES this test's assertion that the violation IS reported."""
+    fixture PASSES this test's assertion that the violation IS reported.
+
+    T-2389: every fixture now writes its own `pyproject.toml` -- the
+    retargeted gate resolves the env-var prefix/source-root scope from
+    `[project].name` (T-2391 fail-loudly: no pyproject.toml means
+    UNRESOLVED, not an assumed "frob" default), so a fixture with none
+    would silently stop exercising the WARN path these tests assert."""
+
+    @staticmethod
+    def _pyproject(tmp_path: Path, name: str = "frob") -> None:
+        """`pyproject.toml` declaring `[project].name = name` AND a
+        src-layout `[tool.setuptools]` block (matching this repo's own
+        real pyproject.toml) -- the denominator `declared_project_
+        package_name`/`declared_source_prefixes` (T-2389, `frob.lang`)
+        resolve the env-var prefix and scanned source roots from. Without
+        the setuptools src declaration, `_declared_python_source_roots`
+        (T-2195) has no way to know these fixtures use `src/<pkg>/`
+        layout and falls back to bare-root-relative prefixes only,
+        silently missing every `src/<pkg>/...` fixture path below."""
+        _write(
+            tmp_path,
+            "pyproject.toml",
+            f'[project]\nname = "{name}"\n\n'
+            f'[tool.setuptools]\npackages = {{ find = {{ where = ["src"] }} }}\n',
+        )
 
     # frob:tests src/frob/gates/_env_var_docs.py::env_var_doc_gate
     def test_undocumented_env_var_fires(self, tmp_path: Path) -> None:
@@ -6918,6 +7008,7 @@ class TestEnvVarDocGate:
         `ModuleNotFoundError`); PASS after (`env_var_doc_gate` reports
         ENV001 for it) -- the T-1610 undocumented-env-var incident,
         mechanized."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", '_UNDOC_ENV = "FROB_UNDOCUMENTED"\n')
         _git_init(tmp_path)
         violations = env_var_doc_gate(tmp_path)
@@ -6927,9 +7018,30 @@ class TestEnvVarDocGate:
         assert violations[0].file == "src/frob/x.py"
         assert violations[0].line == 1
 
+    # frob:tests src/frob/gates/_env_var_docs.py::env_var_doc_gate
+    def test_undocumented_env_var_fires_for_a_differently_named_project(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2384/T-2389 must-now-fire: a `lograder`-named project's OWN
+        `LOGRADER_*` env var, undocumented, is caught the same way --
+        BEFORE this retarget, the hardcoded `FROB_`/`src/frob/` literals
+        made this silently invisible (zero candidates: neither the
+        source-root scan nor the env-var prefix pattern ever matched a
+        non-`frob` project). `src/frob/...` is deliberately absent from
+        this fixture to prove the scan is not silently falling back to
+        it."""
+        self._pyproject(tmp_path, name="lograder")
+        _write(tmp_path, "src/lograder/x.py", '_UNDOC_ENV = "LOGRADER_UNDOCUMENTED"\n')
+        _git_init(tmp_path)
+        violations = env_var_doc_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ENV001"
+        assert violations[0].file == "src/lograder/x.py"
+
     def test_documented_by_literal_string_is_silent(self, tmp_path: Path) -> None:
         """Check (a), literal form: the env-var string itself appears
         somewhere under `docs/`."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", '_DOC_ENV = "FROB_DOCUMENTED"\n')
         _write(tmp_path, "docs/config.md", "Set FROB_DOCUMENTED to enable X.\n")
         _git_init(tmp_path)
@@ -6939,6 +7051,7 @@ class TestEnvVarDocGate:
         """Check (a), constant-name form: the T-1610-established
         allowance -- documented by the Python constant's own name instead
         of the literal env-var string."""
+        self._pyproject(tmp_path)
         _write(
             tmp_path, "src/frob/x.py", '_ARTIFACT_CACHE_ENV = "FROB_ARTIFACT_CACHE"\n'
         )
@@ -6954,6 +7067,7 @@ class TestEnvVarDocGate:
         """Check (b): a `frob:waive ENV001` directive anywhere in the same
         source file waives every `FROB_*` constant in it -- the
         genuinely-internal/test-only/worker-internal escape hatch."""
+        self._pyproject(tmp_path)
         _write(
             tmp_path,
             "src/frob/worker.py",
@@ -6973,18 +7087,36 @@ class TestEnvVarDocGate:
     def test_non_frob_env_prefixed_constants_are_ignored(self, tmp_path: Path) -> None:
         """A constant assigned some OTHER string entirely is not this
         gate's concern -- only `FROB_*`-prefixed literal values count."""
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", '_OTHER = "SOME_OTHER_VALUE"\n')
         _git_init(tmp_path)
         assert env_var_doc_gate(tmp_path) == ()
 
     def test_no_env_assignments_is_silent(self, tmp_path: Path) -> None:
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", "x = 1\n")
         _git_init(tmp_path)
         assert env_var_doc_gate(tmp_path) == ()
 
     def test_non_git_root_is_silent(self, tmp_path: Path) -> None:
+        self._pyproject(tmp_path)
         _write(tmp_path, "src/frob/x.py", '_UNDOC_ENV = "FROB_UNDOCUMENTED"\n')
         assert env_var_doc_gate(tmp_path) == ()
+
+    # frob:tests src/frob/gates/_env_var_docs.py::env_var_doc_gate
+    def test_missing_pyproject_is_unresolved_not_a_clean_pass(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2391 fail-loudly doctrine: a repo with no `pyproject.toml`
+        (so no declared package name to resolve an env-var prefix from)
+        produces an UNRESOLVED finding, never a silent, clean-looking
+        empty violation list."""
+        _write(tmp_path, "src/frob/x.py", '_UNDOC_ENV = "FROB_UNDOCUMENTED"\n')
+        _git_init(tmp_path)
+        violations = env_var_doc_gate(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "ENV001"
+        assert violations[0].severity == Severity.UNRESOLVED
 
 
 class TestInvariantLoad:
@@ -11239,9 +11371,7 @@ class TestFixEngineTierA:
         root = tmp_path / "repo"
         root.mkdir()
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-        subprocess.run(
-            ["git", "config", "user.email", "t@t.t"], cwd=root, check=True
-        )
+        subprocess.run(["git", "config", "user.email", "t@t.t"], cwd=root, check=True)
         subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
 
         clean = root / "clean.py"
@@ -12824,9 +12954,7 @@ class TestFixEngineScopeLease:
         )
         queue = TicketQueue(tickets={"T-2284": landing})
         fixes = [
-            FixApplied(
-                rule="FMT001", file="scripts/unrelated.py", line=1, detail="x"
-            )
+            FixApplied(rule="FMT001", file="scripts/unrelated.py", line=1, detail="x")
         ]
 
         kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
@@ -13137,9 +13265,7 @@ class TestFixEngineScopeLease:
             scope=("src/frob/gates/_fix_engine.py",),
         )
         queue = TicketQueue(tickets={"T-2284": landing})
-        fixes = [
-            FixApplied(rule="REL002", file="pyproject.toml", line=1, detail="x")
-        ]
+        fixes = [FixApplied(rule="REL002", file="pyproject.toml", line=1, detail="x")]
 
         kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2284", fixes)
 
@@ -16450,7 +16576,11 @@ class TestDoc012CommandSectionGate:
         # a live cross-worktree lease (T-2314) at promotion time.
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
-        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        _write(
+            tmp_path,
+            "docs/commands/widget.md",
+            "# acme widget\n\nDoes widget things.\n",
+        )
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
 
         violations = doc012_gate(tmp_path)
@@ -16464,7 +16594,11 @@ class TestDoc012CommandSectionGate:
     def test_documented_subcommand_passes(self, tmp_path: Path) -> None:
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
-        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        _write(
+            tmp_path,
+            "docs/commands/widget.md",
+            "# acme widget\n\nDoes widget things.\n",
+        )
         _write(
             tmp_path,
             "docs/modules/gadget.md",

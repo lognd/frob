@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.531.0] - unreleased
 
+- T-2389: T-2389: retarget hardcoded src/frob/ literal in _env_var_docs.py and _root_asset_dirs.py to the T-2195 source-root resolver
 - T-2405: T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
 - T-2408: T-2408: frob.lang.extract_imports has no typescript/rust/kotlin walker (import_graph capability gap)
 - T-2409: T-2409: no kotlin test collector (test_discovery capability gap)

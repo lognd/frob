@@ -4423,10 +4423,15 @@ file, excluding `src/`/`tests/` (structural), the named allowlist
 in the repo-root `Makefile`'s text, `root_asset_dir_gate` requires at
 least one of:
 
-  (a) `src/frob/**` references the directory's name literally as a
-      `"name/"`-shaped path token (scans every tracked file under that
-      prefix, so `frob.scaffold`'s own non-Python template/data assets
-      count too, not only `.py` sources).
+  (a) this project's own declared source root(s) (`frob.lang.
+      declared_source_prefixes`, T-2389 -- `src/frob/**` in this repo,
+      resolved rather than hardcoded so an off-repo, differently-named
+      `src/<pkg>/**` project is scanned correctly too; `UNRESOLVED`, not
+      a silent clean pass, if `pyproject.toml` cannot be read) reference
+      the directory's name literally as a `"name/"`-shaped path token
+      (scans every tracked file under that prefix, so `frob.scaffold`'s
+      own non-Python template/data assets count too, not only `.py`
+      sources).
   (b) `pyproject.toml`'s own text references the directory's name.
   (c) a tracked markdown file carries an explicit
       `<!-- frob:external-reader dir="name" reason="..." -->`
@@ -4462,9 +4467,16 @@ symbols do NOT carry a `frob:doc` anchor by default -- so an
 operationally user-facing `FROB_*` env var implemented as a private
 constant was structurally invisible to every existing doc-coverage gate.
 
-`env_var_doc_gate` enumerates every `FROB_*` string-literal constant
-ASSIGNMENT under `src/frob/**/*.py` (the same enumeration T-1610 did by
-hand) and requires each to either:
+`env_var_doc_gate` enumerates every string-literal constant ASSIGNMENT
+under this project's own declared source root(s) (`frob.lang.
+declared_source_prefixes`, T-2389 -- resolved from `pyproject.toml`'s
+`[project].name` plus its declared `src`-layout roots, e.g. `src/frob/`
+in this repo; `UNRESOLVED`, not a silent clean pass, if `pyproject.toml`
+cannot be read) whose value is prefixed with this project's own
+uppercased package name plus `_` (e.g. `FROB_` here; derived, not a
+hardcoded literal, so a differently-named project off this repo gets its
+own correct prefix instead of being silently skipped) and requires each
+to either:
 
   (a) appear literally (the `FROB_...` string) or by its owning Python
       constant name in some tracked file under `docs/` -- the

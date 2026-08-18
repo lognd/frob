@@ -45,38 +45,55 @@ from pathlib import Path
 
 from frob.gates._models import Severity, Violation
 from frob.gates._tracked_files import tracked_files as _tracked_files
+from frob.lang import declared_project_package_name, declared_source_prefixes
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
 __all__ = ["env_var_doc_gate"]
 
-#: `NAME = "FROB_SOMETHING"` (or single-quoted) -- a `FROB_*` string
-#: literal assigned to a constant. Deliberately matches ANY line shape
-#: (module-level or indented, with or without a type annotation before
-#: `=`), since the ticket's own enumeration ("every FROB_* string-literal
-#: constant assigned") is not scoped to module top-level only.
-_ENV_ASSIGNMENT_RE = re.compile(
-    r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?=\s*["\'](FROB_[A-Z0-9_]+)["\']'
-)
+
+def _env_assignment_pattern(env_prefix: str) -> re.Pattern[str]:
+    """`NAME = "<ENV_PREFIX>SOMETHING"` (or single-quoted) -- a
+    `<env_prefix>*` string literal assigned to a constant, `env_prefix`
+    resolved from THIS project's own declared package name (T-2389,
+    retargeted off a hardcoded `FROB_` literal -- the same
+    catalogued-is-not-enforced class T-2384 exists to fix: a `lograder`
+    checkout's own `LOGRADER_*` env vars were structurally invisible to
+    the pre-fix hardcoded pattern). Deliberately matches ANY line shape
+    (module-level or indented, with or without a type annotation before
+    `=`), since the ticket's own enumeration ("every <PREFIX>* string-
+    literal constant assigned") is not scoped to module top-level only."""
+    return re.compile(
+        r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?::[^=]+)?=\s*"
+        rf'["\']({re.escape(env_prefix)}[A-Z0-9_]+)["\']'
+    )
 
 
-def _env_var_assignments(root: Path, tracked: tuple[str, ...]) -> tuple[
-    tuple[str, str, str, int], ...
-]:
+def _env_var_assignments(
+    root: Path,
+    tracked: tuple[str, ...],
+    *,
+    source_prefixes: tuple[str, ...],
+    env_prefix: str,
+) -> tuple[tuple[str, str, str, int], ...]:
     """Every `(rel_path, constant_name, env_var_value, line_no)` tuple for
-    a `FROB_*` string-literal constant assignment found under
-    `src/frob/**/*.py`, in file-then-line order."""
+    an `<env_prefix>*` string-literal constant assignment found under any
+    of `source_prefixes` (T-2389: was a hardcoded `"src/frob/"`, now this
+    project's own declared source roots -- see
+    `frob.lang.declared_source_prefixes`, T-2195/T-2384), in
+    file-then-line order."""
+    pattern = _env_assignment_pattern(env_prefix)
     found: list[tuple[str, str, str, int]] = []
     for rel in sorted(tracked):
-        if not (rel.startswith("src/frob/") and rel.endswith(".py")):
+        if not (rel.startswith(source_prefixes) and rel.endswith(".py")):
             continue
         try:
             text = (root / rel).read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
         for lineno, line in enumerate(text.splitlines(), start=1):
-            match = _ENV_ASSIGNMENT_RE.match(line)
+            match = pattern.match(line)
             if match:
                 found.append((rel, match.group(1), match.group(2), lineno))
     return tuple(found)
@@ -98,18 +115,51 @@ def _docs_corpus(root: Path, tracked: tuple[str, ...]) -> str:
 
 # frob:doc docs/modules/gates.md#env001-t-1782
 def env_var_doc_gate(root: Path) -> tuple[Violation, ...]:
-    """ENV001: flag every `FROB_*` string-literal constant assignment
-    under `src/frob/**/*.py` that is documented nowhere under `docs/` --
-    neither by its literal env-var string nor by its owning Python
-    constant name. WARN severity: a surfacing rule (matching ROOT001's
-    own posture, T-1784) -- undocumented is a real gap, not a stop-the-
-    world defect, and file-scoped `frob:waive ENV001` is the honest
-    escape hatch for a genuinely internal/test-only/worker-internal
-    flag."""
+    """ENV001: flag every `<PREFIX>*` string-literal constant assignment
+    (`PREFIX` this project's own declared package name, uppercased --
+    T-2389, was hardcoded `FROB_`) under this project's own declared
+    source roots (T-2389, was hardcoded `src/frob/**/*.py`) that is
+    documented nowhere under `docs/` -- neither by its literal env-var
+    string nor by its owning Python constant name. UNRESOLVED (not a
+    silent empty pass) if this project's own package name cannot be
+    resolved from pyproject.toml (T-2391 fail-loudly doctrine -- no
+    denominator to scan for is a different claim than "found nothing").
+    WARN severity otherwise: a surfacing rule (matching ROOT001's own
+    posture, T-1784) -- undocumented is a real gap, not a stop-the-world
+    defect, and file-scoped `frob:waive ENV001` is the honest escape
+    hatch for a genuinely internal/test-only/worker-internal flag."""
+    pkg = declared_project_package_name(root)
+    if pkg is None:
+        _log.warning(
+            "env_var_docs: %s/pyproject.toml [project].name unreadable -- "
+            "ENV001 cannot resolve what env-var prefix to look for; "
+            "reporting UNRESOLVED, not a clean pass",
+            root,
+        )
+        return (
+            Violation(
+                rule="ENV001",
+                severity=Severity.UNRESOLVED,
+                file="pyproject.toml",
+                line=0,
+                message=(
+                    "ENV001: could not resolve this project's own "
+                    "declared package name from pyproject.toml "
+                    "[project].name -- ENV001 has no env-var prefix to "
+                    "scan for and cannot report a meaningful pass/fail; "
+                    "fix pyproject.toml's [project] table"
+                ),
+            ),
+        )
+    source_prefixes = declared_source_prefixes(root)
+    env_prefix = f"{pkg.upper().replace('-', '_')}_"
+
     tracked = _tracked_files(root, caller="env_var_docs")
     if not tracked:
         return ()
-    assignments = _env_var_assignments(root, tracked)
+    assignments = _env_var_assignments(
+        root, tracked, source_prefixes=source_prefixes, env_prefix=env_prefix
+    )
     if not assignments:
         return ()
     docs_text = _docs_corpus(root, tracked)

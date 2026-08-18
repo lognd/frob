@@ -247,8 +247,10 @@ def _walk001_violation(rel_path: str, site: _WalkSite) -> Violation:
 # frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
-def tracked_python_files_for_gate(root: Path, *, log_prefix: str) -> tuple[str, ...]:
-    """`git ls-files -- src/frob` under `root`, filtered to `.py`,
+def tracked_python_files_for_gate(
+    root: Path, *, log_prefix: str, pathspec: str = "src/frob"
+) -> tuple[str, ...]:
+    """`git ls-files -- <pathspec>` under `root`, filtered to `.py`,
     root-relative POSIX paths, `()` on any git failure -- shared by WALK001
     and RENDER001, which both only scan frob's own package source
     (T-0861 dup group: this was two byte-identical private copies,
@@ -258,6 +260,21 @@ def tracked_python_files_for_gate(root: Path, *, log_prefix: str) -> tuple[str, 
     (not a `**` glob -- plain `git ls-files` pathspecs don't expand `**`
     without glob magic) already matches every file at any depth under it.
 
+    T-2389 (child of T-2384): `pathspec` was a hardcoded `"src/frob"`
+    literal -- exactly the class T-2384 exists to retarget, one layer
+    below every caller that reuses this helper to enumerate tracked
+    files at all (PORT001/WALK001/RENDER001 alike). Now an explicit,
+    OPTIONAL keyword defaulting to the historical literal, so existing
+    callers (`walk_lint_gate`/`render_lint_gate`, both genuinely,
+    permanently about scanning THIS repo's own `src/frob/**` source --
+    not a portability bug, the same class `_config_meta.py`'s self-check
+    is) are unaffected. A new/retargeted caller (see
+    `frob.lang.declared_source_prefixes`, T-2195) passes its own resolved
+    pathspec explicitly instead of inheriting the default -- T-2388's
+    `_port_selfcheck.py` is disclosed as NOT yet doing so (out of this
+    ticket's own scope; a natural next step once this default-preserving
+    shape exists to switch to).
+
     Logs at WARNING (T-0705), not ERROR: a git-less target (no `.git`,
     or `git` itself unavailable) is a supported, silently-empty scan --
     the same posture `ref_gate`/`doc004` already use for the identical
@@ -265,7 +282,7 @@ def tracked_python_files_for_gate(root: Path, *, log_prefix: str) -> tuple[str, 
     `log_prefix` (e.g. `"walk_lint_gate"`/`"render_lint_gate"`) keeps each
     caller's own log line identity so a WARNING still names which gate hit
     the git failure."""
-    spawned = run_argv(("git", "-C", str(root), "ls-files", "--", "src/frob"))
+    spawned = run_argv(("git", "-C", str(root), "ls-files", "--", pathspec))
     if spawned.is_err:
         _log.warning("%s: git ls-files failed: %s", log_prefix, spawned.danger_err)
         return ()

@@ -67,6 +67,8 @@ from frob.lang._models import (
 from frob.lang._nodes import (
     child_by_field,
     cpp_function_nodes,
+    declared_project_package_name,
+    declared_source_prefixes,
     node_text,
     resolve_local_import,
 )
@@ -999,6 +1001,8 @@ __all__ = [
     "child_by_field",
     "conformance_violations",
     "cpp_function_nodes",
+    "declared_project_package_name",
+    "declared_source_prefixes",
     "derive_language_registry",
     "extract_imports",
     "flatten_tree",
