@@ -328,6 +328,13 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",
+            # frob:ticket T-2411
+            # LANG004, wired into gates/__init__.py's job table alongside
+            # lang_conformance/lang_project_conformance -- added here too
+            # so it is reachable via `--only gates-fast` (same T-1044/
+            # T-1340 registered-but-unreachable lesson this file's own
+            # comment names above).
+            "capability_conformance",
             "scope",
             "prework",
             # T-0851: FMT001, diff-scoped like coverage/todo above.

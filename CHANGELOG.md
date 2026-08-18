@@ -20,6 +20,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 ## [0.531.0] - unreleased
 
 - T-2405: T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
+- T-2411: T-2411: wire LANG004 capability_conformance_gate into the check job table
 - T-2445: T-2445: every land writes CHANGELOG.md and the version line, so scope-disjoint lands still conflict
 - T-2464: T-2464: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
 - T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/

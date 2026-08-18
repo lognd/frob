@@ -330,3 +330,91 @@ class TestCapabilityConformanceGate:
             "python" in v.message and "directive_parse" in v.message
             for v in violations
         )
+
+
+# frob:ticket T-2411
+class TestCapabilityConformanceWiring:
+    """LANG004 (T-2365) was built but never added to `frob.gates._ALL_
+    GATES`/the check job table, so no real `frob check` run ever
+    evaluated it -- the exact catalogued-is-not-enforced defect this
+    session repeatedly found elsewhere (T-2397's identical FLAGCOV001
+    lesson, cited directly in `frob.gates.__init__`'s own registration
+    comment). T-2411 wires it in; these tests lock that registration so
+    it cannot silently regress back to registered-but-unreachable."""
+
+    def test_capability_conformance_is_registered_in_all_gates(self) -> None:
+        """Mirrors `TestDeprecatedGate.test_deprecated_is_registered_in_
+        all_gates`'s own precedent for the identical defect class."""
+        # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceWiring.test_capability_conformance_is_registered_in_all_gates  # noqa: E501
+        from frob.gates import _ALL_GATES, _CANONICAL_GATE_ORDER
+
+        assert "capability_conformance" in _ALL_GATES
+        assert "capability_conformance" in _CANONICAL_GATE_ORDER
+
+    def test_capability_conformance_fires_through_real_gate_dispatch(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End-to-end `run_gates` pass (no `--only` filter, the default
+        gate selection) with the registry-vs-fixture disagreement
+        `TestCapabilityConformanceGateEndToEnd.test_wrong_implemented_
+        claim_fails` already proves at the gate-function level -- this
+        proves the SAME disagreement surfaces through the real dispatch
+        path, not just direct-call, confirming the wiring is live rather
+        than merely present in `_ALL_GATES`."""
+        # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceWiring.test_capability_conformance_fires_through_real_gate_dispatch  # noqa: E501
+        import subprocess
+        from datetime import date
+
+        from frob.gates import GateConfig, run_gates
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            '"""Capability fixture module docstring."""\n\n\n'
+            "def public_fn():\n"
+            '    """A public function."""\n'
+            "    return 1\n\n\n"
+            "# frob:tests \\\n"
+            "def _private_fn():\n"
+            "    return 2\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
+
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "t@example.com"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+        (tmp_path / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
+        ticket = Ticket(
+            id="T-0001",
+            title="Sample",
+            state=TicketState.QUEUED,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=(),
+            evidence=(),
+            attachments=(),
+            body="## Description\nx\n\n## Done report\ndone\n",
+        )
+        from frob.tickets._store import write_ticket
+
+        write_ticket(tmp_path, ticket)
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "base"], cwd=tmp_path, check=True
+        )
+
+        cfg = GateConfig(root=str(tmp_path), base="main")
+        result = run_gates(cfg)
+        assert result.is_ok
+        report = result.danger_ok
+        lang004_hits = [v for v in report.violations if v.rule == "LANG004"]
+        assert lang004_hits, (
+            "LANG004 did not fire through real run_gates dispatch -- "
+            "capability_conformance is registered but not actually reached"
+        )

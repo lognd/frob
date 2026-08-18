@@ -148,6 +148,7 @@ from frob.gates._inv import (
     invariant_gate,
 )
 from frob.gates._lang_conformance import (
+    capability_conformance_gate,
     lang_conformance_gate,
     project_lang_conformance_gate,
 )
@@ -5774,6 +5775,11 @@ _ALL_GATES = frozenset(
         "lang_conformance",
         # T-0406: LANG002/LANG003, per-project language conformance.
         "lang_project_conformance",
+        # T-2411: LANG004, the behavioral adapter-capability conformance
+        # gate built under T-2365 -- wired here so it is actually reached
+        # by `frob check`, not just registered (the catalogued-is-not-
+        # enforced defect this ticket exists to close).
+        "capability_conformance",
         # frob:ticket T-0797
         # T-0576/T-0797: DEPR001-004, frob:deprecated lifecycle checks --
         # implemented since T-0576 but never registered here, so no real
@@ -6180,6 +6186,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "compliance",
     "lang_conformance",
     "lang_project_conformance",
+    # frob:ticket T-2411
+    "capability_conformance",
     "scope",
     "prework",
     # frob:ticket T-0851
@@ -6251,6 +6259,7 @@ _CACHEABLE_GATES: frozenset[str] = frozenset(
         "parse_failures",
         "debt",
         "lang_conformance",
+        "capability_conformance",
         "affect_drift",
     }
 )
@@ -6370,6 +6379,7 @@ def _cacheable_gate_factories(
             (current_date, current_version, model_side_channel_key(st.queue)),
         ),
         "lang_conformance": (lambda _snap: lang_conformance_gate(), ()),
+        "capability_conformance": (lambda _snap: capability_conformance_gate(), ()),
         "affect_drift": (
             lambda snap: affect_drift_gate(snap, st.diff),
             (model_side_channel_key(st.diff),),
@@ -6641,6 +6651,9 @@ def _build_thread_jobs(
         # against frob's own shipped registry, not the checked repo's
         # queue.
         "lang_project_conformance": lambda: project_lang_conformance_gate(st.repo_root),
+        # T-2411: LANG004, same no-side-input shape as lang_conformance
+        # above (reads frob.lang's live in-process registry directly).
+        "capability_conformance": lambda: capability_conformance_gate(),
         # T-0851: FMT001, diff-scoped like TODO001/coverage above -- always
         # against repo_root so a `frob check <subdir>` run resolves the same
         # repo-relative diff hunk paths coverage_gate's TODO001 half does.
@@ -8001,6 +8014,7 @@ __all__ = [
     "evidence_covers_scope",
     "fuzz_gate",
     "lang_conformance_gate",
+    "capability_conformance_gate",
     "flag_coverage_gate",
     "lexical_selfcheck_gate",
     "refs_schema_gate",

@@ -1,7 +1,7 @@
 ---
 id: T-2411
 title: wire LANG004 capability_conformance_gate into the check job table
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -12,8 +12,29 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- tests/test_lang_conformance_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: wiring LANG004 into a --only-reachable gates-fast stage group requires this
+    file too, same T-1044/T-1340 lesson its own comment names -- registered-but-unreachable
+    is the exact defect class this ticket exists to avoid
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: wiring regression test for LANG004's frob check job-table registration,
+    same precedent as test_deprecated_is_registered_in_all_gates
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceWiring::test_capability_conformance_is_registered_in_all_gates
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceWiring::test_capability_conformance_fires_through_real_gate_dispatch
 designated_repro_test: null
 threat: null
 component: null
