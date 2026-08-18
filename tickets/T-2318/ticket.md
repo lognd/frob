@@ -2,7 +2,7 @@
 id: T-2318
 title: 'T-1238 epic ledger state is stale: reads queued but all tracked slices (T-1271
   explore, T-1567..T-1571) are already done'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-17'
@@ -13,8 +13,12 @@ sprint: null
 runs_last: false
 scope:
 - tickets/T-1238/**
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
