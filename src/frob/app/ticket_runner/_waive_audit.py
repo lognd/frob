@@ -46,6 +46,7 @@ identical to a broken watermark read.
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
 
@@ -61,6 +62,7 @@ from frob.gates._waive_audit_watermark import (
     save_watermark,
     utc_now,
 )
+from frob.gates._models import Violation
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -596,3 +598,172 @@ def _run_complete_subcommand(root: Path, cfg: AppConfig) -> None:
             f"audited={watermark.waivers_audited} "
             f"catchup_remaining={watermark.catchup_remaining}"
         )
+
+
+# ---------------------------------------------------------------------------
+# T-2493: collision-based INERT-waiver detection.
+#
+# READ THIS BEFORE TOUCHING ANYTHING BELOW. T-1579 asked for exactly this
+# shape of feature once already -- "let the audit tell us a waiver is
+# doing nothing" -- and the version that shipped
+# (`_rule_has_live_finding`, `frob.gates._fix_engine_sync`) reasoned "the
+# rule fired somewhere in this run, so the detector is healthy, so a
+# waiver of that rule matching nothing here is provably stale." That
+# reasoning is UNSOUND: it proves the detector produced output
+# SOMEWHERE, never that it re-examined the ONE site a given waiver
+# covers. It shipped, and during a real land it deleted 55 LIVE waivers
+# during a partially-degraded run that still found some instances of a
+# rule while missing the exact sites those waivers covered. Reverted;
+# `tests/test_gates.py::TestWaive004DegradedRunGuard::
+# test_mass_invalidation_with_live_finding_elsewhere_still_refuses` locks
+# against reintroducing it. T-1904 (successor) established that a SOUND
+# escape needs per-site analysis-coverage proof, which is a materially
+# larger capability than a guard tweak -- built later as T-1921/T-1943's
+# `frob.gates._coverage_sites`, and even THAT substrate was deliberately
+# shipped wired to nothing (its own module docstring: "NOT WIRED INTO
+# WAIVE004 (or any other auto-fix/waiver-retirement path) by this
+# ticket").
+#
+# `find_collision_suspects` below does NOT use an absence signal ("0
+# findings for this waiver") at all -- that signal is exactly what
+# failed. It uses the OPPOSITE, STRONGER signal: does an ACTIVE, PRESENT,
+# UNSUPPRESSED (`GateReport.violations`, i.e. `kept` in
+# `frob.gates._apply_waivers`'s own naming) violation of the SAME rule
+# exist in the SAME repo-relative file as a `frob:waive` directive for
+# that rule? If so, that waiver PROVABLY failed to suppress a violation
+# it names -- not an inference from silence, a direct, present
+# counter-example. This is the general form of the two REAL matching
+# bugs this repo has actually found and fixed this way already: T-2314
+# (`gate:PERF` emitted absolute file paths, so `_match_waiver`'s
+# file-equality check silently never matched -- caught because a
+# KNOWN-waived site's finding kept showing up unsuppressed) and T-2438
+# (a hand-rolled C++ symref spelling differed from the DSL's own
+# qualname join, so the symbol-exact match silently missed -- same
+# shape: a violation persisted despite a waiver that should have covered
+# it). Both were found by noticing presence, never absence.
+#
+# WHAT THIS DELIBERATELY DOES NOT CATCH, disclosed rather than hidden: a
+# waiver whose site has ZERO current violations of its rule ANYWHERE in
+# the tree -- the "hardened guard, currently quiet" case a real load-
+# bearing waiver looks exactly like. `find_collision_suspects` cannot
+# tell that case apart from a genuinely-inert waiver, and does not try
+# to -- it reports NOTHING for either, by construction, because there is
+# no active violation to collide with in either case. Closing that gap
+# requires the per-site analysis-coverage proof T-1904 named as the
+# missing capability (confirm the exact site was actually re-examined
+# this run before treating its silence as meaningful), which
+# `frob.gates._coverage_sites` (T-1921/T-1943) only provides for five
+# gate families and was explicitly left unwired everywhere -- extending
+# it into a general per-waiver inertness verdict is a materially larger,
+# multi-file capability outside this ticket's single-file scope, not
+# something safe to approximate here with a heuristic.
+#
+# REPORT-ONLY, on purpose: this returns data, never mutates a waiver,
+# never gates `frob check`/`frob ticket land`, and is not wired to any
+# CLI subcommand by this ticket -- a caller (a human, or a future ticket
+# with its own scope and its own review) decides what to do with a
+# reported collision. The `AuditVerdict.CLEAN` reachability rule
+# elsewhere in this module (only `complete`, never `scan`, can claim
+# CLEAN) applies here too, transitively: a collision-suspect report is
+# evidence for a human/agent classifying per T-1614's rubric, not itself
+# a verdict.
+
+
+# frob:doc docs/modules/app.md#waive-audit-t-2467
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed\
+# _violation_in_same_rule_and_file_is_flagged kind="unit"
+class CollisionSuspect(BaseModel):
+    """One `frob:waive` directive that, in a specific `GateReport`, coexists
+    with an ACTIVE, UNSUPPRESSED violation of the same rule in the same
+    repo-relative file -- see this module's own T-2493 section docstring
+    for why this positive-collision signal is sound where an absence-based
+    ("0 findings") signal is not."""
+
+    model_config = {}
+
+    file: str
+    line: int | None
+    rule: str
+    reason: str
+    colliding_violation_line: int
+    colliding_violation_message: str
+
+
+def _repo_relative(path: str, root: Path) -> str:
+    """Best-effort normalize `path` to a repo-relative, forward-slash form
+    comparable to a `ScannedWaiver.file`/`Violation.file` value -- T-2314's
+    own root cause was exactly an absolute-vs-relative mismatch silently
+    voiding a match, so this comparison deliberately does NOT trust either
+    side's shape as-is."""
+    p = Path(path)
+    if p.is_absolute():
+        try:
+            p = p.relative_to(root)
+        except ValueError:
+            # Absolute but outside root: leave as-is -- an exotic case
+            # (a violation naming a path outside the checkout at all)
+            # that no repo-relative normalization can meaningfully fix;
+            # falling through lets the equality check below just fail to
+            # match, same as an honest "these are different files" would.
+            return str(p)
+    return p.as_posix()
+
+
+# frob:doc docs/modules/app.md#waive-audit-t-2467
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_active_unsuppressed\
+# _violation_in_same_rule_and_file_is_flagged kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_correctly_matchin\
+# g_live_waiver_is_not_flagged kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_quiet_hardened_si\
+# te_with_zero_violations_anywhere_is_not_flagged kind="unit"
+# frob:waive WIRE001 reason="deliberately unwired to any CLI subcommand by T-2493: \
+# this is the report-only collision-check half of the ticket, and the coordinator \
+# brief explicitly said do not gate a land or wire removal/rewrite in its first \
+# version -- CLI wiring is left for a follow-up ticket (below) with its own review, \
+# not folded in silently here. Genuinely called from this module's own test suite \
+# (frob:tests below); the callgraph correctly reports no CLI-path caller because there \
+# is none yet, on purpose." follow_up="T-2496"
+def find_collision_suspects(
+    waivers: Sequence[ScannedWaiver],
+    kept_violations: Sequence[Violation],
+    *,
+    root: Path,
+) -> tuple[CollisionSuspect, ...]:
+    """The sound half of T-2493: for each of `waivers`, report it as a
+    `CollisionSuspect` only when `kept_violations` (a `GateReport.
+    violations` -- the UNSUPPRESSED set `frob.gates._apply_waivers`
+    already computed for whatever run produced them) contains a violation
+    of the SAME rule in the SAME repo-relative file. Pure and
+    side-effect-free: takes data, returns data, calls neither `run_gates`
+    nor anything that mutates a waiver -- see this module's T-2493 section
+    docstring for what this signal does and does not prove, and why a
+    caller must not treat an empty result as "these waivers are all
+    live"."""
+    kept_by_rule_file: dict[tuple[str, str], list[Violation]] = {}
+    for violation in kept_violations:
+        key = (violation.rule, _repo_relative(violation.file, root))
+        kept_by_rule_file.setdefault(key, []).append(violation)
+
+    suspects: list[CollisionSuspect] = []
+    for waiver in waivers:
+        candidates = kept_by_rule_file.get(
+            (waiver.rule, _repo_relative(waiver.file, root))
+        )
+        if not candidates:
+            continue
+        first = candidates[0]
+        suspects.append(
+            CollisionSuspect(
+                file=waiver.file,
+                line=waiver.line,
+                rule=waiver.rule,
+                reason=waiver.reason,
+                colliding_violation_line=first.line,
+                colliding_violation_message=first.message,
+            )
+        )
+    return tuple(suspects)

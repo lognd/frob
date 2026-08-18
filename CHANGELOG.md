@@ -37,6 +37,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2486: T-2486: nothing structurally prevents a stdout write from corrupting --json output; T-2484 fixed one instance
 - T-2487: T-2487: add a post-Bash root-cleanliness detector for agent context (complementary to T-2481's guard)
 - T-2488: T-2488: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001 SYS111)
+- T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
 
 ## [0.530.0] - unreleased
 

@@ -10,10 +10,13 @@ import pytest
 
 from frob.app.ticket_runner._waive_audit import (
     AuditVerdict,
+    ScannedWaiver,
     WaiveAuditError,
     complete_pass,
+    find_collision_suspects,
     run_scan,
 )
+from frob.gates._models import Severity, Violation
 from frob.gates._waive_audit_watermark import watermark_path
 
 # The parent package's __init__.py re-exports this submodule's `run` under
@@ -244,3 +247,123 @@ class TestPartialCatchup:
         report = run_scan(tmp_path)
         assert report.mode == "incremental"
         assert report.verdict == AuditVerdict.NO_NEW_WAIVERS
+
+
+class TestCollisionSuspects:
+    """T-2493: the sound half of INERT-waiver detection -- a waiver is only
+    flagged when a CURRENTLY-KEPT (unsuppressed) violation of the same
+    rule sits in the same repo-relative file, never from mere absence
+    (the T-1579/55-waiver-deletion failure mode). Both directions of the
+    positive/negative control the coordinator required are here:
+    positive = a planted mismatch that leaves a real violation
+    unsuppressed IS flagged; negative = a genuinely live, correctly-
+    matching waiver, and a quiet hardened site with zero violations
+    anywhere, are BOTH not flagged."""
+
+    def test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Positive control: the waiver names DUP001 in mod.py, but (as if
+        # its symref/path shape never actually matched, T-2314/T-2438's
+        # own root-cause shape) the violation persisted in the KEPT set
+        # instead of being suppressed -- a direct, present counter-example
+        # that the waiver is not doing its job at that site.
+        waiver = ScannedWaiver(
+            file="mod.py", line=3, rule="DUP001", reason="should suppress this"
+        )
+        kept = [
+            Violation(
+                rule="DUP001",
+                severity=Severity.WARN,
+                file="mod.py",
+                line=10,
+                message="DUP001: mod.py:10 duplicate of other.py:5",
+            )
+        ]
+
+        suspects = find_collision_suspects(
+            [waiver], kept, root=tmp_path
+        )
+
+        assert len(suspects) == 1
+        assert suspects[0].rule == "DUP001"
+        assert suspects[0].file == "mod.py"
+        assert suspects[0].colliding_violation_line == 10
+
+    def test_a_correctly_matching_live_waiver_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Negative control #1: the waiver's rule/file has NO entry in the
+        # kept set at all -- exactly what a correctly-matching waiver
+        # produces (its violation was suppressed into `waived`, never
+        # reaching `kept`). Some UNRELATED kept violation (different rule)
+        # exists in the same file to prove this is not a blanket "any
+        # violation in this file" false match.
+        waiver = ScannedWaiver(
+            file="mod.py", line=3, rule="DUP001", reason="correctly suppresses"
+        )
+        kept = [
+            Violation(
+                rule="PERF004",
+                severity=Severity.WARN,
+                file="mod.py",
+                line=20,
+                message="PERF004: mod.py:20 unrelated finding",
+            )
+        ]
+
+        suspects = find_collision_suspects(
+            [waiver], kept, root=tmp_path
+        )
+
+        assert suspects == ()
+
+    def test_a_quiet_hardened_site_with_zero_violations_anywhere_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # Negative control #2, the one that matters most: a load-bearing
+        # waiver on a hardened guard, currently producing ZERO violations
+        # of its rule ANYWHERE in the tree (not just this file) -- exactly
+        # what the falsified T-1579 escape misread as "provably dead".
+        # This function must report nothing here, by construction, since
+        # it never reasons from absence at all.
+        waiver = ScannedWaiver(
+            file="hardened_guard.py",
+            line=42,
+            rule="SEC110",
+            reason="FROB_AGENT is a boolean context flag, never a secret",
+        )
+        kept: list[Violation] = []
+
+        suspects = find_collision_suspects(
+            [waiver], kept, root=tmp_path
+        )
+
+        assert suspects == ()
+
+    def test_absolute_violation_path_still_matches_repo_relative_waiver(
+        self, tmp_path: Path
+    ) -> None:
+        # T-2314's own root cause: a producer emitting an ABSOLUTE path
+        # while everything else compares repo-relative. This function
+        # must normalize both sides, not silently miss the collision the
+        # way _match_waiver used to.
+        waiver = ScannedWaiver(
+            file="pkg/mod.py", line=3, rule="DUP001", reason="should suppress this"
+        )
+        kept = [
+            Violation(
+                rule="DUP001",
+                severity=Severity.WARN,
+                file=str(tmp_path / "pkg" / "mod.py"),
+                line=10,
+                message="DUP001: absolute-path finding",
+            )
+        ]
+
+        suspects = find_collision_suspects(
+            [waiver], kept, root=tmp_path
+        )
+
+        assert len(suspects) == 1
+

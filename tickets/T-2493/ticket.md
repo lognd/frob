@@ -1,7 +1,7 @@
 ---
 id: T-2493
 title: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,10 +12,30 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_waive_audit.py
+- tests/unit/test_waive_audit_runner.py
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_waive_audit_runner.py
+  reason: add tests for the new collision-check function and document it alongside
+    the rest of waive-audit in the same doc anchor
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/app.md
+  reason: add tests for the new collision-check function and document it alongside
+    the rest of waive-audit in the same doc anchor
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_waive_audit_runner.py::TestCollisionSuspects::test_active_unsuppressed_violation_in_same_rule_and_file_is_flagged
+- tests/unit/test_waive_audit_runner.py::TestCollisionSuspects::test_a_correctly_matching_live_waiver_is_not_flagged
+- tests/unit/test_waive_audit_runner.py::TestCollisionSuspects::test_a_quiet_hardened_site_with_zero_violations_anywhere_is_not_flagged
+- tests/unit/test_waive_audit_runner.py::TestCollisionSuspects::test_absolute_violation_path_still_matches_repo_relative_waiver
 designated_repro_test: null
 threat: null
 component: null

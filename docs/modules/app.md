@@ -464,6 +464,31 @@ ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
   follow_up a human/agent classifies per T-1614's original rubric (STILL
   NECESSARY AND HONEST / OBSOLETE / COP-OUT / PERMANENT BY DESIGN) --
   this module supplies the SCOPE and PERSISTENCE, not the judgment.
+- T-2493: `find_collision_suspects(waivers, kept_violations, root=...)` --
+  the SOUND half of "is a waiver inert", built after re-deriving (and
+  rejecting) the exact reasoning that shipped once as T-1579's
+  `_rule_has_live_finding` escape and deleted 55 live waivers ("the rule
+  fired somewhere this run" does not prove the ONE waived site was
+  re-examined). This function never reasons from absence at all: it
+  flags a `frob:waive` only when a `GateReport.violations` (the KEPT,
+  UNSUPPRESSED set) entry for the SAME rule sits in the SAME
+  repo-relative file -- a direct, present counter-example that the
+  waiver failed to suppress an active finding, the general form of the
+  two real matching bugs this repo has found and fixed this way (T-2314
+  absolute-vs-relative path shape, T-2438 hand-rolled C++ symref
+  spelling). `CollisionSuspect` is the reported shape. Deliberately
+  disclosed blind spot: a waiver whose site has ZERO current violations
+  ANYWHERE (a hardened guard behaving exactly like a genuinely inert
+  waiver) is invisible to this check by construction -- closing that
+  gap needs the per-site analysis-coverage proof `frob.gates.
+  _coverage_sites` (T-1921/T-1943) only provides for five gate families
+  and was itself deliberately left unwired everywhere; extending it into
+  a general per-waiver verdict is a materially larger, multi-file
+  capability outside this ticket's single-file scope. Pure/side-effect-
+  free (report-only, per the T-2493 brief: never mutates a waiver, never
+  gates a check or land, not wired to any CLI subcommand by this
+  ticket -- see the function's own T-2493 section docstring in
+  `_waive_audit.py` for the full incident history and reasoning).
 
 ## Shared graph-snapshot helper (T-1085)
 
