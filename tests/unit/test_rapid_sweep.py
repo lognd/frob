@@ -1360,6 +1360,42 @@ class TestIdentitiesStillReproducing:
             _identities_still_reproducing(tmp_path, frozenset({("R", "f.py")})) is None
         )
 
+    # frob:ticket T-2521
+    def test_failed_silent_tool_result_is_unmeasurable_not_zero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_failed_silent_tool_result_is_unmeasurable_not_zero  # noqa: E501
+        """T-2521 required control #2: a re-measurement whose `ruff-check`
+        (or any tool) FAILED (`exit_code != 0`) with zero error
+        diagnostics -- the malformed-JSON shape T-2521's own investigation
+        reproduced directly against this repo's real `parse_ruff_json` --
+        must read as unmeasurable, never as "measured, none of the
+        candidates reproduce". Before this fix, this exact JSON shape
+        would have made `_identities_still_reproducing` return an empty
+        set (not `None`), and the caller would have read that as
+        `vanished = all_pairs`, dropping a ticket whose findings the
+        run never actually managed to check."""
+        import json
+
+        payload = {
+            "results": [
+                {
+                    "tool": "ruff-check",
+                    "exit_code": 1,
+                    "diagnostics": [],
+                    "summary": "malformed JSON: Expecting value",
+                },
+            ]
+        }
+        monkeypatch.setattr(
+            "frob.process._guard.guarded_subprocess_run",
+            lambda *a, **k: self._ok_result(json.dumps(payload)),
+        )
+        result = _identities_still_reproducing(
+            tmp_path, frozenset({("E501", "src/frob/x.py")})
+        )
+        assert result is None
+
 
 # frob:ticket T-2006
 # frob:ticket T-2078
@@ -2764,6 +2800,36 @@ class TestCloseResolvedSweepTickets:
         queue = load_queue(tmp_path)
         assert queue.is_ok
         assert queue.danger_ok.tickets[filed].state == TicketState.QUEUED
+
+    # frob:ticket T-2521
+    def test_absolute_recorded_identity_matches_relative_vanished_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_absolute_recorded_identity_matches_relative_vanished_entry  # noqa: E501
+        """T-2521 required control #3: a ticket whose body recorded an
+        finding with an ABSOLUTE path (the real, historical shape T-2036
+        fixed, T-2314's own 116-waiver incident of the identical class)
+        must still be recognized as resolved when the fresh measurement's
+        `vanished` set names the SAME file repo-relative -- end-to-end
+        through the real drop path (`_close_resolved_sweep_tickets` ->
+        `_maybe_drop_resolved_ticket`), not just the isolated `_normalize_
+        identities` unit tests elsewhere in this file."""
+        findings = frozenset({("RULE1", str(tmp_path / "a.py"))})
+        filed = _file_regression_ticket(tmp_path, "T-9000", "deadbeef", findings)
+        assert filed is not None
+
+        # The fresh measurement's own vanished set, repo-relative (the
+        # shape a real `frob check --json` reports).
+        dropped = _close_resolved_sweep_tickets(
+            tmp_path, "T-9001", frozenset({("RULE1", "a.py")})
+        )
+        assert dropped == (filed,)
+
+        from frob.tickets import TicketState, load_queue
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        assert queue.danger_ok.tickets[filed].state == TicketState.DROPPED
 
     def test_in_progress_sweep_ticket_is_never_touched(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_in_progress_sweep_ticket_is_never_touched  # noqa: E501

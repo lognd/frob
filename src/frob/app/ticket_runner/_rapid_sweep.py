@@ -1053,7 +1053,10 @@ def _matching_error_diagnostics(
     `pairs`, or `None` on any unmeasurable outcome (spawn refused,
     timeout, unparsable/budget-truncated output) -- never an empty list
     standing in for "could not measure"."""
-    from frob.app.ticket_runner._verify import _parse_check_json
+    from frob.app.ticket_runner._verify import (
+        _incomplete_tool_results,
+        _parse_check_json,
+    )
 
     proc = _spawn_true_count_check(root, budget)
     if proc is None:
@@ -1067,6 +1070,22 @@ def _matching_error_diagnostics(
         return None
     results = data.get("results")
     if not isinstance(results, list):
+        return None
+    # T-2521: same structural completeness check `_verify.py::_parse_
+    # error_findings_from_json` applies to the deferred-sweep path --
+    # a FAILED tool result with no error diagnostic (a crashed/malformed
+    # ruff-check, e.g.) must never read as "measured, found nothing" on
+    # THIS scoped doable-time path either; both call sites share the one
+    # detector rather than each re-deriving it.
+    incomplete = _incomplete_tool_results(results)
+    if incomplete:
+        _log.warning(
+            "rapid sweep: true-finding re-measure had %d tool result(s) "
+            "(%s) that exited nonzero with no error diagnostic -- "
+            "treating as unmeasurable (T-2521)",
+            len(incomplete),
+            ", ".join(incomplete),
+        )
         return None
     matched: list[dict] = []
     for r in results:
@@ -2053,6 +2072,7 @@ def _maybe_drop_resolved_ticket(
     final_id: str,
     ticket,  # noqa: ANN001 -- Ticket, deferred-import type
     vanished: frozenset[tuple[str, str]],
+    measurement_note: str = "a complete measurement",
 ) -> str | None:
     """T-1983 (ARCH001 split of `_close_resolved_sweep_tickets`, one
     ticket's worth of the drop-if-resolved decision): `None` unless
@@ -2107,10 +2127,12 @@ def _maybe_drop_resolved_ticket(
         "T-1983: auto-dropped by the deferred post-land sweep -- every "
         f"(rule, file) identity this ticket named "
         f"({', '.join(f'{r} {f}' for r, f in sorted(identities))}) is "
-        f"absent from the fresh unscoped measurement at {final_id}'s "
-        "deferred sweep, i.e. no longer reproduces. If this is wrong (a "
-        "flaky/incomplete measurement), re-file with `frob check --only "
-        "<gate>` evidence attached."
+        f"absent from {measurement_note} at {final_id}'s deferred sweep "
+        "(T-2521: this drop only fires when that measurement itself "
+        "completed -- no budget deferral, no failed/silent tool stage -- "
+        "never on an unmeasured or partial run), i.e. no longer "
+        "reproduces. If this is wrong (a flaky/incomplete measurement), "
+        "re-file with `frob check --only <gate>` evidence attached."
     )
     result = drop_ticket(root, ticket.id, reason)
     if result.is_err:
@@ -2147,7 +2169,10 @@ def _maybe_drop_resolved_ticket(
 # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_partially_resolved_ticket_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets.test_leaves_a_still_reproducing_ticket_untouched  # noqa: E501
 def _close_resolved_sweep_tickets(
-    root: Path, final_id: str, vanished: frozenset[tuple[str, str]]
+    root: Path,
+    final_id: str,
+    vanished: frozenset[tuple[str, str]],
+    measurement_note: str = "a complete measurement",
 ) -> tuple[str, ...]:
     """T-1983: auto-DROP (never close -- dropping states no work happened
     and no evidence exists, matching how T-1947/T-1972 were handled by
@@ -2186,7 +2211,9 @@ def _close_resolved_sweep_tickets(
     for ticket in sorted(queue.danger_ok.tickets.values(), key=lambda t: t.id):
         if ticket.state not in (TicketState.QUEUED, TicketState.PLANNED):
             continue
-        result = _maybe_drop_resolved_ticket(root, final_id, ticket, vanished)
+        result = _maybe_drop_resolved_ticket(
+            root, final_id, ticket, vanished, measurement_note
+        )
         if result is not None:
             dropped.append(result)
     return tuple(dropped)
@@ -2201,6 +2228,14 @@ def _close_resolved_sweep_tickets(
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#doable-time-revalidation-of-sweep-filed-tickets-\
 # t-2006
+# frob:waive AFFECT001 reason="T-2521 only threads a measurement_note string through \
+# to _maybe_drop_resolved_ticket's reason text and gains the shared \
+# _incomplete_tool_results completeness check via _matching_error_diagnostics -- \
+# neither changes this function's own documented contract (still: one scoped re-check, \
+# never a full sweep, unmeasurable drops nothing). docs/modules/ \
+# tickets-verify-sweep.md is under another ticket's live lease (T-2374) for the \
+# duration of this land; the doc update belongs in a follow-up once that lease clears, \
+# not blocking this bug fix"
 def revalidate_dispatchable_sweep_tickets(
     root: Path,
     tickets: Sequence,  # noqa: ANN401 -- Sequence[Ticket], deferred-import type
@@ -2252,9 +2287,20 @@ def revalidate_dispatchable_sweep_tickets(
     if reproducing is None:
         return ()
     vanished = all_pairs - reproducing
+    # T-2521: `reproducing` already passed `_matching_error_diagnostics`'
+    # own completeness gate (no failed/silent tool result) -- named here
+    # so the drop reason states what was actually checked, not merely
+    # asserts absence.
+    measurement_note = (
+        f"a direct re-check of exactly the {len(all_pairs)} named "
+        "(rule, file) identit(ies) (not a full sweep) that completed "
+        "with no failed/silent tool stage"
+    )
     dropped: list[str] = []
     for ticket, identities in candidates:
-        result = _maybe_drop_resolved_ticket(root, "doable", ticket, vanished)
+        result = _maybe_drop_resolved_ticket(
+            root, "doable", ticket, vanished, measurement_note
+        )
         if result is not None:
             dropped.append(result)
     return tuple(dropped)
@@ -2352,9 +2398,21 @@ def _close_and_log_resolved_sweep_tickets(
     baseline had that `fresh` no longer finds) and drop every sweep-filed
     ticket now fully resolved by it, logging a summary when anything
     closed. Returns the same `_close_resolved_sweep_tickets` tuple
-    unchanged; this only names and isolates the call plus its log line."""
+    unchanged; this only names and isolates the call plus its log line.
+
+    T-2521: `fresh` reaching this point already passed `run_deferred_
+    post_land_sweep`'s own completeness gates (no `--budget` deferral,
+    no failed/silent tool result, via `_parse_error_findings_from_json`
+    -> `_incomplete_tool_results`) -- the drop reason states that
+    explicitly rather than merely asserting absence."""
     vanished = baseline - fresh
-    closed = _close_resolved_sweep_tickets(root, final_id, vanished)
+    closed = _close_resolved_sweep_tickets(
+        root,
+        final_id,
+        vanished,
+        "a full unscoped `frob check --json` run that completed with no "
+        "budget deferral and no failed/silent tool stage",
+    )
     if closed:
         _log.info(
             "rapid sweep: %s: closed the loop on %d resolved regression "

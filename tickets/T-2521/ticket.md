@@ -2,7 +2,7 @@
 id: T-2521
 title: 'auto-drop treats an incomplete measurement as proof of absence: 7 tickets
   dropped with ~66 live findings'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,129 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/verify/
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'Root-cause investigation (evidence in Done report) traced the actual
+
+    auto-drop defect to two files outside the originally-declared
+
+    src/frob/verify/ scope: _parse_error_findings_from_json/
+
+    _collect_error_findings in app/ticket_runner/_verify.py (the identity
+
+    extraction that silently drops a failed-but-diagnostic-less ToolResult
+
+    as if it were a clean zero), and the auto-drop decision/reason text in
+
+    app/ticket_runner/_rapid_sweep.py (T-1983''s own _maybe_drop_resolved_
+
+    ticket / _close_resolved_sweep_tickets). Both must change together for
+
+    the required behaviour (refuse-on-incomplete, reason states
+
+    completeness); the mechanism does not live under src/frob/verify/ at
+
+    all despite the ticket''s filed scope naming it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'Root-cause investigation (evidence in Done report) traced the actual
+
+    auto-drop defect to two files outside the originally-declared
+
+    src/frob/verify/ scope: _parse_error_findings_from_json/
+
+    _collect_error_findings in app/ticket_runner/_verify.py (the identity
+
+    extraction that silently drops a failed-but-diagnostic-less ToolResult
+
+    as if it were a clean zero), and the auto-drop decision/reason text in
+
+    app/ticket_runner/_rapid_sweep.py (T-1983''s own _maybe_drop_resolved_
+
+    ticket / _close_resolved_sweep_tickets). Both must change together for
+
+    the required behaviour (refuse-on-incomplete, reason states
+
+    completeness); the mechanism does not live under src/frob/verify/ at
+
+    all despite the ticket''s filed scope naming it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: 'Root-cause investigation (evidence in Done report) traced the actual
+
+    auto-drop defect to two files outside the originally-declared
+
+    src/frob/verify/ scope: _parse_error_findings_from_json/
+
+    _collect_error_findings in app/ticket_runner/_verify.py (the identity
+
+    extraction that silently drops a failed-but-diagnostic-less ToolResult
+
+    as if it were a clean zero), and the auto-drop decision/reason text in
+
+    app/ticket_runner/_rapid_sweep.py (T-1983''s own _maybe_drop_resolved_
+
+    ticket / _close_resolved_sweep_tickets). Both must change together for
+
+    the required behaviour (refuse-on-incomplete, reason states
+
+    completeness); the mechanism does not live under src/frob/verify/ at
+
+    all despite the ticket''s filed scope naming it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'Root-cause investigation (evidence in Done report) traced the actual
+
+    auto-drop defect to two files outside the originally-declared
+
+    src/frob/verify/ scope: _parse_error_findings_from_json/
+
+    _collect_error_findings in app/ticket_runner/_verify.py (the identity
+
+    extraction that silently drops a failed-but-diagnostic-less ToolResult
+
+    as if it were a clean zero), and the auto-drop decision/reason text in
+
+    app/ticket_runner/_rapid_sweep.py (T-1983''s own _maybe_drop_resolved_
+
+    ticket / _close_resolved_sweep_tickets). Both must change together for
+
+    the required behaviour (refuse-on-incomplete, reason states
+
+    completeness); the mechanism does not live under src/frob/verify/ at
+
+    all despite the ticket''s filed scope naming it.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_silent_tool_result_yields_none_not_a_partial_set
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_failed_but_loud_tool_result_does_not_block_measurement
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_absolute_recorded_identity_matches_relative_vanished_entry
+- tests/unit/test_rapid_sweep.py::TestCloseResolvedSweepTickets::test_drops_a_fully_resolved_sweep_ticket
+- tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing::test_failed_silent_tool_result_is_unmeasurable_not_zero
 designated_repro_test: null
 threat: null
 component: null

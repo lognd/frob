@@ -191,6 +191,90 @@ _BUDGET_TRUNCATED_STDOUT = json.dumps(
 )
 
 
+# frob:ticket T-2521
+# T-2521's own reproduced root cause: a real `frob.process.parsers.ruff.
+# parse_ruff_json` malformed-JSON fallback -- `ToolResult(exit_code=1,
+# diagnostics=[], summary="malformed JSON: ...")`. This is EXIT_CODE
+# nonzero with NO error diagnostic, structurally distinct from
+# `_BUDGET_TRUNCATED_STDOUT` above (no "budget" tool result at all) --
+# `_budget_deferred_stage_groups` finds nothing here, so before T-2521
+# this fixture parsed as an empty (not None) identity set despite
+# ruff-check having genuinely failed to report anything.
+_FAILED_SILENT_TOOL_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "ruff-check",
+                "exit_code": 1,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "malformed JSON: Expecting value: line 1 column 1",
+            },
+            {
+                "tool": "gate:SEC",
+                "exit_code": 0,
+                "diagnostics": [
+                    {
+                        "file": "src/frob/y.py",
+                        "line": 1,
+                        "col": 1,
+                        "severity": "error",
+                        "code": "SEC110",
+                        "message": "x",
+                    }
+                ],
+                "tests": [],
+                "summary": "1 errors, 0 warnings, 0 waived",
+            },
+            {
+                "tool": "gate-summary",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "1 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+            },
+        ],
+    }
+)
+
+# frob:ticket T-2521
+# The control case: a tool that failed AND reported a real error
+# diagnostic (`tool_crash_result`'s own convention) must NOT be treated
+# as incomplete -- its failure is already visible as a countable finding,
+# not a silent gap.
+_FAILED_BUT_LOUD_TOOL_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "ty",
+                "exit_code": 1,
+                "diagnostics": [
+                    {
+                        "file": None,
+                        "line": None,
+                        "col": None,
+                        "severity": "error",
+                        "code": None,
+                        "message": "ty crashed: RuntimeError: boom",
+                    }
+                ],
+                "tests": [],
+                "summary": "ty crashed: RuntimeError",
+            },
+            {
+                "tool": "gate-summary",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "1 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+            },
+        ],
+    }
+)
+
+
 class TestCheckGateFindingsFn:
     """`_check_gate_findings_fn` parsing/filtering behavior -- each method
     below carries its own `frob:tests` edge (T-1055: this class docstring
@@ -444,6 +528,41 @@ class TestParseErrorFindingsFromJson:
             "T-0001", _BUDGET_TRUNCATED_STDOUT, 0
         )
         assert findings is None
+
+    # frob:ticket T-2521
+    def test_failed_silent_tool_result_yields_none_not_a_partial_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_failed_silent_tool_result_yields_none_not_a_partial_set  # noqa: E501
+        """T-2521's own root cause, reproduced directly: a `ruff-check`
+        result that FAILED (`exit_code=1`, a malformed-JSON fallback)
+        with zero error diagnostics must make the WHOLE run unmeasured
+        (`None`), never a partial set that silently drops just that
+        tool's own findings -- the real incident: a deferred sweep read
+        this shape as `CLEAN, 0 errors` and auto-dropped seven regression
+        tickets whose findings were still live."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _FAILED_SILENT_TOOL_STDOUT, 1
+        )
+        assert findings is None
+
+    # frob:ticket T-2521
+    def test_failed_but_loud_tool_result_does_not_block_measurement(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_failed_but_loud_tool_result_does_not_block_measurement  # noqa: E501
+        """The control case for the fix above: a tool that failed AND
+        reported a real error diagnostic (`tool_crash_result`'s own
+        convention) is NOT incomplete -- its failure is already visible
+        as a countable finding, so the run as a whole is still
+        measured. A fix that treats every nonzero `exit_code` as
+        unmeasured would over-refuse and disable auto-drop entirely,
+        which is exactly the useless-mechanism failure mode this
+        positive control guards against."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _FAILED_BUT_LOUD_TOOL_STDOUT, 1
+        )
+        assert findings is not None
 
     # frob:ticket T-1703
     def test_check_gates_summary_fn_returns_none_on_budget_truncated_run(

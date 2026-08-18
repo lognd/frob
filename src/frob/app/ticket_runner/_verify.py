@@ -1083,9 +1083,12 @@ def _parse_error_findings_from_json(
     `None` when the run is UNMEASURED -- not "measured zero", not
     "measured some" (T-1703).
 
-    Two independent ways this returns `None`, both closing a real
+    THREE independent ways this returns `None`, all closing a real
     incident:
 
+    0. `_incomplete_tool_results` finds a FAILED tool result with zero
+       error diagnostics (T-2521) -- see that function's own docstring;
+       the live incident it fixes.
     1. `--budget`-truncated (`_budget_deferred_stage_groups` finds a
        `"budget"` tool result): gates that never ran emit no diagnostics
        at all, so a partial run's `results` list is structurally
@@ -1126,7 +1129,116 @@ def _parse_error_findings_from_json(
             ", ".join(deferred),
         )
         return None
+    incomplete = _incomplete_tool_results(results)
+    if incomplete:
+        _log.warning(
+            "ticket %s: `frob check --json` run had %d tool result(s) "
+            "(%s) that exited nonzero with NO error-severity diagnostic "
+            "explaining why -- error-finding identities are unmeasured, "
+            "not a partial set (T-2521: a crashed/malformed tool stage's "
+            "silence is structurally indistinguishable from \"ran clean\" "
+            "to anything that only reads `diagnostics`, so this is "
+            "checked via `exit_code` directly instead)",
+            ticket_id,
+            len(incomplete),
+            ", ".join(incomplete),
+        )
+        return None
     return _collect_error_findings(ticket_id, results)
+
+
+# frob:ticket T-2521
+#: Pseudo-"tool" result names that are aggregate/rollup rows, never a
+#: real subprocess-backed tool invocation of their own -- their `exit_
+#: code` mirrors the WHOLE check's overall pass/fail state (nonzero the
+#: instant any OTHER stage has a real finding) while their own
+#: `diagnostics` list is always empty by design. `_incomplete_tool_
+#: results` must never apply its "failed + silent = incomplete" test to
+#: one of these (measured false positive: a completed run with a single
+#: real gate error makes `gate-summary` read `exit_code=1, diagnostics=
+#: []`, which would otherwise misclassify every run that found ANYTHING
+#: as incomplete).
+_AGGREGATE_ROLLUP_TOOL_NAMES = frozenset({"gate-summary"})
+
+
+# frob:ticket T-2521
+def _incomplete_tool_results(results: list) -> list[str]:  # noqa: ANN401
+    """Tool names from `results` whose invocation FAILED (`exit_code`
+    nonzero, i.e. `ToolResult.passed is False`) with NO diagnostics AT
+    ALL (any severity) to explain why -- a crashed/malformed/refused tool
+    stage that produced neither a real finding NOR a visible failing
+    diagnostic, so its silence reads exactly like "ran clean" to any
+    caller (`_collect_error_findings` here, `_matching_error_diagnostics`
+    in `_rapid_sweep.py`) that only iterates `diagnostics`. Checking for
+    ANY diagnostic, not just `severity == "error"`, matters: `ruff-
+    format`'s normal "N files would be reformatted" outcome is `exit_
+    code=1` with real WARNING-severity diagnostics, a legitimate,
+    fully-measured result this must not misclassify (measured false
+    positive during T-2521's own verification). `_AGGREGATE_ROLLUP_TOOL_
+    NAMES` (`gate-summary`) is excluded entirely for the same reason at
+    the tool-identity level, not the diagnostic level -- see its own
+    docstring.
+
+    T-2521's own root cause, confirmed by direct reproduction: `frob
+    check`'s `parse_ruff_json` (`frob.process.parsers.ruff`) returns
+    `ToolResult(tool="ruff", exit_code=1, diagnostics=[], summary=
+    "malformed JSON: ...")` on a malformed/truncated ruff subprocess
+    output -- unlike its sibling helpers `tool_crash_result`/`tool_
+    disabled_result` (`frob.process.parsers.common`), which both attach a
+    real error `Diagnostic` naming the failure per this repo's own
+    loud-not-silent doctrine (T-0142). A deferred post-land sweep hit
+    this exact gap under fleet contention: `frob check --json --budget
+    480` completed with NO `BUDGET001` deferral (so `_budget_deferred_
+    stage_groups` found nothing) yet `ruff-check`'s own malformed-JSON
+    fallback silently contributed zero identities, and the sweep recorded
+    `CLEAN, 0 error(s)` at a commit where a fresh, complete run reports
+    real `E501`/`F811` errors for files that had not changed since
+    creation -- seven regression tickets auto-dropped on that false
+    "vanished" reading (T-2521's own filing).
+
+    Checked STRUCTURALLY (`exit_code`/`diagnostics` fields on the parsed
+    dict), never a substring match on `summary` prose -- this repo's own
+    "token/grammar fixes, never lexical" convention, and robust to
+    whatever text a tool's own malformed-output message happens to say.
+    A tool that failed AND reported at least one real error diagnostic is
+    NOT included here (e.g. `tool_crash_result`'s own convention already
+    surfaces that failure as a normal, countable finding) -- this
+    function names only the gap class: failed AND silent."""
+    names: list[str] = []
+    for r in results:
+        if not isinstance(r, dict):
+            continue
+        tool_name = r.get("tool") if isinstance(r.get("tool"), str) else "<unknown tool>"
+        if tool_name in _AGGREGATE_ROLLUP_TOOL_NAMES:
+            # T-2521 false-positive fix (found live, against this repo's
+            # own real `frob check --json` output): "gate-summary" is a
+            # rollup row, never a subprocess-backed tool of its own -- it
+            # mirrors the WHOLE check's exit code (nonzero the instant
+            # ANY other stage has a real error) while its OWN `diagnostics`
+            # list is always empty by design. Treating it like any other
+            # tool would flag every run that found a real error ANYWHERE
+            # as "incomplete", which is the exact "trades a bug for a
+            # useless mechanism" failure a positive control below guards
+            # against.
+            continue
+        exit_code = r.get("exit_code", 0)
+        if exit_code in (0, None):
+            continue
+        diagnostics = r.get("diagnostics") or ()
+        # T-2521 false-positive fix, also found live: `ruff-format`'s
+        # normal "N files would be reformatted" outcome is `exit_code=1`
+        # with real, fully-measured WARNING-severity diagnostics (never
+        # "error") -- checking for `severity == "error"` specifically
+        # would misclassify that legitimate, complete result as a silent
+        # crash. Presence of ANY diagnostic (any severity) is what
+        # actually distinguishes "this tool measured something real" from
+        # "this tool crashed and reported nothing" -- the fix's own
+        # target shape (`parse_ruff_json`'s malformed-JSON fallback) has
+        # `diagnostics=[]` unconditionally, at every severity.
+        if diagnostics:
+            continue
+        names.append(tool_name)
+    return names
 
 
 # frob:ticket T-2345
