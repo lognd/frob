@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c46d3f156cd528098a4f7252ccd6e75d296f3a31
 ---
 T-2467's land (7f8193fc958ef608da902730128c6278347b3355) introduced new
 SELFAUDIT001 SYS100 (declared-but-not-observed's inverse: observed-but-
