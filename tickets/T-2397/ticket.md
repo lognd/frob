@@ -11,11 +11,89 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - src/frob/check/**
 - docs/modules/gates.md
+- src/frob/gates/_flag_coverage.py
+- src/frob/gates/_docblocks_shared.py
+- src/frob/gates/_docblocks_refs.py
+- src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- frob.toml
+- tests/unit/test_flag_coverage_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_flag_coverage.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_docblocks_shared.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_docblocks_refs.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: frob.toml
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_flag_coverage_gate.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
