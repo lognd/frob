@@ -2,7 +2,7 @@
 id: T-2350
 title: TICK006 auto-filer twice cited a real, just-filed sibling ticket as phantom
   (possible stale ledger read at land time)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -57,3 +57,6 @@ a shared stale-read helper between the two). Not filed as high priority
 -- both observed instances were self-resolving false positives, not
 silent data loss -- but the pattern recurring on the very next land
 after the first instance is enough to track.
+
+## Drop reason
+- 2026-08-17: Measured on current main (T-2351 landed, 4d1f69916): reproduced the flagged mechanism (disqualified Tier-A revert of tickets.md wiping an uncommitted just-filed ticket line) directly -- it now SURVIVES. Existing regression test_uncommitted_in_scope_edit_survives_a_disqualified_tier_a_revert (1 passed) covers the identical generic code path. Cannot reproduce a phantom TICK006 citation via this mechanism. See attachment for full repro. T-2351 already closed this.
