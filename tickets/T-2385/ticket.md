@@ -14,6 +14,7 @@ runs_last: false
 scope:
 - src/frob/__main__.py
 - src/frob/_cli_parsers/_ops.py
+- tests/unit/test_main_entry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -22,6 +23,12 @@ scope_changes:
   reason: 'T-2385 acceptance[0]: narrower description column from the header-indent
     fix breaks ops help mid-word; shortening that help string is the ticket''s own
     second-order nit'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: test coverage for the header-indent fix lives here per existing frob:tests
+    directives on this class
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
