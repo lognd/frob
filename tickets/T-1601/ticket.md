@@ -13,7 +13,6 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/lang/**
 - src/frob/lang/_walk_java.py
 - tests/fixtures/lang/**
 - tests/test_lang.py
@@ -101,6 +100,12 @@ scope_changes:
     the three existing lang/conformance-gate/support test suites, and the repo''s
     single lang doc (docs/modules/lang.md, confirmed via ls docs/modules/) -- not
     a guess, matches this repo''s own established convention for every other adapter'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/lang/**
+  reason: 'T-2446 follow-up: forgot this removal in the same pass -- narrowed to the
+    specific walker file already, the umbrella glob was a leftover'
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
