@@ -59,7 +59,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e362d42f30eaa55cda297ce1aa45fde8b7c17ee7
 ---
 T-1783 (landed 2026-08-17, commit 153f84bb) shipped a new gate **DOC012**:
 every top-level CLI subcommand the live `[[docblocks.commands]]` registry
