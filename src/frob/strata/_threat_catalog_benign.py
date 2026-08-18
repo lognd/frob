@@ -131,6 +131,35 @@ DEFAULT_BENIGN_CAPABILITIES: tuple[BenignCapability, ...] = (
             "elsewhere"
         ),
     ),
+    BenignCapability(
+        kind="net-mutate",
+        reason=(
+            "T-2464: scanner-only mutating-VERB signal for requests./httpx. "
+            "module-level convenience calls (POST/PUT/DELETE/PATCH), "
+            "additive to the coarse net-connect observation -- DELIBERATELY "
+            "unwired into _capability_modes.py's FAMILY_MODES/WIRED_MODE_ "
+            "FAMILIES (no tier-2 join exists yet, same posture as proc/ffi), "
+            "so it is declared here via its raw scanner-kind spelling "
+            "directly, the first capability in this registry to need that "
+            "(every other declared kind is either a bare family name or a "
+            "wired dotted family.mode spelling). No CWE_CATALOG entry "
+            "targets a network mutation as a sink on its own yet -- this IS "
+            "a real, disclosed gap (a mutating HTTP call is a MORE "
+            "security-relevant signal than a bare net-connect, arguably "
+            "SSRF/CSRF-adjacent, CWE-918/CWE-352 territory), not a judgment "
+            "that net-mutate is actually benign; building the real sink-"
+            "taxonomy mapping is follow-up work this ticket did not attempt "
+            "(T-2464's own scope was the scanner split, not the threat-"
+            "catalog mapping), tracked as a candidate follow-up rather than "
+            "forced into this pass"
+        ),
+        caught_by=(
+            "none -- no CWE_CATALOG sink mapping exists for net-mutate yet "
+            "(disclosed gap, not a security claim); the coarse net-connect "
+            "observation (unaffected by this ticket) is the only THREAT002-"
+            "visible signal for these same call sites today"
+        ),
+    ),
     # T-0717 added the precise, mode-qualified `fs.write`/`fs.read` spellings
     # (`_effects.py::_KIND_MAP`, `frob.vet._capability_modes`) as the
     # preferred replacement for the deprecated bare `fs`/`fs-read` kinds

@@ -1411,6 +1411,12 @@ node testsuite : trusted {
     // of what this bare declaration already covers, so a standalone atom
     // for it is never mutation-audit load-bearing.
     may "net" via "tests/test_app_daemon_proxy.py", "tests/test_capability_registry.py", "tests/test_gates.py", "tests/test_policy.py", "tests/test_serve_leases.py", "tests/test_vet.py", "tests/unit/perf/test_advisories.py", "tests/unit/strata/test_effects.py", "tests/unit/strata/test_selfconform.py", "tests/unit/strata/test_sync_may.py", "tests/unit/strata/test_threat.py", "tests/unit/test_arch.py";
+    // T-2464: TestNetMutateVerbSplit's own fire fixtures contain real
+    // `requests.post(`/`httpx.delete(` needle literals (proving the new
+    // net-mutate split actually fires), the same self-conformance
+    // precedent every other fixture-literal declaration on this node
+    // already follows (see the `may "env"`/`may "exec"` comments above).
+    may "net-mutate" via "tests/test_capability_registry.py";
     may "sql" via "tests/test_capability_registry.py";
     may "deserialize" via "tests/test_capability_registry.py", "tests/test_vet.py", "tests/unit/strata/test_cve_fingerprint_scan.py";
 }

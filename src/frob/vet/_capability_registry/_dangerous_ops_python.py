@@ -287,6 +287,32 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ("requests.",),
         (),
     ),
+    # T-2464: split out of the coarse "requests." needle above -- a
+    # module-level mutating-verb call (POST/PUT/DELETE/PATCH) is a real,
+    # DIFFERENT signal from a read-only GET/HEAD/OPTIONS call, which the
+    # coarse needle alone cannot distinguish. Additive: "requests." above
+    # is UNCHANGED and still fires on every requests usage including
+    # these calls -- this is a strictly more precise SECOND observation,
+    # never a narrowing of the first. Covers only the module-level
+    # convenience functions (`requests.post(url)`); a `session.post(url)`
+    # call on a `requests.Session()` instance is NOT covered (the bare
+    # `.post(` method name is indistinguishable from any other object's
+    # `.post` method at the flat-needle level without false-positive risk
+    # -- disclosed, not silently dropped, T-2464 Done report).
+    _op(
+        "python",
+        "requests",
+        "requests.post/put/delete/patch (module-level mutating verb)",
+        "net-mutate",
+        "issues a state-changing HTTP request (POST/PUT/DELETE/PATCH), "
+        "distinct from a read-only GET -- may create/modify/delete a "
+        "remote resource",
+        "pin a timeout and verify=True; validate SSRF-sensitive URLs; "
+        "treat as a mutating operation for authorization/audit purposes",
+        "medium",
+        ("requests.post(", "requests.put(", "requests.delete(", "requests.patch("),
+        (),
+    ),
     _op(
         "python",
         "aiohttp",
@@ -307,6 +333,23 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "pin a timeout and verify=True; validate SSRF-sensitive URLs",
         "medium",
         ("httpx.",),
+        (),
+    ),
+    # T-2464: same split as requests. above, module-level convenience
+    # functions only (`httpx.post(url)`) -- `httpx.Client().post(url)`
+    # instance-method calls are NOT covered, same disclosed gap.
+    _op(
+        "python",
+        "httpx",
+        "httpx.post/put/delete/patch (module-level mutating verb)",
+        "net-mutate",
+        "issues a state-changing HTTP request (POST/PUT/DELETE/PATCH), "
+        "distinct from a read-only GET -- may create/modify/delete a "
+        "remote resource",
+        "pin a timeout and verify=True; validate SSRF-sensitive URLs; "
+        "treat as a mutating operation for authorization/audit purposes",
+        "medium",
+        ("httpx.post(", "httpx.put(", "httpx.delete(", "httpx.patch("),
         (),
     ),
     _op(

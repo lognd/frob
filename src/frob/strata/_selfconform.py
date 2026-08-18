@@ -461,6 +461,14 @@ _EXTENDED_KINDS = frozenset(
         "html_render",
         "fetch_url",
         "client_storage",
+        #: T-2464: `net-mutate` (a mutating-VERB signal for `requests.`/
+        #: `httpx.` module-level convenience calls, additive to
+        #: `net-connect`) is DELIBERATELY unwired into `_effects.py::
+        #: _KIND_MAP`/`WIRED_MODE_FAMILIES` yet (same "no real mode
+        #: vocabulary yet" posture `ffi`/`install-hook` already have) --
+        #: this module's own SYS100 gap statement applies to it exactly
+        #: like every other extended kind here.
+        "net-mutate",
         #: T-0018 added `fs-read` here as a bespoke extended kind ahead of
         #: a real mode vocabulary; T-0717 promotes it into `_effects.py::
         #: _KIND_MAP` (as `fs.read`) instead, alongside `fs-write`'s new

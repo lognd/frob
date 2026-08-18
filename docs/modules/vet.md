@@ -56,11 +56,16 @@ immediately.
 
 `CAPABILITY_KINDS` (`src/frob/vet/_capability_registry/_kinds.py`, part of
 the `_capability_registry` package since T-1420) has grown
-beyond this table's rows to ~25 entries: precise connect-vs-listen and
+beyond this table's rows to ~26 entries: precise connect-vs-listen and
 read-vs-write variants of `net`/`env` (`net-connect`/`net-listen`/
 `net.connect`/`net.listen`, `env-read`/`env-write`/`env.read`/
 `env.write`), the normalized `fs` spelling of `fs-write`, `process-control`
-(T-1439, split out of `env`), and the c-cpp-excused-kind vocabulary
+(T-1439, split out of `env`), `net-mutate` (T-2464: a mutating-VERB signal
+-- `requests.post/put/delete/patch`, `httpx.post/put/delete/patch` module-
+level convenience calls -- additive to `net-connect`, DELIBERATELY
+unwired into any `may`-declaration join yet, scanner-only, python-only,
+module-level-call-only; see that ticket's Done report for the disclosed
+gaps this does NOT cover), and the c-cpp-excused-kind vocabulary
 (`sql`, `html_render`, `fetch_url`, `deserialize`, `client_storage`) also
 live there -- see `docs/guides/extending/capability-registry.md` for the
 full current list.

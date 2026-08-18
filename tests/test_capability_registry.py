@@ -655,3 +655,72 @@ class TestIsSelfPatternPath:
 
         monkeypatch.setattr(Path, "resolve", _selective_oserror)
         assert is_self_pattern_path(path, tmp_path) is False
+
+
+class TestNetMutateVerbSplit:
+    """T-2464: `net-mutate` -- a mutating-VERB signal for `requests.`/
+    `httpx.` module-level convenience calls, additive to the existing
+    coarse `net-connect` needle. Covers this ticket's own 4 acceptance
+    criteria: must-now-fire, must-not-over-fire on read-only verbs,
+    additive-not-replacing the existing coarse signal, and the disclosed
+    session/instance-method gap staying exactly as narrow before and
+    after (not silently widened or narrowed by this change)."""
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_requests_post_reports_net_mutate_and_net_connect(
+        self, tmp_path: Path
+    ) -> None:
+        """Acceptance [0]+[2]: a mutating verb reports BOTH the new
+        `net-mutate` signal and the pre-existing `net-connect` signal --
+        additive, never a replacement."""
+        path = tmp_path / "m.py"
+        path.write_text("import requests\n\ndef f():\n    requests.post('http://x', json={})\n")
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" in observed
+        assert "net-connect" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_httpx_delete_reports_net_mutate(self, tmp_path: Path) -> None:
+        """Acceptance [0]: the same split for `httpx.`, the second
+        library this ticket covers."""
+        path = tmp_path / "m.py"
+        path.write_text("import httpx\n\ndef f():\n    httpx.delete('http://x')\n")
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_requests_get_only_does_not_report_net_mutate(
+        self, tmp_path: Path
+    ) -> None:
+        """Acceptance [1]: a read-only GET call does NOT report
+        `net-mutate` -- the split does not over-fire on read-only usage,
+        proving this is a real distinction, not a vacuous one."""
+        path = tmp_path / "m.py"
+        path.write_text("import requests\n\ndef f():\n    requests.get('http://x')\n")
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" not in observed
+        assert "net-connect" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_httpx_get_only_does_not_report_net_mutate(self, tmp_path: Path) -> None:
+        """Acceptance [1]: same read-only-verb control for `httpx.`."""
+        path = tmp_path / "m.py"
+        path.write_text("import httpx\n\ndef f():\n    httpx.get('http://x')\n")
+        assert "net-mutate" not in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_session_instance_method_gap_is_unchanged(self, tmp_path: Path) -> None:
+        """Disclosed gap (module docstring / T-2464 Done report): a
+        `session.post(...)` call on a `requests.Session()` instance is
+        NOT covered by the module-level-only needle -- documenting this
+        stays the same shape before and after T-2464 rather than silently
+        widening (a bare `.post(` needle would false-positive on any
+        object's unrelated `.post` method) or silently narrowing (the
+        coarse `net-connect` needle's own pre-existing miss on this shape
+        is untouched by this ticket)."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import requests\n\ndef f(session):\n    session.post('http://x')\n"
+        )
+        observed = scan_file_capabilities(path)
+        assert "net-mutate" not in observed
+        assert "net-connect" not in observed

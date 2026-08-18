@@ -311,6 +311,36 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
         language="kotlin",
         reason="see the python/net.connect excuse above, listen-side",
     ),
+    # T-2464: net-mutate is patterned for python only (requests./httpx.
+    # post(/put(/delete(/patch( -- see _dangerous_ops_python.py); the
+    # other four languages have no equivalent module-level convenience-
+    # function idiom surveyed yet (this ticket's own scope was python-
+    # only, matching T-2457's own precedent of a python-only pass) --
+    # excused, not patterned, until a real per-language survey is done.
+    _MatrixExcuse(
+        capability_kind="net-mutate",
+        language="typescript",
+        reason="T-2464 (net verb-split) was a python-only pass; no "
+        "typescript HTTP-client verb survey has been done yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="net-mutate",
+        language="rust",
+        reason="T-2464 (net verb-split) was a python-only pass; no rust "
+        "HTTP-client verb survey has been done yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="net-mutate",
+        language="c-cpp",
+        reason="T-2464 (net verb-split) was a python-only pass; no c-cpp "
+        "HTTP-client verb survey has been done yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="net-mutate",
+        language="kotlin",
+        reason="T-2464 (net verb-split) was a python-only pass; no "
+        "kotlin HTTP-client verb survey has been done yet",
+    ),
     # T-0771: bare `env` was fully reclassified to env-read/env-write for
     # every language. T-1439: the last two python entries that still
     # emitted bare `env` (sys.exit/os._exit, signal.signal -- never

@@ -1,7 +1,7 @@
 ---
 id: T-2464
 title: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,76 @@ runs_last: false
 scope:
 - src/frob/vet/_capability_registry/**
 - docs/strata/**
+- tests/test_capability_registry.py
+- docs/modules/vet.md
+- src/frob/strata/_selfconform.py
+- src/frob/strata/_threat_catalog_benign.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: add fire/no-fire fixture tests for the new net-mutate kind, mirroring this
+    file's own existing per-cell drift-lock convention
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/vet.md
+  reason: CAPABILITY_KINDS' doc anchor lives here (not docs/strata/**); update the
+    read/write-mode-split description for the new net-mutate kind
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: net-mutate is a new CAPABILITY_KINDS entry with no _KIND_MAP tier-2 analog
+    (by design, T-2464's own scanner-only decision); _EXTENDED_KINDS' own drift-lock
+    test requires it be listed here or SYS100 loses coverage for it
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/strata/_threat_catalog_benign.py
+  reason: net-mutate (T-2464's new capability kind) needs a THREAT002 catalog disposition
+    the same way fs-read/fs got one when they were introduced -- no CWE_CATALOG entry
+    targets a network mutation as a sink on its own yet (that mapping is real follow-up
+    work), so it needs the same disclosed benign excuse fs-read/fs already carry
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_post_reports_net_mutate_and_net_connect
+- tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_delete_reports_net_mutate
+- tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_get_only_does_not_report_net_mutate
+- tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_get_only_does_not_report_net_mutate
+- tests/test_capability_registry.py::TestNetMutateVerbSplit::test_session_instance_method_gap_is_unchanged
 designated_repro_test: null
+acceptance:
+- text: Given a module calling requests.post(/put(/delete(/patch( or httpx.post(/put(/delete(/patch(,
+    when the dangerous-ops scanner runs, then it reports a NEW net-mutate capability
+    signal in addition to the existing net-connect signal, so a mutating HTTP call
+    is distinguishable from a read-only one.
+  evidence:
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_post_reports_net_mutate_and_net_connect
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_delete_reports_net_mutate
+- text: Given a module calling requests.get(/head(/options( or httpx.get(/head(/options(
+    only (no mutating verb), when the scanner runs, then net-mutate is NOT reported
+    for that module, proving the split does not over-fire on read-only usage.
+  evidence:
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_requests_get_only_does_not_report_net_mutate
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_httpx_get_only_does_not_report_net_mutate
+- text: Given the EXISTING coarse requests./httpx./aiohttp. needles, when this ticket
+    lands, then they are UNCHANGED and still fire exactly as before -- this is an
+    additive precision improvement, never a recall regression on the existing net-connect
+    signal.
+  evidence:
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_session_instance_method_gap_is_unchanged
+- text: Given the libraries this ticket does NOT split (aiohttp instance-method verbs,
+    boto3's per-service verb methods, asyncpg/SQL execute-vs-fetch ambiguity, http.client,
+    ftplib, smtplib), when the Done report is written, then each is named with a one-line
+    reason it was out of scope, and a follow-up ticket is filed for the highest-value
+    one rather than silently dropped.
+  evidence:
+  - tests/test_capability_registry.py::TestNetMutateVerbSplit::test_session_instance_method_gap_is_unchanged
 threat: null
 component: null
 anchor: false

@@ -43,6 +43,22 @@ CAPABILITY_KINDS: tuple[str, ...] = (
     #: would stay coarse "net" rather than force a guess.
     "net-connect",
     "net-listen",
+    #: T-2464: mutating-VERB signal for the highest-precision HTTP client
+    #: libraries (`requests`/`httpx` module-level `post(`/`put(`/
+    #: `delete(`/`patch(` convenience calls) -- a DIFFERENT axis from
+    #: connect-vs-listen (socket ROLE): this is read-vs-write over an
+    #: already-connected client, the network-capability analog of
+    #: `fs-write`/`fs-read`. Deliberately UNWIRED (module docstring's
+    #: "Wiring status" section in `frob.vet._capability_modes` -- same
+    #: posture as `proc`/`ffi`): no `FAMILY_MODES`/`WIRED_MODE_FAMILIES`
+    #: entry exists for it yet, so a coarse `may "net"` declaration does
+    #: NOT yet expand to cover it and no SYS100/SYS101 join reads it --
+    #: this is a SCANNER-only signal for now, additive to (never
+    #: replacing) the existing coarse `net-connect` observation. Building
+    #: the tier-2 join, and covering more libraries than requests/httpx,
+    #: is real follow-up work (see T-2464's own Done report for what is
+    #: and is not covered).
+    "net-mutate",
     #: T-0771: `frob.strata._threat.DEFAULT_BENIGN_CAPABILITIES` excuses
     #: THREAT005 against the tier-2 `_effects.py::_KIND_MAP`-NORMALIZED
     #: observed kind (`net.connect`/`net.listen`, mode-qualified, the same
