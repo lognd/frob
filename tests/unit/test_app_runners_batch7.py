@@ -766,6 +766,36 @@ class TestTicketStart:
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0002"].state != TicketState.IN_PROGRESS
 
+    # frob:ticket T-2455
+    def test_short_dissimilar_titles_are_not_flagged_as_related(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_\
+        # titles_are_not_flagged_as_related
+        """T-2455 regression, locked in directly at `related_tickets`
+        rather than duplicating the full `new`+`start` flow the test
+        immediately above already exercises for the same "holder"/
+        "collider" pair (DUP002): those two short, GENUINELY unrelated
+        single-word titles scored 0.714 on `related_tickets`' character-
+        level `SequenceMatcher.ratio()` at the old 0.6 threshold -- above
+        the old cutoff, which refused the second `frob ticket new` call
+        in `test_start_refuses_scope_colliding_with_other_in_progress_
+        lease` before that test's own scope-collision assertion ever
+        ran. Must return no match at the CURRENT threshold."""
+        from frob.app.ticket_runner._new import related_tickets
+
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="holder",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
+        )
+        ticket_run(cfg)
+        matches = related_tickets(tmp_path, "collider")
+        assert matches == ()
+
     # frob:ticket T-1880
     def test_start_allows_disjoint_scope(self, tmp_path: Path) -> None:
         # frob:tests \

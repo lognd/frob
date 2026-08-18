@@ -26,10 +26,25 @@ if TYPE_CHECKING:
 _log = get_logger("frob.app.ticket_runner")
 
 # frob:ticket T-1995
-# difflib's own conventional "close enough to be worth a look" cutoff
-# (matching `frob.gates._fix_engine`'s identical use of 0.6 for the same
-# "surface a candidate, do not silently assume identity" purpose).
-_RELATED_TICKET_SIMILARITY_THRESHOLD = 0.6
+# frob:ticket T-2455
+# T-2455: raised from difflib's conventional 0.6 cutoff (still what
+# `frob.gates._fix_engine` uses for its own "surface a candidate, do not
+# silently assume identity" purpose) after a measured false positive at
+# 0.6 -- two short, GENUINELY unrelated single-word titles ("holder"/
+# "collider") scored 0.714 on `SequenceMatcher.ratio()`'s pure
+# character-level comparison, well above 0.6, and refused ticket
+# creation as if they were a duplicate. `SequenceMatcher` has no notion
+# of WORDS -- it is comparing character runs, so two short strings that
+# happen to share several consecutive letters ("older"/"llider") score
+# high regardless of whether they share any actual word. 0.8 keeps a
+# real near-duplicate detected with room to spare (T-1866/T-1986's own
+# reworded-title precedent scores 0.907) while sitting above every
+# measured single/short-word false positive found so far; if a future
+# false positive is found closer to 0.8, the right fix is a token-aware
+# metric (compare WORDS, not raw characters -- the "token/grammar
+# fixes, never lexical" convention this repo already applies elsewhere),
+# not another threshold bump chasing individual pairs.
+_RELATED_TICKET_SIMILARITY_THRESHOLD = 0.8
 _MAX_RELATED_TICKETS_SHOWN = 5
 
 # frob:ticket T-1995
@@ -599,8 +614,12 @@ def _scope_plausibility_warnings(
 # frob:ticket T-1995
 # frob:ticket T-1998
 # frob:doc docs/modules/tickets.md#public-api
+# frob:ticket T-2455
 # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_finds_an_archived_close_title_match kind="unit"  # noqa: E501
 # frob:tests tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch.test_no_match_for_a_genuinely_distinct_title kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_app_runners_batch7.py::TestTicketStart.test_short_dissimilar_titles_a\
+# re_not_flagged_as_related
 def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float], ...]:
     """`(ticket_id, title, state, similarity)` for every ticket -- ACTIVE
     or ARCHIVED -- whose own title is a close textual match to `title`

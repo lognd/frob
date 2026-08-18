@@ -2,7 +2,7 @@
 id: T-2455
 title: related-title duplicate detector false-positives on holder/collider, breaking
   a pre-existing start test
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -18,7 +18,30 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_short_dissimilar_titles_are_not_flagged_as_related
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_scope_colliding_with_other_in_progress_lease
+designated_repro_test: tests/unit/test_app_runners_batch7.py::TestTicketStart::test_short_dissimilar_titles_are_not_flagged_as_related
+designated_repro_changes:
+- old_value: tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_scope_collision_between_short_dissimilar_titles
+  new_value: tests/unit/test_app_runners_batch7.py::TestTicketStart::test_short_dissimilar_titles_are_not_flagged_as_related
+  reason: "Manually verified genuine pre-fix failure by editing _RELATED_TICKET_SIMILARITY_THRESHOLD\
+    \ back to 0.6 in the worktree (no commit boundary available for --check-repro's\
+    \ ancestor-based merge-base resolution, since the new dedupe-replacement test\
+    \ was authored AFTER the fix commit and no pre-fix ancestor commit contains it)\
+    \ and running:\n  pytest tests/unit/test_app_runners_batch7.py::TestTicketStart::test_short_dissimilar_titles_are_not_flagged_as_related\n\
+    Result: AssertionError -- assert (('T-0001', 'holder', 'queued', 0.7142857142857143),)\
+    \ == () -- the exact false-positive match this ticket fixes. Reverted the threshold\
+    \ back to 0.8 immediately after and reconfirmed the suite green."
+  actor: logan
+  at: '2026-08-18'
+evidence_changes:
+- old_node: tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_refuses_scope_collision_between_short_dissimilar_titles
+  new_node: tests/unit/test_app_runners_batch7.py::TestTicketStart::test_short_dissimilar_titles_are_not_flagged_as_related
+  reason: stale evidence id -- test was renamed/replaced in this ticket's own dedupe
+    fix (DUP002); the surviving test is already recorded separately
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false
