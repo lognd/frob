@@ -16,10 +16,91 @@ runs_last: false
 scope:
 - src/frob/lang/**
 - src/frob/gates/_lang_conformance.py
-- docs/**
-- tests/**
+- src/frob/lang/_models.py
+- tests/test_lang.py
+- tests/test_lang_conformance_gate.py
+- tests/test_lang_support.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_models.py
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang_conformance_gate.py
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'T-2446: real deliverables named concretely (capability matrix on the adapter
+    model, a parameterized conformance suite, a conformance gate); src/frob/lang/_models.py
+    is where the shared per-adapter capability declarations live, docs/modules/lang.md
+    is this repo''s one existing language doc (confirmed: ls docs/modules/ shows a
+    single lang.md, not per-language files), and the three named test files are the
+    existing lang/conformance-gate/support suites this ticket extends -- src/frob/gates/_lang_conformance.py
+    was already precisely scoped'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: 'MEASURED 2026-08-17: significant relevant infrastructure already landed (T-0405/T-0406,
