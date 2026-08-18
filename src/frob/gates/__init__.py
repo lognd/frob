@@ -6633,7 +6633,9 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         "profile_schema": _ProcessJob(profile_schema_gate, (st.repo_root,)),
         # T-2390 epic child T-2431: TOPSCALARSCHEMA001 -- cheap, same
         # shape as profile_schema above.
-        "toplevel_scalar_schema": _ProcessJob(toplevel_scalar_schema_gate, (st.repo_root,)),
+        "toplevel_scalar_schema": _ProcessJob(
+            toplevel_scalar_schema_gate, (st.repo_root,)
+        ),
         # T-2390 epic child T-2432: TESTINGSCHEMA001 -- cheap, same
         # shape as toplevel_scalar_schema above.
         "testing_schema": _ProcessJob(testing_schema_gate, (st.repo_root,)),

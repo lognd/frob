@@ -142,7 +142,6 @@ from frob.logging import get_logger
 
 from ._capability_c import _extra_c_binding_operations
 from ._capability_core import (
-    _EXT_LANGUAGE,
     _PATTERNS,
     _SPECIAL_CHECKS,
     ByteSpan,
@@ -163,7 +162,6 @@ from ._capability_scan import (
     _needle_construct_findings,
     _opaque_indirection_findings,
     _OpaqueFinding,
-    _resolved_candidates_for_language,
     _scan_directory_capabilities,
     _scan_directory_fingerprints,
     _scan_file_fingerprints,
@@ -329,14 +327,16 @@ def _extra_binding_operations(
 
 
 # T-2358: `_resolved_candidates_for_language` moved to
-# `_capability_scan.py` (imported above, re-exported unchanged via
-# `__all__` below) -- same reason as `scan_file_capabilities`'s own
-# T-2358 note in that module.
+# `_capability_scan.py`. Unlike this module's other T-2358 moves, it is
+# NOT re-exported here -- nothing imports it via `frob.vet._capability`
+# (verified: no caller does), so the unused import was dead code, not a
+# live re-export; removed rather than added to `__all__`.
 
 
 __all__ = [
     "SCANNED_LANGUAGES",
     "_OpaqueFinding",
+    "_PATTERNS",
     "_SPECIAL_CHECKS",
     "_decode_to_exec_signal",
     "is_self_pattern_path",

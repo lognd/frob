@@ -2,7 +2,7 @@
 id: T-2478
 title: clear the 5-finding lint quarantine raised by T-1135's post-land sweep (E501
   x4, F401 x1)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,9 +13,16 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_query.py
+- src/frob/gates/__init__.py
 - src/frob/gates/_dup_graph_schema.py
 - src/frob/verify/_worker.py
 - src/frob/vet/_capability.py
+evidence_scope:
+- tests/test_capability_registry.py
+- tests/unit/test_dup_graph_table_schema.py
+- tests/test_serve_daemon.py
+- tests/unit/test_app_runners_t2395_contention.py
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +34,27 @@ scope_changes:
     clears
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: T-2462's lease on this file has cleared; adding back to fix the remaining
+    E501 finding
+  actor: logan
+  at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure lint fix: E501 line-wraps and F401 dead-import
+    removal/re-export documentation, no functional/behavioral change to any touched
+    function -- confirmed via all 5 bound tests passing unchanged'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 8823
+  new_length: 9051
+evidence:
+- tests/test_capability_registry.py::TestNoSilentNeedleRegression::test_every_pre_registry_needle_still_fires_somewhere
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_now_fire_reports_the_undeclared_key
+- tests/test_serve_daemon.py::TestPollVerifyWorker::test_head_moved_notifies_the_worker
+- tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_zero_contention_is_explicit_not_silent
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

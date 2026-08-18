@@ -1200,7 +1200,11 @@ def _render_contention_json(outcome: _ContentionOutcome) -> None:
     is not a batching decision -- see `_suggested_contention_batches`)."""
     payload = {
         "entries": [
-            {"file": e.file, "ticket_ids": list(e.ticket_ids), "count": len(e.ticket_ids)}
+            {
+                "file": e.file,
+                "ticket_ids": list(e.ticket_ids),
+                "count": len(e.ticket_ids),
+            }
             for e in outcome.entries
         ],
         "batches": [list(b) for b in outcome.batches if len(b) > 1],

@@ -336,7 +336,8 @@ def _worker_backpressure_reason(
     memory is the secondary OOM-avoidance floor). A module-level function
     (not a `CoalescingWorker` method) taking explicit arguments, matching
     this file's own `_resolve_verification_outcome`/
-    `_advance_watermark_and_compact` ARCH001-split precedent -- also the only shape `frob check`'s WIRE001
+    `_advance_watermark_and_compact` ARCH001-split precedent -- also
+    the only shape `frob check`'s WIRE001
     text-scan can recognize as "called" for a private helper (a bound
     `self.foo(...)` call is always dot-prefixed, which its bare-name scan
     structurally cannot match)."""

@@ -160,7 +160,9 @@ def _raw_table(root: Path, table_name: str) -> dict | None:
 
 
 # frob:ticket T-2437
-def _unknown_key_violation(rule: str, table_name: str, reader: str, key: str) -> Violation:
+def _unknown_key_violation(
+    rule: str, table_name: str, reader: str, key: str
+) -> Violation:
     """One `Severity.ERROR` finding for `rule`: `[<table_name>]` carries
     an undeclared key `key`, silently ignored by `reader`."""
     return Violation(
