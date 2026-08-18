@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 89d13c31bda338182cc06b0c2b9d71bf220c1278
 ---
 T-2480 changed src/frob/gates/_mutation_evidence.py::_spawn_designated_test
 to call frob.process._guard.guarded_subprocess_run DIRECTLY (catching
