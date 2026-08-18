@@ -12,7 +12,6 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/tickets/**
 - docs/design/**
 - tests/**
 scope_breadth_ack: true
@@ -30,6 +29,13 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+scope_changes:
+- op: remove
+  glob: src/frob/tickets/**
+  reason: no code touch required to close this epic -- rollup is a Done report + evidence
+    binding only; the broad glob collides with T-2360's live lease on src/frob/tickets/_profile.py
+  actor: logan
+  at: '2026-08-17'
 evidence:
 - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
 - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
