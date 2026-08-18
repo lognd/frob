@@ -64,6 +64,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2507: T-2507: vet resolves identities then compares them by substring; LEXCHECK001 trigger set misses the in operator
 - T-2509: T-2509: frob ticket evidence --check-repro ignores explicit --base-ref, always resolves to a fixed unrelated commit
 - T-2517: T-2517: fleet_status reports ORPHANED FORKSERVERS 0 while 82 stale pools hold 12GB of swap
+- T-2519: T-2519: confinement census: give parameter-position credit to close 727 of 740 UNKNOWN sites
 
 ## [0.530.0] - unreleased
 

@@ -2,7 +2,7 @@
 id: T-2519
 title: 'confinement census: give parameter-position credit to close 727 of 740 UNKNOWN
   sites'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,17 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/graph/summary.py
+evidence_scope:
+- tests/unit/test_confinement_lattice.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_confinement_lattice.py::TestParam0Credit::test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted
+- tests/unit/test_confinement_lattice.py::TestParam0Credit::test_helper_that_escapes_its_param_gets_no_credit
+- tests/unit/test_confinement_lattice.py::TestParam0Credit::test_helper_with_one_unrooted_caller_gets_no_credit_for_any_site
+- tests/unit/test_confinement_lattice.py::TestParam0Credit::test_helper_never_called_gets_no_credit
 designated_repro_test: null
 threat: null
 component: null

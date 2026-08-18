@@ -149,3 +149,104 @@ class TestConfinementLatticeHelperPropagation:
         site = result.sites[0]
         assert site.symref.endswith("::test_uses_helper")
         assert site.state is ConfinementState.ROOTED
+
+
+class TestParam0Credit:
+    """T-2519: a private helper that writes DIRECTLY to its own first
+    positional parameter (never returning it, unlike `TestConfinement
+    LatticeHelperPropagation` above) gets ROOTED credit at exactly that
+    site once every observed call site in the corpus passes it a
+    provably ROOTED argument -- closing the 727-of-740-UNKNOWN gap
+    T-2504's census measured."""
+
+    def test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted(
+        self, tmp_path: Path
+    ) -> None:
+        """POSITIVE CONTROL: the exact `_write_fixture(tmp: Path)` shape
+        the ticket names -- writes to its own param, never returns it,
+        called ONLY with a `tmp_path`-derived argument -- resolves
+        ROOTED, not UNKNOWN."""
+        sample = _write_sample(
+            tmp_path,
+            'from pathlib import Path\n'
+            'def _write_fixture(tmp: Path):\n'
+            '    target = tmp / "sub" / "file.txt"\n'
+            '    target.write_text("hi")\n'
+            'def test_uses_fixture(tmp_path):\n'
+            '    _write_fixture(tmp_path)\n',
+        )
+        facts = scan_confinement_facts(tmp_path, [sample.name])
+        result = compute_confinement_summaries(facts, list(facts))
+        assert result.counts["unknown"] == 0
+        assert result.counts["rooted"] == 1
+        site = result.sites[0]
+        assert site.symref.endswith("::_write_fixture")
+        assert site.state is ConfinementState.ROOTED
+
+    def test_helper_that_escapes_its_param_gets_no_credit(
+        self, tmp_path: Path
+    ) -> None:
+        """NEGATIVE CONTROL, mandatory both-directions requirement: a
+        helper that REASSIGNS its own parameter to an absolute literal
+        before writing must NOT receive credit -- it must resolve
+        ESCAPED (the reassignment is a real, provable escape), never a
+        false ROOTED pass just because it was called with a rooted
+        argument."""
+        sample = _write_sample(
+            tmp_path,
+            'from pathlib import Path\n'
+            'def _escapes_param(tmp: Path):\n'
+            '    tmp = Path("/etc/evil")\n'
+            '    tmp.write_text("bad")\n'
+            'def test_uses_escaping_helper(tmp_path):\n'
+            '    _escapes_param(tmp_path)\n',
+        )
+        facts = scan_confinement_facts(tmp_path, [sample.name])
+        result = compute_confinement_summaries(facts, list(facts))
+        assert result.counts["rooted"] == 0
+        assert result.counts["escaped"] == 1
+        site = result.sites[0]
+        assert site.symref.endswith("::_escapes_param")
+        assert site.state is ConfinementState.ESCAPED
+
+    def test_helper_with_one_unrooted_caller_gets_no_credit_for_any_site(
+        self, tmp_path: Path
+    ) -> None:
+        """A helper called from TWO sites, only one of which passes a
+        provably ROOTED argument, must NOT receive credit at all -- a
+        partial-evidence credit would be unsound (the helper's write
+        genuinely is unrooted on the OTHER caller's path). Stays
+        UNKNOWN, never a false ROOTED."""
+        sample = _write_sample(
+            tmp_path,
+            'from pathlib import Path\n'
+            'def _mixed_calls(tmp: Path):\n'
+            '    (tmp / "x.txt").write_text("mixed")\n'
+            'def test_mixed_good(tmp_path):\n'
+            '    _mixed_calls(tmp_path)\n'
+            'def test_mixed_bad():\n'
+            '    _mixed_calls(Path("/tmp/not_rooted"))\n',
+        )
+        facts = scan_confinement_facts(tmp_path, [sample.name])
+        result = compute_confinement_summaries(facts, list(facts))
+        assert result.counts["rooted"] == 0
+        assert result.counts["unknown"] == 1
+        site = result.sites[0]
+        assert site.symref.endswith("::_mixed_calls")
+        assert site.state is ConfinementState.UNKNOWN
+
+    def test_helper_never_called_gets_no_credit(self, tmp_path: Path) -> None:
+        """A helper with ZERO observed call sites (never invoked anywhere
+        in the scanned corpus) has no evidence to credit against --
+        absence of evidence is not evidence of confinement. Stays
+        UNKNOWN, same as before T-2519."""
+        sample = _write_sample(
+            tmp_path,
+            'from pathlib import Path\n'
+            'def _never_called(tmp: Path):\n'
+            '    (tmp / "x.txt").write_text("orphan")\n',
+        )
+        facts = scan_confinement_facts(tmp_path, [sample.name])
+        result = compute_confinement_summaries(facts, list(facts))
+        assert result.counts["unknown"] == 1
+        assert result.counts["rooted"] == 0

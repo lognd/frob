@@ -710,6 +710,85 @@ would likely resolve the large majority of the 727 -- concentrated in a
 small number of files (`tests/test_ticket_land.py` alone is 28% of it).
 This is NOT built by this ticket; T-2504's own scope is the census only.
 
+### Parameter-position confinement credit (T-2519)
+
+<!-- frob:describes src/frob/graph/summary.py::_compute_param0_credit -->
+
+REPORT-ONLY still (nothing wired into `frob check`; no severity
+assigned): a targeted precision improvement over T-2504's first pass,
+closing part of the "727 of 740 UNKNOWN is one disclosed precision
+limit" gap that census identified.
+
+A private helper's OWN `fs.write` site that references its first
+positional parameter DIRECTLY (`_write_fixture(tmp: Path): (tmp /
+"x").write_text(...)`, never returning `tmp`) now resolves `ROOTED`
+instead of an unconditional `UNKNOWN`, but ONLY when `_compute_param0_
+credit` can prove EVERY observed call to that helper anywhere in the
+scanned corpus passes a concrete `ROOTED` argument for that parameter --
+a single unrooted/unprovable caller anywhere disqualifies credit for
+ALL of that helper's sites (never a partial, unsound pass). A helper
+that reassigns its own parameter to something escaping (`tmp =
+Path("/etc/x")`) is unaffected -- that reassignment already resolves
+`ESCAPED` through the existing local-variable tracking before this
+credit mechanism is ever consulted, so an escaping helper can never
+receive credit by construction, not by a special-cased check.
+
+Same single-first-positional-argument scope `_Pending`'s own `arg_state`
+already uses (disclosed there) -- a helper credited/blamed via any OTHER
+parameter position, or via a keyword-only argument, is not modeled.
+
+**Census re-run (2026-08-18, same `tests/**` corpus, apples-to-apples
+against the SAME file set to isolate the credit mechanism's own effect
+from unrelated corpus growth between census runs):**
+
+```
+                    BEFORE T-2519   AFTER T-2519    DELTA
+ROOTED                   2255           2323         +68
+ESCAPED                     1              1           0
+UNKNOWN                   741            673         -68
+```
+
+**The finding, not the hoped-for number:** the ticket's own framing
+("give parameter-position credit to close 727 of 740 UNKNOWN sites")
+anticipated resolving the large majority of the gap; the credit
+mechanism as built and measured resolves only 68 of 727 (9.2%). Two
+concrete, disclosed reasons, in order of actual measured impact:
+
+1. **The private-callee-only resolution boundary, not the credit rule
+   itself, is the dominant remaining limiter.** Both this engine and the
+   underlying `CallGraph` it is hosted on (`build_call_graph`) only ever
+   resolve calls to PRIVATE (leading-underscore) callees -- a deliberate,
+   pre-existing design choice (see "Call graph" above: this is what lets
+   `closure` stop at the public API boundary for free). Inspecting
+   `tests/test_ticket_land.py` (208 of the original 727, the single
+   largest concentration) shows most of its remaining UNKNOWN sites are
+   NOT `_write_fixture(tmp)`-shaped helper calls at all -- they are
+   writes to a local variable (`wt`, `repo`) assigned INSIDE a test
+   METHOD from a call to a PUBLICLY-named test fixture/helper (no
+   leading underscore), which this pass's `_classify_call` never even
+   attempts to track as a `_Pending` marker, by the same convention
+   `build_call_graph` already applies repo-wide. Extending param0-credit
+   (or ANY interprocedural credit) to public-named helpers would require
+   a genuinely different call-resolution boundary, a repo-wide policy
+   decision out of this ticket's own scope.
+2. **The all-callers-rooted + single-first-positional-argument
+   constraints** (both deliberate, both load-bearing for soundness) cut
+   real cases too: any helper called from even one test with a
+   not-provably-rooted argument (common in fixture-heavy test files that
+   mix `tmp_path`-derived and hand-built paths across different tests)
+   gets no credit at all, and a helper crediting a SECOND or keyword
+   parameter is invisible to this pass regardless of how it is called.
+
+**What this means for the epic's gate decision:** parameter-position
+credit is a real, sound, positive-control-verified improvement (verified
+both directions: the escaping-param negative control, T-2519's own
+ticket-mandated third control, correctly stays `ESCAPED`/gets no
+credit), but it is NOT, on its own, sufficient to convert the bulk of
+the remaining UNKNOWN tail into `ROOTED`. The single largest further
+lever is the private-callee-only resolution boundary identified above --
+a repo-wide call-resolution policy question, not a lattice change,
+appropriately out of scope for a report-only measurement ticket.
+
 ## Comment DSL
 
 <!-- frob:describes src/frob/graph/dsl.py::parse_directives -->

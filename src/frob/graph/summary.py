@@ -980,11 +980,30 @@ class _RawFuncFacts:
     resolution: its `fs.write` sites (path repr + locally-resolved state,
     possibly `_Pending` on a private callee) and its own return
     expression's state (same shape) -- `compute_confinement_summaries`
-    finalizes both against the real call graph's callee summaries."""
+    finalizes both against the real call graph's callee summaries.
+
+    T-2519: `first_param` is this function's own first positional
+    parameter name (excluding a bound-method `self`/`cls` receiver),
+    `None` if it takes none -- the SAME single-first-positional-argument
+    convention `_Pending`'s own `arg_state` already uses, now also the
+    parameter `_compute_param0_credit` checks callers against. `calls_
+    made` is every call this function makes to a name that LOOKS like a
+    private helper (Python's leading-underscore convention), regardless
+    of whether the call's result is used -- `(placeholder_callee_id,
+    first_arg_state)` pairs, resolved to real symrefs the same way
+    `_Pending.callee` is (`_resolve_pending_placeholders`). This is the
+    corpus `_compute_param0_credit` aggregates over to determine whether
+    a callee's first parameter is ALWAYS passed a provably `ROOTED`
+    argument -- the evidence T-2519's parameter-position credit needs
+    that a `_Pending`-only view (calls whose result feeds a site/return)
+    cannot see: the common `_write_fixture(tmp_path)` bare-statement
+    shape, called for its SIDE EFFECT, never assigned or returned."""
 
     symref: str
     sites: tuple[tuple[int, str, _LocalState], ...]
     return_state: _LocalState | None
+    first_param: str | None = None
+    calls_made: tuple[tuple[str, _LocalState], ...] = ()
 
 
 def _qualname_stack(node: ast.AST, stack: tuple[str, ...] = ()) -> None:
@@ -1020,6 +1039,57 @@ def _iter_functions(
     return out
 
 
+# frob:ticket T-2519
+def _first_positional_param(func: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
+    """`func`'s own first positional parameter name (T-2519), skipping a
+    bound-method `self`/`cls` receiver -- `None` if it takes no eligible
+    positional parameter at all. The single parameter `_compute_param0_
+    credit` checks every observed caller against, matching the SAME
+    single-first-positional-argument simplification `_Pending`'s own
+    `arg_state` already uses (see its docstring) -- not a NEW, wider
+    interprocedural analysis, the same one-hop convention applied a
+    second place."""
+    candidates = [
+        a.arg
+        for a in (*func.args.posonlyargs, *func.args.args)
+        if a.arg not in ("self", "cls")
+    ]
+    return candidates[0] if candidates else None
+
+
+# frob:ticket T-2519
+def _record_call_exprs(
+    node: ast.AST,
+    locals_: Mapping[str, _LocalState],
+    params: frozenset[str],
+    sites: list[tuple[int, str, _LocalState]],
+    calls_made: list[tuple[str, _LocalState]],
+) -> None:
+    """`_scan_function_facts`'s per-statement call walk, split out to keep
+    that function under ARCH001's length threshold (T-2504/T-2519):
+    walks every `ast.Call` under `node`, appending any recognized
+    `fs.write`-shaped site to `sites` (T-2504) and any call to a
+    private-looking helper (regardless of whether its result is used)
+    to `calls_made` (T-2519, the evidence `_compute_param0_credit`
+    aggregates over) -- mutates both lists in place, matching the
+    accumulator shape `_scan_function_facts`'s own per-statement loop
+    already uses for `sites`/`return_state`."""
+    for child in ast.walk(node):
+        if not isinstance(child, ast.Call):
+            continue
+        site = _fs_write_site(child, locals_, params)
+        if site is not None:
+            path_repr, state = site
+            sites.append((child.lineno, path_repr, state))
+        if (
+            isinstance(child.func, ast.Name)
+            and child.func.id.startswith("_")
+            and child.args
+        ):
+            arg0_state = _classify_expr(child.args[0], locals_, params)
+            calls_made.append((f"?private:{child.func.id}", arg0_state))
+
+
 def _scan_function_facts(
     qualname: str, func: ast.FunctionDef | ast.AsyncFunctionDef
 ) -> _RawFuncFacts:
@@ -1043,17 +1113,14 @@ def _scan_function_facts(
         a.arg
         for a in (*func.args.posonlyargs, *func.args.args, *func.args.kwonlyargs)
     )
+    first_param = _first_positional_param(func)
     locals_: dict[str, _LocalState] = {}
     sites: list[tuple[int, str, _LocalState]] = []
+    calls_made: list[tuple[str, _LocalState]] = []
     return_state: _LocalState | None = None
 
     def visit_call_exprs(node: ast.AST) -> None:
-        for child in ast.walk(node):
-            if isinstance(child, ast.Call):
-                site = _fs_write_site(child, locals_, params)
-                if site is not None:
-                    path_repr, state = site
-                    sites.append((child.lineno, path_repr, state))
+        _record_call_exprs(node, locals_, params, sites, calls_made)
 
     for stmt in func.body:
         if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
@@ -1072,7 +1139,11 @@ def _scan_function_facts(
             visit_call_exprs(stmt)
 
     return _RawFuncFacts(
-        symref=qualname, sites=tuple(sites), return_state=return_state
+        symref=qualname,
+        sites=tuple(sites),
+        return_state=return_state,
+        first_param=first_param,
+        calls_made=tuple(calls_made),
     )
 
 
@@ -1156,6 +1227,12 @@ def _resolve_pending_placeholders(
             )
         return state
 
+    def resolve_callee_name(symref: str, callee_placeholder: str) -> str:
+        if callee_placeholder.startswith("?private:"):
+            short_name = callee_placeholder.removeprefix("?private:")
+            return _resolve_callee_symref(symref, short_name, facts)
+        return callee_placeholder
+
     out: dict[str, _RawFuncFacts] = {}
     for symref, raw in facts.items():
         sites = tuple(
@@ -1167,7 +1244,17 @@ def _resolve_pending_placeholders(
             if raw.return_state is not None
             else None
         )
-        out[symref] = _RawFuncFacts(symref=symref, sites=sites, return_state=return_state)
+        calls_made = tuple(
+            (resolve_callee_name(symref, callee), arg_state)
+            for callee, arg_state in raw.calls_made
+        )
+        out[symref] = _RawFuncFacts(
+            symref=symref,
+            sites=sites,
+            return_state=return_state,
+            first_param=raw.first_param,
+            calls_made=calls_made,
+        )
     return out
 
 
@@ -1225,19 +1312,42 @@ def _resolve_state(
 
 
 def _finalize_function(
-    raw: _RawFuncFacts, summaries: Mapping[str, FunctionConfinement]
+    raw: _RawFuncFacts,
+    summaries: Mapping[str, FunctionConfinement],
+    param0_credit: Mapping[str, bool],
 ) -> FunctionConfinement:
     """`raw`'s own facts finalized into a real `FunctionConfinement`
     against already-computed `summaries` -- `compute_confinement_
     summaries`'s per-function finalization step, shared by both the
     singleton and recursive-SCC branches (mirroring `_singleton_summary`/
-    `_fixpoint_scc_summaries`'s shared `_join_from_callees` above)."""
+    `_fixpoint_scc_summaries`'s shared `_join_from_callees` above).
+
+    T-2519: `param0_credit.get(raw.symref)` is `True` only when EVERY
+    observed caller of `raw.symref` in the whole corpus passes a
+    provably `ROOTED` argument for `raw.first_param`
+    (`_compute_param0_credit`) -- when that holds, a site referencing
+    `_ParamRef(raw.first_param)` DIRECTLY (this function writes straight
+    to its own first parameter, never escaping it -- an escaping
+    reassignment already flows through `locals_` to a concrete `ESCAPED`
+    state before reaching here, per `_classify_expr`'s own docstring, so
+    it never appears as a bare `_ParamRef` in the first place) resolves
+    `ROOTED` instead of the pre-T-2519 unconditional `UNKNOWN`. A
+    `_ParamRef` for any OTHER parameter, or with no credit on record,
+    still resolves `UNKNOWN` via `_resolve_state` unchanged -- the
+    lattice is never weakened for a case this pass cannot prove."""
+    credited = param0_credit.get(raw.symref, False) and raw.first_param is not None
+
+    def resolve_site_state(state: _LocalState) -> tuple[ConfinementState, str | None]:
+        if credited and isinstance(state, _ParamRef) and state.name == raw.first_param:
+            return ConfinementState.ROOTED, None
+        return _resolve_state(state, summaries)
+
     sites = tuple(
         FsWriteSite(
             symref=raw.symref,
             lineno=lineno,
             path_repr=path_repr,
-            state=(resolved := _resolve_state(state, summaries))[0],
+            state=(resolved := resolve_site_state(state))[0],
             poison_source=resolved[1],
         )
         for lineno, path_repr, state in raw.sites
@@ -1260,6 +1370,7 @@ def _fixpoint_confinement_scc(
     members: list[str],
     resolved_facts: Mapping[str, _RawFuncFacts],
     summaries: Mapping[str, FunctionConfinement],
+    param0_credit: Mapping[str, bool],
 ) -> dict[str, FunctionConfinement]:
     """One recursive cluster's (mutual/self-recursive private helpers)
     `FunctionConfinement`s, iterating the join to a fixpoint -- `compute_
@@ -1267,14 +1378,17 @@ def _fixpoint_confinement_scc(
     function under ARCH001's length threshold (T-2504). Bounded the same
     way `_fixpoint_scc_summaries` bounds the protocol engine's own
     recursive case; non-convergence poisons every member `UNKNOWN`
-    rather than reporting a partial result."""
+    rather than reporting a partial result. `param0_credit` (T-2519) is
+    threaded through unchanged -- it is corpus-wide, computed once
+    before the SCC worklist runs, not re-derived per iteration."""
     current = {
         m: FunctionConfinement(symref=m) for m in members if m in resolved_facts
     }
     for _iteration in range(_DEFAULT_MAX_ITERATIONS):
         combined = {**summaries, **current}
         next_round = {
-            m: _finalize_function(resolved_facts[m], combined) for m in current
+            m: _finalize_function(resolved_facts[m], combined, param0_credit)
+            for m in current
         }
         if next_round == current:
             return next_round
@@ -1306,6 +1420,49 @@ def _tally_poison_sources(sites: Sequence[FsWriteSite]) -> dict[str, int]:
     return poison_sources
 
 
+# frob:ticket T-2519
+# frob:tests tests/unit/test_confinement_lattice.py::TestParam0Credit.test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted  # noqa: E501
+def _compute_param0_credit(resolved_facts: Mapping[str, _RawFuncFacts]) -> dict[str, bool]:
+    """`{callee_symref: True}` for every private helper whose declared
+    first positional parameter (`_first_positional_param`) is passed a
+    provably `ROOTED` argument at EVERY observed call site anywhere in
+    `resolved_facts` (T-2519) -- the parameter-position confinement
+    credit this ticket adds: a helper that writes directly to (or is
+    called for the side effect of writing to) its own first parameter,
+    without ever escaping it, is safe to treat as `ROOTED` at exactly
+    that parameter's uses once every caller in the corpus is PROVEN to
+    pass it a rooted value.
+
+    Deliberately corpus-wide and order-independent (computed once, before
+    the bottom-up SCC worklist runs) -- unlike `return_depends_on_param`'s
+    per-call resolution (which only needs THAT call's own argument),
+    crediting a direct in-body write needs to know about EVERY call site
+    across the whole scanned corpus, since a single caller passing an
+    unrooted/unprovable argument would make the credit unsound for ALL
+    of that helper's sites, not just that one call.
+
+    A helper with ZERO observed calls (never invoked anywhere in
+    `resolved_facts` -- e.g. dead code, or invoked only via a mechanism
+    this pass cannot see, like `getattr`/a fixture-injection framework)
+    gets NO credit: absence of evidence is not evidence of confinement,
+    the same NO-FAIL-SILENT posture as every other unprovable case in
+    this module. A helper with at least one call passing anything other
+    than a concrete `ConfinementState.ROOTED` (an `ESCAPED` argument, an
+    `UNKNOWN` one, or a still-symbolic `_ParamRef`/`_Pending` this pass
+    could not itself resolve to a concrete value) also gets no credit --
+    the lattice is never weakened for a case this pass cannot prove for
+    100% of observed callers."""
+    calls_by_callee: dict[str, list[_LocalState]] = {}
+    for raw in resolved_facts.values():
+        for callee, arg_state in raw.calls_made:
+            calls_by_callee.setdefault(callee, []).append(arg_state)
+    return {
+        callee: True
+        for callee, states in calls_by_callee.items()
+        if states and all(state is ConfinementState.ROOTED for state in states)
+    }
+
+
 # frob:doc docs/modules/graph.md#path-confinement-census
 # frob:ticket T-2504
 # frob:tests tests/unit/test_confinement_lattice.py::TestConfinementLatticeHelperPropagation.test_helper_return_value_confinement_propagates_to_caller_site  # noqa: E501
@@ -1330,6 +1487,7 @@ def compute_confinement_summaries(
     sites `UNKNOWN` rather than reporting a partial result, the same
     NO-FAIL-SILENT posture that engine already holds."""
     resolved_facts = _resolve_pending_placeholders(facts)
+    param0_credit = _compute_param0_credit(resolved_facts)
     callgraph = _build_confinement_callgraph(resolved_facts)
     universe = set(resolved_facts) | set(entrypoints)
     reachable = _reachable(callgraph, entrypoints, universe)
@@ -1345,13 +1503,13 @@ def compute_confinement_summaries(
             member = members[0]
             raw = resolved_facts.get(member)
             summaries[member] = (
-                _finalize_function(raw, summaries)
+                _finalize_function(raw, summaries, param0_credit)
                 if raw is not None
                 else FunctionConfinement(symref=member)
             )
             continue
         summaries.update(
-            _fixpoint_confinement_scc(members, resolved_facts, summaries)
+            _fixpoint_confinement_scc(members, resolved_facts, summaries, param0_credit)
         )
 
     all_sites = tuple(
