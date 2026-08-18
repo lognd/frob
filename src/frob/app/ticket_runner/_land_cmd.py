@@ -1727,7 +1727,29 @@ def _resolve_land_root(root: Path, worktree: Path, ticket_id: str) -> Path:
     worktree` -- resolving it here too (same shared helper, not a re-
     implementation) keeps those post-land steps pointed at the real
     primary checkout instead of silently reporting against/pushing
-    from/removing the worktree path that was never actually landed onto."""
+    from/removing the worktree path that was never actually landed onto.
+
+    T-1884: this MUST run once, up front in `_land`, before `_land_core`
+    -- NOT after. No call site at the `_land` level used to actually
+    call this at all: `_land_core_prepare` resolves its OWN internal
+    `root` local for the merge/commit itself, and that resolved value
+    was never threaded back out. When `root` starts out equal to
+    `worktree` (a `frob ticket land` invoked with cwd inside the
+    worktree, or `--worktree` doubling as the effective root), `_land`'s
+    own `root` stayed pointed at the worktree for every step below --
+    `_report_land_result`, an optional `_push_after_land`, and (T-1884's
+    own measured incident, T-1895) `_finish_land_after_success`'s
+    `_print_land_proof` call, which computes `is_ancestor_of_main` via
+    `git -C root merge-base --is-ancestor <sha> main` against the WRONG
+    checkout -- the worktree branch the commit was merged FROM, not the
+    primary checkout it was merged ONTO. That checkout never receives
+    the commit under its own `main` ref, so the ancestry check reads
+    `False` even though the land fully succeeded -- not a ref-update
+    visibility race, a query against the wrong directory entirely.
+    Calling this once, up front in `_land`, and reusing the same value
+    for `_land_core` and every post-land step closes this: there is
+    only one `root` for the whole call, and it is always the real
+    primary checkout."""
     from frob.tickets._land import _resolve_primary_checkout
 
     if root.resolve() != worktree.resolve():
@@ -2069,6 +2091,22 @@ def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) ->
             worktree,
         )
         return
+    if not _auto_sync_worktree_is_clean(worktree, ticket_id):
+        return
+    main_branch = _auto_sync_resolve_main_branch(root, ticket_id)
+    if main_branch is None:
+        return
+    _attempt_auto_sync_merge(worktree, ticket_id, branch, main_branch)
+
+
+# frob:ticket T-2322
+def _auto_sync_worktree_is_clean(worktree: Path, ticket_id: str) -> bool:
+    """`True` iff `worktree` is clean (`git status --porcelain` reports
+    nothing), logging the SAME skip messages `_auto_sync_worktree_onto_
+    main` used to log inline (T-2322 ARCH001 split, zero behavior
+    change) for the two ways this can come back `False`: the status
+    check itself failed (unknown state -- WARNING), or the worktree
+    genuinely has uncommitted changes (DEBUG, expected/routine)."""
     dirty = run_argv(["git", "-C", str(worktree), "status", "--porcelain"])
     if dirty.is_err or dirty.danger_ok.returncode != 0:
         _log.warning(
@@ -2077,7 +2115,7 @@ def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) ->
             ticket_id,
             worktree,
         )
-        return
+        return False
     if dirty.danger_ok.stdout.strip():
         _log.debug(
             "ticket land: %s auto-sync skipped -- %s has uncommitted "
@@ -2087,7 +2125,16 @@ def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) ->
             ticket_id,
             worktree,
         )
-        return
+        return False
+    return True
+
+
+# frob:ticket T-2322
+def _auto_sync_resolve_main_branch(root: Path, ticket_id: str) -> str | None:
+    """`root`'s current branch name (the auto-sync merge target), or
+    `None` (logged at WARNING) if it could not be resolved (T-2322
+    ARCH001 split of `_auto_sync_worktree_onto_main`, zero behavior
+    change)."""
     main_ref = run_argv(["git", "-C", str(root), "rev-parse", "--abbrev-ref", "HEAD"])
     if main_ref.is_err or main_ref.danger_ok.returncode != 0:
         _log.warning(
@@ -2096,8 +2143,19 @@ def _auto_sync_worktree_onto_main(root: Path, worktree: Path, ticket_id: str) ->
             ticket_id,
             root,
         )
-        return
-    main_branch = main_ref.danger_ok.stdout.strip()
+        return None
+    return main_ref.danger_ok.stdout.strip()
+
+
+# frob:ticket T-2322
+def _attempt_auto_sync_merge(
+    worktree: Path, ticket_id: str, branch: str, main_branch: str
+) -> None:
+    """Attempts `git merge --no-edit main_branch` in `worktree` and logs
+    the outcome (T-2322 ARCH001 split of `_auto_sync_worktree_onto_main`,
+    zero behavior change): success logs INFO; failure/conflict aborts
+    the merge (restoring `worktree` to its exact pre-merge state) and
+    logs a WARNING naming the manual recovery command."""
     merge_argv = ["git", "-C", str(worktree), "merge", "--no-edit", main_branch]
     with _land_internal_git_env():
         merged = run_argv(merge_argv)
@@ -3056,20 +3114,7 @@ def _land(root: Path, cfg: AppConfig) -> None:
     real commit (`_verified_reset_root` on a staged-but-uncommitted tree),
     unlike the post-land sweep's own post-commit `git reset --hard`
     below, which stays wired in unchanged as a cheap final assertion."""
-    if cfg.ticket_land_plan:
-        _land_plan_cmd(root, cfg)
-        return
-
-    if cfg.ticket_land_queue:
-        _land_enqueue(root, cfg)
-        return
-
-    if cfg.ticket_land_drain:
-        _land_drain(root, cfg)
-        return
-
-    if cfg.ticket_land_run_mutation_sweep:
-        _run_batch_mutation_sweep(root)
+    if _dispatch_land_mode(root, cfg):
         return
 
     _require_land_args(cfg)
@@ -3078,31 +3123,8 @@ def _land(root: Path, cfg: AppConfig) -> None:
     worktree = cfg.ticket_worktree
 
     # frob:ticket T-1884
-    # T-1884: resolve `root` HERE, once, before `_land_core` runs -- NOT
-    # after. `_resolve_land_root`'s own docstring already documented the
-    # intent ("this CLI wrapper's own `root` local is used AGAIN after
-    # `land()` returns ... resolving it here too keeps those post-land
-    # steps pointed at the real primary checkout"), but no call site at
-    # this level ever actually existed: `_land_core_prepare` resolves its
-    # OWN internal `root` local for the merge/commit itself, and that
-    # resolved value was never threaded back out to this function. When
-    # `root` starts out equal to `worktree` (a `frob ticket land`
-    # invoked with cwd inside the worktree, or `--worktree` doubling as
-    # the effective root), this function's `root` stayed pointed at the
-    # worktree for every step below -- `_report_land_result`, an
-    # optional `_push_after_land`, and (T-1884's own measured incident,
-    # T-1895) `_finish_land_after_success`'s `_print_land_proof` call,
-    # which computes `is_ancestor_of_main` via `git -C root merge-base
-    # --is-ancestor <sha> main` against the WRONG checkout -- the
-    # worktree branch the commit was merged FROM, not the primary
-    # checkout it was merged ONTO. That checkout never receives the
-    # commit under its own `main` ref, so the ancestry check reads
-    # `False` even though the land fully succeeded -- not a ref-update
-    # visibility race, a query against the wrong directory entirely.
-    # Resolving once, up front, and reusing the SAME value for
-    # `_land_core` and every post-land step below closes this: there is
-    # only one `root` for the whole call, and it is always the real
-    # primary checkout.
+    # See _resolve_land_root's own docstring for the full incident this
+    # ordering (once, up front, before _land_core) fixes.
     root = _resolve_land_root(root, worktree, cfg.ticket_id)
 
     # frob:ticket T-2108
@@ -3124,6 +3146,30 @@ def _land(root: Path, cfg: AppConfig) -> None:
         _push_after_land(root, report)
 
     _finish_land_after_success(root, worktree, report, cfg)
+
+
+# frob:ticket T-2322
+def _dispatch_land_mode(root: Path, cfg: AppConfig) -> bool:
+    """`True` iff `cfg` requested one of `_land`'s non-default modes
+    (`--plan`/`--queue`/`--drain`/`--run-mutation-sweep`) and this
+    already ran and returned it -- `_land` returns immediately when this
+    is `True` (T-2322 ARCH001 split, zero behavior change: identical
+    branch order/bodies, just pulled out of `_land`'s own body). `False`
+    means none fired and `_land` should proceed with its ordinary
+    merge-check-splice-close-commit path."""
+    if cfg.ticket_land_plan:
+        _land_plan_cmd(root, cfg)
+        return True
+    if cfg.ticket_land_queue:
+        _land_enqueue(root, cfg)
+        return True
+    if cfg.ticket_land_drain:
+        _land_drain(root, cfg)
+        return True
+    if cfg.ticket_land_run_mutation_sweep:
+        _run_batch_mutation_sweep(root)
+        return True
+    return False
 
 
 # frob:ticket T-1444
@@ -3451,6 +3497,57 @@ _DOC_TEST_EDGE_FAMILIES: tuple[tuple[str, str, str], ...] = (
 )
 
 
+# frob:ticket T-2322
+def _new_public_symbols_in_file_missing_doc_or_test_edge(
+    worktree: Path, merge_base: str, rel_path: str
+) -> list[tuple[str, str, int, list[str]]]:
+    """Per-file body of `_new_public_symbols_missing_doc_or_test_edge`
+    (T-2322 ARCH001 split, zero behavior change): every (file, name,
+    lineno, missing_families) finding for ONE already-filtered `.py`
+    `rel_path` -- reads `rel_path`'s current content plus its content at
+    `merge_base`, diffs the public top-level def names, and checks each
+    NEW one's preceding comment block for the doc/test-edge directive
+    pair. Returns `[]` (never an error) for a file that no longer exists,
+    fails to read, or introduces no new public symbols."""
+    from frob.tickets._land import _genuine_comment_lines
+
+    full = worktree / rel_path
+    if not full.is_file():
+        return []
+    try:
+        source = full.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    new_defs = _public_top_level_defs(source)
+    if not new_defs:
+        return []
+    old = run_argv(["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"])
+    old_names: set[str] = set()
+    if old.is_ok and old.danger_ok.returncode == 0:
+        old_names = set(_public_top_level_defs(old.danger_ok.stdout))
+    lines = source.splitlines()
+    genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
+    findings: list[tuple[str, str, int, list[str]]] = []
+    # frob:waive PERF004 reason="new_defs is recomputed fresh from THIS file's own \
+    # source a few lines above (_public_top_level_defs(source)) on every call to this \
+    # function, one call per touched file -- there is no shared/invariant collection \
+    # to hoist the sort of; each call genuinely sorts different data (T-2321, T-2322)"
+    for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
+        if name in old_names:
+            continue
+        block = _frob_directive_block(lines, lineno, genuine_lines)
+        block_text = "\n".join(block)
+        missing = [
+            label
+            for label, directive, waive_rule in _DOC_TEST_EDGE_FAMILIES
+            if directive not in block_text
+            and f"frob:waive {waive_rule}" not in block_text
+        ]
+        if missing:
+            findings.append((rel_path, name, lineno, missing))
+    return findings
+
+
 def _new_public_symbols_missing_doc_or_test_edge(
     worktree: Path, merge_base: str, touched_paths: frozenset[str]
 ) -> list[tuple[str, str, int, list[str]]]:
@@ -3478,48 +3575,17 @@ def _new_public_symbols_missing_doc_or_test_edge(
     the passenger-ticket check; this reuses the same machinery rather
     than inventing a second answer to "is this line a genuine
     directive?")."""
-    from frob.tickets._land import _genuine_comment_lines
-
     findings: list[tuple[str, str, int, list[str]]] = []
     for rel_path in sorted(touched_paths):
         if not rel_path.endswith(".py"):
             continue
-        full = worktree / rel_path
-        if not full.is_file():
-            continue
         if _is_generated_or_test_path(worktree, rel_path):
             continue
-        try:
-            source = full.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        new_defs = _public_top_level_defs(source)
-        if not new_defs:
-            continue
-        old = run_argv(["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"])
-        old_names: set[str] = set()
-        if old.is_ok and old.danger_ok.returncode == 0:
-            old_names = set(_public_top_level_defs(old.danger_ok.stdout))
-        lines = source.splitlines()
-        genuine_lines = _genuine_comment_lines(worktree, None, rel_path)
-        # frob:waive PERF004 reason="new_defs is recomputed fresh from THIS file's own \
-        # source two lines above (_public_top_level_defs(source)) on every outer \
-        # for-rel_path-in-touched_paths iteration -- there is no shared/invariant \
-        # collection to hoist the sort of; each iteration genuinely sorts different \
-        # data (T-2321)"
-        for name, lineno in sorted(new_defs.items(), key=lambda kv: kv[1]):
-            if name in old_names:
-                continue
-            block = _frob_directive_block(lines, lineno, genuine_lines)
-            block_text = "\n".join(block)
-            missing = [
-                label
-                for label, directive, waive_rule in _DOC_TEST_EDGE_FAMILIES
-                if directive not in block_text
-                and f"frob:waive {waive_rule}" not in block_text
-            ]
-            if missing:
-                findings.append((rel_path, name, lineno, missing))
+        findings.extend(
+            _new_public_symbols_in_file_missing_doc_or_test_edge(
+                worktree, merge_base, rel_path
+            )
+        )
     return findings
 
 
@@ -3558,20 +3624,32 @@ def _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
     )
     if not findings:
         return
-    for rel_path, name, lineno, missing_families in findings:
-        missing = ", ".join(missing_families)
-        _log.error(
-            "ticket land: %s refused -- %s:%d new public symbol %r has no "
-            "%s edge (T-2114: this family is not relaxed by the rapid "
-            "profile); add it above the def, or add a `frob:waive` with a "
-            "reason if it genuinely does not apply",
-            ticket_id,
-            rel_path,
-            lineno,
-            name,
-            missing,
-        )
+    for finding in findings:
+        _log_new_public_symbol_missing_doc_or_test_edge(ticket_id, finding)
     sys.exit(1)
+
+
+# frob:ticket T-2322
+def _log_new_public_symbol_missing_doc_or_test_edge(
+    ticket_id: str, finding: tuple[str, str, int, list[str]]
+) -> None:
+    """Logs one `_new_public_symbols_missing_doc_or_test_edge` finding's
+    refusal line (T-2322 ARCH103 split of `_assert_new_public_symbols_
+    have_doc_and_test_edge_pre_land`, zero behavior change -- identical
+    message text, one call per finding instead of an inline loop body)."""
+    rel_path, name, lineno, missing_families = finding
+    missing = ", ".join(missing_families)
+    _log.error(
+        "ticket land: %s refused -- %s:%d new public symbol %r has no "
+        "%s edge (T-2114: this family is not relaxed by the rapid "
+        "profile); add it above the def, or add a `frob:waive` with a "
+        "reason if it genuinely does not apply",
+        ticket_id,
+        rel_path,
+        lineno,
+        name,
+        missing,
+    )
 
 
 # frob:ticket T-2214
@@ -3612,6 +3690,28 @@ def _long_function_symrefs_over_threshold(
 
 
 # frob:ticket T-2214
+# frob:ticket T-2322
+def _long_function_symrefs_over_threshold_in_content(
+    content: str, rel_path: str
+) -> set[str]:
+    """Writes `content` to a scratch `.py` file and returns the symrefs
+    `_long_function_symrefs_over_threshold` would flag for it (T-2322
+    ARCH103 split of `_long_function_symrefs_over_threshold_at_merge_
+    base`, zero behavior change) -- isolates the tempfile-write/parse/
+    cleanup mechanics from the git-show call that produces `content`."""
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(
+        suffix=".py", mode="w", encoding="utf-8", delete=False
+    ) as tmp:
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+    try:
+        return set(_long_function_symrefs_over_threshold(tmp_path, rel_path))
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 def _long_function_symrefs_over_threshold_at_merge_base(
     worktree: Path, merge_base: str, rel_path: str
 ) -> set[str]:
@@ -3621,20 +3721,12 @@ def _long_function_symrefs_over_threshold_at_merge_base(
     worktree content (T-2214, ARCH001 split of `_new_or_worsened_long_
     functions_in_diff`). Empty on a `git show` failure (file did not
     exist at `merge_base` -- everything in it is new by construction)."""
-    import tempfile
-
     old = run_argv(["git", "-C", str(worktree), "show", f"{merge_base}:{rel_path}"])
     if not (old.is_ok and old.danger_ok.returncode == 0):
         return set()
-    with tempfile.NamedTemporaryFile(
-        suffix=".py", mode="w", encoding="utf-8", delete=False
-    ) as tmp:
-        tmp.write(old.danger_ok.stdout)
-        tmp_path = Path(tmp.name)
-    try:
-        return set(_long_function_symrefs_over_threshold(tmp_path, rel_path))
-    finally:
-        tmp_path.unlink(missing_ok=True)
+    return _long_function_symrefs_over_threshold_in_content(
+        old.danger_ok.stdout, rel_path
+    )
 
 
 def _new_or_worsened_long_functions_in_file(

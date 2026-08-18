@@ -2,7 +2,7 @@
 id: T-2322
 title: 'T-2303 child: split ARCH001/ARCH103 over-threshold functions in _land_cmd.py
   (land-critical, high regression risk)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -15,6 +15,10 @@ scope:
 - src/frob/app/telemetry.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_new.py
+evidence_scope:
+- tests/unit/test_land_auto_rebase.py
+- tests/test_telemetry.py
+- tests/unit/test_ticket_new_scope_plausibility_t2192.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -23,6 +27,13 @@ scope_changes:
   reason: probe scope/lease status
   actor: logan
   at: '2026-08-17'
+evidence:
+- tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain::test_merges_the_worktree_onto_the_new_main_tip
+- tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain::test_squash_then_rebase_conflicts_but_merge_does_not
+- tests/unit/test_land_auto_rebase.py::TestAutoSyncWorktreeOntoMain::test_a_real_conflict_aborts_cleanly_and_does_not_fail_the_land
+- tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed
+- tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all
+- tests/unit/test_ticket_new_scope_plausibility_t2192.py::TestScopePlausibilityIdentifierShaped::test_same_area_wrong_file_now_warns
 designated_repro_test: null
 threat: null
 component: null

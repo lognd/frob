@@ -183,6 +183,37 @@ _HOME_CLAUDE_RUNTIME_STATE_DIRS = frozenset(
 )
 
 
+# frob:ticket T-2322
+def _walk_home_claude_entries(root: Path, home_claude: Path) -> list[str]:
+    """Recursive part of `_home_config_state_hash` (T-2322 ARCH001 split,
+    zero behavior change): returns `"relpath:size:mtime_ns"` entries for
+    every regular file under `root`, pruning `_HOME_CLAUDE_RUNTIME_STATE_
+    DIRS` only at `home_claude`'s own top level (matching the original
+    inline closure's `root == home_claude` check) -- `home_claude` is
+    threaded through explicitly since this is no longer a closure over
+    the caller's local variable. Best-effort: an unreadable directory
+    entry is skipped, never raised."""
+    out: list[str] = []
+    try:
+        with os.scandir(root) as it:
+            children = sorted(it, key=lambda e: e.name)
+    except OSError:
+        return out
+    for entry in children:
+        if entry.is_dir(follow_symlinks=False):
+            if root == home_claude and entry.name in _HOME_CLAUDE_RUNTIME_STATE_DIRS:
+                continue
+            out.extend(_walk_home_claude_entries(Path(entry.path), home_claude))
+        elif entry.is_file(follow_symlinks=False):
+            try:
+                stat = entry.stat()
+            except OSError:
+                continue
+            rel = Path(entry.path).relative_to(home_claude)
+            out.append(f"{rel}:{stat.st_size}:{stat.st_mtime_ns}")
+    return out
+
+
 # frob:ticket T-2191
 # frob:tests tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed  # noqa: E501
 # frob:tests tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all  # noqa: E501
@@ -229,32 +260,8 @@ def _home_config_state_hash() -> str:
     if not home_claude.is_dir():
         return "none"
 
-    def _walk(root: Path) -> list[str]:
-        out: list[str] = []
-        try:
-            with os.scandir(root) as it:
-                children = sorted(it, key=lambda e: e.name)
-        except OSError:
-            return out
-        for entry in children:
-            if entry.is_dir(follow_symlinks=False):
-                if (
-                    root == home_claude
-                    and entry.name in _HOME_CLAUDE_RUNTIME_STATE_DIRS
-                ):
-                    continue
-                out.extend(_walk(Path(entry.path)))
-            elif entry.is_file(follow_symlinks=False):
-                try:
-                    stat = entry.stat()
-                except OSError:
-                    continue
-                rel = Path(entry.path).relative_to(home_claude)
-                out.append(f"{rel}:{stat.st_size}:{stat.st_mtime_ns}")
-        return out
-
     try:
-        entries = sorted(_walk(home_claude))
+        entries = sorted(_walk_home_claude_entries(home_claude, home_claude))
     except OSError:
         return "unreadable"
     digest = hashlib.sha256("\n".join(entries).encode("utf-8", errors="replace"))

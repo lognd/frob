@@ -469,6 +469,28 @@ def _scope_plausibility_ticket_words(title: str, body: str) -> frozenset[str]:
     return frozenset(words)
 
 
+# frob:ticket T-2322
+def _visit_scope_plausibility_string_nodes(node, source: bytes, words: set[str]) -> None:  # noqa: ANN001, E501
+    """Recursive tree-sitter walk extracted from `_scope_plausibility_
+    file_words` (T-2322 ARCH001 split, zero behavior change): for every
+    single-line string-literal node under `node`, tokenizes its text
+    into `words` (mutated in place) via `_SCOPE_PLAUSIBILITY_TOKEN_RE` +
+    `_split_scope_plausibility_words` -- a MULTI-line string literal is
+    skipped (T-2192: almost always a docstring, not a real short
+    subprocess-arg/error-message literal)."""
+    if "string" in node.type:
+        text = source[node.start_byte : node.end_byte].decode(
+            "utf-8", errors="replace"
+        )
+        if "\n" in text:
+            return  # multi-line literal -- almost always a docstring (T-2192)
+        for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(text):
+            words.update(_split_scope_plausibility_words(match.group(0)))
+        return
+    for child in node.children:
+        _visit_scope_plausibility_string_nodes(child, source, words)
+
+
 # frob:ticket T-2177
 # frob:ticket T-2192
 def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
@@ -524,21 +546,7 @@ def _scope_plausibility_file_words(path: Path) -> frozenset[str]:
         return frozenset(words)
     tree, source, _language = tree_result.danger_ok
 
-    def visit(node) -> None:  # noqa: ANN001
-        if "string" in node.type:
-            text = source[node.start_byte : node.end_byte].decode(
-                "utf-8", errors="replace"
-            )
-            # frob:ticket T-2192
-            if "\n" in text:
-                return  # multi-line literal -- almost always a docstring
-            for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(text):
-                words.update(_split_scope_plausibility_words(match.group(0)))
-            return
-        for child in node.children:
-            visit(child)
-
-    visit(tree.root_node)
+    _visit_scope_plausibility_string_nodes(tree.root_node, source, words)
     return frozenset(words)
 
 
