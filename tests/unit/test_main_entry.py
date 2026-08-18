@@ -290,7 +290,10 @@ class TestGroupedHelpFormatter:
         # Slice once instead of re-`.index()`ing per name in a loop (PERF002).
         groups_section = help_text[groups_idx:rest_idx]
         for name in main_module._VERB_GROUP_NAMES:
-            assert f"\n  {name} " in groups_section, (
+            # T-2385: entries render one indent level DEEPER (4 spaces) than
+            # their section header (2 spaces) -- see
+            # test_section_headers_indent_strictly_less_than_entries below.
+            assert f"\n    {name} " in groups_section, (
                 f"{name!r} expected between the two headings"
             )
 
@@ -302,8 +305,61 @@ class TestGroupedHelpFormatter:
         help_text = parser.format_help()
 
         rest_idx = help_text.index("also available directly:")
-        scaffold_idx = help_text.index("\n  scaffold ")
+        scaffold_idx = help_text.index("\n    scaffold ")
         assert scaffold_idx > rest_idx
+
+    def test_section_headers_indent_strictly_less_than_entries(self) -> None:
+        """T-2385: each section header renders at a strictly SMALLER indent
+        than the command entries beneath it, so it can no longer be
+        mistaken for a command itself (the original bug: both rendered at
+        the same hardcoded 2-space indent)."""
+        parser = main_module._build_parser()
+        help_text = parser.format_help()
+
+        for header in (
+            "verb groups (each also usable standalone):",
+            "also available directly:",
+        ):
+            line = next(
+                ln for ln in help_text.splitlines() if header in ln
+            )
+            header_indent = len(line) - len(line.lstrip(" "))
+            entry_line = next(
+                ln
+                for ln in help_text.splitlines()[
+                    help_text.splitlines().index(line) + 1 :
+                ]
+                if ln.strip()
+            )
+            entry_indent = len(entry_line) - len(entry_line.lstrip(" "))
+            assert header_indent < entry_indent, (
+                f"{header!r} indent ({header_indent}) must be strictly less "
+                f"than its first entry's indent ({entry_indent})"
+            )
+
+    def test_no_help_text_breaks_inside_a_word(self) -> None:
+        """T-2385 acceptance[0]: no rendered `--help` line may end mid-word
+        (the narrower description column from the deeper entry indent
+        previously broke `ops`'s help string as "...clean/c" / "lean/...").
+        A genuine word-wrap break always falls on whitespace; textwrap
+        never hyphenates, so a broken word shows up as a line ending in an
+        orphan 1-2 character fragment that only forms a real word when
+        joined with the next line's leading fragment with NO space."""
+        parser = main_module._build_parser()
+        help_text = parser.format_help()
+        lines = help_text.splitlines()
+
+        for line in lines:
+            stripped = line.rstrip()
+            if not stripped or not stripped[-1].isalpha():
+                continue
+            # A single trailing letter with no preceding space (i.e. the
+            # line was truncated mid-token, not wrapped between tokens) is
+            # the original bug's exact signature -- "...doctor/c".
+            last_token = stripped.split()[-1] if stripped.split() else ""
+            assert not (
+                len(last_token) == 1 and stripped.endswith("/" + last_token)
+            ), f"line appears to break mid-word: {stripped!r}"
 
     def test_nested_subparser_help_is_unaffected(self) -> None:
         """`frob quality --help` keeps the ordinary flat argparse listing
