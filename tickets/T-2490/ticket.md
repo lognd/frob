@@ -2,7 +2,7 @@
 id: T-2490
 title: 'SYS100: T-2411''s wiring test in test_lang_conformance_gate.py declares no
   exec capability'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): premise already resolved on main by T-2482
+    before this ticket started; design/frob.strata already declares exec via tests/test_lang_conformance_gate.py,
+    zero SYS100 findings measured, no code change made'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 3790
+  new_length: 4028
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
