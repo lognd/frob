@@ -30,7 +30,7 @@ tests/unit/test_app_runners_batch7.py (already this ticket's own scope):
 fixtures that created a ticket with an empty scope for reasons unrelated
 to scope itself (testing requeue/close/archive/land dispatch). Fixed by
 giving each a real one-file scope; re-ran the touched set clean
-afterward. Also found and filed T-draft-b08172a8 (out of scope: the
+afterward. Also found and filed T-2459 (out of scope: the
 related-title duplicate detector false-positiving "holder"/"collider" at
 71%, breaking a pre-existing TestTicketStart test unrelated to T-2394).
 
@@ -53,7 +53,7 @@ against ef41d2680 as base-ref.
  tests/test_tickets_no_scope.py             | 225 +++++++++++++++++++++++++++++
  tests/unit/test_app_runners_batch7.py      |   7 +
  tickets/T-2394/ticket.md                   | 115 ++++++++++++++-
- tickets/T-draft-b08172a8/ticket.md         |  46 ++++++
+ tickets/T-2459/ticket.md         |  46 ++++++
  14 files changed, 636 insertions(+), 5 deletions(-)
 ```
 

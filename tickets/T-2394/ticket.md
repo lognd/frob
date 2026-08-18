@@ -26,6 +26,8 @@ scope:
 - tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/tickets/_models.py
@@ -134,8 +136,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: 6efcb4487ab515b52e9643683c53c8f7535426fd
-no_scope_declared: false
-no_scope_declared_reason: null
 ---
 MEASURED TODAY: T-2358 was created with an EMPTY scope. Nothing
 complained at creation, nothing complained at `ticket start`, and

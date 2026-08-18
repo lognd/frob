@@ -25,6 +25,8 @@ scope:
 - uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/gates/__init__.py
@@ -80,6 +82,15 @@ scope_changes:
     (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_now_fire_reports_the_undeclared_key
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_schema_declared_is_unresolved_not_empty
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_no_frob_toml_is_unresolved
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_now_fire_reports_the_undeclared_key
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_must_still_pass_this_repos_own_frob_toml
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_schema_declared_is_unresolved_not_empty
+- tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_graph_no_frob_toml_is_unresolved
 designated_repro_test: null
 threat: null
 component: null
