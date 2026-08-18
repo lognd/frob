@@ -11,7 +11,6 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/check/__init__.py
 - src/frob/gates/_rule_id_scan.py
 - tests/gates/test_rule_id_scan_branches.py
 scope_breadth_ack: false
@@ -23,6 +22,12 @@ scope_changes:
   glob: tests/gates/test_rule_id_scan_branches.py
   reason: test coverage for the new standing-gate wrapper lives alongside find_unregistered_rule_ids's
     own existing tests in this file
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/check/__init__.py
+  reason: 'not needed: wiring point is _ALL_GATES/gates/__init__.py, not check/__init__.py,
+    which needs no change'
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
