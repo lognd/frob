@@ -21,6 +21,35 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+acceptance:
+- text: 'MEASURED 2026-08-17: significant relevant infrastructure already landed (T-0405/T-0406,
+    src/frob/lang/_support.py) before this ticket''s own filing predates it (filed
+    2026-08-05) -- LanguageSupport/FacetState/FacetStatus already give every registered
+    language a typed per-facet IMPLEMENTED/NOT_APPLICABLE(reason)/KNOWN_GAP(tracking
+    ticket) cell, derived live from each subsystem''s own registry (frob.lang/frob.vet/frob.dup/frob.arch/frob.gates._docblocks);
+    LANG001 (lang_conformance_gate) already fails the build when a cell is unaccounted
+    for; LANG002/LANG003 already cover the per-PROJECT half (a repo language frob
+    does not parse at all, or a KNOWN_GAP present in the tree with a stale/unverifiable
+    ticket ref). Deliverables 3 and 4 as originally written are LARGELY already satisfied
+    by this existing mechanism -- re-verify against it before building anything parallel.'
+  evidence: []
+- text: 'MEASURED 2026-08-17: the existing FACETS axis (grammar/capability/dup/arch/docblock,
+    src/frob/lang/_support.py FACETS tuple) is SUBSYSTEM-INTEGRATION coverage (does
+    frob.vet/frob.dup/frob.arch/frob.gates._docblocks have an entry for this language),
+    a DIFFERENT axis than this ticket''s own deliverable 1 (symbol walk, public/private
+    determination, docstring/doc-comment extraction, comment/directive parsing incl.
+    continuations, call graph edges, import/dependency edges, test discovery) -- an
+    ADAPTER-CAPABILITY axis. No facet or registry for that axis exists today; this
+    remains real, unbuilt work.'
+  evidence: []
+- text: 'MEASURED 2026-08-17: deliverable 2 (a conformance test suite parameterized
+    over every registered adapter, failing when a language declares a capability it
+    does not implement) does not exist -- tests/test_lang_support.py and tests/test_lang_conformance_gate.py
+    test the EXISTING facet-registry-derivation and gate logic (does a registry entry
+    exist), not adapter BEHAVIOR against a capability declaration. This remains real,
+    unbuilt work, and is the load-bearing gap for the epic''s stated purpose (batch-adding
+    20-50 languages safely).'
+  evidence: []
 threat: null
 component: null
 anchor: false
