@@ -60,7 +60,7 @@ threat: null
 component: verify
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 30d238be4585a661d0e9f0954cfa4035cc4b7d89
 ---
 MEASURED 2026-08-17, immediately after T-2317 wired the drain.
 
