@@ -1074,6 +1074,13 @@ _KNOWN_GATE_RULES = frozenset(
         # reason. src/frob/gates/_sys_selfaudit.py, src/frob/strata/
         # _effects.py::capability_ratchet_violations.
         "SYS111",
+        # T-2523: SYS112 (T-2503's ambient-capability-reason check, wired
+        # into SELFAUDIT001 the same way T-1977 wired SYS111 above) -- a
+        # via-less (ambient) `may "ATOM";` declaration with no same-line
+        # `// because: "..."` justification comment. src/frob/gates/
+        # _sys_selfaudit.py, src/frob/strata/_effects.py::
+        # check_ambient_capability_reasons.
+        "SYS112",
         # CVEFP001 (src/frob/strata/_cve_fingerprint.py, `rule: str =
         # "CVEFP001"` typed pydantic field default) -- CVE-fingerprint
         # `cwe_id` join miss, see FingerprintViolation.

@@ -403,6 +403,16 @@ _AMBIENT_MAY_RE = re.compile(
     r'(?:\s*//\s*because:\s*"(?P<reason>[^"]*)"\s*)?\s*$'
 )
 
+#: Matches a `node ID : trust {` / `store ID : trust {` block header line --
+#: used only to track which node "owns" a `may` line for reporting (T-2523),
+#: the same coarse text-scan posture `_AMBIENT_MAY_RE` already takes. A
+#: nested/multi-line header (rare, none in this repo's own design/ today)
+#: degrades to "node unresolved" for any `may` line before the next header
+#: match -- fail SOFT on the label only, never on the finding itself, since
+#: the reason-missing violation is real regardless of whether its owning
+#: node could be named.
+_NODE_HEADER_RE = re.compile(r'^\s*(?:node|store)\s+(?P<node>[A-Za-z_][\w.]*)\s*:')
+
 
 # frob:doc docs/strata/surface.md#may-scope
 # frob:tests \
@@ -421,6 +431,11 @@ class AmbientCapabilityReasonViolation(BaseModel):
     file: str
     line: int
     atom: str
+    #: Best-effort enclosing `node`/`store` id (T-2523), or `""` if the
+    #: scan could not resolve one before this line (an unusual `.strata`
+    #: layout, or a `may` line appearing before any header at all) --
+    #: reporting-only, never load-bearing for the finding itself.
+    node: str = ""
 
 
 # frob:doc docs/strata/surface.md#may-scope
@@ -456,7 +471,11 @@ def check_ambient_capability_reasons(
                 exc,
             )
             continue
+        current_node = ""
         for lineno, line in enumerate(text.splitlines(), start=1):
+            header = _NODE_HEADER_RE.match(line)
+            if header is not None:
+                current_node = header.group("node")
             m = _AMBIENT_MAY_RE.match(line)
             if m is None:
                 continue
@@ -464,14 +483,19 @@ def check_ambient_capability_reasons(
             if reason is not None and reason.strip():
                 continue
             _log.warning(
-                "strata effects: ambient may %r at %s:%d has no because reason",
+                "strata effects: ambient may %r at %s:%d (node=%s) has no because "
+                "reason",
                 m.group("atom"),
                 path,
                 lineno,
+                current_node,
             )
             found.append(
                 AmbientCapabilityReasonViolation(
-                    file=str(path), line=lineno, atom=m.group("atom")
+                    file=str(path),
+                    line=lineno,
+                    atom=m.group("atom"),
+                    node=current_node,
                 )
             )
     _log.info(

@@ -460,9 +460,9 @@ node checker : trusted {
     code "src/frob/check/**";
     // T-1346: _python.py's FROB_NO_GATE_CACHE feature-flag read (the gate
     // result cache escape hatch) -- a boolean opt-out, no secret carried.
-    may "env.read";
-    may "exec";
-    may "fs.read";
+    may "env.read";  // because: "run_check's per-language stages read feature-flag env vars (e.g. FROB_NO_GATE_CACHE) from wherever a stage happens to be implemented, not one fixed call site"
+    may "exec";  // because: "run_check dispatches every per-language tool (ruff, cargo, tsc, ...) as a subprocess from whichever stage owns that language"
+    may "fs.read";  // because: "every check stage reads the source tree it is scoping over -- that is this package's entire purpose"
     attr flag=frob_check_exec_kill_switch;
 }
 
@@ -601,8 +601,8 @@ node registry_model : trusted {
     ];
     clearance Internal;
     code "src/frob/registry/**";
-    may "fs.write";
-    may "fs.read";
+    may "fs.write";  // because: "append_entry/sync_gate_rule_entries persist registry entries from wherever a caller invokes the writer"
+    may "fs.read";  // because: "load_registry_dir/audit_registry_file read every registry file under this package's own glob"
 }
 
 // T-0707 (fleet half, filed separately at T-0708 then resolved directly
@@ -641,7 +641,7 @@ node fleet : trusted {
     ];
     clearance Internal;
     code "src/frob/fleet/**";
-    may "exec";
+    may "exec";  // because: "route_ticket/collect_status dispatch git and frob subprocesses against a sibling repo from wherever fleet orchestration runs"
     attr flag=frob_check_exec_kill_switch;
     // T-0778: T-0200's kill switch (frob.process._guard.
     // guarded_subprocess_run) is real and shipped, but this node's own
@@ -876,11 +876,11 @@ node mutate : trusted {
     ];
     clearance Internal;
     code "src/frob/mutate/**";
-    may "exec";
+    may "exec";  // because: "run_mutations executes the mutated program under test from wherever a mutation operator invokes it"
     attr flag=frob_check_exec_kill_switch;
-    may "fs.write";
-    may "fs.read";
-    may "env";
+    may "fs.write";  // because: "write_journal/record_journal_progress persist mutation run state from wherever the run loop calls them"
+    may "fs.read";  // because: "generate_mutants reads the source file it is about to mutate from wherever a mutator is implemented"
+    may "env";  // because: "MUTATION_RUN_ENV threads run-scoped configuration through os.environ from wherever a mutation subprocess is launched"
 }
 
 // T-1329: `frob.refactor` -- the T-1197 reference-rewrite engine
@@ -912,8 +912,8 @@ node refactor : trusted {
     ];
     clearance Internal;
     code "src/frob/refactor/**";
-    may "fs.read";
-    may "fs.write";
+    may "fs.read";  // because: "scan_*/resolve_symbol read source files across the whole tree a refactor plan touches, not one fixed set"
+    may "fs.write";  // because: "apply_plan writes every rewritten file a refactor plan names, which varies per plan"
 }
 
 // T-0864: `frob natives build` -- frob-owned `maturin develop` per
@@ -950,9 +950,9 @@ node natives : trusted {
     ];
     clearance Internal;
     code "src/frob/natives/**";
-    may "exec";
+    may "exec";  // because: "build_natives shells out to cargo/maturin from wherever a native crate build is invoked"
     attr flag=frob_check_exec_kill_switch;
-    may "env";
+    may "env";  // because: "cargo's own target-dir caching env (CARGO_CACHE_DIRNAME and friends) is read/set from wherever build_natives runs"
 }
 
 // T-0440: `frob serve` -- the MCP adapter exposing frob's enforcement
@@ -1005,8 +1005,8 @@ node serve : trusted {
     ];
     clearance Internal;
     code "src/frob/serve/**";
-    may "fs.write";
-    may "net";
+    may "fs.write";  // because: "acquire_singleton_lock/lock_path persist the daemon's own lock and socket files from wherever the server process writes them"
+    may "net";  // because: "the socket/stdio daemon's entire purpose is accepting and dispatching network connections"
 
     // T-0756: same SYS203/tickets_ledger disposition as `cli`/`gates`/
     // `fleet`/`core` above (T-0724) -- `serve` also has a Flow into
@@ -1088,9 +1088,9 @@ node deploy : trusted {
     ];
     clearance Internal;
     code "src/frob/deploy/**";
-    may "exec";
+    may "exec";  // because: "run_vm_audit/generate_install_script shell out to VBoxManage and the guest install script from wherever a deploy audit step runs"
     attr flag=frob_check_exec_kill_switch;
-    may "fs.read";
+    may "fs.read";  // because: "diff_states/artifact_freeness_holds read the manifest and captured filesystem state from wherever a deploy check runs"
 }
 
 // vet: src/frob/vet/**. Dependency-vetting -- the ONE component that
@@ -1447,9 +1447,9 @@ node scripts_ops : trusted {
     attr interface=[];
     clearance Internal;
     code "scripts/**";
-    may "fs.write";
-    may "fs.read";
-    may "exec";
+    may "fs.write";  // because: "repo maintenance scripts run by a human/CI outside the installed CLI legitimately write anywhere in the tree they maintain -- this node is the deliberate escape hatch for tooling with no installed-package boundary to scope against"
+    may "fs.read";  // because: "same escape-hatch posture as this node's fs.write above -- a maintenance script reads whatever it is asked to touch"
+    may "exec";  // because: "same escape-hatch posture as this node's fs.write above -- a maintenance script shells out freely, unscoped by design"
 }
 
 // Claude Code dispatch-harness hook scripts (`.claude/hooks/**`), run by
@@ -1473,10 +1473,10 @@ node claude_hooks : trusted {
     attr interface=[];
     clearance Internal;
     code ".claude/hooks/**";
-    may "env.read";
-    may "exec";
-    may "fs.write";
-    may "fs.read";
+    may "env.read";  // because: ".claude/hooks/** scripts read git/CI env vars from wherever the hook happens to run, the same unscoped-by-design posture as scripts_ops"
+    may "exec";  // because: "a git/tool hook's entire job is running commands (git, frob, the tool it wraps) from wherever it is invoked"
+    may "fs.write";  // because: "a hook writes lock/log/state files wherever it runs, the same unscoped-by-design posture as scripts_ops"
+    may "fs.read";  // because: "a hook reads whatever tree state it is asked to check, the same unscoped-by-design posture as scripts_ops"
 }
 
 // T-1857 (T-1838's own COV001/TEST001 fallout ticket): `claude_hooks`'s
@@ -1519,7 +1519,7 @@ assume "weakness:CWE-78:scripts_ops" noflow registry -> scripts_ops owner logan 
 node strata_core_native : trusted {
     clearance Internal;
     code "strata-core/src/**";
-    may "ffi";
+    may "ffi";  // because: "this whole node's code glob IS the PyO3 FFI boundary strata_core implements -- there is no non-FFI file to scope away from"
 }
 
 // The `frob_core` native extension's Rust source (`frob-core/src/**` --
@@ -1532,7 +1532,7 @@ node strata_core_native : trusted {
 node frob_core_native : trusted {
     clearance Internal;
     code "frob-core/src/**";
-    may "ffi";
+    may "ffi";  // because: "this whole node's code glob IS the PyO3 FFI boundary frob_core implements -- there is no non-FFI file to scope away from"
 }
 
 // -- flows ---------------------------------------------------------------

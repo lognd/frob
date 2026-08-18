@@ -171,6 +171,8 @@ def _selfaudit_violations(
         check_stale_via_symbols,
         merge_models,
     )
+    from frob.strata._design_load import _strata_files
+    from frob.strata._effects import check_ambient_capability_reasons
 
     model = merge_models(design_ids.models)
     violations: list[Violation] = []
@@ -260,6 +262,36 @@ def _selfaudit_violations(
     violations.extend(
         _selfaudit_violation("SYS111", v.node, v.detail, design_dir, root)
         for v in ratchet
+    )
+
+    # frob:ticket T-2523
+    # T-2523: SYS112 (T-2503's ambient-capability-reason check) was built
+    # and unit-tested but had NO caller outside its own test module -- the
+    # SAME "catalogued but check-invisible" gap SYS109/SYS111 left until
+    # wired above, now closed the identical way. Re-scans the SAME
+    # `.strata` source `load_design_ids` already walked (`_strata_files`,
+    # re-derived here rather than threaded through `DesignIds` -- that
+    # dataclass keeps only parsed/elaborated facts, never raw paths,
+    # T-1420's own docstring on `DesignIds`); a `because` reason is text
+    # that has no `KernelModel`-level representation (module docstring on
+    # `check_ambient_capability_reasons`), so this sub-family, like
+    # SYS111, needs no `bind_code` binding and runs unconditionally.
+    from frob.excludes import load_exclude_globs
+
+    strata_paths = _strata_files(
+        root, root / design_dir, load_exclude_globs(root)
+    )
+    ambient_reasons = check_ambient_capability_reasons(tuple(strata_paths))
+    violations.extend(
+        _selfaudit_violation(
+            "SYS112",
+            v.node,
+            f"ambient (via-less) may {v.atom!r} at {v.file}:{v.line} has no "
+            "// because: \"...\" justification",
+            design_dir,
+            root,
+        )
+        for v in ambient_reasons
     )
 
     timeouts = check_reliability_timeouts(model, root)

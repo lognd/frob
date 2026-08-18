@@ -906,6 +906,31 @@ class TestAmbientCapabilityReason:
         assert len(found) == 1
         assert found[0].atom == "exec"
         assert found[0].line == 2
+        assert found[0].node == "App"
+
+    # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
+    # kind="unit"
+    def test_node_label_resolves_the_nearest_preceding_header(
+        self, tmp_path: Path
+    ) -> None:
+        # T-2523: SYS112's own reporting needs a node label per finding so
+        # a reader can tell WHICH node to fix without re-deriving it from
+        # the file/line -- each finding must attach to its OWN enclosing
+        # node, not the first one seen in the file.
+        _write(
+            tmp_path,
+            "x.strata",
+            'node First : trusted {\n'
+            '    may "exec";\n'
+            "}\n"
+            'store Second : trusted {\n'
+            '    may "fs.write";\n'
+            "}\n",
+        )
+        found = check_ambient_capability_reasons((tmp_path / "x.strata",))
+        assert len(found) == 2
+        assert found[0].node == "First"
+        assert found[1].node == "Second"
 
     # frob:tests src/frob/strata/_effects.py::check_ambient_capability_reasons \
     # kind="unit"

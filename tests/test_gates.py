@@ -15950,6 +15950,58 @@ class TestSelfAuditGate:
         assert _by_rule(violations, "SELFAUDIT001") == []
 
     # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+    # frob:ticket T-2523
+    def test_selfaudit001_folds_sys112_ambient_reason_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2523: an ambient (via-less) `may` grant with no `// because:
+        "..."` comment must fire SYS112 through the PRODUCTION `sys_gate`
+        entry point -- proving `check_ambient_capability_reasons` (T-2503,
+        built and unit-tested but never wired anywhere else until this
+        ticket) is actually reachable from `frob check`, not just from its
+        own test module."""
+        design = (
+            "module m\n"
+            'node widget : trusted {\n'
+            '    code "src/frob/widget/**";\n'
+            '    may "exec";\n'
+            "}\n"
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "src/frob/widget/_io.py", "subprocess.run(['x'])\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        sys112 = [v for v in selfaudit if "SYS112" in v.message]
+        assert len(sys112) == 1
+        assert sys112[0].severity == Severity.ERROR
+        assert "widget" in sys112[0].message
+        assert "exec" in sys112[0].message
+
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+    # frob:ticket T-2523
+    def test_selfaudit001_sys112_silent_with_a_because_reason(
+        self, tmp_path: Path
+    ) -> None:
+        """The after-fix half of the same before/after proof: the
+        identical ambient grant, now carrying a `// because: "..."`
+        comment, produces zero SYS112 findings through production
+        `sys_gate`."""
+        design = (
+            "module m\n"
+            'node widget : trusted {\n'
+            '    code "src/frob/widget/**";\n'
+            '    may "exec";  // because: "widget shells out to its own helper tools"\n'
+            "}\n"
+        )
+        _write(tmp_path, "design/m.strata", design)
+        _write(tmp_path, "src/frob/widget/_io.py", "subprocess.run(['x'])\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        selfaudit = _by_rule(violations, "SELFAUDIT001")
+        assert [v for v in selfaudit if "SYS112" in v.message] == []
+
+    # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_selfaudit001_suppressed_on_design_load_error(self, tmp_path: Path) -> None:
         """A `.strata` file that fails to parse suppresses SELFAUDIT001
         entirely (matches DOC003/SYS001's suppression posture) -- a broken
