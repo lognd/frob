@@ -134,14 +134,39 @@ Tested end-to-end via `tests/test_hook_pending_background_guard.py`.
 
 ## `root-write-guard.py`
 
-A PreToolUse hook (`Write`/`Edit`/`NotebookEdit`) that refuses a dispatched
-agent's write into the SHARED ROOT (the primary git checkout) at edit
-time -- before the tree is dirtied and every concurrent `frob ticket land`
-starts refusing with DirtyMain. The pre-existing `_WORKTREE_LEASE_HOOK_
-SCRIPT` git hook (`src/frob/scaffold/project.py`) only guards COMMIT time,
-which is too late for the failure this closes (T-2396: measured twice in
-one drive -- two agents edited the shared root instead of their leased
-worktree, and a third agent's land was DirtyMain-blocked as a result).
+A PreToolUse hook (`Write`/`Edit`/`NotebookEdit`/`Bash`) that refuses a
+dispatched agent's write into the SHARED ROOT (the primary git checkout)
+at edit time -- before the tree is dirtied and every concurrent `frob
+ticket land` starts refusing with DirtyMain. The pre-existing `_WORKTREE_
+LEASE_HOOK_SCRIPT` git hook (`src/frob/scaffold/project.py`) only guards
+COMMIT time, which is too late for the failure this closes (T-2396:
+measured twice in one drive -- two agents edited the shared root instead
+of their leased worktree, and a third agent's land was DirtyMain-blocked
+as a result).
+
+T-2481 extended coverage to `Bash`: three separate incidents in one
+session dirtied the root through a heredoc/redirect or a `frob ticket`
+mutating verb run with no `cd` into the worktree, none of which the
+original `Write`/`Edit`/`NotebookEdit`-only guard could see. A Bash
+command's write target is not a declared field the way `Write`'s
+`file_path` is, so `_bash_targets_root` deliberately detects only two
+narrow, high-frequency shapes and lets everything else -- including
+anything it cannot confidently parse -- through: a `frob ticket
+<mutating-verb>` (`_MUTATING_TICKET_VERBS`, read-only verbs like `show`/
+`list`/`doable` excluded) with neither a leading `cd <dir> &&`/`cd
+<dir>;` into a registered worktree in the same command nor `--path`
+anywhere in it; and a `>`/`>>`/`tee`/`sed -i` whose target resolves under
+the primary checkout (`_resolves_under_primary`). `_effective_cwd`
+computes the directory a command's write actually lands in from its
+leading `cd` segment, falling back to the PreToolUse payload's own `cwd`
+when there is none. Any candidate path containing `$`/backtick/glob
+characters (`_AMBIGUOUS_PATH_CHARS`) is treated as unresolvable and
+allowed rather than guessed -- acceptance criterion 4's "when in doubt,
+allow" rule, enforced as code, not just a docstring promise. This is a
+narrower, ADDITIVE detector layered on top of the existing `Write`/
+`Edit`/`NotebookEdit` path -- it reuses the same `_is_agent_context`
+discriminator and the same primary-vs-worktree resolution, just against
+command text instead of a declared `file_path`.
 
 `_is_agent_context` is the discriminator, and it must fire for an agent
 and never for the coordinator or a human (both directions matter): it

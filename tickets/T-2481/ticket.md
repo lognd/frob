@@ -2,7 +2,7 @@
 id: T-2481
 title: the root-write guard does not cover Bash, which is how all three root-dirtying
   incidents actually happened
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,26 +13,66 @@ sprint: null
 runs_last: false
 scope:
 - .claude/hooks/root-write-guard.py
+- .claude/settings.json
+- docs/guides/claude-hooks.md
+evidence_scope:
+- tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/settings.json
+  reason: 'Extending root-write-guard.py to Bash requires wiring the matcher in
+
+    .claude/settings.json (adding "Bash" alongside Write|Edit|NotebookEdit,
+
+    or a separate hook entry) -- without it the new Bash-detection logic in
+
+    root-write-guard.py never runs. Adding settings.json to scope.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: 'frob:doc edges in root-write-guard.py point at docs/guides/claude-hooks.md
+
+    (#root-write-guardpy); updating the guard''s Bash behavior requires updating
+
+    that doc section in the same change to keep DRIFT001 clean.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_and_no_path_is_refused
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_cd_into_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_explicit_path_flag_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ambiguous_redirect_target_is_allowed
 designated_repro_test: null
 acceptance:
 - text: Given an agent-context ticket-mutating command issued from the primary checkout
     with neither a cd into a worktree in the same call nor an explicit --path, when
     it runs, then it is refused before the root is dirtied.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_and_no_path_is_refused
 - text: Given the same command with cd worktree in the same call or an explicit --path,
     when it runs, then it succeeds unchanged.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_cd_into_worktree_is_allowed
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_explicit_path_flag_is_allowed
 - text: Given the coordinator or a human running that command in the root, when it
     runs, then the guard does not fire, proving the discriminator works in both directions.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed
 - text: Given a Bash command whose write target cannot be determined, when it runs,
     then it is allowed rather than refused, so the guard cannot block legitimate work
     on a guess.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ambiguous_redirect_target_is_allowed
 threat: null
 component: hooks
 anchor: false

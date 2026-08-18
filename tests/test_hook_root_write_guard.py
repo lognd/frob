@@ -273,15 +273,18 @@ def test_frob_land_internal_exempts_an_agent_write(tmp_path):
 
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-2396
+# frob:ticket T-2481
 def test_non_guarded_tool_is_ignored(tmp_path):
-    """A tool name outside {Write, Edit, NotebookEdit} (e.g. `Bash`) is
-    never evaluated at all, even under a full agent context."""
+    """A tool name outside `_GUARDED_TOOLS` (e.g. `Grep`) is never
+    evaluated at all, even under a full agent context. T-2481 added `Bash`
+    to `_GUARDED_TOOLS` -- its own coverage lives in the `test_bash_*`
+    cases below, not here."""
     primary, worktree = _make_repo_with_worktree(tmp_path)
     result = _run_hook(
         cwd=primary,
         file_path=primary / "src.py",
         env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
-        tool_name="Bash",
+        tool_name="Grep",
     )
     assert result.stdout.strip() == ""
 
@@ -299,3 +302,155 @@ def test_notebook_edit_to_root_is_refused_for_an_agent(tmp_path):
         tool_name="NotebookEdit",
     )
     assert _denial_reason(result) is not None
+
+
+# frob:ticket T-2481
+def _run_bash_hook(*, cwd: Path, command: str, env: dict[str, str]):
+    """Invoke the hook's real PreToolUse stdin/stdout contract for a `Bash`
+    call running `command` from `cwd`, under `env`."""
+    payload = {"tool_name": "Bash", "tool_input": {"command": command}, "cwd": str(cwd)}
+    return subprocess.run(
+        [sys.executable, str(_HOOK)],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=cwd,
+        env=env,
+    )
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_ticket_verb_with_no_cd_and_no_path_is_refused(tmp_path):
+    """T-2481 acceptance criterion 0 / must-refuse positive control: the
+    exact incident shape -- a `frob ticket done-report` run from the
+    primary checkout in an agent context, with neither a `cd` into the
+    worktree nor `--path` in the same call -- is refused. Fixture uses the
+    REAL nested-worktree topology (T-2442), not the sibling shape."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="frob ticket done-report T-0001 --why done",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_ticket_verb_with_cd_into_worktree_is_allowed(tmp_path):
+    """T-2481 acceptance criterion 1: the identical command, prefixed with
+    `cd <worktree> &&` in the SAME call, is never refused."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"cd {worktree} && frob ticket done-report T-0001 --why done",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_ticket_verb_with_explicit_path_flag_is_allowed(tmp_path):
+    """T-2481 acceptance criterion 1, the other escape: an explicit
+    `--path <worktree>` in the same call is never refused, even with no
+    `cd` and cwd still at the primary checkout."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"frob ticket done-report T-0001 --why done --path {worktree}",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed(tmp_path):
+    """T-2481 acceptance criterion 2: the identical must-refuse command
+    from criterion 0, run with no FROB_AGENT/FROB_WORKTREE at all (plain
+    coordinator/human shell), is never refused -- proves the discriminator
+    still works in both directions for the new Bash coverage."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="frob ticket done-report T-0001 --why done",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_redirect_into_primary_is_refused(tmp_path):
+    """A `>` redirect whose target resolves under the primary checkout, run
+    from an agent context with no worktree cd, is refused -- the second
+    narrow shape T-2481 measured (`sed -i`/`tee`/`>`/`>>`)."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="echo hi > notes.txt",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_redirect_inside_worktree_is_allowed(tmp_path):
+    """The identical redirect shape, `cd`'d into the leased worktree first
+    in the same call, is never refused."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"cd {worktree} && echo hi > notes.txt",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_ambiguous_redirect_target_is_allowed(tmp_path):
+    """T-2481 acceptance criterion 3 (must-not-overblock): a redirect whose
+    target is a shell variable this hook cannot statically resolve is
+    ALLOWED, not refused -- 'when in doubt, allow' as code, not just
+    prose."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command='echo hi > "$OUTFILE"',
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_read_only_ticket_verb_is_never_refused(tmp_path):
+    """A read-only `frob ticket show` (not in `_MUTATING_TICKET_VERBS`) is
+    never mistaken for a write, even from the primary checkout in an agent
+    context with no cd/--path."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="frob ticket show T-0001",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2481
+def test_bash_unrelated_command_is_never_refused(tmp_path):
+    """An ordinary read command with no ticket verb and no redirect at all
+    is never evaluated as a write, from an agent context, at the root."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="git status",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
