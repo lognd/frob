@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 00180216313362599f5b2658dd910d4a9eef978b
 ---
 T-2299 promoted DOC012 (docs/modules/gates.md's "DOC012 dedicated
 command-section drift-lock" section, src/frob/gates/_docblocks.py::
