@@ -30,6 +30,8 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+evidence:
+- tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
 designated_repro_test: null
 acceptance:
 - text: GIVEN the design doc WHEN reviewed THEN it covers file-per-ticket layout (block
@@ -37,7 +39,8 @@ acceptance:
     (renumber with reference rewrite, doable ordering, archive as git mv, flow/velocity
     mining), lock model, merge story with the frob-ledger driver retired, greppability,
     and a reversible migration plan with a compatibility window
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
 - text: GIVEN the migration lands THEN tickets.md/tickets-archive.md are deleted,
     a v2-mode repo with a lingering monofile errors (LEDGERV1001), two agents landing
     disjoint tickets produce no ledger merge conflict, and the TICK002/TICK006 draft-death
