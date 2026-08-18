@@ -1,0 +1,32 @@
+{
+  "total_sites": 2989,
+  "counts": {
+    "rooted": 2248,
+    "escaped": 1,
+    "unknown": 740
+  },
+  "not_analyzed_count": 0,
+  "top_poison_sources": [
+    [
+      "?unresolved",
+      7
+    ],
+    [
+      "tests/integration/test_exports_write.py::_make_pkg",
+      3
+    ],
+    [
+      "tests/system/test_cli_sys_audit.py::_init_repo",
+      1
+    ],
+    [
+      "tests/test_coverage_wait_shared.py::_make_repo",
+      1
+    ],
+    [
+      "tests/test_lang.py::_write",
+      1
+    ]
+  ],
+  "poison_source_count": 5
+}

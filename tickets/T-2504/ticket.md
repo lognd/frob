@@ -2,7 +2,7 @@
 id: T-2504
 title: 'confined to: prove path confinement on the existing summary engine, report-only
   first'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,38 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/graph/summary.py
+- docs/modules/graph.md
+- tests/unit/test_confinement_lattice.py
+- tickets/T-2504/census-2026-08-18-raw.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-2504: doc anchors + regression tests + committed census result for the
+    confinement lattice deliverable'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_confinement_lattice.py
+  reason: 'T-2504: doc anchors + regression tests + committed census result for the
+    confinement lattice deliverable'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-2504/census-2026-08-18-raw.json
+  reason: 'T-2504: doc anchors + regression tests + committed census result for the
+    confinement lattice deliverable'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl::test_absolute_literal_write_is_escaped
+- tests/unit/test_confinement_lattice.py::TestConfinementLatticePositiveControl::test_ordinary_tmp_path_write_is_rooted_not_escaped
+- tests/unit/test_confinement_lattice.py::TestConfinementLatticeUnknown::test_unresolved_private_helper_call_poisons_to_unknown
+- tests/unit/test_confinement_lattice.py::TestConfinementLatticeUnknown::test_env_lookup_feeding_a_write_is_escaped_not_unknown
+- tests/unit/test_confinement_lattice.py::TestConfinementLatticeHelperPropagation::test_helper_return_value_confinement_propagates_to_caller_site
 designated_repro_test: null
 threat: null
 component: null

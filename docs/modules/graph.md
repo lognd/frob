@@ -567,6 +567,149 @@ differs per node, nothing to hoist) -- no behavior change. `acknowledge`
 (`frob.graph.lock`) similarly picked up a reasoned `frob:waive PERF004`
 on its own per-ref `sorted(_facets_for_ref(...))` call.
 
+## Path-confinement census
+
+<!-- frob:describes src/frob/graph/summary.py::compute_confinement_summaries -->
+<!-- frob:describes src/frob/graph/summary.py::scan_confinement_facts -->
+<!-- frob:describes src/frob/graph/summary.py::ConfinementState -->
+<!-- frob:describes src/frob/graph/summary.py::FsWriteSite -->
+<!-- frob:describes src/frob/graph/summary.py::FunctionConfinement -->
+<!-- frob:describes src/frob/graph/summary.py::ConfinementCensusResult -->
+
+REPORT-ONLY (user directive, 2026-08-18): a MEASUREMENT, not a gate.
+Nothing described here is wired into `frob check`; no severity is
+assigned to any finding yet. This is the first deliverable of the
+"confined to" provability epic (T-2501) -- a real, committed-to CENSUS
+of how many `fs.write` call sites under `tests/**` can be PROVEN confined
+to a sanctioned root today, using the existing protocol-summary engine's
+own SCC-ordered worklist (T-0745's design constraint: "one engine, not
+two") rather than a second call-graph traversal.
+
+### The lattice
+
+`ConfinementState`: `ROOTED` (provably derived from `tmp_path`/
+`tmp_path_factory`/`tmpdir`/`tempfile.*` via only confinement-preserving
+ops: `/`-join or `os.path.join` with a relative literal, `.with_name`/
+`.with_suffix`/`.with_stem`), `ESCAPED` (provably outside one: an
+absolute string literal, `Path.home()`, `os.getcwd()`,
+`os.path.expanduser`, an `os.environ` lookup), `UNKNOWN` (unprovable with
+this pass's own precision, or transitively poisoned by an unresolved
+callee -- never rendered as a pass, same NO-FAIL-SILENT posture
+`FunctionSummary.poisoned` already holds above).
+
+### Engine shape
+
+- `scan_confinement_facts(root, paths)` -- the ONE function that reads
+  files: `ast.parse`s every `.py` file in `paths`, extracting each
+  top-level function/method's OWN facts (a single linear forward pass
+  over its top-level statements only -- see `_scan_function_facts`'s own
+  docstring for the exact, disclosed branch-insensitivity limitation)
+  into a private `_RawFuncFacts` record. Not part of `__all__` --
+  `_RawFuncFacts` itself is an internal detail; callers only see the
+  `dict[str, _RawFuncFacts]` this returns, threaded straight into
+  `compute_confinement_summaries`.
+- `compute_confinement_summaries(facts, entrypoints)` -- pure, no
+  filesystem I/O (matches `compute_protocol_summaries`'s existing
+  offline posture): resolves each raw fact's `_Pending`/`_ParamRef`
+  markers into a real `ConfinementState` bottom-up over the SAME
+  `_universe`/`_reachable`/`_tarjan_sccs` worklist `compute_protocol_
+  summaries` above already builds, via its own join (`_resolve_state`/
+  `_finalize_function`) instead of `_join_from_callees`'s five-set union.
+  Pass `entrypoints=list(facts)` (every scanned function is its own
+  entrypoint) to count every site regardless of call-graph reachability
+  -- this consumer wants a full census, not a dead-code exclusion.
+- `FsWriteSite` -- one recognized `fs.write`-shaped call site
+  (`open(path, "w"/...)`, `.write_text`/`.write_bytes`), its final
+  `state`, and `poison_source` (the private callee symref responsible
+  for an `UNKNOWN` verdict, when attributable to one specific
+  unresolved/unprovable helper call rather than this pass's own
+  in-function precision limit).
+- `FunctionConfinement` -- one function's own sites plus its RETURN
+  value's confinement contract: `return_always` (a fixed state
+  independent of its own parameters) or `return_depends_on_param` (the
+  "`param0` confined => result confined" shape the ticket names,
+  single-positional-argument heuristic -- see `_Pending`'s docstring).
+- `ConfinementCensusResult` -- `sites` (every recognized site, final
+  verdict), `not_analyzed` (same NO-FAIL-SILENT channel as the protocol
+  engine), `poison_sources` (`{callee_symref: unknown_site_count}`,
+  the "which helpers are the biggest poison sources" breakdown T-2504's
+  own ticket body asked for), and a `.counts` property giving the exact
+  `{rooted: n, escaped: n, unknown: n}` PROVEN/ESCAPED/UNKNOWN census
+  number.
+
+### Disclosed precision limits (read before trusting a specific verdict)
+
+- **No real control-flow join.** `_scan_function_facts` only tracks
+  local-variable assignments made as TOP-LEVEL statements in a function
+  body; an assignment inside an `if`/`for`/`while`/`with`/`try` block is
+  invisible to later top-level code. This is a deliberate,
+  precision-over-recall bias: it can only ever under-prove (push a real
+  `ROOTED` toward `UNKNOWN`), never fabricate a false `ROOTED`/`ESCAPED`.
+- **No interprocedural argument substitution into a callee's OWN body.**
+  A private helper `def _write_fixture(tmp: Path): (tmp / "x").write_text
+  (...)` (writing directly to its own plain-`Path` parameter, WITHOUT
+  returning it) resolves that internal site `UNKNOWN` regardless of what
+  every call site actually passes -- only a helper's RETURN value gets
+  the param-dependent propagation callers benefit from
+  (`return_depends_on_param`). Building real per-call-site argument
+  substitution is a second, genuinely larger interprocedural analysis
+  this report-only pass deliberately did not build (see the 2026-08-18
+  census run below: this is the actual DOMINANT source of `UNKNOWN`,
+  not helper-poison propagation).
+- **Single-positional-argument heuristic.** `_Pending` only tracks the
+  FIRST positional argument's confinement when deferring to a callee's
+  `return_depends_on_param` -- a multi-argument helper whose result
+  depends on its second/keyword argument is not modeled.
+
+### Census run (2026-08-18, first measurement)
+
+Run against every `.py` file under `tests/**` on this repo (608 files;
+`tests/fixtures/lang/broken.py` skipped, a deliberately-malformed parse
+fixture -- `scan_confinement_facts` logs the skip and omits it, per its
+own docstring, rather than crashing the whole scan):
+
+```
+functions scanned: 11545
+total fs.write sites recognized: 2989
+counts: {rooted: 2248, escaped: 1, unknown: 740}
+poison_sources: 5 distinct callees, 13 UNKNOWN sites attributed to one
+  (transitive helper-call poisoning, T-0809-style propagation)
+UNKNOWN with NO attributable poison_source: 727 sites (98% of all UNKNOWN)
+```
+
+The user's original ~352 figure (from a strata via-list enumeration)
+counted DECLARED FILES, not call sites -- corrected by the user
+mid-drive; 2989 is the real call-site count this pass recognizes.
+
+**The finding, not a failure:** the ticket's own anticipated risk --
+"ONE unresolved callee inside a widely-used test helper can poison
+hundreds of sites" -- does NOT materialize here. Helper-call poison
+propagation accounts for only 13 of 740 `UNKNOWN` sites (five distinct
+helpers, none with more than 3 attributed sites: `tests/integration/
+test_exports_write.py::_make_pkg` (3), plus four with 1 each). The
+DOMINANT source (727 sites, 98%) is this pass's own documented
+interprocedural-argument-substitution gap above: dozens of small,
+file-local `_init_repo(path)`/`_make_pkg(pkg, name)`/`git_init(root)`-
+shaped helpers that write DIRECTLY to their own plain-named `Path`
+parameter (never literally named `tmp_path`, never returned) -- e.g.
+`tests/test_ticket_land.py` alone accounts for 208 of the 727. Only one
+`ESCAPED` site was found in the entire `tests/**` tree (`tests/test_
+check_runner.py:359`), consistent with the ticket's own prediction that
+`ESCAPED` should be rare and each instance worth a look, not a systemic
+pattern.
+
+**What would have to become provable first, if this is to become a
+gate:** the argument-substitution gap above, not helper-poison
+propagation. A follow-up pass that lets a helper's OWN internal write
+site inherit `ROOTED` when EVERY call site in `facts` passes a `ROOTED`
+argument to the corresponding parameter (a much smaller extension than
+full interprocedural substitution: no per-call-site cloning, just a
+whole-program "is this parameter ALWAYS called with a confined
+argument" check per helper, still bottom-up on the same SCC worklist)
+would likely resolve the large majority of the 727 -- concentrated in a
+small number of files (`tests/test_ticket_land.py` alone is 28% of it).
+This is NOT built by this ticket; T-2504's own scope is the census only.
+
 ## Comment DSL
 
 <!-- frob:describes src/frob/graph/dsl.py::parse_directives -->
