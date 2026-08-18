@@ -31,16 +31,32 @@ scope_changes:
     directives on this class
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 designated_repro_test: null
 acceptance:
 - text: Given frob --help, when the grouped subcommand listing renders, then each
     section header sits at a strictly smaller indent than every command entry beneath
     it, and no help-text line breaks inside a word.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 - text: Given the two header-emitting branches, when the fix lands, then they are
     a single loop rather than two near-identical blocks, and the existing WIRE001/DEAD001
     waivers on both methods are preserved unchanged.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_verb_groups_listed_before_also_available_directly_section
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_non_group_verb_listed_after_also_available_directly
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_nested_subparser_help_is_unaffected
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+  - tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_no_help_text_breaks_inside_a_word
 threat: null
 component: cli
 anchor: false
