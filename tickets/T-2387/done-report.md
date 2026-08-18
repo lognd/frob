@@ -38,7 +38,7 @@ green PR does not run `pytest tests/unit/`, it runs `frob check`. Filed
 a follow-up (see below) to wire it into frob check as a gate rather than
 leaving it a unit test nobody runs as part of the enforcement path.
 
-Filed: T-draft-d1d6cb26 ("Wire find_dropped_cli_flags into frob check
+Filed: T-2397 ("Wire find_dropped_cli_flags into frob check
 as a gate (T-2387 visibility gap)"), scope
 src/frob/gates/**,src/frob/check/**,docs/modules/gates.md -- renumbers
 to a real id at land.
@@ -56,7 +56,7 @@ diff-scoped checks. No frob:waive touched or needed.
  tests/unit/test_main_entry.py      | 60 ++++++++++++++++++++++++++++++++++++--
  tickets/T-2385/ticket.md           | 18 +++++++++++-
  tickets/T-2387/ticket.md           |  8 ++++-
- tickets/T-draft-d1d6cb26/ticket.md | 48 ++++++++++++++++++++++++++++++
+ tickets/T-2397/ticket.md | 48 ++++++++++++++++++++++++++++++
  6 files changed, 153 insertions(+), 12 deletions(-)
 ```
 

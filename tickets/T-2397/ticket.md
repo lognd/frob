@@ -1,5 +1,5 @@
 ---
-id: T-draft-d1d6cb26
+id: T-2397
 title: Wire find_dropped_cli_flags into frob check as a gate (T-2387 visibility gap)
 state: queued
 kind: bug

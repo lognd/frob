@@ -58,7 +58,7 @@ across unrelated files (measured, present on main before this change).
  tickets/T-2385/ticket.md           | 38 ++++++++++++++++++--
  tickets/T-2387/done-report.md      | 71 ++++++++++++++++++++++++++++++++++++++
  tickets/T-2387/ticket.md           |  8 ++++-
- tickets/T-draft-d1d6cb26/ticket.md | 48 ++++++++++++++++++++++++++
+ tickets/T-2397/ticket.md | 48 ++++++++++++++++++++++++++
  7 files changed, 242 insertions(+), 14 deletions(-)
 ```
 
