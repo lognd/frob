@@ -279,7 +279,7 @@ def _tracked_gate_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_allowlisted_function_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_semantic_function_with_incidental_regex_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_non_gate_code_never_scanned  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_every_known_detector_package_module_stays_clean  # noqa: E501
+# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_supplychain_lexcheck001_backlog_is_empty_t2469  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_vet_needle_matcher_shape_is_flagged  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_elementtree_find_is_not_a_trigger  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_scans_scope_is_disclosed_in_log  # noqa: E501

@@ -25,6 +25,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2464: T-2464: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
 - T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
 - T-2467: T-2467: Reshape T-1614: periodic watermark-based waiver audit, drop runs_last
+- T-2469: T-2469: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
 - T-2470: T-2470: C++ ARCH symref producer spells qualnames with :: instead of frob's canonical . join
 - T-2473: T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
 - T-2476: T-2476: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001 has a doc entry

@@ -7,12 +7,38 @@ manifests, CI workflows, and tracked binary blobs are purely structural
 properties of text/tree-shape frob already has on disk, no fetch, no
 registry metadata, same "statically-detectable" class docs/design/
 registry/supply-chain.yaml tags them with.
+
+T-2469: the four manifest-reading detectors (`_pyproject_unpinned_
+violations`/`_package_json_unpinned_violations`/`_cargo_toml_unpinned_
+violations`/`_python_install_artifact_violations`/`_unpinned_ci_action_
+violations`) used to decide from `re.search`/`re.match` over each
+manifest's raw TEXT and build a symref-less `Violation` -- T-2466's
+LEXCHECK001 widening (`DETECTOR_PACKAGE_ROOTS` past `src/frob/gates/**`
+alone) correctly caught this as the SAME "parse, don't grep" defect
+class this repo already enforces elsewhere. Every one of these manifest
+formats already has a real parser available (`tomllib`/`json` in the
+stdlib, `packaging.requirements.Requirement` for a PEP 508 dependency
+string, `ast` for setup.py's own Python source, `configparser` for
+setup.cfg's declarative-config INI shape, `yaml` -- already a project
+dependency -- for a GitHub Actions workflow document), so the root fix
+is switching each detector to its real parser rather than adding a
+`symref=` allowlist entry: a regex over an already-structurally-parsed
+VALUE (e.g. splitting `"lodash": "*"`'s value into a bare string) is
+not the lexical-decision shape LEXCHECK001 exists to catch (nothing is
+decided FROM the regex any more, `json`/`tomllib` already decided the
+shape), and this file no longer imports `re` at all.
 """
 
 from __future__ import annotations
 
-import re
+import ast
+import configparser
+import json
+import tomllib
 from pathlib import Path
+
+import yaml
+from packaging.requirements import InvalidRequirement, Requirement
 
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
@@ -23,10 +49,6 @@ _log = get_logger(__name__)
 # Version specs that are NOT an exact pin: caret/tilde ranges, wildcards,
 # comparison operators, and the bare npm/cargo "*" catch-all.
 _UNPINNED_MARKERS = ("^", "~", "*", ">", "<", "x", "X")
-
-_PYPROJECT_DEP_RE = re.compile(r'"([A-Za-z0-9_.-]+)\s*([^"]*)"')
-_PACKAGE_JSON_DEP_RE = re.compile(r'"([A-Za-z0-9_.@/-]+)"\s*:\s*"([^"]+)"')
-_CARGO_DEP_RE = re.compile(r'^\s*([A-Za-z0-9_-]+)\s*=\s*"([^"]+)"', re.MULTILINE)
 
 
 def _read_text_or_empty(path: Path) -> str:
@@ -50,29 +72,30 @@ def _is_unpinned_spec(spec: str) -> bool:
 
 
 def _pyproject_unpinned_violations(project_root: Path) -> list[Violation]:
-    """VET007 half: scan `pyproject.toml`'s `dependencies = [...]` block for
-    specs with no exact pin."""
+    """VET007 half: parse `pyproject.toml`'s `dependencies = [...]` array
+    (bare top-level, or PEP 621's `[project]` table -- both shapes are
+    checked) via `tomllib`, then each PEP 508 requirement string via
+    `packaging.requirements.Requirement`, for specs with no exact pin."""
     violations: list[Violation] = []
     pyproject = project_root / "pyproject.toml"
     if not pyproject.is_file():
         return violations
-    text = _read_text_or_empty(pyproject)
-    in_deps = False
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("dependencies") and "=" in stripped:
-            in_deps = True
+    try:
+        data = tomllib.loads(_read_text_or_empty(pyproject))
+    except tomllib.TOMLDecodeError as exc:
+        _log.warning("vet: %s is not valid TOML: %s", pyproject, exc)
+        return violations
+    deps = data.get("dependencies") or data.get("project", {}).get("dependencies") or []
+    if not isinstance(deps, list):
+        return violations
+    for entry in deps:
+        if not isinstance(entry, str):
             continue
-        if in_deps and stripped.startswith("]"):
-            in_deps = False
+        try:
+            req = Requirement(entry)
+        except InvalidRequirement:
             continue
-        if not in_deps or stripped.startswith("#"):
-            continue
-        match = _PYPROJECT_DEP_RE.search(stripped)
-        if match is None:
-            continue
-        name, rest = match.group(1), match.group(2)
-        if _is_unpinned_spec(rest):
+        if _is_unpinned_spec(str(req.specifier)):
             violations.append(
                 Violation(
                     rule="VET007",
@@ -80,7 +103,7 @@ def _pyproject_unpinned_violations(project_root: Path) -> list[Violation]:
                     file=str(pyproject),
                     line=0,
                     message=(
-                        f"{name}: unpinned dependency spec {stripped!r} "
+                        f"{req.name}: unpinned dependency spec {entry!r} "
                         f"in pyproject.toml"
                     ),
                 )
@@ -89,18 +112,26 @@ def _pyproject_unpinned_violations(project_root: Path) -> list[Violation]:
 
 
 def _package_json_unpinned_violations(project_root: Path) -> list[Violation]:
-    """VET007 half: scan `package.json`'s dependencies/devDependencies for
-    specs with no exact pin."""
+    """VET007 half: parse `package.json` (real JSON) for a
+    dependencies/devDependencies entry with no exact pin."""
     violations: list[Violation] = []
     package_json = project_root / "package.json"
     if not package_json.is_file():
         return violations
-    text = _read_text_or_empty(package_json)
+    try:
+        data = json.loads(_read_text_or_empty(package_json))
+    except json.JSONDecodeError as exc:
+        _log.warning("vet: %s is not valid JSON: %s", package_json, exc)
+        return violations
+    if not isinstance(data, dict):
+        return violations
     for section in ("dependencies", "devDependencies"):
-        block_match = re.search(rf'"{section}"\s*:\s*\{{([^}}]*)\}}', text, re.DOTALL)
-        if block_match is None:
+        deps = data.get(section)
+        if not isinstance(deps, dict):
             continue
-        for name, spec in _PACKAGE_JSON_DEP_RE.findall(block_match.group(1)):
+        for name, spec in deps.items():
+            if not isinstance(spec, str):
+                continue
             if spec.startswith("git+") or spec.startswith("file:"):
                 continue  # SC-DETECTION-NPM-NON-REGISTRY-SOURCE's territory
             if _is_unpinned_spec(spec):
@@ -120,17 +151,30 @@ def _package_json_unpinned_violations(project_root: Path) -> list[Violation]:
 
 
 def _cargo_toml_unpinned_violations(project_root: Path) -> list[Violation]:
-    """VET007 half: scan `Cargo.toml`'s `[dependencies]` table for specs
-    with no exact pin."""
+    """VET007 half: parse `Cargo.toml`'s `[dependencies]` table (real
+    TOML) for a spec (bare version string, or an inline table's own
+    `version=`) with no exact pin."""
     violations: list[Violation] = []
     cargo_toml = project_root / "Cargo.toml"
     if not cargo_toml.is_file():
         return violations
-    text = _read_text_or_empty(cargo_toml)
-    dep_section = re.search(r"\[dependencies\](.*?)(?:\n\[|\Z)", text, re.DOTALL)
-    if dep_section is None:
+    try:
+        data = tomllib.loads(_read_text_or_empty(cargo_toml))
+    except tomllib.TOMLDecodeError as exc:
+        _log.warning("vet: %s is not valid TOML: %s", cargo_toml, exc)
         return violations
-    for name, spec in _CARGO_DEP_RE.findall(dep_section.group(1)):
+    deps = data.get("dependencies", {})
+    if not isinstance(deps, dict):
+        return violations
+    for name, value in deps.items():
+        if isinstance(value, str):
+            spec = value
+        elif isinstance(value, dict):
+            spec = value.get("version", "")
+            if not isinstance(spec, str):
+                continue
+        else:
+            continue
         if _is_unpinned_spec(spec):
             violations.append(
                 Violation(
@@ -162,6 +206,65 @@ def _unpinned_dependency_violations(project_root: Path) -> list[Violation]:
     ]
 
 
+def _setup_py_data_files_dests(text: str) -> list[str]:
+    """Every destination string literal from a `setup(...)`/`setuptools.
+    setup(...)` call's `data_files=` keyword argument, via a real `ast`
+    parse of `text` (T-2469) -- no text regex over Python source. A
+    `data_files` entry is `(dest, [files])`; only the first (destination)
+    element of each 2-tuple/list is collected. A syntax error (or any
+    shape this walk cannot resolve to a literal string) yields nothing
+    rather than raising -- same fail-open posture the previous regex-
+    based scan had for unmatched text."""
+    dests: list[str] = []
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return dests
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        name = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
+        if name != "setup":
+            continue
+        for kw in node.keywords:
+            if kw.arg != "data_files" or not isinstance(kw.value, ast.List):
+                continue
+            for entry in kw.value.elts:
+                dest_node = None
+                if isinstance(entry, (ast.Tuple, ast.List)) and entry.elts:
+                    dest_node = entry.elts[0]
+                if isinstance(dest_node, ast.Constant) and isinstance(
+                    dest_node.value, str
+                ):
+                    dests.append(dest_node.value)
+    return dests
+
+
+def _setup_cfg_data_files_dests(text: str) -> list[str]:
+    """Every destination key under setuptools' declarative `[options.
+    data_files]` INI section (T-2469), via a real `configparser` parse of
+    `text` -- no text regex. A malformed/unparseable `setup.cfg` yields
+    nothing rather than raising."""
+    parser = configparser.ConfigParser()
+    try:
+        parser.read_string(text)
+    except configparser.Error as exc:
+        _log.warning("vet: setup.cfg is not valid INI: %s", exc)
+        return []
+    if not parser.has_section("options.data_files"):
+        return []
+    return list(parser["options.data_files"])
+
+
+def _is_escaping_data_files_dest(dest: str) -> bool:
+    """Whether `dest` is absolute or escapes the package via a leading
+    `../` traversal -- the same two shapes the previous regex-based scan
+    flagged, expressed as plain string prefix checks (no regex needed:
+    the value is already an exact string, extracted by a real parser)."""
+    return dest.startswith("/") or dest.startswith("../")
+
+
 # frob:enforces SC-DETECTION-PYTHON-INSTALL-ARTIFACTS
 # frob:enforces CHK-GATE-VET008
 # frob:tests \
@@ -172,37 +275,79 @@ def _python_install_artifact_violations(project_root: Path) -> list[Violation]:
     escaping the package via `../` traversal -- an installed artifact landing
     somewhere unexpected on the target filesystem."""
     violations: list[Violation] = []
-    for name in ("setup.py", "setup.cfg"):
-        path = project_root / name
-        if not path.is_file():
-            continue
-        text = _read_text_or_empty(path)
-        if "data_files" not in text:
-            continue
-        data_files_match = re.search(r"data_files\s*=\s*(\[.*?\])", text, re.DOTALL)
-        candidate_text = data_files_match.group(1) if data_files_match else text
-        for dest in re.findall(r"""['"]((?:/|\.\./)[^'"]*)['"]""", candidate_text):
-            violations.append(
-                Violation(
-                    rule="VET008",
-                    severity=Severity.ERROR,
-                    file=str(path),
-                    line=0,
-                    message=(
-                        f"{name}: data_files destination {dest!r} is "
-                        f"absolute or escapes the package via '../' "
-                        f"traversal (installed artifact lands outside "
-                        f"the package)"
-                    ),
-                )
-            )
+
+    py_path = project_root / "setup.py"
+    if py_path.is_file():
+        text = _read_text_or_empty(py_path)
+        if "data_files" in text:
+            for dest in _setup_py_data_files_dests(text):
+                if _is_escaping_data_files_dest(dest):
+                    violations.append(
+                        Violation(
+                            rule="VET008",
+                            severity=Severity.ERROR,
+                            file=str(py_path),
+                            line=0,
+                            message=(
+                                f"setup.py: data_files destination {dest!r} "
+                                f"is absolute or escapes the package via "
+                                f"'../' traversal (installed artifact lands "
+                                f"outside the package)"
+                            ),
+                        )
+                    )
+
+    cfg_path = project_root / "setup.cfg"
+    if cfg_path.is_file():
+        text = _read_text_or_empty(cfg_path)
+        if "data_files" in text:
+            for dest in _setup_cfg_data_files_dests(text):
+                if _is_escaping_data_files_dest(dest):
+                    violations.append(
+                        Violation(
+                            rule="VET008",
+                            severity=Severity.ERROR,
+                            file=str(cfg_path),
+                            line=0,
+                            message=(
+                                f"setup.cfg: data_files destination {dest!r} "
+                                f"is absolute or escapes the package via "
+                                f"'../' traversal (installed artifact lands "
+                                f"outside the package)"
+                            ),
+                        )
+                    )
+
     return violations
 
 
-_SHA_REF_RE = re.compile(r"^[0-9a-fA-F]{40}$")
-_USES_RE = re.compile(
-    r"^\s*(?:-\s*)?uses:\s*([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)", re.MULTILINE
-)
+def _iter_workflow_uses_values(node: object) -> list[str]:
+    """Every `uses:` string value anywhere in a parsed GitHub Actions
+    workflow document (T-2469) -- a real recursive walk of the `yaml.
+    safe_load`-parsed structure, covering a job step's `uses`, a
+    composite action's own `runs.steps[].uses`, or any other nesting
+    shape, not just the `jobs.*.steps[]` case a line-oriented regex would
+    have to special-case. No text regex over the YAML source."""
+    values: list[str] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "uses" and isinstance(value, str):
+                values.append(value)
+            else:
+                values.extend(_iter_workflow_uses_values(value))
+    elif isinstance(node, list):
+        for item in node:
+            values.extend(_iter_workflow_uses_values(item))
+    return values
+
+
+_HEX_DIGITS = frozenset("0123456789abcdefABCDEF")
+
+
+def _is_full_commit_sha(ref: str) -> bool:
+    """Whether `ref` is a full 40-hex-character commit SHA (T-2469) --
+    plain string checks, no regex."""
+    return len(ref) == 40 and all(c in _HEX_DIGITS for c in ref)
 
 
 # frob:enforces SC-DETECTION-UNPINNED-CI-ACTION
@@ -212,17 +357,27 @@ _USES_RE = re.compile(
 def _unpinned_ci_action_violations(project_root: Path) -> list[Violation]:
     """VET009: a GitHub Actions `uses: owner/action@ref` where `ref` is a
     mutable branch/tag rather than a full 40-hex-char commit SHA -- a
-    structural property of tracked `.github/workflows/*.yaml` text."""
+    structural property of tracked `.github/workflows/*.yaml` text,
+    decided from a real `yaml.safe_load` parse (T-2469), not a line
+    regex."""
     violations: list[Violation] = []
     workflows_dir = project_root / ".github" / "workflows"
     if not workflows_dir.is_dir():
         return violations
     for path in sorted(workflows_dir.glob("*.y*ml")):
         text = _read_text_or_empty(path)
-        for action, ref in _USES_RE.findall(text):
+        try:
+            doc = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            _log.warning("vet: %s is not valid YAML: %s", path, exc)
+            continue
+        for uses in _iter_workflow_uses_values(doc):
+            if "@" not in uses:
+                continue
+            action, _, ref = uses.rpartition("@")
             if action.startswith("./"):
                 continue  # local composite action, not a supply-chain edge
-            if _SHA_REF_RE.match(ref):
+            if _is_full_commit_sha(ref):
                 continue
             violations.append(
                 Violation(

@@ -1,7 +1,7 @@
 ---
 id: T-2469
 title: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -17,7 +17,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
+designated_repro_test: tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
 threat: null
 component: null
 anchor: false
