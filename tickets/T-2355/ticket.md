@@ -76,7 +76,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cf2f60bde5392be816a0cf07b57bfa2cc7f292e8
 ---
 Investigated for T-2346 (measured 2026-08-17): confirmed hypothesis --
 this is NOT a fresh bug, it is an INCOMPLETE, already-designed migration.
