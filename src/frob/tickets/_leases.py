@@ -41,7 +41,7 @@ from pydantic import BaseModel
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
-from frob import gitio
+import frob.gitio as gitio
 from frob.gitio import GitError, ProcResult
 from frob.logging import get_logger
 from frob.tickets._models import TicketError

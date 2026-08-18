@@ -15232,6 +15232,7 @@ boundary b_login endorse f_login : foreign -> authenticated when "jwt_verified"
 """
 
 
+# frob:ticket T-2407
 class TestSysGate:
     # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
     def test_noop_no_design_dir(self, tmp_path: Path) -> None:
@@ -15284,6 +15285,7 @@ class TestSysGate:
         snapshot = _snapshot(tmp_path)
         assert _by_rule(sys_gate(tmp_path, snapshot), "SYS002") == []
 
+    # frob:ticket T-2407
     def test_sys003_import(self, tmp_path: Path, monkeypatch) -> None:
         """T-0080: SYS003 surfaces `check_import_conformance`'s tier-2
         violations through `sys_gate`. The surface grammar does not lex
@@ -15316,9 +15318,11 @@ class TestSysGate:
         sys003 = _by_rule(violations, "SYS003")
         assert len(sys003) == 1
         assert sys003[0].file == "pkg_a/mod.py"
-        # SYS003 is WARN, not ERROR: warn-first adoption, same posture as
-        # COV001 (T-0080 REJECT round 1, severity item).
-        assert sys003[0].severity == Severity.WARN
+        # T-2407: SYS003 promoted WARN -> ERROR after the T-2380/T-2403/
+        # T-2407 calibration burned genuine findings to zero (was WARN
+        # for warn-first adoption per T-0080 REJECT round 1, same
+        # posture COV001 started from).
+        assert sys003[0].severity == Severity.ERROR
 
     def test_sys004_load_failure(self, tmp_path: Path) -> None:
         # T-0080 REJECT round 1: a malformed .strata file must be reported

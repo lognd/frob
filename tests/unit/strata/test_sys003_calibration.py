@@ -48,6 +48,7 @@ def _snapshot(root: Path):
     return build_graph(root, cache).danger_ok
 
 
+# frob:ticket T-2407
 class TestSys003TestsuiteFlowCalibration:
     """Positive control for the T-2380 model fix: proves the narrowing
     keeps SYS003 capable of firing on every violation class it must, and
@@ -124,6 +125,7 @@ class TestSys003TestsuiteFlowCalibration:
         assert len(sys003) == 1
         assert sys003[0].file == "src_a/mod.py"
 
+    # frob:ticket T-2407
     def test_must_still_fire__genuine_undeclared_production_cross_import(
         self, tmp_path: Path, monkeypatch
     ) -> None:
@@ -142,9 +144,12 @@ class TestSys003TestsuiteFlowCalibration:
         sys003 = [v for v in violations if v.rule == "SYS003"]
         assert len(sys003) == 1
         assert sys003[0].file == "src_a/mod.py"
-        assert sys003[0].severity.name == "WARN"
+        # T-2407: SYS003 promoted WARN -> ERROR once the last real
+        # findings (post-T-2380/T-2403 calibration) were burned to zero.
+        assert sys003[0].severity.name == "ERROR"
 
 
+# frob:ticket T-2407
 class TestSys003DeclaredPairDoesNotMaskReverse:
     """T-2403's own lesson, caught mid-ticket: `Flow` declarations are
     per NODE PAIR, not per import site -- declaring `A -> B` for one
@@ -186,3 +191,67 @@ class TestSys003DeclaredPairDoesNotMaskReverse:
         sys003 = [v for v in violations if v.rule == "SYS003"]
         assert len(sys003) == 1
         assert sys003[0].file == "pkg_b/other.py"
+
+    # frob:ticket T-2407
+    def test_declared_pair_does_not_mask_a_third_node_reaching_the_same_dst(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2407's own carried-forward instance of the same lesson: a
+        Flow is scoped to its declared (src, dst) pair only, so declaring
+        `a -> b` must not silence an UNRELATED `c -> b` import that
+        shares only the destination node. This is the shape T-2407 had
+        to rule out by hand (`git grep` across each source node's whole
+        code glob) before adding each of its four Flows -- a component
+        importing the same widely-depended-on node (like this repo's
+        `cli`) from a second, undeclared source must still fire."""
+        import frob.strata as strata_mod
+
+        nodes = (
+            Node(id="a", trust="trusted", attrs=("code=pkg_a/*.py",)),
+            Node(id="b", trust="trusted", attrs=("code=pkg_b/*.py",)),
+            Node(id="c", trust="trusted", attrs=("code=pkg_c/*.py",)),
+        )
+        # Only a -> b is declared; c -> b has no Flow at all.
+        flows = (Flow(id="f_a_b", src="a", dst="b"),)
+        model = KernelModel(nodes=nodes, flows=flows)
+        monkeypatch.setattr(
+            strata_mod,
+            "load_design_ids",
+            lambda root, design_dir: DesignIds(models=(model,)),
+        )
+        _write(tmp_path, "design/.gitkeep", "")
+        # The declared direction: silent.
+        _write(tmp_path, "pkg_a/mod.py", "import pkg_b.mod\n")
+        # A different source importing the same dst, undeclared: must fire.
+        _write(tmp_path, "pkg_c/mod.py", "import pkg_b.mod\n")
+        _write(tmp_path, "pkg_b/mod.py", "x = 1\n")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys003 = [v for v in violations if v.rule == "SYS003"]
+        assert len(sys003) == 1
+        assert sys003[0].file == "pkg_c/mod.py"
+
+
+# frob:ticket T-2407
+class TestSys003ZeroOnFrobsOwnRepo:
+    """T-2407's own closure-bar evidence: `frob check --only sys`'s SYS003
+    family, run against THIS repo's own live `design/frob.strata`, reports
+    zero findings -- the epic's (T-0969) acceptance criterion [0]. Filters
+    specifically to `rule == "SYS003"` rather than asserting the whole
+    `sys_gate` output is empty: `tests/system/test_frob_self_model.py::
+    TestFrobSelfModel::test_sys_gate_zero_violations` asserts a broader,
+    pre-existing (and, as of this writing, already-failing on `main` for
+    reasons outside T-2407's scope) zero-ALL-violations bar that also
+    covers the unrelated SELFAUDIT/SYS100/SYS101/SYS111 self-audit
+    families; this test isolates the one family T-2407 actually owns."""
+
+    def test_sys003_zero_against_live_repo_design(self, tmp_path: Path) -> None:
+        from frob.gates import sys_gate
+        from frob.graph import build_graph
+
+        repo_root = Path(__file__).resolve().parents[3]
+        build_result = build_graph(repo_root, tmp_path / "cache.db")
+        assert build_result.is_ok, f"graph build failed: {build_result.err}"
+        violations = sys_gate(repo_root, build_result.danger_ok)
+        sys003 = [v for v in violations if v.rule == "SYS003"]
+        assert sys003 == [], f"unexpected SYS003 finding(s): {sys003}"

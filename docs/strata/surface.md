@@ -1012,18 +1012,17 @@ SYS002 obligations anyway; a file-walking surface that does not consult
   authority" with a mandatory revocation edge) -- the construct kinds a
   human reviewer would most want attested by real code, not just the
   model.
-- **SYS003** (warn): tier-2 `bind_code` + `check_import_conformance`
-  (`## Code binding (tier 2, v0 implementation)` above), run once per
-  elaborated design model and surfaced as gate violations -- the "not yet
-  wired" cut noted in that section is now closed. An ambiguous binding
-  within one model is logged and skipped for that model only, never fatal
-  to the whole gate. WARN, not ERROR, on landing (T-0080 REJECT round 1,
-  severity item): every other gate in this family starts warn-first and is
-  flipped to error only by a deliberate, tracked decision once a repo's
-  design/code pairing has stabilized (COV001's history is the precedent).
-  Tier-2 conformance is new and unproven at repo scale; the intended future
-  state is `SYS003 = "error"` via `[gates.severity]` once a repo has run it
-  clean for a while, not a default that can break a build on day one.
+- **SYS003** (error, T-2407): tier-2 `bind_code` + `check_import_
+  conformance` (`## Code binding (tier 2, v0 implementation)` above), run
+  once per elaborated design model and surfaced as gate violations -- the
+  "not yet wired" cut noted in that section is now closed. An ambiguous
+  binding within one model is logged and skipped for that model only,
+  never fatal to the whole gate. Started WARN, not ERROR, on landing
+  (T-0080 REJECT round 1, severity item), the same warn-first-then-
+  deliberate-flip posture every gate in this family starts from (COV001's
+  history is the precedent) -- promoted to ERROR by T-2407 once T-2380's
+  calibration (4834 -> 133 genuine findings) and T-2403/T-2407's burn-down
+  (133 -> 0) proved tier-2 conformance clean at repo scale.
 - **SYS004** (error): a `.strata` file under the design directory failed
   to parse or elaborate. Distinct from SYS001 on purpose -- a load failure
   and a dangling reference are different problems with different fixes

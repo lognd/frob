@@ -287,7 +287,7 @@ check as the first-class CLI surface for the same diagnosis (T-0317).
 
 ## Derived-state integrity manifest (T-0570)
 
-<!-- frob:describes src/frob/doctor.py::verify_derived_state -->
+<!-- frob:describes src/frob/derived_state.py::verify_derived_state -->
 
 `frob doctor` also fingerprints every derived artifact `frob` writes and
 reports which ones are present but corrupt, BEFORE any gate consumes them.
@@ -300,7 +300,18 @@ single line saying "the derived state itself is stale" -- `frob doctor` is
 the first thing an agent runs, so this is the doctor-first choke point that
 catches it before the confusing findings follow.
 
-`DERIVED_ARTIFACTS` (`src/frob/doctor.py`) names every artifact checked:
+T-2407: `verify_derived_state`, `DerivedArtifactStatus`, and
+`DERIVED_ARTIFACTS` now live in `src/frob/derived_state.py`, not
+`src/frob/doctor.py` -- moved out under `core` so that `frob.check`'s
+own direct use of this fingerprint pass (below) is not an `X -> cli`
+import (`frob.doctor` is this repo's `cli`-node home for the `frob
+doctor` subcommand, and had no argparse surface of its own tying this
+check to it). `frob.doctor` imports both back and keeps its own
+drift-manifest tracking (`_detect_derived_state_drift` et al) locally,
+unchanged.
+
+`DERIVED_ARTIFACTS` (`src/frob/derived_state.py`) names every artifact
+checked:
 
 | name | path | format |
 |---|---|---|

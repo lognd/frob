@@ -104,6 +104,10 @@
     "design/frob.strata::frob.f_t2403_verify_graphlang": "5e6975e6ecad5db29a61f59e41778b4d6fcb9d6d9b3dc95eaa89ec05e82293a4",
     "design/frob.strata::frob.f_t2403_verify_tickets_ledger": "10c6e7ce35f6e2af09d0633a3b1b4408d846bce866e726532b352cc21cc5ef84",
     "design/frob.strata::frob.f_t2403_vet_stratamod": "48f168feb3280ae75f5c55be437ae9f134c0e718b54de1a9de4927bc0aca98a7",
+    "design/frob.strata::frob.f_t2407_core_cli": "c7fb2fbc7d816676a3be2c387e336ab1142d74184830789bd28709b24e2a492d",
+    "design/frob.strata::frob.f_t2407_serve_cli": "3aeba2ee3fb641da7e9ee98af11089db6256653eeb3ecd7aa53790ef3e19ae7c",
+    "design/frob.strata::frob.f_t2407_telemetry_cli": "d543ee552ebf57232bb72854593755c1c8ecce6178bd78b0f491b728e8378743",
+    "design/frob.strata::frob.f_t2407_verify_cli": "54d341b5d0c649c65c230b2e26132470a84905006a2e4c1038a959f556b4ed97",
     "design/frob.strata::frob.f_testsuite_checker": "81f90fa7184d0be00311beb5ab5789d80c18c627e8109742879dcbe64b201869",
     "design/frob.strata::frob.f_testsuite_cli": "09c01d79c7bde98f20c1baa7749e635b319f2e78a0f4292c9b5dbe6d033eca73",
     "design/frob.strata::frob.f_testsuite_core": "a6501c30045758a694bf4f1aea20d6fd37931636abeb3c141ace9a0055cd4952",
@@ -547,6 +551,9 @@
     "src/frob/deploy/_vm_runner.py::VmAuditConfig": "760aa6d6ab086e4a4acf3735f2d3316b649974fd0b49c4cb326f7baa625e159b",
     "src/frob/deploy/_vm_runner.py::run_vm_audit": "1e55d5e4788012727ae101ce6d93226338dac78e9bb650ccbb8248989b10c4c3",
     "src/frob/deploy/_vm_runner.py::vboxmanage_available": "93583d29f0a4df041baf2313a4f4334381f98a3027299d736b8b3e03359b430a",
+    "src/frob/derived_state.py::DERIVED_ARTIFACTS": "e676221f7220b28e11b645b847e77b406797a9e8a5658fcc9fcb15d1a8627fee",
+    "src/frob/derived_state.py::DerivedArtifactStatus": "46c01a6894e15e81ad12cfe2c722989599360b0e2d23e6c9c2f4d5046e811085",
+    "src/frob/derived_state.py::verify_derived_state": "49abd14b5828c5397700248137fe88c069f916fb8a465cab5b7ac92a61be3765",
     "src/frob/docs/__init__.py::DocEntry": "653b973beca7c8dce7a746130df0d3fa37968a0fea07baf71e0d407d89ee08c9",
     "src/frob/docs/__init__.py::DocMatch": "b72ab903f51a3d023cee6c741fc2c24c22735e778721fe82cc8db075829250d4",
     "src/frob/docs/__init__.py::Docstring": "c181604f2cb0ce574365ec3be6deb3db42f6af39d7b75d698e317c4924d321ee",
@@ -554,8 +561,6 @@
     "src/frob/docs/__init__.py::find_docs_dir": "86a2b5c70f18a427793381ec67cef5a084ee7627318a9eae1ab81f7b30526a13",
     "src/frob/docs/__init__.py::overview": "7bdf5ce56bde94213fb2153e67eeb8d07e37a102b43fc7a97b44bf033ad36029",
     "src/frob/docs/__init__.py::search": "b3a9ed0fac89851d01ca88da07cfc6eaa69d3a67189fca0e5a5c30d167042890",
-    "src/frob/doctor.py::DERIVED_ARTIFACTS": "e676221f7220b28e11b645b847e77b406797a9e8a5658fcc9fcb15d1a8627fee",
-    "src/frob/doctor.py::DerivedArtifactStatus": "46c01a6894e15e81ad12cfe2c722989599360b0e2d23e6c9c2f4d5046e811085",
     "src/frob/doctor.py::DoctorReport": "5124e9b4331bb1078dd52623f0fa817b69e56254ea620a808f11346044a10d07",
     "src/frob/doctor.py::GlobalBinarySkew": "784b98847845e12e5acc73ce8821b119a147ee883e3439d56b61af3ea2ed4583",
     "src/frob/doctor.py::LiveLandProcess": "df45e85419a76c6e0bb5b53c256dfb6d5844f23147dd9b10757ad879ebf83ad0",
@@ -570,7 +575,6 @@
     "src/frob/doctor.py::scan_malformed_ticket_edges": "6ce0127b57a6808dd573a11421e19d445c2b30a7df80cc5e6ead715ec2e15f19",
     "src/frob/doctor.py::scan_stale_ticket_leases": "8c4cb4195a857fba8b41f5870469e08785481bad36fa06310b1d5557a9176f4f",
     "src/frob/doctor.py::scan_venv_shims": "a0a197ea0da07587194596e85515254b0bdf4d435ea488c7172c7bc03c58df7a",
-    "src/frob/doctor.py::verify_derived_state": "49abd14b5828c5397700248137fe88c069f916fb8a465cab5b7ac92a61be3765",
     "src/frob/dup/_cache.py::get_fingerprint": "13d3a6a454e05691e443e7d8dc6ed772d0242112249fd8e098171317edde0f44",
     "src/frob/dup/_cache.py::get_verdict": "d8ef14a6a2df2d90d5587f8c97cc41ff1a9e4268d5aa8799df7f520c26e2df52",
     "src/frob/dup/_cache.py::put_fingerprint": "7fbd76dde95e7ec172afe95d2e6f380c6c294cb801e3013484ffaf28dbc3c67e",
@@ -2450,5 +2454,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.521.0"
+  "version": "0.522.0"
 }

@@ -69,7 +69,6 @@ hand -- the recorded PID may have been reused.
 
 from __future__ import annotations
 
-import hashlib
 import importlib
 import json
 import shutil
@@ -78,6 +77,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from frob.derived_state import DerivedArtifactStatus, verify_derived_state
 from frob.repo_meta import stale_binary_warning
 from frob.logging import get_logger
 from frob.mutate._journal import StaleJournal, list_stale_journals
@@ -109,45 +109,6 @@ class NativeExtensionStatus(BaseModel):
     name: str
     available: bool
     version: str | None = None
-
-
-# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
-#: `(manifest name, path relative to root, byte-format kind)` for every
-#: derived artifact `frob` writes that `run_diagnosis` fingerprints.
-#: `"sqlite"` entries are validated by header magic bytes (see
-#: `_SQLITE_MAGIC`); `"json"` entries by `json.loads`. Deliberately excludes
-#: `.frob/telemetry.jsonl` (append-only event log, not a cache another gate
-#: trusts for correctness) and native build output (already covered by
-#: `NATIVE_EXTENSIONS` above via direct import, a stronger check than a
-#: fingerprint could give).
-DERIVED_ARTIFACTS: tuple[tuple[str, str, str], ...] = (
-    ("graph-cache", ".frob/cache.db", "sqlite"),
-    ("dup-cache", ".frob/dup.db", "sqlite"),
-    ("vet-cache", ".frob/vet.db", "sqlite"),
-    ("coverage-stamp", ".frob/coverage-stamp", "json"),
-    ("baseline", ".frob/baseline", "json"),
-    ("coverage-lock", "frob-coverage.lock.json", "json"),
-)
-
-#: The first 16 bytes of any valid SQLite database file (the format's own
-#: fixed magic header) -- a `"sqlite"`-kind artifact whose bytes don't start
-#: with this is corrupt/truncated/not-actually-sqlite, not merely "old".
-_SQLITE_MAGIC = b"SQLite format 3\x00"
-
-
-# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
-class DerivedArtifactStatus(BaseModel):
-    """One derived artifact's presence, content fingerprint, and validity,
-    as observed by `frob doctor` (T-0570)."""
-
-    model_config = {}
-
-    name: str
-    path: str
-    present: bool
-    healthy: bool
-    fingerprint: str | None = None
-    detail: str | None = None
 
 
 # frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
@@ -627,89 +588,6 @@ def _global_binary_skew_remediation(skew: GlobalBinarySkew) -> str:
         f"global `frob` on PATH ({skew.global_version!r}) disagrees with this "
         f"repo's own `uv run frob` ({skew.local_version!r}) -- use `uv run "
         "frob ...` here, or reconcile the installs with `uv tool upgrade frob`"
-    )
-
-
-def _sqlite_validity(data: bytes) -> str | None:
-    """`None` if `data` starts with the SQLite magic header, else a short
-    corruption detail string -- never raises on garbage bytes."""
-    if data.startswith(_SQLITE_MAGIC):
-        return None
-    return "not a valid SQLite file (bad or missing header)"
-
-
-def _json_validity(data: bytes) -> str | None:
-    """`None` if `data` parses as JSON, else a short corruption detail
-    string -- never raises on malformed bytes."""
-    try:
-        json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, ValueError) as exc:
-        return f"malformed JSON ({exc})"
-    return None
-
-
-_VALIDATORS = {"sqlite": _sqlite_validity, "json": _json_validity}
-
-
-# frob:waive OPAQUE001 reason="T-1038: kind is always a literal 'sqlite'/'json' string \
-# passed by this module's own internal derived-artifact manifest (every call site is \
-# in this file, never user/CLI input) -- the dict-key lookup can only ever resolve to \
-# one of the two _VALIDATORS entries declared right above"
-def _artifact_status(
-    root: Path, name: str, rel_path: str, kind: str
-) -> DerivedArtifactStatus:
-    """One `DerivedArtifactStatus` for `root/rel_path` -- absent is reported
-    as healthy (nothing written yet is not corruption); present-but-unreadable
-    or present-but-invalid-for-`kind` is reported unhealthy with `detail`
-    explaining why. Never raises: an artifact this function cannot even
-    read is itself a diagnosis, not an exception to propagate."""
-    path = root / rel_path
-    if not path.exists():
-        return DerivedArtifactStatus(
-            name=name, path=rel_path, present=False, healthy=True
-        )
-    try:
-        data = path.read_bytes()
-    except OSError as exc:
-        _log.warning("doctor: derived artifact %s (%s) unreadable: %s", name, path, exc)
-        return DerivedArtifactStatus(
-            name=name,
-            path=rel_path,
-            present=True,
-            healthy=False,
-            detail=f"unreadable: {exc}",
-        )
-    fingerprint = hashlib.sha256(data).hexdigest()
-    detail = _VALIDATORS[kind](data)
-    healthy = detail is None
-    if not healthy:
-        _log.warning(
-            "doctor: derived artifact %s (%s) failed integrity check: %s",
-            name,
-            path,
-            detail,
-        )
-    return DerivedArtifactStatus(
-        name=name,
-        path=rel_path,
-        present=True,
-        healthy=healthy,
-        fingerprint=fingerprint,
-        detail=detail,
-    )
-
-
-# frob:doc docs/guides/install.md#derived-state-integrity-manifest-t-0570
-# frob:tests tests/system/test_cli_doctor.py kind="integration"
-def verify_derived_state(root: Path) -> tuple[DerivedArtifactStatus, ...]:
-    """Fingerprint every entry in `DERIVED_ARTIFACTS` under `root` and report
-    its presence/validity -- the one doctor-first pass `run_diagnosis` folds
-    into `DoctorReport.derived_state`, so stale/corrupt cache state is a
-    named finding instead of a pile of confusing downstream `frob check`/
-    `frob dup` errors (T-0570)."""
-    return tuple(
-        _artifact_status(root, name, rel_path, kind)
-        for name, rel_path, kind in DERIVED_ARTIFACTS
     )
 
 

@@ -46,7 +46,7 @@ from frob.check._python import (
     _run_ty,
 )
 from frob.check._ts import _run_eslint, _run_prettier, _run_tsc, _run_vitest
-from frob.doctor import verify_derived_state
+from frob.derived_state import verify_derived_state
 from frob.lang import reset_parse_cache
 from frob.logging import get_logger
 from frob.logging.quiet import _stdout_stream_handlers as _stdout_log_handlers

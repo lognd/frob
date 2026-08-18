@@ -2,7 +2,7 @@
 id: T-2407
 title: Burn down the final 8 SYS003 findings (X -> cli coupling), then promote to
   error
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -11,16 +11,79 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- design/frob.strata
+- src/frob/doctor.py
+- src/frob/derived_state.py
+- src/frob/tickets/_leases.py
+- src/frob/gates/_sys.py
+- docs/guides/install.md
+- docs/strata/surface.md
+- tests/test_gates.py
+- tests/unit/strata/test_sys003_calibration.py
+evidence_scope:
+- tests/unit/strata/test_sys003_calibration.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/derived_state.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_sys.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/install.md
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/strata/surface.md
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/strata/test_sys003_calibration.py
+  reason: 'T-2407 scope: file this ticket''s SYS003 burn-down actually touched'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__genuine_undeclared_production_cross_import
+- tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
+designated_repro_test: tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
 acceptance:
 - text: given a fresh frob check --only sys --json, when SYS003 findings are counted,
     then the count is zero
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003ZeroOnFrobsOwnRepo::test_sys003_zero_against_live_repo_design
 - text: given src/frob/gates/_sys.py, when SYS003's severity is read, then it is ERROR
     not WARNING
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__genuine_undeclared_production_cross_import
 threat: null
 component: null
 anchor: false

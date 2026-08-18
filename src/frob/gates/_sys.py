@@ -272,7 +272,7 @@ def _sys003_one_model(model, root: Path) -> list[Violation]:  # noqa: ANN001
     return [
         Violation(
             rule="SYS003",
-            severity=Severity.WARN,
+            severity=Severity.ERROR,
             file=violation.file,
             line=violation.line,
             message=(
