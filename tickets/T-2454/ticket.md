@@ -118,7 +118,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9dd7c705da5646d21e36f3b184a30d329eef1312
 ---
 `_KNOWN_GATE_RULES` in `src/frob/gates/_waive.py` is a hand-maintained
 frozenset literal that EVERY ticket adding a gate rule must edit. It is
