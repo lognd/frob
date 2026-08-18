@@ -15,6 +15,12 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'probe: same-glob no-op to check lease status'
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
