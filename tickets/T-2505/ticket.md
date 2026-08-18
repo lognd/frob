@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 273f421a9c2c868a5da2ceddf52c9df9922d146c
 ---
 MEASURED 2026-08-18 against a full unbudgeted `frob check`:
 
