@@ -1132,10 +1132,6 @@ def same_worktree_lease(root: Path, requesting_id: str, holder_id: str) -> bool:
 
 # frob:ticket T-1743
 # frob:ticket T-1777
-# frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_existing_lease_file kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_lease_file_exists kind="unit"  # noqa: E501
-# frob:tests tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_included_in_the_warning_log kind="unit"  # noqa: E501
 # frob:ticket T-1777
 def _log_force_released(ticket_id: str, path: Path, reason: str | None) -> None:
     """The single WARNING `force_release_lease` emits once it has
@@ -1165,6 +1161,73 @@ def _log_force_released(ticket_id: str, path: Path, reason: str | None) -> None:
         )
 
 
+# frob:ticket T-2333
+def _record_lease_force_release_audit(
+    root: Path, ticket_id: str, *, reason: str
+) -> None:
+    """Best-effort append a `LeaseForceReleaseEntry` to `ticket_id`'s own
+    `lease_force_releases` audit list (T-2333) -- the ledger-persisted
+    counterpart to `_log_force_released`'s WARNING log line, so `frob
+    ticket show <id>` surfaces a forced release too, not only the process
+    log. NEVER fails/raises the caller's own lease-release outcome: an
+    unresolvable ticket (a lease can outlive its own ticket, T-1806's
+    `"ticket-gone"` shape), an unreadable queue, or a write failure all
+    degrade to a logged WARNING and a no-op, matching this module's
+    existing best-effort posture for every OTHER side-channel write
+    (`record_lease`/`release_lease`/`rename_lease`)."""
+    from datetime import date
+
+    from frob.tickets import _load_ticket_and_queue
+    from frob.tickets._models import LeaseForceReleaseEntry
+    from frob.tickets._store import ledger_lock, write_ticket
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            _log.warning(
+                "tickets: %s force-release reason not persisted to the "
+                "ledger (ticket unresolvable: %s) -- logged above only",
+                ticket_id,
+                loaded.danger_err,
+            )
+            return
+        ticket, _queue = loaded.danger_ok
+        entry = LeaseForceReleaseEntry(
+            reason=reason,
+            staleness_reason=None,
+            actor=str(root),
+            at=date.today(),
+        )
+        updated = ticket.model_copy(
+            update={"lease_force_releases": (*ticket.lease_force_releases, entry)}
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            _log.warning(
+                "tickets: %s force-release reason not persisted to the "
+                "ledger (write failed: %s) -- logged above only",
+                ticket_id,
+                write_result.danger_err,
+            )
+
+
+# frob:ticket T-2333
+# frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_removes_an_exi\
+# sting_lease_file kind="unit"
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_no_op_when_no_\
+# lease_file_exists kind="unit"
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_incl\
+# uded_in_the_warning_log kind="unit"
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_pers\
+# isted_to_the_ticket_ledger kind="unit"
+# frob:tests \
+# tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli.test_release_lease_cli_force\
+# _releases_a_live_looking_lease kind="unit"
 def force_release_lease(
     root: Path, ticket_id: str, *, reason: str | None = None
 ) -> Result[bool, LeaseError]:
@@ -1179,9 +1242,14 @@ def force_release_lease(
 
     `reason`, when given, is the operator's own justification for
     bypassing the normal orphan-only safety gate -- folded into the SAME
-    WARNING line by `_log_force_released` rather than a second mechanism.
+    WARNING line by `_log_force_released`, AND (T-2333) best-effort
+    appended to `ticket_id`'s own `lease_force_releases` ledger audit
+    list via `_record_lease_force_release_audit`, so the override is
+    reviewable in `frob ticket show <id>` too, not only in process logs.
     `None` is accepted for internal callers (e.g. `release_orphaned_
-    lease`'s own confirmed-stale path) with no operator reason to thread.
+    lease`'s own confirmed-stale path) with no operator reason to thread
+    -- no ledger entry is written for those, only the reasoned `--force`
+    path this ticket exists to cover.
 
     Deliberately does NOT transition `ticket_id`'s own ledger state; the
     caller still owns requeuing separately if abandoned.
@@ -1208,6 +1276,8 @@ def force_release_lease(
             if file_cache is not None:
                 file_cache.pop(path, None)
         _log_force_released(ticket_id, path, reason)
+        if reason:
+            _record_lease_force_release_audit(root, ticket_id, reason=reason)
     else:
         _log.info(
             "tickets: %s had no lease file to force-release (already clear)",

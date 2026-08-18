@@ -350,6 +350,27 @@ operator to discover it. Wiring `force_release_lease` into this CLI verb
 also avoids duplicating the `frob worktree release-lease` surface
 T-2175 had already shipped by the time this ticket was implemented.
 
+<!-- frob:describes src/frob/tickets/_models.py::LeaseForceReleaseEntry -->
+**T-2333: the `--force` reason is now ledger-persisted, not log-only.**
+T-1777 shipped `--force --reason`'s audit trail as a WARNING log line
+only (`_log_force_released`) -- honest, but not reviewable the way
+`frob ticket scope --reason`'s `scope_changes` audit list already is
+(`frob ticket show <id>` surfaces a scope change; it never surfaced a
+forced lease release). `force_release_lease` now ALSO best-effort
+appends a `LeaseForceReleaseEntry` (reason, the `lease_staleness_
+reason` shape that matched at release time if any, actor, date) to the
+released ticket's own `lease_force_releases` list, mirroring `Scope
+ChangeEntry`'s (T-0455) append-only, never-edited shape. Best-effort by
+design, matching every other side-channel write in this module
+(`record_lease`/`release_lease`/`rename_lease`): a lease can outlive
+its own ticket (T-1806's `"ticket-gone"` shape) or the ledger write can
+itself fail, and neither may ever turn a successful lease release into
+a reported failure -- an unresolvable/unwritable ledger degrades to a
+WARNING, never blocks or reverts the release itself. No ledger entry is
+written for the internal, reason-less call `release_orphaned_lease`
+makes on its own confirmed-stale path -- only the reasoned `--force`
+override this ticket exists to make reviewable.
+
 **Lease migration on renumber (T-1173).** The lease file is keyed by
 ticket id, but a `T-draft-XXXXXXXX` provisional id (T-0162) is exactly the
 kind of ticket most likely to hold a live lease at rename time -- a draft

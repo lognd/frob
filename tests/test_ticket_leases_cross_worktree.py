@@ -417,6 +417,29 @@ class TestForceReleaseLease:
             for record in caplog.records
         )
 
+    # frob:ticket T-2333
+    def test_reason_is_persisted_to_the_ticket_ledger(self, repo: Path) -> None:
+        # frob:tests \
+        # tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason\
+        # _is_persisted_to_the_ticket_ledger
+        from frob.tickets import load_active
+
+        created = new_ticket(repo, _spec("Feature C", scope=("src/feature_c.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        assert transition(repo, tid, TicketState.PLANNED).is_ok
+        assert transition(repo, tid, TicketState.IN_PROGRESS).is_ok
+
+        released = force_release_lease(repo, tid, reason="operator confirmed dead")
+        assert released.is_ok
+        assert released.danger_ok is True
+
+        queue = load_active(repo)
+        assert queue.is_ok
+        ticket = queue.danger_ok.tickets[tid]
+        assert len(ticket.lease_force_releases) == 1
+        assert ticket.lease_force_releases[0].reason == "operator confirmed dead"
+
 
 # frob:ticket T-1868
 class TestScopeAddRefusesLiveCrossWorktreeLease:

@@ -2,7 +2,7 @@
 id: T-2333
 title: Persist frob worktree release-lease --force's reason on the ticket ledger,
   not just the WARNING log
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -16,6 +16,9 @@ scope:
 - src/frob/app/worktree_runner.py
 - docs/modules/tickets-lifecycle.md
 - src/frob/tickets/_leases.py
+- tests/test_ticket_leases_cross_worktree.py
+evidence_scope:
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -31,6 +34,15 @@ scope_changes:
     ledger-persisted audit entry alongside its existing WARNING log'
   actor: logan
   at: '2026-08-17'
+- op: add
+  glob: tests/test_ticket_leases_cross_worktree.py
+  reason: 'T-2333: added a positive-control test proving the new lease_force_releases
+    ledger persistence'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease::test_reason_is_persisted_to_the_ticket_ledger
+- tests/test_ticket_leases.py::TestWorktreeReleaseLeaseCli::test_release_lease_cli_force_releases_a_live_looking_lease
 designated_repro_test: null
 threat: null
 component: null

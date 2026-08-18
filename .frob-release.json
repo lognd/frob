@@ -2076,6 +2076,7 @@
     "src/frob/tickets/_models.py::LandError": "046e146b71801d4058343d14139e840579046287ecb3cfc38bf9f804cb4d2603",
     "src/frob/tickets/_models.py::LandPlanReport": "483276786eec34a784b5081ee22769b9721cc799f283bbd4da9b4b7b60693e90",
     "src/frob/tickets/_models.py::LandReport": "25a17fa03fc9d104d7e3b44fa6af0e1886394e5c99319f89ae7f28c6944afb7e",
+    "src/frob/tickets/_models.py::LeaseForceReleaseEntry": "6d9ad46b6d3f1af8a9fcfdf432d3794e8a7f44c15b77e50ddeb0454ca74c0498",
     "src/frob/tickets/_models.py::OVER_BROAD_LITERAL_GLOBS": "17ea3ab620f4c72d712b06d483e2696d8e4d35d40f81c409778d099f12337a50",
     "src/frob/tickets/_models.py::Origin": "b2043e10095b8d2eadef4048e13dac6c80ee2db18de7d5f7815a86e5fbd4d17d",
     "src/frob/tickets/_models.py::PRIORITY_RANK": "81bd258a45d1c8c60d9a9826f4be41cdac45d7415907018ea4c7315cdbbce529",
@@ -2345,5 +2346,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.497.0"
+  "version": "0.498.0"
 }

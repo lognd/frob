@@ -345,7 +345,11 @@ def _run_release_lease(
     `reason` is also given -- never a silent bypass. This is the ONLY
     path in this function that does not first confirm staleness by
     itself; every other branch above it stays exactly as conservative as
-    before `--force` existed.
+    before `--force` existed. T-2333: `force_release_lease` now ALSO
+    best-effort appends `reason` to the ticket's own `lease_force_
+    releases` ledger audit list, so this override is reviewable via
+    `frob ticket show <id>`, not only in the WARNING log this docstring
+    used to describe as the sole audit trail.
 
     `root` is resolved from cwd, same convention as `frob worktree
     remove`."""

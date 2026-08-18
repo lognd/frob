@@ -1195,6 +1195,31 @@ class ScopeChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-2333
+# frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
+# frob:tests \
+# tests/test_ticket_leases_cross_worktree.py::TestForceReleaseLease.test_reason_is_pers\
+# isted_to_the_ticket_ledger kind="unit"
+class LeaseForceReleaseEntry(BaseModel):
+    """One append-only audit line for a `frob worktree release-lease
+    --force --reason TEXT` forced lease release (T-2333): the operator's
+    stated reason, WHICH of `lease_staleness_reason`'s known shapes (if
+    any) matched at release time (`None` when none did -- exactly the
+    case `--force` exists to override), who did it, and when. Mirrors
+    `ScopeChangeEntry`'s shape (T-0455) -- same "make an operator
+    override reviewable in `frob ticket show`, not just a process log
+    line" discipline, applied to T-1777's `--force` escape hatch instead
+    of `scope --add/--remove`. Never edited or removed once written,
+    only appended to."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    reason: str
+    staleness_reason: str | None = None
+    actor: str
+    at: date
+
+
 # frob:ticket T-1422
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 class AcceptanceAmendmentOp(StrEnum):
@@ -1474,6 +1499,15 @@ class Ticket(BaseModel):
     # appended) -- makes scope creep visible instead of a silent SCOPE001
     # waive.
     scope_changes: tuple[ScopeChangeEntry, ...] = ()
+    # frob:ticket T-2333
+    # append-only audit trail of every `frob worktree release-lease
+    # --force --reason TEXT` forced release of THIS ticket's own
+    # cross-worktree lease (never edited, only appended) -- the ledger-
+    # persisted counterpart to `force_release_lease`'s own WARNING log
+    # line, so an operator override is visible in `frob ticket show`
+    # too, not only in process logs (T-1777 shipped the log-only half;
+    # this closes the gap its own Done report disclosed).
+    lease_force_releases: tuple[LeaseForceReleaseEntry, ...] = ()
     evidence: tuple[str, ...] = ()
     # frob:ticket T-1616
     # append-only audit trail of every `frob ticket kind` change made

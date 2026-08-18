@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.498.0] - unreleased
+
+- T-2333: Persist frob worktree release-lease --force's reason on the ticket ledger, not just the WARNING log
+
 ## [0.497.0] - unreleased
 
 - T-2320: frob quality check: split ruff-check/ruff-format skip flags + add a real ruff-autofix/format write mode
