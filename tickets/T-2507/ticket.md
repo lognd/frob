@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 458712eb3292d77741ee3cf511abab004354554d
 ---
 MEASURED 2026-08-18. frob.vet is NOT naive grepping -- _capability_scan.py
 imports parse_file, raw_tree and CallGraph, so call sites really are
