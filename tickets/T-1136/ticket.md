@@ -32,6 +32,7 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   '
 evidence:
 - tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 designated_repro_test: null
 acceptance:
 - text: GIVEN the design doc WHEN reviewed THEN it covers file-per-ticket layout (block
@@ -47,7 +48,8 @@ acceptance:
     classes are structurally impossible or auto-repaired -- while _land_merge.py/_land_merge_zones.py
     correctly remain as live generic land-closeability/union-zone code, not monofile-splice
     residue (design section 5 corrected accordingly)
-  evidence: []
+  evidence:
+  - tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 acceptance_amendments:
 - op: replace
   index: 1
