@@ -2,7 +2,7 @@
 id: T-1136
 title: 'EPIC ledger v2: per-ticket files replace the tickets.md monofile (design first,
   then migration)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-07-28'
