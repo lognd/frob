@@ -2219,10 +2219,12 @@
     "src/frob/verify/_backpressure.py::BackpressureCeilings": "d45cfd34627eafb83d231b020a0e9eac09329544555f3bf42c5c0dc98da8d898",
     "src/frob/verify/_backpressure.py::BackpressureError": "7a8821c23ff47f13a5c5c15217dca685bef8e1ea8d326ff4e77b3178e5000131",
     "src/frob/verify/_backpressure.py::BackpressureStatus": "b76fb2ef9e69c749c4ce12e9c416a45a561d4d8f48c2a75e5c6a02fad2ea1e71",
+    "src/frob/verify/_backpressure.py::LandProfileSettings": "f8e87e325a391df9427bb03110bc14044e766977ae0ad0d38c9dfa9f6ec98fd2",
     "src/frob/verify/_backpressure.py::block_until_watermark_advances": "ade7bac9dab69bdb4b0b472025a933d750e71ca6f09c7480669946f3c55778bd",
     "src/frob/verify/_backpressure.py::ceilings_for_profile": "719f410d654ba71c8e2c1cc98de0fe28e78b7784e1f0c0651871ccd73afe7b36",
     "src/frob/verify/_backpressure.py::current_status": "a1158cc174ac3c62cdcc650f73bac3ac23c9ba5c34c0c14a5d47253f055134bd",
     "src/frob/verify/_backpressure.py::rapid_soft_warning": "88fa8264db930bb987c16d91b8b968b5906688a727dbf3f09137748614c01f0d",
+    "src/frob/verify/_backpressure.py::settings_for_profile": "b0e93ceb6ef40ffd3aae9638c52fa052c10f54bc19edaa6ccbe46a125a4f6dbe",
     "src/frob/verify/_drain.py::DrainError": "4082c2b0326318aef04480e625f03b8a756a1599a3aebe623f4f65090e93c508",
     "src/frob/verify/_drain.py::run_drain_async": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
     "src/frob/verify/_drain.py::spawn_deferred_drain": "727e9e77f2dc1c500ed643a4ac193166e69bbfabdf6b8c107cde9ba7375cffec",
@@ -2349,5 +2351,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.504.0"
+  "version": "0.505.0"
 }

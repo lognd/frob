@@ -15,6 +15,7 @@ from frob.verify._backpressure import (
     ceilings_for_profile,
     current_status,
     rapid_soft_warning,
+    settings_for_profile,
 )
 from frob.verify._watermark import advance_watermark, record_intent
 from tests.unit.verify.test_watermark import _init_git_repo_with_commits
@@ -66,6 +67,63 @@ class TestCeilingsForProfile:
         ceilings = ceilings_for_profile(ProfileName.STANDARD, tmp_path)
         assert ceilings.max_depth == 2
         assert ceilings.max_age_s == 10.0
+
+
+# frob:ticket T-2360
+class TestSettingsForProfile:
+    """T-2360: `settings_for_profile` must reproduce TODAY's if-rapid
+    branch logic at each of the 5 measured call sites
+    (`_land.py:2878`/`:3103`, `_land_cmd.py:4324`/`:4519`,
+    `_evidence.py:323`, `_close_cmd.py:463`) exactly -- these tests
+    assert against that CURRENT behavior, read from the live source at
+    the time T-2360 was filed, not a guess."""
+
+    # frob:ticket T-2360
+    def test_fortress_matches_current_branch_logic(self) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_fortress_matches_current_branch_logic  # noqa: E501
+        settings = settings_for_profile(ProfileName.FORTRESS)
+        # None of the 5 branches distinguishes fortress from standard
+        # today -- both take the "not rapid" arm at every site.
+        assert settings.pre_commit_sweep_enabled is True
+        assert settings.mutation_evidence_required is True
+        assert settings.rel001_preflight_enabled is True
+        assert settings.evidence_scope_unbound_is_debt is False
+
+    # frob:ticket T-2360
+    def test_standard_matches_current_branch_logic(self) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_standard_matches_current_branch_logic  # noqa: E501
+        settings = settings_for_profile(ProfileName.STANDARD)
+        assert settings.pre_commit_sweep_enabled is True
+        assert settings.mutation_evidence_required is True
+        assert settings.rel001_preflight_enabled is True
+        assert settings.evidence_scope_unbound_is_debt is False
+
+    # frob:ticket T-2360
+    def test_rapid_matches_current_branch_logic(self) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
+        settings = settings_for_profile(ProfileName.RAPID)
+        # _land_cmd.py:4324 -- rapid skips the pre-commit sweep (T-1575).
+        assert settings.pre_commit_sweep_enabled is False
+        # _land.py:3103 -- rapid skips TEST016 entirely (T-1575).
+        assert settings.mutation_evidence_required is False
+        # _close_cmd.py:463 -- rapid skips the REL001 preflight (T-1705).
+        assert settings.rel001_preflight_enabled is False
+        # _land.py:2878 / _evidence.py:323 -- rapid records the
+        # evidence-scope-unbound finding as debt instead (T-1681).
+        assert settings.evidence_scope_unbound_is_debt is True
+
+    # frob:ticket T-2360
+    def test_settings_are_frozen(self) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_settings_are_frozen  # noqa: E501
+        settings = settings_for_profile(ProfileName.STANDARD)
+        with pytest.raises(Exception):  # noqa: B017, PT011
+            settings.pre_commit_sweep_enabled = False  # type: ignore[misc]
+
+    # frob:ticket T-2360
+    def test_unknown_profile_value_raises(self) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_unknown_profile_value_raises  # noqa: E501
+        with pytest.raises(ValueError, match="unrecognized ProfileName"):
+            settings_for_profile("not-a-real-profile")
 
 
 class TestCurrentStatus:

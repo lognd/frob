@@ -2,7 +2,7 @@
 id: T-2360
 title: 'Profile-collapse: build LandProfileSettings resolver for the 5 remaining if-rapid
   branches'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -15,8 +15,16 @@ scope:
 - src/frob/verify/_backpressure.py
 - src/frob/tickets/_profile.py
 - docs/modules/tickets-verify-sweep.md
+evidence_scope:
+- tests/unit/verify/test_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_standard_matches_current_branch_logic
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_rapid_matches_current_branch_logic
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_settings_are_frozen
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_unknown_profile_value_raises
 designated_repro_test: null
 threat: null
 component: tickets

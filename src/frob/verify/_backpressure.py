@@ -190,6 +190,111 @@ def ceilings_for_profile(profile, root: Path) -> BackpressureCeilings:  # noqa: 
     return BackpressureCeilings(max_depth=max_depth, max_age_s=float(max_age_s))
 
 
+# frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_fortress_matches_current_branch_logic  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_settings_are_frozen  # noqa: E501
+class LandProfileSettings(BaseModel):
+    """The land-pipeline toggles a profile decides, generalizing
+    `ceilings_for_profile`'s "resolve the name to a settings record in
+    one place, never branch on the name at the call site" pattern
+    (T-1692/T-2290) to the 5 remaining if-rapid seams T-2360 measured via
+    `frob explore xref ProfileName` (`_land.py:2878`/`:3103`,
+    `_land_cmd.py:4324`/`:4519`, `_evidence.py:323`, `_close_cmd.py:463`).
+    `fortress` and `standard` resolve identically on every field today --
+    none of these 5 branches currently distinguishes them, only `rapid`
+    relaxes anything -- but the fields exist as named settings, not a
+    single `is_rapid` bit, so a future profile (or a future decision to
+    split fortress/standard on one of these axes) is a new resolver
+    branch, never a new call-site `if`."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    #: `_land_cmd.py:4324`'s pre-commit sweep (T-1514/T-1575: "single
+    #: post-land sweep with revert-on-red, no pre-commit sweep" under
+    #: rapid). `True` for fortress/standard, `False` for rapid.
+    pre_commit_sweep_enabled: bool
+    #: `_land.py:3103`'s TEST016 mutation evidence -- BOTH the synchronous
+    #: subprocess and the deferred batch-sweep enqueue are skipped
+    #: entirely when this is `False` (T-1575's own "TEST016 skipped
+    #: entirely" framing; BUG002 is unaffected in every profile).
+    mutation_evidence_required: bool
+    #: `_close_cmd.py:463`'s REL001 close-time preflight (T-1705). `True`
+    #: for fortress/standard, `False` for rapid.
+    rel001_preflight_enabled: bool
+    #: `_land.py:2878`/`_evidence.py:323`'s land-evidence-scope-unbound
+    #: finding: recorded as DEBT (via `record_rapid_debt`) when `True`,
+    #: left as whatever the caller's normal (stricter) path does when
+    #: `False`. `True` only for rapid -- fortress/standard never divert
+    #: this finding to debt.
+    evidence_scope_unbound_is_debt: bool
+
+
+#: `LandProfileSettings` for fortress/standard: every rapid-only
+#: relaxation stays OFF, no evidence-scope-unbound is ever silently
+#: filed as debt. Fortress and standard are indistinguishable on all 4
+#: of these fields today (see `LandProfileSettings`'s own docstring) --
+#: named once here so a future split is a second constant, not a
+#: duplicated literal.
+_NON_RAPID_LAND_PROFILE_SETTINGS = LandProfileSettings(
+    pre_commit_sweep_enabled=True,
+    mutation_evidence_required=True,
+    rel001_preflight_enabled=True,
+    evidence_scope_unbound_is_debt=False,
+)
+
+#: `LandProfileSettings` for rapid: every relaxation this profile grants
+#: today, in one place (T-1575/T-1681/T-1705's combined effect).
+_RAPID_LAND_PROFILE_SETTINGS = LandProfileSettings(
+    pre_commit_sweep_enabled=False,
+    mutation_evidence_required=False,
+    rel001_preflight_enabled=False,
+    evidence_scope_unbound_is_debt=True,
+)
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_fortress_matches_current_branch_logic  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_standard_matches_current_branch_logic  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_rapid_matches_current_branch_logic  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_unknown_profile_value_raises  # noqa: E501
+def settings_for_profile(profile) -> LandProfileSettings:  # noqa: ANN001
+    """The `LandProfileSettings` `profile` resolves to -- T-2360's
+    generalization of `ceilings_for_profile`'s pattern to the 5
+    if-rapid seams outside the depth/age axis. Accepts `profile`
+    untyped (`ProfileName`, imported lazily below) for the same
+    load-order reason `ceilings_for_profile` does. Unlike `ceilings_
+    for_profile`, this resolver reads no `frob.toml` overrides -- none
+    of the 5 branches it generalizes has ever been override-able, so
+    adding override plumbing here would be new behavior, not a
+    behavior-preserving migration.
+
+    Deliberately loud on an unrecognized value: an `is`-comparison
+    chain that quietly fell through to a default for a profile it does
+    not recognize is exactly the kind of silent-default this settings
+    record exists to prevent (T-1696's own "adding a fourth profile
+    requires only a new settings row" acceptance -- a resolver that
+    defaults silently would let a new profile fall through unnoticed
+    instead of forcing this function to be taught about it). Raises
+    `ValueError` rather than returning a typani `Result`: an unresolvable
+    `ProfileName` is a programmer error (an enum member this resolver was
+    never taught about), not a caller-recoverable outcome -- matching
+    this module's own `ANN001`-untyped-argument posture of trusting the
+    caller to pass a real `ProfileName`."""
+    from frob.tickets._profile import ProfileName
+
+    if profile is ProfileName.RAPID:
+        return _RAPID_LAND_PROFILE_SETTINGS
+    if profile in (ProfileName.FORTRESS, ProfileName.STANDARD):
+        return _NON_RAPID_LAND_PROFILE_SETTINGS
+    raise ValueError(
+        f"settings_for_profile: unrecognized ProfileName {profile!r} -- "
+        "no LandProfileSettings resolution exists for it; teach this "
+        "resolver about the new profile rather than falling through to "
+        "a default"
+    )
+
+
 def _parse_enqueued_at(raw: str) -> float | None:
     """`VerifyQueueEntry.enqueued_at`'s ISO-8601 UTC string as a UNIX
     timestamp, or `None` on a genuinely unparsable value -- a corrupt
