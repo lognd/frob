@@ -1,7 +1,7 @@
 ---
 id: T-2444
 title: Fix pre-existing duplicate-title SystemExit failures in test_app_runners_t1738_wave.py
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,7 +14,12 @@ scope:
 - tests/unit/test_app_runners_t1738_wave.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+no_scope_declared: false
+no_scope_declared_reason: null
+evidence:
+- tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_json_render_shape
+- tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_plain_render_lists_groups_and_remainder
+designated_repro_test: tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_json_render_shape
 threat: null
 component: null
 anchor: false

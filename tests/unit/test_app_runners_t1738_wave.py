@@ -16,7 +16,12 @@ from frob.app.ticket_runner import run as ticket_run
 
 def _new(tmp_path: Path, *, scope: list[str] | None = None) -> None:
     """File one queued ticket via the real `ticket new` verb, matching
-    the existing t0715 test file's direct-call pattern."""
+    the existing t0715 test file's direct-call pattern. T-2444: passes
+    `ticket_ack_related=True` since every call in this file shares the
+    literal title "a ticket" in the same `tmp_path` -- the real
+    `related_tickets` duplicate-title refusal fires on the second call
+    otherwise (matching the workaround in
+    tests/unit/test_app_runners_t2395_contention.py's own `_new`)."""
     ticket_run(
         AppConfig(
             ticket_command="new",
@@ -24,6 +29,7 @@ def _new(tmp_path: Path, *, scope: list[str] | None = None) -> None:
             ticket_title="a ticket",
             ticket_kind="feature",
             ticket_scope=scope or [],
+            ticket_ack_related=True,
         )
     )
 
