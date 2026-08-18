@@ -93,3 +93,7 @@ FROBLEMS.md
 
 # Rapid-profile verification debt (T-1681) -- tracked deliberately
 !rapid-debt.jsonl
+
+# Stray agent done-report scratch files (T-2524): the canonical home is
+# tickets/<id>/done-report.md
+done-report-*.md
