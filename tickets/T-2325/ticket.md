@@ -40,7 +40,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c5e01142dd6df3c68fb25048431692e9d78050af
 ---
 Found while working T-2302: WIRE001's own gate logic
 (src/frob/gates/_wire.py) rescues an autouse pytest fixture
