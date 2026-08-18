@@ -1,7 +1,7 @@
 ---
 id: T-2437
 title: 'T-2390 child: validate [dup] and [graph] tables against declared schemas'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -82,6 +82,14 @@ scope_changes:
     (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 cannot reproduce a pre-fix state: code already landed as T-2435''s
+    disclosed passenger'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 6692
+  new_length: 7126
 evidence:
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_now_fire_reports_the_undeclared_key
 - tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate::test_dup_must_still_pass_this_repos_own_frob_toml
