@@ -11,8 +11,52 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/process/**
+- src/frob/__main__.py
+- scripts/fleet_status.py
+- tests/unit/test_process_reap.py
+- tests/unit/test_main_entry.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/**
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: scripts/fleet_status.py
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'leak fix: SIGTERM-triggered reaper for multiprocessing children/forkservers,
+    CLI entrypoint wiring, fleet visibility'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a frob check killed mid-run by SIGTERM or a budget abort, when it exits,
