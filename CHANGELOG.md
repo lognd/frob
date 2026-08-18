@@ -24,6 +24,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
 - T-2467: T-2467: Reshape T-1614: periodic watermark-based waiver audit, drop runs_last
 - T-2473: T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
+- T-2482: T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)
 
 ## [0.530.0] - unreleased
 

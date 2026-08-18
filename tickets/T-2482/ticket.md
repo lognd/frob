@@ -2,7 +2,7 @@
 id: T-2482
 title: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001
   SYS100)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,22 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
+evidence_scope:
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure capability-declaration addition in design/frob.strata
+    -- no runtime code touched, nothing to reproduce a defect against'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 924
+  new_length: 1083
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 designated_repro_test: null
 threat: null
 component: null
@@ -40,3 +52,6 @@ All genuine (subprocess.run calls in the test git-fixture helpers, real
 .open()/.write_text() calls in the watermark module) -- declare them,
 following the same via-list-addition pattern as every prior T-2390/T-2457/
 T-2463/T-2465 SELFAUDIT001 fix.
+
+
+frob:no-behavior-change reason="pure capability-declaration addition in design/frob.strata -- no runtime code touched, nothing to reproduce a defect against"
