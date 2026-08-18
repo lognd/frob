@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 801e63c55df52a81ec4898e95f756a040a8f17d6
 ---
 Found while working T-2479: T-2479 implemented boto3.client("service")/
 boto3.resource("service") binding-aware resolution for the net-mutate
