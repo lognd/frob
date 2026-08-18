@@ -79,7 +79,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c44342c5cb0edcf99b06ca9c3935f8fecb981086
 ---
 T-2503 (landed a1c49a2a5) implemented and tested
 `frob.strata._effects.check_ambient_capability_reasons()` +
