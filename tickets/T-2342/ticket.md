@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d64aa17a951ca8a9ae8d5f53b9dfc9e0ea842514
 ---
 Two related defects found while working T-2331 (a "post-land sweep
 regression" auto-filed ticket):
