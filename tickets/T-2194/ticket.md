@@ -2,7 +2,7 @@
 id: T-2194
 title: 'T-2187 follow-up: no permanent full-corpus regression test for walk_strata''s
   grammar-vs-locator reconciliation (manual verification only, prose in a closed ticket)'
-state: queued
+state: done
 kind: invariant
 origin: human
 created: '2026-08-16'
@@ -16,6 +16,8 @@ scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbolsCorpusWide::test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count
 designated_repro_test: null
 threat: null
 component: null

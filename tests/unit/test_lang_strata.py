@@ -383,3 +383,79 @@ class TestGrammarAuthoritativeSymbols:
         # presence in `parsed_ok` must not raise or silently inflate
         # `items` with a bogus entry.
         assert len(items) == 16
+
+
+class TestGrammarAuthoritativeSymbolsCorpusWide:
+    """T-2194 (T-2187 follow-up): T-2187's Done report verified, by hand,
+    that all 64 tracked `.strata` files walk with zero `Err` under its
+    fix -- but that verification was prose in a closed ticket, not a
+    checked-in guard. This makes it permanent: walk EVERY tracked
+    `.strata` file (`git ls-files '*.strata'`, not a fixed list, so a
+    newly-added `.strata` file is covered automatically) and assert each
+    one parses clean. A future change to `_walk_strata.py`, or a new
+    `.strata` construct kind the grammar-vs-locator reconciliation does
+    not yet handle, now fails HERE instead of silently reintroducing the
+    T-2187 defect (a grammar/locator disagreement that used to downgrade
+    to a log warning no caller ever saw)."""
+
+    def test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count(
+        self,
+    ) -> None:
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
+        # T-2187's own defect (pre-fix) never returned `Err` on a grammar-
+        # vs-locator disagreement -- it silently returned an UNDERCOUNTED
+        # symbol set and downgraded the mismatch to a log warning no
+        # caller ever saw. A test that only checks `.is_err` would pass
+        # against BOTH the fixed and the pre-fix code (confirmed by
+        # running this file's fixture against T-2187's pre-fix
+        # `_walk_strata.py`: 0 of 64 corpus files raised `Err` even
+        # though 16 of them were undercounting symbols) -- so this
+        # compares `walk_strata`'s own returned symbol count against
+        # `_declared_items`' independent grammar-authoritative count for
+        # every tracked file, which is exactly the drift T-2187 measured
+        # and fixed.
+        import json
+        import subprocess
+
+        import strata_core
+
+        repo_root = Path(__file__).resolve().parents[2]
+        result = subprocess.run(
+            ["git", "ls-files", "*.strata"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        rel_paths = [line for line in result.stdout.splitlines() if line]
+        # A corpus that shrank to zero tracked .strata files would make
+        # this test vacuously pass -- fail loudly instead, since that
+        # would silently stop exercising the thing this test exists for.
+        assert rel_paths, "expected at least one tracked .strata file"
+
+        errors: list[tuple[str, str]] = []
+        mismatches: list[tuple[str, int, int]] = []
+        for rel_path in rel_paths:
+            source = (repo_root / rel_path).read_text(encoding="utf-8")
+            walked = walk_strata(source)
+            if walked.is_err:
+                errors.append((rel_path, walked.danger_err))
+                continue
+            parsed = json.loads(strata_core.parse_source(source))
+            if "ok" not in parsed:
+                errors.append((rel_path, "grammar itself rejected the source"))
+                continue
+            declared_count = len(_declared_items(parsed["ok"]))
+            symbols, _comments = walked.danger_ok
+            actual_count = len(symbols)
+            if declared_count != actual_count:
+                mismatches.append((rel_path, declared_count, actual_count))
+
+        assert not errors, f"{len(errors)} file(s) errored: {errors}"
+        assert not mismatches, (
+            f"{len(mismatches)} of {len(rel_paths)} tracked .strata file(s) "
+            "disagree between the grammar's declared item count and "
+            "walk_strata's returned symbol count "
+            "(path, declared_count, actual_count): "
+            f"{mismatches}"
+        )
