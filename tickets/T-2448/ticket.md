@@ -13,8 +13,18 @@ runs_last: false
 scope:
 - src/frob/check/__init__.py
 - src/frob/gates/_rule_id_scan.py
+- tests/gates/test_rule_id_scan_branches.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/gates/test_rule_id_scan_branches.py
+  reason: test coverage for the new standing-gate wrapper lives alongside find_unregistered_rule_ids's
+    own existing tests in this file
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
