@@ -310,17 +310,25 @@ def record_rapid_debt(root: Path, ticket_id: str, skipped: str) -> None:
 
 
 # frob:ticket T-1681
+# frob:ticket T-1696
 def _is_rapid(root: Path) -> bool:
-    """Whether `root` is running the `rapid` development profile (T-1681).
+    """Whether `root`'s `LandProfileSettings.evidence_scope_unbound_is_
+    debt` is set (T-1681) -- today true only for the `rapid` development
+    profile.
 
     Best-effort by design: an unreadable/absent profile config resolves to
     NOT rapid, so a broken config can only ever make the ceremony
     stricter, never silently relax it. Deferred import -- `frob.tickets.
-    _profile` imports this package's models."""
-    from frob.tickets._profile import ProfileName, effective_profile
+    _profile` imports this package's models. T-1696: reads the settings
+    record via `frob.verify.settings_for_profile` instead of comparing
+    `effective_profile`'s result to `ProfileName.RAPID` directly."""
+    from frob.tickets._profile import effective_profile
+    from frob.verify import settings_for_profile
 
     resolved = effective_profile(root)
-    return resolved.is_ok and resolved.danger_ok is ProfileName.RAPID
+    if resolved.is_err:
+        return False
+    return settings_for_profile(resolved.danger_ok).evidence_scope_unbound_is_debt
 
 
 # frob:ticket T-0715

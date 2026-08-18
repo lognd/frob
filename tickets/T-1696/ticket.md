@@ -2,7 +2,7 @@
 id: T-1696
 title: Collapse rapid/standard/fortress into one queue-depth dial and delete the if-rapid
   land seams
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-06'
@@ -22,6 +22,9 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/verify/_backpressure.py
+- tests/unit/verify/test_backpressure.py
+evidence_scope:
+- tests/unit/test_land_cmd_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -173,6 +176,17 @@ scope_changes:
     fleet_status.py), and that window is rare for the two busiest files in the repo.'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: tests/unit/verify/test_backpressure.py
+  reason: T-2360's TestSettingsForProfile is the behavioral-equivalence evidence for
+    the rapid_soft_warning_enabled field migration
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_standard_matches_current_branch_logic
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_rapid_matches_current_branch_logic
+- tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_tripped_blocks_then_proceeds
 designated_repro_test: null
 acceptance:
 - text: 'SCOPE IS INSUFFICIENT AS FILED -- measured, do not re-derive. An implementer
@@ -184,14 +198,22 @@ acceptance:
     and :181. The ticket''s own acceptance demands ''no land-pipeline module branches
     on ProfileName'', which is unachievable without touching those files. Widen scope
     to include them before the next dispatch.'
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_standard_matches_current_branch_logic
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_rapid_matches_current_branch_logic
+  - tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_tripped_blocks_then_proceeds
 - text: Dispatch this only when src/frob/app/ticket_runner/_land_cmd.py and src/frob/tickets/_land.py
     are BOTH unleased -- the widened scope covers the two busiest files in the repo,
     so it will collide with almost any concurrent land-path work. Check with 'python3
     scripts/fleet_status.py --ticket T-1696' first; it now reports SCOPE DIVERGES
     and gates dispatchable on lease conflicts, blocked_by edges and existence (T-2196,
     landed 0ab334af19d6).
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_standard_matches_current_branch_logic
+  - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_rapid_matches_current_branch_logic
+  - tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_tripped_blocks_then_proceeds
 threat: null
 component: verification
 labels:

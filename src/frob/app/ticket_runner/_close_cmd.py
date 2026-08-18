@@ -457,10 +457,16 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
     never requires either. The skip is recorded via `record_rapid_debt`
     like every other rapid relaxation, so it stays auditable."""
     from frob.tickets._evidence import record_rapid_debt
-    from frob.tickets._profile import ProfileName, effective_profile
+    from frob.tickets._profile import effective_profile
+    from frob.verify import settings_for_profile
 
     resolved_profile = effective_profile(root)
-    if resolved_profile.is_ok and resolved_profile.danger_ok is ProfileName.RAPID:
+    # T-1696: rel001_preflight_enabled is the settings-record read;
+    # unreadable resolves to "not rapid" (keeps the stricter behaviour),
+    # matching the prior is-ProfileName.RAPID short-circuit on Err.
+    if resolved_profile.is_ok and not settings_for_profile(
+        resolved_profile.danger_ok
+    ).rel001_preflight_enabled:
         record_rapid_debt(root, ticket.id, "close-rel001-preflight-skipped")
         _log.info(
             "ticket close: %s REL001 preflight skipped under rapid profile "

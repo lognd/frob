@@ -2866,16 +2866,23 @@ def _restrict_to_branch_own_files(
 
 
 # frob:ticket T-1681
+# frob:ticket T-1696
 def _land_is_rapid(worktree: Path, ticket_id: str) -> bool:
-    """Whether `worktree` runs the `rapid` profile, recording the
-    relaxation as debt when it does (T-1681). Best-effort: an unreadable
-    profile resolves to NOT rapid, so a broken config can only make the
-    land stricter."""
+    """Whether `worktree`'s `LandProfileSettings.evidence_scope_unbound_
+    is_debt` is set (T-1681), recording the relaxation as debt when it
+    is. Best-effort: an unreadable profile resolves to NOT rapid, so a
+    broken config can only make the land stricter. T-1696: reads the
+    settings record via `frob.verify.settings_for_profile` instead of
+    comparing `effective_profile`'s result to `ProfileName.RAPID`
+    directly -- same outcome, resolved in one place."""
     from frob.tickets._evidence import record_rapid_debt
-    from frob.tickets._profile import ProfileName, effective_profile
+    from frob.tickets._profile import effective_profile
+    from frob.verify import settings_for_profile
 
     resolved = effective_profile(worktree)
-    if not (resolved.is_ok and resolved.danger_ok is ProfileName.RAPID):
+    if resolved.is_err:
+        return False
+    if not settings_for_profile(resolved.danger_ok).evidence_scope_unbound_is_debt:
         return False
     record_rapid_debt(worktree, ticket_id, "land-evidence-scope-unbound")
     return True
@@ -3097,10 +3104,17 @@ def _mutation_evidence_sync_decision(
     `rapid or ticket.kind not in SYNC_BLOCKING_KINDS` condition exactly
     (owes_sync is the negation of that condition)."""
     from frob.tickets._mutation_sweep_queue import SYNC_BLOCKING_KINDS
-    from frob.tickets._profile import ProfileName, effective_profile
+    from frob.tickets._profile import effective_profile
+    from frob.verify import settings_for_profile
 
     profile = effective_profile(worktree)
-    rapid = profile.is_ok and profile.danger_ok is ProfileName.RAPID
+    # T-1696: mutation_evidence_required is the settings-record read;
+    # rapid is the negation (an unreadable profile keeps the stricter
+    # "required" behaviour, matching the prior is-ProfileName.RAPID
+    # short-circuit on Err).
+    rapid = profile.is_ok and not settings_for_profile(
+        profile.danger_ok
+    ).mutation_evidence_required
     if rapid:
         _log.info(
             "land: %s TEST016 skipped entirely (mutation subprocess AND "

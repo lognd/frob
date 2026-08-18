@@ -4404,12 +4404,16 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # as deferred follow-up, not implemented in this pass (see the T-1575
     # Done report).
     from frob.tickets._profile import ProfileName, effective_profile
+    from frob.verify import settings_for_profile
 
     _profile_result = effective_profile(worktree)
     effective = (
         _profile_result.danger_ok if _profile_result.is_ok else ProfileName.STANDARD
     )
-    rapid_land = effective is ProfileName.RAPID
+    # T-1696: pre_commit_sweep_enabled is the settings-record read; the
+    # seam below still needs the boolean sense of "skip it" (rapid_land),
+    # so negate rather than branch on the profile name directly.
+    rapid_land = not settings_for_profile(effective).pre_commit_sweep_enabled
     if rapid_land:
         _log.info(
             "ticket land: %s effective profile is rapid (T-1575) -- "
@@ -4597,17 +4601,19 @@ def _apply_backpressure(root: Path, cfg: AppConfig, profile) -> None:  # noqa: A
     if cfg.ticket_dry_run:
         return
 
-    from frob.tickets._profile import ProfileName
     from frob.verify import (
         block_until_watermark_advances,
         ceilings_for_profile,
         rapid_soft_warning,
+        settings_for_profile,
     )
 
-    if profile is ProfileName.RAPID:
+    if settings_for_profile(profile).rapid_soft_warning_enabled:
         # T-2290: rapid's ceilings are unbounded by construction (never
         # blocks) -- this is the soft half, a loud WARNING at a surface
-        # every land already prints to, never a block/refuse.
+        # every land already prints to, never a block/refuse. T-1696:
+        # gated via the settings record rather than an inline
+        # `is ProfileName.RAPID` comparison.
         warning = rapid_soft_warning(root)
         if warning is not None:
             _log.warning("ticket land: %s", warning)

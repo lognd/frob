@@ -788,33 +788,49 @@ outside `frob.tickets._profile` and `frob.verify._backpressure`:
 
 `LandProfileSettings` (`frozen=True, extra="forbid"`) carries one
 boolean per seam -- `pre_commit_sweep_enabled`, `mutation_evidence_
-required`, `rel001_preflight_enabled`, `evidence_scope_unbound_is_debt`
--- and `settings_for_profile(ProfileName) -> LandProfileSettings` resolves
-all four in one place. Unlike `ceilings_for_profile`, it reads no
-`frob.toml` overrides: none of the 5 branches it generalizes has ever
-been override-able, so adding override plumbing here would be new
-behavior, not a behavior-preserving migration. An unrecognized
-`ProfileName` raises `ValueError` rather than silently defaulting --
-this resolver must be taught about a new profile explicitly, matching
-T-1696's "adding a fourth profile requires only a new settings row"
-acceptance for the parent epic.
+required`, `rel001_preflight_enabled`, `evidence_scope_unbound_is_debt`,
+`rapid_soft_warning_enabled` -- and `settings_for_profile(ProfileName)
+-> LandProfileSettings` resolves all five in one place. Unlike
+`ceilings_for_profile`, it reads no `frob.toml` overrides: none of the
+seams it generalizes has ever been override-able, so adding override
+plumbing here would be new behavior, not a behavior-preserving
+migration. An unrecognized `ProfileName` raises `ValueError` rather than
+silently defaulting -- this resolver must be taught about a new profile
+explicitly, matching T-1696's "adding a fourth profile requires only a
+new settings row" acceptance for the parent epic.
 
 **Behavior-preserving, verified against today's branch logic, not
-inspection.** `fortress` and `standard` resolve identically on all four
-fields today (none of the 5 branches currently distinguishes them, only
+inspection.** `fortress` and `standard` resolve identically on all five
+fields today (none of the seams currently distinguishes them, only
 `rapid` relaxes anything) -- both give every relaxation `False`/`True` as
-appropriate (no relaxation) and `evidence_scope_unbound_is_debt=False`;
-`rapid` gives every relaxation the opposite and
-`evidence_scope_unbound_is_debt=True`. `tests/unit/verify/test_
+appropriate (no relaxation), `evidence_scope_unbound_is_debt=False`, and
+`rapid_soft_warning_enabled=False`; `rapid` gives every relaxation the
+opposite, `evidence_scope_unbound_is_debt=True`, and
+`rapid_soft_warning_enabled=True`. `tests/unit/verify/test_
 backpressure.py::TestSettingsForProfile` asserts this against the
-CURRENT source at each of the 5 call sites above.
+CURRENT source at each call site.
 
-**Disclosed scope cut.** No call site is migrated to read
-`LandProfileSettings` yet -- this leaf only builds and tests the
-resolver. Migrating the 5 branches above to read the settings record
-(and deleting the branches themselves) is the next child in the T-1696
-epic, deliberately split out so this leaf does not need a lease on
-`_land.py`/`_land_cmd.py`, the two busiest files in the repo.
+**T-1696: all 6 call sites now read the settings record.** The 5
+branches T-2360 measured plus a 6th `_land_cmd.py:4607` branch T-1696's
+own re-verification (`frob explore xref ProfileName`) found in
+`_apply_backpressure`'s soft-warning gate (T-2290) -- not enumerated by
+T-2360's original sweep because it sits alongside `ceilings_for_profile`
+rather than one of the 5 originally-measured seams -- are all migrated:
+`_land._land_is_rapid`, `_land._mutation_evidence_sync_decision`,
+`_land_cmd`'s pre-commit-sweep skip, `_land_cmd._apply_backpressure`'s
+soft-warning gate, `_evidence._is_rapid`, and
+`_close_cmd._own_obligations_rel_bump_dirty`'s REL001 preflight skip
+each now call `settings_for_profile` (via `effective_profile`) instead
+of comparing the resolved `ProfileName` to `ProfileName.RAPID` inline.
+No behavior changed at any of the 6 sites -- each migration is a direct
+substitution of the equivalent settings-record field, verified by the
+existing per-seam test suites (`test_land_cmd_backpressure.py`,
+`test_close_rel001_bump.py`, `test_profile.py`, plus this module's own
+`TestSettingsForProfile`) passing unmodified. A `git grep
+'ProfileName\.'` outside `frob.tickets._profile` and
+`frob.verify._backpressure` now returns only test fixtures constructing
+a `ProfileName` value to pass into these resolvers -- never a land-
+pipeline module branching on the name itself.
 
 ## Quarantine circuit breaker (T-1693)
 

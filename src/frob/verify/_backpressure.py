@@ -228,6 +228,15 @@ class LandProfileSettings(BaseModel):
     #: `False`. `True` only for rapid -- fortress/standard never divert
     #: this finding to debt.
     evidence_scope_unbound_is_debt: bool
+    #: `_land_cmd.py:4607`'s `_apply_backpressure` soft-warning gate
+    #: (T-2290): whether `rapid_soft_warning` is even consulted. `True`
+    #: only for rapid -- fortress/standard already BLOCK at their own
+    #: bounded ceilings (`ceilings_for_profile`), so the soft warning,
+    #: which exists specifically to make rapid's unbounded "never blocks"
+    #: debt visible, has nothing to add for them. T-1696 (this field is
+    #: new, added alongside the other 4 T-2360 fields to close the 6th
+    #: ProfileName branch T-2360's own measurement did not enumerate).
+    rapid_soft_warning_enabled: bool
 
 
 #: `LandProfileSettings` for fortress/standard: every rapid-only
@@ -241,6 +250,7 @@ _NON_RAPID_LAND_PROFILE_SETTINGS = LandProfileSettings(
     mutation_evidence_required=True,
     rel001_preflight_enabled=True,
     evidence_scope_unbound_is_debt=False,
+    rapid_soft_warning_enabled=False,
 )
 
 #: `LandProfileSettings` for rapid: every relaxation this profile grants
@@ -250,6 +260,7 @@ _RAPID_LAND_PROFILE_SETTINGS = LandProfileSettings(
     mutation_evidence_required=False,
     rel001_preflight_enabled=False,
     evidence_scope_unbound_is_debt=True,
+    rapid_soft_warning_enabled=True,
 )
 
 

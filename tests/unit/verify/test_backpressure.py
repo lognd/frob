@@ -76,7 +76,12 @@ class TestSettingsForProfile:
     (`_land.py:2878`/`:3103`, `_land_cmd.py:4324`/`:4519`,
     `_evidence.py:323`, `_close_cmd.py:463`) exactly -- these tests
     assert against that CURRENT behavior, read from the live source at
-    the time T-2360 was filed, not a guess."""
+    the time T-2360 was filed, not a guess.
+
+    T-1696 added a 6th field, `rapid_soft_warning_enabled`, for the one
+    remaining `ProfileName` branch T-1696's own re-verification found at
+    `_land_cmd.py:4607` (`_apply_backpressure`'s soft-warning gate,
+    T-2290) that T-2360's original measurement did not enumerate."""
 
     # frob:ticket T-2360
     def test_fortress_matches_current_branch_logic(self) -> None:
@@ -88,6 +93,9 @@ class TestSettingsForProfile:
         assert settings.mutation_evidence_required is True
         assert settings.rel001_preflight_enabled is True
         assert settings.evidence_scope_unbound_is_debt is False
+        # _land_cmd.py:4607 -- fortress never consults the rapid soft
+        # warning (T-1696, T-2290's own "rapid's own soft ceiling").
+        assert settings.rapid_soft_warning_enabled is False
 
     # frob:ticket T-2360
     def test_standard_matches_current_branch_logic(self) -> None:
@@ -97,6 +105,7 @@ class TestSettingsForProfile:
         assert settings.mutation_evidence_required is True
         assert settings.rel001_preflight_enabled is True
         assert settings.evidence_scope_unbound_is_debt is False
+        assert settings.rapid_soft_warning_enabled is False
 
     # frob:ticket T-2360
     def test_rapid_matches_current_branch_logic(self) -> None:
@@ -111,6 +120,9 @@ class TestSettingsForProfile:
         # _land.py:2878 / _evidence.py:323 -- rapid records the
         # evidence-scope-unbound finding as debt instead (T-1681).
         assert settings.evidence_scope_unbound_is_debt is True
+        # _land_cmd.py:4607 -- rapid is the only profile that ever
+        # consults the soft warning (T-2290).
+        assert settings.rapid_soft_warning_enabled is True
 
     # frob:ticket T-2360
     def test_settings_are_frozen(self) -> None:
