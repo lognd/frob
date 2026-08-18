@@ -1,7 +1,7 @@
 ---
 id: T-2489
 title: 'post-land sweep regression from T-2411: 1 new (rule, file) identit(ies) (E501)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -12,10 +12,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_waive_audit.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): verified the sweep''s E501 identity no longer
+    exists on main -- superseded by later lands (T-2485/T-2493) touching the same
+    file; no code change needed'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 3754
+  new_length: 3939
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
