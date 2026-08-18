@@ -101,6 +101,15 @@ scope_changes:
     here as part of registering the new rule
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_still_pass_when_everything_is_forwarded
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_this_repos_own_frob_toml_reports_zero
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_no_declared_sources_is_unresolved_not_empty
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_missing_config_key_is_unresolved
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_missing_forwarded_key_is_unresolved
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_unresolvable_parser_is_unresolved_not_a_crash
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_non_callable_non_set_forwarded_is_unresolved
 designated_repro_test: null
 threat: null
 component: null
