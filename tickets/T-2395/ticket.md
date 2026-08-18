@@ -11,8 +11,40 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_query.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_query.py
+- tests/unit/test_app_runners_t2395_contention.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: implementing frob ticket contention per T-2395 body
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: implementing frob ticket contention per T-2395 body
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: implementing frob ticket contention per T-2395 body
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_app_runners_t2395_contention.py
+  reason: implementing frob ticket contention per T-2395 body
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: implementing frob ticket contention per T-2395 body
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a ledger where several open tickets declare the same file, when frob
