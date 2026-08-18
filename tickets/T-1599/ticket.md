@@ -12,7 +12,7 @@ blocked_by:
 - T-2411
 parent: T-1597
 tier: story
-sprint: null
+sprint: post-1.0
 runs_last: false
 scope:
 - src/frob/lang/**
