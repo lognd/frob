@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2dd06110cb916bd25ff0201e7c7bae176d8e61dc
 ---
 Child of T-2384. Coordinator directive (2026-08-18): the per-site retarget
 of the 22 "src/frob/" literals fixes today's instances only. PORT001 is
