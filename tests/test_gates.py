@@ -7050,6 +7050,7 @@ class TestInvariantLoad:
 
 # frob:ticket T-0549
 # frob:ticket T-1763
+# frob:ticket T-2438
 class TestTestGate:
     def test_test001_public_symbol_no_unit_edge(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/__init__.py::test_gate
@@ -7815,6 +7816,121 @@ class TestTestGate:
         )
         matched = _match_waiver(violation, {"PERF008": [waiver_a, waiver_b]})
         assert matched is not None
+
+    # frob:ticket T-2438
+    def test_match_waiver_symref_formatting_difference_still_waives(self) -> None:
+        """T-2438 must-now-waive control: reproduces the confirmed live
+        mismatch -- `frob.arch`'s hand-rolled C++ symref producer
+        (`frob.lang._common._cpp_class_methods`, shared by
+        `frob.arch._cpp`/`_cpp_mayraise`) spells a method's symref with
+        the native `Class::method` scope operator
+        (`violation.symref == "x.cpp::Foo::bar"`), while the DSL/graph
+        symbol table that binds a symbol-bound `frob:waive` comment
+        (`frob.lang._walk_c`) always dot-joins qualname segments
+        (`waiver.src == "x.cpp::Foo.bar"`). BEFORE this fix, `_match_
+        waiver`'s symbol-exact branch compared these two spellings with
+        plain `==`, found no match, and returned None unconditionally --
+        the waiver never suppressed the finding even though both sides
+        genuinely name the same method. Verified directly against real
+        producers: `frob.arch._cpp._check_long_functions` on a synthetic
+        long C++ method yields `symref='<path>::Foo::bar'`, and `frob.
+        lang.parse_file` + `frob.graph.dsl.parse_directives` on the same
+        source with a `frob:waive ARCH001` comment above `bar` binds
+        `Edge.src == '<path>::Foo.bar'` -- the exact two strings this
+        test hardcodes."""
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        violation = Violation(
+            rule="ARCH001",
+            severity=Severity.WARN,
+            file="x.cpp",
+            line=4,
+            message="x",
+            symref="x.cpp::Foo::bar",
+            metric=20,
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="x.cpp::Foo.bar",
+            target="ARCH001",
+            origin="x.cpp:3",
+            attrs={"reason": "x"},
+        )
+        assert _match_waiver(violation, {"ARCH001": [waiver]}) is waiver
+
+    # frob:ticket T-2438
+    def test_match_waiver_different_symbol_same_file_still_not_waived(
+        self,
+    ) -> None:
+        """T-2438 must-still-keep control: a waiver bound to a DIFFERENT
+        symbol in the same file must still NOT suppress an unrelated
+        finding -- proves the T-2438 normalization fix did not trade
+        symbol-exact precision for a blanket file-scoped waiver. `Foo.bar`
+        and `Foo.qux` normalize to two different strings regardless of
+        separator spelling, so this must stay None both before and after
+        the fix."""
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        violation = Violation(
+            rule="ARCH001",
+            severity=Severity.WARN,
+            file="x.cpp",
+            line=40,
+            message="x",
+            symref="x.cpp::Foo::qux",
+            metric=20,
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="x.cpp::Foo.bar",
+            target="ARCH001",
+            origin="x.cpp:3",
+            attrs={"reason": "x"},
+        )
+        assert _match_waiver(violation, {"ARCH001": [waiver]}) is None
+
+    # frob:ticket T-2438
+    def test_match_waiver_logs_diagnostic_on_genuine_symref_mismatch(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-2438 acceptance [1]: a symref-carrying violation with no
+        symbol-exact (post-normalization) waiver match, but a same-file
+        same-rule waiver present, must emit a diagnostic naming BOTH
+        strings rather than silently returning None -- fail-loudly
+        (T-2391) applied to the waiver-matching layer."""
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        import logging
+
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        violation = Violation(
+            rule="ARCH001",
+            severity=Severity.WARN,
+            file="x.cpp",
+            line=40,
+            message="x",
+            symref="x.cpp::Foo::qux",
+            metric=20,
+        )
+        waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="x.cpp::Foo.bar",
+            target="ARCH001",
+            origin="x.cpp:3",
+            attrs={"reason": "x"},
+        )
+        with caplog.at_level(logging.WARNING):
+            result = _match_waiver(violation, {"ARCH001": [waiver]})
+        assert result is None
+        assert any(
+            "x.cpp::Foo::qux" in rec.message and "x.cpp::Foo.bar" in rec.message
+            for rec in caplog.records
+        ), f"expected a diagnostic naming both symref strings, got {caplog.records!r}"
 
     def test_waive003_flags_waiver_reaching_multiple_packages(self) -> None:
         """T-0470: one `frob:waive TEST003` written in a file nested under

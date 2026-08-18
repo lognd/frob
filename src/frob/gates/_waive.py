@@ -47,6 +47,7 @@ call site keeps working.
 from __future__ import annotations
 
 import tomllib
+from collections.abc import Sequence
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -1945,6 +1946,78 @@ def _closest_by_line(waiver: Edge, violation: Violation) -> tuple[int, int]:
 _LARGE_DISTANCE = 1 << 30
 
 
+# frob:ticket T-2438
+def _canonical_symref(symref: str) -> str:
+    """`symref` with every scope-separator spelling collapsed to `.` for
+    COMPARISON purposes only (never stored/returned to a caller).
+
+    T-2438: the DSL/graph symbol table (`frob.lang._walk_c`, the source of
+    both `comment.following` bindings and every language's canonical
+    `RawSymbol.qualname`) always dot-joins qualname segments
+    (`f"{path}::{'.'.join(stack)}"`-shaped) -- but several hand-rolled
+    `frob.arch` symref producers (confirmed live: `frob.lang._common.
+    _cpp_class_methods`, shared by `frob.arch._cpp`/`_cpp_mayraise`)
+    independently rebuild a C++ method's qualname using the language's own
+    native `ClassName::method` scope operator instead, purely because that
+    string doubles as the human-readable text in the violation's `message`.
+    Reproduced directly: for the same method, `violation.symref` reads
+    `"<path>::Foo::bar"` while the DSL binds the symbol-bound `frob:waive`
+    comment above it to `waiver.src == "<path>::Foo.bar"` -- two spellings
+    of the identical symbol that never compare equal under plain `==`,
+    silently deadening the directive (`_match_waiver`'s ONLY consumer of
+    this helper). `::` is never a legal substring of an identifier in any
+    grammar frob parses (C/C++/Rust/TypeScript/Python), so collapsing it
+    to `.` on BOTH sides before comparing cannot make two genuinely
+    DIFFERENT symbols collide -- it only erases a spelling difference that
+    was never semantically meaningful in the first place. The true fix
+    (teach `_cpp_class_methods` frob's own canonical dot-joined qualname
+    for the `symref=` it feeds, keeping the `::`-spelled name only in the
+    human-facing `message=` text) lives outside this ticket's scope
+    (`src/frob/lang/_common.py`/`src/frob/arch/_cpp*.py`, not
+    `src/frob/gates/_waive.py`) -- filed separately; this is the
+    consumer-side hardening `_match_waiver` can make unilaterally without
+    touching a producer it does not own."""
+    return symref.replace("::", ".")
+
+
+# frob:ticket T-2438
+def _match_waiver_by_symref(
+    violation: Violation, candidates: Sequence[Edge]
+) -> Edge | None:
+    """The symbol-exact branch of `_match_waiver`, split out to keep both
+    under ARCH001's function-length ceiling (T-2438): a `_canonical_
+    symref`-normalized exact match among `candidates`, honoring `ceiling=`
+    (`_ceiling_ok`); on a miss, logs a WARNING naming both raw strings for
+    every same-file same-rule candidate considered and rejected (fail-
+    loudly, T-2391) before returning None -- see `_match_waiver`'s own
+    T-2438 docstring section for why a miss must be loud, not silent."""
+    v_canon = _canonical_symref(violation.symref or "")
+    for waiver in candidates:
+        if _canonical_symref(waiver.src) == v_canon and _ceiling_ok(
+            waiver, violation
+        ):
+            return waiver
+    for waiver in candidates:
+        waiver_file = waiver.src.split("::", 1)[0]
+        if waiver_file == violation.file:
+            _log.warning(
+                "WAIVE: %s at %s:%d carries symref=%r, which does not "
+                "match (even after separator normalization) same-file "
+                "same-rule waiver src=%r (from %s) -- the waiver is "
+                "NOT applied (T-2438: a symref mismatch is silent no "
+                "more, but it is still a mismatch); if these two "
+                "strings denote the same symbol, the waiver comment "
+                "or the producing rule's symref format needs fixing",
+                violation.rule,
+                violation.file,
+                violation.line,
+                violation.symref,
+                waiver.src,
+                waiver.origin,
+            )
+    return None
+
+
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
@@ -1964,15 +2037,30 @@ def _match_waiver(
     returned, so the displayed `[waived: ...]` reason traces back to the
     comment actually closest to the finding it explains. The symref-exact
     path above is already precise (a symbol can only be one waiver's
-    target) and is unchanged."""
+    target) and is unchanged.
+
+    T-2438: the symbol-exact path used to be `waiver.src ==
+    violation.symref` with an unconditional `return None` on a miss -- no
+    fall-through to the file-scoped branch below, and no diagnostic, so a
+    symref spelled differently by its producer than by the DSL binding the
+    waiver comment made the directive permanently and silently inert (see
+    `_canonical_symref`'s docstring for the confirmed live case: `frob.
+    arch`'s hand-rolled C++ symrefs). The match now runs on `_canonical_
+    symref`-normalized strings, so a formatting-only difference still
+    waives (a waiver bound to a genuinely DIFFERENT symbol in the same
+    file still normalizes to a DIFFERENT string and still does not match
+    -- precision is unchanged, only the spelling tolerance is new). A
+    violation that still finds no symbol-exact match after normalization,
+    but DOES have a same-file same-rule waiver present, now logs a
+    WARNING naming both raw strings (fail-loudly, T-2391) instead of
+    silently returning None -- a directive that still cannot match after
+    this fix is either bound to the wrong symbol or needs its comment
+    moved, and that should be visible, not silent."""
     if violation.rule in _UNWAIVABLE_RULES:
         return None
     candidates = waivers_by_rule.get(violation.rule, ())
     if violation.symref is not None:
-        for waiver in candidates:
-            if waiver.src == violation.symref and _ceiling_ok(waiver, violation):
-                return waiver
-        return None
+        return _match_waiver_by_symref(violation, candidates)
     package_scoped = violation.rule in _PACKAGE_SCOPED_RULES
     package_prefix = violation.file.rstrip("/") + "/"
     matches: list[Edge] = []
