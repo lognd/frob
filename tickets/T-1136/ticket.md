@@ -38,10 +38,66 @@ acceptance:
     mining), lock model, merge story with the frob-ledger driver retired, greppability,
     and a reversible migration plan with a compatibility window
   evidence: []
-- text: GIVEN the migration lands THEN the land path performs no monofile splice,
+- text: GIVEN the migration lands THEN tickets.md/tickets-archive.md are deleted,
+    a v2-mode repo with a lingering monofile errors (LEDGERV1001), two agents landing
+    disjoint tickets produce no ledger merge conflict, and the TICK002/TICK006 draft-death
+    classes are structurally impossible or auto-repaired -- while _land_merge.py/_land_merge_zones.py
+    correctly remain as live generic land-closeability/union-zone code, not monofile-splice
+    residue (design section 5 corrected accordingly)
+  evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: GIVEN the migration lands THEN the land path performs no monofile splice,
     two agents landing disjoint tickets produce no ledger merge conflict, and the
     TICK002/TICK006 draft-death classes are structurally impossible or auto-repaired
-  evidence: []
+  new_text: GIVEN the migration lands THEN tickets.md/tickets-archive.md are deleted,
+    a v2-mode repo with a lingering monofile errors (LEDGERV1001), two agents landing
+    disjoint tickets produce no ledger merge conflict, and the TICK002/TICK006 draft-death
+    classes are structurally impossible or auto-repaired -- while _land_merge.py/_land_merge_zones.py
+    correctly remain as live generic land-closeability/union-zone code, not monofile-splice
+    residue (design section 5 corrected accordingly)
+  reason: 'Verified against commit e2ed60480f76189b19157b99c6357a8d563068e7 (T-2356
+    land):
+
+    tickets.md (-11252 lines) and tickets-archive.md (-203330 lines) are both
+
+    deleted. gates/_tickets_gate.py gained LEDGERV1001 (errors on a lingering
+
+    monofile in a v2-mode repo). The migration is landed and the compatibility
+
+    window is closed.
+
+
+    The original criterion assumed _land_merge.py/_land_merge_zones.py would be
+
+    deleted as monofile-splice residue -- design section 5''s stale text. The
+
+    landing agent (T-2356) measured zero DEAD001/WIRE001/REF002 hits against
+
+    both files and confirmed by reading the code that T-1189/T-1194/T-1251 had
+
+    already split the real monofile-merge logic out into
+
+    _land_ledger_merge.py/_land_git_ops.py long ago; what remains in
+
+    _land_merge.py is generic closeability validation every land depends on,
+
+    and _land_merge_zones.py''s union zones (frob.toml, gates/__init__.py,
+
+    docs/audits/*.md) were never about tickets.md at all. Deleting either would
+
+    have broken the live land pipeline. Neither was deleted; design section 4/5
+
+    was corrected instead (see the same commit''s docs/design/ledger-v2.md diff).
+
+    Amending the criterion to match the corrected design rather than the
+
+    now-known-stale original text.
+
+    '
+  actor: logan
+  at: '2026-08-17'
 threat: null
 component: null
 anchor: false
