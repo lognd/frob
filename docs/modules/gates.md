@@ -2560,6 +2560,34 @@ symbol, does NOT satisfy WIRE002 -- `_wire002_is_permanent_test_helper_
 waiver` (`frob.gates._wire`) checks both conditions, and `follow_up=` is
 still required otherwise.
 
+**Dynamic-dispatch rescues: an autouse pytest fixture (T-1510) and a
+pydantic validator (T-1652/T-2325).** `_new_callable_records`'s text-scan
+substrate cannot see a caller that only ever exists inside a FRAMEWORK'S
+own dispatch machinery, not a call token in this repo's own source:
+
+- An autouse pytest fixture (`_is_autouse_pytest_fixture`) is injected by
+  pytest itself into every in-scope test, never called by name anywhere.
+  T-1510 fixed the resulting false positive (5 of this repo's own
+  fixtures flagged before the rescue landed).
+- A pydantic `@field_validator`/`@model_validator` method
+  (`_is_pydantic_validator`) is invoked by pydantic's own decorator-
+  registry dispatch at model-construction/field-assignment time, the
+  identical dynamic-dispatch shape. T-1652 confirmed 9 of 20 real
+  DEAD001 findings were exactly this shape and rescued DEAD001 for it;
+  T-2325 closed the matching gap in WIRE001 itself, which had NOT
+  rescued this shape even though `frob.gates._waive`'s WAIVE008 (its own
+  "is this WIRE001 waiver now permanently dead" liveness check, see
+  `_wire001_symbol_now_rescued`) already assumed it was -- a fresh
+  pydantic validator false-positived WIRE001 unwaived, and false-
+  positived WAIVE008 too if waived anyway, with no clean way to satisfy
+  both checks before this fix.
+
+Both predicates live in `frob.gates._dead_symbols` (shared with DEAD001)
+and are applied in `_new_callable_records` right alongside each other --
+a symbol matching either predicate is excluded from WIRE001's new-symbol
+candidate set entirely, same posture as any other symbol the diff never
+actually introduced.
+
 ## WIRE003 (T-1725)
 
 Hooks and docs reference `frob` verbs BY NAME, as plain strings, with

@@ -2,7 +2,7 @@
 id: T-2325
 title: WIRE001 does not rescue pydantic model_validator, contradicting WAIVE008's
   own assumption
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -14,14 +14,28 @@ runs_last: false
 scope:
 - src/frob/gates/_wire.py
 - src/frob/gates/_waive.py
+- tests/unit/test_wire001_pydantic_validator_rescue.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wire001_pydantic_validator_rescue.py
+  reason: must-fail fixture for the WIRE001 pydantic-validator rescue fix
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_fresh_model_validator_is_not_flagged
+- tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_fresh_field_validator_is_not_flagged
+- tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_ordinary_new_function_still_flagged_positive_control
 designated_repro_test: null
 acceptance:
 - text: given a fresh pydantic model_validator with no explicit outside caller, when
     WIRE001 runs, then it either recognizes the validator as rescued (matching WAIVE008's
     existing assumption) or WAIVE008 is corrected to stop assuming that rescue exists
-  evidence: []
+  evidence:
+  - tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_fresh_model_validator_is_not_flagged
+  - tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_fresh_field_validator_is_not_flagged
+  - tests/unit/test_wire001_pydantic_validator_rescue.py::TestWire001PydanticValidatorRescue::test_ordinary_new_function_still_flagged_positive_control
 threat: null
 component: null
 anchor: false

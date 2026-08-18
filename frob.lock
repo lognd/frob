@@ -485,6 +485,24 @@
       "old_digest": "8154563280adec6decbd53f05cf78ccf6244e5da39f5622de524139cb25b905e",
       "reason": "re-verified: docstring accurately describes current body -- include_test_corpora/_is_test_corpus_path skip (T-2298) and _read_source_for_format's unsupported-language/unreadable-file skip are both present and match; body+sig digest moved from T-2298's own param addition, already correctly reflected in the docstring",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "d0bfccc952a4a900d602237f1484a453cded2c295dc08a3c62a675e7bf721b95",
+      "old_digest": null,
+      "reason": "T-2325: _new_callable_records (called from wire_gate) now also rescues a pydantic model_validator/field_validator alongside the pre-existing autouse-fixture rescue; documented in the new 'Dynamic-dispatch rescues' subsection under this same anchor",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
+      "old_digest": null,
+      "reason": "T-2325: _new_callable_records (called from wire_gate) now also rescues a pydantic model_validator/field_validator alongside the pre-existing autouse-fixture rescue; documented in the new 'Dynamic-dispatch rescues' subsection under this same anchor",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
     }
   ],
   "entries": [
@@ -797,6 +815,16 @@
       "digest": "e95d9ae016e0c80327a72fd91fad9b392a388766fb6fcd5e2d075e26ae3c63f3",
       "facet": "sig",
       "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
+    },
+    {
+      "digest": "d0bfccc952a4a900d602237f1484a453cded2c295dc08a3c62a675e7bf721b95",
+      "facet": "body",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
+    },
+    {
+      "digest": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
+      "facet": "sig",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
     },
     {
       "digest": "665ae6d12c7b7b89371895196db67b373e31ff71306f5af194f4bc8d7e80bc6f",

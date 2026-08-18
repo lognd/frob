@@ -28,6 +28,7 @@ from frob.gates._dead_symbols import (
     _CALLABLE_KINDS,
     _is_autouse_pytest_fixture,
     _is_dunder,
+    _is_pydantic_validator,
     _is_test_symbol,
 )
 from frob.gates._models import Severity, Violation
@@ -147,7 +148,17 @@ def _new_callable_records(
     genuine false positive. T-1510: also excludes an autouse pytest fixture
     (`_is_autouse_pytest_fixture`) -- pytest's own injection machinery
     reaches it for every test in scope, not a caller this gate's text scan
-    can ever see."""
+    can ever see. T-2325: also excludes a pydantic `@field_validator`/
+    `@model_validator` (`_is_pydantic_validator`, T-1652) -- the SAME
+    dynamic-dispatch shape as an autouse fixture (pydantic's own
+    decorator-registry dispatch at model-construction/field-assignment
+    time, never a call token this gate's text scan can see), already
+    rescued for DEAD001 and already assumed rescued here by WAIVE008's
+    own liveness check -- this closes the gap between the two: before
+    this fix, a fresh pydantic validator false-positived WIRE001
+    (unwaived) and, if waived anyway, false-positived WAIVE008 ("this
+    waiver suppresses nothing, remove it") too, with no way to cleanly
+    satisfy both checks at once."""
     found = []
     for record in snapshot.symbols.values():
         if record.kind not in _CALLABLE_KINDS or not record.id.path.endswith(".py"):
@@ -155,7 +166,9 @@ def _new_callable_records(
         qualname = record.id.qualname
         if _is_dunder(qualname) or _is_test_symbol(qualname):
             continue
-        if _is_autouse_pytest_fixture(root, record):
+        if _is_autouse_pytest_fixture(root, record) or _is_pydantic_validator(
+            root, record
+        ):
             continue
         spans = hunks_by_file.get(record.id.path, ())
         if any(h[0] <= record.span[0] and record.span[1] <= h[1] for h in spans):
