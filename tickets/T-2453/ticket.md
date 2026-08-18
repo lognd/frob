@@ -1,7 +1,7 @@
 ---
 id: T-2453
 title: Fix out-of-scope doc/ack drift left by this drive's refactors (DRIFT001/DRIFT002/SELFAUDIT001)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,9 +11,43 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- design/frob.strata;docs/design/registry/capability-via-ratchet.lock.json;docs/modules/arch.md;docs/modules/vet.md
+- design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- docs/modules/arch.md
+- docs/modules/vet.md
+evidence_scope:
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: design/frob.strata;docs/design/registry/capability-via-ratchet.lock.json;docs/modules/arch.md;docs/modules/vet.md
+  reason: 'T-2453: original --scope filing string was one semicolon-joined literal
+    glob, not 4 separate globs -- replacing with proper --add entries'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: design/frob.strata
+  reason: 'T-2453 scope: file this drift-fix ticket touches'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: 'T-2453 scope: file this drift-fix ticket touches'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'T-2453 scope: file this drift-fix ticket touches'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'T-2453 scope: file this drift-fix ticket touches'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 designated_repro_test: null
 threat: null
 component: null

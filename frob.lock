@@ -737,6 +737,42 @@
       "old_digest": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
       "reason": "T-2406: signature/body updated to add exclude_pid/land_ticket_id/wait_timeout_s and the self-refusal + queue-instead-of-discard fix; doc section (automatic watermark drain) updated in the same change",
       "ref": "src/frob/verify/_drain.py::run_drain_async"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "2b488266f44cf0eacf6142bf96fd22fb63dbf10b8a61eaaa3ce00e53f2010cb1",
+      "old_digest": "167f55fa22d47f2baf6af124484f9a88e84aaee7cd82e765a7b312e957ed950d",
+      "reason": "T-2453 (root-recovery re-ack of T-2407's earlier work, lost when frob.lock was reverted during a shared-root cleanup): re-verified body against docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 -- T-2009 attributed_ids override, T-1791 quarantine raise, T-2208 auto-dispose reference all present and matching current body; digest moved from unrelated nearby edits in the same file, not a behavior change to this function",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-2453 (root-recovery re-ack of T-2407's earlier work, lost when frob.lock was reverted during a shared-root cleanup): re-verified body against docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690 -- T-2009 attributed_ids override, T-1791 quarantine raise, T-2208 auto-dispose reference all present and matching current body; digest moved from unrelated nearby edits in the same file, not a behavior change to this function",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "c85d3888efb55c3f2f6356ad13b4f598682d491b5535ec950c5c7224ce84cadf",
+      "old_digest": "e8a44a62eb5abeebc0de948522e0e27780801660d33e356184c1f9fa1de539d3",
+      "reason": "T-2453 (root-recovery re-ack of T-2407's earlier work, lost when frob.lock was reverted during a shared-root cleanup): re-verified against docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138 -- that section describes the Tier-A handler CLASSES (DOC007/DOC002/TICK002/FMT001/REG010/REL002/WAIVE004/SUPPRESS001/SYS111) and their invariants, none of which changed; T-2400's additive merge_target_ids: MergeTargetKnownIds | None = None parameter (threaded uniformly to every handler, documented in the function's own T-2400 docstring block) is an internal renumber-collision-avoidance detail the doc's higher level of abstraction never claimed anything about -- still accurate as written",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "0a9fa734ad8c65af73ff54ea2cf3a07b90d77235985bf09af7304aa352fbfdc7",
+      "old_digest": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
+      "reason": "T-2453 (root-recovery re-ack of T-2407's earlier work, lost when frob.lock was reverted during a shared-root cleanup): re-verified against docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138 -- that section describes the Tier-A handler CLASSES (DOC007/DOC002/TICK002/FMT001/REG010/REL002/WAIVE004/SUPPRESS001/SYS111) and their invariants, none of which changed; T-2400's additive merge_target_ids: MergeTargetKnownIds | None = None parameter (threaded uniformly to every handler, documented in the function's own T-2400 docstring block) is an internal renumber-collision-avoidance detail the doc's higher level of abstraction never claimed anything about -- still accurate as written",
+      "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     }
   ],
   "entries": [
@@ -811,7 +847,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "167f55fa22d47f2baf6af124484f9a88e84aaee7cd82e765a7b312e957ed950d",
+      "digest": "2b488266f44cf0eacf6142bf96fd22fb63dbf10b8a61eaaa3ce00e53f2010cb1",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
@@ -1021,12 +1057,12 @@
       "ref": "src/frob/gates/_fix_engine.py::_snapshot_dirty_files"
     },
     {
-      "digest": "e8a44a62eb5abeebc0de948522e0e27780801660d33e356184c1f9fa1de539d3",
+      "digest": "c85d3888efb55c3f2f6356ad13b4f598682d491b5535ec950c5c7224ce84cadf",
       "facet": "body",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     },
     {
-      "digest": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
+      "digest": "0a9fa734ad8c65af73ff54ea2cf3a07b90d77235985bf09af7304aa352fbfdc7",
       "facet": "sig",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
     },
