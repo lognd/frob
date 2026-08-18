@@ -79,7 +79,7 @@
     "declaration-keywords": {
       "comment": "Top-level construct keywords accepted by strata-core/src/parse.rs::parse_program's dispatch table. Drift-locked bidirectionally by tests/unit/test_strata_tmlanguage.py.",
       "name": "keyword.declaration.strata",
-      "match": "\\b(module|node|flow|boundary|assert|assume|refine|store|cache|queue|cdn|balancer|policy|operation|scenario|secret|resource)\\b"
+      "match": "\\b(module|part|extend|node|flow|boundary|assert|assume|refine|store|cache|queue|cdn|balancer|policy|operation|scenario|secret|resource)\\b"
     },
     "clause-keywords": {
       "comment": "Property/clause keywords used inside declaration bodies (at_keyword/expect_keyword call sites in strata-core/src/parse.rs). Checked one-directionally (parser -> grammar) by tests/unit/test_strata_tmlanguage.py.",

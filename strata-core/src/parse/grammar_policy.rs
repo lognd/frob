@@ -332,11 +332,53 @@ impl Parser {
             };
             match kw.as_str() {
                 "module" => self.parse_module(&mut ast, &mut seen_module)?,
+                // T-2502: `part of NAME` is this file's own header,
+                // mutually exclusive with `module` (both set `seen_module`
+                // and refuse a duplicate) -- a fragment file can never
+                // ALSO declare a module of its own.
+                "part" => self.parse_part_of(&mut ast, &mut seen_module)?,
+                // T-2502: `extend node ID { ... }` is valid ONLY inside a
+                // fragment file (`part of` already seen and `ast.part_of`
+                // is set) -- a root file extending is meaningless (it
+                // would just be a second `node` block for its own id) and
+                // is refused with a clear message rather than silently
+                // accepted as a no-op.
+                "extend" => {
+                    if !seen_module {
+                        return self.err("statement before part-of declaration");
+                    }
+                    if ast.part_of.is_none() {
+                        return self.err(
+                            "'extend' is only valid in a fragment file ('part of NAME') -- a \
+                             root file (which declares 'module NAME') already owns its nodes \
+                             directly and has nothing to extend",
+                        );
+                    }
+                    self.parse_extend_node(&mut ast)?
+                }
                 "node" | "flow" | "boundary" | "assert" | "assume" | "refine" | "store"
                 | "cache" | "queue" | "cdn" | "balancer" | "policy" | "operation"
                 | "scenario" | "secret" | "resource" => {
                     if !seen_module {
                         return self.err("statement before module declaration");
+                    }
+                    // T-2502: a fragment file (`part of NAME`) may ONLY
+                    // contain `extend` statements -- declaring a fresh
+                    // top-level node/flow/boundary/etc introduces a
+                    // construct the root never knew about, which is
+                    // exactly the "assemble a DIFFERENT system" hazard
+                    // the loader-globs-not-includes design forbids. Fail
+                    // closed here, at parse time, rather than let it
+                    // reach the loader as a surprise duplicate/unknown id.
+                    if ast.part_of.is_some() {
+                        return self.err(format!(
+                            "fragment file ('part of {}') may only contain 'extend' \
+                             statements -- found top-level '{}', which would declare a new \
+                             construct the root never knew about; fragments extend, they do \
+                             not stand alone",
+                            ast.part_of.as_deref().unwrap_or(""),
+                            kw
+                        ));
                     }
                     match kw.as_str() {
                         "node" => self.parse_node(&mut ast)?,

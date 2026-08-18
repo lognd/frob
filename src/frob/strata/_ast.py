@@ -813,6 +813,27 @@ class ResourceDecl(BaseModel):
     lock: str | None = None
 
 
+# frob:doc docs/strata/surface.md#fragments-t-2502
+# frob:tests \
+# tests/unit/strata/test_fragments.py::TestParseFragmentGrammar.test_part_of_parses
+class ExtendNodeDecl(BaseModel):
+    """A parsed `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }`
+    statement -- the only construct a fragment file (`part of NAME`) may
+    contain. `may_grants` reuses `MayGrantDecl`'s shape (`exclusive`/`of`
+    always their defaults here -- the grammar never lets a fragment set
+    them) so the merge join in `_multifile.py` can compare a fragment's
+    grant directly against a root `NodeDecl.may_grants` entry with no
+    reshaping. WHY this exists at all rather than folding straight into
+    `NodeDecl`: a fragment's grant is not a `NodeDecl`, it names no
+    `clearance`/`trust`/any other node field, and must be structurally
+    incapable of doing so (docs/strata/surface.md#fragments-t-2502)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    may_grants: tuple[MayGrantDecl, ...] = ()
+
+
 # frob:doc docs/strata/surface.md#parser
 class Module(BaseModel):
     """A whole parsed source file: exactly the shape the Rust parser emits."""
@@ -820,6 +841,17 @@ class Module(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     name: str
+    # T-2502: `part of NAME` -- set when this file is a fragment (declares
+    # no module of its own, extends the named root). `None` means this
+    # file is a root (`module NAME`) or the pre-T-2502 single-file shape;
+    # `name` is meaningless (empty string, per the Rust parser) whenever
+    # this is set.
+    # frob:doc docs/strata/surface.md#fragments-t-2502
+    part_of: str | None = None
+    # T-2502: every `extend node { ... }` statement this file declared --
+    # populated only for a fragment file, always `()` for a root.
+    # frob:doc docs/strata/surface.md#fragments-t-2502
+    extends: tuple[ExtendNodeDecl, ...] = ()
     nodes: tuple[NodeDecl, ...] = ()
     flows: tuple[FlowDecl, ...] = ()
     boundaries: tuple[BoundaryDecl, ...] = ()

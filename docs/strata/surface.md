@@ -929,6 +929,85 @@ through `elaborate_merged`/`check_cross_file_references` instead of
 contract) is left as a separate, narrower follow-up rather than folded
 into this ticket's already-settled "no" (renumbers at land).
 
+## Fragments (T-2502)
+
+<!-- frob:ticket T-2502 -->
+<!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_module -->
+<!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_part_of -->
+<!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_extend_node -->
+<!-- frob:describes src/frob/strata/_multifile.py::resolve_fragments -->
+<!-- frob:describes src/frob/strata/_ast.py::ExtendNodeDecl -->
+
+`design/frob.strata` grows by accretion -- every ticket that adds a test
+file appends another glob to the `testsuite` node's `may "exec"`/
+`"fs.read"`/`"fs.write"` `via` lists, and those single lines had grown
+past 13KB before T-2502: every concurrent agent editing the same giant
+line is a merge-conflict generator. T-2502 adds a narrow, structural
+escape hatch for exactly that shape of growth -- Rust's `mod` (files are
+organizational, the crate/system is the one unit), not C's `#include`
+(textual, no closure, lets two different builds silently diverge):
+
+- **One closure root.** A file declares `module NAME` at most once per
+  file, and stays free to be the ONLY file (the pre-T-2502, and still
+  fully supported, single-file shape) or one of several independently
+  named root files merged the T-1196 way (see previous section) --
+  T-2502 does not mandate modularity.
+- **Fragments extend, they do not stand alone.** A file instead may
+  declare `part of NAME` (mutually exclusive with `module` -- the
+  grammar's `seen_module` guard refuses a file that tries to write
+  both, or two of either). A fragment's ONLY statement shape is
+  `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }` -- no
+  `clearance`, no `capacity`, no fresh top-level `node`/`flow`/etc, no
+  via-less `may` (a via-less grant is a whole-node bless, not a
+  widening of anything a fragment could legitimately touch). Loaded
+  alone, a fragment elaborates to nothing: it declares no module, and
+  `resolve_fragments` refuses closed the moment it cannot find the root
+  it names.
+- **The loader globs, it does not include.** `_design_load._strata_files`
+  already reads `design/**/*.strata` as one unit (T-0080); T-2502 adds no
+  new loader entry point or explicit include list a design could use to
+  assemble a DIFFERENT system out of a different file subset.
+
+**Where the two halves of extend-only enforcement live:**
+
+1. *Syntactic* (`strata-core/src/parse`, `Parser::parse_extend_node`): an
+   `extend node { ... }` block's grammar has vocabulary for exactly one
+   clause, `may "ATOM" via GLOB[, GLOB...]`. It is not possible to parse
+   a fragment that sets `clearance`, `capacity`, or any other `NodeDecl`
+   field, and not possible to parse a via-less (whole-node) grant. This
+   is enforced by the shape of the grammar itself, not by a
+   post-hoc check on the parsed tree -- a fragment cannot express
+   weakening the root even by accident.
+2. *Semantic* (`_multifile.resolve_fragments`, runs before
+   `check_cross_file_references`/`merge_modules`/`elaborate` inside
+   `elaborate_merged`): every `extend node ID` must target a node id the
+   named root itself declared, and every extended `may "ATOM"` must
+   match an atom that root ALREADY granted that exact node -- an unknown
+   node and an unknown atom are refused as two distinct cases, both
+   before the fault could ever reach `elaborate()`'s own duplicate-id
+   machinery. A matching atom's `via` tuple is widened by set union
+   (root entries first, fragment globs appended, no duplicates);
+   `exclusive`/`of` are carried through from the root's grant untouched,
+   since a fragment has no grammar to set either. **This is the ticket's
+   hard constraint**: a fragment can never grant a capability the root
+   refused, because the merge only ever appends to an atom the root
+   already decided to grant -- there is no code path where a fragment's
+   own grant becomes authoritative on its own.
+
+`resolve_fragments` is scoped per targeted module NAME, not globally: if
+NO loaded file declares `part of` anywhere, it is a no-op
+(`Ok(files)` immediately) and the pre-existing T-1196 multi-root-name
+merge (several independently named `module` files, no fragments) is
+completely unaffected. The T-2502 "exactly one root" rule applies only
+to a NAME that at least one fragment actually references -- for that
+name, zero declaring files is "part of NAMES a nonexistent root" and
+more than one declaring file is "ambiguous which root the fragment(s)
+extend", both hard errors naming every file involved.
+
+T-2502 built and proved this mechanism only; migrating
+`design/frob.strata`'s own testsuite via-lists into a fragment file is
+deliberately left to a follow-up ticket, not folded in here.
+
 ## Directives: frob:channel / frob:boundary / frob:secret (T-0080)
 
 <!-- frob:ticket T-0080 -->

@@ -58,6 +58,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2498: T-2498: frob ticket body --append silently misroutes into done-report.md when one exists
 - T-2499: T-2499: capability_test_discovery_status hardcodes language set, stale after T-2409
 - T-2500: T-2500: boto3 net-mutate: exhaustive per-service mutating-verb survey (S3/DynamoDB/IAM done, ~347 services remain)
+- T-2502: T-2502: strata fragments: imports that cannot break a system apart
 - T-2503: T-2503: ambient vs enumerated capability grants: kill the via-list churn without losing the guard
 - T-2504: T-2504: confined to: prove path confinement on the existing summary engine, report-only first
 - T-2505: T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)

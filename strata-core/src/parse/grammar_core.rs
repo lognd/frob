@@ -39,6 +39,23 @@ struct ModuleAst {
     // is pure arbiter metadata, not a node), so it gets its own top-level
     // `Module.resources` field rather than desugaring into an attr.
     resources: Vec<serde_json::Value>,
+    // T-2502: `part of NAME` fragment header -- `None` for a root file
+    // (declares `module NAME`, the closure boundary everything else in
+    // this module is unchanged for); `Some(NAME)` for a fragment file,
+    // which declares no module of its own and stands for nothing loaded
+    // alone (docs/strata/surface.md#fragments-t-2502). `name` is left
+    // empty for a fragment -- fragments do not name a module, only the
+    // root they extend.
+    part_of: Option<String>,
+    // T-2502: `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }`
+    // statements -- the ONLY statement shape a fragment file may contain.
+    // Each entry mirrors `NodeDecl`'s `may_grants` shape narrowly (atom +
+    // via only; no `exclusive`/`of`, no `clearance`/`capacity`/any other
+    // node field) so a fragment is syntactically incapable of touching
+    // anything but an already-existing grant's via-list scope --
+    // structural, not documentary, enforcement of "extend-only, never
+    // override" (docs/strata/surface.md#fragments-t-2502).
+    extends: Vec<serde_json::Value>,
 }
 
 impl Parser {
@@ -350,6 +367,98 @@ impl Parser {
         let name = self.expect_ident("module name")?;
         ast.name = name;
         *seen_module = true;
+        Ok(())
+    }
+
+    /// T-2502: `part of NAME` -- a fragment file's ONLY header, declaring
+    /// which root `module` it extends. Must be the very first statement
+    /// (mirrors `parse_module`'s `seen_module` guard: `seen_module` is
+    /// reused as "header already consumed" for both root and fragment
+    /// files, so a file can never carry both a `module` and a `part of`
+    /// header, nor two of either -- one file is exactly one thing.
+    fn parse_part_of(
+        &mut self,
+        ast: &mut ModuleAst,
+        seen_module: &mut bool,
+    ) -> Result<(), ParseError> {
+        if *seen_module {
+            return self.err("duplicate module/part-of header");
+        }
+        self.advance(); // 'part'
+        if !self.at_keyword("of") {
+            return self.err("expected 'of' after 'part'");
+        }
+        self.advance(); // 'of'
+        let name = self.expect_ident("root module name")?;
+        ast.part_of = Some(name);
+        *seen_module = true;
+        Ok(())
+    }
+
+    /// T-2502: `extend node ID { may "ATOM" via GLOB[, GLOB...]; ... }` --
+    /// the only statement a fragment file may contain. Deliberately
+    /// accepts NO other node clause: no `clearance`, no `capacity`, no
+    /// second `node`/`module` header -- a fragment cannot widen or
+    /// override anything but an EXISTING grant's via-list, by
+    /// construction of this grammar rule alone (docs/strata/surface.md
+    /// #fragments-t-2502). A bare `may "ATOM";` with no `via` is a hard
+    /// parse error here (unlike root `node`'s `may`, where a via-less
+    /// grant means "whole node") -- an unscoped grant is not a widening
+    /// of anything, it is a fresh whole-node bless, exactly what a
+    /// fragment must never be able to do.
+    fn parse_extend_node(&mut self, ast: &mut ModuleAst) -> Result<(), ParseError> {
+        self.advance(); // 'extend'
+        if !self.at_keyword("node") {
+            return self.err("expected 'node' after 'extend' -- fragments may only extend nodes");
+        }
+        self.advance(); // 'node'
+        let id = self.expect_ident("extend node id")?;
+        self.expect_symbol('{')?;
+        let mut may_grants: Vec<serde_json::Value> = Vec::new();
+        loop {
+            if self.at_symbol('}') {
+                break;
+            }
+            if self.at_keyword("may") {
+                self.advance();
+                let atom = self.expect_string("may capability")?;
+                let mut via: Vec<String> = Vec::new();
+                if self.at_keyword("via") {
+                    self.advance();
+                    via.push(self.expect_string("may via glob")?);
+                    while self.at_symbol(',') {
+                        self.advance();
+                        via.push(self.expect_string("may via glob")?);
+                    }
+                }
+                if via.is_empty() {
+                    return self.err(
+                        "extend node may grant requires a via list -- a fragment may only \
+                         widen an existing grant's scope, never bless the whole node",
+                    );
+                }
+                may_grants.push(json!({
+                    "atom": atom,
+                    "via": via,
+                    "exclusive": false,
+                    "of": [],
+                }));
+                if self.at_symbol(';') {
+                    self.advance();
+                }
+            } else {
+                return self.err(
+                    "extend node blocks may only contain 'may \"ATOM\" via ...' clauses -- \
+                     clearance, capacity, and every other node field belong to the root \
+                     declaration only and can never be widened or overridden by a fragment",
+                );
+            }
+        }
+        self.expect_symbol('}')?;
+        ast.extends.push(json!({
+            "id": id,
+            "may_grants": may_grants,
+        }));
         Ok(())
     }
 }

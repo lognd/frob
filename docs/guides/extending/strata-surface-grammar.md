@@ -8,11 +8,17 @@ The `.strata` design-file surface grammar is a hand-written recursive
 descent parser split across `strata-core/src/parse/grammar_*.rs` (Rust,
 post-T-1006 split of the old monolithic parse.rs/mod.rs; compiled via
 PyO3 into `strata_core`, see `make core`). Top-level declaration keywords
-(`module`, `node`, `flow`, `boundary`, `store`, `cache`, `queue`, `cdn`,
-`balancer`, `policy`, `operation`, `scenario`, `secret`, `resource`,
-`assert`, `assume`, `refine`) are dispatched in
+(`module`, `part` (of), `extend`, `node`, `flow`, `boundary`, `store`,
+`cache`, `queue`, `cdn`, `balancer`, `policy`, `operation`, `scenario`,
+`secret`, `resource`, `assert`, `assume`, `refine`) are dispatched in
 `Parser::parse_program` (`grammar_policy.rs`); keyword matching within a
-construct goes through `Parser::expect_keyword`. The
+construct goes through `Parser::expect_keyword`. T-2502 added `part`/
+`extend`: a file is EITHER a root (`module NAME`, the pre-existing
+shape) OR a fragment (`part of NAME`, may only contain `extend node ID
+{ may "ATOM" via GLOB[, GLOB...]; ... }` statements) -- never both, and
+the loader-level closure/extend-only-merge rules live in
+`frob.strata._multifile.resolve_fragments`, not in the grammar itself
+(see `docs/strata/surface.md#fragments-t-2502`). The
 SAME keyword vocabulary is hand-spelled a second time, for syntax
 highlighting only, in `editors/vscode-strata/syntaxes/strata.tmLanguage.json`
 (T-0139) -- this is the one registry in this series with a THIRD artifact
