@@ -489,6 +489,18 @@ class AppConfig(BaseModel):
     # auto-drops or silently proceeds) until the caller explicitly
     # confirms this ticket is not a duplicate.
     ticket_ack_related: bool = False
+    # frob:ticket T-2302
+    # `frob ticket new --scope-breadth-ack` -- the filing-time twin of
+    # `frob ticket scope-ack <id>` (T-1866/T-2123): acknowledges a
+    # deliberately broad --scope immediately at creation, so the T-2123
+    # filing-time breadth WARN never fires for a ticket that already
+    # declared its broad scope intentional. Default False: unacknowledged,
+    # same posture every other breadth check defaults to.
+    ticket_scope_breadth_ack: bool = False
+    # frob:ticket T-2302
+    # required justification for `--scope-breadth-ack`, same non-blank
+    # requirement `frob ticket scope-ack --reason` already enforces.
+    ticket_scope_breadth_ack_reason: str | None = None
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None

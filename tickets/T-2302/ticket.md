@@ -2,7 +2,7 @@
 id: T-2302
 title: 'T-2123 follow-up: no filing-time scope-breadth acknowledgement path, so the
   new-ticket breadth check is advisory forever'
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-17'
@@ -11,18 +11,79 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_new_renumber.py
+- docs/modules/tickets-data-storage.md
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/config.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: wiring --scope-breadth-ack CLI flag through TicketSpec/AppConfig, T-2302
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/test_new_ticket_scope_breadth_ack_flag.py
+  reason: must-fail fixture for --scope-breadth-ack flag
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_acknowledged_broad_scope_is_silent_and_recorded
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_unacknowledged_broad_scope_still_warns
+- tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_ack_without_reason_is_refused
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given a deliberately broad scope at filing time, when the operator passes
     the acknowledgement flag, then the scope is recorded as acknowledged rather than
     merely warned about
-  evidence: []
+  evidence:
+  - tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_acknowledged_broad_scope_is_silent_and_recorded
+  - tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_unacknowledged_broad_scope_still_warns
+  - tests/unit/test_new_ticket_scope_breadth_ack_flag.py::TestScopeBreadthAckFlag::test_ack_without_reason_is_refused
 - text: given the acknowledgement path exists, when the filing-time severity decision
     is made, then it is recorded with the measured count of currently-queued tickets
     that would fail a refusal
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: tickets
 anchor: false

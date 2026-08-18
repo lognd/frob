@@ -413,6 +413,42 @@
       "old_digest": "26fc40e7c586f26b3a596bc3bc12a5dbc4b291c33a46761aa41b062930e73454",
       "reason": "T-2260: re-verified docs/modules/tickets-verify-sweep.md and the resolve_local_import docstring still describe current behavior after unrelated body digest drift; re-acking",
       "ref": "src/frob/lang/_nodes.py::resolve_local_import"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "old_digest": null,
+      "reason": "added --scope-breadth-ack/--scope-breadth-ack-reason flags (T-2302); the two affected doc sections describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags to this same parser-registration function",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "old_digest": null,
+      "reason": "added --scope-breadth-ack/--scope-breadth-ack-reason flags (T-2302); the two affected doc sections describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags to this same parser-registration function",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "old_digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "reason": "added --scope-breadth-ack/--scope-breadth-ack-reason flags (T-2302); the two affected doc sections describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags to this same parser-registration function",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "old_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "reason": "added --scope-breadth-ack/--scope-breadth-ack-reason flags (T-2302); the two affected doc sections describe general scope/frob:ticket discipline and the human/AI split, unaffected by adding two more argparse flags to this same parser-registration function",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
     }
   ],
   "entries": [
@@ -425,6 +461,16 @@
       "digest": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
       "facet": "sig",
       "ref": "design/frob.strata::frob.vet"
+    },
+    {
+      "digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "facet": "body",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "facet": "sig",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
     },
     {
       "digest": "d8a3c5c4826e6a25c933a99e591e993f4baec194ced85dd46bf1fbb14bf070af",

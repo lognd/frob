@@ -346,6 +346,9 @@ def _ticket_spec_from_cfg(
         # `body` is the caller's single already-resolved `_resolve_new_body`
         # result -- never re-read here, see the docstring above.
         body=body,
+        # frob:ticket T-2302
+        scope_breadth_ack=cfg.ticket_scope_breadth_ack,
+        scope_breadth_ack_reason=cfg.ticket_scope_breadth_ack_reason,
     )
 
 

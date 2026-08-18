@@ -98,6 +98,13 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
 
 
 # frob:ticket T-0030
+# frob:waive AFFECT001 reason="T-2302 added \
+# --scope-breadth-ack/--scope-breadth-ack-reason flags to this same \
+# parser-registration function; the two affects()-closure docs \
+# (docs/guides/agentic-workflow.md#implement-strictly-within-scope-add-frobticket--frob\
+# tests-directives, #the-humanai-split) describe general scope/frob:ticket discipline \
+# and the human/AI split, unaffected by adding two more argparse flags here -- content \
+# stays true, already re-acked via frob ack (T-2302)"
 def _add_ticket_new_parser(ticket_sub) -> None:
     """Register `frob ticket new` and its (many) creation flags."""
     ticket_new_p = ticket_sub.add_parser("new", help="create a new ticket")
@@ -149,4 +156,26 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "proceed even though a close match was found -- required only "
         "when the check actually surfaces a candidate; a genuinely novel "
         "title needs no flag",
+    )
+    # frob:ticket T-2302
+    ticket_new_p.add_argument(
+        "--scope-breadth-ack",
+        dest="ticket_scope_breadth_ack",
+        action="store_true",
+        help="acknowledge a deliberately broad --scope at FILING time "
+        "(T-2302, the filing-time twin of `frob ticket scope-ack`): sets "
+        "scope_breadth_ack=True on the new ticket immediately, the same "
+        "field `frob ticket scope-ack <id>` sets after the fact, so the "
+        "T-2123 filing-time breadth WARN never fires for a ticket that "
+        "already declared its broad scope intentional -- requires "
+        "--scope-breadth-ack-reason",
+    )
+    # frob:ticket T-2302
+    ticket_new_p.add_argument(
+        "--scope-breadth-ack-reason",
+        dest="ticket_scope_breadth_ack_reason",
+        metavar="TEXT",
+        help="required justification for --scope-breadth-ack (T-2302), "
+        "same non-blank requirement `frob ticket scope-ack --reason` "
+        "already enforces",
     )

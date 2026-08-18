@@ -1246,3 +1246,43 @@ number is a point-in-time measurement, not a static fact -- re-run the
 same query to get the current one rather than trusting either this
 figure or T-1866's own originally-filed census, which measured a
 slightly different, now-stale queue snapshot.
+
+## Filing-time acknowledgement path: `--scope-breadth-ack` (T-2302)
+
+T-2123 surfaced the SAME breadth measure at `frob ticket new` filing
+time too (`_warn_over_broad_scope_on_new`, WARN-only, never a refusal --
+a ticket being created has no id yet to acknowledge against via `frob
+ticket scope-ack`) but shipped with no way to acknowledge a broad scope
+AT filing time, leaving the filing-time check advisory forever: an
+operator or agent could file an arbitrarily broad scope, see the warning
+scroll past, and proceed.
+
+T-2302 closes that gap: `frob ticket new --scope-breadth-ack
+--scope-breadth-ack-reason TEXT` sets `TicketSpec.scope_breadth_ack`/
+`scope_breadth_ack_reason` directly at spec-construction time (validated
+non-blank there -- `TicketSpec`'s own `model_validator`, mirroring
+`set_scope_breadth_ack`'s reason requirement for the post-filing `scope-
+ack` channel), so `_warn_over_broad_scope_on_new`'s existing `if ticket.
+scope_breadth_ack: return` early-out fires immediately for a ticket that
+declared its broad scope intentional at the moment of filing -- no
+second acknowledgement mechanism, the same field both paths share.
+
+**Severity decision (measured, not escalated):** T-2302 measured how
+many currently-queued tickets would fail a refusal-unless-acknowledged
+posture at filing time (the same escalation `frob ticket start`'s T-1866
+refusal already applies) before touching severity, per this repo's own
+"measure before burning down" precedent (T-2299's DOC012 WARN-at-ship
+posture). Result: **24 of 68 currently-open (queued/planned/in-progress)
+tickets** would fail such a refusal -- roughly a third of the live
+queue. That is a large fraction, not a handful of stragglers, so T-2302
+did NOT escalate the filing-time check from WARN to a refusal: shipping
+a refusal now would repeat exactly the mistake T-1783's DOC012 WARN
+posture was designed to avoid (reddening a large slice of existing,
+unrelated work the moment the check tightens). The filing-time check
+stays WARN-only; escalating it needs its own burn-down ticket first,
+narrowing or acknowledging that 24-ticket backlog, the same shape T-2299
+used for DOC012. This number is a point-in-time measurement like the
+39-of-72 figure above -- re-run the equivalent query
+(`frob.tickets.large_glob_warnings` over every open ticket, skipping
+`scope_breadth_ack=True` ones) to get the current count rather than
+trusting this one indefinitely.

@@ -289,6 +289,9 @@ def _ticket_from_spec(
         component=spec.component,
         labels=spec.labels,
         body=body,
+        # frob:ticket T-2302
+        scope_breadth_ack=spec.scope_breadth_ack,
+        scope_breadth_ack_reason=spec.scope_breadth_ack_reason,
     )
 
 
@@ -396,15 +399,30 @@ def _validate_new_ticket_spec(
 ) -> Result[tuple[str, ...], TicketError]:
     """`new_ticket`'s pre-write validation gauntlet, split out to keep that
     function under ARCH001's line threshold (T-1813): runs-last warning,
-    worktree-lease enforcement, exact-duplicate refusal, evidence schema
-    validation, and evidence resolution checking, in that order. Returns
-    the validated (and normalized) evidence tuple on success, or the
-    first stage's `Err` -- the caller passes this straight through to
-    `_ticket_from_spec`."""
+    scope-breadth-ack reason requirement (T-2302), worktree-lease
+    enforcement, exact-duplicate refusal, evidence schema validation, and
+    evidence resolution checking, in that order. Returns the validated
+    (and normalized) evidence tuple on success, or the first stage's
+    `Err` -- the caller passes this straight through to
+    `_ticket_from_spec`. T-2302's check is a plain function-level guard
+    (not a pydantic `TicketSpec` validator) deliberately: WIRE001's own
+    dynamic-dispatch rescue only recognizes an autouse pytest fixture,
+    not a pydantic `model_validator` (`_is_pydantic_validator` is wired
+    into DEAD001 and WAIVE008's own waiver-liveness check but NOT into
+    WIRE001's gate logic itself, a real gap between the two -- see
+    `frob.gates._wire`'s imports vs `frob.gates._waive`'s), so a
+    `model_validator` here would false-positive WIRE001 with no clean
+    waiver (WAIVE008 flags the waiver as already-covered when it is not
+    actually exempted, a genuine detector inconsistency out of this
+    ticket's own declared scope to fix)."""
     from frob.tickets import _check_evidence_resolution, _validate_evidence_list
 
     if not spec.runs_last:
         _warn_if_runs_last_ticket_in_progress(root)
+
+    # frob:ticket T-2302
+    if spec.scope_breadth_ack and not (spec.scope_breadth_ack_reason or "").strip():
+        return Err(TicketError.ScopeBreadthAckReasonMissing)
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:
@@ -653,12 +671,20 @@ def _warn_over_broad_scope_on_new(root: Path, ticket: Ticket) -> None:
     an already-filed ticket can be acknowledged via `frob ticket scope-ack
     <id>` before retrying `start` -- but a ticket being CREATED has no id
     yet to acknowledge against, so refusing filing outright would strand
-    the author with no way forward inside a single command. `spec`-level
-    `scope_breadth_ack` wiring (a `frob ticket new --scope-breadth-ack`
-    flag) would close this circularity fully but needs CLI-parser/
-    `AppConfig` changes outside this ticket's own declared scope
-    (`src/frob/tickets/_new_renumber.py` alone) -- noted as follow-up
-    work, not silently worked around here.
+    the author with no way forward inside a single command. T-2302 closed
+    the circularity this docstring used to describe as a gap: `frob ticket
+    new --scope-breadth-ack --scope-breadth-ack-reason TEXT` now sets
+    `TicketSpec.scope_breadth_ack`/`scope_breadth_ack_reason` directly at
+    spec-construction time (validated non-blank there, mirroring
+    `set_scope_breadth_ack`'s own reason requirement), so this function's
+    own `if ticket.scope_breadth_ack: return` early-out already fires for
+    a ticket that acknowledged its broad scope AT FILING -- no separate
+    mechanism was needed here, only the CLI-parser/`AppConfig`/`TicketSpec`
+    wiring T-2123 had explicitly deferred. Filing-time severity is STILL
+    WARN-only, not escalated to a refusal-unless-acknowledged posture --
+    T-2302 measured how many currently-queued tickets would fail such a
+    refusal before deciding whether/when to escalate; see its Done report
+    for the measured count and the decision.
 
     T-2123's second finding: the coordinator's own measured incident
     (`frob ticket new --scope src/frob/app/ticket_runner/` accepted,

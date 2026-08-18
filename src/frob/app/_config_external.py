@@ -94,6 +94,8 @@ _STRING_FIELDS = (
     "ticket_by",
     "ticket_summary",
     "ticket_reason",
+    # frob:ticket T-2302
+    "ticket_scope_breadth_ack_reason",
     # frob:ticket T-1762
     "ticket_force_reason",
     # frob:ticket T-1768
@@ -451,6 +453,8 @@ _BOOL_FLAGS = (
     "ticket_no_commit",
     # frob:ticket T-1995
     "ticket_ack_related",
+    # frob:ticket T-2302
+    "ticket_scope_breadth_ack",
     "deploy_check",
     "clean_all",
     "clean_deep",

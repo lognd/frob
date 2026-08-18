@@ -1688,6 +1688,20 @@ class TicketSpec(BaseModel):
     component: str | None = None
     labels: tuple[str, ...] = ()
     body: str = ""
+    # frob:ticket T-2302
+    # `frob ticket new --scope-breadth-ack` -- the filing-time twin of
+    # `set_scope_breadth_ack`/`frob ticket scope-ack <id>` (T-1866/T-1484):
+    # acknowledges a deliberately broad `scope` immediately at creation
+    # time, so `_warn_over_broad_scope_on_new`'s T-2123 filing-time WARN
+    # never fires for a ticket that already declared its broad scope
+    # intentional. Default False, matching every other breadth-ack default.
+    scope_breadth_ack: bool = False
+    # frob:ticket T-2302
+    # required justification for `scope_breadth_ack=True`, `None` when
+    # `scope_breadth_ack` is False -- same non-blank requirement
+    # `set_scope_breadth_ack`/`WAIVE001` already enforce for their own
+    # acknowledgement channels; validated together below.
+    scope_breadth_ack_reason: str | None = None
 
     @field_validator("scope", mode="before")
     @classmethod
