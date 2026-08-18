@@ -1,7 +1,7 @@
 ---
 id: T-2397
 title: Wire find_dropped_cli_flags into frob check as a gate (T-2387 visibility gap)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,11 +11,105 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - src/frob/check/**
 - docs/modules/gates.md
+- src/frob/gates/_flag_coverage.py
+- src/frob/gates/_docblocks_shared.py
+- src/frob/gates/_docblocks_refs.py
+- src/frob/gates/_waive.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- frob.toml
+- tests/unit/test_flag_coverage_gate.py
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_flag_coverage.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_docblocks_shared.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_docblocks_refs.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: frob.toml
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_flag_coverage_gate.py
+  reason: 'narrowing the umbrella glob to the actual files this gate touches: new
+    gate module + shared resolver + registration + this repo self-declaration + docs
+    + tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: frob registry audit --sync-gate-rules writes the CHK-GATE-FLAGCOV001 entry
+    here as part of registering the new rule
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_now_fire_reports_the_genuinely_dropped_flag
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_must_still_pass_when_everything_is_forwarded
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_this_repos_own_frob_toml_reports_zero
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_no_declared_sources_is_unresolved_not_empty
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_missing_config_key_is_unresolved
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_missing_forwarded_key_is_unresolved
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_unresolvable_parser_is_unresolved_not_a_crash
+- tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate::test_non_callable_non_set_forwarded_is_unresolved
 designated_repro_test: null
 threat: null
 component: null

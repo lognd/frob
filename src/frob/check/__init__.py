@@ -297,6 +297,12 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "render_lint",
             # T-2344: LEXCHECK001.
             "lexcheck",
+            # T-2397: FLAGCOV001 -- thread-pool, sub-second, same shape as
+            # lexcheck above; belongs here per the same T-1044/T-1340
+            # lesson (a gate registered in frob.gates._ALL_GATES but not
+            # added to a _STAGE_GROUPS member is unreachable via
+            # `--only <group>`).
+            "flag_coverage",
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",

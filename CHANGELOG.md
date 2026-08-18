@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.510.0] - unreleased
+
+- T-2397: Wire find_dropped_cli_flags into frob check as a gate (T-2387 visibility gap)
+
 ## [0.509.0] - unreleased
 
 - T-2380: Decompose SYS003 (undeclared cross-component import) WARN campaign -- 4834 findings, 603 files
