@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8db5ebed7b82dc49d393011b3f35b43ad3cd3df4
 ---
 SELFAUDIT001 is flagging three ratchet-ceiling-vs-actual mismatches after
 the T-2390 series (T-2435/T-2436/T-2437) and other recently-landed
