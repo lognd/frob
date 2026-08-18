@@ -289,7 +289,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 785a4c81bd7f76552ef9d4cdc49e783564be6a23
 ---
 T-2486 built a structural boundary guard (_guard_json_stdout_writes /
 _StderrRedirectStdout in src/frob/app/check_runner.py) that redirects
