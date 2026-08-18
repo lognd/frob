@@ -33,7 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 519696f9f84e434dca2731a1871a07e87e407942
 ---
 T-2408 added `_imports_typescript`/`_imports_rust`/`_imports_kotlin` walkers
 to `src/frob/lang/_extract.py`'s `_IMPORT_WALKERS` table, so
