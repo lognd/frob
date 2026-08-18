@@ -103,7 +103,7 @@ threat: tampering
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 545be1df644677aad6c2d71c501b7911c6d25c87
 ---
 The meta-checks that police detector QUALITY are themselves scoped to
 one package, so detectors living anywhere else are unpoliced. This is
