@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6691567c7f24fb8292e9906bbdb878ac3389d275
 ---
 found while working T-2438 (a symbol-bound frob:waive silently failed to
 match when symrefs differ, with no fallback and no diagnostic).
