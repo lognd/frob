@@ -77,7 +77,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: adba195da1ad9c9813d611b584f7b4a986754156
 ---
 MEASURED 2026-08-18. Series AA's T-2394 land was refused repeatedly with
 `ScopeLeaseConflict` while finalizing `T-2428` -- a draft it
