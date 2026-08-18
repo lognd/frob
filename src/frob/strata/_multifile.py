@@ -30,11 +30,13 @@ are still file-tagged.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 from typani import Err, Ok, Result
 
-from ._ast import ExtendNodeDecl, MayGrantDecl, Module
+from ._ast import ExtendNodeDecl, MayGrantDecl, Module, NodeDecl
 from ._elaborate import _known_node_ids, elaborate
 from ._errors import StrataError
 from ._models import KernelModel
@@ -142,20 +144,118 @@ def check_cross_file_references(
 
 
 # frob:doc docs/strata/surface.md#fragments-t-2502
+# frob:ticket T-2530
+# frob:tests \
+# tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_atom_s\
+# till_works
+# frob:tests \
+# tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_atom\
+# _refuses_closed
+# frob:tests \
+# tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_at_r\
+# untime
+# frob:tests \
+# tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_fails_stati\
+# c_type_check
+class SealedGrantSet:
+    """Per-node capability-grant mapping (atom -> `MayGrantDecl`) whose
+    ONLY public mutator is `widen` -- unioning MORE `via` globs onto an
+    atom the root ALREADY granted. Inserting a fresh atom is not an
+    expressible operation on this type: there is no method, public or
+    otherwise, that assigns a NEW key into the underlying mapping, and
+    `grants` exposes a `Mapping` (never a `dict`) backed by a real
+    `MappingProxyType` -- so `sealed.grants[atom] = grant` is BOTH a
+    static type error (`Mapping` has no `__setitem__` in its interface;
+    a type checker rejects the assignment before the code ever runs) AND
+    a runtime `TypeError` (`mappingproxy` object does not support item
+    assignment) for code that ignores the type checker entirely.
+
+    T-2530: this replaces a plain `dict[str, MayGrantDecl]` the merge
+    functions used to pass around and mutate directly -- correct only
+    because every call site happened to only ever union into an existing
+    key (`_widen_node_grants`'s old body), a property the type system
+    never enforced. A future `else: node_grants[atom] = grant` edit to
+    that dict-based code would have silently turned a fragment into a
+    place to grant a capability the root refused; the same edit against
+    THIS type does not compile (`grants` is read-only) and there is no
+    other attribute to reach for -- moving the guarantee from the test
+    suite (T-2502's own tests, still green, now testing a stronger
+    contract) into the type system, per this ticket's own charter.
+
+    Construction is likewise restricted: the only way to get one is
+    `from_root_node`, called exactly once per node by
+    `_seed_grants_by_root_node` against a ROOT `Module`'s own `nodes`
+    (never a fragment's) -- a fragment's `extend` statements are folded
+    in through `widen` alone, they never construct their own
+    `SealedGrantSet`."""
+
+    __slots__ = ("_grants",)
+
+    def __init__(self, grants: dict[str, MayGrantDecl]) -> None:
+        """Private in spirit (leading underscore) as well as in practice
+        (the constructor argument is a plain `dict`, never exposed again
+        after this call) -- `from_root_node` is the one sanctioned
+        caller; nothing about this signature stops a determined bypass
+        (Python has no true access control), which is the honest limit
+        of what this type can guarantee -- see the class docstring's
+        `Mapping`/`MappingProxyType` combination for the part that DOES
+        hold even against code that tries to bypass convention."""
+        self._grants: dict[str, MayGrantDecl] = grants
+
+    @classmethod
+    # frob:waive WIRE001 reason="genuinely called, once, as \
+    # SealedGrantSet.from_root_node(node) from _seed_grants_by_root_node below in this \
+    # same file -- WIRE001's call_pattern regex excludes any match preceded by a dot \
+    # (a deliberate anti-false-positive guard for unrelated same-named methods), which \
+    # blinds it to every dotted-qualified classmethod/staticmethod call, not just this \
+    # one; filed as the gate defect T-2532 rather than worked around here" \
+    # follow_up="T-2532"
+    def from_root_node(cls, node: NodeDecl) -> "SealedGrantSet":
+        """The ONLY construction path -- one entry per grant the ROOT
+        node itself already declared. `_seed_grants_by_root_node` is the
+        one caller, and it only ever iterates a resolved ROOT `Module`'s
+        `nodes` (T-2502's `resolve_fragments` never passes a fragment's
+        `Module` here)."""
+        return cls({grant.atom: grant for grant in node.may_grants})
+
+    @property
+    def grants(self) -> Mapping[str, MayGrantDecl]:
+        """Read-only view of the current atom->grant mapping -- typed and
+        backed exactly as the class docstring describes; use `widen` to
+        change anything, there is no other way from outside this class."""
+        return MappingProxyType(self._grants)
+
+    def widen(self, atom: str, via: tuple[str, ...]) -> bool:
+        """Union `via` into the EXISTING grant for `atom`, in place;
+        returns `False` and changes nothing if `atom` was never granted
+        by the root. This is the sealed type's entire public mutation
+        surface -- there is no sibling method that can assign a fresh
+        key, by construction of this class, not by convention."""
+        existing = self._grants.get(atom)
+        if existing is None:
+            return False
+        widened_via = existing.via + tuple(
+            glob for glob in via if glob not in existing.via
+        )
+        self._grants[atom] = existing.model_copy(update={"via": widened_via})
+        return True
+
+
+# frob:doc docs/strata/surface.md#fragments-t-2502
 def _widen_node_grants(
-    path: str, extend: ExtendNodeDecl, node_grants: dict[str, MayGrantDecl]
+    path: str, extend: ExtendNodeDecl, node_grants: SealedGrantSet
 ) -> list[CrossFileError]:
-    """Fold ONE `extend node`'s `may_grants` into `node_grants` (the root
-    node's own atom->grant map, mutated in place) -- an atom the root
-    never granted this node is refused (the ticket's hard weakening
-    constraint), a matching atom's `via` tuple is widened by set union
-    (root entries first, no duplicates). Split out of `resolve_fragments`
-    purely to keep that function's own body a manageable length; no
-    behavior of its own beyond this one fold."""
+    """Fold ONE `extend node`'s `may_grants` into `node_grants` via
+    `SealedGrantSet.widen` -- an atom the root never granted this node is
+    refused (the ticket's hard weakening constraint; `widen` itself
+    reports this by returning `False`, this function is what turns that
+    into a `CrossFileError`), a matching atom's `via` tuple is widened by
+    set union (root entries first, no duplicates). Split out of
+    `resolve_fragments` purely to keep that function's own body a
+    manageable length; no behavior of its own beyond this one fold."""
     errors: list[CrossFileError] = []
     for grant in extend.may_grants:
-        existing = node_grants.get(grant.atom)
-        if existing is None:
+        if not node_grants.widen(grant.atom, grant.via):
             errors.append(
                 CrossFileError(
                     path=path,
@@ -166,11 +266,6 @@ def _widen_node_grants(
                     ),
                 )
             )
-            continue
-        widened_via = existing.via + tuple(
-            glob for glob in grant.via if glob not in existing.via
-        )
-        node_grants[grant.atom] = existing.model_copy(update={"via": widened_via})
     return errors
 
 
@@ -251,15 +346,14 @@ def _resolve_unique_roots(
 # frob:doc docs/strata/surface.md#fragments-t-2502
 def _seed_grants_by_root_node(
     unique_root_by_name: dict[str, tuple[str, Module]],
-) -> dict[str, dict[str, dict[str, MayGrantDecl]]]:
-    """atom -> `MayGrantDecl`, per (root name, node id), seeded from each
-    resolved root's own grants -- the mutable accumulator every
-    fragment's `extend` folds into via `_widen_node_grants`."""
+) -> dict[str, dict[str, SealedGrantSet]]:
+    """One `SealedGrantSet`, per (root name, node id), seeded from each
+    resolved root's own grants via `SealedGrantSet.from_root_node` --
+    the ONLY place a `SealedGrantSet` is constructed; every fragment's
+    `extend` folds into an already-built one via `_widen_node_grants`,
+    never builds its own."""
     return {
-        name: {
-            node.id: {grant.atom: grant for grant in node.may_grants}
-            for node in root.nodes
-        }
+        name: {node.id: SealedGrantSet.from_root_node(node) for node in root.nodes}
         for name, (_, root) in unique_root_by_name.items()
     }
 
@@ -268,7 +362,7 @@ def _seed_grants_by_root_node(
 def _apply_fragment_extends(
     fragments: list[tuple[str, Module, str]],
     unique_root_by_name: dict[str, tuple[str, Module]],
-    grants_by_root_node: dict[str, dict[str, dict[str, MayGrantDecl]]],
+    grants_by_root_node: dict[str, dict[str, SealedGrantSet]],
 ) -> tuple[CrossFileError, ...]:
     """Fold every fragment's `extend node` statements into
     `grants_by_root_node` (mutated in place via `_widen_node_grants`); an
@@ -300,7 +394,7 @@ def _apply_fragment_extends(
 def _rebuild_resolved_files(
     files: tuple[FileModule, ...],
     unique_root_by_name: dict[str, tuple[str, Module]],
-    grants_by_root_node: dict[str, dict[str, dict[str, MayGrantDecl]]],
+    grants_by_root_node: dict[str, dict[str, SealedGrantSet]],
 ) -> tuple[FileModule, ...]:
     """Replace each resolved root's `Module` with a copy carrying its
     widened `may_grants`; every other file (fragments, and any root
@@ -310,7 +404,9 @@ def _rebuild_resolved_files(
         node_grants_for_root = grants_by_root_node[name]
         new_nodes = tuple(
             node.model_copy(
-                update={"may_grants": tuple(node_grants_for_root[node.id].values())}
+                update={
+                    "may_grants": tuple(node_grants_for_root[node.id].grants.values())
+                }
             )
             for node in root_module.nodes
         )

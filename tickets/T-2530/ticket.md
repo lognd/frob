@@ -2,7 +2,7 @@
 id: T-2530
 title: 'strata fragment merge is extend-only by implementation, not by type: seal
   the grant mapping'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,30 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/strata/_multifile.py
+- tests/unit/strata/test_fragments.py
+- docs/strata/surface.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_fragments.py
+  reason: T-2530's positive controls live in the same test file T-2502 created for
+    the fragment mechanism -- adding a TestSealedGrantSet class there, not a new file
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/strata/surface.md
+  reason: SealedGrantSet's frob:doc anchor already points here (#fragments-t-2502);
+    documenting the sealed-type change belongs in the same section
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_widen_on_declared_atom_still_works
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_widen_on_undeclared_atom_refuses_closed
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_fresh_insert_raises_at_runtime
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_fresh_insert_fails_static_type_check
 designated_repro_test: null
 threat: null
 component: null

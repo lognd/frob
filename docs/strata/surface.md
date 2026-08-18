@@ -932,10 +932,12 @@ into this ticket's already-settled "no" (renumbers at land).
 ## Fragments (T-2502)
 
 <!-- frob:ticket T-2502 -->
+<!-- frob:ticket T-2530 -->
 <!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_module -->
 <!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_part_of -->
 <!-- frob:describes strata-core/src/parse/grammar_core.rs::Parser.parse_extend_node -->
 <!-- frob:describes src/frob/strata/_multifile.py::resolve_fragments -->
+<!-- frob:describes src/frob/strata/_multifile.py::SealedGrantSet -->
 <!-- frob:describes src/frob/strata/_ast.py::ExtendNodeDecl -->
 
 `design/frob.strata` grows by accretion -- every ticket that adds a test
@@ -993,6 +995,31 @@ organizational, the crate/system is the one unit), not C's `#include`
    refused, because the merge only ever appends to an atom the root
    already decided to grant -- there is no code path where a fragment's
    own grant becomes authoritative on its own.
+
+   **T-2530 upgraded this half from correct-by-implementation to
+   correct-by-type.** T-2502 shipped this as a plain
+   `dict[str, MayGrantDecl]` the merge functions mutated directly --
+   safe only because every call site happened to union into an existing
+   key, never insert a fresh one, a property nothing enforced; a future
+   `else: node_grants[atom] = grant` edit for the unknown-atom case
+   would have silently made a fragment able to grant a capability the
+   root refused. `SealedGrantSet` (`_multifile.py`) replaces that dict:
+   construction is restricted to `from_root_node` (called once per node,
+   only from a resolved ROOT `Module`, never a fragment's), its only
+   public mutator is `widen` (union onto an EXISTING atom, returns
+   `False` and changes nothing otherwise), and its read view (`grants`)
+   is typed `Mapping[str, MayGrantDecl]` -- never `dict` -- backed by a
+   real `MappingProxyType`. Inserting a fresh atom through this type is
+   therefore a **static type error** (`ty check` reports
+   `invalid-assignment`: `Mapping` has no `__setitem__`) AND a
+   **runtime `TypeError`** for code that ignores the type checker --
+   both directions verified by `tests/unit/strata/test_fragments.py::
+   TestSealedGrantSet`. The one honest limit: Python has no true access
+   control, so `from_root_node` being the "only" constructor is still a
+   convention a determined bypass could ignore (e.g. calling
+   `SealedGrantSet.__init__` directly with a hand-built dict) -- what
+   T-2530 actually closes is the merge's OWN mutation surface, not
+   reflection-level tampering from outside it.
 
 `resolve_fragments` is scoped per targeted module NAME, not globally: if
 NO loaded file declares `part of` anywhere, it is a no-op
