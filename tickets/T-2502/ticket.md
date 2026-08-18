@@ -118,7 +118,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d520179c0ea490807f30489e07313dd58fc3cec5
 ---
 `design/frob.strata` is 2276 lines / 188KB and there is exactly one of
 it. Three single lines exceed 5KB (the testsuite node's exec / fs.read /
