@@ -635,6 +635,15 @@ _KNOWN_GATE_RULES = frozenset(
         # verify (LANG003).
         "LANG002",
         "LANG003",
+        # T-2365: adapter-CAPABILITY conformance (frob.gates._lang_
+        # conformance.capability_conformance_gate) -- the BEHAVIORAL half
+        # of the T-2365 axis: an adapter capability the live registry
+        # declares IMPLEMENTED that actually fails its per-language
+        # fixture exercise. Not yet wired into frob check's own job table
+        # (out of T-2365's declared scope; follow-up T-2411) --
+        # registered here so the rule id itself is a known, waivable
+        # identity the moment that wiring lands.
+        "LANG004",
         # T-0753: dead_symbol_gate's DEAD001 was wired as a real, always-run
         # process job (see _ALL_GATES's "dead_symbols" entry) since before
         # this frozenset existed, but was never added here -- so every

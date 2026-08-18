@@ -538,3 +538,135 @@ LANG002 by name; a synthetic repo containing only python passes cleanly;
 a synthetic repo containing rust (arch is `KNOWN_GAP`, T-0329) warns
 while T-0329 stays open and errors the moment it is marked done/dropped
 without the gap actually being closed.
+
+## Adapter-capability contract (T-2365)
+
+`FACETS` above is subsystem-INTEGRATION coverage: does `frob.vet`/
+`frob.dup`/`frob.arch`/`frob.gates._docblocks` have an entry for this
+language. It answers nothing about whether the ADAPTER ITSELF -- `frob.
+lang`'s own extraction machinery -- implements the primitive operation
+each of those subsystems depends on. A language can score `FACET_
+CAPABILITY` `IMPLEMENTED` (a `frob.vet` registry entry exists) while its
+adapter has no import-graph walker at all; the two questions are
+genuinely different, and `FACETS` alone cannot separate them. `frob.lang.
+_support`'s second axis, `ADAPTER_CAPABILITIES`, exists for exactly that
+separation, reusing `FacetState`'s three-state shape and reasoned-detail
+discipline unchanged, plus one addition (`CapabilityRequirement`):
+
+```python
+ADAPTER_CAPABILITIES: tuple[str, ...]
+# ("symbol_walk", "publicness", "doc_extract", "directive_parse",
+#  "call_graph", "import_graph", "test_discovery")
+
+class CapabilityRequirement(StrEnum):
+    REQUIRED
+    OPTIONAL
+
+class CapabilityStatus(BaseModel):
+    requirement: CapabilityRequirement
+    state: FacetState              # IMPLEMENTED / NOT_APPLICABLE / KNOWN_GAP
+    detail: str                    # required non-empty for NOT_APPLICABLE/KNOWN_GAP
+
+class AdapterCapabilitySupport(BaseModel):
+    language: str
+    capabilities: dict[str, CapabilityStatus]
+
+def derive_capability_registry() -> dict[str, AdapterCapabilitySupport]
+def capability_conformance_violations(registry: dict[str, AdapterCapabilitySupport]) -> tuple[str, ...]
+```
+
+The seven capabilities, and what each one actually checks:
+
+- **`symbol_walk`** -- `frob.lang._extract._WALKERS` (or `_walk_strata`'s
+  equivalent pairing with strata-core) can turn this language's source
+  into a `RawSymbol` tuple at all. `IMPLEMENTED` for every registered
+  language.
+- **`publicness`** -- every `RawSymbol` this adapter emits carries a
+  real, language-correct `public: bool` (T-0841's per-grammar rule), not
+  a placeholder. `IMPLEMENTED` for every language EXCEPT `.strata`:
+  `_walk_strata.py` hardcodes `public=True` unconditionally for every
+  symbol regardless of the construct's real clearance/visibility (the
+  surface syntax has one -- `design/litmus/chirp.strata` declares
+  `clearance Public` on some nodes -- the walker just does not read it),
+  which this ticket's own behavioral suite caught live rather than
+  trusting the "every walker sets it" claim at face value; tracked
+  `KNOWN_GAP`, T-2410.
+- **`doc_extract`** -- this adapter extracts `RawComment`s at all,
+  either `frob.lang._extract.COMMENT_TYPES` (the five tree-sitter
+  grammars plus kotlin) or `.strata`'s own whole-line `//` comment scan
+  (`_walk_strata._extract_comments`, a different mechanism, same
+  capability). `IMPLEMENTED` for every registered language.
+- **`directive_parse`** -- `frob.graph.dsl.parse_directives`/`_fold_
+  continuations` can recover a `frob:` directive from this language's
+  extracted comments, INCLUDING a backslash-continued multi-line
+  directive -- frob's own sharpest test case, since a continuation that
+  folds wrong silently truncates the directive instead of failing
+  loudly. Language-agnostic over `RawComment` text (no per-language
+  branch in `parse_directives` itself), so `IMPLEMENTED` wherever
+  `doc_extract` holds -- every registered language. REQUIRED, not
+  optional: this is frob's own obligation-graph DSL, not incidental
+  tooling.
+- **`call_graph`** -- `frob.graph.callgraph.build_call_graph` can
+  resolve a call edge for this language's symbols (bare-short-name
+  matching over `RawSymbol.public`/`sig_tokens`, also language-agnostic).
+  `IMPLEMENTED` wherever `symbol_walk` holds, except `.strata`
+  (`NOT_APPLICABLE`: design constructs are not "calls" in the sense
+  `build_call_graph`'s kind filter targets; strata's own dependency/
+  threat-discharge graphs cover the equivalent ground under a different
+  vocabulary).
+- **`import_graph`** -- `frob.lang._extract._IMPORT_WALKERS` has a real
+  per-language walker. `IMPLEMENTED` for python/c/cpp only;
+  typescript/rust/kotlin are a real, ticketed `KNOWN_GAP`
+  (T-2408); `.strata` is `NOT_APPLICABLE` (module dependencies
+  resolve through strata-core's own parser, not this tree-sitter-only
+  table).
+- **`test_discovery`** -- `frob.testing` has a `collect_*_tests`
+  entrypoint for this language. `IMPLEMENTED` for
+  python/rust/typescript/c/cpp (c and cpp share one cmake/ctest
+  collector); kotlin is a real, ticketed `KNOWN_GAP` (T-2409);
+  `.strata` is `NOT_APPLICABLE` (design files declare no runnable test
+  suite of their own).
+
+### Behavioral conformance (LANG004, T-2365)
+
+`capability_conformance_violations` (mirroring `conformance_violations`)
+only checks that the registry is internally ACCOUNTED FOR -- every cell
+present, every exemption reasoned. That is not the same claim as "the
+IMPLEMENTED cells are actually true": a wrong registry entry claiming a
+capability works, with a plausible-sounding `detail` string, would pass
+that check trivially. `frob.gates._lang_conformance.capability_
+conformance_gate` (LANG004, ERROR severity) closes that gap by actually
+EXERCISING every `IMPLEMENTED` cell among the four capabilities `frob.
+lang.parse_file` alone can drive in isolation (`symbol_walk`,
+`publicness`, `doc_extract`, `directive_parse`) against a real,
+hand-written per-language fixture -- one containing a public symbol, a
+private symbol, and a `frob:tests \` continuation directive split across
+two physical comment lines. `call_graph`/`import_graph`/`test_discovery`
+need a real multi-file repo tree to exercise meaningfully and stay at
+`lang_conformance_gate`'s structural-completeness level only for now (a
+disclosed cut, not silence -- follow-up scope is T-2411, which
+also covers wiring LANG004 itself into `frob check`'s job table:
+`src/frob/gates/__init__.py` was outside this ticket's own declared
+scope).
+
+`.c`/`.cpp`'s fixture is deliberately a SINGLE physical line, not a
+continuation, per a real language-boundary quirk this suite discovered
+while being built: the C standard's line-splice rule (a trailing `\` at
+end-of-physical-line literally continues the token stream) applies
+INSIDE a `//` comment too, so tree-sitter-c already merges a two-physical
+-line `// frob:tests \` / `// <target>` pair into one comment node before
+`frob.lang` ever sees two lines to fold -- every other language's
+identical two-line fixture folds correctly; C/C++'s would not, for a
+reason that has nothing to do with `_fold_continuations` itself.
+
+`tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck`
+carries two independent MUST-FAIL positive controls proving the oracle
+is not a rubber stamp: a python fixture with the continuation's second
+physical line dropped (the target can never fold correctly) fails
+`directive_parse`, and an empty python fixture (no symbols at all) fails
+`symbol_walk`. `TestCapabilityConformanceGate.test_wrong_implemented_
+claim_fails` proves the SAME corrupted-continuation fixture, run through
+the real `capability_conformance_gate` entrypoint while the live registry
+still claims python's `directive_parse` is `IMPLEMENTED`, produces a real
+LANG004 ERROR `Violation` -- the gate-level half of the same must-fail
+control, not just the underlying checker.

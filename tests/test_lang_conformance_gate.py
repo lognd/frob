@@ -1,14 +1,22 @@
-"""Tests for frob.gates._lang_conformance -- LANG001-LANG003 (T-0405/T-0406)."""
+"""Tests for frob.gates._lang_conformance -- LANG001-LANG004 (T-0405/T-0406/
+T-2365)."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from frob.gates._lang_conformance import (
+    _BEHAVIORALLY_CHECKED_CAPABILITIES,
+    _behavioral_capability_check,
+    capability_conformance_gate,
     lang_conformance_gate,
     project_lang_conformance_gate,
 )
 from frob.gates._models import Severity
+from frob.lang import supported_languages
+from frob.lang._support import FacetState, derive_capability_registry
 
 
 # frob:ticket T-0405
@@ -135,3 +143,190 @@ class TestProjectLangConformanceGate:
         violations = project_lang_conformance_gate(tmp_path)
         lang003 = [v for v in violations if v.rule == "LANG003"]
         assert any(v.severity is Severity.ERROR for v in lang003)
+
+
+# frob:ticket T-2365
+# The (language, capability) pairs derive_capability_registry() marks
+# IMPLEMENTED for a behaviorally-checked capability TODAY -- the honest-
+# tree parametrization every one of these must pass against a real
+# per-language fixture, no skips (T-2365 acceptance criterion 2).
+def _implemented_behavioral_cells() -> list[tuple[str, str]]:
+    registry = derive_capability_registry()
+    cells: list[tuple[str, str]] = []
+    # frob:waive PERF004 reason="support.capabilities is this loop's own per-language \
+    # distinct mapping (7 languages x 7 capabilities, module-collection time only), \
+    # not a shared re-sort -- same reasoning as src/frob/gates/_lang_conformance.py's \
+    # own identical-shape support.facets sort"
+    for language, support in sorted(registry.items()):
+        for capability, status in sorted(support.capabilities.items()):
+            if (
+                capability in _BEHAVIORALLY_CHECKED_CAPABILITIES
+                and status.state is FacetState.IMPLEMENTED
+            ):
+                cells.append((language, capability))
+    return cells
+
+
+# frob:ticket T-2365
+class TestBehavioralCapabilityCheck:
+    """`_behavioral_capability_check` actually EXERCISES a capability
+    against a real per-language fixture -- distinct from `TestDeriveCapabil
+    ityRegistry`/`TestCapabilityConformanceViolations`
+    (tests/test_lang_support.py), which test the REGISTRY's own
+    declarations, never whether the claim holds. This is the load-bearing
+    suite T-2365 exists to build: a conformance suite that asks nothing
+    would still pass every prior test in this repo."""
+
+    # frob:ticket T-2365
+    def test_every_registered_language_is_covered(self) -> None:
+        """T-2365 acceptance: the suite runs against EVERY registered
+        adapter -- no language silently excluded from parametrization."""
+        covered = {language for language, _cap in _implemented_behavioral_cells()}
+        # Every language has at least symbol_walk/publicness/doc_extract
+        # IMPLEMENTED today (derive_capability_registry's own honest-tree
+        # state) -- this is a real, not vacuous, universal-coverage check.
+        assert covered == set(supported_languages())
+
+    # frob:ticket T-2365
+    @pytest.mark.parametrize("language,capability", _implemented_behavioral_cells())
+    def test_implemented_capability_behaves_as_claimed(
+        self, tmp_path: Path, language: str, capability: str
+    ) -> None:
+        """Every (language, capability) cell the live registry claims
+        IMPLEMENTED actually works against a real fixture -- the honest-
+        tree, must-PASS half."""
+        ok, detail = _behavioral_capability_check(language, capability, tmp_path)
+        assert ok, f"{language}/{capability}: {detail}"
+
+    # frob:ticket T-2365
+    def test_directive_continuation_folds_correctly_not_just_present(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2365's own named sharpest test case: the `frob:tests \\`
+        multi-line directive continuation must FOLD to the exact target
+        string, for every language whose fixture actually exercises a
+        continuation (python/typescript/rust/kotlin/strata -- c/cpp's
+        fixture is deliberately single-line, see `_CAPABILITY_FIXTURE_
+        SOURCES`'s own comment on the C-grammar line-splice quirk this
+        test discovered) -- a checker that merely looked for the
+        substring `frob:tests` on the first physical line would pass even
+        if `_fold_continuations` silently truncated the target."""
+        import frob.gates._lang_conformance as module
+
+        registry = derive_capability_registry()
+        checked = False
+        for language, support in sorted(registry.items()):
+            if language in {"c", "cpp"}:
+                continue
+            status = support.capabilities.get("directive_parse")
+            if status is None or status.state is not FacetState.IMPLEMENTED:
+                continue
+            assert language == "strata" or "\\\n" in module._CAPABILITY_FIXTURE_SOURCES.get(
+                language, ""
+            ), f"{language}'s fixture has no continuation"
+            ok, detail = _behavioral_capability_check(
+                language, "directive_parse", tmp_path
+            )
+            assert ok, f"{language}: {detail}"
+            checked = True
+        assert checked, "no language had directive_parse IMPLEMENTED to check"
+
+    # frob:ticket T-2365
+    def test_broken_continuation_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL (T-2365 acceptance criterion 2): a
+        deliberately non-conforming fixture -- python's own source, but
+        with the `frob:tests \\` continuation's second physical line
+        DROPPED, so the directive can never fold to the real target --
+        must make `_behavioral_capability_check` report failure, not
+        success. Without this test, a checker that always returns
+        `(True, ...)` would pass every other test in this file."""
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            '"""Capability fixture module docstring."""\n\n\n'
+            "def public_fn():\n"
+            '    """A public function."""\n'
+            "    return 1\n\n\n"
+            "# frob:tests \\\n"
+            "def _private_fn():\n"
+            "    return 2\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
+        ok, detail = _behavioral_capability_check(
+            "python", "directive_parse", tmp_path
+        )
+        assert not ok, f"broken fixture was wrongly reported as passing: {detail}"
+
+    # frob:ticket T-2365
+    def test_no_symbols_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A second, independent MUST-FAIL positive control: an empty
+        python fixture (no symbols at all) must fail `symbol_walk`'s
+        behavioral check, proving that check genuinely inspects the parse
+        result rather than always returning success."""
+        import frob.gates._lang_conformance as module
+
+        monkeypatch.setitem(
+            module._CAPABILITY_FIXTURE_SOURCES, "python", "# just a comment\n"
+        )
+        ok, detail = _behavioral_capability_check("python", "symbol_walk", tmp_path)
+        assert not ok, f"empty fixture was wrongly reported as passing: {detail}"
+
+    # frob:ticket T-2365
+    def test_unchecked_capability_is_named_not_silently_true(
+        self, tmp_path: Path
+    ) -> None:
+        """Per epic T-2391's doctrine: a capability this module does not
+        (yet) behaviorally check must be reported explicitly as such
+        (`ok=False` naming the gap), never silently read as a pass."""
+        ok, detail = _behavioral_capability_check("python", "call_graph", tmp_path)
+        assert not ok
+        assert "no behavioral check" in detail
+
+
+# frob:ticket T-2365
+class TestCapabilityConformanceGate:
+    """LANG004 (T-2365): the behavioral half of the adapter-capability axis
+    -- exercised through the real `capability_conformance_gate` entrypoint,
+    not just the underlying checker (`TestBehavioralCapabilityCheck` above)."""
+
+    # frob:ticket T-2365
+    def test_real_registry_is_behaviorally_clean(self) -> None:
+        """The repo's own registered adapters all behave as their
+        registry claims today -- this gate is clean, not just wired-but-
+        untested."""
+        assert capability_conformance_gate() == ()
+
+    # frob:ticket T-2365
+    def test_wrong_implemented_claim_fails(self, monkeypatch) -> None:
+        """MUST-FAIL POSITIVE CONTROL, gate level (T-2365 acceptance
+        criterion 3): corrupt python's directive_parse fixture (drop the
+        continuation's second physical line, the SAME broken shape
+        `TestBehavioralCapabilityCheck.test_broken_continuation_fixture_
+        is_caught_not_rubber_stamped` proves the checker catches) while
+        the LIVE registry still claims python's directive_parse is
+        IMPLEMENTED -- `capability_conformance_gate` must turn that
+        disagreement into a real ERROR violation, not pass silently."""
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            '"""Capability fixture module docstring."""\n\n\n'
+            "def public_fn():\n"
+            '    """A public function."""\n'
+            "    return 1\n\n\n"
+            "# frob:tests \\\n"
+            "def _private_fn():\n"
+            "    return 2\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
+        violations = module.capability_conformance_gate()
+        assert len(violations) >= 1
+        assert all(v.rule == "LANG004" for v in violations)
+        assert all(v.severity is Severity.ERROR for v in violations)
+        assert any(
+            "python" in v.message and "directive_parse" in v.message
+            for v in violations
+        )
