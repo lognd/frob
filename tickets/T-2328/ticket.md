@@ -17,6 +17,10 @@ scope:
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
+attachments:
+- path: T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md
+  caption: second live reproduction (T-2329's own land) + root-cause narrowing
+  sha256: 4aa18accafecb3a575c5c162b99a3c736c516c9c9b359db67b51f58e420d90d1
 threat: null
 component: null
 anchor: false
