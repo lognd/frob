@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e5f1480f4e6c023f6dfb914b68bca92cfa04b2d1
 ---
 Residue of T-2330 (deliberately not addressed there): DRIFT002
 src/frob/verify/_drain.py::run_drain_async -> tests/unit/verify/
