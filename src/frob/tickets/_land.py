@@ -4299,10 +4299,6 @@ def _refuse_already_landed(
 # frob:doc \
 # docs/modules/tickets-landing.md#cross-ticket-leakage-only-refuses-on-an-in_progress-s\
 # ibling-t-1639
-# frob:waive AFFECT001 reason="T-1855 added per-path reason disclosure (declared vs \
-# implicit-cli-wiring) to this function's refusal; docs/modules/tickets.md was leased \
-# to in-progress T-1686 and could not be edited here -- follow-up draft filed to \
-# update the anchor once free"
 # frob:ticket T-2121
 #: Paths `_check_cross_ticket_leakage` must never treat as "claimed" by
 #: any ticket's declared (or live-lease) scope, because no ticket's own

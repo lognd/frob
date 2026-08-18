@@ -1,7 +1,7 @@
 ---
 id: T-1860
 title: Update tickets.md cross-ticket-leakage doc anchor for T-1855's reason disclosure
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-08'
@@ -12,6 +12,9 @@ sprint: null
 runs_last: false
 scope:
 - docs/modules/tickets-landing.md
+- src/frob/tickets/_land.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -31,6 +34,16 @@ scope_changes:
     other unrelated ticket also held a lease on'
   actor: logan
   at: '2026-08-16'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'premise re-verified: docs/modules/tickets.md was split (T-1780) since this
+    ticket was filed; the cross-ticket-leakage anchor now lives in tickets-landing.md
+    (already in scope), and _land.py needs its own frob:waive AFFECT001 dropped once
+    the doc is updated'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

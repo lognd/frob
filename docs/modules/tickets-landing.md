@@ -1926,6 +1926,23 @@ way through for a genuinely intentional joint land -- once the first of
 two mutually-scoped same-worktree tickets lands, the second's own later
 land finds the first already `DONE` and exempt.
 
+**Per-path reason disclosure: "declared" vs "implicit-cli-wiring"
+(T-1855).** A leaked path's refusal names WHY it counts as the sibling
+ticket's scope, via `_scope_claim_reason`: `"declared"` means the path
+matches an explicit glob in the sibling's own `ticket.scope` (including
+the always-on ledger/own-shard rules) -- fixable with `frob ticket scope
+--remove` on the sibling. `"implicit-cli-wiring"` means the path matches
+ONLY through the FEATURE-kind `CLI_WIRING_FILES` grant (T-0446/T-1848) --
+a function of the sibling's `kind`, not its declared glob list, so
+`scope --remove` cannot free it; the sibling's `kind` or the CLI-wiring
+grant itself would need to change instead. Collapsing both into one
+undifferentiated `scope=[...]` list (the pre-T-1855 behavior) sent an
+agent trying to resolve the leak toward the wrong remedy for an implicit
+hit. `frob ticket show` surfaces the same per-path reason for a ticket's
+`implicit_scope` entries (see the CLI-wiring grant note wherever a
+ticket's scope is printed), so the two present identically whether
+discovered via a land refusal or an ordinary `show`.
+
 ## Orphaned evidence deletion (T-1946)
 
 <!-- frob:describes src/frob/tickets/_land.py::_check_orphaned_evidence_deletion -->
