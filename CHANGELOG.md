@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.506.0] - unreleased
+
+- T-2386: sync-skills: provenance-aware sync to stop cross-repo agents/skills deletion
+
 ## [0.505.0] - unreleased
 
 - T-2360: Profile-collapse: build LandProfileSettings resolver for the 5 remaining if-rapid branches

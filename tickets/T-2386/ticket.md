@@ -1,7 +1,7 @@
 ---
 id: T-2386
 title: 'sync-skills: provenance-aware sync to stop cross-repo agents/skills deletion'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -16,7 +16,23 @@ scope:
 - docs/commands/sync-skills.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_syncs_new_repo_entries
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_updates_existing_entry_in_place
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_removes_stale_claude_side_entry_this_repo_previously_installed
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_missing_repo_directories_are_a_no_op
+- tests/unit/test_skills_sync.py::TestSyncSkills::test_files_directly_under_claude_dir_are_left_alone
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_second_repo_does_not_delete_first_repos_entries
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_is_never_deleted_or_overwritten
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_collides_instead_of_being_overwritten
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_force_overwrites_collision_and_claims_ownership
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_same_repo_sync_twice_is_a_no_op_second_run
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_manifest_records_only_this_repos_owned_entries
+- tests/unit/test_skills_sync.py::TestSkillsSyncRenderLint::test_no_render001_violations_for_skills_sync
+- tests/unit/test_skills_sync.py::TestMakefileRecipeDelegates::test_recipe_body_is_a_single_line
+- tests/unit/test_skills_sync.py::TestRun::test_run_reports_synced_and_removed_counts
+- tests/unit/test_skills_sync.py::TestRun::test_run_defaults_to_home_claude_when_no_override_given
+designated_repro_test: tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_is_never_deleted_or_overwritten
 threat: null
 component: null
 anchor: false
