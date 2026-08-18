@@ -52,6 +52,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2492: T-2492: audit other --json runners for the same unguarded-stdout-write class T-2486 fixed in check
 - T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
 - T-2494: T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
+- T-2495: T-2495: declare may exec for gates node covering _mutation_evidence.py's direct guarded_subprocess_run call
 - T-2496: T-2496: wire find_collision_suspects into a waive-audit CLI subcommand
 - T-2498: T-2498: frob ticket body --append silently misroutes into done-report.md when one exists
 - T-2499: T-2499: capability_test_discovery_status hardcodes language set, stale after T-2409

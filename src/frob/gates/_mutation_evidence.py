@@ -838,14 +838,7 @@ def _checkout_bug_repro_worktree(
 
 
 # frob:ticket T-2480
-# frob:waive SELFAUDIT001 reason="T-2480: node=gates already effectively has exec \
-# capability -- this same module spawns subprocesses via frob.gitio.run_argv (itself \
-# declared may exec) in _checkout_bug_repro_worktree/_resolve_sha; this change only \
-# moves WHICH function issues the syscall (guarded_subprocess_run directly, to catch \
-# subprocess.TimeoutExpired before run_argv's own try/except would collapse it into an \
-# indistinguishable generic error) -- design/frob.strata's gates node is under \
-# T-2487's live scope lease so the formal may exec declaration cannot be added here; \
-# T-2495 tracks adding it and removing this waiver"
+# frob:ticket T-2495
 def _spawn_designated_test(
     worktree: Path, test_id: str, timeout_s: float
 ) -> Result[subprocess.CompletedProcess[str], _BugReproOutcome]:
@@ -885,9 +878,6 @@ def _spawn_designated_test(
             check=False,
             env=env,
         )
-    # frob:waive SELFAUDIT001 reason="T-2480: same exec-capability posture as this \
-    # function's own docstring/T-2495 note above -- guarded_subprocess_run's \
-    # TimeoutExpired is caught here specifically, not a new execution surface"
     except subprocess.TimeoutExpired:
         _log.warning(
             "BUG002: repro run of %s exceeded its %gs budget -- TIMEOUT, "
@@ -915,10 +905,6 @@ def _spawn_designated_test(
     return Ok(guarded.danger_ok)
 
 
-# frob:waive SELFAUDIT001 reason="T-2480: a type annotation referencing \
-# subprocess.CompletedProcess, the same exec-capability posture as \
-# _spawn_designated_test's own T-2495-tracked waiver above -- this function never \
-# spawns anything itself, it only classifies an already-completed process's exit"
 def _classify_designated_test_exit(
     result: subprocess.CompletedProcess[str], test_id: str
 ) -> _BugReproOutcome:

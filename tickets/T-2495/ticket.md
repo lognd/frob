@@ -2,7 +2,7 @@
 id: T-2495
 title: declare may exec for gates node covering _mutation_evidence.py's direct guarded_subprocess_run
   call
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,22 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
+- src/frob/gates/_mutation_evidence.py
+evidence_scope:
+- tests/test_gates_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: remove the 3 interim SELFAUDIT001 waivers now that the may exec declaration
+    this ticket was filed for already exists (landed incidentally by T-2409)
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations::test_confirmatory_finding_is_warn_for_feature_kind
 designated_repro_test: null
 threat: null
 component: null
