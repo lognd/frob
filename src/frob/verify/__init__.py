@@ -35,10 +35,12 @@ from frob.verify._backpressure import (
     BackpressureCeilings,
     BackpressureError,
     BackpressureStatus,
+    LandProfileSettings,
     block_until_watermark_advances,
     ceilings_for_profile,
     current_status,
     rapid_soft_warning,
+    settings_for_profile,
 )
 from frob.verify._drain import (
     DrainError,
@@ -78,6 +80,7 @@ __all__ = [
     "BackpressureStatus",
     "CoalescingWorker",
     "DrainError",
+    "LandProfileSettings",
     "VerifyFn",
     "VerifyQueueEntry",
     "Watermark",
@@ -99,5 +102,6 @@ __all__ = [
     "record_intent",
     "run_coalesced_verification",
     "run_drain_async",
+    "settings_for_profile",
     "spawn_deferred_drain",
 ]

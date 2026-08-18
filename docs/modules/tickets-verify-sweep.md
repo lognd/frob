@@ -758,6 +758,64 @@ chars across `_land_cmd.py`'s `_land_core_prepare` and
 `_backpressure.py`'s `BackpressureError`/`current_status`. No behavior
 changed.
 
+## Land profile settings (T-2360)
+
+<!-- frob:describes src/frob/verify/_backpressure.py::LandProfileSettings -->
+<!-- frob:describes src/frob/verify/_backpressure.py::settings_for_profile -->
+
+`ceilings_for_profile` (above) is the target pattern for ONE axis --
+resolve a `ProfileName` to a settings record in exactly one place, and
+every caller reads the record, never the name. T-2360 generalizes that
+SAME pattern to the 5 remaining if-rapid seams a `frob explore xref
+ProfileName` sweep found still branching on the profile name directly,
+outside `frob.tickets._profile` and `frob.verify._backpressure`:
+
+- `frob.tickets._land._land_is_rapid` (`_land.py:2878`) -- whether a
+  land-evidence-scope-unbound finding is recorded as DEBT.
+- `frob.tickets._land._mutation_evidence_sync_decision` (`_land.py:3103`)
+  -- TEST016 (both the synchronous subprocess and the deferred batch
+  sweep) skipped entirely under rapid.
+- `frob.app.ticket_runner._land_cmd`'s pre-commit sweep skip
+  (`_land_cmd.py:4324`, T-1514/T-1575).
+- `frob.app.ticket_runner._land_cmd._apply_backpressure`'s rapid soft
+  backpressure warning (`_land_cmd.py:4519`) -- layered on top of
+  `ceilings_for_profile`, which already resolves rapid to unbounded
+  ceilings.
+- `frob.tickets._evidence._is_rapid` (`_evidence.py:323`) -- the generic
+  profile-check helper used by evidence-leniency callers.
+- `frob.tickets._land._own_obligations_rel_bump_dirty`'s REL001
+  close-time preflight skip (`_close_cmd.py:463`, T-1705).
+
+`LandProfileSettings` (`frozen=True, extra="forbid"`) carries one
+boolean per seam -- `pre_commit_sweep_enabled`, `mutation_evidence_
+required`, `rel001_preflight_enabled`, `evidence_scope_unbound_is_debt`
+-- and `settings_for_profile(ProfileName) -> LandProfileSettings` resolves
+all four in one place. Unlike `ceilings_for_profile`, it reads no
+`frob.toml` overrides: none of the 5 branches it generalizes has ever
+been override-able, so adding override plumbing here would be new
+behavior, not a behavior-preserving migration. An unrecognized
+`ProfileName` raises `ValueError` rather than silently defaulting --
+this resolver must be taught about a new profile explicitly, matching
+T-1696's "adding a fourth profile requires only a new settings row"
+acceptance for the parent epic.
+
+**Behavior-preserving, verified against today's branch logic, not
+inspection.** `fortress` and `standard` resolve identically on all four
+fields today (none of the 5 branches currently distinguishes them, only
+`rapid` relaxes anything) -- both give every relaxation `False`/`True` as
+appropriate (no relaxation) and `evidence_scope_unbound_is_debt=False`;
+`rapid` gives every relaxation the opposite and
+`evidence_scope_unbound_is_debt=True`. `tests/unit/verify/test_
+backpressure.py::TestSettingsForProfile` asserts this against the
+CURRENT source at each of the 5 call sites above.
+
+**Disclosed scope cut.** No call site is migrated to read
+`LandProfileSettings` yet -- this leaf only builds and tests the
+resolver. Migrating the 5 branches above to read the settings record
+(and deleting the branches themselves) is the next child in the T-1696
+epic, deliberately split out so this leaf does not need a lease on
+`_land.py`/`_land_cmd.py`, the two busiest files in the repo.
+
 ## Quarantine circuit breaker (T-1693)
 
 <!-- frob:describes src/frob/verify/_quarantine.py::QuarantineError -->
