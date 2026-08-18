@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 89a73237d8ff467b5bd4fe8e0f1507a6a2d92375
 ---
 Direct residue of T-2194 (see T-2328 for the land defect that caused
 this): T-2194's own capability grant to design/frob.strata (may "exec"
