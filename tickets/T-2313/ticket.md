@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 21390b41c73ff7647b292947a79c3d54c84ca186
 ---
 The rapid post-land sweep auto-filer can write a (rule, file) identity with
 BOTH fields empty into a ticket body. Observed verbatim in T-2297 (now
