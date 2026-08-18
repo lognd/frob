@@ -140,6 +140,7 @@ from frob.gates._lang_conformance import (
     lang_conformance_gate,
     project_lang_conformance_gate,
 )
+from frob.gates._lexical_selfcheck import lexical_selfcheck_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -5626,6 +5627,9 @@ _ALL_GATES = frozenset(
         "debt",
         # T-0459: bare stdout write outside frob.render.
         "render_lint",
+        # T-2344: LEXCHECK001, a gate rule that decides a code fact from
+        # raw text with no symref/AST binding on its own finding.
+        "lexcheck",
         # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
@@ -6021,6 +6025,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # frob:ticket T-0797
     "deprecated",
     "render_lint",
+    "lexcheck",
     "parse_failures",
     "dead_symbols",
     # frob:ticket T-1428
@@ -6147,6 +6152,7 @@ _CACHEABLE_PROCESS_GATES: frozenset[str] = frozenset(
         "walk_lint",
         "cve_fingerprint_scan",
         "render_lint",
+        "lexcheck",
         "dead_symbols",
         "wire",
         "cache",
@@ -6552,6 +6558,10 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # same reasoning as walk_lint above: a bare stdout write anywhere in
         # src/frob/ is a repo-wide concern, not a subdir-scoped one.
         "render_lint": _ProcessJob(render_lint_gate, (st.repo_root,)),
+        # T-2344: whole-gates-tree scan, always against repo_root -- same
+        # reasoning as render_lint above: a new lexical-decision rule
+        # anywhere in src/frob/gates/ is a repo-wide concern.
+        "lexcheck": _ProcessJob(lexical_selfcheck_gate, (st.repo_root,)),
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
@@ -7807,6 +7817,7 @@ __all__ = [
     "evidence_covers_scope",
     "fuzz_gate",
     "lang_conformance_gate",
+    "lexical_selfcheck_gate",
     "perf_gate",
     "PERF_REACH_DEGRADED_SKIP_MARKER",
     "pii_structural_gate",

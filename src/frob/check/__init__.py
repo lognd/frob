@@ -295,6 +295,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # frob:ticket T-0797
             "deprecated",
             "render_lint",
+            # T-2344: LEXCHECK001.
+            "lexcheck",
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",

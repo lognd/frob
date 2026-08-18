@@ -579,6 +579,9 @@ def _wire001_rule_id_violations(
 # Path.read_text/re.search/dict.items iteration, plain pathlib/re/dict operations the \
 # resolver cannot statically bound; the one real raise path (config_external.py \
 # missing/unreadable) is caught above"
+# frob:waive LEXCHECK001 reason="known (c) candidate, this module's own docstring \
+# admits the text-membership tradeoff -- filed as T-2348 rather than silently \
+# allowlisted (T-2344)" follow_up="T-2348"
 def _wire001_cli_dest_violations(
     root: Path, added_lines: dict[str, list[tuple[int, str]]]
 ) -> list[Violation]:

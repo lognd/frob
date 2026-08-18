@@ -608,6 +608,9 @@ _KNOWN_GATE_RULES = frozenset(
         "NEGEXIST001",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
+        # T-2344: a gate rule constructed from raw text without a symref/
+        # AST binding is itself a finding (frob.gates._lexical_selfcheck).
+        "LEXCHECK001",
         # T-0465: .git/info/exclude entry shadowing tracked source
         # (frob.gates._exclude_hazard).
         "EXCL001",

@@ -2,7 +2,7 @@
 id: T-2344
 title: 'meta-check: a gate rule constructed from raw text without symref/AST binding
   must itself be a finding'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -15,6 +15,10 @@ scope:
 - docs/modules/gates.md
 - src/frob/gates/_lexical_selfcheck.py
 - src/frob/gates/__init__.py
+- src/frob/gates/_waive.py
+- src/frob/gates/_wire.py
+- src/frob/check/__init__.py
+- tests/unit/gates/test_lexical_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -42,6 +46,36 @@ scope_changes:
     gate registry, not every existing gates/** file'
   actor: logan
   at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: register the new LEXCHECK001 rule id in _KNOWN_GATE_RULES, same drift-lock
+    convention every other new rule id follows
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: add frob:waive LEXCHECK001 above _wire001_cli_dest_violations, citing the
+    new T-2348 follow-up, so the new gate ships clean
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: register the new lexcheck gate name in _STAGE_GROUPS's gates-fast set --
+    same 'omission means unreachable via --only <group>' bug class already fixed once
+    for ffi_boundary/suppress
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/unit/gates/test_lexical_selfcheck.py
+  reason: evidence file for the new gate
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_new_lexical_decider_is_flagged
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_semantic_function_with_incidental_regex_is_silent
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_non_gate_code_never_scanned
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_gates_module_module_stays_clean
 designated_repro_test: null
 threat: null
 component: null
