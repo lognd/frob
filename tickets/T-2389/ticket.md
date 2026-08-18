@@ -108,7 +108,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4c3973f24f7b1489a8bf48f7299d8ae6415b9dfd
 ---
 Child of T-2384 (source-root retarget half, group 1 of N -- narrow scope
 per epic sequencing instruction, not a giant single ticket).
