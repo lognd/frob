@@ -3638,6 +3638,156 @@ class TestStandaloneSiblingDraftSurvivesLand:
         assert landed_map[report.final_id].state == TicketState.DONE
 
 
+# frob:ticket T-2425
+class TestForeignOwnedSiblingDraftSkipped:
+    """T-2425: a sibling draft ACTIVELY leased by a DIFFERENT, live
+    worktree (a different agent's own epic decomposition, still being
+    written) must not be finalized here -- and, critically, must not
+    fail THIS land, whose own content has nothing to do with it. The
+    measured incident: T-2394's land was refused repeatedly with
+    `ScopeLeaseConflict` while trying to finalize `T-2428`, a draft it
+    had never heard of."""
+
+    def test_land_succeeds_and_skips_the_foreign_draft(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts kind="unit"  # noqa: E501
+        from frob.tickets._leases import record_lease
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-landing", str(wt)], repo)
+
+        primary = new_ticket(wt, _spec("Primary landed work", scope=("src/main4.py",)))
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        _make_closeable(wt, primary_id)
+        (wt / "src" / "main4.py").write_text("# primary work\n")
+
+        # This SAME landing worktree's ledger also carries a sibling
+        # draft -- filed here (drafts live on main -- every worktree
+        # carries a checkout copy, the exact "looks like a worktree
+        # lease" red herring the ticket names) but ACTIVELY owned and
+        # leased by a DIFFERENT, live worktree elsewhere in the same
+        # repo, simulating a different agent's own in-progress epic
+        # decomposition. This land has no relation to it and must never
+        # even attempt to renumber it.
+        foreign_draft = new_ticket(wt, _spec("Epic child filed by a different agent"))
+        assert foreign_draft.is_ok
+        foreign_draft_id = foreign_draft.danger_ok.id
+        _commit_all(wt, "primary work plus a foreign-owned sibling draft")
+
+        foreign_wt = repo.parent / "foreign_wt"
+        _run(
+            ["git", "worktree", "add", "-b", "epic-decomposition", str(foreign_wt)],
+            repo,
+        )
+        leased = record_lease(foreign_wt, foreign_draft_id, ())
+        assert leased.is_ok
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        report = result.danger_ok
+        assert report.final_id == primary_id or not report.final_id.startswith(
+            "T-draft-"
+        )
+
+        landed = load_all(repo)
+        assert landed.is_ok
+        landed_map = landed.danger_ok
+        assert landed_map[report.final_id].state == TicketState.DONE
+        # The foreign draft must NOT have been finalized/carried onto
+        # main by THIS land -- it is still its own owner's job.
+        assert not any(
+            t.title == "Epic child filed by a different agent"
+            and not tid.startswith("T-draft-")
+            for tid, t in landed_map.items()
+        )
+
+    def test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_finalize_sibling_drafts kind="unit"  # noqa: E501
+        # Must-still-refuse control (T-2425 acceptance [1]): this fix must
+        # not weaken the LANDING ticket's own conflict detection -- only
+        # sibling drafts get the skip-with-notice treatment.
+        from frob.tickets._leases import record_lease
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-conflict", str(wt)], repo)
+        primary = new_ticket(wt, _spec("Primary work", scope=("src/main5.py",)))
+        assert primary.is_ok
+        primary_id = primary.danger_ok.id
+        _make_closeable(wt, primary_id)
+        (wt / "src" / "main5.py").write_text("# primary work\n")
+        _commit_all(wt, "primary work")
+
+        # A DIFFERENT, live worktree holds a foreign lease on the SAME
+        # id this land is trying to finalize (simulating a genuine
+        # collision on the ticket actually being landed, not a sibling).
+        foreign_wt = repo.parent / "foreign_wt2"
+        _run(["git", "worktree", "add", "-b", "collider", str(foreign_wt)], repo)
+        leased = record_lease(foreign_wt, primary_id, ())
+        assert leased.is_ok
+
+        result = land(repo, primary_id, wt, dry_run=False)
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+
+
+# frob:ticket T-2425
+class TestForeignOwnedDraftWorktree:
+    """Unit coverage for `_foreign_owned_draft_worktree` directly, isolated
+    from the full `land()` pipeline above."""
+
+    def test_no_leases_is_none(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_foreign_owned_draft_worktree kind="unit"  # noqa: E501
+        assert (
+            _land_finalize_mod._foreign_owned_draft_worktree(repo, "T-draft-deadbeef")
+            is None
+        )
+
+    def test_own_worktree_lease_is_not_foreign(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_foreign_owned_draft_worktree kind="unit"  # noqa: E501
+        from frob.tickets._leases import record_lease
+
+        assert record_lease(repo, "T-draft-aaaaaaaa", ()).is_ok
+        assert (
+            _land_finalize_mod._foreign_owned_draft_worktree(repo, "T-draft-aaaaaaaa")
+            is None
+        )
+
+    def test_foreign_live_lease_names_the_worktree(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_foreign_owned_draft_worktree kind="unit"  # noqa: E501
+        from frob.tickets._leases import record_lease
+
+        foreign_wt = repo.parent / "foreign_unit_wt"
+        _run(["git", "worktree", "add", "-b", "foreign-unit", str(foreign_wt)], repo)
+        assert record_lease(foreign_wt, "T-draft-bbbbbbbb", ()).is_ok
+
+        owner = _land_finalize_mod._foreign_owned_draft_worktree(
+            repo, "T-draft-bbbbbbbb"
+        )
+        assert owner is not None
+        assert Path(owner).resolve() == foreign_wt.resolve()
+
+    def test_ttl_expired_foreign_lease_is_not_foreign(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/tickets/_land_finalize.py::_foreign_owned_draft_worktree kind="unit"  # noqa: E501
+        from frob.tickets._leases import record_lease
+
+        foreign_wt = repo.parent / "foreign_ttl_wt"
+        _run(["git", "worktree", "add", "-b", "foreign-ttl", str(foreign_wt)], repo)
+        assert record_lease(foreign_wt, "T-draft-cccccccc", ()).is_ok
+
+        monkeypatch.setattr(
+            "frob.tickets._leases.is_lease_ttl_expired",
+            lambda _record: True,
+        )
+        assert (
+            _land_finalize_mod._foreign_owned_draft_worktree(repo, "T-draft-cccccccc")
+            is None
+        )
+
+
 class TestDraftReferenceRewriteOnLand:
     """T-0811: land renumbers a finalized draft's structural id fields, but
     before this fix left Done-report PROSE citing the old draft id

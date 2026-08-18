@@ -237,7 +237,38 @@ def _finalize_sibling_drafts(
 
     T-1179: uses `finalize_draft_for_land` (not `finalize_draft`) so each
     sibling's id ceiling is also read fresh from `root` (main), not just
-    `worktree`'s copy -- same fix as the landing ticket's own finalize."""
+    `worktree`'s copy -- same fix as the landing ticket's own finalize.
+
+    T-2425: a sibling draft ACTIVELY leased by a DIFFERENT, live worktree
+    (`_foreign_owned_draft_worktree`) is skipped -- logged by name, never
+    attempted -- instead of finalized here. Before this fix, every draft
+    in `worktree`'s ledger was assumed "standalone" (T-0637's own
+    docstring above: filed off the default branch, nothing to do with
+    the ticket being landed) and finalized unconditionally; that
+    assumption breaks the moment a DIFFERENT agent's epic decomposition
+    files a batch of real, still-being-written children into the shared
+    draft pool -- this land does not own them, has never heard of them,
+    and renumbering one out from under its live owner would either
+    corrupt that owner's lease file or (correctly) get refused by
+    `renumber_one`/`renumber_one_v2`'s own `ScopeLeaseConflict` guard
+    (T-1918), which used to abort THIS land entirely over a draft with
+    zero relation to its own content (measured incident: T-2394's land
+    repeatedly refused on `T-2428`, a draft belonging to an unrelated
+    epic). Skipping leaves the foreign draft's id untouched in
+    `worktree`'s own copy of the ledger (its OWNER's own eventual land
+    finalizes it the normal way, from a worktree that actually holds the
+    lease) -- this land's squash-splice never carries an unfinalized
+    draft block onto main, since `_carry_forward_new_worktree_tickets`
+    only ever picks up ids this function actually returns in its
+    mapping. A draft with NO live foreign lease (the T-0637 standalone
+    case this function was originally written for) is finalized exactly
+    as before -- this is a narrowing of what gets attempted, not a
+    behavior change for the common case.
+
+    Any OTHER `finalize_draft_for_land` failure (not a foreign-lease
+    skip) still aborts the land exactly as before -- an unexpected
+    finalize error is a real inconsistency worth stopping for, not
+    something to paper over."""
     from frob.tickets import finalize_draft_for_land
 
     loaded = load_all(worktree)
@@ -252,6 +283,20 @@ def _finalize_sibling_drafts(
     )
     finalized_mapping: dict[str, str] = {}
     for draft_id in draft_ids:
+        foreign_worktree = _foreign_owned_draft_worktree(worktree, draft_id)
+        if foreign_worktree is not None:
+            _log.warning(
+                "land: %s skipping sibling draft %s -- actively leased by "
+                "a different, live worktree (%s); this land's own content "
+                "is unaffected, %s will finalize %s on its own land "
+                "instead of failing this one (T-2425)",
+                landed_final_id,
+                draft_id,
+                foreign_worktree,
+                foreign_worktree,
+                draft_id,
+            )
+            continue
         result = finalize_draft_for_land(worktree, draft_id, root)
         if result.is_err:
             _log.error(
@@ -271,6 +316,44 @@ def _finalize_sibling_drafts(
             landed_final_id,
         )
     return Ok(finalized_mapping)
+
+
+# frob:ticket T-2425
+# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_no_leases_is_none  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_own_worktree_lease_is_not_foreign  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_foreign_live_lease_names_the_worktree  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestForeignOwnedDraftWorktree.test_ttl_expired_foreign_lease_is_not_foreign  # noqa: E501
+def _foreign_owned_draft_worktree(worktree: Path, draft_id: str) -> str | None:
+    """The lease-recorded worktree path of a LIVE, non-TTL-expired,
+    DIFFERENT-worktree lease on `draft_id`, or `None` if no such lease
+    exists (T-2425). Read-only -- takes no lock, mutates nothing; a
+    proactive check so `_finalize_sibling_drafts` never even ATTEMPTS
+    (and never needs to distinguish) the `ScopeLeaseConflict`
+    `renumber_one`/`renumber_one_v2` would otherwise refuse with
+    (T-1918's own `_refuse_if_other_worktree_holds_live_lease_for_id`,
+    same liveness/ownership posture, reused here as a plain lookup
+    instead of a refusal since this caller's response is "skip", not
+    "fail"). Leases are shared repo-wide via the git common dir
+    (`read_all_leases`'s own docstring), so reading from `worktree`
+    (rather than `root`/main) sees the identical lease set any OTHER
+    worktree of this same clone would."""
+    from frob.gitio import repo_root
+    from frob.tickets._leases import is_lease_ttl_expired, read_all_leases
+
+    leases = read_all_leases(worktree)
+    if not leases:
+        return None
+    actual = repo_root(worktree)
+    current_path = actual.danger_ok.resolve() if actual.is_ok else None
+    for lease in leases:
+        if lease.ticket_id != draft_id:
+            continue
+        if is_lease_ttl_expired(lease):
+            continue
+        if current_path is not None and Path(lease.worktree).resolve() == current_path:
+            continue
+        return lease.worktree
+    return None
 
 
 # frob:ticket T-0811

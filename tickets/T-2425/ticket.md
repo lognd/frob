@@ -2,7 +2,7 @@
 id: T-2425
 title: a land finalizes other agents' pending drafts, so epic decomposition blocks
   unrelated lands
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -36,18 +36,43 @@ scope_changes:
     instead of failing the whole land, and names the owner in the refusal message
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft
+- tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket
+- tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none
+- tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign
+- tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree
+- tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign
 designated_repro_test: null
 acceptance:
 - text: Given ten pending drafts created by a different agent's epic decomposition,
     when a land with clean content runs, then it completes rather than failing with
     ScopeLeaseConflict on a draft it does not own.
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign
 - text: Given a land whose own ticket has a genuine scope conflict, when it runs,
     then it is still refused, proving conflict detection was not disabled.
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign
 - text: Given a land refused over a foreign draft, when it reports, then the message
     names which ticket owns that draft and why the land needed to finalize it.
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_succeeds_and_skips_the_foreign_draft
+  - tests/test_ticket_land.py::TestForeignOwnedSiblingDraftSkipped::test_land_still_refuses_a_genuine_scope_conflict_on_its_own_ticket
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_no_leases_is_none
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_own_worktree_lease_is_not_foreign
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_foreign_live_lease_names_the_worktree
+  - tests/test_ticket_land.py::TestForeignOwnedDraftWorktree::test_ttl_expired_foreign_lease_is_not_foreign
 threat: null
 component: tickets
 anchor: false
