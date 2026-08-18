@@ -2,7 +2,7 @@
 id: T-2328
 title: frob ticket land silently discarded T-2194's in-scope design/frob.strata edit
   under a stale/already-cleared lease collision
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -14,8 +14,60 @@ runs_last: false
 scope:
 - src/frob/tickets/_land.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/gates/_fix_engine_scope.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine_scope.py
+  reason: 'Measurement (foreground, this session) confirmed the root cause is a
+
+    stale-scope-read, not a WIP-commit-timing bug: T-2303''s lease file
+
+    (.git/frob-leases/T-2303.json) already shows scope=[] (narrowed) while
+
+    its ticket ledger entry (tickets.md) still declares scope including
+
+    "design". frob.gates._fix_engine_scope._other_ticket_holding_live_lease
+
+    (the Tier-A auto-fix scope/lease filter that skipped SYS100 on
+
+    design/frob.strata during T-2194''s land) reads the OTHER ticket''s
+
+    declared ledger scope directly, never consulting read_all_leases for a
+
+    narrower live lease -- unlike the sibling mechanism
+
+    _land.py::_effective_leakage_scope (T-2095/T-2111), which already
+
+    prefers the live lease''s own scope over a stale declared one for the
+
+    exact same staleness reason. The fix belongs in
+
+    _fix_engine_scope.py, outside T-2328''s originally declared two files;
+
+    adding it here since that is where the real defect lives.
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'Test coverage for the _fix_engine_scope.py fix lives in tests/test_gates.py
+
+    (TestFixEngineScopeLease); adding it to record the new must-still-pass
+
+    positive control and the new bug-repro test.
+
+    '
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_gates.py::TestFixEngineScopeLease::test_narrowed_live_lease_wins_over_stale_declared_scope
+- tests/test_gates.py::TestFixEngineScopeLease::test_live_leased_file_skipped_even_when_in_landing_scope
+- tests/test_gates.py::TestFixEngineScopeLease::test_out_of_scope_fix_is_reverted_and_reported
+- tests/test_gates.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
 designated_repro_test: null
 attachments:
 - path: T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md

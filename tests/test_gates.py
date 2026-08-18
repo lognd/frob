@@ -12458,6 +12458,58 @@ class TestFixEngineScopeLease:
         assert "live lease" in skipped[0].reason
         assert target.read_text(encoding="utf-8") == "original\n"
 
+    def test_narrowed_live_lease_wins_over_stale_declared_scope(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
+        # T-2328: reproduces the incident that silently discarded T-2194's
+        # own in-scope design/frob.strata edit -- an OTHER ticket had
+        # already narrowed its LIVE lease scope (record_lease published
+        # `scope=()`), but its declared ledger scope still names the
+        # file. `_other_ticket_holding_live_lease` used to read only the
+        # stale declared scope, so it (wrongly) treated the file as still
+        # under that ticket's lease and reverted a live, needed fix --
+        # the exact staleness class `_land.py::_effective_leakage_scope`
+        # (T-2095/T-2111) already fixed for `CrossTicketLeakage`. The
+        # live (narrower) lease must win here too: the fix is kept.
+        from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
+        from frob.gates._fix_engine_shared import FixApplied
+        from frob.tickets._leases import record_lease
+
+        root = self._repo(tmp_path)
+        target = root / "design" / "frob.strata"
+        target.parent.mkdir(parents=True)
+        target.write_text("original\n", encoding="utf-8")
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "seed design/frob.strata"],
+            cwd=root,
+            check=True,
+        )
+        target.write_text("handler rewrote this\n", encoding="utf-8")
+
+        landing = _ticket(
+            ticket_id="T-2194", state=TicketState.IN_PROGRESS, scope=("design",)
+        )
+        # T-2303's declared ledger scope is still broad ("design"), but
+        # its live lease has already been narrowed to nothing.
+        other = _ticket(
+            ticket_id="T-2303",
+            state=TicketState.IN_PROGRESS,
+            scope=("design",),
+        )
+        record_lease(root, "T-2303", ())
+        queue = TicketQueue(tickets={"T-2194": landing, "T-2303": other})
+        fixes = [
+            FixApplied(rule="SYS100", file="design/frob.strata", line=0, detail="x")
+        ]
+
+        kept, skipped = filter_fixes_by_scope_and_lease(root, queue, "T-2194", fixes)
+
+        assert skipped == []
+        assert len(kept) == 1
+        assert target.read_text(encoding="utf-8") == "handler rewrote this\n"
+
     def test_in_scope_fix_is_kept_unchanged(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_fix_engine_scope.py::filter_fixes_by_scope_and_lease  # noqa: E501
         from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease

@@ -521,6 +521,24 @@
       "old_digest": null,
       "reason": "T-2337: verified run_drain_async's body against T-2324's landed fix\n(advance-on-green-or-owned-red, never advance on unmeasurable/unfiled-red).\nThe stale frob:tests directive named TestRunDrainAsync.\ntest_green_round_advances_watermark_a_subsequent_round_sees, but that\nmethod actually lives in a separate class, TestDrainAdvancesWatermarkEndToEnd\n(introduced alongside T-2324's fix), which TestRunDrainAsync does not\ndefine. Repointed the directive to the correct class; confirmed the\nmethod genuinely covers the watermark-advance behavior described (green\nround advances, unmeasurable round leaves watermark untouched) and that\nall 6 tests in tests/unit/verify/test_drain.py collect and pass.\n",
       "ref": "src/frob/verify/_drain.py::run_drain_async"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "47762c8662bef85abfcea875e8216ba370d035b75ae6f903b0fa3541f3445219",
+      "old_digest": null,
+      "reason": "T-2328: added a frob:tests edge (this docstring change) alongside the\nT-2095/T-2111-precedent fix that prefers a live lease's own scope over\na ticket's stale declared ledger scope. Verified: the new\ntest_narrowed_live_lease_wins_over_stale_declared_scope reproduces the\nincident (fails before the fix, passes after), and the three\npre-existing tests in TestFixEngineScopeLease (out-of-scope revert,\nlive-lease-wins-over-broader-landing-scope, in-scope-kept) all still\npass -- lease precedence over scope is preserved, this only fixes WHICH\nscope (declared vs live) a lease comparison reads.\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "old_digest": null,
+      "reason": "T-2328: added a frob:tests edge (this docstring change) alongside the\nT-2095/T-2111-precedent fix that prefers a live lease's own scope over\na ticket's stale declared ledger scope. Verified: the new\ntest_narrowed_live_lease_wins_over_stale_declared_scope reproduces the\nincident (fails before the fix, passes after), and the three\npre-existing tests in TestFixEngineScopeLease (out-of-scope revert,\nlive-lease-wins-over-broader-landing-scope, in-scope-kept) all still\npass -- lease precedence over scope is preserved, this only fixes WHICH\nscope (declared vs live) a lease comparison reads.\n",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
     }
   ],
   "entries": [
@@ -743,6 +761,16 @@
       "digest": "1d23d48e9b2d1997a44f70a3c0e802e9267f42931b80f10b6fe0b99e96fb777a",
       "facet": "sig",
       "ref": "src/frob/gates/_coverage.py::stamp_coverage"
+    },
+    {
+      "digest": "47762c8662bef85abfcea875e8216ba370d035b75ae6f903b0fa3541f3445219",
+      "facet": "body",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
+    },
+    {
+      "digest": "221f821b8f3711c4ea87747f4c8ce1f89f5e01810747643b0505614a7fbda310",
+      "facet": "sig",
+      "ref": "src/frob/gates/_fix_engine_scope.py::_other_ticket_holding_live_lease"
     },
     {
       "digest": "acea3454c7ae8da1675b05872696a04ab6dbc26216a57586e883f4217c5cd8f2",

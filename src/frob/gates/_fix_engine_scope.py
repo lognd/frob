@@ -65,7 +65,7 @@ from frob.gates._fix_engine_shared import FixApplied
 from frob.gitio import run_argv
 from frob.logging import get_logger
 from frob.tickets import TicketQueue, scope_matches
-from frob.tickets._leases import is_effectively_in_progress
+from frob.tickets._leases import is_effectively_in_progress, read_all_leases
 
 _log = get_logger(__name__)
 
@@ -108,18 +108,38 @@ class SkippedFix(BaseModel):
 
 
 # frob:ticket T-2284
+# frob:ticket T-2328
 def _other_ticket_holding_live_lease(
     root: Path, queue: TicketQueue, ticket_id: str, path: str
 ) -> str | None:
-    """The id of the first OTHER ticket in `queue` whose declared scope
+    """The id of the first OTHER ticket in `queue` whose EFFECTIVE scope
     covers `path` and is effectively in progress right now (state or a
     live cross-worktree lease, `is_effectively_in_progress`), or `None`.
     Deliberately ignores `ticket_id`'s own scope entirely -- lease
-    precedence, see this module's own docstring."""
+    precedence, see this module's own docstring.
+
+    T-2328: "effective scope" prefers a live cross-worktree lease's OWN
+    recorded scope over the ticket's stale declared ledger scope, the
+    same precedence `_land.py::_effective_leakage_scope` (T-2095/T-2111)
+    already established for `CrossTicketLeakage` -- a narrowing published
+    to the lease side-channel takes effect for the fleet immediately,
+    without waiting for that ticket's own land. Before this fix, a
+    ticket that had already narrowed its live lease to an empty/narrower
+    scope (e.g. via `frob ticket scope --remove`) but whose ledger entry
+    still carried the old, broader scope caused this function to keep
+    reporting the file as under that ticket's lease -- confirmed as the
+    root cause of T-2328's incident (T-2194's own in-scope
+    `design/frob.strata` edit silently reverted because T-2303's ledger
+    scope still named `design` after T-2303's lease had already
+    narrowed to `scope=[]`)."""
+    leases_by_id = {lease.ticket_id: lease.scope for lease in read_all_leases(root)}
     for other_id, other in queue.tickets.items():
         if other_id == ticket_id:
             continue
-        if not scope_matches(path, other.scope, kind=other.kind, ticket_id=other_id):
+        effective_scope = leases_by_id.get(other_id, other.scope)
+        if not scope_matches(
+            path, effective_scope, kind=other.kind, ticket_id=other_id
+        ):
             continue
         if is_effectively_in_progress(root, other_id, other.state):
             return other_id
