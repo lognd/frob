@@ -2,7 +2,7 @@
 id: T-2463
 title: 'SYS101 fallout: checker/fleet/deploy/vet fs.write declarations now unsupported
   post-T-2457'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -18,11 +18,26 @@ scope:
 - src/frob/deploy/**
 - src/frob/vet/_nvd.py
 - src/frob/vet/_registry.py
+- docs/design/registry/capability-via-ratchet.lock.json
+evidence_scope:
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: vet's fs.write capability is fully removed by this ticket (both files it
+    covered), not just reduced -- the orphaned vet::fs.write ratchet entry should
+    not outlive the capability it was ceiling for
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001
+designated_repro_test: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001
 threat: null
 component: null
 anchor: false

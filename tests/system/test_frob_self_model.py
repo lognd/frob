@@ -524,3 +524,39 @@ class TestFrobSelfModel:
             f"_fragments.py should have no undeclared-capability SYS "
             f"violation: {fragments_violations}"
         )
+
+    # frob:tests design/frob.strata kind="e2e"
+    def test_checker_fleet_deploy_vet_have_no_undeclared_fs_write_selfaudit001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2463 regression: `checker`/`fleet`/`deploy` declared a bare
+        `may "fs.write";` (no via-list) and `vet` declared `may "fs.write"
+        via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py"` -- all
+        four were false declarations, the same shape T-2457 fixed for the
+        T-2390 schema modules (a bare read-mode `open(path, "rb")` used to
+        satisfy the old mode-blind `fs.write` needle on its own; T-2457
+        fixed the needle, and these four SYS101 ("declared but never
+        observed") findings were the fallout T-2457's own investigation
+        did not cover). Measured directly (not assumed): none of `checker`/
+        `fleet`/`deploy`'s owned code, nor `_nvd.py`/`_registry.py`,
+        contains a single filesystem-write call of any kind -- narrower
+        than `test_sys_gate_zero_violations` above (which also trips on
+        unrelated, pre-existing SYS101/GATERULE001 findings) so this one
+        regression cannot be masked by those.
+        """
+        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
+        assert build_result.is_ok, f"graph build failed: {build_result.err}"
+        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        node_violations = [
+            v
+            for v in violations
+            if any(
+                f"node={node}" in v.message
+                for node in ("checker", "fleet", "deploy", "vet")
+            )
+            and "fs.write" in v.message
+        ]
+        assert node_violations == [], (
+            f"checker/fleet/deploy/vet should have no declared-but-"
+            f"never-observed fs.write SYS violation: {node_violations}"
+        )

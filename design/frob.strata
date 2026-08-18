@@ -461,7 +461,6 @@ node checker : trusted {
     // result cache escape hatch) -- a boolean opt-out, no secret carried.
     may "env.read";
     may "exec";
-    may "fs.write";
     may "fs.read";
     attr flag=frob_check_exec_kill_switch;
 }
@@ -642,7 +641,6 @@ node fleet : trusted {
     code "src/frob/fleet/**";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs.write";
     // T-0778: T-0200's kill switch (frob.process._guard.
     // guarded_subprocess_run) is real and shipped, but this node's own
     // `subprocess.run` call sites (src/frob/fleet/__init__.py, not the
@@ -1090,7 +1088,6 @@ node deploy : trusted {
     code "src/frob/deploy/**";
     may "exec";
     attr flag=frob_check_exec_kill_switch;
-    may "fs.write";
     may "fs.read";
 }
 
@@ -1159,7 +1156,6 @@ node vet : trusted {
     may "env" via "src/frob/vet/_source.py";
     may "fetch_url" via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py";
     may "ffi" via "src/frob/vet/_popular_pypi.py";
-    may "fs.write" via "src/frob/vet/_nvd.py", "src/frob/vet/_registry.py";
     may "fs.read" via "src/frob/vet/_allow.py", "src/frob/vet/_closedworld.py", "src/frob/vet/_containment.py", "src/frob/vet/_ecosystem.py", "src/frob/vet/_lifecycle.py", "src/frob/vet/_lockfile.py", "src/frob/vet/_obfuscation.py", "src/frob/vet/_scan.py", "src/frob/vet/_supplychain.py", "src/frob/vet/_taint.py";
     may "install-hook" via "src/frob/vet/_ecosystem.py";
     may "net" via "src/frob/vet/_popular_npm.py";
