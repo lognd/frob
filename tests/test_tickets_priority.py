@@ -116,13 +116,72 @@ class TestSetPriority:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        result = set_priority(tmp_path, ticket_id, Priority.CRITICAL)
+        result = set_priority(tmp_path, ticket_id, Priority.CRITICAL, reason="test")
         assert result.is_ok
         assert result.danger_ok.priority == Priority.CRITICAL
 
         reloaded = load_active(tmp_path)
         assert reloaded.is_ok
         assert reloaded.danger_ok.tickets[ticket_id].priority == Priority.CRITICAL
+
+    def test_reason_missing_refuses(self, tmp_path: Path) -> None:
+        """T-2353: a blank/whitespace-only `reason` is refused with
+        `TriageReasonMissing` -- the positive control for the fix's own
+        motivating incident (a priority change with no recorded reason)."""
+        # frob:tests \
+        # tests/test_tickets_priority.py::TestSetPriority.test_reason_missing_refuses
+        import subprocess
+
+        from frob.tickets import Origin as _Origin
+        from frob.tickets import TicketError
+        from frob.tickets import TicketKind as _TicketKind
+        from frob.tickets import TicketSpec, new_ticket
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(title="a ticket", kind=_TicketKind.BUG, origin=_Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        blank = set_priority(tmp_path, ticket_id, Priority.CRITICAL, reason="   ")
+        assert blank.is_err
+        assert blank.danger_err is TicketError.TriageReasonMissing
+
+    def test_reasoned_change_records_triage_entry(self, tmp_path: Path) -> None:
+        """T-2353: a reasoned priority change appends a `TriageChangeEntry`
+        to `ticket.triage_changes` recording the field, old/new value,
+        reason, actor, and date -- the audit trail this ticket adds."""
+        # frob:tests \
+        # tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_\
+        # triage_entry
+        import subprocess
+
+        from frob.tickets import Origin as _Origin
+        from frob.tickets import TicketKind as _TicketKind
+        from frob.tickets import TicketSpec, new_ticket
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(title="a ticket", kind=_TicketKind.BUG, origin=_Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_priority(
+            tmp_path, ticket_id, Priority.CRITICAL, reason="escalated for the demo"
+        )
+        assert result.is_ok
+        entries = result.danger_ok.triage_changes
+        assert len(entries) == 1
+        assert entries[0].field == "priority"
+        assert entries[0].old_value == "medium"
+        assert entries[0].new_value == "critical"
+        assert entries[0].reason == "escalated for the demo"
 
 
 class TestTick004QueueRot:

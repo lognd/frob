@@ -133,7 +133,7 @@ class TestSetComponent:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        result = set_component(tmp_path, ticket_id, "vet")
+        result = set_component(tmp_path, ticket_id, "vet", reason="test")
         assert result.is_ok
         assert result.danger_ok.component == "vet"
 
@@ -151,9 +151,27 @@ class TestSetComponent:
         assert created.is_ok
         ticket_id = created.danger_ok.id
 
-        result = set_component(tmp_path, ticket_id, None)
+        result = set_component(tmp_path, ticket_id, None, reason="test")
         assert result.is_ok
         assert result.danger_ok.component is None
+
+    # frob:ticket T-2353
+    def test_reason_missing_refuses(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refu\
+        # ses
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(title="a ticket", kind=TicketKind.BUG, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_component(tmp_path, ticket_id, "vet", reason="  ")
+        assert result.is_err
+        assert result.danger_err is TicketError.TriageReasonMissing
 
 
 # frob:ticket T-1171

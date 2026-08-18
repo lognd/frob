@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.503.0] - unreleased
+
+- T-2353: priority/kind/component/tier mutations have no --reason audit trail
+
 ## [0.502.0] - unreleased
 
 - T-2355: Ledger v2 migration: build the golden round-trip test and migrate the 108 legacy-only tickets

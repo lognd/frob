@@ -47,6 +47,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketState,
     TicketTier,
+    TriageChangeEntry,
 )
 from frob.tickets._store import (
     _store_mode,
@@ -60,8 +61,47 @@ from frob.tickets._worktree_guard import enforce_worktree_lease
 _log = get_logger(__name__)
 
 
+def _field_str(value: object) -> str | None:
+    """Best-effort string form of a ticket field's raw value for a
+    `TriageChangeEntry.old_value`/`new_value` (T-2353): an enum's `.value`
+    where the field carries one, `None` unchanged (an unset `component`),
+    and `str(value)` otherwise -- the same "log the enum's `.value`, not
+    its repr" preference `_set_ticket_field`'s `log_value` callers already
+    apply, just also applied to the OLD value, which no caller previously
+    had a reason to format."""
+    if value is None:
+        return None
+    inner = getattr(value, "value", None)
+    return inner if isinstance(inner, str) else str(value)
+
+
+# frob:ticket T-2353
+def _triage_change_entry(
+    field: str, old_value: object, new_value: object, reason: str
+) -> TriageChangeEntry:
+    """Build the `TriageChangeEntry` (T-2353) `_set_ticket_field` appends
+    for a reasoned triage-field mutation: formats `old_value`/`new_value`
+    (`_field_str`) and stamps `actor`/`at`."""
+    from datetime import date as _date
+
+    return TriageChangeEntry(
+        field=field,
+        old_value=_field_str(old_value),
+        new_value=_field_str(new_value),
+        reason=reason,
+        actor=_current_actor(),
+        at=_date.today(),
+    )
+
+
 def _set_ticket_field(
-    root: Path, ticket_id: str, field: str, value: object, *, log_value: object
+    root: Path,
+    ticket_id: str,
+    field: str,
+    value: object,
+    *,
+    log_value: object,
+    reason: str | None = None,
 ) -> Result[Ticket, TicketError]:
     """Set one `field` on `ticket_id` to `value` (extracted T-0861): the
     ONE lease-check + ledger-locked-load + `model_copy(update=...)` +
@@ -70,7 +110,20 @@ def _set_ticket_field(
     accountable single-writer discipline can never desync between fields.
     `log_value` lets a caller log an enum's `.value` instead of the enum
     repr where that reads better; the field name itself is embedded in
-    the log line by the caller via `field`."""
+    the log line by the caller via `field`.
+
+    T-2353: `reason` (keyword-only) is required by `set_priority`/
+    `set_kind`/`set_component`/`set_tier` (each validates non-empty
+    before calling in) and, whenever given, appends a `TriageChangeEntry`
+    to `ticket.triage_changes` recording `field`, the old and new value,
+    `reason`, actor, and date -- the `ScopeChangeEntry` discipline
+    (T-0455) applied to these four single-value classification fields. A
+    no-op write (`value` already matches) still appends an entry when
+    `reason` is given -- a caller who explicitly re-asserted the same
+    value with a stated reason gets that recorded, not silently
+    swallowed; only a truly unreasoned caller (library-internal, no
+    `reason`) skips the audit trail entirely, same as before this
+    ticket."""
     from frob.tickets import _load_ticket_and_queue
 
     leased = enforce_worktree_lease(root)
@@ -81,7 +134,17 @@ def _set_ticket_field(
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket, _queue = loaded.danger_ok
-        updated = ticket.model_copy(update={field: value})
+        update: dict[str, object] = {field: value}
+        if reason is not None:
+            # frob:waive OPAQUE001 reason="T-2353: field ranges only over this \
+            # module's own hardcoded single-value setter callers (priority/kind/ \
+            # component/tier), never external/CLI-controlled input -- same closed, \
+            # statically-declared field-set shape as _config_external.py's own T-1038 \
+            # OPAQUE001 waivers"
+            old_value = getattr(ticket, field, None)
+            entry = _triage_change_entry(field, old_value, value, reason)
+            update["triage_changes"] = ticket.triage_changes + (entry,)
+        updated = ticket.model_copy(update=update)
         write_result = write_ticket(root, updated)
         if write_result.is_err:
             return Err(write_result.danger_err)
@@ -90,30 +153,45 @@ def _set_ticket_field(
 
 
 # frob:ticket T-0411
+# frob:ticket T-2353
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_priority.py::TestSetPriority.test_updates_priority_field
+# frob:tests tests/test_tickets_priority.py::TestSetPriority.test_reason_missing_refuses
+# frob:tests \
+# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_e\
+# ntry
 def set_priority(
-    root: Path, ticket_id: str, priority: Priority
+    root: Path, ticket_id: str, priority: Priority, *, reason: str
 ) -> Result[Ticket, TicketError]:
     """Set `ticket_id`'s `priority` field (T-0411) -- the accountable,
     single-writer way to reprioritize a ticket instead of hand-editing
     `tickets.md` frontmatter. Held under `ledger_lock` (same discipline as
     `mutate_scope`) so this can never interleave with a concurrent ledger
-    mutation. A no-op write (still logged) if `priority` already matches."""
+    mutation. A no-op write (still logged) if `priority` already matches.
+
+    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
+    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
+    appended to `ticket.triage_changes` -- closing the "priority change
+    leaves no audit trail" gap this ticket found: `scope`/`accept --amend`
+    both already required and recorded a reason, `priority` alone did not."""
+    if not reason.strip():
+        return Err(TicketError.TriageReasonMissing)
     return _set_ticket_field(
-        root, ticket_id, "priority", priority, log_value=priority.value
+        root, ticket_id, "priority", priority, log_value=priority.value, reason=reason
     )
 
 
 # frob:ticket T-0834
 # frob:ticket T-1616
+# frob:ticket T-2353
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
 # frob:tests \
 # tests/test_ticket_evidence.py::TestKindHistory.test_change_after_evidence_recorded
 # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
+# frob:tests tests/test_ticket_evidence.py::TestSetKind.test_reason_missing_refuses
 def set_kind(
-    root: Path, ticket_id: str, kind: TicketKind
+    root: Path, ticket_id: str, kind: TicketKind, *, reason: str
 ) -> Result[Ticket, TicketError]:
     """Set `ticket_id`'s `kind` field (T-0834) -- the accountable,
     single-writer way to correct a mis-filed kind instead of hand-editing
@@ -121,16 +199,25 @@ def set_kind(
     pattern `set_priority` uses. A no-op write (still logged) if `kind`
     already matches.
 
+    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
+    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
+    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
+    accountability this module's other single-value setters gained.
+
     T-1616: if the ticket already carries evidence and/or a substantive
     Done report at the moment of the change -- i.e. this is not a fresh,
     pre-work reclassification but one that could be relaxing an
     already-earned evidence obligation (a `bug`-kind ticket becoming
     `feature` to dodge BUG002 is the motivating case) -- the change is
-    also appended to `kind_history` (never edited, only appended), so a
-    reviewer or `frob ticket land` can see it happened instead of reading
-    a silent frontmatter edit."""
+    ALSO appended to `kind_history` (never edited, only appended; distinct
+    from and in addition to `triage_changes`, since `kind_history`'s
+    trigger is conditional on evidence/Done-report state while
+    `triage_changes` records every reasoned kind change unconditionally),
+    so a reviewer or `frob ticket land` can see it happened instead of
+    reading a silent frontmatter edit."""
+    if not reason.strip():
+        return Err(TicketError.TriageReasonMissing)
     from frob.tickets import _load_ticket_and_queue
-    from frob.tickets._models import has_substantive_done_report
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:
@@ -141,17 +228,12 @@ def set_kind(
             return Err(loaded.danger_err)
         ticket, _queue = loaded.danger_ok
         update: dict[str, object] = {"kind": kind}
-        history_entry: str | None = None
-        if kind != ticket.kind and (
-            ticket.evidence or has_substantive_done_report(ticket.body)
-        ):
-            done_report = has_substantive_done_report(ticket.body)
-            history_entry = (
-                f"{date.today().isoformat()} {ticket.kind.value}->{kind.value} "
-                f"evidence={len(ticket.evidence)} "
-                f"done_report={'yes' if done_report else 'no'}"
-            )
+        history_entry = _kind_history_entry(ticket, kind)
+        if history_entry is not None:
             update["kind_history"] = (*ticket.kind_history, history_entry)
+        update["triage_changes"] = ticket.triage_changes + (
+            _triage_change_entry("kind", ticket.kind, kind, reason),
+        )
         updated = ticket.model_copy(update=update)
         write_result = write_ticket(root, updated)
         if write_result.is_err:
@@ -169,11 +251,33 @@ def set_kind(
     return Ok(updated)
 
 
+# frob:ticket T-2353
+def _kind_history_entry(ticket: Ticket, kind: TicketKind) -> str | None:
+    """T-1616's `kind_history` line for `set_kind`'s change from `ticket.
+    kind` to `kind`, split out of `set_kind` (T-2353, ARCH001) -- `None`
+    when this is not a post-evidence/Done-report reclassification (a
+    fresh, pre-work kind correction records nothing here)."""
+    from frob.tickets._models import has_substantive_done_report
+
+    if kind == ticket.kind or not (
+        ticket.evidence or has_substantive_done_report(ticket.body)
+    ):
+        return None
+    done_report = has_substantive_done_report(ticket.body)
+    return (
+        f"{date.today().isoformat()} {ticket.kind.value}->{kind.value} "
+        f"evidence={len(ticket.evidence)} "
+        f"done_report={'yes' if done_report else 'no'}"
+    )
+
+
 # frob:ticket T-1069
+# frob:ticket T-2353
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/test_tickets_tiers.py::TestSetTier.test_updates_tier_field
+# frob:tests tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses
 def set_tier(
-    root: Path, ticket_id: str, tier: TicketTier
+    root: Path, ticket_id: str, tier: TicketTier, *, reason: str
 ) -> Result[Ticket, TicketError]:
     """`frob ticket tier <id> <epic|story|ticket>`: set `ticket_id`'s `tier`
     field (T-1069) -- the accountable, single-writer way to reclassify an
@@ -184,8 +288,17 @@ def set_tier(
     T-0715's structural rules (`doable`'s leaf-only surfacing, `transition`'s
     open-descendant close guard) key off whatever `tier` a ticket currently
     carries, so they apply to the new value on the very next read; this
-    function does not re-validate or move `parent` links."""
-    return _set_ticket_field(root, ticket_id, "tier", tier, log_value=tier.value)
+    function does not re-validate or move `parent` links.
+
+    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
+    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
+    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
+    accountability this module's other single-value setters gained."""
+    if not reason.strip():
+        return Err(TicketError.TriageReasonMissing)
+    return _set_ticket_field(
+        root, ticket_id, "tier", tier, log_value=tier.value, reason=reason
+    )
 
 
 # frob:ticket T-1613
@@ -865,15 +978,25 @@ def _median_cycle_days(all_tickets: dict, first_done: dict[str, date]) -> float 
 
 
 # frob:ticket T-0454
+# frob:ticket T-2353
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
 # tests/test_tickets_organization.py::TestSetComponent.test_updates_component_field
+# frob:tests \
+# tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refuses
 def set_component(
-    root: Path, ticket_id: str, component: str | None
+    root: Path, ticket_id: str, component: str | None, *, reason: str
 ) -> Result[Ticket, TicketError]:
     """Set `ticket_id`'s `component` field (T-0454) -- which module/area this
     ticket belongs to, the same single-writer, ledger-locked pattern
-    `set_priority` uses. `component=None` clears it back to uncategorized."""
+    `set_priority` uses. `component=None` clears it back to uncategorized.
+
+    T-2353: `reason` is now REQUIRED (`Err(TicketError.TriageReasonMissing)`
+    on a blank/whitespace-only value) and recorded into a `TriageChangeEntry`
+    appended to `ticket.triage_changes`, the same `set_priority`/T-2353
+    accountability this module's other single-value setters gained."""
+    if not reason.strip():
+        return Err(TicketError.TriageReasonMissing)
     return _set_ticket_field(
-        root, ticket_id, "component", component, log_value=component
+        root, ticket_id, "component", component, log_value=component, reason=reason
     )

@@ -8,6 +8,34 @@ argparse tree.
 from __future__ import annotations
 
 
+# frob:ticket T-2353
+def _add_triage_reason_flags(parser) -> None:  # noqa: ANN001
+    """Register the shared `--reason TEXT | --reason-file PATH` pair
+    (T-2353) on `parser` -- every single-value triage setter
+    (`priority`/`kind`/`component`/`tier`) gets the SAME flag pair through
+    this one helper, mirroring `_add_no_commit_flag`'s "one home, never a
+    copy-pasted block per verb" discipline. Both dest names are shared
+    across all four subcommands (`ticket_triage_reason`/`ticket_triage_
+    reason_file`) since exactly one of the four runs per invocation --
+    same reuse pattern `ticket_scope_reason` already uses across `scope`/
+    `scope-ack`."""
+    parser.add_argument(
+        "--reason",
+        dest="ticket_triage_reason",
+        metavar="TEXT",
+        help="why this change happened (recorded in the ticket's "
+        "triage_changes audit trail); required unless --reason-file is "
+        "given",
+    )
+    parser.add_argument(
+        "--reason-file",
+        dest="ticket_triage_reason_file",
+        metavar="PATH",
+        help="read the reason verbatim from PATH instead of the shell "
+        "(T-0737); mutually exclusive with --reason",
+    )
+
+
 # frob:ticket T-1615
 def _add_no_commit_flag(parser) -> None:  # noqa: ANN001
     """Register the shared `--no-commit` opt-out (T-1615) on `parser` --
@@ -173,11 +201,16 @@ def _add_ticket_anchor_parser(ticket_sub):
 
 
 # frob:ticket T-0411
+# frob:ticket T-2353
 def _add_ticket_priority_parser(ticket_sub):
-    """Register `frob ticket priority <id> <level>` -- reprioritize an
-    existing ticket (T-0411), the accountable, single-writer alternative to
-    hand-editing `tickets.md` frontmatter (same shape as `_add_ticket_scope_
-    parser`'s T-0455 precedent)."""
+    """Register `frob ticket priority <id> <level> (--reason TEXT |
+    --reason-file PATH)` -- reprioritize an existing ticket (T-0411), the
+    accountable, single-writer alternative to hand-editing `tickets.md`
+    frontmatter (same shape as `_add_ticket_scope_parser`'s T-0455
+    precedent). T-2353: `--reason`/`--reason-file` (`_add_triage_reason_
+    flags`) are now required -- a priority change with no stated reason
+    used to leave no audit trail at all, the inconsistency this ticket
+    fixes."""
     ticket_priority_p = ticket_sub.add_parser(
         "priority", help="set a ticket's priority (T-0411)"
     )
@@ -187,15 +220,19 @@ def _add_ticket_priority_parser(ticket_sub):
         metavar="level",
         choices=["low", "medium", "high", "critical"],
     )
+    _add_triage_reason_flags(ticket_priority_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_priority_p)  # frob:ticket T-1615
     return ticket_priority_p
 
 
 # frob:ticket T-0834
+# frob:ticket T-2353
 def _add_ticket_kind_parser(ticket_sub):
-    """Register `frob ticket kind <id> <kind>` -- correct a mis-filed kind
-    (T-0834), same shape as `_add_ticket_priority_parser`'s T-0411
-    precedent."""
+    """Register `frob ticket kind <id> <kind> (--reason TEXT | --reason-file
+    PATH)` -- correct a mis-filed kind (T-0834), same shape as `_add_
+    ticket_priority_parser`'s T-0411 precedent. T-2353: `--reason`/
+    `--reason-file` are now required, same accountability `priority`
+    gained."""
     ticket_kind_p = ticket_sub.add_parser("kind", help="set a ticket's kind (T-0834)")
     ticket_kind_p.add_argument("ticket_id", metavar="id")
     ticket_kind_p.add_argument(
@@ -203,21 +240,26 @@ def _add_ticket_kind_parser(ticket_sub):
         metavar="kind",
         choices=["feature", "bug", "security", "ux", "docs", "invariant", "incident"],
     )
+    _add_triage_reason_flags(ticket_kind_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_kind_p)  # frob:ticket T-1615
     return ticket_kind_p
 
 
 # frob:ticket T-0454
+# frob:ticket T-2353
 def _add_ticket_component_parser(ticket_sub):
-    """Register `frob ticket component <id> <name>` -- set which module/area
-    an existing ticket belongs to (T-0454), same shape as `_add_ticket_
-    priority_parser`'s T-0411 precedent. `name` may be the literal string
-    "none" to clear it back to uncategorized."""
+    """Register `frob ticket component <id> <name> (--reason TEXT |
+    --reason-file PATH)` -- set which module/area an existing ticket
+    belongs to (T-0454), same shape as `_add_ticket_priority_parser`'s
+    T-0411 precedent. `name` may be the literal string "none" to clear it
+    back to uncategorized. T-2353: `--reason`/`--reason-file` are now
+    required, same accountability `priority` gained."""
     ticket_component_p = ticket_sub.add_parser(
         "component", help="set a ticket's component/area (T-0454)"
     )
     ticket_component_p.add_argument("ticket_id", metavar="id")
     ticket_component_p.add_argument("ticket_component", metavar="name")
+    _add_triage_reason_flags(ticket_component_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_component_p)  # frob:ticket T-1615
     return ticket_component_p
 
@@ -341,13 +383,16 @@ def _add_ticket_accept_parser(ticket_sub):
 
 
 # frob:ticket T-1069
+# frob:ticket T-2353
 def _add_ticket_tier_parser(ticket_sub):
-    """Register `frob ticket tier <id> <epic|story|ticket>` -- reclassify an
-    already-created ticket's place in the epic -> story -> ticket hierarchy
-    (T-1069), the mutate-in-place counterpart to `frob ticket new --tier`
-    (T-0715 created the field but never gave existing tickets a way to
-    change it). Same shape as `_add_ticket_priority_parser`'s T-0411
-    precedent."""
+    """Register `frob ticket tier <id> <epic|story|ticket> (--reason TEXT |
+    --reason-file PATH)` -- reclassify an already-created ticket's place in
+    the epic -> story -> ticket hierarchy (T-1069), the mutate-in-place
+    counterpart to `frob ticket new --tier` (T-0715 created the field but
+    never gave existing tickets a way to change it). Same shape as
+    `_add_ticket_priority_parser`'s T-0411 precedent. T-2353: `--reason`/
+    `--reason-file` are now required, same accountability `priority`
+    gained."""
     ticket_tier_p = ticket_sub.add_parser(
         "tier", help="set an existing ticket's tier (T-1069)"
     )
@@ -357,6 +402,7 @@ def _add_ticket_tier_parser(ticket_sub):
         metavar="tier",
         choices=["epic", "story", "ticket"],
     )
+    _add_triage_reason_flags(ticket_tier_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_tier_p)  # frob:ticket T-1615
     return ticket_tier_p
 

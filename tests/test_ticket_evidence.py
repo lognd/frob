@@ -56,7 +56,7 @@ class TestSetKind:
         # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_updates_kind_field
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.FEATURE)
 
-        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS)
+        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS, reason="test")
         assert result.is_ok
         assert result.danger_ok.kind == TicketKind.DOCS
 
@@ -72,7 +72,7 @@ class TestSetKind:
         (see `TestKindHistory` below for that case)."""
         # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_audit_trail_present
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
-        result = set_kind(tmp_path, ticket_id, TicketKind.SECURITY)
+        result = set_kind(tmp_path, ticket_id, TicketKind.SECURITY, reason="test")
         assert result.is_ok
         assert result.danger_ok.kind == TicketKind.SECURITY
         assert result.danger_ok.kind_history == ()
@@ -89,11 +89,21 @@ class TestSetKind:
         done = transition(tmp_path, ticket_id, TicketState.DONE, covers_scope=True)
         assert done.is_ok
 
-        priority_result = set_priority(tmp_path, ticket_id, Priority.HIGH)
-        kind_result = set_kind(tmp_path, ticket_id, TicketKind.DOCS)
+        priority_result = set_priority(tmp_path, ticket_id, Priority.HIGH, reason="test")
+        kind_result = set_kind(tmp_path, ticket_id, TicketKind.DOCS, reason="test")
         # Whatever priority's own behavior is on a terminal ticket, kind's
         # must match it exactly -- both ok, or both err.
         assert kind_result.is_ok == priority_result.is_ok
+
+    def test_reason_missing_refuses(self, tmp_path: Path) -> None:
+        """T-2353: a blank `reason` is refused with `TriageReasonMissing` --
+        `set_kind`'s own copy of `set_priority`'s positive control."""
+        # frob:tests \
+        # tests/test_ticket_evidence.py::TestSetKind.test_reason_missing_refuses
+        ticket_id = _seed_ticket(tmp_path, kind=TicketKind.FEATURE)
+        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS, reason="")
+        assert result.is_err
+        assert result.danger_err is TicketError.TriageReasonMissing
 
 
 class TestKindCliInvalidKind:
@@ -147,6 +157,7 @@ class TestKindCliInvalidKind:
             ticket_id=ticket_id,
             ticket_path=tmp_path,
             ticket_kind_value="ux",
+            ticket_triage_reason="test",
         )
         _kind(tmp_path, cfg)
 
@@ -221,7 +232,7 @@ class TestKindHistory:
     def test_change_before_any_work_not_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_before_any_work_not_recorded  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG)
-        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE, reason="test")
         assert result.is_ok
         assert result.danger_ok.kind_history == ()
 
@@ -235,7 +246,7 @@ class TestKindHistory:
         )
         assert added.is_ok
 
-        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE, reason="test")
         assert result.is_ok
         assert len(result.danger_ok.kind_history) == 1
         entry = result.danger_ok.kind_history[0]
@@ -245,7 +256,7 @@ class TestKindHistory:
     def test_change_after_done_report_recorded(self, tmp_path: Path) -> None:
         # frob:tests tests/test_ticket_evidence.py::TestKindHistory.test_change_after_done_report_recorded  # noqa: E501
         ticket_id = _seed_ticket(tmp_path, kind=TicketKind.BUG, with_done_report=True)
-        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE)
+        result = set_kind(tmp_path, ticket_id, TicketKind.FEATURE, reason="test")
         assert result.is_ok
         assert len(result.danger_ok.kind_history) == 1
         assert "done_report=yes" in result.danger_ok.kind_history[0]
@@ -261,8 +272,8 @@ class TestKindHistory:
         assert add_evidence(
             tmp_path, ticket_id, ("tests/test_ticket_evidence.py::TestSetKind",)
         ).is_ok
-        assert set_kind(tmp_path, ticket_id, TicketKind.FEATURE).is_ok
-        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS)
+        assert set_kind(tmp_path, ticket_id, TicketKind.FEATURE, reason="test").is_ok
+        result = set_kind(tmp_path, ticket_id, TicketKind.DOCS, reason="test")
         assert result.is_ok
         assert len(result.danger_ok.kind_history) == 2
         assert "bug->feature" in result.danger_ok.kind_history[0]

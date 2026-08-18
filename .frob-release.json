@@ -2102,6 +2102,7 @@
     "src/frob/tickets/_models.py::TicketSpec": "7a1b7116d9fdf41bf60270ea79223abf19d3eb5d2bee0f79d97e4020d20efb58",
     "src/frob/tickets/_models.py::TicketState": "21b15f2435ff8eed9e334d82cd75179b00e6e72fd975117b95ef2e828ee78944",
     "src/frob/tickets/_models.py::TicketTier": "e88b98d99f0049f581eb591c3114924e3510f6786b4a735d65889f4ad0839098",
+    "src/frob/tickets/_models.py::TriageChangeEntry": "d627aedeba651503697a330d68603f0c894bd87d5ebc87d7cc4d8eb54d535376",
     "src/frob/tickets/_models.py::has_substantive_done_report": "559e0efa5301fff75054f5daa8f9a88ccb5dd94d7748651d2084888a5820424e",
     "src/frob/tickets/_models.py::is_cmd_evidence": "e8b1ed06b21a176bd633ea5746afb179e7eb34eadf7e8a0299d022643ddedb52",
     "src/frob/tickets/_models.py::is_valid_ticket_ref": "f1ebc875eb8d0b2870c17cd625785779a27e76931888534981c0c41afbf1ade5",
@@ -2158,14 +2159,14 @@
     "src/frob/tickets/_scope.py::demote_to_evidence_only": "ba1179204bb115782aa964597f6c172c6f9006071fbc4b0bb2380d242896644a",
     "src/frob/tickets/_scope.py::mutate_scope": "c0261fba55cf8031a29d4bb5f8cfa53f5ccb6fe930d15251ef57076e949926d5",
     "src/frob/tickets/_scope.py::scope_lease_conflict": "e72cb77e91e74e24ba2ceb91e2c4d173e95dd3be174b5b322bed0ad8518875f4",
-    "src/frob/tickets/_setters.py::set_component": "6ed99d19391bf26ac9ae25792a213e1079a841623ed2fb2deac73bff44690a40",
+    "src/frob/tickets/_setters.py::set_component": "2d2daa3a3e2f721296277392c90165fa6087d6af398a3730821e5caf76eb3113",
     "src/frob/tickets/_setters.py::set_designated_repro_test": "ac2e27338cd14f34b1fc4580b931c91abcd3f40a71be5243a00bee0f6119d58b",
-    "src/frob/tickets/_setters.py::set_kind": "8a4080d822675b2aba306037e1a3af1d01669fe4772c4ecb0077d7427781ebd0",
-    "src/frob/tickets/_setters.py::set_priority": "c4c5efc225ac364f5c558302f3dffcb2ca395e77f1c280b69ebcee7bec1c73d5",
+    "src/frob/tickets/_setters.py::set_kind": "f58f8c8f002ee271b83b20087421234ef5cb80228970b4035351f5cea1dcd379",
+    "src/frob/tickets/_setters.py::set_priority": "e9a3159becafb8704293286b1436da101a0f335fa15cca3d1f126e18d9b95699",
     "src/frob/tickets/_setters.py::set_runs_last": "d1bdb57b49a3066e1d90eb544ddd217c202a7a60f5ca3b01a736f3643d5cea93",
     "src/frob/tickets/_setters.py::set_scope_breadth_ack": "588c7734e3a27dfe4ef19966c6b6cb630cb05ff1349b85ff8f758b19e0e52b50",
     "src/frob/tickets/_setters.py::set_sprint": "41fda4febf6418788633d360bbd4c790e140816430cdba242c6a290aba3e51cc",
-    "src/frob/tickets/_setters.py::set_tier": "3010c3e63c31daa6be93c70198e92a8c4e52b42723e8ffe9e57530d94cbdef91",
+    "src/frob/tickets/_setters.py::set_tier": "19784c879b08e47cfdecde2f2d63a2eb6a277ccd8dff94310582c620d9e5b161",
     "src/frob/tickets/_setters.py::sprint_velocity": "8cd0c24c49d892d781291103ee1b1dadb1910ef4a6952c3a53600961421807cf",
     "src/frob/tickets/_setters.py::sprint_view": "6b42b53893077506b7811c6fad63cc3f84f58a16efd56582ea31d6f74ddd7cbe",
     "src/frob/tickets/_setters.py::ticket_flow": "9b27320b33ca48cfdde2896e81ca1425945211dc45fd157b2533604efa24f105",
@@ -2348,5 +2349,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.502.0"
+  "version": "0.503.0"
 }

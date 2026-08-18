@@ -1195,6 +1195,41 @@ class ScopeChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-2353
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:tests \
+# tests/test_tickets_priority.py::TestSetPriority.test_reasoned_change_records_triage_e\
+# ntry
+class TriageChangeEntry(BaseModel):
+    """One append-only audit line for a `frob ticket priority`/`kind`/
+    `component`/`tier` mutation (T-2353): which single-value field moved,
+    its old and new value, why, who did it, and when -- the
+    `ScopeChangeEntry`/`AcceptanceAmendmentEntry` discipline (T-0455/
+    T-1422) applied to the ticket's own triage classification fields.
+
+    T-2353's own motivating incident: `frob ticket priority` accepted no
+    `--reason` at all, while `scope`/`accept --amend` both required one
+    and recorded it -- an inconsistency in the ledger's accountability
+    model that let a critical re-triage (T-2351: medium -> critical) land
+    with no recorded justification. `reason` is mandatory here for the
+    same reason it is mandatory on `AcceptanceAmendmentEntry`: a triage
+    change with no stated reason is indistinguishable from a silent,
+    unaccountable hand-edit. `old_value`/`new_value` are always the
+    field's own string form (an enum's `.value`, or the raw string for
+    `component`); `old_value` is `None` only for a field that had never
+    been set before (`component`'s uncategorized default). Never edited
+    or removed once written, only appended to."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    field: str
+    old_value: str | None
+    new_value: str | None
+    reason: str
+    actor: str
+    at: date
+
+
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
@@ -1499,6 +1534,13 @@ class Ticket(BaseModel):
     # appended) -- makes scope creep visible instead of a silent SCOPE001
     # waive.
     scope_changes: tuple[ScopeChangeEntry, ...] = ()
+    # frob:ticket T-2353
+    # append-only audit trail of every `frob ticket priority`/`kind`/
+    # `component`/`tier` mutation this ticket has gone through (never
+    # edited, only appended) -- the `ScopeChangeEntry` discipline (T-0455)
+    # applied to triage-classification fields, closing the "priority
+    # change leaves no trace" gap T-2353 found.
+    triage_changes: tuple[TriageChangeEntry, ...] = ()
     # frob:ticket T-2333
     # append-only audit trail of every `frob worktree release-lease
     # --force --reason TEXT` forced release of THIS ticket's own
@@ -1858,6 +1900,10 @@ class TicketError(ErrorSet):
     ScopeBreadthAckReasonMissing = "scope-ack requires a non-empty --reason"
     # frob:ticket T-1856
     AnchorReasonMissing = "anchor set/clear requires a non-empty --reason"
+    # frob:ticket T-2353
+    TriageReasonMissing = (
+        "priority/kind/component/tier change requires a non-empty --reason"
+    )
     ScopeLeaseConflict = (
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )

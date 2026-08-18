@@ -232,13 +232,32 @@ class TestSetTier:
         ticket_id = created.danger_ok.id
         assert created.danger_ok.tier is TicketTier.TICKET
 
-        result = set_tier(tmp_path, ticket_id, TicketTier.EPIC)
+        result = set_tier(tmp_path, ticket_id, TicketTier.EPIC, reason="test")
         assert result.is_ok
         assert result.danger_ok.tier is TicketTier.EPIC
 
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok[ticket_id].tier is TicketTier.EPIC
+
+    # frob:ticket T-2353
+    def test_reason_missing_refuses(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_tier(tmp_path, ticket_id, TicketTier.EPIC, reason="")
+        assert result.is_err
+        assert result.danger_err is TicketError.TriageReasonMissing
 
     # frob:ticket T-1069
     # frob:ticket T-1151
@@ -248,7 +267,7 @@ class TestSetTier:
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
         )
-        result = set_tier(tmp_path, "T-9999", TicketTier.STORY)
+        result = set_tier(tmp_path, "T-9999", TicketTier.STORY, reason="test")
         assert result.is_err
 
     # frob:ticket T-1069
@@ -276,7 +295,7 @@ class TestSetTier:
         write_ticket(tmp_path, parent)
         write_ticket(tmp_path, leaf)
 
-        retiered = set_tier(tmp_path, "T-0001", TicketTier.EPIC)
+        retiered = set_tier(tmp_path, "T-0001", TicketTier.EPIC, reason="test")
         assert retiered.is_ok
         assert retiered.danger_ok.tier is TicketTier.EPIC
 

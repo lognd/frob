@@ -584,6 +584,14 @@ class AppConfig(BaseModel):
     # shape as `ticket_priority_level`'s T-0411 precedent (`ticket_tier`
     # above is already taken by `frob ticket new --tier`).
     ticket_tier_value: str | None = None
+    # frob:ticket T-2353
+    # `frob ticket priority/kind/component/tier ... (--reason TEXT |
+    # --reason-file PATH)` -- ONE shared dest reused across all four
+    # single-value triage setters (same shape as `ticket_scope_reason`'s
+    # reuse across `scope`/`scope-ack`, T-0737 precedent), since exactly
+    # one of these four subcommands runs per invocation.
+    ticket_triage_reason: str | None = None
+    ticket_triage_reason_file: Path | None = None
     # frob:ticket T-1613
     # `frob ticket runs-last <id> <on|off>` -- the new runs-last marker
     # value, same shape as `ticket_tier_value`'s T-1069 precedent.

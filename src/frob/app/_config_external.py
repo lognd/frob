@@ -129,6 +129,9 @@ _STRING_FIELDS = (
     "ticket_component",
     "ticket_board_component",
     "ticket_board_label",
+    # frob:ticket T-2353
+    "ticket_triage_reason",
+    "ticket_triage_reason_file",
     # frob:ticket T-0715
     "ticket_tier",
     # frob:ticket T-1069

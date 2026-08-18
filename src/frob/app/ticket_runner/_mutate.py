@@ -62,6 +62,34 @@ def _resolve_scope_reason(cfg: AppConfig) -> str | None:
     return cfg.ticket_scope_reason
 
 
+# frob:ticket T-2353
+def _resolve_triage_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket priority`/`kind`/`component`/`tier`'s
+    `--reason`: `--reason-file` wins if given (read verbatim, T-0737
+    pattern), else the inline `--reason` string. Exits 1 if both are
+    given; returns `None` if neither is given (the caller reports the
+    "one is required" error, matching `_resolve_scope_reason`'s shape --
+    the same shared-dest reuse pattern `ticket_scope_reason` already uses
+    across `scope`/`scope-ack`, applied here across all four single-value
+    triage setters)."""
+    if cfg.ticket_triage_reason_file is not None and cfg.ticket_triage_reason:
+        _log.error(
+            "frob ticket: --reason and --reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if cfg.ticket_triage_reason_file is not None:
+        try:
+            return cfg.ticket_triage_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket: could not read --reason-file %s: %s",
+                cfg.ticket_triage_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_triage_reason
+
+
 # frob:ticket T-0455
 # frob:ticket T-0737
 # frob:ticket T-1975
@@ -321,17 +349,27 @@ def _anchor(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0411
+# frob:ticket T-2353
 def _priority(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket priority <id> <level>`: the ONLY thing this command does
-    is forward to `frob.tickets.set_priority` -- no validation is re-derived
-    here (T-0411, same pattern as `_scope`/T-0455)."""
+    """`frob ticket priority <id> <level> (--reason TEXT | --reason-file
+    PATH)`: the ONLY thing this command does is resolve the reason
+    (`_resolve_triage_reason`, T-2353) and forward to `frob.tickets.
+    set_priority` -- no validation is re-derived here (T-0411, same
+    pattern as `_scope`/T-0455)."""
     from frob.tickets import Priority, set_priority
 
     if cfg.ticket_id is None or cfg.ticket_priority_level is None:
         _log.error("frob ticket priority requires <id> <level>")
         sys.exit(1)
 
-    result = set_priority(root, cfg.ticket_id, Priority(cfg.ticket_priority_level))
+    reason = _resolve_triage_reason(cfg)
+    if not reason:
+        _log.error("frob ticket priority requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    result = set_priority(
+        root, cfg.ticket_id, Priority(cfg.ticket_priority_level), reason=reason
+    )
     if result.is_err:
         _log.error("priority change failed: %s", result.danger_err)
         sys.exit(1)
@@ -340,6 +378,7 @@ def _priority(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0834
+# frob:ticket T-2353
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1062: leaked Unknown traces to the deferred import of \
@@ -347,12 +386,13 @@ def _priority(root: Path, cfg: AppConfig) -> None:
 # function-local import boundary; the only locally-visible fallible step (TicketKind \
 # construction) is already caught below"
 def _kind(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket kind <id> <kind>`: the ONLY thing this command does is
-    forward to `frob.tickets.set_kind` -- no validation is re-derived here
-    (T-0834, same pattern as `_priority`/T-0411). `kind` is validated
-    strictly against the real `TicketKind` enum inside `TicketKind(...)`;
-    an unknown value raises `ValueError`, reported and exited the same way
-    an unresolvable ticket id is."""
+    """`frob ticket kind <id> <kind> (--reason TEXT | --reason-file PATH)`:
+    the ONLY thing this command does is resolve the reason (`_resolve_
+    triage_reason`, T-2353) and forward to `frob.tickets.set_kind` -- no
+    validation is re-derived here (T-0834, same pattern as `_priority`/
+    T-0411). `kind` is validated strictly against the real `TicketKind`
+    enum inside `TicketKind(...)`; an unknown value raises `ValueError`,
+    reported and exited the same way an unresolvable ticket id is."""
     from frob.tickets import TicketKind, set_kind
 
     if cfg.ticket_id is None or cfg.ticket_kind_value is None:
@@ -369,7 +409,12 @@ def _kind(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    result = set_kind(root, cfg.ticket_id, kind)
+    reason = _resolve_triage_reason(cfg)
+    if not reason:
+        _log.error("frob ticket kind requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    result = set_kind(root, cfg.ticket_id, kind, reason=reason)
     if result.is_err:
         _log.error("kind change failed: %s", result.danger_err)
         sys.exit(1)
@@ -378,18 +423,26 @@ def _kind(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-0454
+# frob:ticket T-2353
 def _component(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket component <id> <name>`: forward to
-    `frob.tickets.set_component` -- `name == "none"` clears the field back
-    to uncategorized (T-0454, same pattern as `_priority`/`_scope`)."""
+    """`frob ticket component <id> <name> (--reason TEXT | --reason-file
+    PATH)`: forward to `frob.tickets.set_component` -- `name == "none"`
+    clears the field back to uncategorized (T-0454, same pattern as
+    `_priority`/`_scope`). T-2353: resolves the required reason
+    (`_resolve_triage_reason`) before forwarding."""
     from frob.tickets import set_component
 
     if cfg.ticket_id is None or cfg.ticket_component is None:
         _log.error("frob ticket component requires <id> <name>")
         sys.exit(1)
 
+    reason = _resolve_triage_reason(cfg)
+    if not reason:
+        _log.error("frob ticket component requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
     value = None if cfg.ticket_component == "none" else cfg.ticket_component
-    result = set_component(root, cfg.ticket_id, value)
+    result = set_component(root, cfg.ticket_id, value, reason=reason)
     if result.is_err:
         _log.error("component change failed: %s", result.danger_err)
         sys.exit(1)
@@ -716,6 +769,7 @@ def _epic(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1069
+# frob:ticket T-2353
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
 # ambiguous bare re-raise; this leaked Unknown traces to an unresolved callee instead \
 # (the demoted case). T-1062: leaked Unknown traces to the deferred import of \
@@ -723,12 +777,14 @@ def _epic(root: Path, cfg: AppConfig) -> None:
 # function-local import boundary; the only locally-visible fallible step (TicketTier \
 # construction) is already caught below"
 def _tier(root: Path, cfg: AppConfig) -> None:
-    """`frob ticket tier <id> <epic|story|ticket>`: the ONLY thing this
-    command does is forward to `frob.tickets.set_tier` -- no validation is
-    re-derived here (T-1069, same pattern as `_priority`/T-0411). `tier` is
-    validated strictly against the real `TicketTier` enum inside
-    `TicketTier(...)`; an unknown value raises `ValueError`, reported and
-    exited the same way an unresolvable ticket id is."""
+    """`frob ticket tier <id> <epic|story|ticket> (--reason TEXT |
+    --reason-file PATH)`: the ONLY thing this command does is resolve the
+    reason (`_resolve_triage_reason`, T-2353) and forward to `frob.
+    tickets.set_tier` -- no validation is re-derived here (T-1069, same
+    pattern as `_priority`/T-0411). `tier` is validated strictly against
+    the real `TicketTier` enum inside `TicketTier(...)`; an unknown value
+    raises `ValueError`, reported and exited the same way an unresolvable
+    ticket id is."""
     from frob.tickets import TicketTier, set_tier
 
     if cfg.ticket_id is None or cfg.ticket_tier_value is None:
@@ -745,7 +801,12 @@ def _tier(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
-    result = set_tier(root, cfg.ticket_id, tier)
+    reason = _resolve_triage_reason(cfg)
+    if not reason:
+        _log.error("frob ticket tier requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    result = set_tier(root, cfg.ticket_id, tier, reason=reason)
     if result.is_err:
         _log.error("tier change failed: %s", result.danger_err)
         sys.exit(1)

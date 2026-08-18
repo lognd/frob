@@ -300,7 +300,7 @@ class TestRootIsItselfANestedWorktree:
         epic = new_ticket(repo, _spec("Epic for nested refusal"))
         assert epic.is_ok
         epic_id = epic.danger_ok.id
-        assert set_tier(repo, epic_id, TicketTier.EPIC).is_ok
+        assert set_tier(repo, epic_id, TicketTier.EPIC, reason="test").is_ok
         leaf_spec = TicketSpec(
             title="Leaf under epic",
             kind=TicketKind.FEATURE,
