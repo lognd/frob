@@ -12,10 +12,7 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
-- src/frob/app/**
-- docs/**
-- tests/**
+- tickets/T-1137/**
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/umbrella
   ticket
@@ -31,6 +28,42 @@ scope_breadth_ack_reason: 'WAVE14-B (T-draft-57d64be9): this is a genuine epic/u
   exemption this drive built.
 
   '
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'T-2446: epic per its own body (''children at design time''); NEEDS DECOMPOSITION
+    per fleet_status.py at 20+ days old -- narrowing the parent to its own ledger
+    shard, real file scopes belong to the not-yet-filed children'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/app/**
+  reason: 'T-2446: epic per its own body (''children at design time''); NEEDS DECOMPOSITION
+    per fleet_status.py at 20+ days old -- narrowing the parent to its own ledger
+    shard, real file scopes belong to the not-yet-filed children'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/**
+  reason: 'T-2446: epic per its own body (''children at design time''); NEEDS DECOMPOSITION
+    per fleet_status.py at 20+ days old -- narrowing the parent to its own ledger
+    shard, real file scopes belong to the not-yet-filed children'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: epic per its own body (''children at design time''); NEEDS DECOMPOSITION
+    per fleet_status.py at 20+ days old -- narrowing the parent to its own ledger
+    shard, real file scopes belong to the not-yet-filed children'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-1137/**
+  reason: 'T-2446: epic per its own body (''children at design time''); NEEDS DECOMPOSITION
+    per fleet_status.py at 20+ days old -- narrowing the parent to its own ledger
+    shard, real file scopes belong to the not-yet-filed children'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: GIVEN frob check --fix WHEN Tier-A findings exist THEN deterministic semantics-preserving
