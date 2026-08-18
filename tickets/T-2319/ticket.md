@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cf1fa0f2eb5149e009715a7d31d775fa0c2ba43d
 ---
 Split from T-2252. `frob quality test`'s `path` positional
 (`cfg.test_path`, src/frob/app/test_runner.py `_resolve_test_root`) is
