@@ -590,7 +590,14 @@ def _dispatch(argv: list[str]) -> None:
         _print_startup_warnings(pyproject.parent.resolve())
         if argv and argv[0] == "check":
             _reap_orphaned_forkservers_best_effort()
-            _report_concurrent_check_advisory_best_effort()
+            # T-2484: `--json` makes stdout the machine-readable payload,
+            # so this advisory must land on stderr ONLY in that mode --
+            # see `_report_concurrent_check_advisory_best_effort`'s own
+            # docstring for why routing this through the normal INFO/
+            # WARNING level split is not enough on its own.
+            _report_concurrent_check_advisory_best_effort(
+                force_stderr=getattr(args, "check_json", False)
+            )
         cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
 
@@ -614,7 +621,10 @@ def _reap_orphaned_forkservers_best_effort() -> None:
 
 
 # frob:ticket T-2473
-def _report_concurrent_check_advisory_best_effort() -> None:
+# frob:ticket T-2484
+def _report_concurrent_check_advisory_best_effort(
+    *, force_stderr: bool = False
+) -> None:
     """`frob check` startup advisory (T-2473): logs how many OTHER `frob
     check` processes are already running on this host, plus available
     memory, so an agent/coordinator watching logs can see fleet-wide
@@ -634,7 +644,31 @@ def _report_concurrent_check_advisory_best_effort() -> None:
     silently (not even at DEBUG) when the count is 0 -- an idle machine's
     check gets no extra log noise, matching the must-not-stall
     acceptance's spirit even though this function itself never adds
-    latency."""
+    latency.
+
+    T-2484: `force_stderr=True` (passed by `_dispatch` exactly when
+    `--json` was requested) bypasses the logger entirely and `print`s
+    straight to `sys.stderr` instead. The INFO/WARNING split above is a
+    LOG LEVEL, and `frob.logging.config.toml`'s `below_warning` filter
+    routes INFO to the STDOUT handler by default -- under `--json`,
+    stdout is the machine-readable `CheckResult` payload, so an INFO-
+    level advisory landing ahead of it corrupts every parser that does
+    not know to strip a prefix (this was T-2484 itself: `scripts/check_
+    summary.py` and the land-path's `_parse_check_json` both broke this
+    way). Raising the stdout handler's level for the call (`frob.logging.
+    quiet.quiet_stdout_logs`) was the first fix attempted here and is
+    WRONG: it also silences the WARNING-vs-INFO threshold check itself
+    only for records at/above the raised level, but for an INFO record
+    specifically it makes the advisory vanish from BOTH streams --
+    stdout because the handler is quieted, stderr because INFO never
+    routed there in the first place (`config.toml`'s stderr handler is
+    `level = "WARNING"`). A direct `print(..., file=sys.stderr)`, mirroring
+    `_print_startup_warnings`'s own established idiom in this same file,
+    is the only way to guarantee the message reaches stderr regardless of
+    which of the two severities fired -- so the non-`--json` path keeps
+    the existing level-based logger call (preserving `caplog`-based
+    introspection and the INFO/WARNING split for normal log-watching
+    tooling) while `--json` switches to the guaranteed-stderr print."""
     from frob.process._reap import count_running_checks
 
     try:
@@ -646,13 +680,18 @@ def _report_concurrent_check_advisory_best_effort() -> None:
         return
     if not others:
         return
-    level = _log.warning if others >= 4 else _log.info
-    level(
+    message = (
         "frob check: %d other check(s) already running on this host -- "
         "see `scripts/fleet_status.py` for swap/load before dispatching "
-        "more (T-2473, advisory only -- this check is not deferred)",
-        others,
+        "more (T-2473, advisory only -- this check is not deferred)"
     )
+    if force_stderr:
+        import sys as _sys
+
+        print(message % others, file=_sys.stderr)
+        return
+    level = _log.warning if others >= 4 else _log.info
+    level(message, others)
 
 
 # frob:ticket T-1808

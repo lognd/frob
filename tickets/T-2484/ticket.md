@@ -2,7 +2,7 @@
 id: T-2484
 title: T-2473's concurrent-check advisory writes to stdout, corrupting frob check
   --json under fleet load
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,27 +13,48 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/__main__.py
+evidence_scope:
+- tests/unit/test_main_entry.py
+- tests/unit/test_check_json_none_handling_t2484.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_below_four_still_reaches_stderr
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_idle_machine_stays_quiet
+- tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_dispatch_passes_force_stderr_only_for_json
+- tests/unit/test_check_json_none_handling_t2484.py::TestParseCheckJsonReturnsNoneOnCorruption::test_corrupted_json_stdout_is_unparsable
+- tests/unit/test_check_json_none_handling_t2484.py::TestBudgetDeferredGroupsFromStdoutOnNone::test_corrupted_stdout_yields_empty_tuple_not_a_false_claim
+- tests/unit/test_check_json_none_handling_t2484.py::TestParseErrorFindingsFromStdoutOnCorruption::test_corrupted_json_stdout_is_unmeasured_not_empty
+- tests/unit/test_check_json_none_handling_t2484.py::TestMatchingErrorDiagnosticsOnNone::test_none_data_returns_none_not_empty_list
 designated_repro_test: null
 acceptance:
 - text: Given two or more concurrent frob check processes, when frob check --json
     runs, then its stdout parses as JSON with no prefix stripping and scripts/check_summary.py
     succeeds.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_writes_to_stderr_not_stdout
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_dispatch_passes_force_stderr_only_for_json
 - text: Given the same conditions, when the check runs, then the concurrency advisory
     still reaches the operator on stderr, proving the T-2473 feature was not deleted
     to fix the corruption.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_below_four_still_reaches_stderr
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_dispatch_passes_force_stderr_only_for_json
 - text: Given an idle machine, when frob check --json runs, then no advisory is emitted
     on any stream and output is unchanged.
-  evidence: []
+  evidence:
+  - tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory::test_force_stderr_idle_machine_stays_quiet
 - text: Given each caller of _parse_check_json, when it receives None from a decode
     failure, then it is documented whether that is treated as not-measured or as no-findings,
     and any caller treating it as no-findings is corrected.
-  evidence: []
+  evidence:
+  - tests/unit/test_check_json_none_handling_t2484.py::TestParseCheckJsonReturnsNoneOnCorruption::test_corrupted_json_stdout_is_unparsable
+  - tests/unit/test_check_json_none_handling_t2484.py::TestBudgetDeferredGroupsFromStdoutOnNone::test_corrupted_stdout_yields_empty_tuple_not_a_false_claim
+  - tests/unit/test_check_json_none_handling_t2484.py::TestParseErrorFindingsFromStdoutOnCorruption::test_corrupted_json_stdout_is_unmeasured_not_empty
+  - tests/unit/test_check_json_none_handling_t2484.py::TestMatchingErrorDiagnosticsOnNone::test_none_data_returns_none_not_empty_list
 threat: null
 component: process
 anchor: false

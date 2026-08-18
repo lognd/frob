@@ -455,3 +455,89 @@ class TestConcurrentCheckAdvisory:
         monkeypatch.setattr("frob.process._reap.count_running_checks", _boom)
         # Must not raise -- best-effort, never fatal to the real check.
         main_module._report_concurrent_check_advisory_best_effort()
+
+    # frob:ticket T-2484
+    def test_force_stderr_writes_to_stderr_not_stdout(
+        self, monkeypatch, capsys
+    ) -> None:
+        """T-2484 regression: `force_stderr=True` (the `--json` path) must
+        never touch stdout -- that stream is the JSON payload -- and must
+        still reach the operator, on stderr, so the advisory is not
+        silently dropped instead of merely relocated."""
+        # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_writes_to_stderr_not_stdout  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._reap.count_running_checks", lambda: 1
+        )
+        main_module._report_concurrent_check_advisory_best_effort(
+            force_stderr=True
+        )
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "1 other check(s)" in captured.err
+
+    # frob:ticket T-2484
+    def test_force_stderr_below_four_still_reaches_stderr(
+        self, monkeypatch, capsys
+    ) -> None:
+        """T-2484: the below-four case logs at INFO under the default
+        (non-json) path, and `config.toml`'s stderr handler only accepts
+        WARNING+ -- so relying on that handler's level threshold would
+        silently drop this exact case. `force_stderr=True` must bypass
+        that threshold entirely, not just relocate it."""
+        # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_below_four_still_reaches_stderr  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._reap.count_running_checks", lambda: 2
+        )
+        main_module._report_concurrent_check_advisory_best_effort(
+            force_stderr=True
+        )
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "2 other check(s)" in captured.err
+
+    # frob:ticket T-2484
+    def test_force_stderr_idle_machine_stays_quiet(
+        self, monkeypatch, capsys
+    ) -> None:
+        """T-2484 must-stay-quiet: an idle machine (0 other checks) must
+        add no noise on either stream, `force_stderr` or not."""
+        # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_idle_machine_stays_quiet  # noqa: E501
+        monkeypatch.setattr(
+            "frob.process._reap.count_running_checks", lambda: 0
+        )
+        main_module._report_concurrent_check_advisory_best_effort(
+            force_stderr=True
+        )
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
+
+    # frob:ticket T-2484
+    def test_dispatch_passes_force_stderr_only_for_json(
+        self, monkeypatch
+    ) -> None:
+        """`_dispatch` must derive `force_stderr` from the parsed
+        `check_json` flag, not from some other proxy -- a plain (non-
+        json) `frob check` keeps the old level-routed behavior."""
+        # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_dispatch_passes_force_stderr_only_for_json  # noqa: E501
+        calls = []
+        monkeypatch.setattr(
+            main_module,
+            "_report_concurrent_check_advisory_best_effort",
+            lambda **kw: calls.append(kw),
+        )
+        monkeypatch.setattr(
+            main_module, "_reap_orphaned_forkservers_best_effort", lambda: None
+        )
+        monkeypatch.setattr(
+            main_module, "_print_startup_warnings", lambda *a, **kw: None
+        )
+        monkeypatch.setattr(
+            main_module.AppConfig, "from_external", lambda *a, **kw: object()
+        )
+        monkeypatch.setattr(main_module, "App", lambda cfg: (lambda: None))
+        main_module._dispatch(["check", "--json"])
+        assert calls == [{"force_stderr": True}]
+        calls.clear()
+        main_module._dispatch(["check"])
+        assert calls == [{"force_stderr": False}]
