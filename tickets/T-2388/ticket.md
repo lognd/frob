@@ -2,7 +2,7 @@
 id: T-2388
 title: 'PORT001: meta-gate detecting gates that hardcode project identity instead
   of resolving it'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,32 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_port_selfcheck.py
-- src/frob/gates/__init__.py
 - tests/unit/gates/test_port_selfcheck.py
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: T-2397 holds a live lease on gates/__init__.py for unrelated wiring work;
+    will add the PORT001 registration line back once that lease clears, per playbook
+    step 4 (narrow rather than wait idle)
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: T-2397 also holds a live lease on docs/modules/gates.md; will add PORT001's
+    doc entry back once that lease clears
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_path_prefix_is_flagged
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_identity_literal_in_tuple_is_flagged
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_allowlisted_self_match_file_is_silent
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_gate_code_never_scanned
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_clean_gate_module_is_silent
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_search_literal_is_resolved_not_hardcoded
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_unresolved_project_name_is_not_a_clean_pass
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_unparseable_file_is_parse001_not_silent
 designated_repro_test: null
 threat: null
 component: null
