@@ -88,7 +88,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 51cf648d58efa946e176dbcf6bb9d997e94b4c7b
 ---
 T-2403 (SYS003 burn-down) reduced the 133 genuine post-calibration findings
 to 8, resolved via a mix of judgment, matching the coordinator's explicit
