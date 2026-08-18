@@ -235,7 +235,7 @@ the graceful-degrade gate.
   as a plain `HostManifest` field like any other field, never
   model-checked by the generator.
 - `CapabilityBoundingSet=`/`SystemCallFilter=` are coarse, `may`-KIND-
-  level mappings (`frob.deploy._generate._CAP_KIND_MAP`,
+  level mappings (`frob.deploy._generate_common._CAP_KIND_MAP`,
   `frob.strata._export._SECCOMP_KIND_MAP`) -- a capability KIND names a
   class, not an exact Linux capability or syscall list, until the
   surface grammar can express finer atoms (same deferral

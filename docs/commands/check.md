@@ -137,6 +137,7 @@ skip just one half (either the bundled `--skip-ruff` or the matching split
 flag skips a given stage -- they combine with OR, never override each
 other):
 
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_parser -->
 ```bash
 frob check src/ --skip-ruff-check     # skip lint, still run format --check
 frob check src/ --skip-ruff-format    # skip format --check, still run lint
@@ -153,6 +154,7 @@ which never apply a general `ruff --fix` across every fixable rule
 category. This is the primitive `format:`/`lint-fix:` Makefile leaves
 repoint to (T-2244):
 
+<!-- frob:describes src/frob/_cli_parsers/_check.py::_add_check_selection_args -->
 ```bash
 frob check --fix-ruff    # rewrite files on disk via ruff's own autofix + formatter
 ```

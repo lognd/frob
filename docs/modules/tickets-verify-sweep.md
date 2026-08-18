@@ -520,8 +520,10 @@ of it.
 `Err(BatchSelectionError.GraphUnavailable)` (or `RunnersUnavailable`) the
 moment the graph or `test.runner` config cannot be loaded/built -- it
 never silently selects fewer tests than the touched set actually implies.
-The caller (`frob.app.graph_runner._run_select_batch_tests`, wired as
-`frob graph select-batch-tests`) is the one place that decision resolves:
+The caller (`frob.app.graph_runner._run_select_batch_tests`) is the one
+place that decision resolves -- its own dispatch checks for
+<!-- frob:waive DOC006 reason="cfg.graph_command == \"select-batch-tests\" is dispatch-ready but the argparse subparser was never registered (frob graph --help lists only build/query/why/affects); not yet reachable as a direct CLI invocation, tracked separately from this doc fix" -->`frob graph select-batch-tests`
+but no argparse subparser currently registers that choice:
 on `Err` it falls back to the FULL suite (every runner's `ALL_SENTINEL`
 selection, the same shape `frob test --all` already produces) with a
 loud WARNING naming why, never to running nothing or a partial set.
@@ -783,7 +785,7 @@ outside `frob.tickets._profile` and `frob.verify._backpressure`:
   ceilings.
 - `frob.tickets._evidence._is_rapid` (`_evidence.py:323`) -- the generic
   profile-check helper used by evidence-leniency callers.
-- `frob.tickets._land._own_obligations_rel_bump_dirty`'s REL001
+- `frob.app.ticket_runner._close_cmd._own_obligations_rel_bump_dirty`'s REL001
   close-time preflight skip (`_close_cmd.py:463`, T-1705).
 
 `LandProfileSettings` (`frozen=True, extra="forbid"`) carries one

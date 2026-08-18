@@ -327,7 +327,7 @@ state -- requeuing an abandoned ticket is a separate, deliberate step
 
 <!-- frob:describes src/frob/app/worktree_runner.py::_run_release_lease -->
 **`--force` (T-1777): an explicit, logged override for a lease that
-still LOOKS live.** `frob worktree release-lease TICKET-ID`
+still LOOKS live.** <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease TICKET-ID`
 (T-1789/T-1806/T-2175, below) already refuses by default unless
 `lease_staleness_reason`'s four shapes or T-2175's scope-divergence check
 confirm the lease is genuinely stale -- the correct default, but it left
@@ -347,7 +347,7 @@ existed, and the "no known shape matched" refusal message now names
 `--force --reason` as the documented recovery path instead of leaving an
 operator to discover it. Wiring `force_release_lease` into this CLI verb
 (rather than a new, competing `frob ticket lease release <id>` command)
-also avoids duplicating the `frob worktree release-lease` surface
+also avoids duplicating the <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease` surface
 T-2175 had already shipped by the time this ticket was implemented.
 
 <!-- frob:describes src/frob/tickets/_models.py::LeaseForceReleaseEntry -->
@@ -475,7 +475,7 @@ built the pieces this closes: `is_lease_ttl_expired` (T-0782), the
 worktree-liveness probe (`scan_for_live_worktree_process`, T-1739), and
 `lease_staleness_reason`/`orphaned_leases` (T-1789/T-1806), which unify
 both into the three-shape "path-gone / ticket-gone / holder-dead"
-verdict `frob worktree release-lease` already acts on. What was still
+verdict <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease` already acts on. What was still
 missing: `doable`'s own "In-flight (leased, already being worked)"
 section rendered a dead agent's lease identically to a live one, with no
 signal at the point a coordinator actually decides what to dispatch --
@@ -490,7 +490,7 @@ fourth liveness signal (T-1876's own explicit design constraint: a
 liveness check that is too eager would let two worktrees mutate the same
 scope at once, T-1868's exact failure class). `_render_doable_in_flight`
 prints an extra warning line under any in-flight row this map covers,
-naming the reason and the `frob worktree release-lease TICKET-ID`
+naming the reason and the <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease TICKET-ID`
 recovery command -- and does nothing else: the row still appears
 in-flight, `doable`'s own dispatchable/blocked partition is completely
 unchanged, and no lease is ever released automatically. FLAG, never

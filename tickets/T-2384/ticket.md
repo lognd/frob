@@ -76,7 +76,7 @@ which is the same class of assumption one level up: the project's own
 name.
 
 THE FIX ALREADY EXISTS FOR ONE CONSUMER. T-2195 solved exactly this for
-`frob lang`: `frob.lang._nodes._declared_python_source_roots(root)` reads
+the `frob.lang` package: `frob.lang._nodes._declared_python_source_roots(root)` reads
 the project's OWN declared packaging config (setuptools
 packages.find.where, package-dir, hatch wheel packages) to discover
 source roots, explicitly rejecting "hardcoding the `src/` convention as a
@@ -138,6 +138,6 @@ how it was found:
   silently winning.
 
 Deliberately NOT in scope: `strata/_compliance.py`'s owner="logan" is frob's own
-registry DATA, not a mechanism. `app/_config_meta.py`'s
+registry DATA, not a mechanism. `src/frob/repo_meta.py`'s
 `project.get("name") != "frob"` is a deliberate self-identification
 check for the version floor. Neither of these two is a defect.

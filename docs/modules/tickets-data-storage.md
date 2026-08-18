@@ -188,7 +188,7 @@ failure mode this guard exists to prevent cannot occur on that path, so
 gating it the same way would only cost every v2-mode drive real
 throughput for no safety gained.
 
-TICK003 (`docs/modules/gates.md#tick003`) is the OTHER half of this
+TICK003 (`frob.gates._tickets_gate._tick003_stale_archive`) is the OTHER half of this
 incident: it forced `archive` to run at an arbitrary, non-quiet moment
 mid-drive by escalating to a hard ERROR once too many closed tickets sat
 un-archived. `_tick003_stale_archive`'s warn/error thresholds moved from
@@ -989,7 +989,7 @@ agents on a 12-CPU machine each requesting ~12 workers, `LOAD 28.2`.
 
 `agent_env_exports(root)` (T-0574's `frob agent env` choke point) now also
 computes `PYTEST_XDIST_AUTO_NUM_WORKERS` -- the env var `pytest-xdist`
-3.8.0 itself reads when resolving `-n auto` (`xdist/plugin.py`) -- and
+3.8.0 itself reads when resolving `-n auto` (<!-- frob:waive DOC006 reason="xdist/plugin.py is the third-party pytest-xdist package's own source path, not a file in this repo" -->`xdist/plugin.py`) -- and
 includes it in the exported env whenever `read_all_leases(root)` (the same
 real, cross-worktree lease side-channel `doable()` already uses, never a
 `ps`-parsed process count) shows at least one OTHER live agent lease. The

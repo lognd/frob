@@ -56,7 +56,7 @@ Both lands showed the SAME "T-2303's live lease" message, on TWO
 separate ticket lands, roughly 45+ minutes apart (T-2194's land ~00:05
 UTC, T-2329's land ~00:51 UTC). By T-2329's land, T-2303's own ticket
 state had been narrowed to an EMPTY scope on its own worktree (per
-`tickets/T-2303/ticket.md` in `.claude/worktrees/t-2303`, confirmed
+`tickets/T-2303/ticket.md` in <!-- frob:waive DOC006 reason="historical evidence/attachment file under a DONE ticket -- T-2505's ticket.md/done-report.md exemption does not yet cover tickets/<id>/evidence|attachments/*.md; same historical-record class, tracked as a follow-up" -->`.claude/worktrees/t-2303`, confirmed
 before this land ran) -- yet the SYS100 skip-check land uses evidently
 still resolves `design` as leased by T-2303. This strongly suggests the
 skip-check is NOT reading T-2303's live, current lease/scope at land

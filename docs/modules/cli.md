@@ -328,7 +328,7 @@ use `frob explore docs-search` instead, not this); `graph` is the same
 obligation-graph build/query/why surface `frob graph` (see above)
 exposes directly, reachable here too for discoverability; `exports`
 generates a package's `__init__.py` from its public symbols. Each
-subcommand has its own `--help`; this entry exists so `frob design ...`
+subcommand has its own `--help`; this entry exists so <!-- frob:waive DOC006 reason="frob design ... is self-referential DOC012 prose about this very entry existing, not a literal invocation -- the trailing ... is not real CLI syntax" -->`frob design ...`
 itself resolves to something documented, per DOC012.
 
 ## frob docs

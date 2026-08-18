@@ -77,7 +77,9 @@ nobody has filed one already.
 
 Side effects every split in this family has produced (per the T-1651/
 T-1646 dispatch brief) -- anticipate per split, do not discover at land
-time: a new module needs a design/frob.strata code= glob addition plus
-`frob sys sync-interface`; prose separated from its frob:invariant anchor
+time: a new module needs a design/frob.strata code= glob addition plus a
+hand-declared `interface=` update (T-1870: <!-- frob:waive DOC006 reason="naming the T-1870-removed command for historical context, not claiming it currently exists" -->`frob sys sync-interface`'s
+auto-writer was removed; `interface=` is now purely hand-declared, no
+CLI command re-runs it); prose separated from its frob:invariant anchor
 needs the anchor (or its waiver) carried forward explicitly as
 carried-forward, not a new claim.

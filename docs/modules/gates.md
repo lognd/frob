@@ -2755,7 +2755,7 @@ error -- the table is optional.
 ## TOPSCALARSCHEMA001 (T-2390 epic child, T-2431)
 
 T-2390's finding applied to frob.toml's two top-level SCALAR keys
-(`min_frob_version`, `check_base` -- no enclosing `[table]` at all).
+(`min_frob_version`, `check_base` -- no enclosing <!-- frob:waive DOC006 reason="[table] here is generic placeholder terminology for 'any TOML table', not a real frob.toml section name" -->`[table]` at all).
 Structurally different from every other T-2390 child: there is no table
 to iterate and no array-of-records, just a flat set of bare `key = value`
 lines at the document root. `frob.repo_meta.declared_min_frob_version`
@@ -2839,7 +2839,7 @@ NESTED SUB-TABLE EXCLUSION: `[arch.layering]` (T-0620's DIP layering
 contract, `frob.arch._layering`) is a genuinely different, deliberately
 inert, documented sub-table nested one level inside `[arch]` -- a
 dict-valued key inside `[arch]` is excluded from this check entirely,
-the same way TOPSCALARSCHEMA001 excludes real `[table]` headers from its
+the same way TOPSCALARSCHEMA001 excludes real <!-- frob:waive DOC006 reason="[table] here is generic placeholder terminology for 'any TOML table', not a real frob.toml section name" -->`[table]` headers from its
 own scalar-key check.
 
 FAIL-LOUDLY (T-2391's doctrine, via the already-shipped `Severity.
@@ -3172,7 +3172,7 @@ superset of the old scan (`gates/` is itself one of `DETECTOR_PACKAGE_
 ROOTS`) and, measured against this repo at T-2405 time, added exactly
 one new PORT001-IDENT finding (`src/frob/vet/_capability_scan.py`) and
 zero new PORT001-PATH findings -- the promotion bar's own burn-down
-target did not grow. `app/_config_meta.py` (a deliberate `project.get(
+target did not grow. `src/frob/repo_meta.py` (a deliberate `project.get(
 "name") != "frob"` self-identification check) stays out of scope even
 after the widening (`app/` was measured as containing zero gate-shaped
 `Violation(` constructors); `gates/_pii_structural/_self_match.py`

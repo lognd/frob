@@ -57,7 +57,7 @@ itself, same as any other subcommand that is not `bind`.
 
 T-1218: `_dispatch` (the argv-to-`App` step inside `main`) prints TWO
 independent stale-binary warnings to stderr before building `AppConfig`,
-both string-or-`None` probes from `frob.app._config_meta`:
+both string-or-`None` probes from `frob.repo_meta`:
 
 - `stale_install_warning` (T-0358): exact-version mismatch between the
   RUNNING `frob` package and THIS repo's own declared `pyproject.toml`

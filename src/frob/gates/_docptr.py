@@ -43,12 +43,14 @@ collect-only separator, e.g. `foo.py::TestX::test_y`) is definitively the
 wrong shape for a graph-facing `frob:tests` target -- this is caught here,
 directly, rather than waiting for it to surface later as a generic
 DRIFT002 dangling-edge failure with a less specific message. As of T-0986
-this is its OWN rule, DOC007, at ERROR (not DOC006/WARN): the mistake
-recurred four separate times (T-0715, T-0926, T-0976 x8, T-0983), each
-only ever surfacing post-land as a DRIFT002 failure, so it now refuses at
-author time instead. It is split into a dedicated rule id specifically so
-this promotion does not also promote the other ~700 live DOC006 findings
-in this repo (an unrelated, still-WARN burn-down) to ERROR.
+this is its OWN rule, DOC007, at ERROR (not DOC006, WARN at the time):
+the mistake recurred four separate times (T-0715, T-0926, T-0976 x8,
+T-0983), each only ever surfacing post-land as a DRIFT002 failure, so it
+now refuses at author time instead. It was split into a dedicated rule
+id specifically so this promotion did not also promote the ~700 then-
+live DOC006 findings (an unrelated, then-still-WARN burn-down) to ERROR
+before that burn-down was ready -- T-2374 later closed that burn-down and
+promoted DOC006 to ERROR too, so both rules are ERROR today.
 
 Every DOC006 finding is `frob:waive DOC006 reason="..."`-able (same
 nearby-line convention as DOC004: same line or up to 3 preceding lines),
@@ -169,16 +171,21 @@ def _nearby_waived(doc_lines: list[str], line_no: int) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-2374
 # frob:enforces CHK-GATE-DOC006
 def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation:
-    """Build one DOC006 violation. Shipped at WARN (T-0688 new-gate-at-
-    WARN-first-turn-on precedent) -- a recognized pointer shape that does
-    not resolve is real, present drift, but this gate turns on repo-wide
-    against existing docs that may already carry some, so it starts
-    advisory rather than an immediate hard failure."""
+    """Build one DOC006 violation. Promoted to ERROR (T-2374 -- the v1.0.0
+    severity freeze): shipped at WARN under T-0688's new-gate-at-WARN-
+    first-turn-on precedent while ~700 repo-wide findings were unreviewed
+    drift; T-2131/T-2505 removed the historical-record false positives
+    (archived/done-report/terminal-ticket docs) that made the family
+    unenforceable, and T-2374 burned the remaining live count to zero
+    (docs/, open ticket bodies) before promoting -- a recognized pointer
+    shape that does not resolve is real, present drift and a genuinely
+    resolvable one now."""
     return Violation(
         rule="DOC006",
-        severity=Severity.WARN,
+        severity=Severity.ERROR,
         file=file,
         line=line,
         message=(
@@ -195,12 +202,14 @@ def _doc007_violation(file: str, line: int, detail: str) -> Violation:
     """Build one DOC007 violation (T-0986): a `frob:tests` target using
     pytest's `Class::method` collect-only separator instead of this
     graph's own single-`::`-then-dotted-qualname convention. Split out of
-    DOC006 (rather than promoting that whole family to ERROR) SPECIFICALLY
-    so this one recognized-shape mistake refuses at author time -- the
-    other ~700 live DOC006 findings in this repo stay at WARN, untouched,
-    a separate burn-down. Shipped at ERROR from birth (not the WARN-first-
-    turn-on precedent DOC006 itself used): the shape it catches has zero
-    live occurrences on `main` (verified by grep before this rule shipped)
+    DOC006 (rather than promoting that whole family to ERROR at the
+    time) SPECIFICALLY so this one recognized-shape mistake refuses at
+    author time -- the ~700 then-live DOC006 findings stayed WARN,
+    untouched, a separate burn-down (since closed and promoted by
+    T-2374; both rules are ERROR today). Shipped at ERROR from birth (not
+    the WARN-first-turn-on precedent DOC006 itself used): the shape it
+    catches has zero live occurrences on `main` (verified by grep before
+    this rule shipped)
     and every historical occurrence (T-0715, T-0926, T-0976 x8, T-0983)
     only ever surfaced post-land as a DRIFT002 dangling-edge failure --
     there is no adoption baseline to protect, only a recurring author-time

@@ -22,7 +22,7 @@ violation as the discriminating test, not just "clean" as the outcome):
 
 Fix guidance (grammar, not path lexical): do NOT special-case the
 literal string `src/`. Resolve import roots from DECLARED project
-configuration (`pyproject.toml`'s `[tool.setuptools]`/`packages.find`,
+configuration (`pyproject.toml`'s <!-- frob:waive DOC006 reason="historical evidence/attachment file under a DONE ticket -- T-2505's ticket.md/done-report.md exemption does not yet cover tickets/<id>/evidence|attachments/*.md; same historical-record class, tracked as a follow-up" -->`[tool.setuptools]`/`packages.find`,
 or `[tool.hatch.build]`) and the importing module's own package
 position (derived from `__init__.py` presence up the tree), not a
 hardcoded directory name -- `lib/`, a namespace package, or a monorepo

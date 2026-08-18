@@ -72,7 +72,7 @@ class TestDoc006FilePath:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("gone.py" in v.message for v in found)
-        assert all(v.severity == Severity.WARN for v in found)
+        assert all(v.severity == Severity.ERROR for v in found)
 
     def test_real_path_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -909,3 +909,44 @@ class TestDoc006LedgerExclusion:
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets.md")
+
+
+class TestDoc004Doc006ZeroOnFrobsOwnRepo:
+    """T-2374's closure-bar evidence: DOC004 and DOC006, run against THIS
+    repo's own live tree with its real waivers applied, report zero
+    findings -- the epic's (T-0969) acceptance criterion [0]. Mirrors
+    `tests/unit/strata/test_sys003_calibration.py::
+    TestSys003ZeroOnFrobsOwnRepo`, T-2407's precedent for the same
+    burn-to-zero-then-promote shape: filtered to the two rules this
+    ticket owns rather than asserting the whole gate output is empty,
+    because the surrounding DOC family carries unrelated pre-existing
+    DOC001/DOC002/DOC005 findings outside this ticket's scope."""
+
+    def test_doc004_doc006_zero_against_live_repo(self, tmp_path: Path) -> None:
+        from frob.gates import _apply_waivers, doc004_gate
+        from frob.gates._docptr import doc006_gate
+
+        repo_root = Path(__file__).resolve().parents[1]
+        snapshot = build_graph(repo_root, tmp_path / "cache.db").danger_ok
+        raw = tuple(doc004_gate(repo_root, snapshot)) + tuple(
+            doc006_gate(repo_root, snapshot)
+        )
+        kept, _waived = _apply_waivers(raw, snapshot)
+        offenders = [v for v in kept if v.rule in ("DOC004", "DOC006")]
+        assert offenders == [], f"unexpected DOC004/DOC006 finding(s): {offenders}"
+
+    def test_doc004_doc006_are_error_severity(self, tmp_path: Path) -> None:
+        """The other half of T-2374: a zero that leaves the gate advisory
+        lets the debt silently reaccumulate, so the severity freeze is
+        asserted here alongside the zero it protects."""
+        from frob.gates._docblocks_shared import _doc004_violation
+        from frob.gates._docptr import _doc006_violation
+
+        assert (
+            _doc004_violation("docs/x.md", 1, tier="unbound", detail="d").severity
+            == Severity.ERROR
+        )
+        assert (
+            _doc006_violation("docs/x.md", 1, detail="d", kind="file/path").severity
+            == Severity.ERROR
+        )

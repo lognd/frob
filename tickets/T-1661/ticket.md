@@ -66,17 +66,18 @@ Method (carried forward, it worked -- verified again this round):
   node-level, using the path::Class.method dotted form (not pytest's ::
   form) to satisfy DOC007.
 - New top-level Test* classes (or free test functions) added to tests/**
-  require `frob sys sync-interface` to be re-run before `make coverage` --
-  the testsuite node's design/frob.strata interface list enumerates every
-  public test symbol by name, and an undeclared one fails
-  tests/unit/strata/test_selfconform.py's SYS104 check AND
+  require a hand-declared `interface=` update in design/frob.strata
+  before `make coverage` -- the testsuite node's interface list
+  enumerates every public test symbol by name, and an undeclared one
+  fails tests/unit/strata/test_selfconform.py's SYS104 check AND
   tests/system/test_frob_self_model.py's zero-violations check AND
   tests/unit/strata/test_conform_eval_needle.py's needle-gap check --
-  all three failed together in this round until `frob sys sync-interface`
-  was run and its rewrite of design/frob.strata committed alongside the
-  new tests. Run it as a matter of course whenever a test file gains a
-  new top-level class or function, not just when a coverage run
-  surprises you with these three failures.
+  all three failed together in this round until <!-- frob:waive DOC006 reason="naming the T-1870-removed command for historical context, not claiming it currently exists" -->`frob sys sync-interface`
+  (T-1150's auto-writer, since removed per T-1870) was run and its
+  rewrite of design/frob.strata committed alongside the new tests. Add
+  the `interface=` entry by hand as a matter of course whenever a test
+  file gains a new top-level class or function, not just when a coverage
+  run surprises you with these three failures.
 - Prioritize `app`/`serve`/`arch` (10/9/8) next -- they are the largest
   remaining clusters and were not touched this round.
 

@@ -42,7 +42,7 @@ genuine (b) gaps:
 `deploy-audit`/`pool-*` are ALREADY thin wrappers over an existing frob
 subcommand (`frob check --only lint`, `frob check --only ty`, `frob test
 [path] [--all]`, `frob natives build`, `frob check`, `frob clean --all -y`,
-`frob coverage .`, `frob deploy audit`, `frob scaffold pool ...`) -- no
+`frob coverage .`, `frob deploy audit`, <!-- frob:waive DOC006 reason="frob scaffold pool ... is illustrative shorthand for the real warm/lease/status subcommands, not a literal invocation" -->`frob scaffold pool ...`) -- no
 work needed there. `coverage` (the heavy crash-recovery recipe) is a
 DELIBERATE T-1516/T-1526 decision to keep the shell logic Makefile-side,
 not a gap. `install`/`install-tool` are bootstrap targets (uv sync / uv
@@ -61,13 +61,13 @@ by T-1382's implicit CLI-wiring scope (only `__main__.py`, `app/config.py`,
 `src/frob/app/app.py` explicitly in scope rather than widening T-1382 back
 out after it was narrowed for TICK009.
 
-Suggested design: one new runner module (`src/frob/app/pyfmt_runner.py`)
+Suggested design: one new runner module (<!-- frob:waive DOC006 reason="proposed future file this OPEN ticket exists to create; not yet implemented" -->`src/frob/app/pyfmt_runner.py`)
 wrapping `ruff check --fix [--select I]` + `ruff format` as two subprocess
 calls (mirror `src/frob/check/_python.py::_run_ruff`'s tool-missing/
 kill-switch handling, but write instead of `--check`), exposed as a new
-top-level `frob format [--select-imports-only]` subcommand (name chosen to
+top-level <!-- frob:waive DOC006 reason="proposed future subcommand this OPEN ticket exists to build; not yet implemented" -->`frob format [--select-imports-only]` subcommand (name chosen to
 avoid colliding with the existing `frob fmt`, which does directive-comment
-canonicalization, a different concern). `lint-fix` becomes `frob format`
+canonicalization, a different concern). `lint-fix` becomes <!-- frob:waive DOC006 reason="proposed future subcommand this OPEN ticket exists to build; not yet implemented" -->`frob format`
 with no `--select-imports-only` flag; `format` becomes `frob format
 --select-imports-only`; `all` becomes `frob natives build && frob format
 --select-imports-only && frob check --only ty`.

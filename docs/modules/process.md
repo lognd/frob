@@ -286,8 +286,7 @@ cap risks turning a busy fleet into a queue of stalled agents if the
 cap is chosen badly, and this repo consistently prefers surfacing over
 commanding. Two read-only, best-effort pieces, both matching a live
 `frob check` process by its `frob`/`check` argv token pair (as
-SEPARATE tokens -- never a substring, which would also fire on `frob
-ticket check-repro` or a path containing "check"):
+SEPARATE tokens -- never a substring, which would also fire on <!-- frob:waive DOC006 reason="illustrative hypothetical false-positive example, not a real subcommand claim -- frob ticket evidence --check-repro is the real flag" -->`frob ticket check-repro` or a path containing "check"):
 
 - `count_running_checks` (`frob.process._reap`) -- called from `frob.
   __main__`'s own `_report_concurrent_check_advisory_best_effort`, at

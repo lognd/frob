@@ -60,7 +60,7 @@ WHAT THE REAL FIX LOOKS LIKE (pick one, do not do all three):
    path the land provably never stages) and say so in the playbook, so
    the shape stops being produced at all. This is the preferred fix --
    it removes the failure rather than hiding it.
-2. Have `frob ticket done-report --body-file` consume-and-delete its
+2. Have `frob ticket done-report --why-file` consume-and-delete its
    input when the input lives inside the repo, so the file cannot outlive
    the command that read it.
 3. Make the land REFUSE to stage repo-root files matching a scratch

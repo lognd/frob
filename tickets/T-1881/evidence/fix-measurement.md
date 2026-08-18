@@ -4,7 +4,7 @@
 
 1. Checked out `bdb39bde3` (the ticket's own stage-1 repro commit,
    preserved in this repo's git history) into a disposable worktree
-   (`.claude/worktrees/dead-branch-repro`).
+   (<!-- frob:waive DOC006 reason="historical evidence/attachment file under a DONE ticket -- T-2505's ticket.md/done-report.md exemption does not yet cover tickets/<id>/evidence|attachments/*.md; same historical-record class, tracked as a follow-up" -->`.claude/worktrees/dead-branch-repro`).
 2. Ran `dead_symbol_gate` directly (Python harness, not the full
    `frob check`, for speed) against the checkout's UNMODIFIED
    `_dead_symbols.py` -- this reproduces the ticket's own baseline claim.

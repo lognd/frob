@@ -45,7 +45,8 @@ explicit user refinements folded in):
      symbols keyed by `path::qualname`; rust: checked by scanning the
      resolved crate's tracked `.rs` files for a matching `pub` item
      declaration) -- concrete drift already present.
-   - UNBOUND (warn): the reference DOES resolve (or, for TS/JS, could not
+   - UNBOUND (error as of T-2374's v1.0.0 severity freeze; shipped warn):
+     the reference DOES resolve (or, for TS/JS, could not
      be confidently disproven -- see `_ts_reference_violation`) but the
      block carries no `frob:doc`/`frob:describes`/`frob:tests` binding
      directive within itself or its three immediately-preceding lines, so

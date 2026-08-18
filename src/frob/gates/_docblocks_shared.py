@@ -44,11 +44,14 @@ def _read_toml(path: Path) -> dict | None:
 
 # frob:enforces CHK-GATE-DOC004
 # frob:waive DUP001 reason="T-2231: DUP001 flags this against _decisions_compliance.py::_compliance005_violation and _refactor/_scan.py::_import_op purely on the shared 'build one Violation(...) from a tier/detail pair' boilerplate shape every gate module in this package repeats -- moving here (T-2231's import-cycle fix) surfaced it as a new DUP001 identity, not new duplication; each site constructs a DIFFERENT rule's Violation from a DIFFERENT source type, no shared logic to extract"  # noqa: E501
+# frob:ticket T-2374
 def _doc004_violation(doc_path: str, line: int, *, tier: str, detail: str) -> Violation:
-    """Build one DOC004 `Violation` -- `tier` is `"stale"` (error, a named
-    reference does not resolve) or `"unbound"` (warn, a valid reference has
-    no nearby binding directive)."""
-    severity = Severity.ERROR if tier == "stale" else Severity.WARN
+    """Build one DOC004 `Violation` -- `tier` is `"stale"` (a named
+    reference does not resolve) or `"unbound"` (a valid reference has no
+    nearby binding directive); both ERROR as of T-2374 (the v1.0.0
+    severity freeze -- `"unbound"` shipped at WARN and was burned to zero
+    alongside DOC006 before promotion)."""
+    severity = Severity.ERROR
     label = "stale" if tier == "stale" else "unbound"
     return Violation(
         rule="DOC004",

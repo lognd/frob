@@ -170,7 +170,9 @@ Order of operations, and why it is this order:
 2.6. **Tier-A auto-fix crash recovery** (T-1348). Before `land()` (the
    function documented by this numbered list) is ever called, `frob
    ticket land`'s CLI layer (`_absorb_pre_land_fixes`, T-1175) already ran
-   `frob fmt`, `frob sys sync-interface`, and every Tier-A `--fix` handler
+   `frob fmt` and every Tier-A `--fix` handler (T-1870 removed <!-- frob:waive DOC006 reason="naming the T-1870-removed command for historical context, not claiming it currently exists" -->`frob sys
+   sync-interface` from this pipeline -- `interface=` is now purely
+   hand-declared, with no auto-writer anywhere in this codebase)
    (`apply_tier_a_fixes`, `src/frob/gates/_fix_engine.py`) directly against
    the worktree, on disk, with NO commit of any kind yet -- this step's
    own wip-commit (step 3 below) is the FIRST commit that captures any of
@@ -311,8 +313,7 @@ Order of operations, and why it is this order:
     `pyproject.toml`/`.frob-release.json` kept every land serialized on
     one pair of files regardless of how disjoint the tickets' own code
     scopes were. Bumping them is now an explicit, separate release-cut
-    step (`frob release check`/`sync`/`stamp`, or `frob release
-    publish`) that reads the SAME `diff_class`-against-manifest
+    step (`frob release check`/`sync`/`stamp`, or <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob release publish`) that reads the SAME `diff_class`-against-manifest
     computation this callback itself uses (the manifest stays frozen at
     its last real stamp until that cut runs, so the cut naturally sees
     the FULL accumulated diff across every deferred land, not just the
@@ -556,7 +557,7 @@ planner worktrees in one drive.
    --no-ff` -- never a squash; there is no single worked ticket to squash
    under, unlike `land`'s own per-ticket path). Any `tickets.md` conflict
    splices via the registered git merge driver
-   (`docs/modules/tickets.md#git-merge-driver`) the same way an ordinary
+   (`docs/modules/tickets-merge-driver.md#git-merge-driver`) the same way an ordinary
    `git merge`/`pull` already would -- `land_plan` performs no ledger
    surgery of its own. A real conflict `git merge --abort`s (nothing was
    committed yet) and refuses with `LandError.MergeConflict`.
@@ -1489,13 +1490,13 @@ can afford to treat "cannot confirm" the same as "looks gone" and let a
 human decide.
 
 **`frob.tickets._leases.release_orphaned_lease(root, ticket_id)`**
-(`frob worktree release-lease TICKET-ID`) is the targeted, SAFE release
+(<!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease TICKET-ID`) is the targeted, SAFE release
 verb this incident needed and did not have: it releases exactly ONE
 ticket's lease, and ONLY after confirming (via the same raw-parse
 lookup) that the lease's recorded worktree path is genuinely gone --
 `Err(NoLeaseForTicket)` if there is no lease at all, `Err(
 LeaseWorktreeMismatch)` if the lease is not actually orphaned (its
-worktree still exists -- use `frob worktree remove`/the ordinary
+worktree still exists -- use <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree remove`/the ordinary
 ticket-close path instead). This is the fix for the actual recovery
 T-1766 forced: the coordinator ran `rm .git/frob-leases/T-1766.json` by
 hand with five live agents running, because no scoped verb existed to
@@ -1632,7 +1633,7 @@ produces a new `kept:live` verdict naming the pid
 (`kept:live(pid <N>) <path>`) -- unconditionally, regardless of whether
 the worktree is clean, leased, or old, which is exactly the property the
 2026-08-07 incident needed and the old three-gate design did not have.
-`frob worktree sweep --force` overrides the `kept:live` gate specifically
+<!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree sweep --force` overrides the `kept:live` gate specifically
 (dirty/age are unaffected by `--force`); refuse-by-default is the point
 of the flag existing at all, so reach for it narrowly, worktree by
 worktree, not as a blanket unblock for a whole sweep.

@@ -725,12 +725,12 @@ scan (the ticket's own filed measurement: 12 concurrent checks went
 unnoticed until someone checked by hand while swap climbed from 2.1GB
 to 7.8GB and lands/hour fell from 9 to 6 as agent count rose). Matches
 the `frob`/`check` argv token pair as SEPARATE tokens (never a
-substring, which would also fire on `frob ticket check-repro` or a path
+substring, which would also fire on <!-- frob:waive DOC006 reason="illustrative hypothetical false-positive example, not a real subcommand claim -- frob ticket evidence --check-repro is the real flag" -->`frob ticket check-repro` or a path
 containing "check"), duplicated in plain form from `frob.process.
 _reap`'s own matcher (this script's "no `frob` import" contract, same
 posture `orphaned_forkserver_count` above already takes). ADVISORY
 ONLY -- this script reports the count, it never limits, queues, or
-refuses anything; see `docs/modules/process.md#count-running-checks-t-2473`
+refuses anything; see `docs/modules/process.md#concurrent-check-advisory-t-2473`
 for `frob check`'s own companion advisory log line (a separate, self-
 excluding counter used from inside a running check). Returns `None`
 (never a fabricated zero) when `/proc` is unreadable.

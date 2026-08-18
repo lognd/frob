@@ -130,7 +130,7 @@ class TestPythonNamespace:
 
         matches = [v for v in violations if v.file == "docs/guide.md"]
         assert len(matches) == 1
-        assert matches[0].severity == Severity.WARN
+        assert matches[0].severity == Severity.ERROR
         assert matches[0].rule == "DOC004"
 
     def test_waive_doc004_suppresses(self, tmp_path: Path) -> None:
@@ -283,8 +283,8 @@ class TestCCppNamespace:
         snapshot = _snapshot(tmp_path)
         violations = doc004_gate(tmp_path, snapshot)
 
-        warns = [v for v in violations if v.severity == Severity.WARN]
-        assert any("not anchored" in v.message for v in warns)
+        errors = [v for v in violations if v.severity == Severity.ERROR]
+        assert any("not anchored" in v.message for v in errors)
 
     def test_include_of_tracked_header_anchored_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)

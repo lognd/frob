@@ -32,12 +32,12 @@ citations against real Makefile targets
 Still open, no dedicated mechanism:
 - frob.toml severity claims in prose (e.g. "ARCH101 is a report, not a
   gate" when frob.toml declares it error) have no anchor -- DOC006's
-  kind 3 (CONFIG REFERENCE) only resolves `[section]`/`[section.key]`
+  kind 3 (CONFIG REFERENCE) only resolves <!-- frob:waive DOC006 reason="[section]/[section.key] here is _docptr's own generic placeholder shape describing DOC006's kind-3 grammar, not a real config reference" -->`[section]`/`[section.key]`
   existence, not a claimed VALUE against the real one.
 - pyproject.toml entries, tmLanguage grammar lists, and other non-Rust,
   non-Makefile config surfaces still have no graph node at all.
 - Rust file layout/symbol citations are now covered incidentally by
-  class 2's T-1228 FILE::SYMBOL kind (`path.rs::name`), not by a
+  class 2's T-1228 FILE::SYMBOL kind (<!-- frob:waive DOC006 reason="path.rs::name is a generic placeholder shape illustrating the FILE::SYMBOL grammar, not a real file citation" -->`path.rs::name`), not by a
   dedicated class-4 mechanism -- worth confirming that coverage is
   sufficient before scoping new work here, rather than re-deriving it.
 
