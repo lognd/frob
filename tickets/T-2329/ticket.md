@@ -2,7 +2,7 @@
 id: T-2329
 title: design/frob.strata missing exec/fs.read grant for test_lang_strata.py (T-2194
   residue, dropped by T-2328's land defect)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,8 +13,12 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
+evidence_scope:
+- tests/unit/test_lang_strata.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_lang_strata.py::TestGrammarAuthoritativeSymbolsCorpusWide::test_every_tracked_strata_file_symbol_count_matches_grammar_declared_count
 designated_repro_test: null
 threat: null
 component: null
