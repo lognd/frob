@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1b129af6370d477e506fd166aa255a9d271ec21f
 ---
 T-2313 fixed the SYMPTOM within its own declared scope
 (src/frob/app/ticket_runner/_rapid_sweep.py::_normalize_identities now
