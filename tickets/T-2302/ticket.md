@@ -88,7 +88,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 744953cac6e0420c9ce7ce2e30e6ff2e0596a411
 ---
 T-2123 (landed 2026-08-17, commit 4f38aad1) made `frob ticket new` WARN on
 an unacknowledged over-broad scope at filing time, reusing the
