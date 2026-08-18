@@ -27,7 +27,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5cbb6f1eb4f177b587f55785136bdcc578602e13
 ---
 Found while working T-2452: `frob ticket body <id> --append TEXT --reason
 TEXT` silently misdirects its write when the target ticket already has a
