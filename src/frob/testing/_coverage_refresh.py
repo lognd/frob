@@ -91,6 +91,86 @@ _log = get_logger(__name__)
 _DEFAULT_COV_TARGET = "src/frob"
 
 
+#: T-1235/T-2527: relative path to the generated subprocess-coverage rc
+#: (mirrors the retired Makefile's `.frob/coverage-subprocess.rc`, same
+#: filename so any tooling that already expects it at this path keeps
+#: working).
+_SUBPROCESS_RC_REL = ".frob/coverage-subprocess.rc"
+
+
+# frob:ticket T-1235
+# frob:ticket T-2527
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_uses_absolute_source_and_data_file  # noqa: E501
+# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_declares_multiprocessing_and_sigterm  # noqa: E501
+# frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_remaps_paths_back_to_source  # noqa: E501
+def _write_coverage_subprocess_rc(root: Path, *, cov_target: str) -> Path:
+    """Write `root/.frob/coverage-subprocess.rc` with ABSOLUTE `source`/
+    `data_file` paths (T-1235's "Loss A" fix, ported here since T-2240's
+    Makefile retirement deleted the ONE place that generated this file --
+    T-2527 re-adds it for the native path).
+
+    `pyproject.toml`'s own `[tool.coverage.run]` `source = ["src/frob"]`
+    is RELATIVE -- it resolves against each child process's OWN cwd, not
+    `root`'s. A subprocess/pool-worker spawned with a different cwd (any
+    CLI subprocess test that runs `frob` in a tmp fixture repo, any
+    `ProcessPoolExecutor` worker) then measures nothing against the real
+    source tree and strands an empty `.coverage.*` data file in its own
+    cwd -- the exact "Loss A" attribution bug T-1235 originally diagnosed
+    (626 stranded files, 100% of 120 sampled empty) and fixed by pointing
+    `COVERAGE_PROCESS_START` at a dedicated rc with absolute paths instead
+    of at `pyproject.toml` directly.
+
+    `concurrency = multiprocessing, thread` and `sigterm = True` (T-1235's
+    "Loss B" fix) are NOT duplicated here -- those already live in
+    `pyproject.toml`'s `[tool.coverage.run]` and were never lost; only the
+    absolute-path rc generation was. `[paths] source` remaps a relative-
+    root-recorded path (this repo's own top-level `coverage:` pass, which
+    still uses `pyproject.toml`'s relative config) back onto the same
+    canonical `src/frob` key at combine time, so the two coverage passes
+    merge instead of appearing as two different files."""
+    rc_path = root / _SUBPROCESS_RC_REL
+    rc_path.parent.mkdir(parents=True, exist_ok=True)
+    absolute_source = str((root / cov_target).resolve())
+    absolute_data_file = str((root / ".coverage").resolve())
+    rc_path.write_text(
+        "\n".join(
+            [
+                "[run]",
+                "branch = True",
+                "parallel = True",
+                "relative_files = True",
+                "sigterm = True",
+                "concurrency = multiprocessing, thread",
+                "disable_warnings = no-data-collected",
+                f"source = {absolute_source}",
+                f"data_file = {absolute_data_file}",
+                "[paths]",
+                "source =",
+                f"    {cov_target}",
+                f"    */{cov_target}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return rc_path
+
+
+# frob:ticket T-2527
+def _pytest_subprocess_env(root: Path, *, cov_target: str) -> dict[str, str]:
+    """`os.environ` plus `COVERAGE_PROCESS_START` pointed at the freshly
+    written absolute-path subprocess rc (T-1235/T-2527) -- passed as every
+    pytest pass's subprocess `env` so any CHILD process pytest itself
+    spawns (a CLI subprocess under test, a `ProcessPoolExecutor` gate
+    worker) is coverage-instrumented too, the same guarantee the retired
+    Makefile recipe gave."""
+    rc_path = _write_coverage_subprocess_rc(root, cov_target=cov_target)
+    env = dict(os.environ)
+    env["COVERAGE_PROCESS_START"] = str(rc_path)
+    return env
+
+
 # frob:ticket T-1516
 # frob:ticket T-1677
 # frob:doc docs/modules/testing.md#public-api
@@ -309,7 +389,7 @@ def _kill_process_group(proc: subprocess.Popen, *, grace_s: float) -> None:
 
 
 def _start_watchdog_process(
-    argv: list[str], *, cwd: Path, log_fd: int
+    argv: list[str], *, cwd: Path, log_fd: int, env: dict[str, str] | None = None
 ) -> subprocess.Popen | None:
     """`Popen`-spawn `argv` with stdout+stderr redirected to `log_fd`, in
     its own process GROUP (T-1677, split out of `_spawn_with_watchdog` to
@@ -318,6 +398,13 @@ def _start_watchdog_process(
     `_kill_process_group`'s `os.killpg` can reach every descendant later);
     Windows via `CREATE_NEW_PROCESS_GROUP` (no killpg equivalent, so
     `_kill_process_group` falls back to `taskkill /T /F` there instead).
+
+    `env` (T-2527) defaults to `None`, which makes `Popen` inherit this
+    process's own environment unchanged -- the pre-T-2527 behavior for
+    every caller except a pytest pass, which passes
+    `_pytest_subprocess_env`'s `COVERAGE_PROCESS_START`-carrying dict so a
+    subprocess/pool-worker the pytest run itself spawns is coverage-
+    instrumented too (T-1235's "Loss A" fix, ported here).
 
     `None` on a spawn failure (logged here) -- the caller's `log_fd` is
     ALWAYS closed by this function before returning, success or failure,
@@ -332,6 +419,7 @@ def _start_watchdog_process(
                 stdout=log_fd,
                 stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                env=env,
             )
         return subprocess.Popen(  # noqa: S603
             argv,
@@ -339,6 +427,7 @@ def _start_watchdog_process(
             stdout=log_fd,
             stderr=subprocess.STDOUT,
             start_new_session=True,
+            env=env,
         )
     except OSError as exc:
         _log.error("coverage_refresh: watchdog spawn of %r failed: %s", argv, exc)
@@ -404,7 +493,11 @@ def _watchdog_poll_loop(
 
 # frob:ticket T-1677
 def _spawn_with_watchdog(
-    argv: list[str], *, cwd: Path, config: _WatchdogConfig
+    argv: list[str],
+    *,
+    cwd: Path,
+    config: _WatchdogConfig,
+    env: dict[str, str] | None = None,
 ) -> Result[subprocess.CompletedProcess, _WatchdogAbortReason]:
     """Run `argv` under BOTH a wall-clock deadline and a no-progress
     watchdog (T-1677), killing the whole process GROUP (not just the
@@ -434,7 +527,7 @@ def _spawn_with_watchdog(
     log_path = Path(log_path_str)
 
     _log.debug("coverage_refresh: spawning %r under watchdog (log=%s)", argv, log_path)
-    proc = _start_watchdog_process(argv, cwd=cwd, log_fd=log_fd)
+    proc = _start_watchdog_process(argv, cwd=cwd, log_fd=log_fd, env=env)
     if proc is None:
         log_path.unlink(missing_ok=True)
         return Err(_WatchdogAbortReason.WallClockExceeded)
@@ -677,7 +770,7 @@ class _SpawnError(ErrorSet):
 # frob:ticket T-1676
 # frob:ticket T-1677
 def _spawn(
-    argv: list[str], *, cwd: Path
+    argv: list[str], *, cwd: Path, env: dict[str, str] | None = None
 ) -> Result[subprocess.CompletedProcess, _SpawnError]:
     """The one seam every subprocess in this module goes through (T-1676),
     now ALSO the one seam the T-1677 wall-clock/no-progress watchdog goes
@@ -699,7 +792,9 @@ def _spawn(
     if not exec_enabled():
         _log.error("coverage_refresh: %s refused (exec disabled)", " ".join(argv))
         return Err(_SpawnError.Refused)
-    spawned = _spawn_with_watchdog(argv, cwd=cwd, config=_watchdog_config_from_env())
+    spawned = _spawn_with_watchdog(
+        argv, cwd=cwd, config=_watchdog_config_from_env(), env=env
+    )
     if spawned.is_err:
         reason = spawned.danger_err
         return Err(
@@ -895,7 +990,9 @@ _PYTEST_UNMEASURABLE_EXIT_CODES = frozenset({3, 4})
 
 # frob:ticket T-1672
 # frob:ticket T-2032
-def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
+def _retry_after_worker_crash(
+    argv: list[str], *, cwd: Path, code: int, env: dict[str, str] | None = None
+) -> int:
     """The ONE serial retry `_pytest_outcome` runs after matching
     `_WORKER_CRASH_SIGNATURE_RE` (T-1672), split out to keep that function
     under the ARCH001 line threshold. Returns the FINAL exit code to
@@ -940,7 +1037,7 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
             neutralized_addopts,
         )
         retry_argv += ["-o", f"addopts={neutralized_addopts}"]
-    respawned = _spawn(retry_argv, cwd=cwd)
+    respawned = _spawn(retry_argv, cwd=cwd, env=env)
     if respawned.is_err:
         _log.error(
             "coverage_refresh: serial retry after worker-crash also "
@@ -975,7 +1072,9 @@ def _retry_after_worker_crash(argv: list[str], *, cwd: Path, code: int) -> int:
     return retry_code
 
 
-def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, _SpawnError]:
+def _pytest_outcome(
+    argv: list[str], *, cwd: Path, env: dict[str, str] | None = None
+) -> Result[_PytestPass, _SpawnError]:
     """Run one pytest pass and classify its exit (T-1676), now also
     detecting and recovering from an xdist worker crash (T-1677/T-1672).
 
@@ -1003,7 +1102,7 @@ def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, _Spawn
     data is what the caller asked for. It is logged at ERROR so a red
     suite stays as visible as it was when it aborted the run -- it simply
     no longer vetoes the artifact."""
-    spawned = _spawn(argv, cwd=cwd)
+    spawned = _spawn(argv, cwd=cwd, env=env)
     if spawned.is_err:
         return Err(spawned.danger_err)
     proc = spawned.danger_ok
@@ -1012,7 +1111,7 @@ def _pytest_outcome(argv: list[str], *, cwd: Path) -> Result[_PytestPass, _Spawn
     worker_crash = bool(code != 0 and _WORKER_CRASH_SIGNATURE_RE.search(output))
 
     if worker_crash:
-        code = _retry_after_worker_crash(argv, cwd=cwd, code=code)
+        code = _retry_after_worker_crash(argv, cwd=cwd, code=code, env=env)
 
     if code != 0 and not worker_crash:
         _log.error(
@@ -1049,7 +1148,8 @@ def _run_full_suite(
     human-readable log label only (e.g. "explicit --full")."""
     _log.info("coverage_refresh: %s -- running the full suite", reason)
     argv = _pytest_argv(targets=(), cov_target=cov_target, append=False)
-    ran = _pytest_outcome(argv, cwd=root)
+    env = _pytest_subprocess_env(root, cov_target=cov_target)
+    ran = _pytest_outcome(argv, cwd=root, env=env)
     if ran.is_err:
         return Err(_SPAWN_ERROR_TO_REFRESH_ERROR[ran.danger_err])
     return Ok(ran.danger_ok)
@@ -1077,7 +1177,8 @@ def _run_incremental_or_restamp(
     if targets:
         _log.info("coverage_refresh: incremental run, %d target(s)", len(targets))
         argv = _pytest_argv(targets=targets, cov_target=cov_target, append=True)
-        ran = _pytest_outcome(argv, cwd=root)
+        env = _pytest_subprocess_env(root, cov_target=cov_target)
+        ran = _pytest_outcome(argv, cwd=root, env=env)
         if ran.is_err:
             return Err(_SPAWN_ERROR_TO_REFRESH_ERROR[ran.danger_err])
         return Ok(ran.danger_ok)

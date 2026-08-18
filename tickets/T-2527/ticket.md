@@ -2,7 +2,7 @@
 id: T-2527
 title: re-add subprocess-coverage measurement to native_coverage_refresh (Loss-A regression,
   T-1235/T-1205/T-1397/T-1526 orphaned)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -30,6 +30,13 @@ scope_changes:
   reason: 'scope closure: doc/test edges for native_coverage_refresh'
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_uses_absolute_source_and_data_file
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_declares_multiprocessing_and_sigterm
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_remaps_paths_back_to_source
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_env_carries_coverage_process_start_pointed_at_the_rc
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_full_run_passes_coverage_process_start_env_to_spawn
+- tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 designated_repro_test: null
 threat: null
 component: null

@@ -582,7 +582,7 @@ class TestNativeCoverageRefresh:
         run, then `coverage xml -i`, then `stamp_coverage`."""
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0))
 
@@ -604,7 +604,7 @@ class TestNativeCoverageRefresh:
         target -- the pytest run is `--cov-append`-restricted to it."""
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0))
 
@@ -632,7 +632,7 @@ class TestNativeCoverageRefresh:
         (tmp_path / "coverage.xml").write_text("<coverage/>", encoding="utf-8")
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0))
 
@@ -666,7 +666,7 @@ class TestNativeCoverageRefresh:
         coverage.xml was produced at all."""
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             code = 1 if argv[0] == "pytest" else 0
             return Ok(subprocess.CompletedProcess(argv, code))
@@ -703,7 +703,7 @@ class TestNativeCoverageRefresh:
             "INTERNALERROR> KeyError: <WorkerController gw15>\n"
         )
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             if argv[0] == "pytest" and "-n" in argv:
                 return Ok(subprocess.CompletedProcess(argv, 3, stdout=crash_output))
@@ -772,6 +772,120 @@ class TestNativeCoverageRefresh:
         record = json.loads(stale.read_text(encoding="utf-8"))
         assert record["degraded"] is False
         assert record["pytest_exit_code"] == 0
+
+
+# frob:ticket T-1235
+# frob:ticket T-2527
+class TestSubprocessCoverageRc:
+    """T-1235's "Loss A" fix, ported here (T-2527) since T-2240's Makefile
+    retirement deleted the ONE place that generated
+    `.frob/coverage-subprocess.rc` -- these carry the exact same claims
+    the deleted `tests/unit/test_makefile_coverage.py::
+    TestSubprocessRcIsAbsoluteAndConcurrencyAware` class made, now proven
+    directly against `_write_coverage_subprocess_rc`/
+    `_pytest_subprocess_env` instead of a retired Makefile recipe."""
+
+    # frob:ticket T-1235
+    # frob:ticket T-2527
+    def test_rc_uses_absolute_source_and_data_file(self, tmp_path: Path) -> None:
+        """`source`/`data_file` are absolute paths under `root`, not the
+        relative `pyproject.toml` values -- a subprocess spawned with a
+        DIFFERENT cwd than `root` still resolves them correctly instead of
+        stranding an empty `.coverage.*` data file in its own cwd (the
+        original T-1235 "Loss A" bug: 626 stranded files, 100% of 120
+        sampled empty)."""
+        rc_path = _refresh_mod._write_coverage_subprocess_rc(
+            tmp_path, cov_target="src/frob"
+        )
+        text = rc_path.read_text(encoding="utf-8")
+        assert f"source = {tmp_path / 'src/frob'}" in text
+        assert f"data_file = {tmp_path / '.coverage'}" in text
+        assert str(tmp_path) in text  # every path is absolute, not relative
+
+    # frob:ticket T-1235
+    # frob:ticket T-2527
+    def test_rc_declares_multiprocessing_and_sigterm(self, tmp_path: Path) -> None:
+        """`concurrency = multiprocessing, thread` and `sigterm = True`
+        so a `ProcessPoolExecutor` gate worker's execution is recorded
+        (the original T-1235 "Loss B" fix -- still also present in
+        `pyproject.toml`'s own `[tool.coverage.run]`, never lost; this
+        just proves the generated rc carries it too)."""
+        rc_path = _refresh_mod._write_coverage_subprocess_rc(
+            tmp_path, cov_target="src/frob"
+        )
+        text = rc_path.read_text(encoding="utf-8")
+        assert "concurrency = multiprocessing, thread" in text
+        assert "sigterm = True" in text
+        assert "branch = True" in text
+        assert "parallel = True" in text
+
+    # frob:ticket T-1235
+    # frob:ticket T-2527
+    def test_rc_remaps_paths_back_to_source(self, tmp_path: Path) -> None:
+        """`[paths] source` remaps the relative `src/frob`/`*/src/frob`
+        keys back onto the same canonical path at combine time, so this
+        subprocess pass's absolute-path data merges with the top-level
+        `coverage:` pass's relative-path data instead of appearing as two
+        unrelated files."""
+        rc_path = _refresh_mod._write_coverage_subprocess_rc(
+            tmp_path, cov_target="src/frob"
+        )
+        text = rc_path.read_text(encoding="utf-8")
+        assert "[paths]" in text
+        assert "src/frob" in text
+        assert "*/src/frob" in text
+
+    # frob:ticket T-2527
+    def test_env_carries_coverage_process_start_pointed_at_the_rc(
+        self, tmp_path: Path
+    ) -> None:
+        """`_pytest_subprocess_env` is a copy of `os.environ` with
+        `COVERAGE_PROCESS_START` pointed at the just-written rc -- this is
+        the env every pytest pass (T-2527) now spawns with, so a
+        subprocess pytest itself spawns inherits the setting and gets
+        instrumented too."""
+        env = _refresh_mod._pytest_subprocess_env(tmp_path, cov_target="src/frob")
+        assert env["COVERAGE_PROCESS_START"] == str(
+            tmp_path / ".frob" / "coverage-subprocess.rc"
+        )
+        # a real rc file was actually written, not just a path promised
+        assert (tmp_path / ".frob" / "coverage-subprocess.rc").exists()
+        # env is a COPY -- the real os.environ is untouched
+        assert "COVERAGE_PROCESS_START" not in os.environ or env is not os.environ
+
+    # frob:ticket T-2527
+    def test_full_run_passes_coverage_process_start_env_to_spawn(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """`native_coverage_refresh`'s full-run pytest pass is spawned with
+        `COVERAGE_PROCESS_START` set in its subprocess env -- the actual
+        wiring this ticket is about, proven at the `native_coverage_
+        refresh` entry point rather than only at the two leaf helpers
+        above (which could pass in isolation while the real call site
+        forgot to use them)."""
+        captured_env: list[dict | None] = []
+
+        def _fake_spawn(argv, *, cwd, env=None, **_kw):  # noqa: ANN001, ARG001
+            captured_env.append(env)
+            return Ok(subprocess.CompletedProcess(argv, 0))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        import frob.gates._coverage as coverage_mod
+
+        monkeypatch.setattr(coverage_mod, "load_stamp", lambda _root: None)
+        monkeypatch.setattr(
+            coverage_mod,
+            "stamp_coverage",
+            lambda root, snapshot: Ok(Unit()),  # noqa: ARG005
+        )
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_ok
+        pytest_envs = [e for e in captured_env if e is not None]
+        assert pytest_envs, "no pytest pass carried a non-None env"
+        assert pytest_envs[0]["COVERAGE_PROCESS_START"] == str(
+            tmp_path / ".frob" / "coverage-subprocess.rc"
+        )
 
 
 # frob:ticket T-1677
@@ -914,7 +1028,7 @@ class TestPytestOutcomeWorkerCrashRecovery:
         # frob:tests tests/test_coverage.py::TestPytestOutcomeWorkerCrashRecovery.test_crash_signature_triggers_one_serial_retry  # noqa: E501
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             if len(calls) == 1:
                 return Ok(
@@ -940,7 +1054,7 @@ class TestPytestOutcomeWorkerCrashRecovery:
         """The retry itself finding a REAL failure (not another crash) is
         reported as an honest red suite, not silently swallowed."""
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             if "-p" in argv:
                 return Ok(subprocess.CompletedProcess(argv, 1, stdout="1 failed\n"))
             return Ok(subprocess.CompletedProcess(argv, 3, stdout=self._CRASH_OUTPUT))
@@ -964,7 +1078,7 @@ class TestPytestOutcomeWorkerCrashRecovery:
         regression)."""
         calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             calls.append(list(argv))
             return Ok(
                 subprocess.CompletedProcess(argv, 1, stdout="1 failed, 99 passed\n")
@@ -1003,7 +1117,7 @@ class TestWorkerCrashRetryArgvStripsWorkerCount:
         both still present)."""
         captured: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             captured.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
 
@@ -1038,7 +1152,7 @@ class TestWorkerCrashRetryUnmeasurableExitReporting:
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests tests/test_coverage.py::TestWorkerCrashRetryUnmeasurableExitReporting.test_retry_exit_4_is_not_reported_as_a_real_failure  # noqa: E501
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             return Ok(subprocess.CompletedProcess(argv, 4, stdout="usage error\n"))
 
         monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
@@ -1194,7 +1308,7 @@ class TestNeutralizedAddopts:
         )
         captured: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             captured.append(list(argv))
             return Ok(subprocess.CompletedProcess(argv, 0, stdout="ok\n"))
 
@@ -1283,8 +1397,7 @@ class TestNeutralizedAddoptsPytest11Entrypoint:
     ) -> None:
         # frob:tests tests/test_coverage.py::TestNeutralizedAddoptsPytest11Entrypoint.test_p_no_xdist_on_cli_no_longer_needs_a_manual_addopts_override  # noqa: E501
         (tmp_path / "pyproject.toml").write_text(
-            "[tool.pytest.ini_options]\n"
-            'addopts = "-q -n auto --dist=loadgroup"\n',
+            '[tool.pytest.ini_options]\naddopts = "-q -n auto --dist=loadgroup"\n',
             encoding="utf-8",
         )
         (tmp_path / "test_widget.py").write_text(
@@ -1343,7 +1456,7 @@ class TestNativeCoverageRefreshAbort:
 
         xml_calls: list[list[str]] = []
 
-        def _fake_spawn(argv, *, cwd):  # noqa: ANN001, ARG001
+        def _fake_spawn(argv, *, cwd, **_kw):  # noqa: ANN001, ARG001
             if argv[0] == "pytest":
                 return Err(spawn_error)
             xml_calls.append(list(argv))
