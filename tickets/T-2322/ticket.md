@@ -2,7 +2,7 @@
 id: T-2322
 title: 'T-2303 child: split ARCH001/ARCH103 over-threshold functions in _land_cmd.py
   (land-critical, high regression risk)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
