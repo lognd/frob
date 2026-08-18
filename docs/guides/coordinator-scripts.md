@@ -665,6 +665,55 @@ Returns `None` (never a fabricated zero) when `/proc` is unreadable. See
 number makes actionable -- the fix itself lives in `frob.process._reap`,
 not here; this function only reports.
 
+### `_forkserver_snapshot`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_forkserver_snapshot -->
+
+T-2517. One `/proc` walk collecting every live `multiprocessing.
+forkserver` helper's pid/ppid/age/VmSwap, shared by `orphaned_forkserver_
+count`, `stale_forkserver_count`, and `forkserver_swap_held_kb` so
+reporting all three numbers costs one scan, not three. Age is computed
+from `<pid>/stat`'s starttime field against `<proc>/uptime` and
+`os.sysconf("SC_CLK_TCK")`; VmSwap is read from `<pid>/status`. A
+per-process file that cannot be read degrades only that process's field
+to `None`/`0`; the whole scan returns `None` only when `/proc` itself is
+unreadable.
+
+### `stale_forkserver_count`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count -->
+
+T-2517. Motivating incident: `ORPHANED FORKSERVERS: 0` read as "nothing
+wrong" while 82 of 148 live `multiprocessing.forkserver` helpers were
+older than an hour and held essentially all of the host's 12GB of
+in-use swap between them -- invisible to `orphaned_forkserver_count`
+because every one of them still had a LIVE parent (an agent shell that
+had finished its check but had not exited). `orphaned_forkserver_count`'s
+signal is ancestry (`ppid == 1`); this function's signal is idleness +
+age, independent of ancestry: a forkserver older than `stale_after_s`
+(default 1 hour) counts as stale ONLY when the caller's own
+`concurrent_check_count` reading is exactly `0` -- passed in, not
+re-measured, so both numbers come from the same instant. Any positive
+count or `None` (unknown) makes this return `0`, per the ticket's own
+explicit caution: a forkserver with a live parent may belong to a check
+about to start, so a wrong precondition here would read a live pool as
+reclaimable. This function performs no reclamation of any kind -- it
+only reports the count; automated reclamation was explicitly deferred to
+a future, separately-designed ticket, never bundled in here.
+
+### `forkserver_swap_held_kb`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#forkserver_swap_held_kb -->
+
+T-2517. Sum of `VmSwap` (kb) across every live `multiprocessing.
+forkserver` helper on the host, orphaned or not, stale or not -- the
+third of the three numbers the ticket requires reported separately,
+never collapsed into the orphan/stale counts. Deliberately reads
+`VmSwap`, never RSS: a fully swapped-out process reports near-zero RSS
+while still holding real memory, which is exactly the reading that let
+the ticket's own 12GB incident hide behind a clean-looking `ORPHANED
+FORKSERVERS: 0`. Returns `None` only when `/proc` itself is unreadable.
+
 ### `concurrent_check_count`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count -->
@@ -714,6 +763,19 @@ T-2443: also renders an `ORPHANED FORKSERVERS: N ...` line from
 positive count names the T-2443 leak signature directly so a coordinator
 seeing an unexplained `_swap_guidance` '1 agent (SWAP ...)' clause knows
 immediately whether this specific, fixable leak is the cause.
+
+T-2517: also renders two MORE forkserver lines, deliberately kept
+separate from `ORPHANED FORKSERVERS` rather than folded into it --
+folding them together is the exact incident this ticket was filed from
+(a clean-reading `ORPHANED FORKSERVERS: 0` while 82 stale, live-parented
+pools held 12GB of swap the orphan-only signal structurally cannot see):
+a `STALE FORKSERVERS: N ...` line from `stale_forkserver_count`'s own
+reading (idle + aged, independent of parent liveness, only ever nonzero
+when `concurrent_check_count` read exactly 0 at the same instant), and a
+`SWAP HELD BY FORKSERVERS: N.NGB ...` line from `forkserver_swap_held_
+kb`'s own reading (summed `VmSwap`, orphaned+stale+live-parented alike,
+never RSS). Same "unknown"-vs-real-zero contract as every other line
+here.
 
 T-2473: also renders a `CONCURRENT CHECKS: N (T-2473, advisory)` line
 from `concurrent_check_count`'s own reading -- the same "unknown"-vs-

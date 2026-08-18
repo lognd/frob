@@ -1450,6 +1450,129 @@ def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
 _FORKSERVER_CMDLINE_RE = re.compile(r"multiprocessing\.forkserver")
 
 
+#: T-2517: how old (wall-clock seconds) a forkserver must be before it is
+#: reported STALE. 1 hour -- well past any real check's own runtime (the
+#: heaviest measured `frob check` stage total is ~209s, playbook section
+#: 13), so a forkserver still alive past this age is not mid-service, and
+#: well above the "reused within the next check" window a coordinator's
+#: own dispatch cadence would otherwise false-positive on. Matches the
+#: measured incident this ticket was filed from: 82 of 148 forkservers
+#: were older than 1 hour, holding essentially all of the host's 12GB of
+#: in-use swap between them.
+_FORKSERVER_STALE_AFTER_S = 3600.0
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_forkserver_snapshot
+# frob:ticket T-2443
+# frob:ticket T-2517
+def _forkserver_age_s(fields: list[str], uptime_s: float | None, clk_tck: int) -> float | None:
+    """`fields` is `_forkserver_snapshot`'s own post-")" split of one
+    `/proc/<pid>/stat` line; `fields[19]` is starttime (field 22 overall,
+    clock ticks since boot). Returns `None` (never a fabricated age) if
+    `uptime_s` is unknown, the field is missing, or the ticks value does
+    not parse -- ARCH001 split of `_forkserver_snapshot` (T-2517), no
+    behavior change from inlining this at the call site."""
+    if uptime_s is None or len(fields) < 20 or not clk_tck:
+        return None
+    try:
+        starttime_ticks = int(fields[19])
+        return uptime_s - (starttime_ticks / clk_tck)
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _forkserver_vmswap_kb(entry: Path) -> int:
+    """`VmSwap:` (kb) from `<entry>/status`, or `0` if the file is
+    missing/unparseable -- degrades that ONE process's contribution, never
+    raises. ARCH001 split of `_forkserver_snapshot` (T-2517)."""
+    try:
+        for line in (entry / "status").read_text(encoding="utf-8").splitlines():
+            if line.startswith("VmSwap:"):
+                return int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        pass
+    return 0
+
+
+def _parse_forkserver_entry(
+    entry: Path, uptime_s: float | None, clk_tck: int
+) -> dict[str, int | float | None] | None:
+    """One `/proc/<pid>` entry -> `{pid, ppid, age_s, vmswap_kb}`, or
+    `None` if `entry` is not a live `multiprocessing.forkserver` process
+    (not a pid dir, cmdline does not match, or `stat` is unreadable/
+    unparseable). ARCH001 split of `_forkserver_snapshot` (T-2517): the
+    per-entry parsing logic, unchanged from what `_forkserver_snapshot`
+    used to do inline."""
+    if not entry.name.isdigit():
+        return None
+    try:
+        cmdline = (entry / "cmdline").read_bytes().replace(b"\0", b" ")
+    except OSError:
+        return None
+    if not _FORKSERVER_CMDLINE_RE.search(cmdline.decode("utf-8", errors="replace")):
+        return None
+    try:
+        stat_text = (entry / "stat").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    close_paren = stat_text.rfind(")")
+    if close_paren == -1:
+        return None
+    # Fields after ")": [state, ppid, pgrp, ..., starttime, ...] -- ppid
+    # is fields[1], starttime (field 22 overall) is fields[19].
+    fields = stat_text[close_paren + 2 :].split()
+    if len(fields) < 2:
+        return None
+    try:
+        ppid = int(fields[1])
+    except ValueError:
+        return None
+    return {
+        "pid": int(entry.name),
+        "ppid": ppid,
+        "age_s": _forkserver_age_s(fields, uptime_s, clk_tck),
+        "vmswap_kb": _forkserver_vmswap_kb(entry),
+    }
+
+
+def _forkserver_snapshot(proc: Path = Path("/proc")) -> list[dict[str, int | float | None]] | None:
+    """One `/proc` walk collecting every live `multiprocessing.forkserver`
+    helper's `pid`/`ppid`/`age_s`/`vmswap_kb` (via `_parse_forkserver_
+    entry`), shared by `orphaned_forkserver_count`, `stale_forkserver_
+    count`, and `forkserver_swap_held_kb` (T-2517) so reporting all three
+    numbers costs one scan, not three. `age_s`/`vmswap_kb` degrade to
+    `None`/`0` per-entry on a missing/unparseable file, never abort the
+    whole scan -- see `_forkserver_age_s`/`_forkserver_vmswap_kb`'s own
+    docstrings for exactly which reads those are. Returns `None` only
+    when `/proc` itself is missing/unreadable, mirroring every other
+    best-effort `/proc`-scanning function in this module. Motivating
+    incident (T-2517): `ORPHANED FORKSERVERS: 0` while 82 stale pools
+    held 12GB of swap, because the orphan-only signal (reparented to
+    init) missed every one of them -- they all still had a live
+    agent-shell parent."""
+    if not proc.is_dir():
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    uptime_s: float | None
+    try:
+        uptime_s = float((proc / "uptime").read_text(encoding="utf-8").split()[0])
+    except (OSError, ValueError, IndexError):
+        uptime_s = None
+    try:
+        clk_tck = os.sysconf("SC_CLK_TCK")
+    except (ValueError, OSError):
+        clk_tck = 100
+    procs: list[dict[str, int | float | None]] = []
+    for entry in entries:
+        parsed = _parse_forkserver_entry(entry, uptime_s, clk_tck)
+        if parsed is not None:
+            procs.append(parsed)
+    return procs
+
+
 # frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
 # frob:ticket T-2443
 # frob:tests \
@@ -1479,41 +1602,102 @@ def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     guessing. Returns `None` if `/proc` is missing/unreadable (a non-Linux
     host, a sandboxed container) -- the caller must treat that as
     'unknown', never '0 orphans', mirroring every other best-effort
-    `/proc`-scanning function in this module."""
-    if not proc.is_dir():
+    `/proc`-scanning function in this module.
+
+    T-2517 CAUTION this function's own name invites: "orphaned" here means
+    ONLY init-reparented (ppid == 1). A forkserver whose parent is still
+    alive but idle for an hour is NOT counted here -- see `stale_
+    forkserver_count` for that (deliberately separate) signal; T-2517's
+    own incident is exactly a reader collapsing the two and reading
+    `ORPHANED FORKSERVERS: 0` as "nothing to reclaim" while 12GB of swap
+    sat in live-parented pools this function structurally cannot see."""
+    snapshot = _forkserver_snapshot(proc)
+    if snapshot is None:
         return None
-    try:
-        entries = list(proc.iterdir())
-    except OSError:
+    return sum(1 for p in snapshot if p["ppid"] == 1)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count
+# frob:ticket T-2517
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_counts_old_fork\
+# server_when_no_checks_running
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_ignores_young_f\
+# orkserver
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_never_counts_an\
+# ything_while_a_check_is_running
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_unknown_concurr\
+# ent_checks_never_counts_anything
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_missing_proc_re\
+# turns_none
+def stale_forkserver_count(
+    proc: Path = Path("/proc"),
+    *,
+    concurrent_checks: int | None,
+    stale_after_s: float = _FORKSERVER_STALE_AFTER_S,
+) -> int | None:
+    """How many live `multiprocessing.forkserver` helpers are STALE (T-2517):
+    older than `stale_after_s` (default 1 hour) with no `frob check`
+    currently running on the host, REGARDLESS of whether their parent
+    process is still alive. This is the signal `orphaned_forkserver_count`
+    structurally cannot report -- T-2517's own incident measured 82 of 148
+    forkservers past this age, all still parented to a live agent shell,
+    holding 12GB of swap while the orphan count read a clean 0.
+
+    `concurrent_checks` is the caller's own `concurrent_check_count`
+    reading, passed in rather than re-measured here so both numbers in one
+    report come from the same instant. Per the ticket's own explicit
+    caution against building a reaper on a wrong precondition: a
+    forkserver with a live parent MAY belong to a check about to start, so
+    this ONLY counts anything when `concurrent_checks == 0` -- `None`
+    (unknown) or any positive count both make every forkserver read as
+    "not stale, cannot tell" (0), never a guess. This function performs no
+    reclamation of any kind; it only reports the count an operator (or a
+    future, separately-designed reaper) would act on.
+
+    Returns `None` only when `/proc` itself is unreadable, matching every
+    other best-effort function in this module."""
+    snapshot = _forkserver_snapshot(proc)
+    if snapshot is None:
         return None
-    count = 0
-    for entry in entries:
-        if not entry.name.isdigit():
-            continue
-        try:
-            cmdline = (entry / "cmdline").read_bytes().replace(b"\0", b" ")
-        except OSError:
-            continue
-        if not _FORKSERVER_CMDLINE_RE.search(cmdline.decode("utf-8", errors="replace")):
-            continue
-        try:
-            stat_text = (entry / "stat").read_text(encoding="utf-8")
-        except OSError:
-            continue
-        close_paren = stat_text.rfind(")")
-        if close_paren == -1:
-            continue
-        # Fields after ")": [state, ppid, pgrp, ...] -- ppid is fields[1].
-        fields = stat_text[close_paren + 2 :].split()
-        if len(fields) < 2:
-            continue
-        try:
-            ppid = int(fields[1])
-        except ValueError:
-            continue
-        if ppid == 1:
-            count += 1
-    return count
+    if concurrent_checks != 0:
+        return 0
+    return sum(
+        1 for p in snapshot if p["age_s"] is not None and p["age_s"] >= stale_after_s
+    )
+
+
+# frob:doc docs/guides/coordinator-scripts.md#forkserver_swap_held_kb
+# frob:ticket T-2517
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_sums_vmswap_acr\
+# oss_every_forkserver
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_missing_status_\
+# file_degrades_that_entry_to_zero_not_a_crash
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_missing_proc_re\
+# turns_none
+def forkserver_swap_held_kb(proc: Path = Path("/proc")) -> int | None:
+    """Sum of `VmSwap` (kb) across every live `multiprocessing.forkserver`
+    helper on the host, orphaned or not, stale or not (T-2517) -- the
+    third of the three numbers the ticket requires reported separately,
+    never collapsed into the orphan/stale counts. RSS is deliberately
+    never read for this: a swapped-out process reports near-zero RSS
+    while still holding real memory, which is exactly the measurement
+    that would have hidden T-2517's own 12GB incident a second time.
+    Returns `None` only when `/proc` itself is unreadable; a per-process
+    `status` file that cannot be read degrades THAT process's contribution
+    to 0kb (a partial reading, not a crash), matching `_forkserver_
+    snapshot`'s own per-entry resilience contract."""
+    snapshot = _forkserver_snapshot(proc)
+    if snapshot is None:
+        return None
+    return sum(int(p["vmswap_kb"] or 0) for p in snapshot)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#concurrent_check_count
@@ -2364,6 +2548,8 @@ def _land_status_lines(
     swap: tuple[int, int] | None = None,
     orphaned_forkservers: int | None = None,
     concurrent_checks: int | None = None,
+    stale_forkservers: int | None = None,
+    forkserver_swap_kb: int | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -2381,6 +2567,16 @@ def _land_status_lines(
     coordinator seeing both together knows whether the specific, fixable
     T-2443 leak is the cause before spending time investigating anything
     else.
+
+    T-2517: `stale_forkservers` (`stale_forkserver_count`'s own reading)
+    and `forkserver_swap_kb` (`forkserver_swap_held_kb`'s own reading) are
+    printed as their OWN separate lines, never folded into `orphaned_
+    forkservers` -- collapsing them was the exact incident this ticket was
+    filed from (`ORPHANED FORKSERVERS: 0` read as "nothing wrong" while
+    82 stale, live-parented pools held 12GB of swap that the orphan-only
+    reading structurally could not see). All three stay independently
+    "unknown"-vs-real-zero, matching every other best-effort number this
+    function already renders.
 
     T-2222: `held_lease_count` (the raw `len(leases())`) and `live_lease_
     count_` (`live_lease_count(leases())`, T-2222's own live-vs-reclaimable
@@ -2434,6 +2630,27 @@ def _land_status_lines(
             f"{live_lease_count_} live lease(s) ({held_lease_count} total) "
             f"-- guidance is {_swap_guidance(swap)}"
         )
+    lines.extend(
+        _forkserver_status_lines(
+            orphaned_forkservers, stale_forkservers, forkserver_swap_kb, concurrent_checks
+        )
+    )
+    return lines
+
+
+def _forkserver_status_lines(
+    orphaned_forkservers: int | None,
+    stale_forkservers: int | None,
+    forkserver_swap_kb: int | None,
+    concurrent_checks: int | None,
+) -> list[str]:
+    """The four forkserver/check lines (`ORPHANED FORKSERVERS`, `STALE
+    FORKSERVERS`, `SWAP HELD BY FORKSERVERS`, `CONCURRENT CHECKS`) --
+    ARCH001 split of `_land_status_lines` (T-2517), pure formatting, no
+    behavior change from inlining. T-2517: the three forkserver numbers
+    stay on THREE separate lines, never collapsed into one -- see `_land_
+    status_lines`'s own docstring for why."""
+    lines: list[str] = []
     if orphaned_forkservers is None:
         lines.append("ORPHANED FORKSERVERS: unknown (/proc unreadable)")
     elif orphaned_forkservers > 0:
@@ -2444,6 +2661,23 @@ def _land_status_lines(
         )
     else:
         lines.append("ORPHANED FORKSERVERS: 0")
+    if stale_forkservers is None:
+        lines.append("STALE FORKSERVERS: unknown (/proc unreadable)")
+    elif stale_forkservers > 0:
+        lines.append(
+            f"STALE FORKSERVERS: {stale_forkservers} idle >1h with no check "
+            "running (T-2517 leak signature -- SIGTERM them; safe only "
+            "because CONCURRENT CHECKS is 0 right now)"
+        )
+    else:
+        lines.append("STALE FORKSERVERS: 0")
+    if forkserver_swap_kb is None:
+        lines.append("SWAP HELD BY FORKSERVERS: unknown (/proc unreadable)")
+    else:
+        lines.append(
+            f"SWAP HELD BY FORKSERVERS: {forkserver_swap_kb / (1024 * 1024):.1f}GB "
+            "(sum of VmSwap, orphaned+stale+live-parented alike, T-2517)"
+        )
     if concurrent_checks is None:
         lines.append("CONCURRENT CHECKS: unknown (/proc unreadable)")
     else:
@@ -2478,14 +2712,21 @@ def _print_land_status() -> None:
     section already exists to answer ('is it safe to dispatch another
     agent right now') -- six concurrent agents against a documented 3-4
     agent cap went unnoticed on this host until someone checked by
-    hand. ARCH103 (T-2172 precedent): all formatting/branching lives in
-    `_land_status_lines`; this function only gathers inputs and prints."""
+    hand. T-2517: also computes `concurrent_check_count` ONCE and passes it
+    into `stale_forkserver_count` (whose own "0 unless no check is
+    running" precondition needs that exact reading, not a re-measured
+    one) alongside `forkserver_swap_held_kb` -- three separate forkserver
+    numbers (orphaned/stale/swap-held), never collapsed into one, per the
+    ticket's own explicit requirement. ARCH103 (T-2172 precedent): all
+    formatting/branching lives in `_land_status_lines`; this function only
+    gathers inputs and prints."""
     invocations = land_invocations()
     holder_pids = land_lock_holder_pids(REPO)
     lock_path = REPO / ".frob" / "land.lock"
     load = host_load()
     swap = swap_pressure()
     held = leases()
+    concurrent_checks = concurrent_check_count()
     for line in _land_status_lines(
         invocations,
         holder_pids,
@@ -2495,7 +2736,9 @@ def _print_land_status() -> None:
         live_lease_count(held),
         swap,
         orphaned_forkserver_count(),
-        concurrent_check_count(),
+        concurrent_checks,
+        stale_forkserver_count(concurrent_checks=concurrent_checks),
+        forkserver_swap_held_kb(),
     ):
         print(line)
 

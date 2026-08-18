@@ -2,7 +2,7 @@
 id: T-2517
 title: fleet_status reports ORPHANED FORKSERVERS 0 while 82 stale pools hold 12GB
   of swap
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,35 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: new stale/swap-held forkserver reporting needs test coverage and its own
+    frob:doc anchors alongside the existing orphaned_forkserver_count docs
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: new stale/swap-held forkserver reporting needs test coverage and its own
+    frob:doc anchors alongside the existing orphaned_forkserver_count docs
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_counts_old_forkserver_when_no_checks_running
+- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_ignores_young_forkserver
+- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_never_counts_anything_while_a_check_is_running
+- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_unknown_concurrent_checks_never_counts_anything
+- tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_sums_vmswap_across_every_forkserver
+- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_missing_status_file_degrades_that_entry_to_zero_not_a_crash
+- tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_prints_no_live_holder_as_normal_resting_state_not_stale
 designated_repro_test: null
 threat: null
 component: null

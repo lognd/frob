@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import sys
 from datetime import UTC, date, datetime
@@ -1003,10 +1004,20 @@ class TestPrintLandStatus:
         monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
         monkeypatch.setattr(fleet_status, "host_load", lambda: None)
         monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: None)
+        monkeypatch.setattr(fleet_status, "concurrent_check_count", lambda: None)
+        monkeypatch.setattr(
+            fleet_status, "stale_forkserver_count", lambda **kwargs: None
+        )
+        monkeypatch.setattr(fleet_status, "forkserver_swap_held_kb", lambda: None)
         fleet_status._print_land_status()
         out = capsys.readouterr().out
         assert "LANDS IN FLIGHT: 0" in out
-        assert "stale" not in out.lower()
+        # T-2517: "stale" is now a legitimate word in the (separate,
+        # forkserver-specific) STALE FORKSERVERS line -- this test only
+        # cares that the LAND LOCK line itself never uses it.
+        land_lock_line = next(line for line in out.splitlines() if line.startswith("LAND LOCK"))
+        assert "stale" not in land_lock_line.lower()
         assert "no live holder" in out.lower()
         assert "normal resting state" in out.lower()
         assert "LOAD: unknown" in out
@@ -1317,6 +1328,123 @@ class TestOrphanedForkserverCount:
 
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
+
+
+# frob:ticket T-2517
+class TestStaleForkserverCount:
+    """`fleet_status.stale_forkserver_count` (T-2517): idle+aged, not
+    ancestry-based -- the signal `orphaned_forkserver_count` cannot see
+    for a forkserver whose creating agent shell is still alive."""
+
+    @staticmethod
+    def _write_proc(proc: Path, *, uptime_s: float) -> None:
+        proc.mkdir()
+        proc.joinpath("uptime").write_text(f"{uptime_s} 0.0\n", encoding="utf-8")
+
+    @staticmethod
+    def _write_forkserver(proc: Path, pid: int, *, age_s: float, ppid: int = 999) -> None:
+        clk_tck = os.sysconf("SC_CLK_TCK")
+        uptime_s = float(proc.joinpath("uptime").read_text(encoding="utf-8").split()[0])
+        starttime_ticks = int((uptime_s - age_s) * clk_tck)
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(
+            b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        )
+        stat_fields = ["S", str(ppid), str(pid), "0", "0", "-1", "0"]
+        stat_fields += ["0"] * 12  # pad up through nice/num_threads/itrealvalue
+        stat_fields.append(str(starttime_ticks))  # fields[19] == starttime
+        (entry / "stat").write_text(f"{pid} (python3) " + " ".join(stat_fields) + "\n")
+
+    def test_counts_old_forkserver_when_no_checks_running(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_counts_old_forkserver_when_no_checks_running  # noqa: E501
+        proc = tmp_path / "proc"
+        self._write_proc(proc, uptime_s=1_000_000.0)
+        self._write_forkserver(proc, 4242, age_s=7200.0)  # 2h old
+        assert fleet_status.stale_forkserver_count(proc, concurrent_checks=0) == 1
+
+    def test_ignores_young_forkserver(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_ignores_young_forkserver  # noqa: E501
+        proc = tmp_path / "proc"
+        self._write_proc(proc, uptime_s=1_000_000.0)
+        self._write_forkserver(proc, 4242, age_s=30.0)  # 30s old, still working
+        assert fleet_status.stale_forkserver_count(proc, concurrent_checks=0) == 0
+
+    def test_never_counts_anything_while_a_check_is_running(self, tmp_path: Path) -> None:
+        """T-2517's own explicit caution: a live-parented forkserver MAY
+        belong to a check about to start. `concurrent_checks > 0` must
+        zero the count even for a forkserver that is genuinely 2h old --
+        this function never claims 'stale' while a check might be using
+        the pool."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_never_counts_anything_while_a_check_is_running  # noqa: E501
+        proc = tmp_path / "proc"
+        self._write_proc(proc, uptime_s=1_000_000.0)
+        self._write_forkserver(proc, 4242, age_s=7200.0)
+        assert fleet_status.stale_forkserver_count(proc, concurrent_checks=1) == 0
+
+    def test_unknown_concurrent_checks_never_counts_anything(self, tmp_path: Path) -> None:
+        """`concurrent_checks is None` (unknown) must degrade to 0, the
+        same conservative posture as a positive count -- never treated as
+        'assume zero checks running'."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_unknown_concurrent_checks_never_counts_anything  # noqa: E501
+        proc = tmp_path / "proc"
+        self._write_proc(proc, uptime_s=1_000_000.0)
+        self._write_forkserver(proc, 4242, age_s=7200.0)
+        assert fleet_status.stale_forkserver_count(proc, concurrent_checks=None) == 0
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_missing_proc_returns_none  # noqa: E501
+        assert (
+            fleet_status.stale_forkserver_count(tmp_path / "no-proc", concurrent_checks=0)
+            is None
+        )
+
+
+# frob:ticket T-2517
+class TestForkserverSwapHeldKb:
+    """`fleet_status.forkserver_swap_held_kb` (T-2517): summed VmSwap,
+    never RSS -- a swapped-out process reports near-zero RSS while still
+    holding real memory, the exact reading that hid the ticket's own
+    12GB incident behind a clean-looking orphan count."""
+
+    @staticmethod
+    def _write_entry(
+        proc: Path, pid: int, *, cmdline: bytes, vmswap_kb: int | None
+    ) -> None:
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(cmdline)
+        (entry / "stat").write_text(f"{pid} (python3) S 999 {pid} 0 0 -1 0\n")
+        if vmswap_kb is not None:
+            (entry / "status").write_text(
+                f"Name:\tpython3\nVmRSS:\t     100 kB\nVmSwap:\t{vmswap_kb} kB\n",
+                encoding="utf-8",
+            )
+
+    def test_sums_vmswap_across_every_forkserver(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_sums_vmswap_across_every_forkserver  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        fs_cmdline = b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        self._write_entry(proc, 100, cmdline=fs_cmdline, vmswap_kb=5000)
+        self._write_entry(proc, 101, cmdline=fs_cmdline, vmswap_kb=7000)
+        self._write_entry(proc, 102, cmdline=b"sleep\x00600\x00", vmswap_kb=9000)
+        assert fleet_status.forkserver_swap_held_kb(proc) == 12000
+
+    def test_missing_status_file_degrades_that_entry_to_zero_not_a_crash(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_missing_status_file_degrades_that_entry_to_zero_not_a_crash  # noqa: E501
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        fs_cmdline = b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+        self._write_entry(proc, 100, cmdline=fs_cmdline, vmswap_kb=None)
+        self._write_entry(proc, 101, cmdline=fs_cmdline, vmswap_kb=3000)
+        assert fleet_status.forkserver_swap_held_kb(proc) == 3000
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_missing_proc_returns_none  # noqa: E501
+        assert fleet_status.forkserver_swap_held_kb(tmp_path / "no-proc") is None
 
 
 # frob:ticket T-2473
