@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5ef3674ccaf8ac69f463edbdbf431408f05d42d9
 ---
 T-2106 bounded the doable-time re-verification's own budget (300s ->
 20s), fixing the measured 736s -> 86.5s throughput problem. Separately,
