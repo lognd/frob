@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cc11398d4db3b4c3824132d2bb028bcc7415a1cc
 ---
 T-2504's census (landed 5f01c7b01, numbers in
 docs/modules/graph.md#path-confinement-census) measured the confinement
