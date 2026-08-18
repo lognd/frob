@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 525baabf2412a68f2499fbccb3dc241a41f7688e
 ---
 Found while working T-2394: `tests/unit/test_app_runners_batch7.py::
 TestTicketStart::test_start_refuses_scope_colliding_with_other_in_progress_
