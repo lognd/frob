@@ -49,7 +49,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 31c1e197d40ad8c801020f8634cb6332d4ad2f76
 ---
 Found while building T-2344 (T-1662's meta-check): `_wire001_cli_dest_
 violations` (src/frob/gates/_wire.py) decides WIRE001 case 3 ("a new CLI
