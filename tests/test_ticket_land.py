@@ -10201,6 +10201,190 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         assert result == frozenset()
 
 
+class TestUnscopedErrorFindingsRecordsBudgetDeferral:
+    """T-2456: a `--budget`-truncated `_unscoped_error_findings` call must
+    not just return `None` (T-1703's existing unmeasurable contract,
+    unchanged) -- it must ALSO record which stage group(s) were deferred
+    into `_LAST_BUDGET_DEFERRALS` so `_print_land_proof` can name them on
+    the `LAND-PROOF:` line instead of the fact being reachable only via a
+    `_log.warning` line a human has to already be tailing to see."""
+
+    @staticmethod
+    def _budget_truncated_payload(deferred: str) -> str:
+        """A minimal `frob check --json --budget` payload carrying one
+        `BUDGET001` diagnostic naming `deferred` -- the exact shape
+        `_budget_deferred_stage_groups`/`_budget_deferred_groups_from_
+        stdout` parse."""
+        return json.dumps(
+            {
+                "results": [
+                    {
+                        "tool": "budget",
+                        "diagnostics": [
+                            {
+                                "file": None,
+                                "line": None,
+                                "col": None,
+                                "severity": "warning",
+                                "code": "BUDGET001",
+                                "message": (
+                                    f"BUDGET001: --budget 480 deferred 1 stage "
+                                    f"group(s) to a later run: {deferred}. "
+                                    "Resume state persisted -- run `frob check "
+                                    "--budget <seconds>` again to continue."
+                                ),
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+
+    # frob:ticket T-2456
+    def test_budget_truncated_run_records_deferred_groups(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.tes\
+        # t_budget_truncated_run_records_deferred_groups
+        from frob.app import ticket_runner
+        from frob.app.ticket_runner import _land_cmd
+
+        payload = self._budget_truncated_payload("static")
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        _land_cmd._LAST_BUDGET_DEFERRALS.pop("T-9999", None)
+
+        result = _land_cmd._unscoped_error_findings(tmp_path, "T-9999")
+
+        assert result is None
+        assert _land_cmd._LAST_BUDGET_DEFERRALS.get("T-9999") == ("static",)
+
+    # frob:ticket T-2456
+    def test_clean_run_records_no_deferral(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral.tes\
+        # t_clean_run_records_no_deferral
+        """The must-still-land positive control at this layer: a run with
+        no `BUDGET001` deferral at all leaves `_LAST_BUDGET_DEFERRALS`
+        untouched for this ticket id."""
+        from frob.app import ticket_runner
+        from frob.app.ticket_runner import _land_cmd
+
+        payload = json.dumps({"results": [{"tool": "gate-summary", "diagnostics": []}]})
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            return Ok(
+                ProcResult(argv=tuple(argv), returncode=0, stdout=payload, stderr="")
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        _land_cmd._LAST_BUDGET_DEFERRALS.pop("T-9998", None)
+
+        result = _land_cmd._unscoped_error_findings(tmp_path, "T-9998")
+
+        assert result == frozenset()
+        assert "T-9998" not in _land_cmd._LAST_BUDGET_DEFERRALS
+
+
+class TestPrintLandProofSurfacesBudgetDeferred:
+    """T-2456: `_print_land_proof`'s `budget_deferred=` field is the
+    minimum-bar fix this ticket exists for -- a land whose post-land
+    sweep was budget-truncated must not present as indistinguishable
+    from a land whose sweep ran clean. `verified=` itself is UNCHANGED
+    (must-still-land: this is surfacing, never a new refusal)."""
+
+    @staticmethod
+    def _stub_land_proof_checks(monkeypatch: pytest.MonkeyPatch) -> None:
+        from frob.app.ticket_runner import _land_cmd
+
+        monkeypatch.setattr(
+            _land_cmd,
+            "_land_proof_checks",
+            lambda root, final_id, commit_sha: (True, "done", True),
+        )
+
+    # frob:ticket T-2456
+    def test_deferred_groups_named_on_the_land_proof_line(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred.test_defe\
+        # rred_groups_named_on_the_land_proof_line
+        import logging
+
+        from frob.app.ticket_runner import _land_cmd
+        from frob.tickets._models import LandReport
+
+        self._stub_land_proof_checks(monkeypatch)
+        _land_cmd._LAST_BUDGET_DEFERRALS["T-9997"] = ("static", "lint")
+        report = LandReport(
+            ticket_id="T-9997",
+            final_id="T-9997",
+            dry_run=False,
+            wip_committed=True,
+            merged_main_into_worktree=True,
+            ledger_spliced=False,
+            commit_sha="deadbeef",
+        )
+
+        with caplog.at_level(logging.INFO):
+            verified = _land_cmd._print_land_proof(tmp_path, report)
+
+        assert verified is True
+        assert "T-9997" not in _land_cmd._LAST_BUDGET_DEFERRALS
+        [line] = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert "budget_deferred=static,lint" in line
+        assert "verified=True" in line
+
+    # frob:ticket T-2456
+    def test_no_deferral_reports_none_not_absent(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred.test_no_d\
+        # eferral_reports_none_not_absent
+        """The must-still-land positive control: a land whose sweep ran
+        clean prints `budget_deferred=none` -- present and explicit,
+        never a silently-omitted field a human could mistake for
+        unmeasured."""
+        import logging
+
+        from frob.app.ticket_runner import _land_cmd
+        from frob.tickets._models import LandReport
+
+        self._stub_land_proof_checks(monkeypatch)
+        _land_cmd._LAST_BUDGET_DEFERRALS.pop("T-9996", None)
+        report = LandReport(
+            ticket_id="T-9996",
+            final_id="T-9996",
+            dry_run=False,
+            wip_committed=True,
+            merged_main_into_worktree=True,
+            ledger_spliced=False,
+            commit_sha="deadbeef",
+        )
+
+        with caplog.at_level(logging.INFO):
+            _land_cmd._print_land_proof(tmp_path, report)
+
+        [line] = [r.message for r in caplog.records if "LAND-PROOF:" in r.message]
+        assert "budget_deferred=none" in line
+
+
 # frob:ticket T-1736
 class TestTouchedSymrefsForIntent:
     """`_touched_symrefs_for_intent`'s own span-overlap contract, tested

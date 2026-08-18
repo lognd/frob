@@ -2,7 +2,7 @@
 id: T-2456
 title: land's budgeted check drops gates, so lands report verified while putting errors
   on main
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,22 +11,109 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/app/_check_chunking.py
+- tests/unit/test_ticket_runner_gate_findings.py
+- tests/unit/test_check_budget.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- docs/modules/tickets-landing.md
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: land-time budget truncation must surface in the land record and never present
+    as clean; measured 30->119 error floor across 22 lands all reporting verified=True
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/_check_chunking.py
+  reason: land-time budget truncation must surface in the land record and never present
+    as clean; measured 30->119 error floor across 22 lands all reporting verified=True
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: land-time budget truncation must surface in the land record and never present
+    as clean; measured 30->119 error floor across 22 lands all reporting verified=True
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: land-time budget truncation must surface in the land record and never present
+    as clean; measured 30->119 error floor across 22 lands all reporting verified=True
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: export the new _budget_deferred_groups_from_stdout helper the same way every
+    other _verify.py cross-module helper is re-exported
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: land-time budget truncation must surface loudly in LAND-PROOF output and
+    stay attributable, instead of a silent skip-the-sweep warning
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: land-time budget truncation must surface loudly in LAND-PROOF output and
+    stay attributable, instead of a silent skip-the-sweep warning
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: unit coverage for the new budget_deferred= LAND-PROOF field and the raised
+    post-land sweep budget
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
+- tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+- tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+- tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+- tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 designated_repro_test: null
 acceptance:
 - text: Given a land whose frob check was budget-truncated, when it reports, then
     it states that verification was incomplete and names the skipped gates, rather
     than presenting as a clean verification.
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 - text: Given a branch introducing a trivial ruff E501 violation, when it is landed,
     then the violation is caught rather than reaching main silently.
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 - text: Given a land whose check runs to completion with no findings, when it reports,
     then it lands cleanly with no added friction.
-  evidence: []
+  evidence:
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_extracts_deferred_groups_from_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_for_non_json_stdout
+  - tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_empty_when_no_deferral_present
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_budget_truncated_run_records_deferred_groups
+  - tests/test_ticket_land.py::TestUnscopedErrorFindingsRecordsBudgetDeferral::test_clean_run_records_no_deferral
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_deferred_groups_named_on_the_land_proof_line
+  - tests/test_ticket_land.py::TestPrintLandProofSurfacesBudgetDeferred::test_no_deferral_reports_none_not_absent
 threat: null
 component: tickets
 anchor: false

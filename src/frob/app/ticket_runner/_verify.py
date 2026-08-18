@@ -932,6 +932,45 @@ def _budget_deferred_stage_groups(results: list) -> list[str]:  # noqa: ANN001
     return names
 
 
+# frob:ticket T-2456
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
+# st_extracts_deferred_groups_from_json_stdout
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
+# st_empty_for_non_json_stdout
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout.te\
+# st_empty_when_no_deferral_present
+def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
+    """Recover the `BUDGET001`-deferred stage-group names straight from a
+    captured `frob check --json --budget ...` spawn's `stdout`, or `()`
+    when `stdout` does not decode as JSON (`_parse_check_json`) or names
+    no deferral at all.
+
+    T-2456: `_unscoped_error_findings`'s existing unmeasurable-is-`None`
+    contract collapses every unmeasurable cause (refused spawn, timeout,
+    unparsable output, budget truncation) into the SAME `None` -- correct
+    for "do not compare a real set against a guess," but it throws away
+    the one cause (`BUDGET001` deferral) that is nameable and worth
+    surfacing on its own: which stage groups never ran. This is a
+    deliberately SEPARATE, additive read of the same stdout a caller
+    already has in hand, so a land-time caller can say "the sweep is
+    unmeasured AND here is exactly what was skipped" instead of a bare
+    unmeasured warning that erases which gates (lint's ruff/ty among
+    them) never got a chance to fire. Reuses `_parse_check_json` +
+    `_budget_deferred_stage_groups` (T-1703) rather than a second parser,
+    so this can never itself drift from what THOSE already recognize as
+    a deferral."""
+    data = _parse_check_json(stdout)
+    if data is None:
+        return ()
+    results = data.get("results")
+    if not isinstance(results, list):
+        return ()
+    return tuple(_budget_deferred_stage_groups(results))
+
+
 # frob:ticket T-0846
 # frob:ticket T-0850
 # frob:ticket T-1703

@@ -30,12 +30,30 @@ from frob.tickets._land_git_ops import _describe_git_failure, _land_internal_git
 from frob.tickets._leases import refuse_if_worktree_in_use
 
 from ._verify import (
+    _budget_deferred_groups_from_stdout,
     _check_gate_findings_fn,
     _check_gates_summary_fn,
     _parse_error_findings_from_stdout,
     _python_for_tree,
     _shared_check_spawn_fn,
 )
+
+# frob:ticket T-2456
+#: Process-local record of every `BUDGET001` deferral `_unscoped_error_
+#: findings` observed FOR THIS land invocation, keyed by the `ticket_id`
+#: string each call site already threads through -- same "module dict,
+#: popped once at LAND-PROOF print time" idiom `frob.tickets._land`'s
+#: `_LAST_CLAIMS_OUTCOME`/`_LAST_ORPHAN_EVIDENCE_OUTCOME` (T-2091/T-2275)
+#: already established for surfacing a process-local, non-gating fact
+#: onto the `LAND-PROOF:` line without threading a new parameter through
+#: every intervening call. One `frob ticket land` invocation is one
+#: process, so this never crosses two concurrent lands (each is its own
+#: subprocess) -- safe without a lock. Values accumulate (union) across
+#: however many `_unscoped_error_findings` calls one land makes (pre-land
+#: baseline capture, post-land sweep, a Tier-A reverify) so a single
+#: land's LAND-PROOF line reports every stage group ANY of those calls
+#: could not measure, not just the last one.
+_LAST_BUDGET_DEFERRALS: dict[str, tuple[str, ...]] = {}
 
 if TYPE_CHECKING:
     # frob:ticket T-2400
@@ -521,10 +539,28 @@ def _tier_a_pre_land_step(
 
 # frob:ticket T-1456
 # frob:ticket T-1463
+# frob:ticket T-2456
 # 90s was far under a real unscoped check (~3.5 min on this repo); every
 # land's sweep spawn then died on TimeoutExpired, which also ESCAPED as an
 # unhandled crash instead of the documented None/skip path (fixed below).
-_POST_LAND_SWEEP_BUDGET_S = 300
+#
+# T-2456: 300 raised to 480. MEASURED against root's own steady-state
+# `.frob/check-budget-timing.json` EMA (2026-08-18, post-T-2443
+# forkserver-leak fix): gates-fast 109.5s + gates-native 51.2s +
+# gates-security 87.4s + lint 2.6s + static 83.9s = 334.6s total -- ALREADY
+# over the old 300s budget on a healthy, non-degraded machine, meaning
+# the `static` stage group (cycle/dup/arch/bind/exports) was being
+# silently deferred from EVERY post-land sweep, not only during unusual
+# load. 480s covers the full measured total with ~145s of headroom for
+# normal variance while still refusing to chase an unbounded machine --
+# a run that genuinely cannot finish 5 stage groups in 480s is exactly
+# the degraded-machine case `budget_deferred=` (see `_print_land_proof`)
+# now names explicitly rather than silently. This does not slow a land
+# whose sweep already finishes under budget (the common case measures
+# ~131-220s wall time for the parts of the split this ticket measured
+# directly) -- it only changes the outcome for the sweep that was
+# ALREADY taking the full budget and silently dropping a stage group.
+_POST_LAND_SWEEP_BUDGET_S = 480
 
 #: T-1804: PRE001/SCOPE001, in their OWN "no active ticket derivable" mode
 #: (`frob.gates._no_active_ticket_violation`, B9) -- the loud, by-design
@@ -665,6 +701,18 @@ def _unscoped_error_findings(
         ticket_id, result.stdout, result.returncode
     )
     if findings is None:
+        # T-2456: `findings is None` collapses every unmeasurable cause
+        # into one value (T-1703's own contract, unchanged above) -- but
+        # a `BUDGET001` deferral is the one cause with a NAMEABLE cause:
+        # which stage group(s) never ran. Record it into the process-
+        # local `_LAST_BUDGET_DEFERRALS` so `_print_land_proof` can name
+        # it on the `LAND-PROOF:` line instead of this staying reachable
+        # only via a log line a human has to already be watching for.
+        deferred = _budget_deferred_groups_from_stdout(result.stdout)
+        if deferred:
+            _LAST_BUDGET_DEFERRALS[ticket_id] = tuple(
+                sorted(set(_LAST_BUDGET_DEFERRALS.get(ticket_id, ())) | set(deferred))
+            )
         return None
     return frozenset(
         (rule, file)
@@ -1410,7 +1458,24 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
     only: this field never changes the RETURNED `verified` bool, exactly
     as `claims_reverify=` does not. T-2255 was scoped to `_land.py`
     alone, so this ticket is the `_land_cmd.py`-side wiring T-2091's own
-    precedent already established for a sibling check."""
+    precedent already established for a sibling check.
+
+    T-2456: same surfacing-only treatment for this module's OWN
+    `_LAST_BUDGET_DEFERRALS` -- a `budget_deferred=` field naming every
+    stage group any `_unscoped_error_findings` call this land made could
+    not measure (`none` when every call ran to completion, the common
+    case). This is the fix for the defect that motivated T-2456: a
+    `--budget`-truncated post-land sweep used to fall silently into
+    "skip the sweep" with only a `_log.warning` a human had to already be
+    tailing to ever see, while the SAME `LAND-PROOF:` line printed
+    `verified=True` right next to it -- indistinguishable from a land
+    whose sweep ran clean. Deliberately non-gating, same posture as
+    `claims_reverify=`/`orphan_evidence_check=`: a busy machine that
+    truncates the sweep must not silently claim full coverage, but it
+    also must not turn every such land into a hard refusal (that would
+    convert "the fleet is busy" into "the fleet cannot land," exactly
+    when throughput matters most) -- the debt is named and attributable
+    instead."""
     from frob.tickets._land import (
         _LAST_CLAIMS_OUTCOME,
         _LAST_ORPHAN_EVIDENCE_OUTCOME,
@@ -1428,10 +1493,12 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
 
     orphan_evidence_outcome = _LAST_ORPHAN_EVIDENCE_OUTCOME.pop(report.ticket_id, None)
 
+    budget_deferred = _LAST_BUDGET_DEFERRALS.pop(report.ticket_id, ())
+
     _log.info(
         "LAND-PROOF: ticket=%s commit=%s is_ancestor_of_main=%s "
         "state_on_main=%s claims_reverify=%s orphan_evidence_check=%s "
-        "verified=%s",
+        "budget_deferred=%s verified=%s",
         report.final_id,
         report.commit_sha,
         ancestor_ok,
@@ -1440,6 +1507,7 @@ def _print_land_proof(root: Path, report) -> bool:  # noqa: ANN001
         orphan_evidence_outcome.value
         if orphan_evidence_outcome is not None
         else "unknown",
+        ",".join(budget_deferred) if budget_deferred else "none",
         printed_verified,
     )
     return verified

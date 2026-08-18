@@ -1,0 +1,8 @@
+WARNING: load_coverage: no coverage.xml at coverage.xml
+WARNING: module design: trusted component present without std.policy.analyzable; auto-injecting mandatory base pack
+WARNING: no grammar registered for extension '.log' (path=/home/logan/projects/frob/.claude/worktrees/t-2456/budget_err.log)
+WARNING: no grammar registered for extension '.json' (path=/home/logan/projects/frob/.claude/worktrees/t-2456/check_full.json)
+WARNING: no grammar registered for extension '.log' (path=/home/logan/projects/frob/.claude/worktrees/t-2456/err.log)
+WARNING: load_coverage: no coverage.xml at coverage.xml
+WARNING: load_coverage: no coverage.xml at coverage.xml
+WARNING: check --budget 300: 2 of 5 stage group(s) did NOT run this invocation: lint, static -- this JSON/text output is PARTIAL, not the full picture

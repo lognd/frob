@@ -464,6 +464,60 @@ class TestParseErrorFindingsFromJson:
         assert fn() is None
 
 
+class TestBudgetDeferredGroupsFromStdout:
+    """T-2456: `_budget_deferred_groups_from_stdout` is the additive,
+    nameable companion to `_parse_error_findings_from_stdout`'s
+    everything-collapses-to-`None` unmeasurable contract -- a land-time
+    caller needs to say WHICH stage groups a budget-truncated run never
+    ran, not just that the sweep is unmeasured."""
+
+    # frob:ticket T-2456
+    def test_extracts_deferred_groups_from_json_stdout(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
+        # tdout.test_extracts_deferred_groups_from_json_stdout
+        """The exact `_BUDGET_TRUNCATED_STDOUT` fixture `_parse_error_
+        findings_from_stdout` treats as unmeasured must still yield the
+        one deferred group name by this reading."""
+        deferred = ticket_runner._budget_deferred_groups_from_stdout(
+            _BUDGET_TRUNCATED_STDOUT
+        )
+        assert deferred == ("static",)
+
+    # frob:ticket T-2456
+    def test_empty_for_non_json_stdout(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
+        # tdout.test_empty_for_non_json_stdout
+        """Legacy plain-text `stdout` (not `--json`) has nothing this
+        function can parse -- `()`, never a crash or a guessed name."""
+        assert ticket_runner._budget_deferred_groups_from_stdout("not json") == ()
+
+    # frob:ticket T-2456
+    def test_empty_when_no_deferral_present(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
+        # tdout.test_empty_when_no_deferral_present
+        """A clean, fully-run `--json` payload (no `"budget"` tool result
+        at all) reports zero deferred groups -- the must-still-land
+        positive control at this layer."""
+        clean = json.dumps(
+            {
+                "path": ".",
+                "results": [
+                    {
+                        "tool": "gate-summary",
+                        "exit_code": 0,
+                        "diagnostics": [],
+                        "tests": [],
+                        "summary": "0 errors, 0 warnings, 0 waived",
+                    }
+                ],
+            }
+        )
+        assert ticket_runner._budget_deferred_groups_from_stdout(clean) == ()
+
+
 class TestPythonForTree:
     """`_python_for_tree` resolution -- each method below carries its own
     `frob:tests` edge (T-1055: this class docstring used to itself be a

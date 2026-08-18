@@ -140,6 +140,7 @@ from ._rapid_sweep import _sweep_async
 from ._verify import (
     _apply_cmd_evidence,
     _apply_evidence,
+    _budget_deferred_groups_from_stdout,
     _check_gate_findings_fn,
     _check_gates_summary_fn,
     _collect_python_and_rust_ids,
@@ -183,6 +184,7 @@ __all__ = [
     "_block",
     "_board",
     "_brief",
+    "_budget_deferred_groups_from_stdout",
     "_check_gate_findings_fn",
     "_check_gates_summary_fn",
     "_close",

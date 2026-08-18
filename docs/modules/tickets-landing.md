@@ -2327,8 +2327,9 @@ counts/identities -- and only surfaced in the coordinator's next full,
 unscoped `frob check`, forcing a hand-fix cycle between lands.
 
 `frob ticket land`'s CLI layer (`_land`, `_land_cmd.py`) now brackets the
-real `land()` call with an UNSCOPED, `--budget`-bounded (default 90s)
-error-identity sweep of `root`:
+real `land()` call with an UNSCOPED, `--budget`-bounded (`_POST_LAND_
+SWEEP_BUDGET_S`, 480s as of T-2456 -- see the next section for why) error-
+identity sweep of `root`:
 
 1. **Before `land()` runs** (real, non-dry-run lands only): capture
    `root`'s current `HEAD` (`pre_land_sha`) and an unscoped `(rule_id,
@@ -2360,6 +2361,69 @@ sweep entirely rather than comparing a real set against a guess -- the
 same unmeasured-is-not-zero posture `_check_gates_summary_fn`/
 `_check_gate_findings_fn` (T-0832/T-0846) already use for the scoped
 claim-divergence check this complements, not replaces.
+
+### Budget-truncated sweeps must not present as clean (T-2456)
+
+<!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::_print_land_proof -->
+<!-- frob:describes src/frob/app/ticket_runner/_verify.py::_budget_deferred_groups_from_stdout -->
+
+"Skips the sweep entirely" above used to mean exactly that: silently.
+`--budget`-bounded `frob check` self-selects which of its 5 stage groups
+(`gates-fast`/`gates-native`/`gates-security`/`lint`/`static`, `frob.
+check._STAGE_GROUPS`) fit the time budget and DEFERS the rest, which
+makes `_parse_error_findings_from_json` return `None` (T-1703: a
+truncated run is a DIFFERENT question, never a smaller answer). Before
+T-2456, that `None` reached `_post_land_unscoped_error_sweep` as an
+ordinary unmeasurable result, logged one `_log.warning` line, and the
+land proceeded and printed `LAND-PROOF: ... verified=True` -- structurally
+indistinguishable from a land whose sweep ran to completion and found
+nothing. MEASURED consequence (T-2456's own investigation): the repo's
+error floor went from 30 to 119 across 22 lands in one session, every one
+reporting `verified=True`, including 4 `ruff-check:E501` (line-too-long)
+findings that reached `main` because the `lint` stage group -- the one
+carrying `ruff`/`ty` -- was among those deferred.
+
+Two changes close this, deliberately WITHOUT making a truncated run a
+hard land refusal (a refusal here would convert "the fleet is busy" into
+"the fleet cannot land," worst exactly when throughput matters most --
+see this ticket's own weighed-and-rejected alternatives for why):
+
+1. **`_POST_LAND_SWEEP_BUDGET_S` raised 300 -> 480.** Measured against
+   `root`'s own steady-state `.frob/check-budget-timing.json` EMA
+   (2026-08-18, post-T-2443 forkserver-leak fix): `gates-fast` 109.5s +
+   `gates-native` 51.2s + `gates-security` 87.4s + `lint` 2.6s + `static`
+   83.9s = 334.6s total -- already OVER the old 300s budget on a healthy,
+   non-degraded machine, meaning `static` (cycle/dup/arch/bind/exports)
+   was being silently deferred from every post-land sweep as a matter of
+   course, not only under unusual load. 480s covers the measured total
+   with ~145s of headroom. This is the quantified latency trade: a sweep
+   that used to truncate at ~250s now typically runs the full ~335s --
+   about 85s more wall time on the common case, not a "dramatically
+   slower" change, and it only ever adds time to the step that was
+   ALREADY silently dropping coverage.
+2. **`budget_deferred=` on the `LAND-PROOF:` line.** `_unscoped_error_
+   findings` now also calls `_budget_deferred_groups_from_stdout` (`_verify.
+   py`, additive, does not change `_unscoped_error_findings`'s own return
+   contract) whenever it returns `None` because of a `BUDGET001`
+   deferral specifically, and folds the named group(s) into the process-
+   local `_LAST_BUDGET_DEFERRALS` dict -- the same "module dict, popped
+   once at print time" idiom T-2091's `_LAST_CLAIMS_OUTCOME` and T-2275's
+   `_LAST_ORPHAN_EVIDENCE_OUTCOME` already established for surfacing a
+   process-local fact onto `LAND-PROOF:` without threading a new
+   parameter through every intervening call. `_print_land_proof` pops it
+   and prints `budget_deferred=<sorted,comma,list>` or `budget_deferred=
+   none` -- present and explicit on EVERY land, never a silently-omitted
+   field. This is surfacing only: it never changes the RETURNED
+   `verified` bool, exactly as `claims_reverify=`/`orphan_evidence_
+   check=` do not.
+
+Even with the raised budget, a genuinely overloaded machine can still
+truncate a sweep -- 480s is a quantified reduction in how often that
+happens on THIS repo's measured shape, not a promise it can never
+recur. When it does, `budget_deferred=` names it on the very
+`LAND-PROOF:` line a human or a script already reads, closing the actual
+defect this ticket exists for: a clean-looking result from an incomplete
+run.
 
 ## `frob check --land-parity` (T-1535)
 
