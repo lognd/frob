@@ -82,7 +82,7 @@ threat: null
 component: hooks
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2e33cc71767f3d5e357675e22aae1f78fa5b5360
 ---
 MEASURED TODAY: two agents in one wave edited the SHARED ROOT instead of
 their worktree, and a third agent's land was DirtyMain-blocked as a
