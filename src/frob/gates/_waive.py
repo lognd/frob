@@ -748,6 +748,24 @@ _KNOWN_GATE_RULES = frozenset(
         # declaration).
         "FFI001",
         "FFI002",
+        # frob:ticket T-2397
+        # T-2397: FLAGCOV001 -- a CLI flag that parses but never reaches
+        # its declared config model (frob.gates._flag_coverage).
+        "FLAGCOV001",
+        # frob:ticket T-2388
+        # T-2397: courtesy registration to unblock T-2388 (Series Y) --
+        # T-2388's land refused at UnregisteredGateRuleConstructed (T-1937)
+        # because a new rule id must be registered here BEFORE it can
+        # close, and this file was under T-2397's own live lease. This
+        # ticket (T-2397) registers ONLY the two rule ids below;
+        # PORT001's actual gate wiring, `_ALL_GATES`/`_CANONICAL_GATE_
+        # ORDER`/dispatch registration, and its docs entry all belong to
+        # and land with T-2388, not here. `PORT001-PATH` (promoted to
+        # ERROR after its own burn-down) and `PORT001-IDENT` (advisory,
+        # excluded from that promotion bar) per the coordinator's
+        # PORT001 split decision this turn.
+        "PORT001-PATH",
+        "PORT001-IDENT",
         # frob:ticket T-0924
         # T-0924: the larger pre-existing batch T-0901's drift-lock test
         # surfaced beyond T-0903/T-0923's ids, carried in that test's

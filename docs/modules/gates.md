@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PORT001-IDENT,PORT001-PATH,PRE001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -90,6 +90,7 @@ declaration).
 | CPPTHROW001 | arch (ERROR, T-1034) | `frob.arch._cpp_mayraise`'s `cpp-noexcept-throws` category (T-0687, docs/modules/arch.md#cpp-may-throw-analysis-t-0687) channeled into a real gate `Violation` -- a C++ `noexcept` function whose computed may-throw set is non-empty with no encompassing `catch (...)`; ships at `Severity.ERROR`, not the `WARN` every other `arch`-family rule here uses, since an escaping exception from `noexcept` is `std::terminate` at runtime, not deferrable debt. Still an ORDINARY waivable rule (`frob:waive CPPTHROW001 reason="..."`), matching every other `arch`-family rule -- ERROR severity is not the same thing as `_UNWAIVABLE_RULES` membership. |
 | LARGE001 | arch (WARN, T-1102) | `frob.arch._check_large_file`'s language-agnostic `large-file` category (any file over `max_file_lines`, `frob.toml`'s `[arch]` table or the calibrated default) channeled into a real gate `Violation` -- previously advisory-only (`frob.arch.analyze_project`'s own text/JSON output), invisible to `frob check`/`frob:waive` entirely. Test files and `fixtures/`-rooted data files stay exempt, same as the underlying advisory check (T-0368/T-0372). WARN first-turn-on, not ERROR: this repo's own source tree carried 43 pre-existing over-threshold files at filing time (measured via `frob.gates._arch.arch_gate` itself against `frob.toml`'s `max_file_lines = 800`, `python` + `rust` files -- `analyze_project` called standalone under-counts since it does not walk `frob-core/`'s own crate the same way the gate's repo-root invocation does), the same debt-corpus posture ARCH101-103 and EXHAUST001/002 shipped WARN-first for. Waivable with a reasoned `frob:waive LARGE001 reason="..."`; a file-level finding has no function/class symbol, so the waiver binds by file/line, not `symref`. `frob arch <single-file>` (single-file mode) reports the identical finding a directory walk containing just that file would (T-1102 also fixed a `frob.arch.analyze_project` bug where single-file mode silently produced zero findings for every category, not just this one). |
 | LEXCHECK001 | lexcheck | (error) a gate rule constructed from raw text (`re.search`/`match`/`fullmatch`/`findall`/`finditer` over source text, or a module-level compiled `_FOO_RE` pattern) with no `symref`/AST binding on its own `Violation` -- T-1662's own directive #4, closing the loop so a NEW lexical decider cannot land silently the way REF001/DEAD001-OPAQUE001/T-2178/T-2201/T-2187/T-2188/T-2243 all did (`frob.gates._lexical_selfcheck`, see [LEXCHECK001](#lexcheck001-t-2344) below) |
+| FLAGCOV001 | flag_coverage | (error/unresolved) a CLI flag that parses on a declared `[[docblocks.commands]]` parser tree but never reaches its declared `config=` model (T-2387/T-0749's defect shape); UNRESOLVED (never a silent zero) when no source is declared, or `config=`/`forwarded=` is missing, or a dotted path fails to resolve (`frob.gates._flag_coverage`, see [FLAGCOV001](#flagcov001-t-2397) below) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`), a TS `interface`/`type`/`class` field, or a Rust `struct` field (T-0352), with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
 | PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
@@ -2650,6 +2651,76 @@ once.
 `frob:waive WIRE003 reason="..."` is the escape hatch for a genuine
 false positive within the enforced scope (prose that happened to land
 inside a code span/pattern).
+
+## FLAGCOV001 (T-2397)
+
+T-2387's own root cause is this rule's reason for existing:
+`find_dropped_cli_flags` (T-2004, `frob.app._config_external`) is a
+correct, already-existing detector for "a CLI flag parses but its config-
+forwarding layer silently drops it before the model is constructed" --
+the exact shape of both T-0749 (`--accepts`) and T-2320's three ruff
+flags. It was wired to exactly ONE place, its own unit test
+(`tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags::
+test_current_tree_has_zero_dropped_flags`), which nothing in the
+`frob check` gate surface ever ran -- a gate whose only trigger is
+"someone happens to run `pytest tests/unit/`" is not a control, it is a
+detector nobody is required to consult. This rule is that wiring.
+
+`frob.gates._flag_coverage.flag_coverage_gate` reads every
+`[[docblocks.commands]]` entry (the SAME declared table DOC004 already
+uses, T-1195) in the project's `frob.toml`. Each entry may now carry two
+additional keys beyond DOC004's own `prog`/`parser`:
+
+- `config = "module:Class"` -- the dotted path to the pydantic-shaped
+  config model this command tree's CLI flags are meant to reach.
+- `forwarded = "module:symbol"` -- the dotted path to either a
+  `frozenset[str]` or a zero-argument callable returning one: the actual
+  set of `config`'s field names THIS PROJECT'S OWN config-forwarding
+  layer copies from a parsed CLI namespace.
+
+Both are required together (declaring `config=` alone is not enough) --
+see the "why `forwarded=` is mandatory" note below. For each fully
+declared source, the gate resolves `parser`, calls it to build the real
+`argparse.ArgumentParser`, resolves `config`, resolves `forwarded`, and
+calls `find_dropped_cli_flags(parser, config_cls, forwarded=forwarded)`.
+Every returned dest name is an ERROR-severity FLAGCOV001 finding.
+
+PORTABILITY (T-2384's doctrine, applied at design time): this gate holds
+no reference to `frob.__main__:_build_parser` or `frob.app.config:
+AppConfig` anywhere in its own source -- both are resolved through the
+declared `module:symbol` paths, the identical mechanism DOC004 already
+uses (`frob.gates._docblocks_shared.resolve_dotted_symbol`, which
+`frob.gates._docblocks_refs._load_parser_factory` now delegates to
+rather than duplicating). Any project that already declares
+`[[docblocks.commands]]` for DOC004 gets FLAGCOV001 for free by adding
+`config=`/`forwarded=` to an existing entry -- no new config table.
+
+WHY `forwarded=` IS MANDATORY, NOT OPTIONAL WITH A SENSIBLE DEFAULT.
+`find_dropped_cli_flags`'s own `forwarded=None` default resolves to
+`frob.app._config_external._all_forwarded_field_names()` -- frob's OWN
+hardcoded field-name tuples, computed independently of whichever
+`config_cls` was actually passed in. Measured directly while building
+this gate: pointed at a synthetic fixture project (its own unrelated
+parser/config pair), relying on that ambient default flagged 100% of the
+fixture's fields as "dropped" -- every single one, a false positive
+across the board, because frob's own tuples know nothing about a foreign
+project's fields. Requiring every declaration (including this repo's
+own, `forwarded = "frob.app._config_external:_all_forwarded_field_
+names"`) to name its forwarding source explicitly closes that gap
+before it could bite a second project the way the ungated default would
+have.
+
+FAIL-LOUDLY DOCTRINE (T-2391, applied via the mechanism already shipped
+ahead of that epic's full type migration): every "could not measure"
+state -- no `[[docblocks.commands]]` declared at all, `config=` missing,
+`forwarded=` missing, a dotted path that fails to resolve, a parser
+factory that raises, a `forwarded=` value that is neither a set nor a
+set-returning callable -- reports `Severity.UNRESOLVED` (T-1664, the
+same "the check could not determine an answer" signal REF001/REF002
+already use), never a silently empty violation list. An empty result
+from this gate means exactly one thing: every declared source resolved
+and `find_dropped_cli_flags` found nothing -- the only state this rule
+treats as a genuine pass.
 
 ## LEXCHECK001 (T-2344)
 

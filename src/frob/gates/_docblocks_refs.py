@@ -16,6 +16,7 @@ from frob.gates._docblocks_shared import (
     _doc004_violation,
     _ProjectNamespaces,
     _read_toml,
+    resolve_dotted_symbol,
 )
 from frob.gates._models import Violation
 from frob.gitio import run_argv
@@ -111,10 +112,35 @@ class _ConsoleCommandSource:
     zero-argument `argparse.ArgumentParser` factory (`parser`) this gate
     imports and walks AT CHECK TIME -- the live registry is the only source
     of truth, so a renamed/removed subcommand is caught with zero edits
-    here or in `frob.toml`."""
+    here or in `frob.toml`. `config` (T-2397, optional -- `None` for a
+    project that has not opted into FLAGCOV001) is the dotted `module:Class`
+    path to the pydantic-shaped config model this command tree's CLI flags
+    are meant to reach; `frob.gates._flag_coverage` is DOC004's only other
+    consumer of this same declared table, reusing it rather than inventing
+    a second `[[...]]` array for a second gate. `forwarded` (T-2397,
+    required alongside `config` -- FLAGCOV001 reports UNRESOLVED rather
+    than guess when it is missing) is a dotted `module:symbol` path to
+    either a `frozenset[str]` or a zero-argument callable returning one:
+    the actual set of `config`'s field names this PROJECT'S OWN config-
+    forwarding layer copies from a parsed CLI namespace.
+    `find_dropped_cli_flags`'s own `forwarded=None` default
+    (`frob.app._config_external._all_forwarded_field_names`) is frob's
+    OWN hardcoded tuple set, not derived from whichever `config_cls` was
+    passed -- silently relying on it for a foreign project's config would
+    flag every field as dropped (measured directly building this gate:
+    a synthetic fixture project reported 100% of its fields "dropped"
+    under the ambient default, false positives across the board). Every
+    declaration -- including this repo's own -- names its `forwarded`
+    source explicitly rather than depending on that default, so the same
+    portability bug this ticket exists to avoid cannot recur one layer
+    down."""
 
     prog: str
     parser: str
+    # frob:ticket T-2397
+    config: str | None = None
+    # frob:ticket T-2397
+    forwarded: str | None = None
 
 
 # frob:ticket T-1195
@@ -135,40 +161,29 @@ def _console_command_sources(root: Path) -> tuple[_ConsoleCommandSource, ...]:
             continue
         prog = entry.get("prog")
         parser = entry.get("parser")
+        # frob:ticket T-2397
+        config = entry.get("config")
+        config = config if isinstance(config, str) and config else None
+        forwarded = entry.get("forwarded")
+        forwarded = forwarded if isinstance(forwarded, str) and forwarded else None
         if isinstance(prog, str) and prog and isinstance(parser, str) and parser:
-            sources.append(_ConsoleCommandSource(prog=prog, parser=parser))
+            sources.append(
+                _ConsoleCommandSource(
+                    prog=prog, parser=parser, config=config, forwarded=forwarded
+                )
+            )
     return tuple(sources)
 
 
 # frob:ticket T-1195
+# frob:ticket T-2397
 def _load_parser_factory(dotted: str):
     """Resolve a `module:callable` dotted path to the callable itself, or
-    `None` on any import/lookup failure -- a malformed/stale config entry
-    degrades to "no console checking for this source", never a gate
-    crash."""
-    import importlib
-
-    module_name, _, attr = dotted.partition(":")
-    if not module_name or not attr:
-        _log.warning(
-            "doc004: malformed parser path %r (want 'module:callable')", dotted
-        )
-        return None
-    try:
-        # frob:waive OPAQUE001 reason="T-1185: dotted is a repo-owner-authored \
-        # frob.toml [[doc004.source]].parser config value (docs/modules/gates.md's \
-        # DOC004 console-parser plugin surface), never externally/untrusted-input \
-        # controlled -- the whole point of this dotted-path indirection is loading a \
-        # repo-chosen parser callable by name; resolving it statically would defeat \
-        # the plugin mechanism entirely, not just move the opacity"
-        module = importlib.import_module(module_name)
-        # frob:waive OPAQUE001 reason="T-1185: attr is the same repo-owner-authored \
-        # module:callable config value as module_name above -- same plugin-loading \
-        # justification, not a second independent opacity"
-        return getattr(module, attr)
-    except (ImportError, AttributeError) as exc:
-        _log.warning("doc004: could not resolve parser %r: %s", dotted, exc)
-        return None
+    `None` on any import/lookup failure -- degrades to "no console
+    checking for this source", never a gate crash. T-2397: thin
+    `log_prefix="doc004"` wrapper over the shared `resolve_dotted_symbol`
+    (also FLAGCOV001's own resolver for the same declared entries)."""
+    return resolve_dotted_symbol(dotted, log_prefix="doc004")
 
 
 # frob:invariant terminates reason="_subparser_tree only recurses into a subparser's own choices, and argparse subparser trees are built once at module load as a finite, non-self-referential tree (a subcommand can never register itself or an ancestor as one of its own subparsers)" measure="depth of the argparse subparser tree strictly decreases with each recursive call"  # noqa: E501

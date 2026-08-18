@@ -64,8 +64,60 @@ def _doc004_violation(doc_path: str, line: int, *, tier: str, detail: str) -> Vi
     )
 
 
+# frob:doc docs/modules/gates.md#flagcov001-t-2397
+# frob:tests \
+# tests/unit/test_flag_coverage_gate.py::TestFlagCoverageGate.test_unresolvable_parser_\
+# is_unresolved_not_a_crash kind="unit"
+# frob:ticket T-2397
+def resolve_dotted_symbol(
+    dotted: str, *, log_prefix: str = "resolve_dotted_symbol"
+) -> object | None:
+    """Resolve a `module:attribute` dotted path (the same declaration shape
+    `[[docblocks.commands]]`'s own `parser` key already uses, T-1195) to the
+    live object itself, or `None` on any import/lookup failure -- a
+    malformed/stale config entry degrades to "cannot resolve this source",
+    never a crash. Generic over WHAT is resolved (a zero-arg parser-factory
+    callable, a pydantic config class, ...) so a second consumer (T-2397's
+    FLAGCOV001, resolving both a `parser` AND a `config` entry off the same
+    `[[docblocks.commands]]` declaration) reuses this exactly rather than
+    hand-rolling a second `importlib.import_module`/`getattr` pair -- the
+    NO DUPLICATION rule applied to DOC004's own `_load_parser_factory`,
+    which now delegates here unchanged in behavior. `log_prefix` tags the
+    warning with the calling gate's own rule family so a resolution failure
+    in the log is traceable to which gate hit it."""
+    import importlib
+
+    from frob.logging import get_logger
+
+    _log = get_logger(__name__)
+
+    module_name, _, attr = dotted.partition(":")
+    if not module_name or not attr:
+        _log.warning(
+            "%s: malformed dotted path %r (want 'module:attribute')",
+            log_prefix,
+            dotted,
+        )
+        return None
+    try:
+        # frob:waive OPAQUE001 reason="T-2397: dotted is a repo-owner-authored \
+        # frob.toml [[docblocks.commands]].parser/.config config value, never \
+        # externally/untrusted-input controlled -- same plugin-loading justification \
+        # as _load_parser_factory's own OPAQUE001 waiver (T-1185), generalized to a \
+        # second consumer of the identical declaration shape"
+        module = importlib.import_module(module_name)
+        # frob:waive OPAQUE001 reason="T-2397: attr is the same repo-owner-authored \
+        # module:attribute config value as module_name above -- same plugin-loading \
+        # justification, not a second independent opacity"
+        return getattr(module, attr)
+    except (ImportError, AttributeError) as exc:
+        _log.warning("%s: could not resolve %r: %s", log_prefix, dotted, exc)
+        return None
+
+
 __all__ = [
     "_ProjectNamespaces",
     "_doc004_violation",
     "_read_toml",
+    "resolve_dotted_symbol",
 ]
