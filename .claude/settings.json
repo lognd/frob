@@ -25,6 +25,17 @@
             "statusMessage": "frob-suggest"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/root-write-guard.py",
+            "timeout": 10,
+            "statusMessage": "root-write-guard"
+          }
+        ]
       }
     ],
     "SessionStart": [
