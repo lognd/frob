@@ -332,7 +332,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5219d3acb1eced57743e38804f04db2dc0d80481
 ---
 Re-measurement of T-2331 (post-land sweep regression from T-2299, filed
 2026-08-17 20:27) against the CURRENT floor (2026-08-17, post T-2290/
