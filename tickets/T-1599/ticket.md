@@ -9,6 +9,7 @@ created: '2026-08-05'
 priority: high
 blocked_by:
 - T-1598
+- T-2411
 parent: T-1597
 tier: story
 sprint: null
@@ -23,6 +24,8 @@ scope:
 - docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: docs/**
