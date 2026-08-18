@@ -162,7 +162,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 23191cd7e12a8c57c4286e62490e2cf09e6d41bf
 ---
 MEASURED 2026-08-17. `uv run frob cycle src/frob` reports three genuine
 import cycles in this package:
