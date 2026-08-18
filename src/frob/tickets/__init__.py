@@ -111,6 +111,7 @@ from frob.tickets._models import (
     AcceptanceCriterion,
     Attachment,
     AttachmentSource,
+    BodyChangeEntry,
     BoardColumn,
     DoneReportClaims,
     EpicRollup,
@@ -173,6 +174,7 @@ from frob.tickets._reporting import (
 )
 from frob.tickets._scope import demote_to_evidence_only, mutate_scope
 from frob.tickets._setters import (
+    set_body,
     set_component,
     set_designated_repro_test,
     set_kind,
@@ -594,6 +596,7 @@ __all__ = [
     "AttachError",
     "AttachmentSource",
     "BOARD_STATES",
+    "BodyChangeEntry",
     "BoardColumn",
     "ClipboardError",
     "DoneReportClaims",
@@ -659,6 +662,7 @@ __all__ = [
     "mutate_scope",
     "queue_status",
     "remove_acceptance",
+    "set_body",
     "set_component",
     "set_designated_repro_test",
     "set_kind",

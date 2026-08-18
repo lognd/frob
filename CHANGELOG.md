@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.508.0] - unreleased
+
+- T-2392: no CLI verb amends a ticket body, forcing agents to hand-edit the ledger
+
 ## [0.507.0] - unreleased
 
 - T-2396: the shared-root write guard fires at commit time, after the damage is done

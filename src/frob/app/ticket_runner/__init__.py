@@ -88,6 +88,7 @@ from ._mutate import (
     _accept,
     _anchor,
     _board,
+    _body,
     _brief,
     _component,
     _epic,
@@ -362,6 +363,8 @@ def _ticket_dispatch_table() -> dict:
         "kind": _kind,
         "component": _component,
         "label": _label,
+        # frob:ticket T-2392
+        "body": _body,
         # frob:ticket T-1029
         "accept": _accept,
         "board": _board,

@@ -377,6 +377,106 @@ def _priority(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: priority now %s", cfg.ticket_id, ticket.priority.value)
 
 
+# frob:ticket T-2392
+def _resolve_body_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket body`'s `--reason`: `--reason-file` wins if
+    given (read verbatim, T-0737 pattern), else the inline `--reason`
+    string. Exits 1 if both are given; returns `None` if neither is given
+    (the caller reports the "one is required" error), same shape as
+    `_resolve_triage_reason`."""
+    if cfg.ticket_body_reason_file is not None and cfg.ticket_body_reason:
+        _log.error("frob ticket body: --reason and --reason-file are mutually exclusive")
+        sys.exit(1)
+    if cfg.ticket_body_reason_file is not None:
+        try:
+            return cfg.ticket_body_reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket body: could not read --reason-file %s: %s",
+                cfg.ticket_body_reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return cfg.ticket_body_reason
+
+
+# frob:ticket T-2392
+def _resolve_body_mode_and_text(cfg: AppConfig) -> tuple[str, str] | None:
+    """Resolve `frob ticket body`'s mode (`"append"`/`"set"`) and text from
+    whichever of `--append`/`--append-file`/`--set`/`--set-file` was given
+    (argparse's mutually-exclusive group already refuses more than one at
+    parse time). Exits 1 if a `-file` variant cannot be read, or if NONE of
+    the four were given (`Err`-equivalent -- the caller reports the
+    "exactly one is required" error, matching `_resolve_scope_reason`'s
+    None-means-missing shape)."""
+    if cfg.ticket_body_append is not None:
+        return "append", cfg.ticket_body_append
+    if cfg.ticket_body_append_file is not None:
+        try:
+            return "append", cfg.ticket_body_append_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket body: could not read --append-file %s: %s",
+                cfg.ticket_body_append_file,
+                exc,
+            )
+            sys.exit(1)
+    if cfg.ticket_body_set is not None:
+        return "set", cfg.ticket_body_set
+    if cfg.ticket_body_set_file is not None:
+        try:
+            return "set", cfg.ticket_body_set_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket body: could not read --set-file %s: %s",
+                cfg.ticket_body_set_file,
+                exc,
+            )
+            sys.exit(1)
+    return None
+
+
+# frob:ticket T-2392
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_append_writes_body
+# frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_missing_text_exits_nonzero
+def _body(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket body <id> (--append TEXT|--append-file PATH | --set
+    TEXT|--set-file PATH) --reason TEXT`: the ONLY thing this command does
+    is resolve the mode+text (`_resolve_body_mode_and_text`) and reason
+    (`_resolve_body_reason`) and forward to `frob.tickets.set_body`
+    (T-2392) -- no validation is re-derived here, same thin-dispatch
+    pattern `_priority`/T-0411 established."""
+    from frob.tickets import set_body
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket body requires <id>")
+        sys.exit(1)
+
+    mode_and_text = _resolve_body_mode_and_text(cfg)
+    if mode_and_text is None:
+        _log.error(
+            "frob ticket body requires exactly one of --append/--append-file/"
+            "--set/--set-file"
+        )
+        sys.exit(1)
+    mode, text = mode_and_text
+
+    reason = _resolve_body_reason(cfg)
+    if not reason:
+        _log.error("frob ticket body requires --reason TEXT or --reason-file PATH")
+        sys.exit(1)
+
+    result = set_body(root, cfg.ticket_id, text, mode=mode, reason=reason)
+    if result.is_err:
+        _log.error("body change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: body %s (now %d chars)", cfg.ticket_id, mode, len(ticket.body)
+    )
+
+
 # frob:ticket T-0834
 # frob:ticket T-2353
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
