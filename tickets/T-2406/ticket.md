@@ -117,7 +117,7 @@ threat: null
 component: verify
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3945d38d463d332bb617ab7d0346b5c3926778dc
 ---
 THE ENTIRE DEFERRED-VERIFICATION ARCHITECTURE IS ~49% INERT. Measured
 directly from `.frob/verify-drain/*.log`, 47 drain attempts this drive:
