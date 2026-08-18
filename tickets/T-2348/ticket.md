@@ -13,9 +13,15 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_wire.py
-- tests/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: too broad, collided with T-1604; narrow to a specific test file once implementation
+    starts
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
