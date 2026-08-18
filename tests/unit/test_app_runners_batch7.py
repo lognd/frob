@@ -7,7 +7,6 @@ subcommand handlers) directly against a hand-built `AppConfig`. Modules
 covered this batch: `app/ticket_runner.py`, `app/sys_runner.py`.
 """
 
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -72,9 +71,7 @@ class TestTicketRunnerDispatch:
         import frob.app.debt_runner as debt_mod
 
         called = {}
-        monkeypatch.setattr(
-            debt_mod, "run", lambda cfg: called.setdefault("cfg", cfg)
-        )
+        monkeypatch.setattr(debt_mod, "run", lambda cfg: called.setdefault("cfg", cfg))
         cfg = AppConfig(ticket_command="debt", ticket_path=tmp_path, debt_path=tmp_path)
         ticket_run(cfg)
         assert called["cfg"] is cfg
@@ -146,7 +143,10 @@ class TestTicketRunnerRootResolution:
     ) -> None:
         # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketRunnerRootResolution.test_resolved_root_is_logged_for_a_mutating_verb  # noqa: E501
         cfg = AppConfig(
-            ticket_command="new", ticket_path=tmp_path, ticket_title="t", ticket_kind="bug"
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="t",
+            ticket_kind="bug",
         )
         with caplog.at_level("INFO"):
             ticket_run(cfg)
@@ -632,6 +632,73 @@ class TestTicketStart:
         queue = load_queue(tmp_path).danger_ok
         assert queue.tickets["T-0001"].state == TicketState.IN_PROGRESS
 
+    # frob:ticket T-2446
+    def test_start_scope_breadth_ack_flag_sets_field_before_refusal(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_bread\
+        # th_ack_flag_sets_field_before_refusal
+        """T-2446: `--scope-breadth-ack`/`--scope-breadth-ack-reason` on
+        `start` itself set `scope_breadth_ack=True` in the SAME command,
+        so a genuinely broad epic can ack-and-start in one call instead of
+        a separate `frob ticket scope-ack` first."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="broad scope ticket inline ack",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/**"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start",
+            ticket_path=tmp_path,
+            ticket_id="T-0001",
+            ticket_scope_breadth_ack=True,
+            ticket_scope_breadth_ack_reason="genuine epic umbrella, acked at start",
+        )
+        with caplog.at_level("INFO"):
+            ticket_run(cfg)
+        assert "scope_breadth_ack now True" in caplog.text
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].state == TicketState.IN_PROGRESS
+        assert queue.tickets["T-0001"].scope_breadth_ack is True
+
+    # frob:ticket T-2446
+    def test_start_scope_breadth_ack_without_reason_refuses(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_bread\
+        # th_ack_without_reason_refuses
+        """T-2446: `--scope-breadth-ack` with no `--scope-breadth-ack-
+        reason` refuses immediately, same mandatory-reason posture `frob
+        ticket scope-ack --reason` and `frob ticket new
+        --scope-breadth-ack-reason` already enforce -- an unackable ack
+        must not silently no-op."""
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=tmp_path,
+            ticket_title="broad scope ticket inline ack no reason",
+            ticket_kind="bug",
+            ticket_scope=["src/frob/**"],
+        )
+        ticket_run(cfg)
+        cfg = AppConfig(
+            ticket_command="start",
+            ticket_path=tmp_path,
+            ticket_id="T-0001",
+            ticket_scope_breadth_ack=True,
+        )
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            ticket_run(cfg)
+        assert exc.value.code == 1
+        assert "--scope-breadth-ack-reason" in caplog.text
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets["T-0001"].state != TicketState.IN_PROGRESS
+        assert queue.tickets["T-0001"].scope_breadth_ack is False
+
     # frob:ticket T-1645
     def test_start_precise_scope_warns_nothing(self, tmp_path: Path, caplog) -> None:
         # frob:tests \
@@ -938,6 +1005,121 @@ class TestTicketRequeue:
         assert "not in-progress" in caplog.text
 
 
+# frob:ticket T-2446
+class TestScopeBreadthNarrowingT2446:
+    """T-2446 part (b) regression coverage: the underlying primitives
+    `_compute_contention`/`_globs_intersect` behave correctly on the
+    SHAPE of the real narrowing this ticket performed -- a broad-glob
+    ticket set narrowed to precise files still contends where files are
+    genuinely shared, and no longer contends where they are not. Uses a
+    self-contained `tmp_path` fixture rather than introspecting this
+    repo's own live ticket state (which a worktree's own stale ledger
+    copy cannot reliably reflect -- the exact staleness class T-2400
+    fixed for TICK006's citation check applies here too: a test that
+    reads "whichever repo I happen to be checked out in" is not
+    deterministic across worktree/main)."""
+
+    _SEED_TITLES = [
+        "alpha widget rework",
+        "bravo pipeline overhaul",
+        "charlie config migration",
+        "delta report renderer",
+        "echo cache invalidation",
+    ]
+
+    def _seed(self, root: Path, index: int, scope: tuple) -> None:
+        cfg = AppConfig(
+            ticket_command="new",
+            ticket_path=root,
+            ticket_title=self._SEED_TITLES[index],
+            ticket_kind="bug",
+            ticket_scope=list(scope),
+            ticket_scope_breadth_ack=True,
+            ticket_scope_breadth_ack_reason="fixture seed, breadth is the point of this test",
+            ticket_ack_related=True,
+        )
+        ticket_run(cfg)
+
+    def test_conftest_contention_materially_reduced(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446.test_conftest_contention_materially_reduced  # noqa: E501
+        """Before: N tickets all declaring a broad tests/** glob collide
+        on every file under tests/, including tests/conftest.py itself.
+        After: narrowing each to a precise, disjoint test file drops
+        tests/conftest.py's declarer count to zero -- the same shape
+        T-2446's real narrowing pass produced (20 -> 7, with only the
+        deliberately-left-broad tickets remaining)."""
+        from frob.app.ticket_runner._query import _compute_contention
+        from frob.tickets import load_queue
+
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "tests" / "conftest.py").write_text("# fixtures\n")
+        for i in range(5):
+            (tmp_path / "tests" / f"test_{i}.py").write_text("def test_x(): pass\n")
+            self._seed(tmp_path, i, ("tests/**",))
+
+        queue_before = load_queue(tmp_path).danger_ok
+        before = _compute_contention(tmp_path, queue_before)
+        before_conftest = next(
+            (e for e in before.entries if e.file == "tests/conftest.py"), None
+        )
+        assert before_conftest is not None
+        assert len(before_conftest.ticket_ids) == 5
+
+        # Narrow each to its own precise file -- tests/conftest.py drops
+        # out of every one of their declared scopes.
+        from frob.tickets import mutate_scope
+
+        for i in range(5):
+            result = mutate_scope(
+                tmp_path,
+                f"T-{i + 1:04d}",
+                add=(f"tests/test_{i}.py",),
+                remove=("tests/**",),
+                reason="narrowed",
+            )
+            assert result.is_ok, result.err
+
+        queue_after = load_queue(tmp_path).danger_ok
+        after = _compute_contention(tmp_path, queue_after)
+        after_conftest = next(
+            (e for e in after.entries if e.file == "tests/conftest.py"), None
+        )
+        assert after_conftest is None, (
+            "tests/conftest.py should have zero declarers once every "
+            "ticket narrowed away from tests/**"
+        )
+
+    def test_narrowed_disjoint_tickets_have_no_scope_overlap(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446.test_narrowed_disjoint_tickets_have_no_scope_overlap  # noqa: E501
+        """must-now-start (T-2446 acceptance [2]): two tickets narrowed
+        to genuinely DIFFERENT individual test files have zero scope
+        overlap -- `leased_by`'s own overlap primitive finds nothing
+        shared, so both are concurrently startable, which a shared
+        tests/** declaration made impossible before narrowing."""
+        from frob.tickets._models import _globs_intersect
+
+        a = ("src/frob/arch/_cpp_mayraise.py", "tests/test_perf.py")
+        b = ("src/frob/gates/_fmt_directives.py", "tests/test_gates_fmt_directives.py")
+        overlap = [(x, y) for x in a for y in b if _globs_intersect(x, y)]
+        assert overlap == [], f"expected no overlap, found: {overlap}"
+
+    def test_narrowed_sibling_tickets_still_conflict(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446.test_narrowed_sibling_tickets_still_conflict  # noqa: E501
+        """must-still-refuse (T-2446 acceptance [3]): two narrowed
+        SIBLING tickets that genuinely share a file (a common conformance
+        suite both exercise) still overlap after narrowing -- proves
+        breadth was fixed by precision, not by weakening `leased_by`'s
+        overlap detection."""
+        from frob.tickets._models import _globs_intersect
+
+        a = ("src/frob/lang/_walk_csharp.py", "tests/test_lang_conformance_gate.py")
+        b = ("src/frob/lang/_walk_java.py", "tests/test_lang_conformance_gate.py")
+        overlap = [(x, y) for x in a for y in b if _globs_intersect(x, y)]
+        assert overlap != [], "expected genuine sibling overlap, found none"
+
+
 class TestTicketStartTransitionFailure:
     def test_transition_to_in_progress_failure_exits_1(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
@@ -1186,7 +1368,9 @@ class TestTicketAttachBackfillDrafts:
         assert before.startswith("T-draft-cafef00d/")
 
         cfg = AppConfig(
-            ticket_command="attach", ticket_path=tmp_path, ticket_attach_backfill_drafts=True
+            ticket_command="attach",
+            ticket_path=tmp_path,
+            ticket_attach_backfill_drafts=True,
         )
         with caplog.at_level("INFO"):
             ticket_run(cfg)
@@ -1715,9 +1899,7 @@ class TestSysExport:
         out = capsys.readouterr().out
         assert out.strip() != ""
 
-    def test_dangling_flow_endpoint_fails_closed(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_dangling_flow_endpoint_fails_closed(self, tmp_path: Path, caplog) -> None:
         # frob:tests src/frob/app/sys_runner.py::_load_export_model kind="unit"
         # T-1834: a flow naming a node id declared nowhere in the file must
         # fail closed via elaborate_merged's check_cross_file_references,

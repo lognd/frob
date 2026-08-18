@@ -2,7 +2,7 @@
 id: T-2446
 title: 55 open tickets hold glob-shaped scopes and 20 lease the whole test suite,
   capping fleet parallelism
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -38,22 +38,39 @@ scope_changes:
     ticket extends with inline ack flags
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_scope_breadth_ack_flag_sets_field_before_refusal
+- tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_scope_breadth_ack_without_reason_refuses
+- tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_conftest_contention_materially_reduced
+- tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_disjoint_tickets_have_no_scope_overlap
+- tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_sibling_tickets_still_conflict
 designated_repro_test: null
 acceptance:
 - text: Given a ticket whose declared scope contains an over-broad glob, when frob
     ticket start runs without an explicit breadth acknowledgement and reason, then
     it is refused rather than merely warned.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_scope_breadth_ack_flag_sets_field_before_refusal
+  - tests/unit/test_app_runners_batch7.py::TestTicketStart::test_start_scope_breadth_ack_without_reason_refuses
 - text: Given the 20 tickets currently appearing on every contended test file, when
     their scopes have been narrowed, then frob ticket contention reports a materially
     lower ticket count on tests/conftest.py, with the before and after numbers recorded.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_conftest_contention_materially_reduced
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_disjoint_tickets_have_no_scope_overlap
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_sibling_tickets_still_conflict
 - text: Given two tickets declaring different individual test files, when both are
     started, then both succeed concurrently, which is impossible today.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_conftest_contention_materially_reduced
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_disjoint_tickets_have_no_scope_overlap
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_sibling_tickets_still_conflict
 - text: Given a ticket with a genuinely conflicting narrow scope, when it is started,
     then it is still refused, proving breadth was not fixed by weakening lease detection.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_conftest_contention_materially_reduced
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_disjoint_tickets_have_no_scope_overlap
+  - tests/unit/test_app_runners_batch7.py::TestScopeBreadthNarrowingT2446::test_narrowed_sibling_tickets_still_conflict
 threat: null
 component: tickets
 anchor: false

@@ -743,6 +743,7 @@ def _start(root: Path, cfg: AppConfig) -> None:
         )
         sys.exit(1)
 
+    ticket = _apply_scope_breadth_ack_on_start(root, cfg, ticket)
     _refuse_over_broad_scope_on_start(root, ticket)
     _refuse_on_scope_lease_collision(root, cfg.ticket_id, ticket)
 
@@ -973,6 +974,69 @@ def _reconcile_cmd(root: Path, cfg: AppConfig) -> None:
         _log.info("reconcile: no orphan worktrees found")
 
     _log_reconcile_intents_and_unlanded_work(report)
+
+
+# frob:ticket T-2446
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_flag_sets_field_before_refusal  # noqa: E501
+# frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_scope_breadth_ack_without_reason_refuses  # noqa: E501
+def _apply_scope_breadth_ack_on_start(root: Path, cfg: AppConfig, ticket):  # noqa: ANN001,ANN201
+    """T-2446: if `--scope-breadth-ack` was passed to `frob ticket start`,
+    set `scope_breadth_ack=True` (with its mandatory `--scope-breadth-ack-
+    reason`) BEFORE `_refuse_over_broad_scope_on_start` runs, so a
+    genuinely broad epic can ack-and-start in one command instead of a
+    separate `frob ticket scope-ack <id> --reason ...` call first.
+
+    T-1866 already lets a ticket bypass the over-broad-scope refusal via
+    `ticket.scope_breadth_ack` -- but the ONLY way to set that field was a
+    separate command run beforehand (`scope-ack`, or `new
+    --scope-breadth-ack` at filing time). `frob ticket new` already has
+    inline `--scope-breadth-ack`/`--scope-breadth-ack-reason` flags
+    (T-2302); this wires the SAME flag names, SAME field, SAME mandatory-
+    reason posture onto `start` -- adds no new mechanism, no new field,
+    just a second write path into the one that already exists.
+
+    A blank/missing `--scope-breadth-ack-reason` when `--scope-breadth-
+    ack` is given refuses immediately (`sys.exit(1)`) rather than silently
+    skipping the ack -- an unackable ack would just let the over-broad
+    refusal fire anyway with a confusing "you asked to ack but nothing
+    happened" outcome; failing loudly here is cheaper than that.
+
+    Returns `ticket` unchanged when `--scope-breadth-ack` was not passed
+    (the ordinary case -- a ticket that already carries `scope_breadth_
+    ack=True` from `new`/`scope-ack`, or one with no over-broad entries at
+    all, needs no write here); returns the FRESH post-write ticket
+    (`set_scope_breadth_ack`'s own return) when it was, so the caller's
+    `_refuse_over_broad_scope_on_start` checks the ack that was JUST set,
+    not the stale pre-write snapshot."""
+    if not cfg.ticket_scope_breadth_ack:
+        return ticket
+    assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
+    reason = cfg.ticket_scope_breadth_ack_reason
+    if not reason or not reason.strip():
+        _log.error(
+            "ticket start failed: %s --scope-breadth-ack requires "
+            "--scope-breadth-ack-reason TEXT (T-2446, same requirement "
+            "`frob ticket scope-ack --reason` and `frob ticket new "
+            "--scope-breadth-ack-reason` already enforce)",
+            cfg.ticket_id,
+        )
+        sys.exit(1)
+    from frob.tickets import set_scope_breadth_ack
+
+    result = set_scope_breadth_ack(root, cfg.ticket_id, reason)
+    if result.is_err:
+        _log.error(
+            "ticket start failed: %s --scope-breadth-ack could not be recorded: %s",
+            cfg.ticket_id,
+            result.danger_err,
+        )
+        sys.exit(1)
+    _log.info(
+        "ticket start: %s scope_breadth_ack now True (T-2446, inline at start) -- %s",
+        cfg.ticket_id,
+        reason,
+    )
+    return result.danger_ok
 
 
 # frob:ticket T-1866

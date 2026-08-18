@@ -51,6 +51,28 @@ def _add_ticket_progress_parsers(ticket_sub) -> list:
         help="override a refusal caused by another worktree's live lease "
         "(T-0835); invalidates that worktree's lease for close/land",
     )
+    # frob:ticket T-2446
+    ticket_start_p.add_argument(
+        "--scope-breadth-ack",
+        dest="ticket_scope_breadth_ack",
+        action="store_true",
+        help="acknowledge a deliberately broad declared --scope at START "
+        "time (T-2446, same field/semantics as `frob ticket new "
+        "--scope-breadth-ack`/`frob ticket scope-ack <id>`): sets "
+        "scope_breadth_ack=True before the T-1866 over-broad-scope refusal "
+        "runs, so a genuinely broad epic can ack-and-start in one command "
+        "instead of a separate `scope-ack` call first -- requires "
+        "--scope-breadth-ack-reason",
+    )
+    # frob:ticket T-2446
+    ticket_start_p.add_argument(
+        "--scope-breadth-ack-reason",
+        dest="ticket_scope_breadth_ack_reason",
+        metavar="TEXT",
+        help="required justification for --scope-breadth-ack (T-2446), "
+        "same non-blank requirement `frob ticket scope-ack --reason` and "
+        "`frob ticket new --scope-breadth-ack-reason` already enforce",
+    )
 
     # frob:ticket T-1175
     ticket_work_p = ticket_sub.add_parser(
