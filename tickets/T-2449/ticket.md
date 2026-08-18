@@ -72,7 +72,9 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e0d5c56f2e1b980d6744cae4cfd8a469d8887be0
+no_scope_declared: false
+no_scope_declared_reason: null
 ---
 A ticket whose blockers have been COMPLETED AND ARCHIVED reads as
 permanently blocked, so it can never be dispatched and the rot detector
