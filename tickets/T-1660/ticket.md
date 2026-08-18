@@ -15,9 +15,24 @@ scope:
 - src/frob/arch/_cpp_mayraise.py
 - src/frob/arch/_ffi.py
 - src/frob/gates/_rule_id_scan.py
-- tests/**
+- tests/test_perf.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: the 3 src files were already precisely scoped (this ticket''s own
+    body names them exactly); tests/test_perf.py is the existing general PERF-gate
+    test suite (confirmed via ls tests/) -- not a guess'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_perf.py
+  reason: 'T-2446: the 3 src files were already precisely scoped (this ticket''s own
+    body names them exactly); tests/test_perf.py is the existing general PERF-gate
+    test suite (confirmed via ls tests/) -- not a guess'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
