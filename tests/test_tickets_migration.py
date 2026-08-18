@@ -391,8 +391,9 @@ class TestLedgerV1DeprecationGate:
         assert violations[0].severity == Severity.ERROR
 
     def test_v2_mode_repo_is_silent(self, tmp_path: Path) -> None:
-        """A repo already migrated to v2 never fires LEDGERV1001 -- there
-        is nothing left to warn about."""
+        """A repo already migrated to v2, with the monofiles ALSO deleted
+        (the T-2356 cutover's second commit), never fires LEDGERV1001 --
+        there is nothing left to warn about."""
         _git_init(tmp_path)
         _seed_v1_fixture(tmp_path)
         assert migrate_v1_to_v2(tmp_path).is_ok
@@ -400,7 +401,40 @@ class TestLedgerV1DeprecationGate:
         # v2 tree is what `_store_mode` actually reports -- confirm the
         # premise before asserting the gate's own behavior.
         assert _store_mode(tmp_path) == "v2"
+        # T-2356: migrate_v1_to_v2 deliberately LEAVES the monofiles in
+        # place (design section 7's reversibility guarantee) -- silence
+        # requires the cutover's own second commit to have actually
+        # deleted them, not just v2-mode alone (see the companion test
+        # below for the "still there" case, which must NOT be silent).
+        ledger_path(tmp_path).unlink()
+        archive_path(tmp_path).unlink()
         assert _ledgerv1001_violations(tmp_path) == ()
+
+    def test_v2_mode_repo_with_a_lingering_monofile_errors(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2356: a v2-mode repo that still has tickets.md/tickets-
+        archive.md sitting on disk (the cutover's first commit landed --
+        migrate_v1_to_v2 ran -- but its second commit, deleting the
+        monofiles, never did) must NOT be silently accepted as a
+        permanent, indefinite compatibility window. Unconditional ERROR,
+        not sunset-gated -- there is no "still migrating" grace period
+        for a v2-mode repo that kept a stray monofile around."""
+        _git_init(tmp_path)
+        _seed_v1_fixture(tmp_path)
+        assert migrate_v1_to_v2(tmp_path).is_ok
+        assert _store_mode(tmp_path) == "v2"
+        # Monofiles deliberately left in place -- this is the incomplete-
+        # cutover shape.
+        assert ledger_path(tmp_path).exists()
+        assert archive_path(tmp_path).exists()
+
+        violations = _ledgerv1001_violations(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "LEDGERV1001"
+        assert violations[0].severity == Severity.ERROR
+        assert "tickets.md" in violations[0].message
+        assert "cutover" in violations[0].message
 
     def test_no_ledger_content_at_all_is_silent(self, tmp_path: Path) -> None:
         """A from-scratch repo with zero ticket content of either shape

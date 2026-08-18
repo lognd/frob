@@ -1,35 +1,13 @@
-# T-0323: tickets.md is a shared, append-mostly ledger -- concurrent
-# worktrees appending near the same line otherwise produce a false
-# textual conflict (T-0176's class). Route it through the frob-ledger
-# merge driver (splice_ledger, id-level/state-rank/evidence-union
-# resolution) instead of git's default line-level merge.
-#
-# The driver itself must still be registered locally (a .gitattributes
-# entry alone does not install it, by git's own design -- see
-# docs/modules/tickets.md#git-merge-driver for the one-time
-# `git config merge.frob-ledger.*` setup):
-#
-#   git config merge.frob-ledger.name "frob ticket ledger splice"
-#   git config merge.frob-ledger.driver "frob ticket merge-driver %O %A %B"
-#
-# T-0480: the pattern MUST be anchored with a leading slash so it matches
-# ONLY the root ledger. An unanchored `tickets.md` also matches
-# `docs/modules/tickets.md` (and any other file so named), and the ledger
-# driver then truncates that documentation to a bare 3-line ledger header
-# with NO conflict markers -- silent ~900-line doc loss during any merge.
-/tickets.md merge=frob-ledger
-/tickets-archive.md merge=frob-ledger
-
-# T-1258: ledger v2 (docs/design/ledger-v2.md section 5) retires this
-# driver's NEED once a repo is v2-only -- disjoint `tickets/T-####/`
-# directories are ordinary git objects git's native per-file 3-way merge
-# already resolves correctly, with zero conflict for two branches editing
-# different tickets and an ordinary (non-spliced) conflict for two
-# branches editing the SAME ticket. This repo itself still stores tickets
-# in the v1 monofile (`tickets.md`/`tickets-archive.md` above), so the two
-# lines above stay in force; removing them is the migration ticket's
-# final-cutover step (design section 7.4), not this ticket's -- see
+# T-1258/T-2356: this repo cut over to ledger v2 (disjoint tickets/T-####/
+# directories, ordinary git objects git's native per-file 3-way merge
+# already resolves correctly). tickets.md/tickets-archive.md and the
+# frob-ledger merge driver they needed are gone -- see
 # docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here.
+# The merge driver itself (`frob ticket merge-driver`, splice_ledger) is
+# NOT removed from frob's own source -- other repos using frob may still
+# be on v1/monofile mode during their own compatibility window; only
+# THIS repo's now-inert data files and the .gitattributes lines that
+# routed them through the driver are retired here.
 
 # T-1873: rapid-debt.jsonl is a tracked, append-only ledger -- every rapid
 # -profile land appends one record to its tail, and concurrent worktrees

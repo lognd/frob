@@ -44,6 +44,7 @@ from frob.tickets._store import _dir_glob as _tickets_dir_glob
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import _store_mode as _tickets_store_mode
 from frob.tickets._store import ledger_path as _tickets_ledger_path
+from frob.tickets._store import archive_path as _tickets_archive_path
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
 
@@ -1217,6 +1218,7 @@ _LEDGERV1_SUNSET = "2027-02-02"
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_warns_before_sunset  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_errors_past_sunset  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_is_silent  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_with_a_lingering_monofile_errors  # noqa: E501
 # frob:enforces CHK-GATE-LEDGERV1001
 def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     """LEDGERV1001 (ledger v2 design section 7, deliverable 3): a repo
@@ -1230,15 +1232,50 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     the DEPR00x family's own "warn in-window, error past expiry" shape
     (`_deprecated_is_expired`/`_depr004_violations`) so an unmigrated repo
     does not silently carry the deprecated backend forever. Silent for a
-    v2-mode repo, and silent for a repo with no ledger content of EITHER
-    shape at all (nothing yet to migrate) -- there is nothing left (or
-    nothing yet) to warn about in either case."""
+    repo with no ledger content of EITHER shape at all (nothing yet to
+    migrate) -- there is nothing yet to warn about.
+
+    T-2356: a v2-mode repo is NOT unconditionally silent any more. `mode
+    == "v2"` alone only proves `tickets/T-####/ticket.md` exists
+    SOMEWHERE -- it says nothing about whether a STRAY `tickets.md`/
+    `tickets-archive.md` also still sits on disk, unread by every v2 code
+    path (`_store_mode` prefers v2 the instant any v2 file exists) but
+    never deleted -- exactly the "permanent, indefinite compatibility
+    window" the parent ticket's acceptance[3] says must never be silently
+    accepted. That state now fires the SAME rule, unconditionally at
+    ERROR (not sunset-gated: a v2-mode repo choosing to keep a stray
+    monofile around is not "still migrating", it is a cutover that never
+    finished its own second commit -- there is no argument for a warning
+    period here the way there is for a repo that has not started
+    migrating at all)."""
     mode = _tickets_store_mode(root)
+    monofile_exists = _tickets_ledger_path(root).exists() or _tickets_archive_path(
+        root
+    ).exists()
     if mode == "v2":
-        return ()
-    has_legacy_content = _tickets_ledger_path(root).exists() or bool(
-        _tickets_dir_glob(root)
-    )
+        if not monofile_exists:
+            return ()
+        _log.debug(
+            "LEDGERV1001: v2-mode repo with a lingering monofile still on disk"
+        )
+        return (
+            Violation(
+                rule="LEDGERV1001",
+                severity=Severity.ERROR,
+                file="tickets.md",
+                line=0,
+                message=(
+                    "LEDGERV1001: this repo is v2-mode (tickets/T-####/ "
+                    "ticket.md files exist) but tickets.md/tickets-archive.md "
+                    "still sit on disk, unread and un-migrated-from -- the "
+                    "cutover's own second commit (docs/design/ledger-v2.md "
+                    "section 7 step 2/5: delete the monofiles once the v2 "
+                    "tree round-trips) never happened; delete them, they are "
+                    "dead weight, not a compatibility fallback"
+                ),
+            ),
+        )
+    has_legacy_content = monofile_exists or bool(_tickets_dir_glob(root))
     if not has_legacy_content:
         return ()
     from datetime import date

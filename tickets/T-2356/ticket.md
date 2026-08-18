@@ -2,7 +2,7 @@
 id: T-2356
 title: 'Ledger v2 cutover: delete tickets.md/tickets-archive.md and the monofile code
   path once the v2 tree round-trips'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -17,9 +17,63 @@ scope:
 - src/frob/tickets/_land_merge.py
 - src/frob/tickets/_land_merge_zones.py
 - .gitattributes
+- tickets.md
+- tickets-archive.md
+- src/frob/gates/_tickets_gate.py
+- tests/test_ticket_land_merge.py
+- tests/test_tickets_migration.py
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tickets.md
+  reason: deleting the monofiles + their code path per design section 7 step 2, plus
+    checking/extending LEDGERV1001
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tickets-archive.md
+  reason: deleting the monofiles + their code path per design section 7 step 2, plus
+    checking/extending LEDGERV1001
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: deleting the monofiles + their code path per design section 7 step 2, plus
+    checking/extending LEDGERV1001
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_ticket_land_merge.py
+  reason: deleting the monofiles + their code path per design section 7 step 2, plus
+    checking/extending LEDGERV1001
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: deleting the monofiles + their code path per design section 7 step 2, plus
+    checking/extending LEDGERV1001
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'doc updates for the cutover: monofile section retirement'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'doc updates for the cutover: monofile section retirement'
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_is_silent
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_monofile_mode_warns_before_sunset
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_monofile_mode_errors_past_sunset
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_no_ledger_content_at_all_is_silent
+designated_repro_test: tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
 threat: null
 component: null
 anchor: false

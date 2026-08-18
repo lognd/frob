@@ -525,12 +525,32 @@ must deliver; it does not implement any of it.
    `tests/test_tickets_collision.py`, and `tests/test_tickets_velocity.py`
    and pinned each to v1/'single' mode explicitly (seeding an empty
    `tickets.md` before exercising v1-specific behavior) so the flip
-   changed only the default, not what those tests actually verify. The
-   monofile-mode code path (`_render_ledger`, `splice_ledger`,
-   `_land_merge.py`, `_land_merge_zones.py`) is NOT yet deleted -- that
-   removal, plus dropping `.gitattributes`' merge-driver line, remains a
-   separate follow-up ticket (existing repos still on v1 need the
-   monofile path to keep working through `frob ticket migrate --to v2`).
+   changed only the default, not what those tests actually verify.
+
+   **T-2356 correction, this repo's own cutover:** this step's ORIGINAL
+   text named `_land_merge.py`/`_land_merge_zones.py` as "the monofile-
+   mode code path" still owed a deletion follow-up. That was stale by
+   the time T-2356 read it: T-1189/T-1194/T-1251 (all landed well before
+   T-2356) had already progressively split the actual monofile-merge
+   logic (`splice_ledger`, `_render_ledger`, the newest-wins per-ticket-
+   id merge, the union-zone conflict resolver) into
+   `frob.tickets._land_ledger_merge`/`frob.tickets._store`, leaving
+   `_land_merge.py` holding only generic pre-merge closeability
+   validation + the landing commit-message helper (used by EVERY land
+   regardless of ledger mode) and `_land_merge_zones.py` holding a
+   conflict-resolution registry whose three registered zones
+   (`frob.toml`, `src/frob/gates/__init__.py`, `docs/audits/*.md`) have
+   NEVER been about `tickets.md` at all. T-2356 measured this directly
+   (DEAD001/WIRE001/REF002 against both files: zero findings) before
+   trusting the plan, per this repo's own "deletion is a detector test"
+   discipline -- neither file was deleted. **`splice_ledger`/
+   `_render_ledger` and frob's v1-mode dispatch branches also stay in
+   frob's own SOURCE** -- deleting them would break every OTHER repo
+   using frob that has not yet cut over to v2 during ITS OWN
+   compatibility window; only a given repo's own inert `tickets.md`/
+   `tickets-archive.md` data files (and that repo's own
+   `.gitattributes` lines routing them through the merge driver) are
+   ever retired by a repo's individual cutover.
 5. **Rollback**: because step 2 keeps the monofiles as an inert snapshot
    through the whole compatibility window, rollback at any point before
    final cutover is `git rm -r tickets/` (the v2 tree) plus restoring
