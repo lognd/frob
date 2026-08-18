@@ -11,8 +11,31 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_land_finalize.py
+- src/frob/tickets/_models.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_finalize.py
+  reason: land finalizes only its own drafts, queues/skips-with-notice foreign drafts
+    instead of failing the whole land, and names the owner in the refusal message
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: land finalizes only its own drafts, queues/skips-with-notice foreign drafts
+    instead of failing the whole land, and names the owner in the refusal message
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: land finalizes only its own drafts, queues/skips-with-notice foreign drafts
+    instead of failing the whole land, and names the owner in the refusal message
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given ten pending drafts created by a different agent's epic decomposition,
