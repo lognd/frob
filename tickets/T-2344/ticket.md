@@ -12,8 +12,9 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/**
 - docs/modules/gates.md
+- src/frob/gates/_lexical_selfcheck.py
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -21,6 +22,24 @@ scope_changes:
   glob: tests/**
   reason: too broad -- collided with T-1606 and every other test-touching ticket;
     narrow to a single new test file once implementation starts
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/gates/**
+  reason: 'narrow: new standalone meta-check module + its wiring into __init__.py''s
+    gate registry, not every existing gates/** file'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/_lexical_selfcheck.py
+  reason: 'narrow: new standalone meta-check module + its wiring into __init__.py''s
+    gate registry, not every existing gates/** file'
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'narrow: new standalone meta-check module + its wiring into __init__.py''s
+    gate registry, not every existing gates/** file'
   actor: logan
   at: '2026-08-17'
 designated_repro_test: null
