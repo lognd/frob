@@ -2,7 +2,7 @@
 id: T-2477
 title: 'post-land sweep regression from T-1135: 5 new (rule, file) identit(ies), 0
   finding(s) (E501, F401)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -12,15 +12,32 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/app/ticket_runner/_query.py
 - src/frob/gates/__init__.py
 - src/frob/gates/_dup_graph_schema.py
 - src/frob/verify/_worker.py
 - src/frob/vet/_capability.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: T-2477's fix (if any) is documentation-only re-measurement disclosure; no
+    code edit needed in _query.py, and it collides with T-2492's live lease
+  actor: logan
+  at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: BUG002 waiver -- stale-baseline false positive, no reproducible defect exists
+  actor: logan
+  at: '2026-08-18'
+  old_length: 4942
+  new_length: 5368
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
