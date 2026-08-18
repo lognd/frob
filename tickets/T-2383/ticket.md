@@ -1,7 +1,7 @@
 ---
 id: T-2383
 title: Recovered from T-2341's phantom TICK006 citation of T-2366
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -28,3 +28,6 @@ ledger-consistency, 9 errors + 17 warnings under one identity, needs
 per-finding triage before a fix) -> T-2367.
 
 STILL OP
+
+## Drop reason
+- 2026-08-17: T-2366 is a real, filed ticket (frob ticket show T-2366 confirms queued state, real body); same TICK006 phantom-citation pattern T-2350 root-caused and T-2351 fixed. Not a genuine phantom.
