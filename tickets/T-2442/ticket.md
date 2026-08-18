@@ -21,7 +21,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 031b62997f31eaa2ee07ca6c4a4c6da09d051d97
 ---
 T-2396 landed .claude/hooks/root-write-guard.py. The original fixture
 (_make_repo_with_worktree in tests/test_hook_root_write_guard.py) placed
