@@ -726,6 +726,8 @@
     "src/frob/gates/_docblocks.py::doc012_gate": "6ef7aafa2fa0ac6878d800b5c254988c118d854309cd907e94cbc3daa3b3ba64",
     "src/frob/gates/_docblocks.py::generate_cli_command_table": "19308e55747c3896b245ccdd587caa2291dfa027a9519265a6c5c0da4834f454",
     "src/frob/gates/_docblocks.py::sync_cli_command_table": "9c460dc928444f19b6020472d81bd6300f82b288d35a4e2acf9774e99a325a65",
+    "src/frob/gates/_docblocks_schema.py::DOCBLOCKS_COMMAND_KNOWN_KEYS": "732aa1d27a415b22f5342b731fa2988d11e57e55a30127f8c8f4b06bf5200305",
+    "src/frob/gates/_docblocks_schema.py::docblocks_schema_gate": "ec8a0e0afa75b37ae2accbdf99517cb9b97231a6baac61bc63e5a03c2c23461a",
     "src/frob/gates/_docblocks_shared.py::resolve_dotted_symbol": "a12286d29b43c3bfdf4e84d01c4b2a6715369a23149946d67f94c6a17757d6f4",
     "src/frob/gates/_docenum.py::docenum001_gate": "2bc5d86dcfe1d35539982f6256a597ac6b608bb4511379ae37cd8358f02b1f97",
     "src/frob/gates/_doclink_docanchor.py::docanchor_gate": "c42559cd1fae6c91936f804bc558ed2d3f5fd49bbd3955b96675bb566fdaef20",
@@ -2448,5 +2450,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.520.0"
+  "version": "0.521.0"
 }

@@ -316,6 +316,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "testing_schema",
             # T-2390 epic child T-2433: ARCHSCHEMA001, same shape.
             "arch_schema",
+            # T-2390 epic child T-2434: DOCBLOCKSSCHEMA001, same shape.
+            "docblocks_schema",
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",

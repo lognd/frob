@@ -74,6 +74,14 @@ enforce = true
 # callable) explicitly -- FLAGCOV001 requires this on every entry rather
 # than silently defaulting to it, so a project whose config is NOT
 # AppConfig cannot inherit frob's own forwarding tuples by accident.
+#
+# T-2390 epic child (T-2434): known_keys declares this table's own
+# known-key set for DOCBLOCKSSCHEMA001 (an unknown/misspelled key in a
+# [[docblocks.commands]] entry, previously silently ignored), resolved
+# through the same module:symbol idiom as [refs] entrypoint_schema.
+[docblocks_schema]
+known_keys = "frob.gates._docblocks_schema:DOCBLOCKS_COMMAND_KNOWN_KEYS"
+
 [[docblocks.commands]]
 prog = "frob"
 parser = "frob.__main__:_build_parser"

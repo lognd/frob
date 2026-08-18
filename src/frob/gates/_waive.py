@@ -785,6 +785,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2390 epic child: ARCHSCHEMA001 -- an unknown/misspelled key
         # in the [arch] table (frob.gates._arch_schema).
         "ARCHSCHEMA001",
+        # frob:ticket T-2434
+        # T-2390 epic child: DOCBLOCKSSCHEMA001 -- an unknown/misspelled
+        # key in a [[docblocks.commands]] entry (frob.gates._docblocks_schema).
+        "DOCBLOCKSSCHEMA001",
         # frob:ticket T-2388
         # T-2397: courtesy registration to unblock T-2388 (Series Y) --
         # T-2388's land refused at UnregisteredGateRuleConstructed (T-1937)
