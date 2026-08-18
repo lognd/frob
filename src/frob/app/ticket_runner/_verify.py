@@ -189,9 +189,10 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
     at designate time and on demand is identical, not two independently
     drifting copies of the same explanation. `outcome` is typed loosely
     (no import-time dependency on `frob.gates.BugReproOutcome`'s enum
-    identity here) but is always one of that enum's six members in
-    practice (T-2025 added `TEST_ABSENT_AT_PARENT`) -- every call site
-    passes a value straight from `bug_repro_outcome_at_ref`."""
+    identity here) but is always one of that enum's seven members in
+    practice (T-2025 added `TEST_ABSENT_AT_PARENT`; T-2480 added
+    `TIMEOUT`) -- every call site passes a value straight from
+    `bug_repro_outcome_at_ref`."""
     from frob.gates import BugReproOutcome
 
     name = outcome.name
@@ -212,6 +213,19 @@ def _bug_repro_outcome_message(outcome, node_id: str, parent_ref: str) -> str:  
             f"(e.g. it calls a function that does not exist there yet) -- "
             f"this is NOT a pass, it is an unresolved verdict; T-1907's "
             f"original incident was exactly this shape"
+        )
+    # frob:ticket T-2480
+    if outcome is BugReproOutcome.TIMEOUT:
+        return (
+            f"TIMEOUT: {node_id!r} did not finish running at {parent_ref} "
+            f"within its time budget -- distinct from NO_VERDICT: this "
+            f"test may well genuinely reproduce the defect, it simply "
+            f"could not be MEASURED in time (repro tests for design/"
+            f"architecture-level defects are structurally the slowest, "
+            f"since demonstrating the defect means elaborating the whole "
+            f"model). Re-run with a larger --repro-timeout-s SECONDS, or "
+            f"verify the fail-at-parent/pass-at-fix shape by hand and use "
+            f"--designate-repro-force with the timeout noted as the reason"
         )
     if outcome is BugReproOutcome.SAME_AS_HEAD:
         return (
@@ -307,7 +321,9 @@ def _validate_designate_repro_at_parent(root: Path, cfg: AppConfig) -> None:
         return
     parent_ref = resolved.danger_ok
 
-    outcome = bug_repro_outcome_at_ref(root, node_id, parent_ref)
+    outcome = bug_repro_outcome_at_ref(
+        root, node_id, parent_ref, timeout_s=cfg.ticket_repro_timeout_s
+    )
     message = _bug_repro_outcome_message(outcome, node_id, parent_ref)
     if outcome is BugReproOutcome.FAILED_AT_PARENT:
         _log.info("ticket evidence --designate-repro: %s %s", cfg.ticket_id, message)
@@ -401,7 +417,9 @@ def _evidence_check_repro(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
     parent_ref = resolved.danger_ok
 
-    outcome = bug_repro_outcome_at_ref(root, node_id, parent_ref)
+    outcome = bug_repro_outcome_at_ref(
+        root, node_id, parent_ref, timeout_s=cfg.ticket_repro_timeout_s
+    )
     message = _bug_repro_outcome_message(outcome, node_id, parent_ref)
     if outcome is BugReproOutcome.FAILED_AT_PARENT:
         _log.info("ticket evidence --check-repro: %s %s", cfg.ticket_id, message)

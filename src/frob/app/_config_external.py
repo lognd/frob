@@ -115,6 +115,8 @@ _STRING_FIELDS = (
     "ticket_designate_repro_reason",
     # frob:ticket T-1929
     "ticket_check_repro",
+    # frob:ticket T-2480
+    "ticket_repro_timeout_s",
     "ticket_review_verdict",
     "ticket_reviewer",
     "ticket_review_commit",

@@ -453,11 +453,29 @@ def _add_ticket_fail_evidence_archive_parsers(ticket_sub) -> list:
         help="T-1929: run BUG002's parent-commit repro classification "
         "on demand, without mutating anything -- reports FAILED_AT_PARENT "
         "(genuine repro) / PASSED_AT_PARENT (confirmatory-only) / "
-        "NO_VERDICT (could not even collect at the parent) / SAME_AS_HEAD "
+        "NO_VERDICT (could not even collect at the parent) / TIMEOUT "
+        "(T-2480: did not finish within the budget -- distinct from "
+        "NO_VERDICT, may still genuinely reproduce) / SAME_AS_HEAD "
         "(base_ref resolves to HEAD itself) and exits nonzero unless "
         "FAILED_AT_PARENT. NODE-ID is optional: omitted, resolves the "
         "same test BUG002 itself would (explicit --designate-repro, else "
         "the first pytest-node-id evidence)",
+    )
+    # frob:ticket T-2480
+    ticket_evidence_p.add_argument(
+        "--repro-timeout-s",
+        dest="ticket_repro_timeout_s",
+        type=float,
+        default=None,
+        metavar="SECONDS",
+        help="T-2480: override BUG002's default repro-check subprocess "
+        "budget (60s) for --check-repro/--designate-repro on THIS "
+        "invocation only -- repro tests for design/architecture-level "
+        "defects are structurally the slowest (demonstrating the defect "
+        "means elaborating the whole model), so a test that TIMEOUTs at "
+        "the default budget is not necessarily confirmatory-only; raise "
+        "this instead of reaching for --designate-repro-force on a test "
+        "you have not actually verified fails at the parent commit",
     )
 
     ticket_drop_p = ticket_sub.add_parser(

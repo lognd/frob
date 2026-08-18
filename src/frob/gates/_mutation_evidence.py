@@ -33,15 +33,18 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 from enum import Enum, auto
 from pathlib import Path
 
+from typani import Err, Ok, Result
+
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.process._guard import exec_enabled
+from frob.process._guard import ProcessGuardError, exec_enabled, guarded_subprocess_run
 from frob.tickets._models import Ticket, TicketKind
 from frob.tickets._mutation_evidence import (
     ConfirmatoryFinding,
@@ -487,6 +490,30 @@ class _BugReproOutcome(Enum):
     #: same posture `MutationEvidenceError.ExecDisabled` already uses one
     #: function up in this same module.
     NO_VERDICT = auto()
+    #: The designated test spawn HIT ITS TIME BUDGET (T-2480) -- the
+    #: subprocess was still running when `timeout_s` elapsed and was
+    #: killed, never allowed to reach a real exit code at all. Distinct
+    #: from `NO_VERDICT`'s other infra-failure causes (spawn refused,
+    #: kill switch, collection error) because it carries DIFFERENT
+    #: information for a reader: "this test may well genuinely
+    #: reproduce the defect, but could not be MEASURED within the
+    #: budget" is not the same fact as "something about the environment
+    #: or the test itself made a verdict impossible". T-2480's own
+    #: motivating incident: a repro test that elaborates the full strata
+    #: design plus the entire SYS gate legitimately exceeds a 60s budget
+    #: on real hardware, and repro tests for architecture/design-level
+    #: defects are STRUCTURALLY the slowest ones (demonstrating the
+    #: defect means elaborating the whole model) -- so a fixed budget
+    #: selectively disenfranchises exactly the repro tests covering the
+    #: broadest, highest-consequence defects. Every caller that already
+    #: treats `NO_VERDICT` as "cannot be trusted as evidence" must treat
+    #: `TIMEOUT` identically for that same purpose (never a false
+    #: `FAILED_AT_PARENT`/`PASSED_AT_PARENT`) -- the split exists so the
+    #: MESSAGE a human or `--designate-repro-force`'s recorded reason
+    #: sees can say "budget exceeded, raise --repro-timeout-s or
+    #: re-measure" instead of the generic NO_VERDICT wording, not so any
+    #: caller's gating logic branches on it specially.
+    TIMEOUT = auto()
     #: `base_ref` resolves to the SAME commit as HEAD -- the comparison is
     #: structurally impossible, not merely undecided (T-1678). This is the
     #: "committed straight to main" degenerate case: `base_ref` (a branch
@@ -536,11 +563,11 @@ class _BugReproOutcome(Enum):
 #: Public alias for `_BugReproOutcome` (T-1929): an on-demand caller
 #: outside this module (`frob.app.ticket_runner._verify`'s validate-at-
 #: designate check, `frob ticket evidence --check-repro`) needs to inspect
-#: which of the six outcomes `bug_repro_outcome_at_ref` returned --
+#: which of the seven outcomes `bug_repro_outcome_at_ref` returned --
 #: FAILED_AT_PARENT is the only acceptable one to treat as a genuine
-#: repro; PASSED_AT_PARENT, NO_VERDICT, SAME_AS_HEAD, and (T-2025)
-#: TEST_ABSENT_AT_PARENT must never be silently treated as a pass by any
-#: caller.
+#: repro; PASSED_AT_PARENT, NO_VERDICT, (T-2480) TIMEOUT, SAME_AS_HEAD,
+#: and (T-2025) TEST_ABSENT_AT_PARENT must never be silently treated as
+#: a pass by any caller.
 BugReproOutcome = _BugReproOutcome
 
 
@@ -724,7 +751,11 @@ def _bug_repro_outcome_at_ref(
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
 def bug_repro_outcome_at_ref(
-    root: Path, test_id: str, base_ref: str = "main"
+    root: Path,
+    test_id: str,
+    base_ref: str = "main",
+    *,
+    timeout_s: float | None = None,
 ) -> _BugReproOutcome:
     """Public entrypoint (T-1929) exposing `_bug_repro_outcome_at_ref`'s
     parent-commit repro classification to callers OUTSIDE this module --
@@ -737,12 +768,29 @@ def bug_repro_outcome_at_ref(
     machinery; `bug_repro_violations` below is the land/close-time
     consumer of the identical classification and must keep using it too.
 
-    Deliberately a thin, no-logic wrapper: it does not decide anything
-    about ticket kind, waivers, or severity -- callers get the raw
-    `_BugReproOutcome` (its public alias `BugReproOutcome`, above) and
-    decide what to do with FAILED_AT_PARENT / PASSED_AT_PARENT /
-    NO_VERDICT / SAME_AS_HEAD for their own purpose."""
-    return _bug_repro_outcome_at_ref(root, test_id, base_ref)
+    T-2480: `timeout_s`, `None` by default, overrides
+    `_BUG_REPRO_TIMEOUT_S` for THIS call only -- a caller whose repro
+    test is known to be design/architecture-level (inherently slower,
+    since demonstrating the defect means elaborating the whole model)
+    can raise the budget explicitly instead of the check silently
+    turning "did not finish in time" into a `NO_VERDICT` that reads
+    exactly like "does not reproduce". `bug_repro_violations` (the land/
+    close-time consumer) deliberately does NOT expose this parameter --
+    a per-ticket override at gate time would let a slow, never-actually-
+    verified test simply wait longer instead of surfacing TIMEOUT for a
+    human to act on; the override is for the interactive/on-demand paths
+    (`--check-repro`, `--designate-repro`) where a caller is actively
+    watching and can choose to raise it.
+
+    Deliberately a thin, no-logic wrapper otherwise: it does not decide
+    anything about ticket kind, waivers, or severity -- callers get the
+    raw `_BugReproOutcome` (its public alias `BugReproOutcome`, above)
+    and decide what to do with FAILED_AT_PARENT / PASSED_AT_PARENT /
+    NO_VERDICT / TIMEOUT / SAME_AS_HEAD for their own purpose."""
+    resolved_timeout = timeout_s if timeout_s is not None else _BUG_REPRO_TIMEOUT_S
+    return _bug_repro_outcome_at_ref(
+        root, test_id, base_ref, timeout_s=resolved_timeout
+    )
 
 
 # frob:ticket T-1929
@@ -789,18 +837,98 @@ def _checkout_bug_repro_worktree(
     return True
 
 
-def _run_designated_test(
+# frob:ticket T-2480
+# frob:waive SELFAUDIT001 reason="T-2480: node=gates already effectively has exec \
+# capability -- this same module spawns subprocesses via frob.gitio.run_argv (itself \
+# declared may exec) in _checkout_bug_repro_worktree/_resolve_sha; this change only \
+# moves WHICH function issues the syscall (guarded_subprocess_run directly, to catch \
+# subprocess.TimeoutExpired before run_argv's own try/except would collapse it into an \
+# indistinguishable generic error) -- design/frob.strata's gates node is under \
+# T-2487's live scope lease so the formal may exec declaration cannot be added here; \
+# T-2495 tracks adding it and removing this waiver"
+def _spawn_designated_test(
     worktree: Path, test_id: str, timeout_s: float
+) -> Result[subprocess.CompletedProcess[str], _BugReproOutcome]:
+    """`_run_designated_test`'s spawn-only half (ARCH103 split, T-2480):
+    launch `test_id` in `worktree` via the CURRENT interpreter,
+    `PYTHONPATH`-pointed at `worktree/src` so imports resolve to the
+    checked-out parent-commit source. Returns `Ok(CompletedProcess)` on
+    any real exit, or `Err(_BugReproOutcome)` for the two ways a REAL
+    exit was never reached: `TIMEOUT` (T-2480) or `NO_VERDICT` (kill
+    switch / spawn refusal) -- the caller classifies a real exit's
+    return code; this function only ever returns those two outcomes on
+    its `Err` side, never a code-based one.
+
+    Called DIRECTLY via `guarded_subprocess_run` (still kill-switch-
+    gated, `frob.gitio.run_argv`'s own underlying primitive) rather than
+    through `run_argv` itself -- `run_argv` catches `subprocess.
+    TimeoutExpired` internally and collapses it into the SAME `Err(
+    GitError.GitFailed)` a spawn refusal or an `OSError` produces, so a
+    caller downstream of `run_argv` cannot tell "hit the time budget"
+    apart from "could not spawn at all" -- exactly the ambiguity T-2480
+    exists to close. Catching the timeout HERE, before it would be
+    collapsed, is what makes `TIMEOUT` a real, distinct outcome instead
+    of another shade of `NO_VERDICT`."""
+    env = dict(os.environ)
+    src = str(worktree / "src")
+    env["PYTHONPATH"] = (
+        src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
+    )
+    argv = (sys.executable, "-m", "pytest", test_id, "-q", "-p", "no:cacheprovider")
+    try:
+        guarded = guarded_subprocess_run(
+            list(argv),
+            cwd=str(worktree),
+            capture_output=True,
+            timeout=timeout_s,
+            text=True,
+            check=False,
+            env=env,
+        )
+    # frob:waive SELFAUDIT001 reason="T-2480: same exec-capability posture as this \
+    # function's own docstring/T-2495 note above -- guarded_subprocess_run's \
+    # TimeoutExpired is caught here specifically, not a new execution surface"
+    except subprocess.TimeoutExpired:
+        _log.warning(
+            "BUG002: repro run of %s exceeded its %gs budget -- TIMEOUT, "
+            "not NO_VERDICT: this test may well genuinely reproduce the "
+            "defect, it simply could not be MEASURED in time. Re-run with "
+            "a larger --repro-timeout-s, or use --designate-repro-force "
+            "with the timeout noted as the reason if the fail-at-parent/"
+            "pass-at-fix shape has already been verified by hand",
+            test_id,
+            timeout_s,
+        )
+        return Err(_BugReproOutcome.TIMEOUT)
+    if guarded.is_err:
+        if guarded.danger_err is ProcessGuardError.ExecDisabled:
+            _log.warning(
+                "BUG002: exec disabled via kill switch, no repro-at-parent "
+                "verdict for %s",
+                test_id,
+            )
+        else:
+            _log.warning(
+                "BUG002: repro run of %s failed to spawn -- no verdict", test_id
+            )
+        return Err(_BugReproOutcome.NO_VERDICT)
+    return Ok(guarded.danger_ok)
+
+
+# frob:waive SELFAUDIT001 reason="T-2480: a type annotation referencing \
+# subprocess.CompletedProcess, the same exec-capability posture as \
+# _spawn_designated_test's own T-2495-tracked waiver above -- this function never \
+# spawns anything itself, it only classifies an already-completed process's exit"
+def _classify_designated_test_exit(
+    result: subprocess.CompletedProcess[str], test_id: str
 ) -> _BugReproOutcome:
-    """Run `test_id` in `worktree` (a `base_ref` checkout) via the CURRENT
-    interpreter, `PYTHONPATH`-pointed at `worktree/src` so imports resolve
-    to the checked-out parent-commit source rather than the current
-    editable install -- `_bug_repro_outcome_at_ref`'s spawn-and-classify
-    half. Exit 0 -> `PASSED_AT_PARENT`; exit 1 (a genuine assertion/error
-    failure) -> `FAILED_AT_PARENT`; any other exit whose output shows
-    ZERO tests were collected (`test_id` does not exist in this tree at
-    all, T-2025) -> `TEST_ABSENT_AT_PARENT`; anything else (collection
-    error, missing native extension, timeout) -> `NO_VERDICT`, never
+    """`_run_designated_test`'s exit-code-classification half (ARCH103
+    split, T-2480, extracted unchanged from the pre-split function's own
+    body): exit 0 -> `PASSED_AT_PARENT`; exit 1 (a genuine assertion/
+    error failure) -> `FAILED_AT_PARENT`; any other exit whose output
+    shows ZERO tests were collected (`test_id` does not exist in this
+    tree at all, T-2025) -> `TEST_ABSENT_AT_PARENT`; anything else
+    (collection error, missing native extension) -> `NO_VERDICT`, never
     guessed at as a pass or a fail.
 
     T-2025: the "test does not exist here" case does NOT map to one fixed
@@ -822,23 +950,11 @@ def _run_designated_test(
     or otherwise lacks it -- confirmed present alongside the custom line
     in the same measured run, so this is genuinely a fallback, not a
     guess."""
-    env = dict(os.environ)
-    src = str(worktree / "src")
-    env["PYTHONPATH"] = (
-        src if not env.get("PYTHONPATH") else src + os.pathsep + env["PYTHONPATH"]
-    )
-    argv = (sys.executable, "-m", "pytest", test_id, "-q", "-p", "no:cacheprovider")
-    spawned = run_argv(argv, cwd=worktree, timeout_s=timeout_s, env=env)
-    if spawned.is_err:
-        _log.warning("BUG002: repro run of %s failed to spawn -- no verdict", test_id)
-        return _BugReproOutcome.NO_VERDICT
-    result = spawned.danger_ok
     rc = result.returncode
     if rc == 0:
         return _BugReproOutcome.PASSED_AT_PARENT
     if rc == 1:
         return _BugReproOutcome.FAILED_AT_PARENT
-    # frob:ticket T-2025
     combined_output = result.stdout + result.stderr
     zero_collected = bool(re.search(r"\bcollected=0\b", combined_output))
     if zero_collected or "no tests ran" in combined_output:
@@ -863,6 +979,19 @@ def _run_designated_test(
         rc,
     )
     return _BugReproOutcome.NO_VERDICT
+
+
+def _run_designated_test(
+    worktree: Path, test_id: str, timeout_s: float
+) -> _BugReproOutcome:
+    """`_bug_repro_outcome_at_ref`'s spawn-and-classify half (ARCH103
+    split into `_spawn_designated_test` + `_classify_designated_test_exit`
+    above, T-2480) -- this function is now just their composition, same
+    posture as `_try_check_delta_via_daemon`'s own split precedent."""
+    spawned = _spawn_designated_test(worktree, test_id, timeout_s)
+    if spawned.is_err:
+        return spawned.danger_err
+    return _classify_designated_test_exit(spawned.danger_ok, test_id)
 
 
 def _remove_bug_repro_worktree(root: Path, worktree: Path) -> None:

@@ -26,7 +26,7 @@ from typani import Ok
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _evidence, _new
-from frob.gates._mutation_evidence import _BugReproOutcome
+from frob.gates._mutation_evidence import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
 from frob.testing._models import CollectedTests
 from frob.tickets import load_queue
 
@@ -219,9 +219,82 @@ class TestValidateDesignateReproAtParent:
 
 
 # frob:ticket T-1929
+# frob:ticket T-2480
 class TestEvidenceCheckRepro:
     """Requirement B: `--check-repro` runs the same classification on
     demand, mutates nothing."""
+
+    # frob:ticket T-2480
+    def test_repro_timeout_s_is_forwarded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2480: `--repro-timeout-s` reaches `bug_repro_outcome_at_ref`
+        as its `timeout_s` override, not silently dropped."""
+        # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_repro_timeout_s_is_forwarded  # noqa: E501
+        ticket_id = _test_make_bug_ticket(tmp_path, monkeypatch)
+        with (
+            patch(
+                "frob.gitio._merge_base",
+                return_value=Ok("deadbeef"),
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.FAILED_AT_PARENT,
+            ) as mocked,
+        ):
+            cfg = AppConfig(
+                ticket_command="evidence",
+                ticket_id=ticket_id,
+                ticket_path=tmp_path,
+                ticket_check_repro="tests/x.py::test_a",
+                ticket_repro_timeout_s=300.0,
+            )
+            _evidence(tmp_path, cfg)
+        mocked.assert_called_once_with(
+            tmp_path, "tests/x.py::test_a", "deadbeef", timeout_s=300.0
+        )
+
+    # frob:ticket T-2480
+    def test_timeout_outcome_reports_distinctly_and_exits_nonzero(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        """T-2480 acceptance [0]: `--check-repro` reports a TIMEOUT
+        outcome with wording distinct from the generic NO_VERDICT
+        message -- a reader must be able to tell "hit the budget" from
+        "genuinely could not be measured for another reason" without
+        reading free text elsewhere."""
+        # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro.test_timeout_outcome_reports_distinctly_and_exits_nonzero  # noqa: E501
+        ticket_id = _test_make_bug_ticket(tmp_path, monkeypatch)
+        with (
+            patch(
+                "frob.gitio._merge_base",
+                return_value=Ok("deadbeef"),
+            ),
+            patch(
+                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                return_value=_BugReproOutcome.TIMEOUT,
+            ),
+            pytest.raises(SystemExit) as exc,
+        ):
+            cfg = AppConfig(
+                ticket_command="evidence",
+                ticket_id=ticket_id,
+                ticket_path=tmp_path,
+                ticket_check_repro="tests/x.py::test_a",
+            )
+            with caplog.at_level("ERROR"):
+                _evidence(tmp_path, cfg)
+        assert exc.value.code != 0
+        error_records = [r for r in caplog.records if r.levelname == "ERROR"]
+        assert error_records, caplog.text
+        message = error_records[-1].getMessage()
+        # The outcome LABEL itself must read TIMEOUT, not NO_VERDICT --
+        # the message legitimately CONTRASTS itself with NO_VERDICT in
+        # prose elsewhere ("distinct from NO_VERDICT"), so this checks
+        # the label position specifically rather than mere substring
+        # absence.
+        assert "T-0001 TIMEOUT:" in message
+        assert "--repro-timeout-s" in message
 
     def test_reports_failed_at_parent_exit0(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -336,6 +409,7 @@ class TestEvidenceCheckRepro:
         assert "TEST_ABSENT_AT_PARENT" in caplog.text
         assert "squash" in caplog.text.lower()
 
+    # frob:ticket T-2480
     def test_no_node_id_resolves_designated_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -358,7 +432,9 @@ class TestEvidenceCheckRepro:
                 ticket_check_repro="",
             )
             _evidence(tmp_path, cfg)
-        mocked.assert_called_once_with(tmp_path, "tests/x.py::test_a", "deadbeef")
+        mocked.assert_called_once_with(
+            tmp_path, "tests/x.py::test_a", "deadbeef", timeout_s=_BUG_REPRO_TIMEOUT_S
+        )
 
 
 # frob:ticket T-1929
@@ -394,6 +470,28 @@ class TestEvidenceCliFlagsSurviveFromExternal:
         cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
         assert cfg.ticket_check_repro == "tests/x.py::test_a"
         assert cfg.ticket_base_ref == "deadbeef"
+
+    # frob:ticket T-2480
+    def test_repro_timeout_s_survives_from_external(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal.test_repro_timeout_s_survives_from_external  # noqa: E501
+        from frob.__main__ import _build_parser
+
+        parser = _build_parser()
+        args = parser.parse_args(
+            [
+                "ticket",
+                "evidence",
+                "T-0001",
+                "--check-repro",
+                "tests/x.py::test_a",
+                "--repro-timeout-s",
+                "300",
+                "--path",
+                str(tmp_path),
+            ]
+        )
+        cfg = AppConfig.from_external(args, tmp_path / "pyproject.toml")
+        assert cfg.ticket_repro_timeout_s == 300.0
 
     def test_check_repro_with_no_node_id_survives_as_empty_string(
         self, tmp_path: Path

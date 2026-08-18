@@ -589,6 +589,92 @@ class TestBugReproAtRef:
         assert outcome is not _BugReproOutcome.NO_VERDICT
 
 
+# frob:ticket T-2480
+class TestBugReproTimeout:
+    """T-2480's own positive controls: a repro test that genuinely
+    exceeds its budget must classify as TIMEOUT, distinct from
+    NO_VERDICT, without weakening BUG002's real fail-at-parent check for
+    a fast test (must-still-refuse) or adding friction to a fast,
+    genuinely-reproducing one (must-still-complete)."""
+
+    # frob:ticket T-2480
+    def _parent_and_head_repo(self, tmp_path, body, filename="test_x.py"):
+        """A repo with `body` committed at a PARENT commit, then one more
+        trivial commit on top -- HEAD != base_ref, matching
+        `test_test_absent_at_parent_is_distinct_from_no_verdict`'s own
+        technique so `_bug_repro_outcome_at_ref` does not short-circuit
+        to `SAME_AS_HEAD` before ever spawning the subprocess."""
+        repo = tmp_path / "repo"
+        _init_repo(repo)
+        tests_dir = repo / "tests"
+        tests_dir.mkdir()
+        (tests_dir / filename).write_text(body, encoding="utf-8")
+        _commit(repo, "parent: the repro test as it exists at the parent commit")
+        parent_sha = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        (repo / "README.md").write_text("unrelated later change\n", encoding="utf-8")
+        _commit(repo, "fix: an unrelated later commit, so HEAD != parent_sha")
+        return repo, parent_sha
+
+    # frob:ticket T-2480
+    def test_slow_test_exceeding_budget_is_timeout_not_no_verdict(
+        self, tmp_path: Path
+    ) -> None:
+        """must-now-protect / must-distinguish (acceptance [0]): a real
+        test that sleeps past a deliberately tiny `timeout_s` reports
+        TIMEOUT, never the generic NO_VERDICT a spawn failure or
+        collection error produces."""
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproTimeout.test_slow_test_exceeding_budget_is_timeout_not_no_verdict  # noqa: E501
+        body = "import time\n\n\ndef test_slow():\n    time.sleep(5)\n"
+        repo, parent_sha = self._parent_and_head_repo(
+            tmp_path, body, filename="test_slow.py"
+        )
+        outcome = _bug_repro_outcome_at_ref(
+            repo, "tests/test_slow.py::test_slow", parent_sha, timeout_s=0.2
+        )
+        assert outcome is _BugReproOutcome.TIMEOUT
+        assert outcome is not _BugReproOutcome.NO_VERDICT
+
+    # frob:ticket T-2480
+    def test_fast_genuinely_failing_test_still_refused(self, tmp_path: Path) -> None:
+        """must-still-refuse (acceptance [1]): a FAST test that genuinely
+        does not fail at the parent (it PASSES) must still be rejected
+        by BUG002's real check -- the TIMEOUT addition must not create a
+        side channel that weakens the existing FAILED_AT_PARENT-only
+        gate."""
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproTimeout.test_fast_genuinely_failing_test_still_refused  # noqa: E501
+        body = "def test_passes():\n    assert True\n"
+        repo, parent_sha = self._parent_and_head_repo(
+            tmp_path, body, filename="test_fast.py"
+        )
+        outcome = _bug_repro_outcome_at_ref(
+            repo, "tests/test_fast.py::test_passes", parent_sha, timeout_s=30.0
+        )
+        assert outcome is _BugReproOutcome.PASSED_AT_PARENT
+        assert outcome is not _BugReproOutcome.FAILED_AT_PARENT
+
+    # frob:ticket T-2480
+    def test_fast_genuinely_reproducing_test_completes_normally(
+        self, tmp_path: Path
+    ) -> None:
+        """must-still-complete (acceptance [2]): a fast test that
+        genuinely fails at the parent verifies through the normal path,
+        with no added friction from the TIMEOUT machinery."""
+        # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproTimeout.test_fast_genuinely_reproducing_test_completes_normally  # noqa: E501
+        body = "def test_fails():\n    assert False\n"
+        repo, parent_sha = self._parent_and_head_repo(
+            tmp_path, body, filename="test_fails.py"
+        )
+        outcome = _bug_repro_outcome_at_ref(
+            repo, "tests/test_fails.py::test_fails", parent_sha, timeout_s=30.0
+        )
+        assert outcome is _BugReproOutcome.FAILED_AT_PARENT
+
+
 class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_non_bug_kind_never_checked  # noqa: E501

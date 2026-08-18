@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from frob.gates import BugReproOutcome, bug_repro_outcome_at_ref, designated_repro_test
-from frob.gates._mutation_evidence import _BugReproOutcome
+from frob.gates._mutation_evidence import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 
 
@@ -39,7 +39,9 @@ def _ticket(**overrides: object) -> Ticket:
     return base.model_copy(update=overrides)
 
 
+# frob:ticket T-2480
 class TestBugReproOutcomeAtRefPublic:
+    # frob:ticket T-2480
     def test_wraps_the_private_classifier(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
         with patch(
@@ -49,13 +51,16 @@ class TestBugReproOutcomeAtRefPublic:
             outcome = bug_repro_outcome_at_ref(
                 tmp_path, "tests/test_x.py::test_x", "main"
             )
-        mocked.assert_called_once_with(tmp_path, "tests/test_x.py::test_x", "main")
+        mocked.assert_called_once_with(
+            tmp_path, "tests/test_x.py::test_x", "main", timeout_s=_BUG_REPRO_TIMEOUT_S
+        )
         assert outcome is _BugReproOutcome.FAILED_AT_PARENT
 
     def test_public_alias_is_the_same_enum(self) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_public_alias_is_the_same_enum  # noqa: E501
         assert BugReproOutcome is _BugReproOutcome
 
+    # frob:ticket T-2480
     def test_default_base_ref_is_main(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_default_base_ref_is_main  # noqa: E501
         with patch(
@@ -63,7 +68,9 @@ class TestBugReproOutcomeAtRefPublic:
             return_value=_BugReproOutcome.NO_VERDICT,
         ) as mocked:
             bug_repro_outcome_at_ref(tmp_path, "tests/test_x.py::test_x")
-        mocked.assert_called_once_with(tmp_path, "tests/test_x.py::test_x", "main")
+        mocked.assert_called_once_with(
+            tmp_path, "tests/test_x.py::test_x", "main", timeout_s=_BUG_REPRO_TIMEOUT_S
+        )
 
 
 class TestDesignatedReproTestPublic:

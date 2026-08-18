@@ -2,7 +2,7 @@
 id: T-2480
 title: check-repro's fixed 60s budget turns a slow but valid repro test into an indistinguishable
   NO_VERDICT
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,23 +13,121 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_evidence.py
+- src/frob/gates/_mutation_evidence.py
+- src/frob/app/ticket_runner/_verify.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
+- docs/modules/tickets.md
+- docs/modules/tickets-landing.md
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- tests/gates/test_bug_repro_at_ref_public.py
+- tests/test_gates_mutation_evidence.py
+- tests/unit/test_ticket_runner_designate_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: the actual repro-timeout classification (_BugReproOutcome, _run_designated_test)
+    lives in gates/_mutation_evidence.py and the --check-repro/--designate-repro CLI-facing
+    messaging lives in app/ticket_runner/_verify.py, not in tickets/_evidence.py as
+    originally scoped; a --repro-timeout-s override needs a new CLI flag in _cli_parsers/_ticket/_closeout.py
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: the actual repro-timeout classification (_BugReproOutcome, _run_designated_test)
+    lives in gates/_mutation_evidence.py and the --check-repro/--designate-repro CLI-facing
+    messaging lives in app/ticket_runner/_verify.py, not in tickets/_evidence.py as
+    originally scoped; a --repro-timeout-s override needs a new CLI flag in _cli_parsers/_ticket/_closeout.py
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: the actual repro-timeout classification (_BugReproOutcome, _run_designated_test)
+    lives in gates/_mutation_evidence.py and the --check-repro/--designate-repro CLI-facing
+    messaging lives in app/ticket_runner/_verify.py, not in tickets/_evidence.py as
+    originally scoped; a --repro-timeout-s override needs a new CLI flag in _cli_parsers/_ticket/_closeout.py
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: bug_repro_outcome_at_ref/designated_repro_test's frob:doc anchors both live
+    here and need the new TIMEOUT outcome + --repro-timeout-s documented
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: _BugReproOutcome's frob:doc anchor lives here; adding TIMEOUT needs it touched
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/config.py
+  reason: the new --repro-timeout-s flag needs a ticket_repro_timeout_s field declared
+    on AppConfig (pydantic BaseModel, fields must be declared) alongside the existing
+    ticket_check_repro/ticket_designate_repro_force fields
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: AppConfig.from_external's field-name allowlist in _config_external.py must
+    carry ticket_repro_timeout_s through or the new flag is silently dropped (WIRE001
+    caught it); the three test files hold this ticket's positive-control/regression
+    evidence
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/gates/test_bug_repro_at_ref_public.py
+  reason: AppConfig.from_external's field-name allowlist in _config_external.py must
+    carry ticket_repro_timeout_s through or the new flag is silently dropped (WIRE001
+    caught it); the three test files hold this ticket's positive-control/regression
+    evidence
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates_mutation_evidence.py
+  reason: AppConfig.from_external's field-name allowlist in _config_external.py must
+    carry ticket_repro_timeout_s through or the new flag is silently dropped (WIRE001
+    caught it); the three test files hold this ticket's positive-control/regression
+    evidence
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: AppConfig.from_external's field-name allowlist in _config_external.py must
+    carry ticket_repro_timeout_s through or the new flag is silently dropped (WIRE001
+    caught it); the three test files hold this ticket's positive-control/regression
+    evidence
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_slow_test_exceeding_budget_is_timeout_not_no_verdict
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_timeout_outcome_reports_distinctly_and_exits_nonzero
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_failing_test_still_refused
+- tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_reproducing_test_completes_normally
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_repro_timeout_s_is_forwarded
+- tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal::test_repro_timeout_s_survives_from_external
 designated_repro_test: null
 acceptance:
 - text: Given a repro test that exceeds the check-repro time budget, when it is checked,
     then the result reports a timeout distinctly from a test that ran and did not
     reproduce.
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_slow_test_exceeding_budget_is_timeout_not_no_verdict
+  - tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_timeout_outcome_reports_distinctly_and_exits_nonzero
+  - tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCheckRepro::test_repro_timeout_s_is_forwarded
+  - tests/unit/test_ticket_runner_designate_repro.py::TestEvidenceCliFlagsSurviveFromExternal::test_repro_timeout_s_survives_from_external
 - text: Given a fast test that genuinely does not fail at the parent commit, when
     it is checked, then it is still rejected, proving BUG002's real check was not
     weakened.
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_failing_test_still_refused
 - text: Given a fast genuinely-reproducing test, when it is checked, then it verifies
     through the normal path with no added friction.
-  evidence: []
+  evidence:
+  - tests/test_gates_mutation_evidence.py::TestBugReproTimeout::test_fast_genuinely_reproducing_test_completes_normally
 threat: null
 component: tickets
 anchor: false

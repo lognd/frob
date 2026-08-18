@@ -665,6 +665,18 @@ class AppConfig(BaseModel):
     #: first pytest-node-id evidence); any other value is an explicit
     #: NODE-ID to check.
     ticket_check_repro: str | None = None
+    # frob:ticket T-2480
+    #: `--repro-timeout-s SECONDS`: overrides BUG002's default 60s repro-
+    #: check subprocess budget for `--check-repro`/`--designate-repro` on
+    #: THIS invocation only -- `None` means "use the default"
+    #: (`frob.gates._mutation_evidence._BUG_REPRO_TIMEOUT_S`). Repro tests
+    #: for design/architecture-level defects are structurally the
+    #: slowest (demonstrating the defect means elaborating the whole
+    #: model), so a fixed budget selectively disenfranchises exactly the
+    #: repro tests covering the broadest defects -- this lets a caller
+    #: raise it explicitly instead of silently hitting `BugReproOutcome.
+    #: TIMEOUT`.
+    ticket_repro_timeout_s: float | None = None
     # frob:ticket T-1537
     #: `frob ticket evidence <id> --replace OLD-NODE-ID NEW-NODE-ID`: rebind
     #: one evidence id everywhere it appears (flat list + every acceptance
