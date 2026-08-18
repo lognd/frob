@@ -1,5 +1,5 @@
 ---
-id: T-draft-44e1bb9b
+id: T-2432
 title: 'T-2390 child: validate [testing] table against a declared schema (already
   has TestPolicy model)'
 state: queued

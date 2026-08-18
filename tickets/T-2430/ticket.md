@@ -1,5 +1,5 @@
 ---
-id: T-draft-09cb6d8d
+id: T-2430
 title: 'T-2390 child: validate [profile] table against a declared schema'
 state: queued
 kind: bug

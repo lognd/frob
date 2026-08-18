@@ -761,6 +761,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2397: FLAGCOV001 -- a CLI flag that parses but never reaches
         # its declared config model (frob.gates._flag_coverage).
         "FLAGCOV001",
+        # frob:ticket T-2428
+        # T-2390 epic child: REFSCHEMA001 -- an unknown/misspelled key in
+        # a [[refs.entrypoint]] entry (frob.gates._refs_schema).
+        "REFSCHEMA001",
         # frob:ticket T-2388
         # T-2397: courtesy registration to unblock T-2388 (Series Y) --
         # T-2388's land refused at UnregisteredGateRuleConstructed (T-1937)

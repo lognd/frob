@@ -93,6 +93,7 @@ from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
 from frob.gates._docenum import docenum001_gate
 from frob.gates._flag_coverage import flag_coverage_gate
+from frob.gates._refs_schema import refs_schema_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
@@ -5636,6 +5637,9 @@ _ALL_GATES = frozenset(
         # wired to nothing frob check ever ran; this registration is the
         # fix.
         "flag_coverage",
+        # T-2390 epic child T-2428: REFSCHEMA001, an unknown/
+        # misspelled key in a [[refs.entrypoint]] entry.
+        "refs_schema",
         # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
@@ -6033,6 +6037,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "render_lint",
     "lexcheck",
     "flag_coverage",
+    "refs_schema",
     "parse_failures",
     "dead_symbols",
     # frob:ticket T-1428
@@ -6575,6 +6580,11 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # declaration lives at the repo root, never a possibly-scoped
         # subdir.
         "flag_coverage": _ProcessJob(flag_coverage_gate, (st.repo_root,)),
+        # T-2390 epic child T-2428: REFSCHEMA001 -- cheap (one
+        # frob.toml read plus one dotted-path import), thread-pool like
+        # flag_coverage above, always against repo_root (the declaration
+        # lives at the repo root).
+        "refs_schema": _ProcessJob(refs_schema_gate, (st.repo_root,)),
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
@@ -7832,6 +7842,7 @@ __all__ = [
     "lang_conformance_gate",
     "flag_coverage_gate",
     "lexical_selfcheck_gate",
+    "refs_schema_gate",
     "perf_gate",
     "PERF_REACH_DEGRADED_SKIP_MARKER",
     "pii_structural_gate",

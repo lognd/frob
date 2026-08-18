@@ -1,5 +1,5 @@
 ---
-id: T-draft-33674b0d
+id: T-2431
 title: 'T-2390 child: validate top-level scalar keys (min_frob_version, check_base)
   against a declared schema'
 state: queued

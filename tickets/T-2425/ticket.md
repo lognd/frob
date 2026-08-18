@@ -32,7 +32,7 @@ anchor_reason: null
 land_commit: null
 ---
 MEASURED 2026-08-18. Series AA's T-2394 land was refused repeatedly with
-`ScopeLeaseConflict` while finalizing `T-draft-2654f0be` -- a draft it
+`ScopeLeaseConflict` while finalizing `T-2428` -- a draft it
 does not own, belonging to an unrelated ticket. The harness flagged it
 as a stuck repeated failure after 3 identical attempts. AA's own content
 was clean and its branch (`agent/dev-friction`, tip `4dc086933`) was
@@ -71,7 +71,7 @@ FIX SHAPE (design judgement wanted, not a mechanical patch):
     unrelated agent's in-progress filing should never be able to fail a
     land whose own content is clean.
   - The refusal message must name WHOSE draft it is and why the land
-    cares. "ScopeLeaseConflict on T-draft-2654f0be" sent two agents
+    cares. "ScopeLeaseConflict on T-2428" sent two agents
     hunting for a worktree lease that did not exist.
 
 POSITIVE CONTROLS:

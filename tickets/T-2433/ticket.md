@@ -1,6 +1,6 @@
 ---
-id: T-draft-d5c59b00
-title: 'T-2390 child: validate [test] table against a declared schema'
+id: T-2433
+title: 'T-2390 child: validate [arch] table against a declared schema'
 state: queued
 kind: bug
 origin: human
@@ -11,8 +11,8 @@ tier: story
 sprint: null
 runs_last: false
 scope:
-- src/frob/check/_native.py
-- tests/unit/test_test_table_schema.py
+- src/frob/app/_config_meta.py
+- tests/unit/test_arch_table_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
@@ -22,10 +22,12 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Validate the `[test]` table (16 leaves) against a declared schema.
-Readers are spread across frob.check._native and frob.gates.__init__ --
-NOT fully inventoried at T-2390 filing time; do that as this child's own
-first step.
+Validate the `[arch]` table (9 leaves) against a declared schema.
+Reader: frob.app._config_meta.load_arch_config -- hand-lists 10 named
+keys (5 T-0373 thresholds + 5 T-0728 SRP/cohesion knobs) against its own
+calibrated-defaults dict; a misspelled key (e.g. "max_fuction_lines",
+this epic's own filing-time example) silently reverts to the built-in
+default with no diagnostic.
 
 Same required shape as every T-2390 child: module:symbol declared
 schema (T-2397's resolve_dotted_symbol precedent), must-now-fire +

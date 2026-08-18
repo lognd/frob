@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.512.0] - unreleased
+
+- T-2428: T-2390 child: validate [[refs.entrypoint]] against a declared schema (58 leaves, largest table)
+
 ## [0.511.0] - unreleased
 
 - T-2365: Adapter-capability axis + behavioral conformance suite for the 6 registered languages

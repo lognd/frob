@@ -1,5 +1,5 @@
 ---
-id: T-draft-d8d789d0
+id: T-2437
 title: 'T-2390 child: validate [dup] and [graph] tables against declared schemas'
 state: queued
 kind: bug

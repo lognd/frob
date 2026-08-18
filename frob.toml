@@ -140,6 +140,15 @@ exclude = [
 # read from OUTSIDE this repo's own tracked-file graph (a human, GitHub's
 # UI, a packaging tool, CI's own runner, the interpreter's own entry-point
 # convention), never a blanket mute: every entry carries its own reason.
+#
+# T-2390 epic child (T-2428): entrypoint_schema declares this
+# table's own known-key set for REFSCHEMA001 (an unknown/misspelled key
+# in an [[refs.entrypoint]] entry, previously silently ignored), resolved
+# through the same module:symbol idiom as [[docblocks.commands]]'s own
+# parser/config/forwarded keys.
+[refs]
+entrypoint_schema = "frob.gates._refs_schema:REFS_ENTRYPOINT_KNOWN_KEYS"
+
 [[refs.entrypoint]]
 path = "README.md"
 reason = "read by humans/GitHub, not referenced from other tracked files"

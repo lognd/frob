@@ -203,22 +203,22 @@ shape rather than a flat scalar table) myself first, per coordinator
 instruction, to establish the pattern on the hardest case.
 
 Children filed (draft ids, renumber to real ids at land):
-- T-draft-2654f0be: [[refs.entrypoint]] (58 leaves) -- TAKEN by this
+- T-2428: [[refs.entrypoint]] (58 leaves) -- TAKEN by this
   session, in progress
-- T-draft-80240977: [gates] table (incl. [gates.ratchet]) (19 leaves)
-- T-draft-d5c59b00: [test] table (16 leaves)
-- T-draft-6ccb6666: [arch] table (9 leaves)
-- T-draft-03cf93c1: [[native]] table (6 leaves)
-- T-draft-7c08cb94: [[docblocks.commands]] table (4 leaves, incl.
+- T-2435: [gates] table (incl. [gates.ratchet]) (19 leaves)
+- T-2436: [test] table (16 leaves)
+- T-2433: [arch] table (9 leaves)
+- T-2429: [[native]] table (6 leaves)
+- T-2434: [[docblocks.commands]] table (4 leaves, incl.
   T-2397's own new config=/forwarded= keys)
-- T-draft-44e1bb9b: [testing] table (5 leaves, already has a TestPolicy
+- T-2432: [testing] table (5 leaves, already has a TestPolicy
   pydantic model -- good early pick to test the pattern against an
   already-modeled table)
-- T-draft-09cb6d8d: [profile] table (2 leaves, smallest per-table child)
-- T-draft-d8d789d0: [dup] + [graph] tables combined (1 leaf each,
+- T-2430: [profile] table (2 leaves, smallest per-table child)
+- T-2437: [dup] + [graph] tables combined (1 leaf each,
   disjoint readers but too small individually to justify separate
   tickets)
-- T-draft-33674b0d: top-level scalar keys (min_frob_version, check_base
+- T-2431: top-level scalar keys (min_frob_version, check_base
   -- no enclosing table, structurally different from the rest)
 
 All ten are blocked_by=[] (independent scopes, safe to dispatch in

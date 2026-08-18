@@ -303,6 +303,9 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             # added to a _STAGE_GROUPS member is unreachable via
             # `--only <group>`).
             "flag_coverage",
+            # T-2390 epic child T-2428: REFSCHEMA001 -- thread-
+            # pool, sub-second, same shape as flag_coverage above.
+            "refs_schema",
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",

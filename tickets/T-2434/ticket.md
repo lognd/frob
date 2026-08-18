@@ -1,5 +1,5 @@
 ---
-id: T-draft-7c08cb94
+id: T-2434
 title: 'T-2390 child: validate [[docblocks.commands]] table against a declared schema
   (incl. T-2397''s config=/forwarded= keys)'
 state: queued

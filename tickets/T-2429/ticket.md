@@ -1,7 +1,6 @@
 ---
-id: T-draft-80240977
-title: 'T-2390 child: validate [gates] table (incl. [gates.ratchet]) against a declared
-  schema'
+id: T-2429
+title: 'T-2390 child: validate [[native]] table against a declared schema'
 state: queued
 kind: bug
 origin: human
@@ -12,8 +11,8 @@ tier: story
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/_ratchet.py
-- tests/unit/test_gates_table_schema.py
+- src/frob/natives/__init__.py
+- tests/unit/test_native_table_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 designated_repro_test: null
@@ -23,12 +22,10 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Validate the `[gates]` table (19 leaves, includes nested
-`[gates.ratchet]`) against a declared schema. Readers span
-frob.gates._ratchet ([gates.ratchet.rules]) and other [gates]-nested
-sub-tables -- inventory the full [gates] key surface first (this was
-NOT fully surveyed at T-2390 filing time; do that as this child's own
-first step, do not assume the one reader named here is exhaustive).
+Validate `[[native]]` (6 leaves) against a declared schema: each array
+entry's known keys (crate path, cargo_target_dir-shaped options, etc --
+inventory the exact key set as this child's own first step). Consumers:
+frob.natives, frob._cli_parsers._misc, frob.app.config.
 
 Same required shape as every T-2390 child: module:symbol declared
 schema (T-2397's resolve_dotted_symbol precedent), must-now-fire +
