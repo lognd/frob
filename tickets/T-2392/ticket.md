@@ -114,7 +114,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 477176777f9cf94e1978628ebec06d342639197a
 ---
 MEASURED TODAY: two independent agents (Series U twice, Series V once)
 hit the same wall and resolved it the same unsafe way.
