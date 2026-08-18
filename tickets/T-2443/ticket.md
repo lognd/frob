@@ -135,7 +135,7 @@ threat: null
 component: process
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4493e4cd6ff449252d040088056814aae00f3338
 ---
 MEASURED 2026-08-18, on a live fleet. `frob check` (and/or the pytest
 runs it drives) leaks `multiprocessing.forkserver` processes that
