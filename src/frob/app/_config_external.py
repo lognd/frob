@@ -360,6 +360,8 @@ _LIST_FIELDS = (
 _BOOL_FLAGS = (
     # frob:ticket T-2485
     "waive_audit_partial",
+    # frob:ticket T-2496
+    "waive_audit_check_collisions",
     "scaffold_force",
     "cycle_suggest",
     "outline_json",

@@ -608,6 +608,29 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         "since the last watermark (or a bounded first-run catch-up set)",
     )
     scan_p.add_argument("--json", dest="ticket_json", action="store_true")
+    # frob:ticket T-2496
+    scan_p.add_argument(
+        "--check-collisions",
+        dest="waive_audit_check_collisions",
+        action="store_true",
+        help="T-2496: opt-in, report-only. Also runs find_collision_"
+        "suspects (T-2493) -- flags a frob:waive only when an ACTIVE, "
+        "UNSUPPRESSED violation of the SAME rule sits in the SAME file as "
+        "the waiver, a direct presence-based counter-example that the "
+        "waiver failed to suppress something it names. Never reasons from "
+        "absence: a waiver whose site has ZERO current violations "
+        "anywhere is INVISIBLE to this check, indistinguishable from a "
+        "genuinely inert waiver using only this signal (T-1579's own "
+        "incident is why -- see find_collision_suspects's module-level "
+        "docstring for the full history). Runs a real, unscoped "
+        "`frob check` gate pass to get the current kept-violation set, so "
+        "expect this to cost roughly what a full `frob check` costs -- "
+        "opt in deliberately, do not make this the default. Purely "
+        "additive to scan's own report: never removes, rewrites, or "
+        "auto-drops a waiver, and never gates this command's own exit "
+        "status -- a collision is reported for a human/agent to "
+        "classify, same posture as scan's own NEEDS_REVIEW list.",
+    )
     complete_p = waive_audit_sub.add_parser(
         "complete",
         help="record a finished pass's verdict and advance the watermark",

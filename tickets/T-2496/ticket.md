@@ -1,7 +1,7 @@
 ---
 id: T-2496
 title: wire find_collision_suspects into a waive-audit CLI subcommand
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,17 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/_waive_audit.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+evidence_scope:
+- tests/unit/test_waive_audit_runner.py
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring::test_check_collisions_renders_suspects
+- tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring::test_check_collisions_never_flags_when_gate_run_fails
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

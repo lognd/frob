@@ -500,9 +500,26 @@ ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
   a general per-waiver verdict is a materially larger, multi-file
   capability outside this ticket's single-file scope. Pure/side-effect-
   free (report-only, per the T-2493 brief: never mutates a waiver, never
-  gates a check or land, not wired to any CLI subcommand by this
-  ticket -- see the function's own T-2493 section docstring in
-  `_waive_audit.py` for the full incident history and reasoning).
+  gates a check or land -- see the function's own T-2493 section
+  docstring in `_waive_audit.py` for the full incident history and
+  reasoning).
+- T-2496: `frob ticket waive-audit scan --check-collisions` wires
+  `find_collision_suspects` into the CLI, opt-in and additive only.
+  `_render_collision_suspects` runs a fresh, unscoped `frob check` gate
+  pass (so expect this to cost roughly what a full `frob check` costs --
+  it is not the default), feeds the resulting `GateReport.violations`
+  plus the current waiver corpus to `find_collision_suspects`, and
+  prints whatever it flags as a SEPARATE report section below `scan`'s
+  own watermark-scoped output -- never folded into `scan`'s
+  `AuditVerdict`, never mutates a waiver, and never changes this
+  command's own exit status; a reported collision is input for a
+  human/agent's own T-1614 classification pass. `find_collision_
+  suspects`'s disclosed blind spot (a waiver whose site has ZERO current
+  violations anywhere is invisible to this check) is restated in the
+  flag's own `--help` text and in this command's rendered output, not
+  hidden. Deliberately did NOT add an "and clean up"/auto-drop mode in
+  this wiring -- that decision needs its own separate review, per the
+  T-2493 brief this ticket inherited.
 
 ## Shared graph-snapshot helper (T-1085)
 

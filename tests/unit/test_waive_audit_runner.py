@@ -367,3 +367,76 @@ class TestCollisionSuspects:
 
         assert len(suspects) == 1
 
+
+# frob:ticket T-2496
+class TestCheckCollisionsWiring:
+    """T-2496: `waive-audit scan --check-collisions` wires
+    `find_collision_suspects` into the CLI -- report-only, additive to
+    `scan`'s own output, never affecting `scan`'s own `AuditVerdict` or
+    this command's exit status."""
+
+    # frob:ticket T-2496
+    def test_check_collisions_renders_suspects(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        from typani import Ok
+
+        from frob.gates._models import GateReport, GateStats
+
+        waiver = ScannedWaiver(
+            file="mod.py", line=3, rule="DUP001", reason="should suppress this"
+        )
+        kept_violation = Violation(
+            rule="DUP001",
+            severity=Severity.WARN,
+            file="mod.py",
+            line=10,
+            message="DUP001: mod.py:10 duplicate of other.py:5",
+        )
+        report = GateReport(violations=(kept_violation,), waived=(), stats=GateStats())
+
+        monkeypatch.setattr(
+            _waive_audit, "_all_current_waivers", lambda root: (waiver,)
+        )
+        # `_render_collision_suspects` imports `run_gates`/`GateConfig`
+        # lazily from `frob.gates` inside its own body, so the
+        # monkeypatch target is `frob.gates.run_gates`, not this
+        # runner module's own namespace.
+        import frob.gates as gates_module
+
+        monkeypatch.setattr(gates_module, "run_gates", lambda cfg, **kw: Ok(report))
+
+        from frob.render import Renderer
+
+        renderer = Renderer.for_stream(__import__("sys").stdout)
+        _waive_audit._render_collision_suspects(tmp_path, renderer, as_json=False)
+
+        out = capsys.readouterr().out
+        assert "1 suspect(s)" in out
+        assert "mod.py:3 frob:waive DUP001" in out
+        assert "ZERO current violations anywhere" in out
+
+    # frob:ticket T-2496
+    def test_check_collisions_never_flags_when_gate_run_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        from typani import Err
+
+        import frob.gates as gates_module
+        from frob.gates import GateError
+
+        monkeypatch.setattr(
+            gates_module,
+            "run_gates",
+            lambda cfg, **kw: Err(GateError.GraphUnavailable),
+        )
+
+        from frob.render import Renderer
+
+        renderer = Renderer.for_stream(__import__("sys").stdout)
+        # Must not raise -- a gate-run failure is reported, not fatal.
+        _waive_audit._render_collision_suspects(tmp_path, renderer, as_json=False)
+
+        out = capsys.readouterr().out
+        assert "gate run failed" in out
+

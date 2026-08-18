@@ -549,6 +549,9 @@ class AppConfig(BaseModel):
     waive_audit_cop_outs: int | None = None
     # frob:ticket T-2485
     waive_audit_partial: bool = False
+    #: T-2496: `waive-audit scan --check-collisions` opt-in flag -- also
+    #: runs `find_collision_suspects` (T-2493) against a fresh gate pass.
+    waive_audit_check_collisions: bool = False
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
     # frob:ticket T-0810

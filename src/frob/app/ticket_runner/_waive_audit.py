@@ -49,6 +49,7 @@ import sys
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 from typani import Err, Ok, Result
@@ -64,6 +65,9 @@ from frob.gates._waive_audit_watermark import (
 )
 from frob.gates._models import Violation
 from frob.logging import get_logger
+
+if TYPE_CHECKING:
+    from frob.render import Renderer
 
 _log = get_logger(__name__)
 
@@ -528,15 +532,21 @@ def run(root: Path, cfg: AppConfig) -> None:
     sys.exit(1)
 
 
+# frob:ticket T-2496
 def _run_scan_subcommand(root: Path, cfg: AppConfig) -> None:
     """Render `waive-audit scan`'s report and exit(1) on
     `WATERMARK_UNREADABLE` -- the only failure mode `scan` itself has,
-    since it is otherwise read-only."""
+    since it is otherwise read-only. T-2496: with `--check-collisions`,
+    ALSO renders `find_collision_suspects`'s report as a second, clearly
+    separate section -- see `_render_collision_suspects`'s own docstring
+    for why this stays additive rather than folded into `scan`'s own
+    verdict."""
     from frob.render import Renderer
 
     renderer = Renderer.for_stream(sys.stdout)
     report = run_scan(root)
-    if getattr(cfg, "ticket_json", False):
+    as_json = getattr(cfg, "ticket_json", False)
+    if as_json:
         renderer.line(report.model_dump_json(indent=2))
     else:
         renderer.line(f"verdict={report.verdict.value} mode={report.mode}")
@@ -549,8 +559,72 @@ def _run_scan_subcommand(root: Path, cfg: AppConfig) -> None:
             renderer.line(
                 f"  {w.file}:{w.line} frob:waive {w.rule} reason={w.reason!r}"
             )
+    if getattr(cfg, "waive_audit_check_collisions", False):
+        _render_collision_suspects(root, renderer, as_json=as_json)
     if report.verdict == AuditVerdict.WATERMARK_UNREADABLE:
         sys.exit(1)
+
+
+# frob:ticket T-2496
+def _render_collision_suspects(
+    root: Path, renderer: Renderer, *, as_json: bool
+) -> None:
+    """`--check-collisions`'s own report section: run a fresh, unscoped
+    `frob check` gate pass, feed its `kept` (unsuppressed) violations plus
+    the current waiver corpus into T-2493's `find_collision_suspects`, and
+    render whatever it flags.
+
+    Deliberately its own function, not folded into `run_scan`/
+    `WaiveAuditScanReport`: `find_collision_suspects` answers a DIFFERENT
+    question (does an active violation collide with a waiver's own
+    rule+file) than `scan`'s watermark-scoped "what changed since last
+    audit" question, and mixing the two into one verdict would let a
+    collision-suspect silently start counting toward `AuditVerdict.
+    CLEAN`/`NEEDS_REVIEW` -- exactly the kind of verdict-collapsing this
+    module's own docstring says never to do. This function NEVER raises
+    this command's exit status and NEVER mutates a waiver; a collision
+    reported here is input for a human/agent's own T-1614 classification
+    pass, same as `scan`'s own NEEDS_REVIEW list already is.
+
+    A gate-run failure (`GateError`) is reported and swallowed, not
+    fatal -- `--check-collisions` is additive to `scan`'s own report, so
+    a gate-pass hiccup must not turn an otherwise-successful `scan` into
+    a failed command."""
+    from frob.gates import GateConfig, run_gates
+
+    gate_result = run_gates(GateConfig(root=str(root)))
+    if gate_result.is_err:
+        _log.warning(
+            "waive-audit --check-collisions: gate run failed (%s) -- "
+            "collision report skipped, scan's own report above is "
+            "unaffected",
+            gate_result.danger_err,
+        )
+        if not as_json:
+            renderer.line(
+                f"check-collisions: gate run failed: {gate_result.danger_err}"
+            )
+        return
+    waivers = _all_current_waivers(root)
+    suspects = find_collision_suspects(
+        waivers, gate_result.danger_ok.violations, root=root
+    )
+    if as_json:
+        payload = [s.model_dump() for s in suspects]
+        renderer.line(f"check_collisions: {payload}")
+        return
+    renderer.line(
+        f"check-collisions: {len(suspects)} suspect(s) -- a waiver whose "
+        "site has ZERO current violations anywhere is NOT detectable by "
+        "this check (T-2493's disclosed blind spot); absence here is "
+        "never proof of inertness"
+    )
+    for s in suspects:
+        renderer.line(
+            f"  {s.file}:{s.line} frob:waive {s.rule} reason={s.reason!r} "
+            f"collides with kept violation at line {s.colliding_violation_line}: "
+            f"{s.colliding_violation_message!r}"
+        )
 
 
 def _run_complete_subcommand(root: Path, cfg: AppConfig) -> None:
@@ -720,13 +794,10 @@ def _repo_relative(path: str, root: Path) -> str:
 # frob:tests \
 # tests/unit/test_waive_audit_runner.py::TestCollisionSuspects.test_a_quiet_hardened_si\
 # te_with_zero_violations_anywhere_is_not_flagged kind="unit"
-# frob:waive WIRE001 reason="deliberately unwired to any CLI subcommand by T-2493: \
-# this is the report-only collision-check half of the ticket, and the coordinator \
-# brief explicitly said do not gate a land or wire removal/rewrite in its first \
-# version -- CLI wiring is left for a follow-up ticket (below) with its own review, \
-# not folded in silently here. Genuinely called from this module's own test suite \
-# (frob:tests below); the callgraph correctly reports no CLI-path caller because there \
-# is none yet, on purpose." follow_up="T-2496"
+# frob:ticket T-2496
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestCheckCollisionsWiring.test_check_collision\
+# s_renders_suspects kind="unit"
 def find_collision_suspects(
     waivers: Sequence[ScannedWaiver],
     kept_violations: Sequence[Violation],
