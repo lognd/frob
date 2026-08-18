@@ -1,7 +1,7 @@
 ---
 id: T-2354
 title: Recovered from T-2344's phantom TICK006 citation of T-2348
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -26,3 +26,6 @@ Auto-filed by the TICK006 Tier-A fix (T-1544): T-2344's Done report claimed T-23
   `follow_up="T-2348"` rather than silently allowlisted.
 - docs/modules/gates.md: rule-catalog row + full `## LEXCHECK001 (T-2344)`
   section, `_KNOWN_GATE_RULES` f
+
+## Drop reason
+- 2026-08-17: T-2348 is a real, filed ticket (now landed at 31c1e197), verified via ticket show and git grep against tickets.md; T-2344's follow_up citation was never phantom. Same stale phantom-citation pattern T-2350 root-caused and closed (T-2351 fixed the underlying disqualified Tier-A revert mechanism); nothing independent to fix here.
