@@ -223,15 +223,45 @@ def _normalize_identity_file(root: Path, file: str) -> str:
         return path.as_posix()
 
 
+# frob:ticket T-2313
+# frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentities.test_drops_genuinely_empty_identity_pair  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
 def _normalize_identities(
     root: Path, identities: frozenset[tuple[str, str]]
 ) -> frozenset[tuple[str, str]]:
-    """T-2036: apply `_normalize_identity_file` across a whole
+    """T-2036/T-2313: apply `_normalize_identity_file` across a whole
     `(rule, file)` identity set -- the single call every producer/
-    consumer of an identity set in this module should route through."""
-    return frozenset(
-        (rule, _normalize_identity_file(root, file)) for rule, file in identities
-    )
+    consumer of an identity set in this module should route through.
+
+    T-2313: also drops any genuinely identity-less pair (rule AND file
+    BOTH empty) here, before it can enter a baseline diff or be rendered
+    into a filed ticket body -- observed verbatim in T-2297
+    ("-   ", both fields blank). Such a pair carries no key any
+    downstream auto-filer/attribution/dedup/dispose path can act on (a
+    plausible route to an unclearable quarantine entry, T-2207's own
+    precedent for a genuinely identity-less record), and its presence
+    signals an upstream diagnostic with missing `code`/`file` data (see
+    `_parse_error_findings_from_json` in `_verify.py`), never a real,
+    actionable finding. Logged when it happens, never silently dropped.
+    A pair with only ONE field empty (a real rule with no file, or vice
+    versa) is left alone -- that is still a genuine, if partial,
+    identity, not the T-2313 shape."""
+    normalized: set[tuple[str, str]] = set()
+    dropped = 0
+    for rule, file in identities:
+        if not rule and not file:
+            dropped += 1
+            continue
+        normalized.add((rule, _normalize_identity_file(root, file)))
+    if dropped:
+        _log.warning(
+            "rapid sweep: T-2313: dropped %d genuinely identity-less "
+            "(rule, file) pair(s) -- both fields empty, cannot be keyed, "
+            "attributed, deduped, or disposed; likely an upstream "
+            "diagnostic missing its code/file data",
+            dropped,
+        )
+    return frozenset(normalized)
 
 
 # frob:tests tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_absent_baseline_reads_as_none_not_empty  # noqa: E501

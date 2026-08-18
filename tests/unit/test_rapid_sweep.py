@@ -2605,6 +2605,51 @@ class TestNormalizeIdentityFile:
         assert _normalize_identity_file(tmp_path, str(other)) == other.as_posix()
 
 
+# frob:ticket T-2313
+class TestNormalizeIdentities:
+    """T-2313: `_normalize_identities` must drop a genuinely
+    identity-less (rule, file) pair (both fields empty) rather than
+    silently carrying it through into a baseline diff or a filed ticket
+    body -- observed verbatim in T-2297 as a blank ``"-   "`` line."""
+
+    def test_drops_genuinely_empty_identity_pair(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentities.test_drops_genuinely_empty_identity_pair  # noqa: E501
+        import logging
+
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identities
+
+        with caplog.at_level(logging.WARNING):
+            result = _normalize_identities(
+                tmp_path, frozenset({("", ""), ("E501", "a.py")})
+            )
+        assert result == frozenset({("E501", "a.py")})
+        assert "T-2313" in caplog.text
+        assert "1 genuinely identity-less" in caplog.text
+
+    def test_leaves_well_formed_pairs_untouched(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentities.test_leaves_well_formed_pairs_untouched  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identities
+
+        identities = frozenset({("E501", "a.py"), ("F841", "b.py")})
+        assert _normalize_identities(tmp_path, identities) == identities
+
+    def test_partial_identity_one_field_empty_is_kept(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestNormalizeIdentities.test_partial_identity_one_field_empty_is_kept  # noqa: E501
+        # A pair with only ONE empty field is a real, if partial,
+        # identity (e.g. a rule with no associated file) -- not the
+        # T-2313 both-empty shape -- and must be left alone, not dropped.
+        from frob.app.ticket_runner._rapid_sweep import _normalize_identities
+
+        # _normalize_identity_file("") normalizes to "." (Path("").as_posix()),
+        # pre-existing, unrelated behavior -- this test only asserts the
+        # pair was NOT dropped as identity-less, not the exact file string.
+        result = _normalize_identities(tmp_path, frozenset({("E501", "")}))
+        assert len(result) == 1
+        assert next(iter(result))[0] == "E501"
+
+
 # frob:ticket T-2036
 class TestAbsoluteVsRelativePathIdentityMismatch:
     """T-2036's own repro: T-2022 was auto-dropped while its
