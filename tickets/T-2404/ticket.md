@@ -1,7 +1,7 @@
 ---
 id: T-2404
 title: Recovered from T-2380's phantom TICK006 citation of T-2403
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -26,3 +26,6 @@ importing `frob.verify._selection` with no `cli -> verify` Flow, etc.) --
 real work, not calibration noise. Filed as T-2403 (single-dispatch burn-
 down + WARN->ERROR promotion), not split into multiple children: 133
 spans ~45 distinct (from, to) pairs but is one cohe
+
+## Drop reason
+- 2026-08-18: false positive, same TICK006 stale-ledger-read race T-2350 already documented and confirmed dropped-mechanism-fixed post-T-2351: T-2403 is a real ticket, filed via frob ticket new moments before T-2380's land in the same session (verified: frob ticket show T-2403 resolves, state=queued). Not a phantom citation.
