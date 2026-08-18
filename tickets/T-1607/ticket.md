@@ -10,12 +10,14 @@ blocked_by:
 - T-1599
 parent: T-1597
 tier: ticket
-sprint: null
+sprint: post-1.0
 runs_last: false
 scope:
 - tickets/T-1607/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/lang/**
