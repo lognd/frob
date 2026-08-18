@@ -1,7 +1,7 @@
 ---
 id: T-2397
 title: Wire find_dropped_cli_flags into frob check as a gate (T-2387 visibility gap)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
