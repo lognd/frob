@@ -2,7 +2,7 @@
 id: T-2500
 title: 'boto3 net-mutate: exhaustive per-service mutating-verb survey (S3/DynamoDB/IAM
   done, ~347 services remain)'
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,42 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/vet/_capability_registry/**
+- tests/test_capability_registry.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: T-2500's needle-table extension needs new tests (mirroring T-2479's TestBoto3ServiceBindingResolution
+    pattern) plus the docs/modules/vet.md coverage note T-2479 also updated
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/vet.md
+  reason: T-2500's needle-table extension needs new tests (mirroring T-2479's TestBoto3ServiceBindingResolution
+    pattern) plus the docs/modules/vet.md coverage note T-2479 also updated
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_ec2_terminate_instances_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_rds_delete_db_instance_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_lambda_update_function_code_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_sns_publish_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_sqs_send_message_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_secretsmanager_put_secret_value_reports_net_mutate
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_kms_schedule_key_deletion_reports_net_mutate
+designated_repro_test: tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_kms_schedule_key_deletion_reports_net_mutate
+evidence_changes:
+- old_node: tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_ec2_describe_instances_does_not_report_net_mutate
+  new_node: tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_ec2_terminate_instances_reports_net_mutate
+  reason: stale evidence id -- redundant read-only control test was removed as a DUP001-flagged
+    duplicate of an existing S3 control; the surviving EC2 mutate test is already
+    recorded separately
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false

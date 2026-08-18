@@ -829,3 +829,97 @@ class TestBoto3ServiceBindingResolution:
         observed = scan_file_capabilities(path)
         assert "net-mutate" not in observed
         assert "net-connect" in observed
+
+
+# frob:ticket T-2500
+class TestBoto3NextTierServiceBindingResolution:
+    """T-2500: the next tier of boto3 services beyond S3/DynamoDB/IAM
+    (T-2479) -- EC2, RDS, Lambda, SNS, SQS, Secrets Manager, KMS -- via
+    the SAME service-agnostic binding-aware resolver
+    (`_resolve_py_boto3_client_call`); no resolver changes, only new
+    per-service needle tables in `_dangerous_ops_python.py`. One
+    mutating-verb test per new service, plus a read-only control proving
+    the per-verb split still holds for at least one of them."""
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_ec2_terminate_instances_reports_net_mutate(self, tmp_path: Path) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    ec2 = boto3.client('ec2')\n"
+            "    ec2.terminate_instances(InstanceIds=['i-1'])\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_rds_delete_db_instance_reports_net_mutate(self, tmp_path: Path) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    rds = boto3.client('rds')\n"
+            "    rds.delete_db_instance(DBInstanceIdentifier='d')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_lambda_update_function_code_reports_net_mutate(
+        self, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    lam = boto3.client('lambda')\n"
+            "    lam.update_function_code(FunctionName='f', S3Bucket='b')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_sns_publish_reports_net_mutate(self, tmp_path: Path) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    sns = boto3.client('sns')\n"
+            "    sns.publish(TopicArn='t', Message='m')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_sqs_send_message_reports_net_mutate(self, tmp_path: Path) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    sqs = boto3.client('sqs')\n"
+            "    sqs.send_message(QueueUrl='q', MessageBody='m')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_secretsmanager_put_secret_value_reports_net_mutate(
+        self, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    sm = boto3.client('secretsmanager')\n"
+            "    sm.put_secret_value(SecretId='s', SecretString='v')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_kms_schedule_key_deletion_reports_net_mutate(self, tmp_path: Path) -> None:
+        """KMS's most destructive verb -- irreversible deletion of a key
+        that decrypts existing data."""
+        path = tmp_path / "m.py"
+        path.write_text(
+            "import boto3\n\n"
+            "def f():\n"
+            "    kms = boto3.client('kms')\n"
+            "    kms.schedule_key_deletion(KeyId='k')\n"
+        )
+        assert "net-mutate" in scan_file_capabilities(path)

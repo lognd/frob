@@ -74,7 +74,12 @@ from, since boto3's mutating method names are per-service and carry no
 library-name prefix at the call site the way `requests.post(`/`httpx.
 post(` do; a non-literal service name does not resolve, and coverage is
 disclosed-partial -- three high-value services with a representative, not
-exhaustive, verb list each, see T-2479's Done report), and the
+exhaustive, verb list each -- T-2479 covered S3/DynamoDB/IAM, T-2500 added
+EC2/RDS/Lambda/SNS/SQS/Secrets Manager/KMS via the SAME resolver with
+no code changes, only new per-service needle tables (boto3 has roughly
+350 services total, so this remains a representative, not exhaustive,
+verb list per service and a representative, not exhaustive, SET of
+covered services -- see T-2479's and T-2500's Done reports), and the
 c-cpp-excused-kind vocabulary
 (`sql`, `html_render`, `fetch_url`, `deserialize`, `client_storage`) also
 live there -- see `docs/guides/extending/capability-registry.md` for the

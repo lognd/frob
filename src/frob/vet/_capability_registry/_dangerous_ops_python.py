@@ -829,6 +829,230 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         ),
         (),
     ),
+    # T-2500: exhaustive per-service boto3 survey, next tier after S3/
+    # DynamoDB/IAM -- same _op(...) shape, same binding-aware resolver
+    # (frob.vet._capability_python._resolve_py_boto3_client_call, T-2479),
+    # no resolver changes needed, only new per-service needle tables.
+    # Scope disclosed: this covers 7 more HIGH-VALUE services (EC2, RDS,
+    # Lambda, SNS, SQS, Secrets Manager, KMS) with representative, not
+    # exhaustive, mutating-verb lists -- boto3 has ~350 services total;
+    # the remainder is out of scope here (see T-2500's own Done report
+    # for what remains and why an exhaustive survey was not attempted in
+    # one pass).
+    _op(
+        "python",
+        "boto3",
+        "boto3 EC2 mutating verb (run/terminate/modify on client/resource(\"ec2\"))",
+        "net-mutate",
+        "issues a state-changing AWS EC2 API call (launch/terminate an "
+        "instance, modify a security group, attach/detach a volume) -- "
+        "can create billable resources or open network exposure",
+        "scope credentials via IAM least privilege; treat as a mutating "
+        "operation for authorization/audit purposes; never accept "
+        "attacker-controlled instance/security-group parameters unvalidated",
+        "high",
+        tuple(
+            f'boto3.{factory}(ec2).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "run_instances",
+                "terminate_instances",
+                "stop_instances",
+                "reboot_instances",
+                "create_security_group",
+                "delete_security_group",
+                "authorize_security_group_ingress",
+                "authorize_security_group_egress",
+                "revoke_security_group_ingress",
+                "revoke_security_group_egress",
+                "create_volume",
+                "delete_volume",
+                "attach_volume",
+                "detach_volume",
+                "create_snapshot",
+                "delete_snapshot",
+                "create_key_pair",
+                "delete_key_pair",
+                "modify_instance_attribute",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3 RDS mutating verb (create/delete/modify on client/resource(\"rds\"))",
+        "net-mutate",
+        "issues a state-changing AWS RDS API call (create/delete a "
+        "database instance, take/delete a snapshot) -- may destroy "
+        "production data or create billable resources",
+        "scope credentials via IAM least privilege; treat as a mutating "
+        "operation for authorization/audit purposes; require a human "
+        "review/approval gate before any delete_db_instance-shaped call",
+        "critical",
+        tuple(
+            f'boto3.{factory}(rds).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "create_db_instance",
+                "delete_db_instance",
+                "modify_db_instance",
+                "reboot_db_instance",
+                "create_db_snapshot",
+                "delete_db_snapshot",
+                "restore_db_instance_from_db_snapshot",
+                "create_db_cluster",
+                "delete_db_cluster",
+                "modify_db_cluster",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3 Lambda mutating verb (create/delete/update-code on "
+        'client/resource("lambda"))',
+        "net-mutate",
+        "issues a state-changing AWS Lambda API call (create/delete a "
+        "function, update its code or configuration) -- a code-execution "
+        "surface: a mutated function's code runs with its own IAM role "
+        "on the next invocation",
+        "scope credentials via IAM least privilege; treat as a mutating "
+        "operation for authorization/audit purposes; require code review "
+        "before any update_function_code-shaped call reaches production",
+        "critical",
+        tuple(
+            f'boto3.{factory}(lambda).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "create_function",
+                "delete_function",
+                "update_function_code",
+                "update_function_configuration",
+                "add_permission",
+                "remove_permission",
+                "publish_version",
+                "create_alias",
+                "delete_alias",
+                "update_alias",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        'boto3 SNS mutating verb (publish/create/delete on client/resource("sns"))',
+        "net-mutate",
+        "issues a state-changing AWS SNS API call (publish a message, "
+        "create/delete a topic or subscription) -- lower severity than "
+        "IAM/Lambda but still an outbound-notification and topology "
+        "mutation surface",
+        "scope credentials via IAM least privilege; validate message "
+        "content/topic ARNs before publishing",
+        "medium",
+        tuple(
+            f'boto3.{factory}(sns).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "publish",
+                "create_topic",
+                "delete_topic",
+                "subscribe",
+                "unsubscribe",
+                "set_topic_attributes",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        'boto3 SQS mutating verb (send/create/delete on client/resource("sqs"))',
+        "net-mutate",
+        "issues a state-changing AWS SQS API call (send/delete a "
+        "message, create/delete/purge a queue) -- lower severity than "
+        "IAM/Lambda but still a queue-topology and message-injection "
+        "surface",
+        "scope credentials via IAM least privilege; validate message "
+        "content before sending; never purge a queue on attacker-"
+        "controlled input",
+        "medium",
+        tuple(
+            f'boto3.{factory}(sqs).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "send_message",
+                "send_message_batch",
+                "delete_message",
+                "delete_message_batch",
+                "create_queue",
+                "delete_queue",
+                "purge_queue",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3 Secrets Manager mutating verb (create/delete/put/rotate on "
+        'client/resource("secretsmanager"))',
+        "net-mutate",
+        "issues a state-changing AWS Secrets Manager API call "
+        "(create/delete a secret, update its value, rotate it) -- "
+        "credential-adjacent, IAM-like severity: a mutated secret can "
+        "break every consumer or leak a new value",
+        "scope credentials via IAM least privilege; require a human "
+        "review/approval gate before any delete_secret or put_secret_"
+        "value-shaped call",
+        "critical",
+        tuple(
+            f'boto3.{factory}(secretsmanager).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "create_secret",
+                "delete_secret",
+                "put_secret_value",
+                "update_secret",
+                "rotate_secret",
+                "restore_secret",
+            )
+        ),
+        (),
+    ),
+    _op(
+        "python",
+        "boto3",
+        "boto3 KMS mutating verb (create/delete/disable/schedule on "
+        'client/resource("kms"))',
+        "net-mutate",
+        "issues a state-changing AWS KMS API call (create/schedule "
+        "deletion of a key, disable a key, re-encrypt data under a "
+        "different key) -- credential-adjacent, IAM-like severity: a "
+        "scheduled key deletion is irreversibly destructive to anything "
+        "encrypted under that key",
+        "scope credentials via IAM least privilege; require a human "
+        "review/approval gate before any schedule_key_deletion-shaped "
+        "call -- this is the single most destructive verb in this table",
+        "critical",
+        tuple(
+            f'boto3.{factory}(kms).{verb}('
+            for factory in ("client", "resource")
+            for verb in (
+                "create_key",
+                "schedule_key_deletion",
+                "cancel_key_deletion",
+                "disable_key",
+                "enable_key",
+                "put_key_policy",
+                "create_grant",
+                "revoke_grant",
+            )
+        ),
+        (),
+    ),
     _op(
         "python",
         "stripe",

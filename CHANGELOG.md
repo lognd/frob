@@ -52,6 +52,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
 - T-2494: T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
 - T-2498: T-2498: frob ticket body --append silently misroutes into done-report.md when one exists
+- T-2500: T-2500: boto3 net-mutate: exhaustive per-service mutating-verb survey (S3/DynamoDB/IAM done, ~347 services remain)
 - T-2505: T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
 
 ## [0.530.0] - unreleased
