@@ -81,7 +81,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d0e6b5644e11c782859fb39431becd9cfc60f4a3
 ---
 T-2194's own declared scope included `design/frob.strata` -- it added a
 `may "exec"`/`may "fs.read"` capability grant for
