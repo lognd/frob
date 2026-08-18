@@ -17,7 +17,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from typani import Ok
 
 from frob.app.ticket_runner._verify import (
     _repro_merge_base_root,
@@ -42,7 +41,11 @@ def _commit(cwd: Path, name: str, content: str) -> str:
     _git(cwd, "add", name)
     _git(cwd, "commit", "-q", "-m", f"add {name}")
     result = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=cwd, check=True, capture_output=True, text=True
+        ["git", "rev-parse", "HEAD"],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+        text=True,
     )
     return result.stdout.strip()
 
@@ -202,5 +205,7 @@ class TestWarnIfBaseRefNotHonouredExactly:
         resolved = _merge_base(worktree, root_tip)
         assert resolved.is_ok
         with caplog.at_level("WARNING"):
-            _warn_if_base_ref_not_honoured_exactly(worktree, root_tip, resolved.danger_ok)
+            _warn_if_base_ref_not_honoured_exactly(
+                worktree, root_tip, resolved.danger_ok
+            )
         assert "could not be honoured exactly" in caplog.text

@@ -538,6 +538,7 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
 # tests/unit/test_coordinator_scripts.py::TestTicketReadiness.test_flags_scope_divergen\
 # ce_between_the_live_lease_and_main
 
+
 # frob:doc docs/guides/coordinator-scripts.md#_classify_blockers
 # frob:ticket T-2449
 # frob:tests \
@@ -1465,7 +1466,9 @@ _FORKSERVER_STALE_AFTER_S = 3600.0
 # frob:doc docs/guides/coordinator-scripts.md#_forkserver_snapshot
 # frob:ticket T-2443
 # frob:ticket T-2517
-def _forkserver_age_s(fields: list[str], uptime_s: float | None, clk_tck: int) -> float | None:
+def _forkserver_age_s(
+    fields: list[str], uptime_s: float | None, clk_tck: int
+) -> float | None:
     """`fields` is `_forkserver_snapshot`'s own post-")" split of one
     `/proc/<pid>/stat` line; `fields[19]` is starttime (field 22 overall,
     clock ticks since boot). Returns `None` (never a fabricated age) if
@@ -1535,7 +1538,9 @@ def _parse_forkserver_entry(
     }
 
 
-def _forkserver_snapshot(proc: Path = Path("/proc")) -> list[dict[str, int | float | None]] | None:
+def _forkserver_snapshot(
+    proc: Path = Path("/proc"),
+) -> list[dict[str, int | float | None]] | None:
     """One `/proc` walk collecting every live `multiprocessing.forkserver`
     helper's `pid`/`ppid`/`age_s`/`vmswap_kb` (via `_parse_forkserver_
     entry`), shared by `orphaned_forkserver_count`, `stale_forkserver_
@@ -2632,7 +2637,10 @@ def _land_status_lines(
         )
     lines.extend(
         _forkserver_status_lines(
-            orphaned_forkservers, stale_forkservers, forkserver_swap_kb, concurrent_checks
+            orphaned_forkservers,
+            stale_forkservers,
+            forkserver_swap_kb,
+            concurrent_checks,
         )
     )
     return lines

@@ -62,7 +62,9 @@ def _gradle_build_uses_kotlin(build_path: Path) -> bool:
     try:
         text = build_path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
-        _log.warning("_find_kotlin_gradle_projects: could not read %s: %s", build_path, exc)
+        _log.warning(
+            "_find_kotlin_gradle_projects: could not read %s: %s", build_path, exc
+        )
         return False
     return _KOTLIN_PLUGIN_RE.search(text) is not None
 
@@ -118,7 +120,9 @@ def _parse_junit_xml(xml_path: Path) -> list[tuple[str, str]]:
     try:
         tree = ElementTree.parse(xml_path)
     except ElementTree.ParseError as exc:
-        _log.warning("collect_kotlin_tests: unparseable JUnit report %s: %s", xml_path, exc)
+        _log.warning(
+            "collect_kotlin_tests: unparseable JUnit report %s: %s", xml_path, exc
+        )
         return []
     pairs: list[tuple[str, str]] = []
     for testcase in tree.getroot().iter("testcase"):

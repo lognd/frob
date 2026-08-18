@@ -2,7 +2,7 @@
 id: T-2531
 title: 'post-land sweep regression from T-2503: E501/F401 residue (3 files, unrelated
   to T-2526''s F811)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -20,6 +20,20 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Pure lint/style fix (E501 line wraps in fleet_status.py/summary.py/_collect_kotlin.py,
+    unused-import removal in a test file) -- no functional/behavioral change, only
+    formatting and a dead import. All 4 findings were confirmed live via a direct
+    ruff check before fixing; ruff check + ruff format --check are now clean on the
+    touched files, and the touched test file''s own suite (7 tests) still passes.'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 782
+  new_length: 1217
+evidence:
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly::test_no_warning_when_base_ref_already_matches
+- tests/unit/test_ticket_runner_repro_merge_base.py::TestWarnIfBaseRefNotHonouredExactly::test_warns_when_base_ref_is_not_an_ancestor
 designated_repro_test: null
 threat: null
 component: null
@@ -42,3 +56,6 @@ All 4 confirmed live via a direct `ruff check` against the current
 tree (not stale sweep residue). Mechanical fixes: shorten/wrap the 3
 long lines, remove the unused import (ruff --fix handles the F401
 one automatically). No functional risk.
+
+
+frob:no-behavior-change reason="Pure lint/style fix (E501 line wraps in fleet_status.py/summary.py/_collect_kotlin.py, unused-import removal in a test file) -- no functional/behavioral change, only formatting and a dead import. All 4 findings were confirmed live via a direct ruff check before fixing; ruff check + ruff format --check are now clean on the touched files, and the touched test file's own suite (7 tests) still passes."

@@ -1110,8 +1110,7 @@ def _scan_function_facts(
     report-only pass -- see docs/modules/graph.md#path-confinement-census
     for the staging note this feeds."""
     params = frozenset(
-        a.arg
-        for a in (*func.args.posonlyargs, *func.args.args, *func.args.kwonlyargs)
+        a.arg for a in (*func.args.posonlyargs, *func.args.args, *func.args.kwonlyargs)
     )
     first_param = _first_positional_param(func)
     locals_: dict[str, _LocalState] = {}
@@ -1304,7 +1303,11 @@ def _resolve_state(
     if callee_summary is None:
         return ConfinementState.UNKNOWN, state.callee
     if callee_summary.return_always is not None:
-        poison = state.callee if callee_summary.return_always is ConfinementState.UNKNOWN else None
+        poison = (
+            state.callee
+            if callee_summary.return_always is ConfinementState.UNKNOWN
+            else None
+        )
         return callee_summary.return_always, poison
     if callee_summary.return_depends_on_param is not None:
         return state.arg_state, None
@@ -1381,9 +1384,7 @@ def _fixpoint_confinement_scc(
     rather than reporting a partial result. `param0_credit` (T-2519) is
     threaded through unchanged -- it is corpus-wide, computed once
     before the SCC worklist runs, not re-derived per iteration."""
-    current = {
-        m: FunctionConfinement(symref=m) for m in members if m in resolved_facts
-    }
+    current = {m: FunctionConfinement(symref=m) for m in members if m in resolved_facts}
     for _iteration in range(_DEFAULT_MAX_ITERATIONS):
         combined = {**summaries, **current}
         next_round = {
@@ -1422,7 +1423,9 @@ def _tally_poison_sources(sites: Sequence[FsWriteSite]) -> dict[str, int]:
 
 # frob:ticket T-2519
 # frob:tests tests/unit/test_confinement_lattice.py::TestParam0Credit.test_helper_writing_directly_to_its_own_param_gets_credit_when_every_call_is_rooted  # noqa: E501
-def _compute_param0_credit(resolved_facts: Mapping[str, _RawFuncFacts]) -> dict[str, bool]:
+def _compute_param0_credit(
+    resolved_facts: Mapping[str, _RawFuncFacts],
+) -> dict[str, bool]:
     """`{callee_symref: True}` for every private helper whose declared
     first positional parameter (`_first_positional_param`) is passed a
     provably `ROOTED` argument at EVERY observed call site anywhere in
