@@ -14,6 +14,7 @@ runs_last: false
 scope:
 - src/frob/_cli_parsers/_ticket/_progress.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -29,6 +30,12 @@ scope_changes:
   reason: 'part a: wire --scope-breadth-ack/--scope-breadth-ack-reason onto start,
     mandatory when the T-1866 guard would otherwise refuse; part b done via direct
     ticket-CLI scope edits on the 55 flagged tickets, no source scope needed for those'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: existing TestTicketStart suite for the T-1866 refuse-over-broad guard this
+    ticket extends with inline ack flags
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
