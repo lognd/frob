@@ -830,6 +830,15 @@ _KNOWN_GATE_RULES = frozenset(
         "TESTRUNNERSCHEMA001",
         "DUPSCHEMA001",
         "GRAPHSCHEMA001",
+        # frob:ticket T-2448
+        # T-2448: GATERULE001, emitted by
+        # frob.gates._rule_id_scan.gate_rule_registry_violations, wired
+        # into the already-registered "sys" gate (src/frob/gates/_sys.py
+        # ::sys_gate) rather than a new top-level _ALL_GATES entry -- the
+        # T-1937 completeness scan (find_unregistered_rule_ids) run
+        # repo-wide as a STANDING check instead of only ever consulted
+        # scope-limited at one ticket's own close/land preflight.
+        "GATERULE001",
         # frob:ticket T-0924
         # T-0924: the larger pre-existing batch T-0901's drift-lock test
         # surfaced beyond T-0903/T-0923's ids, carried in that test's

@@ -504,20 +504,35 @@ def sys_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     (undeclared cross-component import, tier-2 conformance), SYS004 (a
     `.strata` design file failed to parse/elaborate -- suppresses SYS001
     for the whole run since ids are merged across files with no per-file
-    provenance), and SELFAUDIT001 (T-0756: frob's own self-conformance/
+    provenance), SELFAUDIT001 (T-0756: frob's own self-conformance/
     resource-contention/reliability audit surface, see `_selfaudit_
+    violations`'s doc), and GATERULE001 (T-2448: see `gate_rule_registry_
     violations`'s doc). See the comment above for the opt-in/deferred-import
-    posture."""
+    posture.
+
+    T-2448: GATERULE001 runs BEFORE the `design/` early-return below,
+    deliberately -- it is a `frob.gates._KNOWN_GATE_RULES` registry
+    completeness check, a concept entirely independent of whether this
+    repo happens to use the strata design language at all. Gating it
+    behind `design/` presence the same way SELFAUDIT001 is (that one
+    genuinely needs design ids) would silently skip a real, standing
+    check on every repo without a `design/` dir -- exactly the kind of
+    hidden precondition this ticket's own body warns against."""
     root = Path(root)
+    from frob.gates._rule_id_scan import gate_rule_registry_violations
+
+    gaterule_violations = gate_rule_registry_violations(root)
+
     design_dir = _design_dir(root)
     if not (root / design_dir).is_dir():
         _log.debug("sys_gate: no %s/ directory, skipping", design_dir)
-        return ()
+        return gaterule_violations
 
     from frob.strata import load_design_ids
 
     design_ids = load_design_ids(root, design_dir)
     violations = (
+        *gaterule_violations,
         *_sys004(design_ids, root),
         *_sys001(snapshot, design_ids),
         *_sys002(snapshot, design_ids),

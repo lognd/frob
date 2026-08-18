@@ -1,7 +1,7 @@
 ---
 id: T-2448
 title: Surface find_unregistered_rule_ids as a standing repo-wide frob check gate
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,6 +13,8 @@ runs_last: false
 scope:
 - src/frob/gates/_rule_id_scan.py
 - tests/gates/test_rule_id_scan_branches.py
+- src/frob/gates/_sys.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,23 @@ scope_changes:
     which needs no change'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_sys.py
+  reason: test lease availability check
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: new _KNOWN_GATE_RULES entry for GATERULE001; dropping docs/modules/gates.md
+    from this add (held by T-2437, same T-2390 epic sibling) -- doc anchor moves to
+    the gate function's own frob:doc target or a follow-up
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_clean_repo_is_silent
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_unregistered_id_reported_as_error
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_missing_src_dir_is_unresolved_not_silent_zero
+- tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate::test_scan_crash_is_unresolved_not_silently_swallowed
 designated_repro_test: null
 threat: null
 component: null

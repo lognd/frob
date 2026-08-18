@@ -18,9 +18,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from frob.gates._models import Severity
 from frob.gates._rule_id_scan import (
     RETIRED_RULE_IDS,
     find_unregistered_rule_ids,
+    gate_rule_registry_violations,
     generated_gate_rule_ids,
     scan_candidate_rule_id_literals,
     scan_emitted_rule_ids,
@@ -285,3 +287,74 @@ class TestFindUnregisteredRuleIds:
             "src/ but missing from both _KNOWN_GATE_RULES and "
             f"RETIRED_RULE_IDS: {missing}"
         )
+
+
+class TestGateRuleRegistryGate:
+    """GATERULE001 (T-2448): `find_unregistered_rule_ids` run repo-wide
+    as a STANDING gate, not just at one ticket's own close/land time."""
+
+    def test_clean_repo_is_silent(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clea\
+        # n_repo_is_silent
+        # A src/ tree with zero rule-id-shaped candidates at all is
+        # silent -- no findings, not even UNRESOLVED (a real scan ran
+        # and genuinely found nothing to report).
+        (tmp_path / "src" / "frob" / "gates").mkdir(parents=True)
+        violations = gate_rule_registry_violations(tmp_path)
+        assert violations == ()
+
+    def test_unregistered_id_reported_as_error(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unre\
+        # gistered_id_reported_as_error
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_synthetic.py").write_text(
+            'RULE = "ZZZTEST030"\n'
+        )
+        violations = gate_rule_registry_violations(tmp_path)
+        matches = [v for v in violations if v.rule == "GATERULE001"]
+        # ZZZTEST030 is not a real known_gate_rule_ids() member, so it
+        # must be reported (this repo's own registry is the real one --
+        # a synthetic fixture id can never collide with it).
+        assert any(v.symref == "ZZZTEST030" for v in matches)
+        found = next(v for v in matches if v.symref == "ZZZTEST030")
+        assert found.severity == Severity.ERROR
+        assert "not registered in _KNOWN_GATE_RULES" in found.message
+
+    def test_missing_src_dir_is_unresolved_not_silent_zero(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_miss\
+        # ing_src_dir_is_unresolved_not_silent_zero
+        # T-2391 fail-loudly positive control: a repo with NO src/ at
+        # all (a layout this scan cannot cover, T-2384) must report
+        # UNRESOLVED, never an empty (falsely-clean) result.
+        violations = gate_rule_registry_violations(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].rule == "GATERULE001"
+        assert violations[0].severity == Severity.UNRESOLVED
+        assert "does not exist" in violations[0].message
+
+    def test_scan_crash_is_unresolved_not_silently_swallowed(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_scan\
+        # _crash_is_unresolved_not_silently_swallowed
+        (tmp_path / "src").mkdir()
+
+        def _boom(*args, **kwargs):
+            raise OSError("synthetic scan crash")
+
+        import frob.gates._rule_id_scan as rule_id_scan_module
+
+        monkeypatch.setattr(
+            rule_id_scan_module, "find_unregistered_rule_ids", _boom
+        )
+        violations = gate_rule_registry_violations(tmp_path)
+        assert len(violations) == 1
+        assert violations[0].severity == Severity.UNRESOLVED
+        assert "scan crashed" in violations[0].message

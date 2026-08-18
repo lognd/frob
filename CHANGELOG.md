@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.527.0] - unreleased
+
+- T-2448: Surface find_unregistered_rule_ids as a standing repo-wide frob check gate
+
 ## [0.526.0] - unreleased
 
 - T-2435: T-2390 child: validate [gates] table (incl. [gates.ratchet]) against a declared schema

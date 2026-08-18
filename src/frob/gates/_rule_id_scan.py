@@ -145,6 +145,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from frob.gates._models import Severity, Violation
+
 #: `rule="RULE_ID"` / `"rule": "RULE_ID"` inline string literal shape.
 _LITERAL_PATTERN = re.compile(r'rule\s*[:=]\s*"([A-Z][A-Z0-9_-]*)"')
 
@@ -390,10 +392,107 @@ def find_unregistered_rule_ids(
     }
 
 
+# frob:ticket T-2448
+# frob:waive COV001 reason="docs/modules/gates.md's rule catalog is the natural home \
+# for GATERULE001's own entry, but that file is under another T-2390-epic sibling's \
+# live lease as of this ticket's own land -- not in T-2448's declared scope. \
+# Follow-up: add the catalog entry once the lease clears."
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_clean_repo_is_silent  # noqa: E501
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_unregistered_id_reported_as_error  # noqa: E501
+# frob:tests \
+# tests/gates/test_rule_id_scan_branches.py::TestGateRuleRegistryGate.test_missing_src_dir_is_unresolved_not_silent_zero  # noqa: E501
+def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
+    """GATERULE001 (T-2448): `find_unregistered_rule_ids` (T-1937) run
+    repo-wide as a STANDING `frob check` gate, instead of only ever
+    consulted scope-limited at one ticket's own close/land preflight
+    (`frob.tickets._new_gate_rule_acceptance.unregistered_rule_ids_in_
+    scope`, T-1956's deliberate narrowing). That narrowing is correct for
+    the close/land gate (a pre-existing gap a ticket never touched must
+    not block an unrelated close) -- but it leaves a real blind spot: a
+    rule id constructed in a branch NOBODY is currently landing stays
+    invisible until someone eventually tries (T-2388's bare PORT001 and
+    T-2447's CLAUDE001 were both found only by manually re-running this
+    scanner against every live worktree by hand, not by any standing
+    check -- the exact "detected but not surfaced" shape T-2387's three
+    inert CLI flags and T-2438's inert waiver directives already showed
+    twice earlier the same day this gate was written).
+
+    T-2391 FAIL-LOUDLY: this scan's own coverage assumption is a
+    top-level `root/src/` directory
+    (`scan_candidate_rule_id_literals`'s own docstring/implementation --
+    T-2384: that hardcoded-layout edge was out of THIS ticket's scope to
+    remove). When `src/` is absent, a "0 unregistered" from the
+    underlying scanner is not a real answer -- it is silence dressed as
+    an answer -- so this wrapper reports `Severity.UNRESOLVED` naming
+    exactly what could not be scanned instead of a false-clean pass. The
+    same posture covers any other scan-time crash (an unreadable file, a
+    encoding error): caught explicitly and reported UNRESOLVED, never
+    left to propagate into a whole-`frob check` crash and never silently
+    swallowed into an empty (and therefore falsely-clean) result."""
+    from frob.gates._waive import known_gate_rule_ids
+
+    src_dir = root / "src"
+    if not src_dir.is_dir():
+        return (
+            Violation(
+                rule="GATERULE001",
+                severity=Severity.UNRESOLVED,
+                file=str(root),
+                line=1,
+                message=(
+                    f"GATERULE001: could not scan for unregistered gate "
+                    f"rule ids -- {src_dir} does not exist (T-2384: this "
+                    "scan assumes a top-level src/ layout); report this "
+                    "as a coverage gap, never as a silent 0"
+                ),
+            ),
+        )
+    try:
+        known = known_gate_rule_ids()
+        unregistered = find_unregistered_rule_ids(
+            root, known=known, retired=RETIRED_RULE_IDS
+        )
+    except Exception as exc:  # noqa: BLE001 -- a scan crash must be reported UNRESOLVED, never silently swallowed into a false-clean 0  # noqa: E501
+        return (
+            Violation(
+                rule="GATERULE001",
+                severity=Severity.UNRESOLVED,
+                file=str(root),
+                line=1,
+                message=(
+                    "GATERULE001: scan crashed, coverage unknown -- "
+                    f"{exc!r}"
+                ),
+            ),
+        )
+    return tuple(
+        Violation(
+            rule="GATERULE001",
+            severity=Severity.ERROR,
+            file=loc.split(":", 1)[0],
+            line=int(loc.split(":", 1)[1]) if ":" in loc else 1,
+            message=(
+                f"GATERULE001: gate rule id {rule_id!r} constructed at "
+                f"{loc} but not registered in _KNOWN_GATE_RULES "
+                "(frob.gates._waive) -- register it before this branch "
+                "lands, or the ticket that constructs it cannot close "
+                "(T-1937/T-1956's own close-time gate will refuse it "
+                "anyway; this surfaces the SAME gap earlier, before it "
+                "blocks anyone's land)"
+            ),
+            symref=rule_id,
+        )
+        for rule_id, loc in sorted(unregistered.items())
+    )
+
+
 __all__ = [
     "RETIRED_RULE_IDS",
     "SCANNED_BASES",
     "find_unregistered_rule_ids",
+    "gate_rule_registry_violations",
     "generated_gate_rule_ids",
     "scan_candidate_rule_id_literals",
     "scan_emitted_rule_ids",
