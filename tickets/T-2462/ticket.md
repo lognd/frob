@@ -90,7 +90,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2bd1f74d9ca73dfa80b86ed8b56d4d27e8b3bb3b
 ---
 T-2445 landed changelog.d/T-####.md fragments so CHANGELOG.md's write is collision-free and self-healing under land interruption, but left pyproject.toml's version line and .frob-release.json's stamped manifest bumping on EVERY land, unchanged -- the other half of the measured 6-of-7-lands-touch-both-shared-files contention T-2445 was filed to close.
 
