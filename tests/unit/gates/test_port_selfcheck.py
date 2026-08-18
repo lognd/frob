@@ -109,12 +109,15 @@ class TestPort001:
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
         ] == []
 
-    def test_non_gate_code_never_scanned(self, tmp_path: Path) -> None:
-        """A file outside `src/frob/gates/**` carrying the identical
-        offending literal is never scanned -- PORT001's declared scope is
-        the gates package only (T-2388's own disclosed scope note:
-        `app/_config_meta.py`/`strata/_compliance.py` are outside it by
-        design, not allowlisted for a scope they cannot enter)."""
+    def test_non_detector_package_code_never_scanned(self, tmp_path: Path) -> None:
+        """A file outside `DETECTOR_PACKAGE_ROOTS`
+        (`src/frob/{check,gates,strata,vet}/`, T-2405's widened scope,
+        T-2466's shared, MEASURED declaration) carrying the identical
+        offending literal is never scanned -- `app/_config_meta.py` is
+        the disclosed example: T-2466 measured `app/` as containing zero
+        gate-shaped `Violation(` constructors, so it stays out of
+        PORT001's scanned set even after the T-2405 widening, not
+        allowlisted for a scope it cannot enter."""
         _init_repo(tmp_path)
         (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
         app_dir = tmp_path / "src" / "frob" / "app"
@@ -134,6 +137,43 @@ class TestPort001:
         assert [
             v for v in violations if v.rule in ("PORT001-PATH", "PORT001-IDENT")
         ] == []
+
+    def test_strata_and_vet_are_scanned_since_t2405(self, tmp_path: Path) -> None:
+        """T-2405: PORT001 widened past `src/frob/gates/**` to the full
+        `DETECTOR_PACKAGE_ROOTS` set -- a hardcoded-identity literal in
+        `src/frob/strata/` or `src/frob/vet/` is now caught, mirroring
+        LEXCHECK001's own reuse of the same shared declaration (T-2466)."""
+        _init_repo(tmp_path)
+        (tmp_path / "pyproject.toml").write_text(_PYPROJECT_NAMED_FROB)
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        strata_dir = tmp_path / "src" / "frob" / "strata"
+        strata_dir.mkdir()
+        (strata_dir / "__init__.py").write_text("")
+        (strata_dir / "_offender.py").write_text(
+            "def f(rel_path):\n    return rel_path.startswith('src/frob/')\n"
+        )
+        vet_dir = tmp_path / "src" / "frob" / "vet"
+        vet_dir.mkdir()
+        (vet_dir / "__init__.py").write_text("")
+        (vet_dir / "_offender.py").write_text(
+            "_SUFFIXES = (\n    ('frob', 'vet', 'thing.py'),\n)\n"
+        )
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir()
+        (gates_dir / "__init__.py").write_text("")
+        _commit(tmp_path)
+
+        violations = port_selfcheck_gate(tmp_path)
+
+        path_hits = {
+            v.file for v in violations if v.rule == "PORT001-PATH"
+        }
+        ident_hits = {
+            v.file for v in violations if v.rule == "PORT001-IDENT"
+        }
+        assert "src/frob/strata/_offender.py" in path_hits
+        assert "src/frob/vet/_offender.py" in ident_hits
 
     def test_clean_gate_module_is_silent(self, tmp_path: Path) -> None:
         """A gate module with no hardcoded identity literal at all is

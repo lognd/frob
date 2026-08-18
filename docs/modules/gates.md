@@ -3131,6 +3131,66 @@ ERROR severity: a new lexical decider anywhere under `DETECTOR_PACKAGE_
 ROOTS` is exactly the failure mode this whole epic exists to prevent
 from landing quietly.
 
+## PORT001 (T-2388)
+
+<!-- frob:describes src/frob/gates/_port_selfcheck.py::port_selfcheck_gate -->
+
+`port_selfcheck_gate` (`frob.gates._port_selfcheck`, T-2388, child of
+T-2384) flags a gate rule that hardcodes THIS project's own identity
+(its package-path prefix, or its own package name used as a bare
+path-segment literal) instead of resolving it from the scanned repo's
+own `pyproject.toml` `[project].name` -- the same [[catalogued-is-not-
+enforced]] failure mode LEXCHECK001 exists for, one layer up: a gate
+that silently matches nothing (or the wrong thing) off-repo because it
+was built and tested against this repo's own layout only.
+
+Two rule ids, two dispositions, from the same AST scan:
+
+- **PORT001-PATH**: a `"src/<pkg>/"`-shaped string constant passed to
+  `.startswith(...)` -- the exact `_env_var_docs.py`/`_root_asset_dirs.
+  py` bug shape T-2384 measured. BEHAVIORAL, and the class the WARN ->
+  ERROR promotion bar applies to once its own burn-down (T-2389 and
+  siblings) reaches zero.
+- **PORT001-IDENT**: the bare package-name literal used as a whole
+  `/`-delimited path segment inside a `Tuple`/`List`/f-string constant --
+  ADVISORY only, permanently excluded from the promotion bar (most real
+  hits are maintainer-facing message text naming this repo's own file,
+  not path-building logic).
+
+**Scope (T-2405 widening).** PORT001 originally scanned `src/frob/
+gates/**` only, by explicit coordinator instruction not to widen inside
+T-2388 itself. T-2405 widened it to `frob.gates._detector_scope.
+DETECTOR_PACKAGE_ROOTS` (`src/frob/{check,gates,strata,vet}/`) -- the
+SAME shared, MEASURED declaration LEXCHECK001 (T-2466) already reuses,
+rather than a second, independently-hardcoded scope that would drift
+apart from it. `_tracked_gate_files` filters with `is_detector_package_
+file` instead of its old `src/frob/gates/`-only prefix; `tracked_python_
+files_for_gate`'s existing default pathspec (`git ls-files -- src/frob`)
+already covers every `DETECTOR_PACKAGE_ROOTS` prefix, so no new keyword
+argument was needed on that shared helper. The widening is a strict
+superset of the old scan (`gates/` is itself one of `DETECTOR_PACKAGE_
+ROOTS`) and, measured against this repo at T-2405 time, added exactly
+one new PORT001-IDENT finding (`src/frob/vet/_capability_scan.py`) and
+zero new PORT001-PATH findings -- the promotion bar's own burn-down
+target did not grow. `app/_config_meta.py` (a deliberate `project.get(
+"name") != "frob"` self-identification check) stays out of scope even
+after the widening (`app/` was measured as containing zero gate-shaped
+`Violation(` constructors); `gates/_pii_structural/_self_match.py`
+(PORT001's own self-exclusion precedent for a PII scanner's identity
+list) is allowlisted by exact relpath with a stated reason, same
+convention as LEXCHECK001's `_ALLOWLIST`.
+
+Every run logs its own scanned scope alongside its count, unconditionally
+(`port_selfcheck_gate: scanned N tracked file(s) under DETECTOR_PACKAGE_
+ROOTS (...) ONLY (not repo-wide ...), M violation(s)`) -- a count quoted
+without that line is a statement about the scanned subset, never the
+whole repo (the same silent-zero-denominator lesson T-2391 exists for).
+
+UNRESOLVED (not a clean pass) if the scanned repo's own `pyproject.toml`
+`[project].name` cannot be read -- PORT001 has no denominator to search
+source text for in that case, and reports that explicitly rather than an
+empty (clean-looking) violation list.
+
 ## GATERULE001 (T-2448)
 
 <!-- frob:describes src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations -->

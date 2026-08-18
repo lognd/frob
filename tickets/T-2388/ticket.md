@@ -16,6 +16,8 @@ scope:
 - tests/unit/gates/test_port_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/__init__.py
@@ -34,12 +36,19 @@ evidence:
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_path_prefix_is_flagged
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_identity_literal_in_tuple_is_flagged
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_allowlisted_self_match_file_is_silent
-- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_gate_code_never_scanned
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_clean_gate_module_is_silent
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_search_literal_is_resolved_not_hardcoded
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_unresolved_project_name_is_not_a_clean_pass
 - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_unparseable_file_is_parse001_not_silent
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_gate_code_never_scanned
+  new_node: tests/unit/gates/test_port_selfcheck.py::TestPort001::test_non_detector_package_code_never_scanned
+  reason: 'T-2405: test renamed to reflect widened DETECTOR_PACKAGE_ROOTS scope, same
+    coverage'
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false

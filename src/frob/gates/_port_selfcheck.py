@@ -46,6 +46,44 @@ is deliberately NOT done in T-2388/here -- filed as its own child ticket
 with those 8 as the starting set, per the coordinator's explicit
 instruction not to widen scope inside this ticket.
 
+T-2405 WIDENING (2026-08-18, this ticket): the "8 more files repo-wide"
+list two paragraphs up came from the coordinator's own `git grep` over
+the LITERAL PREFIX pattern, not from PORT001's AST detector, and was
+seeded only as a starting set to re-verify -- it is NOT this widening's
+scope. By the time this ticket ran, T-2466 had already measured and
+shipped `frob.gates._detector_scope.DETECTOR_PACKAGE_ROOTS` (`src/frob/
+{check,gates,strata,vet}/`) for LEXCHECK001's identical scope problem,
+derived by counting `Violation(`-constructing modules per package rather
+than guessing; `arch/` was measured and excluded on that same evidence.
+PORT001 reuses that SAME declaration (`_tracked_gate_files` now filters
+with `is_detector_package_file` instead of its old `src/frob/gates/`-only
+prefix) rather than inventing a second, separately-drifting scope -- the
+exact two-copies-desync failure T-2466's own docstring warns against.
+Running PORT001's real AST detector (not a grep) against the
+coordinator's 8-file starting set found only 2 of the 8
+(`strata/_packs.py`, `strata/_selfconform.py`) even fall inside
+`DETECTOR_PACKAGE_ROOTS` -- the other 6 (`tickets/_models.py`,
+`tickets/_land_merge_zones.py`, `tickets/_new_gate_rule_acceptance.py`,
+`app/ticket_runner/_land_cmd.py`, `app/ticket_runner/_new.py`,
+`refactor/_repointer.py`) sit in packages T-2466 measured as containing
+zero gate-shaped `Violation(` construction, so they are not part of this
+detector's population at all, same reasoning `arch/` was excluded by.
+Of the 2 that ARE in scope, only `strata/_selfconform.py` (PORT001-IDENT,
+a bare `"frob"` path-segment literal) is a real finding; `strata/
+_packs.py` has none. Widening `src/frob/gates/**` (93 tracked files) to
+the full `DETECTOR_PACKAGE_ROOTS` set (213 tracked files) added exactly
+one new finding beyond that: `vet/_capability_scan.py` (also PORT001-
+IDENT). No new PORT001-PATH hits appeared -- the widened scan is a
+strict superset of the old one, so the 2 pre-existing PATH hits
+(`_env_var_docs.py`, `_root_asset_dirs.py`) still fire unchanged, and the
+promotion bar's burn-down target grows by zero PATH-class findings.
+`tracked_python_files_for_gate`'s own default pathspec (`git ls-files --
+src/frob`) already covers every `DETECTOR_PACKAGE_ROOTS` prefix (they
+all sit under `src/frob/`), so no optional pathspec keyword was needed
+on that shared helper -- LEXCHECK001 (T-2466) established this same
+no-new-keyword reuse first; PORT001 follows the identical pattern rather
+than adding a second way to call it.
+
 Detection shape (v1, module-scanning `src/frob/gates/**/*.py`): a string
 constant containing THIS repo's own resolved package name as a path
 segment, found in one of two AST shapes, each its OWN rule id with its
@@ -95,12 +133,17 @@ guard" -- see [[an-exemption-matching-the-normal-case-disables-the-guard]]).
 THIS repo's own files (a self-match exclusion list for a PII scanner) --
 allowlisted by exact relpath with a stated reason, same as LEXCHECK001's
 own six entries. `app/_config_meta.py` (a deliberate `project.get("name")
-!= "frob"` self-identification check for the version floor) and `strata/
-_compliance.py` (registry DATA, not gate mechanism) are both OUTSIDE
-PORT001's scanned set (`src/frob/gates/**` only, not `app/`/`strata/`) --
-disclosed here rather than silently allowlisted for a scope they can
-never actually enter, so a future widening of the scanned set does not
-inherit an allowlist entry nobody re-examined against the wider set.
+!= "frob"` self-identification check for the version floor) is OUTSIDE
+`DETECTOR_PACKAGE_ROOTS` (`app/` never measured as containing a
+gate-shaped `Violation(` constructor, T-2466) and so stays out of
+PORT001's scanned set even after T-2405's widening -- disclosed here
+rather than silently allowlisted for a scope it can never actually
+enter. `strata/_compliance.py` (registry DATA, not gate mechanism) DID
+enter PORT001's scanned set as of T-2405 (`strata/` is a
+`DETECTOR_PACKAGE_ROOTS` member) but scans clean -- no allowlist entry
+needed because it produces no hit, not because it is out of scope; if
+that ever changes, re-examine it against `_ALLOWLIST` at that point
+rather than pre-emptively carving it out now.
 
 WARN tier on arrival for BOTH rule ids (T-2388): the honest scanned-scope
 finding count against THIS repo is expected to be nonzero -- the retarget
@@ -120,6 +163,7 @@ import ast
 import tomllib
 from pathlib import Path
 
+from frob.gates._detector_scope import DETECTOR_PACKAGE_ROOTS, is_detector_package_file
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
 from frob.gates._walk_lint import tracked_python_files_for_gate
@@ -166,26 +210,39 @@ def _project_package_name(root: Path) -> str | None:
 
 
 def _tracked_gate_files(root: Path) -> tuple[str, ...]:
-    """Every git-tracked `.py` file under `src/frob/gates/`, reusing the
-    same shared tracked-file helper LEXCHECK001/RENDER001/WALK001 already
-    use (T-0861), filtered to this gate's own scanned package.
+    """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`
+    (`src/frob/{check,gates,strata,vet}/`, T-2466's shared, MEASURED
+    declaration of which packages can contain a gate-shaped detector),
+    reusing the same shared tracked-file helper LEXCHECK001/RENDER001/
+    WALK001 already use (T-0861), filtered by `is_detector_package_file`
+    -- the SAME membership test LEXCHECK001 uses (T-2466's own directive:
+    two meta-checks hardcoding separate scopes is this bug again; PORT001
+    was T-2466's named second consumer, filed as this widening).
 
-    DISCLOSED LIMITATION (found while building this gate, not fixed
-    here -- out of T-2388's own declared scope): `tracked_python_files_
-    for_gate` itself hardcodes `git ls-files -- src/frob` (`_walk_lint.
-    py`'s own `run_argv` call) -- the SAME literal-package-path class
-    T-2384 exists to retarget, one layer below WALK001/RENDER001/PORT001
-    alike. PORT001 only ever scans `src/frob/gates/**` as a result, same
-    as its two siblings; a genuine repo-rename would need that shared
-    helper retargeted too, a natural sibling for T-2389's own retarget
-    group. The pkg name PORT001 resolves from `pyproject.toml` (see
-    `_project_package_name`) is still real and load-bearing -- it is the
-    LITERAL PORT001 searches source text FOR, independent of which
+    T-2405: this used to be `rel.startswith("src/frob/gates/")`, PORT001's
+    own hardcoded, narrower-than-T-2466's-measurement prefix. Widening it
+    to `is_detector_package_file` is a strict superset of the old scan
+    (`src/frob/gates/` is itself one of `DETECTOR_PACKAGE_ROOTS`), so
+    every finding the narrower scan already reported still fires here.
+
+    DISCLOSED LIMITATION (unchanged from T-2388, still out of this
+    ticket's own declared scope): `tracked_python_files_for_gate` itself
+    hardcodes `git ls-files -- src/frob` (`_walk_lint.py`'s own
+    `run_argv` call) -- the SAME literal-package-path class T-2384 exists
+    to retarget, one layer below WALK001/RENDER001/PORT001 alike. Every
+    `DETECTOR_PACKAGE_ROOTS` prefix sits under `src/frob/`, so this
+    default pathspec already covers the full widened scope without
+    needing its own keyword argument -- LEXCHECK001 (T-2466) established
+    this same reuse pattern first. A genuine repo-rename would still need
+    that shared helper retargeted, a natural sibling for T-2389's own
+    retarget group. The pkg name PORT001 resolves from `pyproject.toml`
+    (see `_project_package_name`) is still real and load-bearing -- it is
+    the LITERAL PORT001 searches source text FOR, independent of which
     directory gets walked to find that text."""
     return tuple(
         rel
         for rel in tracked_python_files_for_gate(root, log_prefix="port_gate")
-        if rel.startswith("src/frob/gates/")
+        if is_detector_package_file(rel)
     )
 
 
@@ -363,9 +420,13 @@ def _unresolved_project_name_violation(root: Path) -> Violation:
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_allowlisted_self_match_file_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unresolved_project_name_is_not_a_clean_pass  # noqa: E501
 # frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_unparseable_file_is_parse001_not_silent  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_non_detector_package_code_never_scanned  # noqa: E501
+# frob:tests tests/unit/gates/test_port_selfcheck.py::TestPort001.test_strata_and_vet_are_scanned_since_t2405  # noqa: E501
 def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
-    """PORT001: every git-tracked `src/frob/gates/**/*.py` file that
-    hardcodes this repo's own resolved package name as a path prefix
+    """PORT001: every git-tracked `.py` file under one of
+    `DETECTOR_PACKAGE_ROOTS` (`src/frob/{check,gates,strata,vet}/`,
+    T-2405 widening past `src/frob/gates/**` alone) that hardcodes this
+    repo's own resolved package name as a path prefix
     (`.startswith("src/<pkg>/")`) or as a bare literal path segment
     (a tuple/list/f-string element), unless the file is in `_ALLOWLIST`
     with a stated reason. UNRESOLVED (not a clean pass) if `root`'s own
@@ -397,9 +458,10 @@ def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
             violations.append(_port001_ident_violation(rel_path, ident_hit.lineno, pkg))
     _log.warning(
         "port_selfcheck_gate: scanned %d tracked file(s) under "
-        "src/frob/gates/** ONLY (not repo-wide -- see T-2389 for the "
-        "wider src/frob/**-and-beyond retarget), %d violation(s)",
+        "DETECTOR_PACKAGE_ROOTS (%s) ONLY (not repo-wide -- see T-2389 "
+        "for the wider src/frob/**-and-beyond retarget), %d violation(s)",
         len(scanned_files),
+        ", ".join(DETECTOR_PACKAGE_ROOTS),
         len(violations),
     )
     return tuple(violations)
