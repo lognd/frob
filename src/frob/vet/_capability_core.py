@@ -961,19 +961,108 @@ def _operation_entry_matches(
     return False
 
 
+# frob:ticket T-2507
+_SEGMENT_SEP_RE = re.compile(r"::|\.")
+
+
+# frob:ticket T-2507
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_re\
+# aches_sibling_family
+def _dotted_segments(target: str) -> list[str]:
+    """Split a resolved identity or registry needle into its dotted
+    segments (T-2507) -- `"::"` (rust/c++ path separator, e.g.
+    `"std::process::Command::new"`) and `"."` (every other language this
+    registry resolves: python/typescript/kotlin/c dotted-attribute form)
+    are BOTH segment separators here, so `_needle_matches_resolved`'s
+    boundary comparison works identically regardless of which resolver
+    produced the string -- neither separator can appear inside a bare
+    identifier segment in any of these languages, so this split is
+    unambiguous."""
+    return _SEGMENT_SEP_RE.split(target)
+
+
+# frob:ticket T-2507
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_matches_\
+# with_and_without_trailing_dot
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_call_target_matches_wi\
+# th_and_without_trailing_paren
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_bare_identifier_matche\
+# s_with_and_without_trailing_paren
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_family_prefix_still_re\
+# aches_sibling_family
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_m\
+# odule_name_substring
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_c\
+# all_target_substring
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_no_false_positive_on_b\
+# are_identifier_substring
+# frob:tests \
+# tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary.test_module_prefix_does_not\
+# _match_unrelated_leading_segment
 def _needle_matches_resolved(needle: str, resolved: str) -> bool:
-    """True if `needle` (a registry needle string, e.g. `"subprocess."`,
-    `"os.system("`, or a bare `"Popen("`) occurs in the RESOLVED dotted
-    target `resolved` (e.g. `"subprocess.run"`), checking both the bare
-    resolved string and a synthesized call form (`resolved + "("`) so a
-    needle written with a trailing call-paren (`"os.system("`) still
-    matches a resolved identity that has none of its own (T-0328: this is
-    the resolved-identity sibling of the raw-text `_needle_hits_outside_
-    comments` substring check above). Shared across every per-language
-    binding family (python/typescript/rust/c/kotlin), not python-specific
-    despite the T-0328 origin -- lives in the core module so no per-
-    language module depends on another."""
-    return needle in resolved or needle in f"{resolved}("
+    """True if `needle` (a registry needle string -- a bare identifier
+    like `"Popen"`, a dotted module prefix like `"subprocess."`, a fully-
+    dotted call target like `"os.system("`, or a dotted family prefix like
+    `"os.exec"` meant to match the whole `os.exec*` sibling group) matches
+    the RESOLVED dotted target `resolved` (e.g. `"subprocess.run"`) at
+    DOTTED-SEGMENT boundaries, never by raw substring containment (T-2507:
+    the prior `needle in resolved or needle in f"{resolved}("` form was
+    wrong at boundaries in both directions -- needle `"net"` substring-hit
+    resolved `"netrc"`/`"network_helper"`, and needle `"os.system("`
+    could substring-hit an unrelated `"myos.system"`).
+
+    The registry's own trailing punctuation on a needle is now REDUNDANT
+    for every needle this registry actually declares (droppable without
+    losing a single intended match -- the falsifiable proof this fix is
+    real, not cosmetic) precisely because segment comparison already
+    enforces the boundary the punctuation used to approximate by hand:
+
+    - a trailing `"("` (a call target, e.g. `"os.system("`): stripped,
+      then treated identically to the no-marker form below.
+    - a trailing `"."` (a module prefix, e.g. `"subprocess."`): stripped,
+      then treated as a single bare segment (module prefixes this
+      registry declares are always one segment).
+    - a bare SINGLE segment (e.g. `"Popen"`, `"subprocess"`, `"net"`):
+      matches when it equals ANY of `resolved`'s dotted segments exactly
+      (`"subprocess"` matches `"subprocess.run"` at position 0,
+      `"Popen"` matches `"subprocess.Popen"` at position 1; `"net"` does
+      NOT match `"netrc"` -- `"netrc"` is one whole segment, not equal
+      to `"net"`).
+    - a bare MULTI-segment needle (e.g. `"os.exec"`, meant to reach the
+      whole `os.exec*` family -- `os.execv`, `os.execve`, ...): searched
+      at every contiguous start offset in `resolved`'s segments; every
+      segment but the last must equal exactly, and only the FINAL
+      segment is a genuine prefix match (`"exec"` prefixes `"execv"`) --
+      the one deliberately-loose rule this registry actually relies on,
+      bounded to the last segment and still exact on every earlier one,
+      never a blanket substring."""
+    if needle.endswith("("):
+        needle = needle[:-1]
+    elif needle.endswith("."):
+        needle = needle[:-1]
+    needle_parts = _dotted_segments(needle)
+    resolved_parts = _dotted_segments(resolved)
+    needle_len, resolved_len = len(needle_parts), len(resolved_parts)
+    if needle_len > resolved_len:
+        return False
+    if needle_len == 1:
+        return needle_parts[0] in resolved_parts
+    for start in range(resolved_len - needle_len + 1):
+        window = resolved_parts[start : start + needle_len]
+        if window[:-1] == needle_parts[:-1] and window[-1].startswith(
+            needle_parts[-1]
+        ):
+            return True
+    return False
+
 
 
 # frob:doc docs/modules/vet.md#public-api

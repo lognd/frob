@@ -7688,3 +7688,96 @@ class TestOperationEntryMatchesFallthrough:
         )
         result = _operation_entry_matches(entry, b"nothing relevant here", ())
         assert result is False
+
+
+class TestNeedleMatchesResolvedTokenBoundary:
+    """T-2507: `_needle_matches_resolved` compares RESOLVED dotted
+    identities as dotted-segment sequences with boundary equality, not
+    substring containment. The falsifiable proof that the fix is real
+    (not cosmetic): with segment comparison, a needle's trailing
+    punctuation ("subprocess.", "os.system(") is REDUNDANT -- dropping it
+    must not change a single verdict below. Every pair in this class is
+    run BOTH with and without its registry punctuation and must agree."""
+
+    # frob:ticket T-2507
+
+    def test_module_prefix_matches_with_and_without_trailing_dot(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("subprocess.", "subprocess.run") is True
+        assert _needle_matches_resolved("subprocess", "subprocess.run") is True
+        assert _needle_matches_resolved("subprocess.", "subprocess.Popen") is True
+        assert _needle_matches_resolved("subprocess", "subprocess.Popen") is True
+
+    def test_call_target_matches_with_and_without_trailing_paren(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("os.system(", "os.system") is True
+        assert _needle_matches_resolved("os.system", "os.system") is True
+
+    def test_bare_identifier_matches_with_and_without_trailing_paren(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("Popen(", "subprocess.Popen") is True
+        assert _needle_matches_resolved("Popen", "subprocess.Popen") is True
+        assert _needle_matches_resolved("Popen(", "Popen") is True
+        assert _needle_matches_resolved("Popen", "Popen") is True
+
+    def test_family_prefix_still_reaches_sibling_family(self) -> None:
+        """`"os.exec"` (no trailing marker) is a deliberate family prefix
+        meant to reach `os.execv`/`os.execve`/etc -- unaffected by the
+        punctuation-drop property since it never had trailing punctuation
+        to drop; kept here as the still-intentional loose case."""
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("os.exec", "os.execv") is True
+        assert _needle_matches_resolved("os.exec", "os.execve") is True
+
+    def test_no_false_positive_on_module_name_substring(self) -> None:
+        """The exact false positive named in T-2507's own body: needle
+        `"net"` must NOT substring-hit `"netrc"`/`"network_helper"` --
+        the class of bug this ticket exists to close."""
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("net", "netrc") is False
+        assert _needle_matches_resolved("net", "network_helper") is False
+        assert _needle_matches_resolved("net.", "netrc") is False
+
+    def test_no_false_positive_on_call_target_substring(self) -> None:
+        """The other T-2507 example: needle `"os.system("` must not
+        substring-hit an unrelated `"myos.system"` -- true with or
+        without the trailing call-paren, since the leading segment
+        `"myos"` never equals `"os"` exactly."""
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("os.system(", "myos.system") is False
+        assert _needle_matches_resolved("os.system", "myos.system") is False
+
+
+    def test_no_false_positive_on_bare_identifier_substring(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("Popen(", "NotPopen") is False
+        assert _needle_matches_resolved("Popen", "NotPopenEither") is False
+
+    def test_module_prefix_does_not_match_unrelated_leading_segment(self) -> None:
+        # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \
+        # kind="unit"
+        from frob.vet._capability_core import _needle_matches_resolved
+
+        assert _needle_matches_resolved("subprocess.", "subprocess2.run") is False
+        assert _needle_matches_resolved("subprocess", "subprocess2.run") is False

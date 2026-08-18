@@ -2,7 +2,7 @@
 id: T-2507
 title: vet resolves identities then compares them by substring; LEXCHECK001 trigger
   set misses the in operator
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,10 +14,26 @@ runs_last: false
 scope:
 - src/frob/vet/_capability_core.py
 - src/frob/gates/_lexical_selfcheck.py
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_vet.py
+  reason: T-2507 deliverable-1 fix's own tests live here (SCOPE001/SCOPE002)
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_module_prefix_matches_with_and_without_trailing_dot
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_call_target_matches_with_and_without_trailing_paren
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_bare_identifier_matches_with_and_without_trailing_paren
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_family_prefix_still_reaches_sibling_family
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_no_false_positive_on_module_name_substring
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_no_false_positive_on_call_target_substring
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_no_false_positive_on_bare_identifier_substring
+- tests/test_vet.py::TestNeedleMatchesResolvedTokenBoundary::test_module_prefix_does_not_match_unrelated_leading_segment
 designated_repro_test: null
 threat: null
 component: null
