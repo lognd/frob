@@ -486,19 +486,37 @@ must deliver; it does not implement any of it.
    round-trips cleanly, then a SEPARATE commit deletes the monofiles.
    This makes the cutover a two-commit, `git revert`-able sequence
    rather than one irreversible rewrite.
-3. **Golden round-trip test**: migrate a fixture ledger (a checked-in
-<!-- frob:waive DOC006 reason="design proposal (T-1136, status: design only, no migration yet) -- this fixture does not exist yet, this section describes what a future migration ticket must add" -->
-   `tests/fixtures/tickets/golden-monofile-ledger.md` covering: a
-   done ticket with a Done report, a queued ticket with blocked_by, a
-   ticket with attachments, an archived ticket, a draft-id ticket) to v2,
-   then migrate v2 BACK to a monofile rendering, and assert the
-   round-tripped monofile is semantically identical to the original
-   (same id set, same field values per ticket, same Done-report text) --
-   not necessarily byte-identical (v2's normalized field ordering may
-   differ), but parses to an equal `dict[str, Ticket]` plus an equal
-   `dict[str, str]` of done-report bodies. This is the reversibility
+3. **Golden round-trip test (T-2355, BUILT):** `tests/fixtures/tickets/
+   golden-monofile-ledger.md` + `golden-monofile-archive.md` are checked
+   in, covering: a done ticket with a Done report, a queued ticket with
+   blocked_by, a ticket with attachments, an archived ticket, a draft-id
+   ticket. `tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip.
+   test_checked_in_fixture_round_trips_to_v2_and_back` migrates the
+   fixture to v2 and asserts the result is semantically identical to the
+   original (same id set, same field values per ticket, same Done-report
+   text) -- not necessarily byte-identical (v2's normalized field
+   ordering may differ), but parses to an equal `dict[str, Ticket]` plus
+   equal Done-report text per ticket. This is the reversibility
    guarantee: nothing is lossy in either direction for the length of the
-   compatibility window.
+   compatibility window. Its companion,
+   `test_a_genuinely_divergent_v2_tree_fails_the_equivalence_check`, is
+   the positive control this deliverable had been missing: it hand-
+   corrupts a v2 ticket's title post-migration and asserts the shared
+   equivalence helper actually raises -- proof the round-trip check can
+   fail, not just pass.
+
+   `migrate_missing_v2` (T-2355, `src/frob/tickets/_store.py`) closes a
+   gap `migrate_v1_to_v2` alone left open in practice: once a repo is
+   ALREADY v2-mode, `migrate_v1_to_v2` no-ops entirely (by design, so it
+   never re-reads a monofile ledger that a v2 repo no longer treats as
+   authoritative) -- but a repo that was only ever PARTIALLY migrated
+   (some tickets have a real `tickets/T-####/ticket.md`, some exist only
+   in the monofile, because the confirm-and-delete half of this section's
+   own plan was never run) had no path to close that gap at all.
+   `migrate_missing_v2` walks the monofile ledger/archive and writes a v2
+   file only for ids that do not already have one, leaving every already-
+   migrated ticket's current (possibly since-diverged) v2 state
+   untouched.
 4. **Cutover (T-1553, LANDED)**: `_store_mode`'s fresh-repo default is
    now `"v2"` -- a repo with no `tickets.md`/`tickets/*.md`/
    `tickets/T-####/` content at all chooses v2 mode, not v1. T-1553

@@ -2,7 +2,7 @@
 id: T-2355
 title: 'Ledger v2 migration: build the golden round-trip test and migrate the 108
   legacy-only tickets'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,6 +13,10 @@ sprint: null
 runs_last: false
 scope:
 - tests/fixtures/tickets/golden-monofile-ledger.md
+- src/frob/tickets/_store.py
+- tests/test_tickets_migration.py
+- tests/fixtures/tickets/**
+- docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 scope_changes:
@@ -37,6 +41,36 @@ scope_changes:
     with 20 other tickets'
   actor: logan
   at: '2026-08-17'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: need to extend migrate_v1_to_v2 for the partial-migration case (repo already
+    v2 but 108 tickets exist only in the monofile) and add the golden round-trip fixture+test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_tickets_migration.py
+  reason: need to extend migrate_v1_to_v2 for the partial-migration case (repo already
+    v2 but 108 tickets exist only in the monofile) and add the golden round-trip fixture+test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/fixtures/tickets/**
+  reason: need to extend migrate_v1_to_v2 for the partial-migration case (repo already
+    v2 but 108 tickets exist only in the monofile) and add the golden round-trip fixture+test
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: doc edges for the new migrate_missing_v2 function
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_checked_in_fixture_round_trips_to_v2_and_back
+- tests/test_tickets_migration.py::TestGoldenFixtureRoundTrip::test_a_genuinely_divergent_v2_tree_fails_the_equivalence_check
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_migrates_only_the_monofile_only_tickets
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_never_overwrites_an_already_migrated_ticket
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_idempotent_second_run_is_a_no_op
 designated_repro_test: null
 threat: null
 component: null

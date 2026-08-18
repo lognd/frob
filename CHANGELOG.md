@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.502.0] - unreleased
+
+- T-2355: Ledger v2 migration: build the golden round-trip test and migrate the 108 legacy-only tickets
+
 ## [0.501.0] - unreleased
 
 - T-2352: sweep auto-filer must relativize absolute finding paths into scope: (T-2342 producer-side half, deferred behind T-2313's lease)

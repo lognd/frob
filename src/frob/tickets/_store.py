@@ -28,7 +28,7 @@ import re
 import shutil
 import tempfile
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from types import ModuleType
@@ -2394,6 +2394,101 @@ def migrate_v1_to_v2(root: Path) -> Result[int, TicketError]:
         len(archived),
     )
     return Ok(total)
+
+
+# frob:ticket T-2355
+# frob:doc docs/design/ledger-v2.md#7-reversible-migration-plan-design-for-the-child-ticket-not-built-here  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_migrates_only_the_monofile_only_tickets  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_never_overwrites_an_already_migrated_ticket  # noqa: E501
+# frob:tests tests/test_tickets_migration.py::TestMigrateMissingV2.test_a_stale_active_row_whose_v2_state_already_moved_to_archive_is_not_duplicated  # noqa: E501
+def migrate_missing_v2(root: Path) -> Result[int, TicketError]:
+    """Partial-migration gap `migrate_v1_to_v2` cannot close (T-2355):
+    that migrator no-ops entirely (`Ok(0)`) the instant `_store_mode`
+    reads `"v2"` (any `tickets/T-####/ticket.md` at all), so a repo that
+    was cut over to v2 for NEW writes but still carries legacy tickets
+    that exist ONLY in `tickets.md`/`tickets-archive.md` (never
+    individually migrated -- design section 7's confirmation-and-delete
+    step was never run for them) has no path to a real per-ticket file
+    for those ids at all.
+
+    For every id `_parse_ledger` finds in the monofile ledger/archive
+    that does NOT already have a `tickets/T-####/ticket.md` OR a
+    `tickets/archive/T-####/ticket.md` -- checked in BOTH v2 locations
+    regardless of which monofile the id's row came from, since a stale
+    "active" row can already be migrated into the ARCHIVE side (the
+    ticket moved on after an earlier individual migration; live incident
+    during T-2355's own implementation: measuring "missing" against only
+    the row's own claimed side produced 108 apparent gaps that were
+    every one of them already-archived v2 tickets, and writing them again
+    as "active" tripped `frob check`'s DuplicateId gate) -- writes one via
+    `_migrate_one_v2` into the location the monofile row's own state
+    implies, identical per-ticket output to `migrate_v1_to_v2`, just
+    reachable when the repo is already v2-mode. An id that already has a
+    v2 file ANYWHERE is left untouched, byte for byte -- this function
+    only ever ADDS a genuinely missing file, never overwrites or
+    re-derives an existing one (T-2355 acceptance: an already-migrated
+    ticket's state may have diverged from its stale monofile row since
+    migration, and that current v2 state is authoritative, not the
+    monofile's snapshot). Monofiles are never written to or deleted here,
+    same reversibility guarantee as `migrate_v1_to_v2`. Returns the count
+    of ids actually written."""
+    active: dict[str, Ticket] = {}
+    active_path = ledger_path(root)
+    if active_path.exists():
+        parsed = _parse_ledger(active_path.read_text(encoding="utf-8"))
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        active = parsed.danger_ok
+    archived: dict[str, Ticket] = {}
+    archive_p = archive_path(root)
+    if archive_p.exists():
+        parsed = _parse_ledger(archive_p.read_text(encoding="utf-8"))
+        if parsed.is_err:
+            return Err(parsed.danger_err)
+        archived = parsed.danger_ok
+
+    active_written = _migrate_missing_ids(root, active, v2_ticket_dir)
+    if active_written.is_err:
+        return Err(active_written.danger_err)
+    archived_written = _migrate_missing_ids(root, archived, v2_archive_dir)
+    if archived_written.is_err:
+        return Err(archived_written.danger_err)
+
+    written = active_written.danger_ok + archived_written.danger_ok
+    _log.info(
+        "tickets: migrate_missing_v2 wrote %d monofile-only ticket(s) into v2 "
+        "layout; every already-migrated ticket left untouched",
+        written,
+    )
+    return Ok(written)
+
+
+def _migrate_missing_ids(
+    root: Path,
+    tickets: dict[str, Ticket],
+    home_dir: Callable[[Path, str], Path],
+) -> Result[int, TicketError]:
+    """`migrate_missing_v2`'s per-map body, split out to keep the caller
+    under ARCH001's line threshold: writes `home_dir(root, id)` for every
+    `tickets` entry that has no v2 file yet in EITHER v2 location
+    (`v2_ticket_dir` or `v2_archive_dir`) -- checked in both regardless of
+    which monofile `tickets` came from, since a monofile row's own
+    claimed side (active vs archived) can be stale relative to where the
+    ticket's v2 state actually lives (T-2355 incident: a stale 'active'
+    row whose v2 state had already moved to `tickets/archive/<id>/`
+    produced a genuine duplicate id when only `home_dir` itself was
+    checked). Returns the count actually written."""
+    written = 0
+    for ticket_id, ticket in tickets.items():
+        if (v2_ticket_dir(root, ticket_id) / "ticket.md").exists():
+            continue
+        if (v2_archive_dir(root, ticket_id) / "ticket.md").exists():
+            continue
+        result = _migrate_one_v2(root, ticket, home_dir(root, ticket_id))
+        if result.is_err:
+            return Err(result.danger_err)
+        written += 1
+    return Ok(written)
 
 
 # frob:doc docs/modules/tickets-data-storage.md#storage-internals
