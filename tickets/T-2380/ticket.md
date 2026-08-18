@@ -90,7 +90,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 65e46af6f33cdafefd63e9d02de02cfe79ed5227
 ---
 Measured via `uv run frob check --json --budget 500` (full gate-summary coverage,
 no BUDGET001 deferral), gate:SYS rule SYS003 ("undeclared cross-component
