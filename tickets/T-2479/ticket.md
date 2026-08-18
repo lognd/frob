@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 07085bf811a0a9342ee47fffaa3a2982902a30dd
 ---
 T-2464 added a `net-mutate` scanner-only capability signal, split from
 the coarse `net-connect` needle, for exactly TWO libraries' module-level
