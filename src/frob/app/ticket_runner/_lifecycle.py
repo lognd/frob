@@ -745,6 +745,14 @@ def _start(root: Path, cfg: AppConfig) -> None:
 
     ticket = _apply_scope_breadth_ack_on_start(root, cfg, ticket)
     _refuse_over_broad_scope_on_start(root, ticket)
+    # T-2394: an EMPTY scope is a different failure mode than a too-BROAD
+    # one -- _refuse_empty_scope_on_start checks ticket.scope/no_scope_
+    # declared directly and is never satisfied by scope_breadth_ack (that
+    # field only bypasses _refuse_over_broad_scope_on_start above, T-2446),
+    # so ordering it after the breadth-ack write does not let the ack
+    # short-circuit it. See TestRefuseEmptyScopeOnStart::
+    # test_scope_breadth_ack_does_not_satisfy_empty_scope_refusal.
+    _refuse_empty_scope_on_start(ticket)
     _refuse_on_scope_lease_collision(root, cfg.ticket_id, ticket)
 
     ticket = _auto_plan_if_queued(root, cfg.ticket_id, ticket)
@@ -1082,6 +1090,52 @@ def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN0
         ticket.id,
         len(warnings),
         "y" if len(warnings) == 1 else "ies",
+        ticket.id,
+        ticket.id,
+    )
+    sys.exit(1)
+
+
+# frob:ticket T-2394
+# frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_empty_scope_refuses
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_declared_no_scope_starts_cleanly  # noqa: E501
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_nonempty_scope_starts_cleanly  # noqa: E501
+def _refuse_empty_scope_on_start(ticket) -> None:  # noqa: ANN001
+    """T-2394: `sys.exit(1)` if `ticket.scope` is empty and `ticket.
+    no_scope_declared` is not set.
+
+    An empty scope was previously caught only at LAND time (the
+    out-of-scope waive-deletion check), by which point an agent could
+    have spent hours implementing against a scope that never existed --
+    scope is simultaneously the evidence-coverage declaration and the
+    write lease, so an empty one means the ticket holds no lease and its
+    changes are unattributable from the moment `start` transitions it to
+    IN_PROGRESS. `start` is the correct hard gate: it is the point a
+    lease is actually needed, mirroring `_refuse_over_broad_scope_on_
+    start`'s T-1866 placement for the OPPOSITE problem (a scope too
+    broad, not too empty).
+
+    The escape hatch is `ticket.no_scope_declared` (T-2394's own field,
+    set via `frob ticket scope <id> --declare-no-scope --reason TEXT` or
+    `frob ticket new --no-scope`) -- a ticket that legitimately has no
+    file scope (a tier=epic rollup, a pure decision record) declares that
+    explicitly and starts cleanly, distinguishable from one whose scope
+    was merely omitted at filing time (the fail-loudly doctrine, T-2391,
+    applied to scope: absence must be declared, never inferred from
+    silence)."""
+    if ticket.scope or ticket.no_scope_declared:
+        return
+    _log.error(
+        "ticket start failed: %s has an EMPTY scope -- either add scope "
+        "(`frob ticket scope %s --add '<glob>' --reason '...'`) or, if this "
+        "ticket legitimately has no file scope (a tier=epic rollup, a pure "
+        "decision record), declare that explicitly: `frob ticket scope %s "
+        "--declare-no-scope --reason '...'`",
+        ticket.id,
         ticket.id,
         ticket.id,
     )

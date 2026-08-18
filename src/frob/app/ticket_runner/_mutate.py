@@ -73,9 +73,7 @@ def _resolve_triage_reason(cfg: AppConfig) -> str | None:
     across `scope`/`scope-ack`, applied here across all four single-value
     triage setters)."""
     if cfg.ticket_triage_reason_file is not None and cfg.ticket_triage_reason:
-        _log.error(
-            "frob ticket: --reason and --reason-file are mutually exclusive"
-        )
+        _log.error("frob ticket: --reason and --reason-file are mutually exclusive")
         sys.exit(1)
     if cfg.ticket_triage_reason_file is not None:
         try:
@@ -201,10 +199,11 @@ def _scope(root: Path, cfg: AppConfig) -> None:
         not cfg.ticket_scope_add
         and not cfg.ticket_scope_remove
         and not cfg.ticket_scope_demote_to_evidence_only
+        and not cfg.ticket_scope_declare_no_scope
     ):
         _log.error(
             "frob ticket scope requires --add and/or --remove and/or "
-            "--demote-to-evidence-only GLOB"
+            "--demote-to-evidence-only GLOB and/or --declare-no-scope"
         )
         sys.exit(1)
 
@@ -212,6 +211,22 @@ def _scope(root: Path, cfg: AppConfig) -> None:
     if not reason:
         _log.error("frob ticket scope requires --reason TEXT or --reason-file PATH")
         sys.exit(1)
+
+    # frob:ticket T-2394
+    if cfg.ticket_scope_declare_no_scope:
+        from frob.tickets import set_no_scope_declared
+
+        result = set_no_scope_declared(root, cfg.ticket_id, reason)
+        if result.is_err:
+            _log.error("declare-no-scope failed: %s", result.danger_err)
+            sys.exit(1)
+        _log.info("%s: no_scope_declared set to True", cfg.ticket_id)
+        if (
+            not cfg.ticket_scope_add
+            and not cfg.ticket_scope_remove
+            and not cfg.ticket_scope_demote_to_evidence_only
+        ):
+            return
 
     if cfg.ticket_scope_demote_to_evidence_only:
         _apply_demote_to_evidence_only(root, cfg, reason)
@@ -385,7 +400,9 @@ def _resolve_body_reason(cfg: AppConfig) -> str | None:
     (the caller reports the "one is required" error), same shape as
     `_resolve_triage_reason`."""
     if cfg.ticket_body_reason_file is not None and cfg.ticket_body_reason:
-        _log.error("frob ticket body: --reason and --reason-file are mutually exclusive")
+        _log.error(
+            "frob ticket body: --reason and --reason-file are mutually exclusive"
+        )
         sys.exit(1)
     if cfg.ticket_body_reason_file is not None:
         try:
@@ -472,9 +489,7 @@ def _body(root: Path, cfg: AppConfig) -> None:
         _log.error("body change failed: %s", result.danger_err)
         sys.exit(1)
     ticket = result.danger_ok
-    _log.info(
-        "%s: body %s (now %d chars)", cfg.ticket_id, mode, len(ticket.body)
-    )
+    _log.info("%s: body %s (now %d chars)", cfg.ticket_id, mode, len(ticket.body))
 
 
 # frob:ticket T-0834

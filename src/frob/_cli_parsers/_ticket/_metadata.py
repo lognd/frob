@@ -101,6 +101,16 @@ def _add_ticket_scope_parser(ticket_sub):
         "momentarily false. Mutually combinable with --add/--remove in the "
         "same call.",
     )
+    # frob:ticket T-2394
+    ticket_scope_p.add_argument(
+        "--declare-no-scope",
+        dest="ticket_scope_declare_no_scope",
+        action="store_true",
+        help="declare that this ticket LEGITIMATELY has no file scope (a "
+        "tier=epic rollup, a pure decision record) -- the escape hatch "
+        "`frob ticket start` checks before refusing on an empty scope "
+        "(T-2394); requires --reason/--reason-file, same as --add/--remove",
+    )
     ticket_scope_p.add_argument(
         "--reason",
         dest="ticket_scope_reason",

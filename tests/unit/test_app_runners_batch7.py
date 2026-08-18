@@ -561,6 +561,7 @@ class TestTicketStart:
             ticket_path=tmp_path,
             ticket_title="start me",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -812,6 +813,7 @@ class TestTicketStart:
             ticket_path=tmp_path,
             ticket_title="start me fg",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -831,6 +833,7 @@ class TestTicketStart:
             ticket_path=tmp_path,
             ticket_title="start me",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -968,6 +971,7 @@ class TestTicketRequeue:
             ticket_path=tmp_path,
             ticket_title="requeue me",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -1468,6 +1472,7 @@ class TestTicketClose:
             ticket_path=tmp_path,
             ticket_title="close me",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -1490,6 +1495,7 @@ class TestTicketClose:
             ticket_path=tmp_path,
             ticket_title="close me",
             ticket_kind="bug",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(
@@ -1655,6 +1661,7 @@ class TestTicketArchive:
             ticket_title="archive me",
             ticket_kind="docs",
             ticket_body="## Done report\n\nDone.\n",
+            ticket_scope=["src/frob/app/config.py"],
         )
         ticket_run(cfg)
         cfg = AppConfig(

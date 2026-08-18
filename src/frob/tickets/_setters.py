@@ -449,6 +449,55 @@ def set_scope_breadth_ack(
     return Ok(updated)
 
 
+# frob:ticket T-2394
+# frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestSetNoScopeDeclared.test_sets_both_fields
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestSetNoScopeDeclared.test_reason_missing_refuses
+def set_no_scope_declared(
+    root: Path, ticket_id: str, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket scope <id> --declare-no-scope --reason TEXT` (T-2394):
+    declare that `ticket_id` LEGITIMATELY has no file scope (a tier=epic
+    rollup, a pure decision record) -- sets `no_scope_declared=True` and
+    records `reason` in `no_scope_declared_reason` in one ledger-locked
+    write, same shape as `set_scope_breadth_ack`'s T-1484 precedent (the
+    opposite problem: acknowledging a scope that is too BROAD, not one
+    that is intentionally EMPTY). This is the escape hatch
+    `_refuse_empty_scope_on_start` (frob.app.ticket_runner._lifecycle)
+    checks before refusing `frob ticket start` on an empty `scope` --
+    the fail-loudly doctrine (T-2391) applied here: an empty scope must
+    be DECLARED, never merely inferred from silence. A blank/whitespace-
+    only `reason` is rejected (`Err`), the same "no stated justification"
+    refusal `set_scope_breadth_ack` already enforces."""
+    if not reason.strip():
+        return Err(TicketError.NoScopeDeclaredReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(
+            update={
+                "no_scope_declared": True,
+                "no_scope_declared_reason": reason,
+            }
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s no_scope_declared set to True (reason=%s)", ticket_id, reason
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-1749
 def _current_actor() -> str:
     """Best-effort identity for a `designated_repro_changes` audit entry's

@@ -565,6 +565,11 @@ class AppConfig(BaseModel):
     # TEXT` -- migrate an existing scope GLOB into evidence_scope in one
     # atomic write (T-1944's demote_to_evidence_only).
     ticket_scope_demote_to_evidence_only: list[str] = []
+    # frob:ticket T-2394
+    # `frob ticket scope <id> --declare-no-scope --reason TEXT`: declare
+    # an empty scope intentional -- the escape hatch `frob ticket start`
+    # checks before refusing on an empty scope.
+    ticket_scope_declare_no_scope: bool = False
     ticket_scope_reason: str | None = None
     # frob:ticket T-0737
     # `frob ticket scope <id> --reason-file PATH` -- read the scope-change

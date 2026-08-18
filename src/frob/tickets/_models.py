@@ -1557,6 +1557,22 @@ class Ticket(BaseModel):
     # `None` when `scope_breadth_ack` is False. Set together by
     # `set_scope_breadth_ack`, never independently.
     scope_breadth_ack_reason: str | None = None
+    # frob:ticket T-2394
+    # explicit declaration that this ticket LEGITIMATELY has no file scope
+    # (a tier=epic rollup, a pure decision record) -- the fail-loudly
+    # doctrine (T-2391) applied to scope: absence must be DECLARED, never
+    # inferred from silence, so a ticket that genuinely has no file scope
+    # is distinguishable from one whose scope was merely omitted at filing
+    # time. `_refuse_empty_scope_on_start` (frob.app.ticket_runner.
+    # _lifecycle) refuses `frob ticket start` on an empty `scope` unless
+    # this is True. Set via `frob ticket scope <id> --declare-no-scope
+    # --reason TEXT`, never by hand-editing the ledger.
+    no_scope_declared: bool = False
+    # frob:ticket T-2394
+    # required human-readable justification for `no_scope_declared=True`;
+    # `None` when `no_scope_declared` is False. Set together by
+    # `set_no_scope_declared`, never independently.
+    no_scope_declared_reason: str | None = None
     # frob:ticket T-0455
     # append-only audit trail of every `frob ticket scope --add/--remove`
     # mutation this ticket's `scope` has gone through (never edited, only
@@ -1815,6 +1831,20 @@ class TicketSpec(BaseModel):
     # `set_scope_breadth_ack`/`WAIVE001` already enforce for their own
     # acknowledgement channels; validated together below.
     scope_breadth_ack_reason: str | None = None
+    # frob:ticket T-2394
+    # `frob ticket new --no-scope --no-scope-reason TEXT` -- the
+    # filing-time twin of `set_no_scope_declared`/`frob ticket scope <id>
+    # --declare-no-scope`: declares an empty `scope` intentional
+    # immediately at creation time, so `frob ticket start` never refuses
+    # a ticket that legitimately has no file scope (a tier=epic rollup, a
+    # pure decision record). Default False, matching `scope_breadth_ack`'s
+    # own default.
+    no_scope_declared: bool = False
+    # frob:ticket T-2394
+    # required justification for `no_scope_declared=True`, `None` when
+    # `no_scope_declared` is False -- same non-blank requirement
+    # `set_no_scope_declared` enforces for the mutate-in-place channel.
+    no_scope_declared_reason: str | None = None
 
     @field_validator("scope", mode="before")
     @classmethod
@@ -1935,6 +1965,13 @@ class TicketError(ErrorSet):
     ScopeChangeReasonMissing = "scope change requires a non-empty --reason"
     # frob:ticket T-1484
     ScopeBreadthAckReasonMissing = "scope-ack requires a non-empty --reason"
+    # frob:ticket T-2394
+    NoScopeDeclaredReasonMissing = "--declare-no-scope requires a non-empty --reason"
+    # frob:ticket T-2394
+    EmptyScopeAtStart = (
+        "ticket has an empty scope and no_scope_declared is not set -- refuse to "
+        "start (T-2394)"
+    )
     # frob:ticket T-1856
     AnchorReasonMissing = "anchor set/clear requires a non-empty --reason"
     # frob:ticket T-2353

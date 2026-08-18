@@ -449,6 +449,8 @@ _BOOL_FLAGS = (
     "ticket_close_skip_mutation_evidence",
     # frob:ticket T-2393
     "ticket_close_no_behavior_change",
+    # frob:ticket T-2394
+    "ticket_scope_declare_no_scope",
     # frob:ticket T-1929
     "ticket_designate_repro_force",
     "ticket_land_push",

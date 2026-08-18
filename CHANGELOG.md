@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.525.0] - unreleased
+
+- T-2394: an empty ticket scope is only caught at land time
+
 ## [0.524.0] - unreleased
 
 - T-2388: PORT001: meta-gate detecting gates that hardcode project identity instead of resolving it

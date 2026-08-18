@@ -891,6 +891,42 @@ of waiving the gate, and the mutation is recorded, not hidden.
   than the three well-known wiring files below -- see the next section for
   what no longer needs it.
 
+### Declared no-scope (T-2394)
+
+An empty `scope` used to be caught only at LAND time, by the out-of-scope
+waive-deletion check -- an agent could spend hours implementing against a
+ticket with no declared scope at all before the omission surfaced, by
+which point it had to reconstruct the scope from the files it had already
+touched. Scope is simultaneously the evidence-coverage declaration and
+the write lease, so an empty one means the ticket holds no lease and its
+changes are unattributable from the moment it starts.
+
+`frob ticket start <id>` now refuses UNCONDITIONALLY on an empty `scope`
+(`_refuse_empty_scope_on_start`, `frob.app.ticket_runner._lifecycle`) --
+`start` is the correct hard gate, the point a lease is actually needed,
+mirroring `_refuse_over_broad_scope_on_start`'s T-1866 placement for the
+OPPOSITE problem (a scope too broad, not too empty). `frob ticket new`
+also WARNs (never refuses -- a ticket being created has no id yet to
+acknowledge against) the moment an empty scope is filed
+(`_warn_empty_scope_on_new`, `frob.tickets._new_renumber`), the earliest
+possible signal, same "surface it at filing, refuse it at start" split
+T-2123 established for the over-broad case.
+
+**The escape hatch: `no_scope_declared`.** A ticket that legitimately has
+no file scope (a tier=epic rollup, a pure decision record) declares that
+explicitly via `frob ticket scope <id> --declare-no-scope --reason TEXT`
+(`frob.tickets.set_no_scope_declared`) -- sets `no_scope_declared=True`
+and records `reason` in `no_scope_declared_reason`, the same ledger-
+locked, mandatory-reason shape `set_scope_breadth_ack` (T-1484) already
+established for the opposite acknowledgement. This is the fail-loudly
+doctrine (T-2391) applied to scope: absence must be DECLARED, never
+inferred from silence, so a ticket that genuinely has no file scope is
+distinguishable -- both to a human reading `frob ticket show` and to
+`_refuse_empty_scope_on_start`'s own check -- from one whose scope was
+merely omitted at filing time. A blank/whitespace-only `--reason` is
+refused (`TicketError.NoScopeDeclaredReasonMissing`), same as every other
+reasoned acknowledgement channel in this file.
+
 ### CLI-wiring files are implicitly in scope for FEATURE tickets (T-0446)
 
 Every `frob ticket <subcommand>` a feature ticket adds structurally needs

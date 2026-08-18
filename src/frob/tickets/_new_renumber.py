@@ -649,7 +649,50 @@ def new_ticket(
     _commit_new_ticket(root, ticket, no_commit, warn_if_dirty=warn_if_dirty)
     # frob:ticket T-2123
     _warn_over_broad_scope_on_new(root, ticket)
+    # frob:ticket T-2394
+    _warn_empty_scope_on_new(ticket)
     return Ok(ticket)
+
+
+# frob:ticket T-2394
+# frob:doc docs/modules/tickets-lifecycle.md#declared-no-scope-t-2394
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_empty_scope_warns_at_fil\
+# ing_time
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_declared_no_scope_is_sil\
+# ent
+# frob:tests \
+# tests/test_tickets_no_scope.py::TestWarnEmptyScopeOnNew.test_nonempty_scope_is_silent
+def _warn_empty_scope_on_new(ticket: Ticket) -> None:
+    """T-2394: an empty `scope` at filing time gets a loud WARNING (never
+    a refusal here, matching `_warn_over_broad_scope_on_new`'s T-2123
+    posture -- a ticket being CREATED has no id yet to acknowledge
+    against, so refusing filing outright strands the author with no way
+    forward inside a single command). The HARD refusal for an
+    undeclared empty scope lives at `frob ticket start`
+    (`_refuse_empty_scope_on_start`, frob.app.ticket_runner._lifecycle),
+    the point a lease is actually needed -- this is only the earliest
+    possible signal, same "surface it at filing, refuse it at start"
+    split T-2123 established for the opposite (over-broad) problem.
+
+    Silent when `ticket.no_scope_declared` is True (the ticket already
+    declared its empty scope intentional, e.g. via `frob ticket new
+    --no-scope`/a filing-time equivalent, or will confirm via `frob
+    ticket scope --declare-no-scope` before its first `start`) or when
+    `scope` is non-empty."""
+    if ticket.scope or ticket.no_scope_declared:
+        return
+    _log.warning(
+        "ticket new: %s filed with an EMPTY scope -- `frob ticket start` "
+        "will refuse to start it (T-2394) unless you either add scope "
+        "(`frob ticket scope %s --add '<glob>' --reason '...'`) or declare "
+        "the empty scope intentional (`frob ticket scope %s "
+        "--declare-no-scope --reason '...'`) before starting",
+        ticket.id,
+        ticket.id,
+        ticket.id,
+    )
 
 
 # frob:ticket T-2123
