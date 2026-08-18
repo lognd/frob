@@ -2,7 +2,7 @@
 id: T-2478
 title: clear the 5-finding lint quarantine raised by T-1135's post-land sweep (E501
   x4, F401 x1)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
