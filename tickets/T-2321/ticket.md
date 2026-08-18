@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9b644c779b13492b0a9f25e6d09a45966a326554
 ---
 Child of T-2303 (parent scope: ARCH001/ARCH103/PERF004/SELFAUDIT001 debt
 found by T-2206's sweep). This is the PERF piece.
