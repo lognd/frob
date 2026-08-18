@@ -2,7 +2,7 @@
 id: T-2390
 title: 'config-file keys are never validated: an unknown or misspelled frob.toml key
   is silently ignored'
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -100,3 +100,6 @@ frob.toml, all 148 leaf values, must report zero once any genuinely
 undeclared-but-intentional keys are declared). If the control does not
 pass, the finding is that frob.toml has real undeclared keys -- report
 them, do not weaken the check to accommodate them.
+
+## Failure log
+- 2026-08-18 attempt 1: Scoped, not coded: frob.toml has 12 top-level tables/121 leaves read by ~10 DISJOINT ad hoc per-table readers (load_arch_config, _dup_config, etc), none bound to a pydantic schema today; a faithful fix needs the module:symbol schema-declaration idiom (docblocks.commands precedent) extended across every table plus a must-fire/must-still-pass fixture PER table -- epic-shaped, not a single-pass bug fix. Requeuing rather than forcing partial coverage that would falsely claim the acceptance[2] all-121-leaves-zero-unknown bar.
