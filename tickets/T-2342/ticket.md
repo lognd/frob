@@ -2,7 +2,7 @@
 id: T-2342
 title: post-land sweep filer emits absolute-path scope; frob ticket new crashes fleet-wide
   on one corrupt entry
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,11 +13,26 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_new.py
-- src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/verify_runner.py
+evidence_scope:
+- tests/unit/test_new_ticket_scope_overlap_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: T-2313 holds a live cross-worktree lease on this file (fixing the same auto-filer's
+    blank-identity defect); narrowing to the reader-side fix (_new.py) for now, will
+    re-add once T-2313 lands to do the producer-side absolute-path fix
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash::test_unrelated_ticket_still_files_despite_one_corrupt_row
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash::test_corrupt_row_is_named_loudly_not_silently_coerced
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_non_overlapping_scope_is_silent
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash::test_multiple_corrupt_entries_use_plural_wording
+designated_repro_test: tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash::test_unrelated_ticket_still_files_despite_one_corrupt_row
 threat: null
 component: null
 anchor: false

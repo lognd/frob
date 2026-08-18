@@ -246,3 +246,156 @@ class TestScopeOverlapWarnings:
 
         messages = "\n".join(r.getMessage() for r in caplog.records)
         assert "scope overlaps" not in messages
+
+
+# frob:ticket T-2342
+class TestNonRelativeScopeDoesNotCrash:
+    """T-2342 (reader-side half): a ticket with a corrupted, ABSOLUTE-path
+    scope entry (T-2308's real incident -- the rapid-sweep auto-filer had
+    written filesystem-absolute paths into `scope:`) used to crash EVERY
+    `frob ticket new` fleet-wide with `NotImplementedError: Non-relative
+    patterns are unsupported`, because `Path.glob()`'s laziness meant the
+    `try/except` around the call never actually caught the error raised
+    during iteration. Filing an unrelated ticket must still succeed, and
+    the malformed entry must be named in a warning, not silently
+    swallowed or silently coerced into something plausible."""
+
+    # frob:ticket T-2342
+    # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_unrelated_ticket_still_files_despite_one_corrupt_row  # noqa: E501
+    def test_unrelated_ticket_still_files_despite_one_corrupt_row(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Positive control 3 (T-2342): `frob ticket new` for an UNRELATED
+        ticket still succeeds when one bad row exists elsewhere in the
+        ledger -- this MUST FAIL on main (raises NotImplementedError)."""
+        from frob.tickets._store import load_all, write_ticket
+
+        _write(tmp_path / "scripts/fleet_status.py", "x = 1\n")
+        corrupt_cfg = _file_cfg(
+            tmp_path,
+            title="corrupt scope victim",
+            body="placeholder body.",
+            scope=["scripts/fleet_status.py"],
+        )
+        _new(tmp_path, corrupt_cfg)
+        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        corrupt_ticket = loaded.danger_ok[corrupt_id]
+        # T-2308's real corruption shape: an absolute filesystem path
+        # instead of a repo-relative glob, on an otherwise-normal
+        # non-terminal (queued) ticket.
+        corrupted = corrupt_ticket.model_copy(
+            update={"scope": [str((tmp_path / "scripts/fleet_status.py").resolve())]}
+        )
+        assert write_ticket(tmp_path, corrupted).is_ok
+
+        _write(tmp_path / "src/unrelated.py", "y = 1\n")
+        caplog.clear()
+        unrelated_cfg = _file_cfg(
+            tmp_path,
+            title="an entirely unrelated ticket",
+            body="src/unrelated.py has its own, unrelated defect.",
+            scope=["src/unrelated.py"],
+        )
+        with caplog.at_level(logging.WARNING):
+            _new(tmp_path, unrelated_cfg)  # must not raise
+
+        ids = {p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir()}
+        assert corrupt_id in ids
+        assert len(ids) == 2, f"expected the unrelated ticket to have filed too: {ids}"
+
+    # frob:ticket T-2342
+    # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_corrupt_row_is_named_loudly_not_silently_coerced  # noqa: E501
+    def test_corrupt_row_is_named_loudly_not_silently_coerced(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Positive control 2 (T-2342, must-still-pass): a genuinely
+        malformed scope entry is REJECTED loudly -- named in a warning
+        identifying the offending ticket and path -- rather than silently
+        coerced into a plausible-looking relative path or silently
+        dropped with no trace."""
+        from frob.tickets._store import load_all, write_ticket
+
+        _write(tmp_path / "scripts/fleet_status.py", "x = 1\n")
+        corrupt_cfg = _file_cfg(
+            tmp_path,
+            title="corrupt scope victim",
+            body="placeholder body.",
+            scope=["scripts/fleet_status.py"],
+        )
+        _new(tmp_path, corrupt_cfg)
+        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        corrupt_ticket = loaded.danger_ok[corrupt_id]
+        abs_path = str((tmp_path / "scripts/fleet_status.py").resolve())
+        corrupted = corrupt_ticket.model_copy(update={"scope": [abs_path]})
+        assert write_ticket(tmp_path, corrupted).is_ok
+
+        _write(tmp_path / "src/unrelated.py", "y = 1\n")
+        caplog.clear()
+        unrelated_cfg = _file_cfg(
+            tmp_path,
+            title="an entirely unrelated ticket",
+            body="src/unrelated.py has its own, unrelated defect.",
+            scope=["src/unrelated.py"],
+        )
+        with caplog.at_level(logging.WARNING):
+            _new(tmp_path, unrelated_cfg)
+
+        messages = "\n".join(r.getMessage() for r in caplog.records)
+        assert corrupt_id in messages, (
+            f"expected the offending ticket {corrupt_id} named; got:\n{messages}"
+        )
+        assert abs_path in messages or "non-relative" in messages.lower(), (
+            f"expected the malformed path or a 'non-relative' label; got:\n{messages}"
+        )
+
+    # frob:ticket T-2342
+    # frob:tests tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash.test_multiple_corrupt_entries_use_plural_wording  # noqa: E501
+    def test_multiple_corrupt_entries_use_plural_wording(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """T-2342 TEST016 kill: TWO malformed scope entries on the same
+        offending ticket must pluralize ("entries", not "entry") -- this
+        distinguishes the singular/plural branch from a mutant that always
+        picks one or the other, which a single-bad-entry test cannot."""
+        from frob.tickets._store import load_all, write_ticket
+
+        _write(tmp_path / "scripts/fleet_status.py", "x = 1\n")
+        _write(tmp_path / "scripts/other.py", "y = 1\n")
+        corrupt_cfg = _file_cfg(
+            tmp_path,
+            title="corrupt scope victim two",
+            body="placeholder body.",
+            scope=["scripts/fleet_status.py"],
+        )
+        _new(tmp_path, corrupt_cfg)
+        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        corrupt_ticket = loaded.danger_ok[corrupt_id]
+        abs_paths = [
+            str((tmp_path / "scripts/fleet_status.py").resolve()),
+            str((tmp_path / "scripts/other.py").resolve()),
+        ]
+        corrupted = corrupt_ticket.model_copy(update={"scope": abs_paths})
+        assert write_ticket(tmp_path, corrupted).is_ok
+
+        _write(tmp_path / "src/unrelated2.py", "z = 1\n")
+        caplog.clear()
+        unrelated_cfg = _file_cfg(
+            tmp_path,
+            title="another entirely unrelated ticket",
+            body="src/unrelated2.py has its own, unrelated defect.",
+            scope=["src/unrelated2.py"],
+        )
+        with caplog.at_level(logging.WARNING):
+            _new(tmp_path, unrelated_cfg)
+
+        messages = "\n".join(r.getMessage() for r in caplog.records)
+        assert "entries" in messages, f"expected plural 'entries'; got:\n{messages}"
+        assert "entry" not in messages.replace("entries", ""), (
+            f"expected no singular 'entry' when 2 bad patterns exist; got:\n{messages}"
+        )

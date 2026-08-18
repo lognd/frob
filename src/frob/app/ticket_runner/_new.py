@@ -930,7 +930,18 @@ def _expand_scope_globs_to_paths(root: Path, globs) -> set[Path]:  # noqa: ANN00
     best-effort, matching this repo's existing fail-quiet scope-tooling
     posture (see `scripts/fleet_status.py::_expand_scope_globs_to_paths`,
     T-2225, this function's own sibling in the script that cannot import
-    this package)."""
+    this package).
+
+    T-2342: `Path.glob()` returns a LAZY generator -- calling it never
+    raises, so a `try/except` wrapped only around the call (the shape this
+    function used to have) never actually catches anything; the pattern's
+    real error (e.g. `NotImplementedError` for a non-relative/absolute
+    pattern) surfaces later, the moment something iterates the generator.
+    A single ticket with a corrupted absolute-path scope entry crashed
+    EVERY `frob ticket new` fleet-wide this way (T-2308's incident,
+    reachable from every other ticket's `_scope_overlap_warnings` scan).
+    The iteration must happen INSIDE the same `try` as the call for the
+    `except` to mean anything."""
     paths: set[Path] = set()
     patterns_to_try: set[str] = set()
     for pattern in globs:
@@ -944,13 +955,23 @@ def _expand_scope_globs_to_paths(root: Path, globs) -> set[Path]:  # noqa: ANN00
             # bounded-subtree walk this could prune ahead of time -- the same shape \
             # scripts/fleet_status.py::_expand_scope_globs_to_paths (T-2225) already \
             # takes for the identical call"
-            matches = root.glob(pattern)
+            for match in root.glob(pattern):
+                if match.is_file():
+                    paths.add(match.resolve())
         except (OSError, ValueError, NotImplementedError):
             continue
-        for match in matches:
-            if match.is_file():
-                paths.add(match.resolve())
     return paths
+
+
+# frob:ticket T-2342
+def _non_relative_scope_patterns(scope) -> tuple[str, ...]:  # noqa: ANN001
+    """Return every entry of `scope` that is an absolute filesystem path
+    rather than a repo-relative glob -- the corruption shape T-2308 hit
+    (absolute paths written by the rapid-sweep auto-filer, T-2342's
+    producer-side half). Used to name the offending ticket/path in a
+    warning instead of letting the malformed entry disappear into
+    `_expand_scope_globs_to_paths`'s best-effort silence."""
+    return tuple(pattern for pattern in scope if Path(pattern).is_absolute())
 
 
 # frob:ticket T-2257
@@ -988,6 +1009,18 @@ def _scope_overlap_warnings(root: Path, new_ticket_id: str, scope) -> tuple[str,
             continue
         if other.state not in _NON_TERMINAL_TICKET_STATES_FOR_OVERLAP:
             continue
+        bad_patterns = _non_relative_scope_patterns(other.scope)
+        if bad_patterns:
+            # T-2342: name the offending ticket and path rather than let a
+            # malformed row disappear silently into best-effort expansion
+            # -- a ledger row is INPUT to every tool that reads it, and a
+            # bad row deserves a diagnosable message, not silence.
+            warnings.append(
+                f"{other_id} ({other.state}) has non-relative (absolute) "
+                f"scope entr{'y' if len(bad_patterns) == 1 else 'ies'}, "
+                f"skipped for overlap check: {', '.join(bad_patterns)} "
+                "-- repair via `frob ticket scope` (never hand-edit)"
+            )
         other_paths = _expand_scope_globs_to_paths(root, other.scope)
         overlap = sorted(
             str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
