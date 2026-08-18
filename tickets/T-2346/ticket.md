@@ -18,12 +18,46 @@ acceptance:
 - text: given a ticket whose state changed via the CLI, when both tickets.md and tickets/<ID>/ticket.md
     are read, then they agree (or tickets.md no longer exists)
   evidence: []
-- text: given the 108 tickets that exist only in tickets.md with no per-ticket file,
-    when the fix is applied, then none of them is lost
+- text: 'given the 108 tickets whose stale tickets.md row implied no per-ticket file,
+    when checked against BOTH tickets/<id>/ticket.md and tickets/archive/<id>/ticket.md,
+    then all 158 tickets.md ids already have a real v2 file somewhere (T-2355 measured
+    2026-08-17: zero missing in either location) -- no migration write was needed
+    or made'
   evidence: []
 - text: given a deliberately divergent row, when the gate runs, then the divergence
     is reported rather than passing silently
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 1
+  old_text: given the 108 tickets that exist only in tickets.md with no per-ticket
+    file, when the fix is applied, then none of them is lost
+  new_text: 'given the 108 tickets whose stale tickets.md row implied no per-ticket
+    file, when checked against BOTH tickets/<id>/ticket.md and tickets/archive/<id>/ticket.md,
+    then all 158 tickets.md ids already have a real v2 file somewhere (T-2355 measured
+    2026-08-17: zero missing in either location) -- no migration write was needed
+    or made'
+  reason: 'T-2355 (child, done) found and fixed the coordinator''s own filing error:
+
+    "108 tickets exist only in tickets.md with no per-ticket file" was
+
+    measured by checking only tickets/T-####/ (active v2 dir) and never
+
+    tickets/archive/<id>/. Direct verification against the real repo tree
+
+    (all 158 tickets.md ids checked against BOTH v2 locations) found zero
+
+    missing a v2 file -- all 108 already had an ARCHIVED v2 file, just not
+
+    where the stale monofile row implied. There is no 108-ticket migration
+
+    gap; this criterion is corrected to reflect that, rather than left to
+
+    silently mislead a future reader.
+
+    '
+  actor: logan
+  at: '2026-08-17'
 threat: null
 component: tickets
 anchor: false
