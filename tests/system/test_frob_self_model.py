@@ -501,3 +501,26 @@ class TestFrobSelfModel:
         assert build_result.is_ok, f"graph build failed: {build_result.err}"
         violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
         assert violations == (), f"unexpected SYS violation(s): {violations}"
+
+    # frob:tests design/frob.strata kind="e2e"
+    def test_fragments_module_fs_read_is_declared_not_selfaudit001(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2465 regression: `src/frob/release/_fragments.py` reads
+        `changelog.d/*.md` fragments via `Path.exists()`/`Path.read_text()`
+        (T-2445), and this real fs.read site must be declared for the
+        `core` node's `may "fs.read"` via-list in `design/frob.strata` --
+        narrower than `test_sys_gate_zero_violations` above (which also
+        trips on unrelated, pre-existing SYS101/GATERULE001 findings) so
+        this one regression cannot be masked by those.
+        """
+        build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
+        assert build_result.is_ok, f"graph build failed: {build_result.err}"
+        violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
+        fragments_violations = [
+            v for v in violations if "_fragments.py" in v.message
+        ]
+        assert fragments_violations == [], (
+            f"_fragments.py should have no undeclared-capability SYS "
+            f"violation: {fragments_violations}"
+        )

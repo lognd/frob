@@ -2,7 +2,7 @@
 id: T-2465
 title: declare fs.read capability for src/frob/release/_fragments.py in design/frob.strata
   (SELFAUDIT001, from T-2445)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,28 @@ sprint: null
 runs_last: false
 scope:
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
+- tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: ratchet ceiling must bump alongside the new fs.read via-list declaration
+    in the same diff, per SYS111's own enforced pairing
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/system/test_frob_self_model.py
+  reason: narrow regression test proving the fs.read declaration fix, isolated from
+    unrelated pre-existing SYS101/GATERULE001 findings the file's other test also
+    trips on
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_fragments_module_fs_read_is_declared_not_selfaudit001
 designated_repro_test: null
 threat: null
 component: null

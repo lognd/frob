@@ -61,9 +61,9 @@
       "ticket": "T-1628"
     },
     "core::fs.read": {
-      "accepted_count": 32,
-      "reason": "T-2453: further cumulative site-count growth measured after the worktree's own re-measurement (more already-authorized lands landed on main while this ticket was in flight) -- same posture as the earlier T-2407 bump in this same file: every contributing file is already a declared via-source, no new unauthorized site.",
-      "ticket": "T-2453"
+      "accepted_count": 33,
+      "reason": "T-2465: src/frob/release/_fragments.py's changelog.d/*.md fragment reads (Path.exists/Path.read_text) are a genuine new fs.read site, now declared in design/frob.strata's core node via-list -- ceiling bumped to match the newly-authorized site, same posture as the T-2453/T-2407 bumps in this same file.",
+      "ticket": "T-2465"
     },
     "core::fs.write": {
       "accepted_count": 25,
