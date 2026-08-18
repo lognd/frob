@@ -2,7 +2,7 @@
 id: T-2365
 title: Adapter-capability axis + behavioral conformance suite for the 6 registered
   languages
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -17,8 +17,57 @@ scope:
 - docs/modules/lang.md
 - tests/test_lang_support.py
 - tests/test_lang_conformance_gate.py
+- tickets/T-2408/**
+- tickets/T-2409/**
+- tickets/T-2410/**
+- tickets/T-2411/**
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-2408/**
+  reason: own filed draft follow-up ticket.md files land in this ticket's own commit
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-2409/**
+  reason: own filed draft follow-up ticket.md files land in this ticket's own commit
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-2410/**
+  reason: own filed draft follow-up ticket.md files land in this ticket's own commit
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-2411/**
+  reason: own filed draft follow-up ticket.md files land in this ticket's own commit
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: closing the ticket requires registering the new LANG004 gate rule id in
+    _KNOWN_GATE_RULES (T-1937 land-time construct gate) -- a mandatory one-line registration,
+    not new functionality
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_covers_every_supported_language
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_every_language_declares_every_capability
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_real_registry_has_no_conformance_violations
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_strata_call_graph_is_not_applicable
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_typescript_import_graph_is_a_reasoned_known_gap
+- tests/test_lang_support.py::TestCapabilityConformanceViolations::test_missing_capability_fails
+- tests/test_lang_support.py::TestCapabilityConformanceViolations::test_fully_registered_language_passes
+- tests/test_lang_support.py::TestCapabilityConformanceViolations::test_unreasoned_known_gap_fails
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_every_registered_language_is_covered
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_directive_continuation_folds_correctly_not_just_present
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_broken_continuation_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_no_symbols_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_unchecked_capability_is_named_not_silently_true
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_real_registry_is_behaviorally_clean
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_wrong_implemented_claim_fails
 designated_repro_test: null
 threat: null
 component: tickets

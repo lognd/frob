@@ -45,7 +45,28 @@ _log = get_logger(__name__)
 # below imports its one registry lazily, inside the function body, for
 # exactly that reason; see docs/modules/lang.md#language-support-contract.
 
+# frob:waive ARCH102 reason="T-2365 added a SECOND, deliberately parallel typed \
+# registration \
+# (ADAPTER_CAPABILITIES/CapabilityStatus/AdapterCapabilitySupport/derive_capability_reg\
+# istry/capability_conformance_violations) alongside the pre-existing one \
+# (FACETS/FacetStatus/LanguageSupport/derive_language_registry/conformance_violations) \
+# -- the clustering heuristic correctly finds two internally-cohesive naming/usage \
+# clusters, one per axis, plus the shared \
+# FacetState/_implemented/_not_applicable/_known_gap primitives both axes reuse on \
+# purpose (this module's own docstring explains why: one axis is subsystem- \
+# INTEGRATION coverage, the other is adapter-CAPABILITY coverage, genuinely different \
+# questions this module answers together because they share the exact same accounting \
+# discipline). Splitting into two files would duplicate that shared discipline instead \
+# of reusing it -- the opposite of what T-2365 was asked to do."
 __all__ = [
+    "ADAPTER_CAPABILITIES",
+    "CAPABILITY_CALL_GRAPH",
+    "CAPABILITY_DIRECTIVE_PARSE",
+    "CAPABILITY_DOC_EXTRACT",
+    "CAPABILITY_IMPORT_GRAPH",
+    "CAPABILITY_PUBLICNESS",
+    "CAPABILITY_SYMBOL_WALK",
+    "CAPABILITY_TEST_DISCOVERY",
     "FACETS",
     "FACET_ARCH",
     "FACET_CAPABILITY",
@@ -53,10 +74,15 @@ __all__ = [
     "FACET_DUP",
     "FACET_GRAMMAR",
     "KNOWN_GAP_TRACKING_TICKETS",
+    "AdapterCapabilitySupport",
+    "CapabilityRequirement",
+    "CapabilityStatus",
     "FacetState",
     "FacetStatus",
     "LanguageSupport",
+    "capability_conformance_violations",
     "conformance_violations",
+    "derive_capability_registry",
     "derive_language_registry",
 ]
 
@@ -95,6 +121,84 @@ FACETS: tuple[str, ...] = (
     FACET_ARCH,
     FACET_DOCBLOCK,
 )
+
+# T-2365: a SECOND facet-shaped axis, distinct from FACETS above. FACETS is
+# subsystem-INTEGRATION coverage (does frob.vet/frob.dup/frob.arch/frob.
+# gates._docblocks have an entry for this language). This axis is ADAPTER-
+# CAPABILITY coverage: does the adapter ITSELF implement the primitive
+# operation at all, independent of which downstream subsystem consumes it.
+# The distinction matters because a language can score FACET_CAPABILITY
+# IMPLEMENTED (frob.vet has an entry) while its adapter has no import-graph
+# walker at all (frob.lang._extract._IMPORT_WALKERS) -- two genuinely
+# different questions FACETS alone cannot separate.
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: `frob.lang._extract._WALKERS` (or the strata-core pairing for `.strata`)
+#: can turn this language's source into a `RawSymbol` tuple at all.
+CAPABILITY_SYMBOL_WALK = "symbol_walk"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: Every `RawSymbol` this adapter emits carries a real, language-correct
+#: `public: bool` (T-0841's per-grammar publicness rule), not a placeholder.
+CAPABILITY_PUBLICNESS = "publicness"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: This adapter extracts `RawComment`s at all -- `frob.lang._extract.
+#: COMMENT_TYPES`, or (for `.strata`, which has no tree-sitter comment
+#: node type) `_walk_strata`'s own whole-line `//` comment scan.
+CAPABILITY_DOC_EXTRACT = "doc_extract"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: `frob.graph.dsl.parse_directives` can recover a `frob:` directive from
+#: this language's extracted comments, including a backslash-continued
+#: multi-line directive (`_fold_continuations`) -- frob's own sharpest
+#: test case for this capability, since a continuation that folds wrong
+#: silently truncates the directive instead of failing loudly.
+CAPABILITY_DIRECTIVE_PARSE = "directive_parse"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: `frob.graph.callgraph.build_call_graph` can resolve a call edge for
+#: this language's symbols (bare-short-name matching over `RawSymbol.
+#: public`/`sig_tokens`, language-agnostic once `CAPABILITY_SYMBOL_WALK`
+#: holds).
+CAPABILITY_CALL_GRAPH = "call_graph"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: `frob.lang.extract_imports` (`_IMPORT_WALKERS`) has a real per-language
+#: walker for this language's import/include syntax.
+CAPABILITY_IMPORT_GRAPH = "import_graph"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: `frob.testing` has a `collect_*_tests` entrypoint that can discover
+#: this language's own test suite.
+CAPABILITY_TEST_DISCOVERY = "test_discovery"
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+#: Every capability a registered language's adapter must account for, one
+#: way or another (`FacetState.IMPLEMENTED`/`NOT_APPLICABLE`/`KNOWN_GAP`)
+#: -- the behavioral conformance suite's enumeration universe (T-2365).
+ADAPTER_CAPABILITIES: tuple[str, ...] = (
+    CAPABILITY_SYMBOL_WALK,
+    CAPABILITY_PUBLICNESS,
+    CAPABILITY_DOC_EXTRACT,
+    CAPABILITY_DIRECTIVE_PARSE,
+    CAPABILITY_CALL_GRAPH,
+    CAPABILITY_IMPORT_GRAPH,
+    CAPABILITY_TEST_DISCOVERY,
+)
+
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
+class CapabilityRequirement(StrEnum):
+    """Whether a `(language, capability)` cell is REQUIRED (every language
+    must eventually reach `IMPLEMENTED`, or be a reasoned `NOT_APPLICABLE`)
+    or OPTIONAL (a `KNOWN_GAP` is an acceptable steady state, not just a
+    tolerated one) -- distinct from `FacetState`, which says what the
+    current status IS; this says how much that status is allowed to matter."""
+
+    REQUIRED = "required"
+    OPTIONAL = "optional"
 
 
 # frob:doc docs/modules/lang.md#language-support-contract
@@ -157,14 +261,82 @@ class LanguageSupport(BaseModel):
         A state without a reason is exactly as unaccountable as a missing
         cell -- see `FacetStatus.detail`'s docstring.
         """
-        out = []
-        for name in FACETS:
-            status = self.facets.get(name)
-            if status is None:
-                continue
-            if status.state is not FacetState.IMPLEMENTED and not status.detail.strip():
-                out.append(name)
-        return tuple(out)
+        return _unreasoned_names(FACETS, self.facets)
+
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
+class CapabilityStatus(BaseModel):
+    """One `(language, capability)` cell: requirement, state, and an honest
+    detail string -- the same `FacetState`/reasoned-detail discipline
+    `FacetStatus` established, plus `requirement` (T-2365's own addition).
+    `detail` is required non-empty for `NOT_APPLICABLE`/`KNOWN_GAP`, same
+    rule as `FacetStatus.detail`."""
+
+    model_config = ConfigDict(frozen=True)
+
+    requirement: CapabilityRequirement
+    state: FacetState
+    detail: str
+
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+# frob:tests tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_covers_every_supported_language  # noqa: E501
+class AdapterCapabilitySupport(BaseModel):
+    """One language's full adapter-capability accounting -- the T-2365
+    typed registration, structurally identical in spirit to
+    `LanguageSupport` but keyed on `ADAPTER_CAPABILITIES` instead of
+    `FACETS`. A capability key ABSENT from `capabilities` is the same
+    "fell through the cracks" case `capability_conformance_violations`
+    fails loudly on."""
+
+    model_config = ConfigDict(frozen=True)
+
+    language: str
+    capabilities: dict[str, CapabilityStatus]
+
+    # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+    # frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_missing_capability_fails  # noqa: E501
+    def missing_capabilities(self) -> tuple[str, ...]:
+        """Capabilities in `ADAPTER_CAPABILITIES` entirely absent from
+        `self.capabilities`, sorted -- mirrors `LanguageSupport.
+        missing_facets`."""
+        return tuple(c for c in ADAPTER_CAPABILITIES if c not in self.capabilities)
+
+    # frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+    # frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
+    def unreasoned_capabilities(self) -> tuple[str, ...]:
+        """Present capabilities whose `NOT_APPLICABLE`/`KNOWN_GAP` `detail`
+        is blank -- shares `_unreasoned_names` with `LanguageSupport.
+        unreasoned_facets` (the two axes' accounting rule is identical by
+        design; DUP001 flagged the pre-extraction near-duplicate)."""
+        return _unreasoned_names(ADAPTER_CAPABILITIES, self.capabilities)
+
+
+# frob:doc docs/modules/lang.md#language-support-contract
+# frob:tests tests/test_lang_support.py::TestConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
+# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
+def _unreasoned_names(
+    universe: tuple[str, ...],
+    cells: dict[str, FacetStatus] | dict[str, CapabilityStatus],
+) -> tuple[str, ...]:
+    """Names in `universe` present in `cells` with a `NOT_APPLICABLE`/
+    `KNOWN_GAP` state and a blank `detail` -- the shared accounting rule
+    both `LanguageSupport.unreasoned_facets` (T-0405) and `AdapterCapability
+    Support.unreasoned_capabilities` (T-2365) apply, extracted once both
+    axes turned out to need the IDENTICAL rule (`FacetStatus` and
+    `CapabilityStatus` both carry `state`/`detail`, just as `CapabilityStatus`
+    additionally carries `requirement`). A state without a reason is
+    exactly as unaccountable as a missing cell -- see `FacetStatus.detail`'s
+    docstring."""
+    out = []
+    for name in universe:
+        status = cells.get(name)
+        if status is None:
+            continue
+        if status.state is not FacetState.IMPLEMENTED and not status.detail.strip():
+            out.append(name)
+    return tuple(out)
 
 
 def _implemented(detail: str) -> FacetStatus:
@@ -181,6 +353,34 @@ def _not_applicable(detail: str) -> FacetStatus:
 def _known_gap(detail: str) -> FacetStatus:
     """`FacetStatus(KNOWN_GAP, detail)` -- see `_implemented`."""
     return FacetStatus(state=FacetState.KNOWN_GAP, detail=detail)
+
+
+def _cap_implemented(
+    requirement: CapabilityRequirement, detail: str
+) -> CapabilityStatus:
+    """`CapabilityStatus(requirement, IMPLEMENTED, detail)` -- the
+    capability-axis analogue of `_implemented`."""
+    return CapabilityStatus(
+        requirement=requirement, state=FacetState.IMPLEMENTED, detail=detail
+    )
+
+
+def _cap_not_applicable(
+    requirement: CapabilityRequirement, detail: str
+) -> CapabilityStatus:
+    """`CapabilityStatus(requirement, NOT_APPLICABLE, detail)` -- see
+    `_cap_implemented`."""
+    return CapabilityStatus(
+        requirement=requirement, state=FacetState.NOT_APPLICABLE, detail=detail
+    )
+
+
+def _cap_known_gap(requirement: CapabilityRequirement, detail: str) -> CapabilityStatus:
+    """`CapabilityStatus(requirement, KNOWN_GAP, detail)` -- see
+    `_cap_implemented`."""
+    return CapabilityStatus(
+        requirement=requirement, state=FacetState.KNOWN_GAP, detail=detail
+    )
 
 
 # frob:doc docs/modules/lang.md#language-support-contract
@@ -205,6 +405,19 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_arch_status`'s known-gap detail for every language frob.arch has
     # no per-language dispatch branch for yet (c/rust/typescript today).
     "T-0329": True,
+    # T-2365: `_capability_import_graph_status`'s known-gap detail for
+    # typescript/rust/kotlin -- `frob.lang._extract._IMPORT_WALKERS` has
+    # no walker for any of these three yet.
+    "T-2408": True,
+    # T-2365: `_capability_test_discovery_status`'s known-gap detail for
+    # kotlin -- `frob.testing` has no `collect_kotlin_tests` entrypoint yet.
+    "T-2409": True,
+    # T-2365: `_capability_publicness_status`'s known-gap detail for
+    # strata -- `_walk_strata.py` hardcodes `public=True` unconditionally,
+    # a placeholder, not language-correct publicness (T-0841's rule).
+    # Caught BY this ticket's own behavioral suite, not a pre-existing
+    # entry.
+    "T-2410": True,
 }
 
 
@@ -396,5 +609,236 @@ def conformance_violations(
                 f"{language}: facet '{facet}' is not-applicable/known-gap "
                 f"but carries no reason -- an unreasoned exemption is as "
                 f"unaccountable as a missing cell"
+            )
+    return tuple(violations)
+
+
+# --------------------------------------------------------------------------
+# T-2365: the adapter-capability axis -- see ADAPTER_CAPABILITIES above.
+# --------------------------------------------------------------------------
+
+# `frob.lang._extract._WALKERS` covers every tree-sitter grammar language;
+# `.strata` is handled separately by `_walk_strata.walk_strata`, which
+# returns the identical `RawSymbol` shape (module docstring). Every member
+# of `frob.lang.supported_languages()` therefore has a real symbol walker
+# today -- there is no known gap here to derive, so this is a plain
+# membership check rather than a lazy import of a registry, mirroring the
+# other `_capability_*_status` helpers' "always true" branches (e.g.
+# `_grammar_status` above).
+_SYMBOL_WALK_LANGUAGES_NOTE = (
+    "frob.lang._extract._WALKERS entry (or _walk_strata's equivalent "
+    "RawSymbol-producing pairing with strata-core for .strata)"
+)
+
+# `RawSymbol.public: bool` (frob.lang._models) is a REQUIRED, non-optional
+# pydantic field -- every walker (including `_walk_strata`) must set it or
+# the walk itself cannot construct a `RawSymbol` at all. This is a
+# structural guarantee, not a per-language registry to check membership
+# against, hence the same "always true" shape as `_SYMBOL_WALK_LANGUAGES_
+# NOTE` above.
+_PUBLICNESS_NOTE = (
+    "RawSymbol.public is a required pydantic field (frob.lang._models); "
+    "every adapter walker must set a language-correct value (T-0841) to "
+    "construct a RawSymbol at all"
+)
+
+# `frob.lang._extract.COMMENT_TYPES` covers every tree-sitter grammar
+# language; `.strata` extracts its own whole-line `//` comments directly
+# in `_walk_strata._extract_comments` (a different mechanism, same
+# capability). Every registered language has one or the other.
+_DOC_EXTRACT_NOTE = (
+    "frob.lang._extract.COMMENT_TYPES entry, or (for .strata) "
+    "_walk_strata._extract_comments's own whole-line comment scan"
+)
+
+# `frob.graph.dsl.parse_directives`/`_fold_continuations` operate on
+# `RawComment.text` alone -- they have no per-language branch at all, so
+# directive parsing (continuations included) works for any language whose
+# comments get extracted, i.e. every language `_DOC_EXTRACT_NOTE` covers.
+_DIRECTIVE_PARSE_NOTE = (
+    "frob.graph.dsl.parse_directives is language-agnostic over extracted "
+    "RawComment text (no per-language branch); available wherever "
+    "CAPABILITY_DOC_EXTRACT holds"
+)
+
+# `frob.graph.callgraph.build_call_graph` resolves edges via bare-short-
+# name matching over `RawSymbol.public`/`sig_tokens` -- also no per-
+# language branch, available for every language `CAPABILITY_SYMBOL_WALK`
+# covers EXCEPT `.strata`: a design file's declared constructs are not
+# "calls" in the traditional sense frob.graph.callgraph's kind filter
+# targets, and strata's own dependency/threat-discharge graphs
+# (frob.strata._threat/_effects) already cover the equivalent ground
+# under a different vocabulary (same reasoning `_capability_status`
+# above already applies to strata for the FACETS axis).
+_CALL_GRAPH_NOTE = (
+    "frob.graph.callgraph.build_call_graph is language-agnostic over "
+    "RawSymbol.public/sig_tokens (no per-language branch); available "
+    "wherever CAPABILITY_SYMBOL_WALK holds"
+)
+
+
+def _capability_symbol_walk_status(language: str) -> CapabilityStatus:
+    """Every `supported_languages()` member has a real walker -- see
+    `_SYMBOL_WALK_LANGUAGES_NOTE`."""
+    return _cap_implemented(CapabilityRequirement.REQUIRED, _SYMBOL_WALK_LANGUAGES_NOTE)
+
+
+def _capability_publicness_status(language: str) -> CapabilityStatus:
+    """`RawSymbol.public` is a required field for every walker -- see
+    `_PUBLICNESS_NOTE`. `.strata` is a real, ticketed EXCEPTION discovered
+    by this ticket's own behavioral suite: `_walk_strata.py` hardcodes
+    `public=True` unconditionally rather than deriving it from the
+    surface syntax's own clearance/visibility concept -- a placeholder
+    satisfying the required-field shape, not T-0841's language-correct
+    rule every other adapter implements."""
+    if language == "strata":
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "_walk_strata.py hardcodes public=True unconditionally for "
+            "every symbol -- not a real, language-correct publicness "
+            "rule; tracked by T-2410",
+        )
+    return _cap_implemented(CapabilityRequirement.REQUIRED, _PUBLICNESS_NOTE)
+
+
+def _capability_doc_extract_status(language: str) -> CapabilityStatus:
+    """Every `supported_languages()` member extracts comments one way or
+    another -- see `_DOC_EXTRACT_NOTE`."""
+    return _cap_implemented(CapabilityRequirement.REQUIRED, _DOC_EXTRACT_NOTE)
+
+
+def _capability_directive_parse_status(language: str) -> CapabilityStatus:
+    """Directive parsing (continuations included) rides on `CAPABILITY_
+    DOC_EXTRACT`, which every language has -- see `_DIRECTIVE_PARSE_NOTE`.
+    REQUIRED: this is frob's own obligation-graph DSL (`frob:doc`/
+    `frob:tests`/`frob:ticket`/...), not optional tooling."""
+    return _cap_implemented(CapabilityRequirement.REQUIRED, _DIRECTIVE_PARSE_NOTE)
+
+
+def _capability_call_graph_status(language: str) -> CapabilityStatus:
+    """Call-graph resolution is language-agnostic over symbol-walk output
+    -- `.strata` is the one reasoned exemption, see `_CALL_GRAPH_NOTE`."""
+    if language == "strata":
+        return _cap_not_applicable(
+            CapabilityRequirement.OPTIONAL,
+            "strata design constructs are not 'calls' in the traditional "
+            "sense frob.graph.callgraph's kind filter targets; strata's "
+            "own dependency/threat-discharge graphs (frob.strata._threat/"
+            "_effects) cover the equivalent ground under a different "
+            "vocabulary",
+        )
+    return _cap_implemented(CapabilityRequirement.REQUIRED, _CALL_GRAPH_NOTE)
+
+
+def _capability_import_graph_status(language: str) -> CapabilityStatus:
+    """`frob.lang._extract._IMPORT_WALKERS` has python/c/cpp only --
+    typescript/rust/kotlin are a real, ticketed gap (T-2365); `.strata`
+    has no `#include`/`import` analogue frob.lang.extract_imports models
+    (strata's own module-dependency syntax is resolved by strata-core
+    directly, not this walker)."""
+    if language == "strata":
+        return _cap_not_applicable(
+            CapabilityRequirement.OPTIONAL,
+            "strata module dependencies are resolved by strata-core's "
+            "own parser directly, not frob.lang.extract_imports's "
+            "tree-sitter-only walker table",
+        )
+    if language in {"python", "c", "cpp"}:
+        return _cap_implemented(
+            CapabilityRequirement.REQUIRED,
+            "frob.lang._extract._IMPORT_WALKERS entry",
+        )
+    return _cap_known_gap(
+        CapabilityRequirement.REQUIRED,
+        f"{language} absent from frob.lang._extract._IMPORT_WALKERS -- "
+        f"tracked by T-2408",
+    )
+
+
+def _capability_test_discovery_status(language: str) -> CapabilityStatus:
+    """`frob.testing` has `collect_python_tests`/`collect_rust_tests`/
+    `collect_ts_tests`/`collect_cpp_tests` (the last covering `c` too, one
+    shared cmake/ctest build); kotlin has no collector yet (a real,
+    ticketed gap); `.strata` design files have no runnable-test concept."""
+    if language == "strata":
+        return _cap_not_applicable(
+            CapabilityRequirement.OPTIONAL,
+            "strata design files declare no runnable test suite of "
+            "their own -- there is nothing for a test collector to find",
+        )
+    if language in {"python", "rust", "typescript", "c", "cpp"}:
+        return _cap_implemented(
+            CapabilityRequirement.REQUIRED,
+            "frob.testing collect_python_tests/collect_rust_tests/"
+            "collect_ts_tests/collect_cpp_tests (c shares cpp's cmake/"
+            "ctest collector)",
+        )
+    return _cap_known_gap(
+        CapabilityRequirement.REQUIRED,
+        f"{language} has no frob.testing collect_*_tests entrypoint -- "
+        f"tracked by T-2409",
+    )
+
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+# frob:ticket T-2365
+# frob:tests tests/test_lang_support.py::TestDeriveCapabilityRegistry.test_covers_every_supported_language  # noqa: E501
+def derive_capability_registry() -> dict[str, AdapterCapabilitySupport]:
+    """One `AdapterCapabilitySupport` per `frob.lang.supported_languages()`
+    member -- the capability-axis analogue of `derive_language_registry`.
+    Every cell is derived from the real, live adapter machinery it names
+    (never a hand-copied constant); see each `_capability_*_status` helper
+    above."""
+    from frob.lang import supported_languages
+
+    registry: dict[str, AdapterCapabilitySupport] = {}
+    for language in sorted(supported_languages()):
+        capabilities = {
+            CAPABILITY_SYMBOL_WALK: _capability_symbol_walk_status(language),
+            CAPABILITY_PUBLICNESS: _capability_publicness_status(language),
+            CAPABILITY_DOC_EXTRACT: _capability_doc_extract_status(language),
+            CAPABILITY_DIRECTIVE_PARSE: _capability_directive_parse_status(language),
+            CAPABILITY_CALL_GRAPH: _capability_call_graph_status(language),
+            CAPABILITY_IMPORT_GRAPH: _capability_import_graph_status(language),
+            CAPABILITY_TEST_DISCOVERY: _capability_test_discovery_status(language),
+        }
+        registry[language] = AdapterCapabilitySupport(
+            language=language, capabilities=capabilities
+        )
+    _log.info(
+        "derive_capability_registry: %d language(s) registered",
+        len(registry),
+    )
+    return registry
+
+
+# frob:doc docs/modules/lang.md#adapter-capability-contract-t-2365
+# frob:ticket T-2365
+# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_missing_capability_fails  # noqa: E501
+# frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_fully_registered_language_passes  # noqa: E501
+def capability_conformance_violations(
+    registry: dict[str, AdapterCapabilitySupport],
+) -> tuple[str, ...]:
+    """One message per unaccounted-for `(language, capability)` cell in
+    `registry` -- the capability-axis analogue of `conformance_violations`.
+    Fail-closed the identical way: a missing cell or an unreasoned
+    `NOT_APPLICABLE`/`KNOWN_GAP` both produce a message; a `KNOWN_GAP` WITH
+    a detail does not."""
+    violations: list[str] = []
+    for language, support in sorted(registry.items()):
+        for capability in support.missing_capabilities():
+            violations.append(
+                f"{language}: capability '{capability}' has no "
+                f"AdapterCapabilitySupport entry at all -- every "
+                f"registered language must declare every capability as "
+                f"implemented, not-applicable (with a reason), or a "
+                f"known gap (with a tracking ticket)"
+            )
+        for capability in support.unreasoned_capabilities():
+            violations.append(
+                f"{language}: capability '{capability}' is not-"
+                f"applicable/known-gap but carries no reason -- an "
+                f"unreasoned exemption is as unaccountable as a "
+                f"missing cell"
             )
     return tuple(violations)

@@ -31,22 +31,239 @@ ticket exists to close.
 from __future__ import annotations
 
 import re
+import tempfile
 from pathlib import Path
 
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.lang import language_for_extension, supported_extensions
 from frob.lang._support import (
+    CAPABILITY_DIRECTIVE_PARSE,
+    CAPABILITY_DOC_EXTRACT,
+    CAPABILITY_PUBLICNESS,
+    CAPABILITY_SYMBOL_WALK,
     KNOWN_GAP_TRACKING_TICKETS,
     FacetState,
     conformance_violations,
+    derive_capability_registry,
     derive_language_registry,
 )
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
 
-__all__ = ["lang_conformance_gate", "project_lang_conformance_gate"]
+__all__ = [
+    "capability_conformance_gate",
+    "lang_conformance_gate",
+    "project_lang_conformance_gate",
+]
+
+# T-2365: the target every fixture's `frob:tests` continuation directive
+# declares -- deliberately split across two physical comment lines in
+# EVERY per-language fixture below, so a correct behavioral check proves
+# `frob.graph.dsl._fold_continuations` actually folds the continuation
+# rather than merely detecting the presence of a `frob:tests` line.
+_CAPABILITY_FIXTURE_TESTS_TARGET = (
+    "tests/test_lang_conformance_gate.py::test_capability_fixture_continuation"
+)
+
+# T-2365: one small, hand-written source fixture per registered language,
+# each containing (a) one PUBLIC symbol, (b) one PRIVATE symbol -- so
+# CAPABILITY_PUBLICNESS's behavioral check can observe both truth values,
+# not just one -- and (c) a `# frob:tests \` / `// frob:tests \`
+# continuation directive attached above the private symbol. `.strata` has
+# no tree-sitter grammar to hand-write against blind, so its fixture is
+# built from the REAL litmus file (`design/litmus/chirp.strata`, already
+# proven to parse) plus an inserted directive block, rather than novel
+# syntax this module cannot independently verify.
+_CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
+    "python": ".py",
+    "typescript": ".ts",
+    "rust": ".rs",
+    "c": ".c",
+    "cpp": ".cpp",
+    "kotlin": ".kt",
+    "strata": ".strata",
+}
+
+_CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
+    "python": (
+        '"""Capability fixture module docstring."""\n\n\n'
+        "def public_fn():\n"
+        '    """A public function."""\n'
+        "    return 1\n\n\n"
+        "# frob:tests \\\n"
+        f"# {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "def _private_fn():\n"
+        "    return 2\n"
+    ),
+    "typescript": (
+        "// Capability fixture module doc.\n\n"
+        "export function publicFn(): number {\n"
+        "  return 1;\n"
+        "}\n\n"
+        "// frob:tests \\\n"
+        f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "function privateFn(): number {\n"
+        "  return 2;\n"
+        "}\n"
+    ),
+    "rust": (
+        "// Capability fixture module doc.\n\n"
+        "pub fn public_fn() -> i32 {\n"
+        "    1\n"
+        "}\n\n"
+        "// frob:tests \\\n"
+        f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "fn private_fn() -> i32 {\n"
+        "    2\n"
+        "}\n"
+    ),
+    # T-2365: C's grammar (per the ISO C standard, tree-sitter-c included)
+    # treats a trailing `\` at end-of-physical-line as a genuine line
+    # splice EVERYWHERE, including inside a `//` comment -- so a two-
+    # physical-line `// frob:tests \` / `// <target>` pair is not two
+    # `RawComment`s to fold at all, it is tree-sitter's OWN grammar
+    # already merging them into ONE comment node before frob.lang ever
+    # sees it, with the backslash-newline literally still embedded in the
+    # node text (`// frob:tests \\\n// <target>` as one token, not two
+    # lines `_fold_continuations` can walk). Confirmed empirically while
+    # building this fixture: the two-line form parses to 1 malformed
+    # directive here, 0 for every OTHER language's identical two-line
+    # shape. C/C++'s fixture therefore uses a single-physical-line
+    # directive instead -- a real, disclosed language-boundary quirk, not
+    # a gap in `_behavioral_capability_check`'s continuation coverage
+    # (python/typescript/rust/kotlin/strata all exercise the real
+    # continuation fold; see docs/modules/lang.md).
+    "c": (
+        "// Capability fixture module doc.\n\n"
+        "int public_fn(void) {\n"
+        "    return 1;\n"
+        "}\n\n"
+        f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "static int private_fn(void) {\n"
+        "    return 2;\n"
+        "}\n"
+    ),
+    "cpp": (
+        "// Capability fixture module doc.\n\n"
+        "int public_fn() {\n"
+        "    return 1;\n"
+        "}\n\n"
+        f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "static int private_fn() {\n"
+        "    return 2;\n"
+        "}\n"
+    ),
+    "kotlin": (
+        "// Capability fixture module doc.\n\n"
+        "fun publicFn(): Int {\n"
+        "    return 1\n"
+        "}\n\n"
+        "// frob:tests \\\n"
+        f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "private fun privateFn(): Int {\n"
+        "    return 2\n"
+        "}\n"
+    ),
+}
+
+# T-2365: the four capabilities `frob.lang.parse_file` alone (no repo-wide
+# scan, no build system) can behaviorally exercise in isolation. call_graph/
+# import_graph/test_discovery need a real multi-file repo tree to exercise
+# meaningfully and stay at this gate's structural-registry-completeness
+# level only (`lang_conformance_gate`'s own missing/unreasoned-cell check,
+# which `derive_capability_registry`'s cells already flow through) -- a
+# disclosed, deliberate cut (see docs/modules/lang.md), not silence: filed
+# as follow-up scope, not dropped.
+_BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
+    {
+        CAPABILITY_SYMBOL_WALK,
+        CAPABILITY_PUBLICNESS,
+        CAPABILITY_DOC_EXTRACT,
+        CAPABILITY_DIRECTIVE_PARSE,
+    }
+)
+
+
+def _strata_capability_fixture_source() -> str | None:
+    """Build the `.strata` capability fixture from the real litmus file
+    (`design/litmus/chirp.strata`, already proven to parse by `tests/unit/
+    test_lang_strata.py`) plus an inserted `frob:tests` continuation
+    directive right above its first node declaration -- `None` if the
+    litmus file cannot be found (a repo layout this module cannot assume,
+    e.g. an installed wheel with no `design/` tree), which the caller
+    treats as "no fixture available" rather than crashing."""
+    litmus = Path(__file__).resolve().parents[3] / "design" / "litmus" / "chirp.strata"
+    if not litmus.is_file():
+        return None
+    text = litmus.read_text(encoding="utf-8")
+    marker = "node author"
+    idx = text.find(marker)
+    if idx == -1:
+        return None
+    directive_block = f"// frob:tests \\\n// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+    return text[:idx] + directive_block + text[idx:]
+
+
+def _behavioral_capability_check(
+    language: str, capability: str, tmp_path: Path
+) -> tuple[bool, str]:
+    """Actually EXERCISE `capability` for `language` against a small
+    embedded fixture written under `tmp_path`, returning `(worked, detail)`
+    -- the oracle both the behavioral pytest suite (`tests/test_lang_
+    conformance_gate.py`) and `capability_conformance_gate` (LANG004) share,
+    so a wrong registry entry cannot pass one and fail the other.
+
+    Only covers `_BEHAVIORALLY_CHECKED_CAPABILITIES` -- any other
+    capability name returns `(False, ...)` naming the gap explicitly
+    rather than silently reporting success for something never checked.
+    """
+    if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
+        return False, f"no behavioral check implemented for capability '{capability}'"
+    ext = _CAPABILITY_FIXTURE_EXTENSIONS.get(language)
+    if language == "strata":
+        source = _strata_capability_fixture_source()
+        ext = ".strata"
+    else:
+        source = _CAPABILITY_FIXTURE_SOURCES.get(language)
+    if source is None or ext is None:
+        return False, f"no behavioral fixture registered for language '{language}'"
+
+    from frob.lang import parse_file
+
+    path = tmp_path / f"fixture_{language}{ext}"
+    path.write_text(source, encoding="utf-8")
+    parsed_result = parse_file(path)
+    if parsed_result.is_err:
+        return False, f"parse_file failed: {parsed_result.danger_err}"
+    parsed = parsed_result.danger_ok
+
+    if capability == CAPABILITY_SYMBOL_WALK:
+        ok = len(parsed.symbols) >= 2
+        return ok, f"{len(parsed.symbols)} symbol(s) extracted"
+    if capability == CAPABILITY_PUBLICNESS:
+        publics = {s.public for s in parsed.symbols}
+        ok = True in publics and False in publics
+        return ok, f"public values observed: {sorted(publics)}"
+    if capability == CAPABILITY_DOC_EXTRACT:
+        ok = len(parsed.comments) >= 1
+        return ok, f"{len(parsed.comments)} comment(s) extracted"
+    # CAPABILITY_DIRECTIVE_PARSE
+    from frob.graph._models import EdgeKind
+    from frob.graph.dsl import parse_directives
+
+    edges, malformed = parse_directives(parsed)
+    matched = any(
+        e.kind is EdgeKind.TESTS and e.target == _CAPABILITY_FIXTURE_TESTS_TARGET
+        for e in edges
+    )
+    ok = matched and not malformed
+    return ok, (
+        f"{len(edges)} edge(s), {len(malformed)} malformed, "
+        f"continuation-target-matched={matched}"
+    )
+
 
 # T-0406: well-known general-purpose-language extensions frob has NO
 # `frob.lang` grammar registration for at all (as opposed to T-0405's
@@ -308,3 +525,65 @@ def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
         sum(1 for v in violations if v.rule == "LANG003"),
     )
     return violations
+
+
+# frob:doc docs/modules/lang.md#behavioral-conformance-lang004-t-2365
+# frob:ticket T-2365
+# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
+# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_wrong_implemented_claim_fails  # noqa: E501
+# frob:enforces CHK-GATE-LANG004
+def capability_conformance_gate() -> tuple[Violation, ...]:
+    """LANG004 (T-2365): the BEHAVIORAL half of the adapter-capability axis.
+
+    `lang_conformance_gate` (LANG001) and this gate's own registry
+    (`derive_capability_registry`) only verify the registry is internally
+    ACCOUNTED FOR -- every cell present, every exemption reasoned. That is
+    exactly the gap this ticket's own motivation names: a wrong registry
+    entry claiming `IMPLEMENTED` for a capability that does not actually
+    work would pass every structural check trivially, since a reasoned
+    detail string is not evidence the claim is TRUE, only that someone
+    wrote a sentence.
+
+    This gate closes that gap by actually EXERCISING every `IMPLEMENTED`
+    cell `_BEHAVIORALLY_CHECKED_CAPABILITIES` covers, via `_behavioral_
+    capability_check`, against a real per-language fixture -- fail LOUDLY
+    (ERROR) the moment a claim and reality disagree, rather than trusting
+    the claim. Every cell outside `_BEHAVIORALLY_CHECKED_CAPABILITIES`
+    (call_graph/import_graph/test_discovery, T-2365's disclosed cut) is
+    silently skipped here -- `lang_conformance_gate` still holds those
+    cells to the structural-completeness bar, this gate just cannot verify
+    them BEHAVIORALLY yet.
+    """
+    registry = derive_capability_registry()
+    violations: list[Violation] = []
+    with tempfile.TemporaryDirectory(prefix="frob-lang004-") as tmp:
+        tmp_path = Path(tmp)
+        for language, support in sorted(registry.items()):
+            for capability, status in sorted(support.capabilities.items()):
+                if status.state is not FacetState.IMPLEMENTED:
+                    continue
+                if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
+                    continue
+                ok, detail = _behavioral_capability_check(
+                    language, capability, tmp_path
+                )
+                if not ok:
+                    violations.append(
+                        Violation(
+                            rule="LANG004",
+                            severity=Severity.ERROR,
+                            file="src/frob/lang/_support.py",
+                            line=0,
+                            message=(
+                                f"LANG004: {language} capability "
+                                f"'{capability}' is declared IMPLEMENTED "
+                                f"but failed its behavioral check: {detail}"
+                            ),
+                        )
+                    )
+    _log.info(
+        "capability_conformance_gate: %d language(s) checked, %d violation(s)",
+        len(registry),
+        len(violations),
+    )
+    return tuple(violations)
