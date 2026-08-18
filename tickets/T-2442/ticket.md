@@ -1,7 +1,7 @@
 ---
 id: T-2442
 title: Add nested-worktree regression case to root-write-guard hook tests
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,6 +14,8 @@ scope:
 - tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/test_hook_root_write_guard.py::test_agent_write_inside_a_nested_worktree_is_allowed
 designated_repro_test: null
 threat: null
 component: null

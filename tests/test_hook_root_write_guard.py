@@ -46,8 +46,12 @@ def _git(args: list[str], cwd: Path) -> None:
 # frob:ticket T-2396
 def _make_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
     """Build a real throwaway git repo at `tmp_path/primary` with one real
-    linked worktree at `tmp_path/agent-wt`, and return both paths -- the
-    fixture every test in this file shares."""
+    linked worktree SITED AS A SIBLING at `tmp_path/agent-wt`, and return
+    both paths. T-2442: this topology alone is NOT this repo's real
+    deployment shape (worktrees here nest under `.claude/worktrees/`
+    INSIDE the primary checkout) -- keep this fixture for sibling-topology
+    coverage, but see `_make_repo_with_nested_worktree` below for the
+    shape that actually matters."""
     primary = tmp_path / "primary"
     primary.mkdir()
     _git(["init"], primary)
@@ -57,6 +61,33 @@ def _make_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
     _git(["add", "README.md"], primary)
     _git(["commit", "-m", "init"], primary)
     worktree = tmp_path / "agent-wt"
+    _git(["worktree", "add", "-b", "agent-branch", str(worktree)], primary)
+    return primary, worktree
+
+
+# frob:ticket T-2442
+def _make_repo_with_nested_worktree(tmp_path: Path) -> tuple[Path, Path]:
+    """Build a real throwaway git repo at `tmp_path/primary` with one real
+    linked worktree NESTED INSIDE the primary checkout, at
+    `primary/.claude/worktrees/agent-wt` -- this repo's actual deployment
+    topology (see this repo's own `.claude/worktrees/` layout). T-2396's
+    original fixture (`_make_repo_with_worktree`) only ever built the
+    SIBLING shape, so its positive control passed against the pre-fix
+    hook for the wrong reason: the pre-fix `..`-relpath-shape check
+    happens to also classify a sibling-sited worktree as non-primary even
+    with the bug present, and the bug (every write inside a NESTED
+    worktree misclassified as a root write) never got exercised. This
+    fixture reproduces the real topology instead of the abstract shape."""
+    primary = tmp_path / "primary"
+    primary.mkdir()
+    _git(["init"], primary)
+    _git(["config", "user.email", "t@example.com"], primary)
+    _git(["config", "user.name", "T"], primary)
+    (primary / "README.md").write_text("x\n", encoding="utf-8")
+    _git(["add", "README.md"], primary)
+    _git(["commit", "-m", "init"], primary)
+    worktree = primary / ".claude" / "worktrees" / "agent-wt"
+    worktree.parent.mkdir(parents=True)
     _git(["worktree", "add", "-b", "agent-branch", str(worktree)], primary)
     return primary, worktree
 
@@ -178,6 +209,26 @@ def test_agent_write_inside_its_own_worktree_is_allowed(tmp_path):
     """The normal, correct case: an agent context writing INSIDE its own
     leased worktree (not the primary checkout) is never refused."""
     primary, worktree = _make_repo_with_worktree(tmp_path)
+    result = _run_hook(
+        cwd=worktree,
+        file_path=worktree / "src.py",
+        env={"FROB_AGENT": "1", "FROB_WORKTREE": str(worktree)},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2442
+def test_agent_write_inside_a_nested_worktree_is_allowed(tmp_path):
+    """T-2442: the real deployment topology (worktree nested INSIDE the
+    primary checkout, per T-2412's fix commit 39039b5f3) -- an agent
+    write inside its own leased worktree there must be allowed, same as
+    the sibling-sited case above. This is the exact fixture gap that let
+    T-2396's original 9/9-green suite ship a hook denying every agent
+    write in the fleet's real worktree layout: this must FAIL against the
+    pre-fix hook (`git show 39039b5f3^:.claude/hooks/root-write-guard.py`)
+    and PASS against current."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_hook(
         cwd=worktree,
         file_path=worktree / "src.py",
