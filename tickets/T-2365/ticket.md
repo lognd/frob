@@ -73,7 +73,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d7a147d18c6c129c67987e3b4add9845cd198063
 ---
 Split from T-1599 after a 2026-08-17 re-measurement (recorded on the
 parent's own acceptance list via `frob ticket accept`, not hand-edited).
