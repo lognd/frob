@@ -25,6 +25,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2464: T-2464: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
 - T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
 - T-2467: T-2467: Reshape T-1614: periodic watermark-based waiver audit, drop runs_last
+- T-2469: T-2469: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
 - T-2470: T-2470: C++ ARCH symref producer spells qualnames with :: instead of frob's canonical . join
 - T-2473: T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
 - T-2476: T-2476: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001 has a doc entry
@@ -32,6 +33,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2482: T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)
 - T-2484: T-2484: T-2473's concurrent-check advisory writes to stdout, corrupting frob check --json under fleet load
 - T-2485: T-2485: waive-audit complete has no partial-catchup-progress path, defeating the 100-item bound
+- T-2488: T-2488: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001 SYS111)
 
 ## [0.530.0] - unreleased
 

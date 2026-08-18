@@ -141,53 +141,35 @@ class TestLexcheck001:
 
     #: T-2466's OWN widening surfaced 5 real, previously-unscanned
     #: LEXCHECK001 hits (module docstring's own T-2466 note) --
-    #: `src/frob/vet/_supplychain.py` decides from `re.search`/`re.match`
-    #: over TOML/JSON/YAML manifest text and builds a symref-less
-    #: `Violation` in five separate functions. Filed as T-2469
-    #: (renumbers at land) rather than fixed inline (out of T-2466's own
-    #: declared scope, `src/frob/gates/_lexical_selfcheck.py` and its own
-    #: test/doc, not `_supplychain.py`) -- mirrors the T-2348/`_wire001_
-    #: cli_dest_violations` precedent this test used to cite for the
-    #: identical situation. Named explicitly here (never a blind
-    #: `== []`) so this KNOWN backlog does not mask a genuinely NEW
-    #: offender landing anywhere else in the widened scope, and so
-    #: whoever fixes the follow-up ticket has one line to shrink back to
-    #: `== []` as the done-signal.
-    _KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG = frozenset(
-        {
-            ("src/frob/vet/_supplychain.py", "_pyproject_unpinned_violations"),
-            ("src/frob/vet/_supplychain.py", "_package_json_unpinned_violations"),
-            ("src/frob/vet/_supplychain.py", "_cargo_toml_unpinned_violations"),
-            ("src/frob/vet/_supplychain.py", "_python_install_artifact_violations"),
-            ("src/frob/vet/_supplychain.py", "_unpinned_ci_action_violations"),
-        }
-    )
+    #: `src/frob/vet/_supplychain.py` decided from `re.search`/`re.match`
+    #: over TOML/JSON/YAML manifest text and built a symref-less
+    #: `Violation` in five separate functions. T-2469 fixed all five at
+    #: the ROOT rather than allowlisting them: each detector now decides
+    #: from a REAL parse of its manifest format (`tomllib`/`json`/
+    #: `packaging.requirements.Requirement`/`ast`/`configparser`/`yaml`)
+    #: instead of a text regex, so `_supplychain.py` no longer imports
+    #: `re` at all -- mirrors the T-2348/`_wire001_cli_dest_violations`
+    #: precedent this test used to cite for the identical situation, one
+    #: level further: T-2348 kept the regex but added a `symref=`;
+    #: T-2469 removed the regex entirely. This backlog set is therefore
+    #: EMPTY again -- kept as a named (not deleted) frozenset so a FUTURE
+    #: regression in this same package restores it by name rather than
+    #: reaching for a blind `== []`.
+    _KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG: frozenset[tuple[str, str]] = frozenset()
 
-    def test_every_known_detector_package_module_stays_clean(self) -> None:
+    def test_supplychain_lexcheck001_backlog_is_empty_t2469(self) -> None:
         """This repo's OWN `DETECTOR_PACKAGE_ROOTS` scan (T-2466: widened
         past `src/frob/gates/**` alone to include `vet/`/`strata/`/
         `check/` too) against the real checkout (the same target the
         wired-in `lexcheck` stage evaluates at `frob check` time): every
         real instance this gate found during T-2344's own development is
-        either allowlisted (a stated class-(b) reason) or fixed outright,
-        with ONE disclosed exception -- `_KNOWN_SUPPLYCHAIN_LEXCHECK001_
-        BACKLOG` (see its own comment) -- filed rather than silently
-        allowlisted. `_wire001_cli_dest_violations` (T-2348) was the
-        earlier instance of this exact pattern: T-2348 raised it to a
-        semantic decision (`_config_external_forwarded_dest_names`'s
-        AST-parsed set) and split the regex-based diff-line extraction
-        into its own function (`_cli_dest_literals_in_added_lines`) so no
-        single function both regex-decides and builds a symref-less
-        `Violation` any more; the in-file `frob:waive LEXCHECK001` was
-        removed along with the fix, not left behind. `lexical_selfcheck_
-        gate` itself does not apply waivers (that is `frob check`'s own
-        outer pass, matching every other gate in this repo), so this
-        asserts the RAW finding set equals EXACTLY the known backlog --
-        a regression here means a NEW, unaccounted-for lexical decider
-        landed (or this one came back) in ANY of the widened scope's
-        packages, not just `gates/`, OR the known backlog shrank (in
-        which case narrow the backlog set, do not loosen this
-        assertion)."""
+        either allowlisted (a stated class-(b) reason) or fixed outright.
+        T-2469 fixed the last disclosed exception
+        (`_KNOWN_SUPPLYCHAIN_LEXCHECK001_BACKLOG`, see its own comment)
+        at the root, so this asserts the RAW finding set is EXACTLY
+        empty -- a regression here means a NEW, unaccounted-for lexical
+        decider landed in ANY of the widened scope's packages, not just
+        `gates/`."""
         from frob.gitio import repo_root
 
         root = repo_root(Path(__file__).parent).danger_ok

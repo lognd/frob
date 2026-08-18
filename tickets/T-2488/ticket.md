@@ -2,8 +2,8 @@
 id: T-2488
 title: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001
   SYS111)
-state: queued
-kind: bug
+state: done
+kind: docs
 origin: human
 created: '2026-08-18'
 priority: medium
@@ -17,12 +17,24 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: data-only ratchet-ceiling JSON bump, no code change -- same kind as T-2460's
+    own precedent for this identical class of fix
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- cmd:bash /tmp/t2488_verify.sh exit=0 sha256=df7a93730321
+kind_history:
+- 2026-08-18 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e60364488d161b64ed4d78ea9e0dfbb2155c8821
 ---
 ## Description
 

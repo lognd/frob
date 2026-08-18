@@ -68,7 +68,7 @@ evidence:
 - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
 - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_semantic_function_with_incidental_regex_is_silent
 - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_elementtree_find_is_not_a_trigger
-- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_detector_package_module_stays_clean
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
 - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_non_gate_code_never_scanned
 - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_scans_scope_is_disclosed_in_log
 - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_gates_vet_strata_check_are_members
@@ -93,12 +93,20 @@ acceptance:
   - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
   - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_semantic_function_with_incidental_regex_is_silent
   - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_elementtree_find_is_not_a_trigger
-  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_detector_package_module_stays_clean
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
   - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_non_gate_code_never_scanned
 - text: Given any LEXCHECK001 result, when it is emitted, then it names the scope
     actually scanned, so a count cannot be read as repo-wide when it is not.
   evidence:
   - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_scans_scope_is_disclosed_in_log
+evidence_changes:
+- old_node: tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_detector_package_module_stays_clean
+  new_node: tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
+  reason: T-2469 renamed this test (to give BUG002's own repro check an unambiguous
+    parent-absent node id) and fixed the 5 real lexical deciders it asserts against;
+    T-2466's own evidence must follow the rename in the same diff
+  actor: logan
+  at: '2026-08-18'
 threat: tampering
 component: gates
 anchor: false
