@@ -11658,6 +11658,123 @@ class TestFixEngineTierA:
         applied = fix_tick006_phantom_refile(root, queue)
         assert applied == []
 
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_id_on_merge_target_but_not_worktree_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2400 must-now-be-silent control: a citation whose id is NOT
+        in this worktree's own queue/archive, but IS present in
+        `merge_target_ids` (i.e. filed on main after this worktree was
+        cut), must not be treated as phantom."""
+        from frob.gates._fix_engine import (
+            MergeTargetKnownIds,
+            fix_tick006_phantom_refile,
+        )
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite a ticket that postdates this worktree")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        merge_target_ids = MergeTargetKnownIds(ids=frozenset({"T-2388"}), measured=True)
+        applied = fix_tick006_phantom_refile(root, queue, merge_target_ids)
+        assert applied == []
+
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2400 must-still-fire control: passing `merge_target_ids`
+        must not suppress filing for an id genuinely absent from BOTH
+        the worktree's own ledger AND the merge target -- proves the fix
+        did not simply disable the check."""
+        from frob.gates._fix_engine import (
+            MergeTargetKnownIds,
+            fix_tick006_phantom_refile,
+        )
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-deadbeef (recovery ticket) "
+                "as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite a genuinely phantom id")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        merge_target_ids = MergeTargetKnownIds(
+            ids=frozenset({"T-2388"}), measured=True
+        )
+        applied = fix_tick006_phantom_refile(root, queue, merge_target_ids)
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_not_measured_merge_target_files_nothing(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2400 NOT_MEASURED control: when the merge target's own
+        ledger could not be read, the handler must file NOTHING this
+        pass rather than guess -- concluding "phantom" from an
+        incomplete view is exactly the silent-wrong-answer class
+        doctrine T-2391 forbids, even for an id that WOULD otherwise
+        look phantom against this worktree's own view alone."""
+        from frob.gates._fix_engine import (
+            MergeTargetKnownIds,
+            fix_tick006_phantom_refile,
+        )
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite an id this pass cannot verify")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        merge_target_ids = MergeTargetKnownIds(ids=frozenset(), measured=False)
+        applied = fix_tick006_phantom_refile(root, queue, merge_target_ids)
+        assert applied == []
+
     # -- SYS111 capability-ratchet lock sync (T-2001) ----------------------
 
     def _init_git_repo(self, root: Path) -> None:

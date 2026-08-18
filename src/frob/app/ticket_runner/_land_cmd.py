@@ -17,6 +17,7 @@ import time
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typani.result import Err, Ok
 
@@ -35,6 +36,17 @@ from ._verify import (
     _python_for_tree,
     _shared_check_spawn_fn,
 )
+
+if TYPE_CHECKING:
+    # frob:ticket T-2400
+    # Type-only: `_resolve_merge_target_known_ids`'s return annotation
+    # needs this name resolvable for static analysis (ruff F821); the
+    # real import stays LOCAL to that function body (matching this
+    # module's existing lazy-import convention throughout), since
+    # `frob.gates._fix_engine` is a heavier import than this thin CLI
+    # command module wants to pay at module load time for every `frob`
+    # invocation, not just a land.
+    from frob.gates._fix_engine import MergeTargetKnownIds
 
 _log = get_logger("frob.app.ticket_runner")
 
@@ -136,7 +148,9 @@ def _land_touched_paths(worktree: Path, ticket_id: str) -> frozenset[str] | None
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_fmt_half_canonicalizes_a_non_canonical_directive  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_out_of_scope_file_with_noncanonical_directive_is_left_untouched  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestAbsorbPreLandFixes.test_in_scope_file_with_noncanonical_directive_is_still_fixed  # noqa: E501
-def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
+def _absorb_pre_land_fixes(
+    worktree: Path, ticket_id: str, root: Path | None = None
+) -> None:
     """`frob ticket land`'s T-1175 absorption step: run `frob fmt`
     (directive canonicalization) and the T-1138 Tier-A deterministic
     auto-fix handlers against `worktree`, BEFORE `land()`'s own merge/
@@ -175,11 +189,21 @@ def _absorb_pre_land_fixes(worktree: Path, ticket_id: str) -> None:
     STILL reported `LAND-PROOF verified=True`. The second call below is
     the load-bearing one: it is what makes a corrupting Tier-A handler
     structurally unable to publish, not just the one handler T-1900
-    happened to fix."""
+    happened to fix.
+
+    T-2400: `root` (the land's actual merge target, i.e. main -- `None`
+    defaults to `worktree`, matching every pre-T-2400 call site,
+    including this module's own test fixtures that pass only `worktree`)
+    is threaded to `_tier_a_pre_land_step` so TICK006's phantom-citation
+    handler can resolve a Done report's citation against main's CURRENT
+    ledger, not just this worktree's own pre-merge snapshot -- see that
+    function's own docstring for the false-positive incident this
+    closes."""
+    merge_root = root if root is not None else worktree
     touched_paths = _land_touched_paths(worktree, ticket_id)
     _fmt_pre_land_step(worktree, ticket_id, touched_paths)
     _assert_design_loads_pre_land(worktree, ticket_id, stage="pre-tier-a")
-    _tier_a_pre_land_step(worktree, ticket_id, touched_paths)
+    _tier_a_pre_land_step(worktree, ticket_id, touched_paths, merge_root)
     _assert_design_loads_pre_land(worktree, ticket_id, stage="post-tier-a")
 
 
@@ -330,12 +354,69 @@ def _worktree_natives_verifiably_healthy(worktree: Path) -> bool:
 
 # frob:ticket T-1323
 # frob:ticket T-1404
+# frob:ticket T-2400
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_measured_unions_active_and_archived_ids  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_unloadable_active_ledger_is_not_measured  # noqa: E501
+# frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_unloadable_archive_is_not_measured  # noqa: E501
+def _resolve_merge_target_known_ids(root: Path) -> "MergeTargetKnownIds":
+    """T-2400: read `root` (the land's actual merge target -- always the
+    primary checkout by this point, `_land_core_prepare`'s own `root`
+    local, resolved via `_resolve_land_root` before `_land_core` ever
+    runs) as it stands RIGHT NOW, on disk -- BEFORE this land's own merge
+    -- so TICK006's Tier-A handler can resolve a Done report's citation
+    against main's current ticket set, not just `worktree`'s possibly-
+    stale pre-merge view. A plain disk read (not a git-object snapshot
+    worktree, unlike `_spawn_baseline_snapshot_worktree`'s race-avoidance
+    concern for the CONCURRENT post-land baseline scan) is correct and
+    sufficient here: this call happens strictly before `land()`'s own
+    merge touches `root` at all, per playbook section on land-in-flight
+    exclusivity (only one land runs against a given `root` at a time).
+
+    `measured=False` (doctrine T-2391: never conclude absence from an
+    incomplete view) whenever EITHER `root`'s active ledger OR its
+    archive fails to load -- an archived-on-main id that this read could
+    not see would otherwise look phantom just as easily as a genuinely
+    nonexistent one, so both halves of the merge target's own view must
+    be readable before this can claim anything is truly absent."""
+    from frob.gates._fix_engine import MergeTargetKnownIds
+    from frob.tickets import load_active
+    from frob.tickets._store import load_archive
+
+    active_result = load_active(root)
+    archived_result = load_archive(root)
+    if active_result.is_err or archived_result.is_err:
+        _log.warning(
+            "ticket land: could not read the merge target's own ticket "
+            "ledger at %s for TICK006 phantom-citation resolution "
+            "(active=%s, archived=%s) -- treating as NOT_MEASURED, no "
+            "phantom-citation ticket will be filed this pass (T-2400)",
+            root,
+            active_result.err if active_result.is_err else "ok",
+            archived_result.err if archived_result.is_err else "ok",
+        )
+        return MergeTargetKnownIds(ids=frozenset(), measured=False)
+    ids = set(active_result.danger_ok.tickets) | set(archived_result.danger_ok)
+    return MergeTargetKnownIds(ids=frozenset(ids), measured=True)
+
+
 def _tier_a_pre_land_step(
-    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+    worktree: Path,
+    ticket_id: str,
+    touched_paths: frozenset[str] | None,
+    root: Path,
 ) -> None:
     """The Tier-A deterministic auto-fix half of `_absorb_pre_land_fixes`,
     logging and skipping when the graph or queue cannot load (a land
-    convenience, not a precondition)."""
+    convenience, not a precondition).
+
+    T-2400: `root` is the land's actual merge target (main); its own
+    ticket ledger is resolved once, here, via `_resolve_merge_target_
+    known_ids` and threaded to `apply_tier_a_fixes` so TICK006's Tier-A
+    handler can tell a genuinely nonexistent citation from one that
+    exists on `root` but postdates `worktree`'s own cut -- see
+    `frob.gates._fix_engine.fix_tick006_phantom_refile`'s docstring for
+    the false-positive incident (T-2382/T-2383, T-2398/T-2399, T-2404,
+    T-2439) this closes."""
     from frob.gates._fix_engine import apply_tier_a_fixes
     from frob.graph import build_graph
     from frob.tickets import load_active
@@ -421,12 +502,14 @@ def _tier_a_pre_land_step(
             "auto-rebuild attempt (T-1578)",
             ticket_id,
         )
+    merge_target_ids = _resolve_merge_target_known_ids(root)
     applied = apply_tier_a_fixes(
         worktree,
         snapshot_result.danger_ok,
         queue_result.danger_ok,
         exclude=exclude,
         ticket_id=ticket_id,
+        merge_target_ids=merge_target_ids,
     )
     if applied:
         _log.info(
@@ -4266,7 +4349,12 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # the exact same landed state a real run would produce) -- any file
     # rewritten here becomes an ordinary uncommitted change `land()`'s own
     # wip-commit step already picks up, so this needs no separate commit.
-    _absorb_pre_land_fixes(worktree, cfg.ticket_id)
+    # T-2400: `root` here is ALREADY the resolved primary checkout (T-1884
+    # -- `_resolve_land_root` runs once, up front in `_land`, before
+    # `_land_core`/`_land_core_prepare` are ever called), so it is exactly
+    # the merge target TICK006's Tier-A handler needs to resolve a
+    # citation against.
+    _absorb_pre_land_fixes(worktree, cfg.ticket_id, root)
 
     # frob:ticket T-1907
     touched_paths = _land_touched_paths(worktree, cfg.ticket_id)

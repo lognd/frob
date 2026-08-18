@@ -2,7 +2,7 @@
 id: T-2400
 title: TICK006 auto-files false phantom-citation tickets for ids that exist on main
   but postdate the worktree
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -56,19 +56,44 @@ triage_changes:
     real finding.'
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_id_on_merge_target_but_not_worktree_is_silent
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_not_measured_merge_target_files_nothing
+- tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_measured_unions_active_and_archived_ids
+- tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_active_ledger_is_not_measured
+- tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_archive_is_not_measured
 designated_repro_test: null
 acceptance:
 - text: Given a Done report citing a ticket that exists on main but was filed after
     the landing worktree was cut, when the land's TICK006 check runs, then it files
     no recovery ticket.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_id_on_merge_target_but_not_worktree_is_silent
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_not_measured_merge_target_files_nothing
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_measured_unions_active_and_archived_ids
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_active_ledger_is_not_measured
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_archive_is_not_measured
 - text: Given a Done report citing a genuinely nonexistent ticket id, when the same
     check runs, then it still files a recovery ticket, proving the fix did not simply
     disable the check.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_id_on_merge_target_but_not_worktree_is_silent
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_not_measured_merge_target_files_nothing
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_measured_unions_active_and_archived_ids
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_active_ledger_is_not_measured
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_archive_is_not_measured
 - text: Given the check cannot read the merge target's ledger, when it runs, then
     it reports NOT_MEASURED with a reason rather than concluding the citation is phantom.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_id_on_merge_target_but_not_worktree_is_silent
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_nonexistent_id_still_fires_with_merge_target
+  - tests/test_gates.py::TestFixEngineTierA::test_tick006_not_measured_merge_target_files_nothing
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_measured_unions_active_and_archived_ids
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_active_ledger_is_not_measured
+  - tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds::test_unloadable_archive_is_not_measured
 threat: null
 component: tickets
 anchor: false

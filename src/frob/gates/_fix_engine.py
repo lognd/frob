@@ -39,6 +39,8 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from frob.gates._fix_engine_scope import filter_fixes_by_scope_and_lease
 from frob.gates._fix_engine_shared import (
     FixApplied,
@@ -67,6 +69,36 @@ from frob.tickets import Ticket, TicketQueue
 from frob.tickets._provisional import is_draft_id
 
 _log = logging.getLogger(__name__)
+
+
+# frob:ticket T-2400
+# frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_id_on_merge_target_but_not_workt\
+# ree_is_silent kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_not_measured_merge_target_files_\
+# nothing kind="unit"
+class MergeTargetKnownIds(BaseModel):
+    """Ticket ids resolvable on `frob ticket land`'s merge target (the
+    primary checkout, i.e. main) at the moment the pre-land Tier-A batch
+    runs -- BEFORE this land's own merge, so `ids` reflects whatever a
+    sibling agent or the coordinator has filed on main in the meantime,
+    not just this worktree's possibly-stale snapshot (T-2400).
+
+    `measured=False` means the merge target's own active-ticket ledger
+    (or, for the stricter posture this model exists to support, its
+    archive) could not be loaded/parsed -- `fix_tick006_phantom_refile`
+    treats that as NOT_MEASURED (doctrine T-2391: never conclude a
+    citation is phantom from a view you could not fully read) and files
+    nothing for this pass rather than risk a false-positive recovery
+    ticket. `ids` is empty and meaningless whenever `measured` is
+    `False`; callers must check `measured` first."""
+
+    model_config = {}
+
+    ids: frozenset[str] = frozenset()
+    measured: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +361,11 @@ def _tick006_context_excerpt(done_report_text: str, tid: str) -> str:
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_tick006_known_id_is_never_touched \
 # kind="unit"
-def fix_tick006_phantom_refile(root: Path, queue: TicketQueue) -> list[FixApplied]:
+def fix_tick006_phantom_refile(
+    root: Path,
+    queue: TicketQueue,
+    merge_target_ids: MergeTargetKnownIds | None = None,
+) -> list[FixApplied]:
     """Tier-A fix: TICK006 (T-0726) flags a Done report's affirmative
     "filed" claim whose referenced id resolves to NO block anywhere --
     unlike TICK002 (a draft id that survived onto main and just needs
@@ -354,13 +390,40 @@ def fix_tick006_phantom_refile(root: Path, queue: TicketQueue) -> list[FixApplie
     violation, malformed evidence) -- the phantom citation is left
     exactly as TICK006 already reports it rather than silently rewritten
     to an id that was never actually filed, which would just create a
-    SECOND phantom."""
+    SECOND phantom.
+
+    T-2400: `root`/`queue` alone are `worktree`'s own pre-merge view --
+    correct for a bare `frob check --fix` (no `merge_target_ids`, `None`
+    default, byte-identical to pre-T-2400 behavior), but WRONG for `frob
+    ticket land`'s pre-merge Tier-A pass, which used to resolve a
+    citation's existence against this same stale view and file a
+    spurious recovery ticket for an id a sibling agent or the
+    coordinator had already filed on main after this worktree was cut
+    (four occurrences in one day: T-2382/T-2383, T-2398/T-2399, T-2404,
+    T-2439). `_tier_a_pre_land_step` now passes a `merge_target_ids`
+    resolved from the land's actual merge target, unioned into
+    `known_ids` here -- an id that exists on main but not yet in this
+    worktree's own ledger is no longer phantom. `measured=False` (the
+    merge target's own ledger could not be read) refuses to file
+    ANYTHING this pass rather than risk exactly that false positive
+    (doctrine T-2391) -- a genuinely phantom id just waits for the next
+    land attempt, when the merge target is hopefully readable again."""
     from frob.tickets._store import load_archive
 
+    if merge_target_ids is not None and not merge_target_ids.measured:
+        _log.warning(
+            "fix_tick006_phantom_refile: NOT_MEASURED -- the land merge "
+            "target's ticket ledger could not be read; skipping all "
+            "phantom-citation filing this pass rather than risk a false "
+            "positive (T-2400)"
+        )
+        return []
     archived = load_archive(root)
     known_ids = set(queue.tickets) | (
         set(archived.danger_ok) if archived.is_ok else set()
     )
+    if merge_target_ids is not None:
+        known_ids |= merge_target_ids.ids
     applied: list[FixApplied] = []
     for ticket in sorted(queue.tickets.values(), key=lambda t: t.id):
         applied.extend(_tick006_refile_for_ticket(root, ticket, known_ids))
@@ -516,53 +579,74 @@ def _fix_sys100_both_cases(root: Path) -> list[FixApplied]:
 #: Tier-A fix that structurally needs to know WHICH ticket is landing
 #: (there is no other way to derive that from `root`/`snapshot`/`queue`
 #: alone -- multiple tickets can be simultaneously open).
+#: T-2400: every handler now ALSO takes a 5th `merge_target_ids:
+#: MergeTargetKnownIds | None` argument, same uniform-shape precedent as
+#: T-1548's `ticket_id` -- `None` for a bare `frob check --fix` (no land
+#: merge target to resolve). Only `fix_tick006_phantom_refile` reads it,
+#: for the identical reason `ticket_id` above is read by only one
+#: handler: resolving a phantom citation against the land's actual merge
+#: target, not just this worktree's own stale ledger view.
 TIER_A_HANDLERS: dict[
-    str, Callable[[Path, GraphSnapshot, TicketQueue, "str | None"], list[FixApplied]]
+    str,
+    Callable[
+        [Path, GraphSnapshot, TicketQueue, "str | None", "MergeTargetKnownIds | None"],
+        list[FixApplied],
+    ],
 ] = {
-    "DOC007": lambda root, snapshot, queue, ticket_id: fix_doc007_dotted_form(
-        root, snapshot
+    "DOC007": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_doc007_dotted_form(root, snapshot)
     ),
-    "DOC002": lambda root, snapshot, queue, ticket_id: fix_doc002_unique_slug(
-        root, snapshot
+    "DOC002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_doc002_unique_slug(root, snapshot)
     ),
-    "FMT001": lambda root, snapshot, queue, ticket_id: fix_fmt001_directive_wrap(root),
+    "FMT001": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_fmt001_directive_wrap(root)
+    ),
     "SUPPRESS001": (
-        lambda root, snapshot, queue, ticket_id: fix_suppress001_paired_suppression(
-            root, snapshot
+        lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+            fix_suppress001_paired_suppression(root, snapshot)
         )
     ),
-    "REG010": lambda root, snapshot, queue, ticket_id: fix_reg010_registry_sync(root),
+    "REG010": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_reg010_registry_sync(root)
+    ),
     "DOCENUM001": (
-        lambda root, snapshot, queue, ticket_id: fix_docenum001_enumerates_sync(
-            root, snapshot
+        lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+            fix_docenum001_enumerates_sync(root, snapshot)
         )
     ),
-    "REL002": lambda root, snapshot, queue, ticket_id: fix_rel002_release_sync(root),
-    "SYS100": lambda root, snapshot, queue, ticket_id: _fix_sys100_both_cases(root),
+    "REL002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_rel002_release_sync(root)
+    ),
+    "SYS100": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        _fix_sys100_both_cases(root)
+    ),
     # frob:ticket T-2001
     # Runs immediately after SYS100 (dict order, `apply_tier_a_fixes`'
     # own docstring): the ratchet-sync handler's BEFORE-vs-CURRENT
     # attribution depends on SYS100's own via-list widening already
     # having happened on disk in THIS SAME pass.
     "SYS111": (
-        lambda root, snapshot, queue, ticket_id: fix_sys111_capability_ratchet_sync(
-            root
+        lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+            fix_sys111_capability_ratchet_sync(root)
         )
     ),
-    "E501": lambda root, snapshot, queue, ticket_id: fix_e501_merge_introduced(root),
+    "E501": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_e501_merge_introduced(root)
+    ),
     "COV002": (
-        lambda root, snapshot, queue, ticket_id: fix_cov002_ticket_directive_insertion(
-            root, snapshot, queue, ticket_id
+        lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+            fix_cov002_ticket_directive_insertion(root, snapshot, queue, ticket_id)
         )
     ),
-    "TICK002": lambda root, snapshot, queue, ticket_id: fix_tick002_renumber(
-        root, queue
+    "TICK002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_tick002_renumber(root, queue)
     ),
-    "TICK006": lambda root, snapshot, queue, ticket_id: fix_tick006_phantom_refile(
-        root, queue
+    "TICK006": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_tick006_phantom_refile(root, queue, merge_target_ids)
     ),
-    "WAIVE004": lambda root, snapshot, queue, ticket_id: fix_waive004_stale_waiver(
-        root, snapshot, queue
+    "WAIVE004": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
+        fix_waive004_stale_waiver(root, snapshot, queue)
     ),
 }
 
@@ -615,6 +699,7 @@ def apply_tier_a_fixes(
     queue: TicketQueue,
     exclude: tuple[str, ...] = (),
     ticket_id: str | None = None,
+    merge_target_ids: MergeTargetKnownIds | None = None,
 ) -> list[FixApplied]:
     """Apply every Tier-A deterministic fix this batch ships (T-1138,
     T-1177, T-1261) via `TIER_A_HANDLERS`, in that dict's declared order
@@ -670,14 +755,22 @@ def apply_tier_a_fixes(
     `_fix_engine_scope._revert_fix_file`'s own docstring for why `HEAD`
     silently discarded real, uncommitted, in-scope work when this
     function runs (as it always does, T-1175) BEFORE `frob ticket
-    land`'s own pre-land wip-commit step."""
+    land`'s own pre-land wip-commit step.
+
+    T-2400: `merge_target_ids`, when given (only by `frob ticket land`'s
+    pre-land call site), is threaded to every handler alongside
+    `ticket_id` -- only `fix_tick006_phantom_refile` reads it, to
+    resolve a Done report's citation against the land's actual merge
+    target instead of just this (possibly stale) worktree ledger. `None`
+    for a bare `frob check --fix`, byte-identical to pre-T-2400
+    behavior."""
     applied: list[FixApplied] = []
     pre_fix_snapshot = _snapshot_dirty_files(root)
     for rule_id, handler in TIER_A_HANDLERS.items():
         if rule_id in exclude:
             _log.info("tier-a fixes: %s excluded by caller", rule_id)
             continue
-        fixes = handler(root, snapshot, queue, ticket_id)
+        fixes = handler(root, snapshot, queue, ticket_id, merge_target_ids)
         kept, skipped = filter_fixes_by_scope_and_lease(
             root, queue, ticket_id, fixes, pre_fix_snapshot
         )

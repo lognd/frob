@@ -31,6 +31,7 @@ from frob.app.ticket_runner._land_cmd import (
     _post_land_unscoped_error_sweep,
     _pre_commit_unscoped_error_sweep,
     _print_land_proof,
+    _resolve_merge_target_known_ids,
     _worktree_branch_name,
     land_parity_findings,
 )
@@ -415,6 +416,80 @@ class TestAbsorbPreLandFixes:
         assert rewritten != original
         for line in rewritten.splitlines():
             assert len(line) <= 88
+
+
+# frob:ticket T-2400
+class TestResolveMergeTargetKnownIds:
+    """T-2400's merge-target ledger read (`_resolve_merge_target_known_
+    ids`): a plain disk read of `root` (the land's actual merge target)
+    right before this land's own merge -- `measured=True` and the union
+    of active+archived ids when both load; `measured=False` (never a
+    guessed-empty set) when either fails."""
+
+    def test_measured_unions_active_and_archived_ids(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_measured_unions_active_and_archived_ids  # noqa: E501
+        created = new_ticket(repo, _spec("active ticket on main"))
+        assert created.is_ok
+        active_id = created.danger_ok.id
+        _commit_all(repo, "file an active ticket")
+
+        import datetime
+
+        from frob.tickets._models import Ticket
+        from frob.tickets._store import write_archived_ticket
+
+        archived_ticket = Ticket(
+            id="T-9999",
+            title="an archived ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=datetime.date(2026, 1, 1),
+            body="## Done report\n\nAlready archived.\n",
+        )
+        archive_result = write_archived_ticket(repo, archived_ticket)
+        assert archive_result.is_ok
+        _commit_all(repo, "archive T-9999")
+
+        result = _resolve_merge_target_known_ids(repo)
+        assert result.measured is True
+        assert active_id in result.ids
+        assert "T-9999" in result.ids
+
+    def test_unloadable_active_ledger_is_not_measured(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_unloadable_active_ledger_is_not_measured  # noqa: E501
+        from typani.result import Err
+
+        from frob.tickets._models import TicketError
+
+        monkeypatch.setattr(
+            "frob.tickets.load_active", lambda _root: Err(TicketError.MalformedFrontmatter)
+        )
+        result = _resolve_merge_target_known_ids(repo)
+        assert result.measured is False
+        assert result.ids == frozenset()
+
+    def test_unloadable_archive_is_not_measured(
+        self, repo: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/test_ticket_work_and_land_finish.py::TestResolveMergeTargetKnownIds.test_unloadable_archive_is_not_measured  # noqa: E501
+        # A readable active ledger alone is NOT enough to claim
+        # `measured=True` -- an id archived on main that this read cannot
+        # see would otherwise look phantom just as easily as a genuinely
+        # nonexistent one (doctrine T-2391: never conclude absence from
+        # an incomplete view).
+        from typani.result import Err
+
+        from frob.tickets._models import TicketError
+
+        monkeypatch.setattr(
+            "frob.tickets._store.load_archive", lambda _root: Err(TicketError.MalformedFrontmatter)
+        )
+        result = _resolve_merge_target_known_ids(repo)
+        assert result.measured is False
+        assert result.ids == frozenset()
 
 
 # frob:ticket T-1796
