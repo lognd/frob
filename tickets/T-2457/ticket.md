@@ -11,10 +11,30 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_pii_structural/**
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_pii_structural/**
+  reason: The dangerous-ops needle table that produces the false fs.write match lives
+    in the structural-capability detector under gates/_pii_structural/; design/frob.strata
+    is required because the fix must also REMOVE the seven false declarations it forced,
+    which is acceptance criterion [2] and not separable from the detector change.
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: design/frob.strata
+  reason: The dangerous-ops needle table that produces the false fs.write match lives
+    in the structural-capability detector under gates/_pii_structural/; design/frob.strata
+    is required because the fix must also REMOVE the seven false declarations it forced,
+    which is acceptance criterion [2] and not separable from the detector change.
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a module whose only filesystem access is open(path, 'rb'), when the
