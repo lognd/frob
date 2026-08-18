@@ -12,10 +12,151 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- /home/logan/projects/frob/scripts/fleet_status.py
-- /home/logan/projects/frob/tests/test_ticket_land.py
+- scripts/fleet_status.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: /home/logan/projects/frob/scripts/fleet_status.py
+  reason: 'Repairing scope corruption: T-2308 was auto-filed by the post-land sweep
+
+    generator with ABSOLUTE filesystem paths in scope (e.g.
+
+    /home/logan/projects/frob/scripts/fleet_status.py) instead of repo-
+
+    relative ones. This crashes EVERY `frob ticket new` invocation repo-wide
+
+    (NotImplementedError: Non-relative patterns are unsupported, thrown from
+
+    Path.glob inside _new.py::_expand_scope_globs_to_paths when it walks
+
+    other queued/in-progress tickets'' scope globs for the overlap-warning
+
+    check) -- a fleet-wide outage of ticket filing. T-1753/T-1756 have the
+
+    same corruption but are state=done and excluded from the live overlap
+
+    check, so they are harmless; T-2308 is queued (non-terminal) and is the
+
+    one live offender found via a full non-terminal-state scan. Replacing the
+
+    two absolute-path entries with their repo-relative equivalents (same
+
+    files, same intent) restores `frob ticket new` for the whole fleet without
+
+    changing what T-2308 actually covers. Filed under T-2331''s own emergency
+
+    Done report (this crash blocked filing T-2331''s own child ticket).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: /home/logan/projects/frob/tests/test_ticket_land.py
+  reason: 'Repairing scope corruption: T-2308 was auto-filed by the post-land sweep
+
+    generator with ABSOLUTE filesystem paths in scope (e.g.
+
+    /home/logan/projects/frob/scripts/fleet_status.py) instead of repo-
+
+    relative ones. This crashes EVERY `frob ticket new` invocation repo-wide
+
+    (NotImplementedError: Non-relative patterns are unsupported, thrown from
+
+    Path.glob inside _new.py::_expand_scope_globs_to_paths when it walks
+
+    other queued/in-progress tickets'' scope globs for the overlap-warning
+
+    check) -- a fleet-wide outage of ticket filing. T-1753/T-1756 have the
+
+    same corruption but are state=done and excluded from the live overlap
+
+    check, so they are harmless; T-2308 is queued (non-terminal) and is the
+
+    one live offender found via a full non-terminal-state scan. Replacing the
+
+    two absolute-path entries with their repo-relative equivalents (same
+
+    files, same intent) restores `frob ticket new` for the whole fleet without
+
+    changing what T-2308 actually covers. Filed under T-2331''s own emergency
+
+    Done report (this crash blocked filing T-2331''s own child ticket).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: scripts/fleet_status.py
+  reason: 'Repairing scope corruption: T-2308 was auto-filed by the post-land sweep
+
+    generator with ABSOLUTE filesystem paths in scope (e.g.
+
+    /home/logan/projects/frob/scripts/fleet_status.py) instead of repo-
+
+    relative ones. This crashes EVERY `frob ticket new` invocation repo-wide
+
+    (NotImplementedError: Non-relative patterns are unsupported, thrown from
+
+    Path.glob inside _new.py::_expand_scope_globs_to_paths when it walks
+
+    other queued/in-progress tickets'' scope globs for the overlap-warning
+
+    check) -- a fleet-wide outage of ticket filing. T-1753/T-1756 have the
+
+    same corruption but are state=done and excluded from the live overlap
+
+    check, so they are harmless; T-2308 is queued (non-terminal) and is the
+
+    one live offender found via a full non-terminal-state scan. Replacing the
+
+    two absolute-path entries with their repo-relative equivalents (same
+
+    files, same intent) restores `frob ticket new` for the whole fleet without
+
+    changing what T-2308 actually covers. Filed under T-2331''s own emergency
+
+    Done report (this crash blocked filing T-2331''s own child ticket).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'Repairing scope corruption: T-2308 was auto-filed by the post-land sweep
+
+    generator with ABSOLUTE filesystem paths in scope (e.g.
+
+    /home/logan/projects/frob/scripts/fleet_status.py) instead of repo-
+
+    relative ones. This crashes EVERY `frob ticket new` invocation repo-wide
+
+    (NotImplementedError: Non-relative patterns are unsupported, thrown from
+
+    Path.glob inside _new.py::_expand_scope_globs_to_paths when it walks
+
+    other queued/in-progress tickets'' scope globs for the overlap-warning
+
+    check) -- a fleet-wide outage of ticket filing. T-1753/T-1756 have the
+
+    same corruption but are state=done and excluded from the live overlap
+
+    check, so they are harmless; T-2308 is queued (non-terminal) and is the
+
+    one live offender found via a full non-terminal-state scan. Replacing the
+
+    two absolute-path entries with their repo-relative equivalents (same
+
+    files, same intent) restores `frob ticket new` for the whole fleet without
+
+    changing what T-2308 actually covers. Filed under T-2331''s own emergency
+
+    Done report (this crash blocked filing T-2331''s own child ticket).
+
+    '
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null

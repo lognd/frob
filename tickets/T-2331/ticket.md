@@ -2,7 +2,7 @@
 id: T-2331
 title: 'post-land sweep regression from T-2299: 32 new (rule, file) identit(ies),
   89 finding(s) (ARCH001, ARCH103, COV001, COV003)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -12,31 +12,142 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- design
-- docs/commands/release.md
-- docs/design/gate-semantics-classification.md
-- docs/guides/coordinator-scripts.md
-- docs/modules/cli.md
-- scripts/fleet_status.py
-- src/frob/app/telemetry.py
-- src/frob/app/ticket_runner/_land_cmd.py
-- src/frob/app/ticket_runner/_new.py
-- src/frob/app/ticket_runner/_rapid_sweep.py
-- src/frob/app/verify_runner.py
-- src/frob/gates/_debt_deprecated.py
-- src/frob/gates/_fmt_directives.py
-- src/frob/release/_cli.py
-- src/frob/tickets/_land_git_ops.py
-- src/frob/verify/_drain.py
-- src/frob/verify/_quarantine.py
-- tests/test_release.py
 - tickets.md
-- tickets/T-1205
-- tickets/T-1235
-- tickets/T-1397
-- tickets/T-1526
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: design
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/commands/release.md
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/design/gate-semantics-classification.md
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/guides/coordinator-scripts.md
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/modules/cli.md
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: scripts/fleet_status.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/telemetry.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/verify_runner.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/gates/_debt_deprecated.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/gates/_fmt_directives.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/release/_cli.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/verify/_drain.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/verify/_quarantine.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tests/test_release.py
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1205
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1235
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1397
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1526
+  reason: measurement/dispositioning only -- not fixing code in this ticket; real
+    fixes tracked in child ticket, pre-existing fold-ins go to owning tickets
+  actor: logan
+  at: '2026-08-17'
 designated_repro_test: null
 threat: null
 component: null
@@ -119,3 +230,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-17: 27/32 claimed identities genuinely reproduce, 5/32 stale (see Done report); real work is a multi-file refactor filed as child (renumbers at land); pre-existing findings already attributed to closed tickets T-2242/T-2310/T-2178 recorded in Done report; dropping this auto-filed sweep ticket in favor of the properly-scoped child rather than forcing a fix through (absorbed by T-2341)
