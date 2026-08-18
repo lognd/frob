@@ -11,8 +11,38 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_fix_engine.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_gates.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: 'TICK006 phantom-citation false positive: resolve known ids against the
+    land merge target, not just the worktree/archive'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'TICK006 phantom-citation false positive: resolve known ids against the
+    land merge target, not just the worktree/archive'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'TICK006 phantom-citation false positive: resolve known ids against the
+    land merge target, not just the worktree/archive'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: 'TICK006 phantom-citation false positive: resolve known ids against the
+    land merge target, not just the worktree/archive'
+  actor: logan
+  at: '2026-08-18'
 triage_changes:
 - field: priority
   old_value: high
