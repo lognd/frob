@@ -2484,6 +2484,157 @@ class TestCollectCppTests:
         assert result.danger_err == TestingError.CollectFailed
 
 
+# frob:ticket T-2409
+class TestCollectKotlinTests:
+    """T-2409: already-produced JUnit XML report node ids for gradle
+    projects declaring the kotlin plugin -- mirrors TestCollectCppTests's
+    "read what already exists, never build here" structure."""
+
+    # frob:ticket T-2409
+    def _write_project(self, root: Path, *, build_filename: str = "build.gradle.kts") -> None:
+        contents = (
+            'plugins {\n    kotlin("jvm") version "1.9.0"\n}\n'
+            if build_filename.endswith(".kts")
+            else "apply plugin: 'kotlin'\n"
+        )
+        _write(root, f"app/{build_filename}", contents)
+        _write(
+            root,
+            "app/src/test/kotlin/FooTest.kt",
+            "class FooTest {\n    fun testBar() {}\n}\n",
+        )
+        _write(
+            root,
+            "app/build/test-results/test/TEST-com.example.FooTest.xml",
+            '''<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.FooTest" tests="1">
+  <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
+</testsuite>
+''',
+        )
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_parses_and_caches(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        self._write_project(tmp_path)
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"app/src/test/kotlin/FooTest.kt::com.example.FooTest.testBar"}
+        )
+
+        result2 = collect_kotlin_tests(tmp_path)
+        assert result2.is_ok
+        assert result2.danger_ok.node_ids == result.danger_ok.node_ids
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_groovy_plugin_form(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        self._write_project(tmp_path, build_filename="build.gradle")
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"app/src/test/kotlin/FooTest.kt::com.example.FooTest.testBar"}
+        )
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_no_projects_is_ok_empty(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_unreported_project_is_ok_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # a kotlin gradle project that has never run its tests (no
+        # build/test-results/test/ yet) must degrade to empty, not error --
+        # this collector never invokes gradle itself to produce one.
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        _write(
+            tmp_path,
+            "app/build.gradle.kts",
+            'plugins {\n    kotlin("jvm") version "1.9.0"\n}\n',
+        )
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_falls_back_when_source_unresolvable(
+        self, tmp_path: Path
+    ) -> None:
+        # no matching FooTest.kt/.java under src/test/{kotlin,java} ->
+        # report-dir-anchored fallback node id, never a dropped test.
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        _write(
+            tmp_path,
+            "app/build.gradle.kts",
+            'plugins {\n    kotlin("jvm") version "1.9.0"\n}\n',
+        )
+        _write(
+            tmp_path,
+            "app/build/test-results/test/TEST-com.example.FooTest.xml",
+            '''<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.FooTest" tests="1">
+  <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
+</testsuite>
+''',
+        )
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"app::com.example.FooTest.testBar"}
+        )
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_skips_malformed_report(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        self._write_project(tmp_path)
+        _write(tmp_path, "app/build/test-results/test/TEST-broken.xml", "<not-xml")
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset(
+            {"app/src/test/kotlin/FooTest.kt::com.example.FooTest.testBar"}
+        )
+
+    # frob:ticket T-2409
+    def test_collect_kotlin_tests_non_kotlin_gradle_project_is_ok_empty(
+        self, tmp_path: Path
+    ) -> None:
+        # a plain java gradle project (no kotlin plugin declared) with a
+        # JUnit report must not be picked up by the kotlin collector.
+        # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
+        from frob.testing._collect import collect_kotlin_tests
+
+        _write(tmp_path, "app/build.gradle.kts", 'plugins {\n    java\n}\n')
+        _write(
+            tmp_path,
+            "app/build/test-results/test/TEST-com.example.FooTest.xml",
+            '''<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.FooTest" tests="1">
+  <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
+</testsuite>
+''',
+        )
+        result = collect_kotlin_tests(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.node_ids == frozenset()
+
+
 # frob:ticket T-0587
 class TestFindCmakeProjects:
     # frob:ticket T-0587

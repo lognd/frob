@@ -18,6 +18,7 @@ _CACHE_REL = Path(".frob") / "pytest-collect.json"
 _RUST_CACHE_REL = Path(".frob") / "cargo-collect.json"
 _TS_CACHE_REL = Path(".frob") / "vitest-collect.json"
 _CTEST_CACHE_REL = Path(".frob") / "ctest-collect.json"
+_KOTLIN_CACHE_REL = Path(".frob") / "kotlin-junit-collect.json"
 _COLLECT_TIMEOUT_S = 300.0
 
 

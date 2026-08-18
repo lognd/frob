@@ -53,6 +53,17 @@ from frob.testing._collect_cpp import (  # noqa: F401
     _run_ctest_list,
     collect_cpp_tests,
 )
+from frob.testing._collect_kotlin import (  # noqa: F401
+    _find_junit_report_dirs,
+    _find_kotlin_gradle_projects,
+    _find_kotlin_source,
+    _gradle_build_uses_kotlin,
+    _junit_report_dir,
+    _kotlin_content_key,
+    _kotlin_node_id,
+    _parse_junit_xml,
+    collect_kotlin_tests,
+)
 from frob.testing._collect_rust import (  # noqa: F401
     _CARGO_TEST_LINE_RE,
     _NO_LIB_TARGET_RE,
@@ -74,6 +85,7 @@ from frob.testing._collect_shared import (  # noqa: F401
     _CACHE_REL,
     _COLLECT_TIMEOUT_S,
     _CTEST_CACHE_REL,
+    _KOTLIN_CACHE_REL,
     _RUST_CACHE_REL,
     _TS_CACHE_REL,
     _load_cache,
@@ -592,6 +604,7 @@ def _collection_cache_key(root: Path, natives: tuple[NativeSpec, ...]) -> str:
 
 __all__ = [
     "collect_cpp_tests",
+    "collect_kotlin_tests",
     "collect_python_tests",
     "collect_rust_tests",
     "collect_ts_tests",
