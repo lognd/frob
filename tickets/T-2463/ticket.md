@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a7b9dcb7abb36670841c96ea6b8023989cd09b94
 ---
 T-2457 fixed the dangerous-ops capability detector's mode-blind `open(`
 needle (a bare read-mode `open(path, "rb")` used to satisfy the `fs.write`
