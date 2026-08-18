@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5f01c7b01120786a08316d1bd004533eb8f5ddf2
 ---
 User directive 2026-08-18: `confined to` must be STATICALLY PROVABLE. A
 declaration nobody can check is a comment with syntax.
