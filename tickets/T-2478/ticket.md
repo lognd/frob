@@ -13,7 +13,6 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_query.py
-- src/frob/gates/__init__.py
 - src/frob/gates/_dup_graph_schema.py
 - src/frob/verify/_worker.py
 - src/frob/vet/_capability.py
@@ -21,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: T-2462 holds a live lease on this file; will --add back and fix once it
+    clears
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
