@@ -611,6 +611,78 @@
       "old_digest": null,
       "reason": "T-2351: now captures a pre-handler dirty-file snapshot once via _snapshot_dirty_files before the Tier-A handler loop, threading it to filter_fixes_by_scope_and_lease so a disqualified fix reverts to the ticket's own pre-handler state instead of HEAD. Verified via the full TestFixEngineScopeLease/TestFixEngineTierA suite (43 tests passing) plus the manual must-fail-then-pass check against the pre-fix code.\n",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "6ac90a428c52b1c57a4320b92fbbd34765fb71cec85afafbb3c84cc82c166135",
+      "old_digest": null,
+      "reason": "T-2345 land-time fix: split the blank-identity-drop logic out of _parse_error_findings_from_json into a new helper _error_finding_identity to satisfy ARCH001's line-count threshold (land refused at 90 lines). No behavior change -- same 3 tests still pass unchanged.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "old_digest": null,
+      "reason": "T-2345 land-time fix: split the blank-identity-drop logic out of _parse_error_findings_from_json into a new helper _error_finding_identity to satisfy ARCH001's line-count threshold (land refused at 90 lines). No behavior change -- same 3 tests still pass unchanged.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "aabf09452ad2ffcf552c309deb9bc4a155bec364180fd24ce7870b89e2083267",
+      "old_digest": null,
+      "reason": "T-2345: new symbol, extracted from _parse_error_findings_from_json to satisfy ARCH001. Verified via TestParseErrorFindingsFromJsonDropsBlankIdentity (3 tests, all passing) which exercises this helper indirectly through the parent function's public contract.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "ed6b426d8749a18c11b9e81727b355c7308a843979671b339c2be91dcfd47dc4",
+      "old_digest": null,
+      "reason": "T-2345: new symbol, extracted from _parse_error_findings_from_json to satisfy ARCH001. Verified via TestParseErrorFindingsFromJsonDropsBlankIdentity (3 tests, all passing) which exercises this helper indirectly through the parent function's public contract.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "1b4e3befb99e6974bb16fa02c3a51faf56701fee6055ac754518c7dc41a95c62",
+      "old_digest": "6ac90a428c52b1c57a4320b92fbbd34765fb71cec85afafbb3c84cc82c166135",
+      "reason": "T-2345 land-time follow-up: further split to satisfy ARCH001 (still 64 lines after the first split). Extracted _collect_error_findings. No behavior change -- same 3 tests still pass.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "old_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "reason": "T-2345 land-time follow-up: further split to satisfy ARCH001 (still 64 lines after the first split). Extracted _collect_error_findings. No behavior change -- same 3 tests still pass.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "8e5718390e19a3602eeb02d1dd8fa67eef028d78e8dcb0ecc3f9a97b13e3b971",
+      "old_digest": null,
+      "reason": "T-2345 land-time follow-up: further split to satisfy ARCH001 (still 64 lines after the first split). Extracted _collect_error_findings. No behavior change -- same 3 tests still pass.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "79d7da51842eac76ba4dfb821970e116bb285967a16f560010a34ae5ad59b1e7",
+      "old_digest": null,
+      "reason": "T-2345 land-time follow-up: further split to satisfy ARCH001 (still 64 lines after the first split). Extracted _collect_error_findings. No behavior change -- same 3 tests still pass.\n",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
     }
   ],
   "entries": [
@@ -703,6 +775,36 @@
       "digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "digest": "8e5718390e19a3602eeb02d1dd8fa67eef028d78e8dcb0ecc3f9a97b13e3b971",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
+    },
+    {
+      "digest": "79d7da51842eac76ba4dfb821970e116bb285967a16f560010a34ae5ad59b1e7",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_collect_error_findings"
+    },
+    {
+      "digest": "aabf09452ad2ffcf552c309deb9bc4a155bec364180fd24ce7870b89e2083267",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "digest": "ed6b426d8749a18c11b9e81727b355c7308a843979671b339c2be91dcfd47dc4",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
+    },
+    {
+      "digest": "1b4e3befb99e6974bb16fa02c3a51faf56701fee6055ac754518c7dc41a95c62",
+      "facet": "body",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "facet": "sig",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
     },
     {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",

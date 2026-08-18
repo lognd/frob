@@ -969,7 +969,10 @@ def _parse_error_findings_from_json(
     shape silently violate. Reading `code`/`file` directly off the
     `Diagnostic` model is immune to how any tool chooses to RENDER
     itself, by construction -- there is no shape left to drift out of
-    sync with."""
+    sync with.
+
+    T-2345: `_error_finding_identity` drops a diagnostic with a blank
+    identity instead of returning one -- see its own docstring."""
     results = data["results"]
     deferred = _budget_deferred_stage_groups(results)
     if deferred:
@@ -983,14 +986,65 @@ def _parse_error_findings_from_json(
             ", ".join(deferred),
         )
         return None
+    return _collect_error_findings(ticket_id, results)
+
+
+# frob:ticket T-2345
+def _collect_error_findings(
+    ticket_id: str, results: list
+) -> frozenset[tuple[str, str]]:
+    """Every error-severity diagnostic's `(code, file)` identity across
+    every `ToolResult` in `results`, via `_error_finding_identity` (which
+    drops a both-empty diagnostic loudly rather than returning a fake
+    `("", "")` member) -- split out of `_parse_error_findings_from_json`
+    (T-2345, T-2214's ARCH001 long-function budget) so that function
+    stays under the line-count threshold."""
     findings: set[tuple[str, str]] = set()
     for r in results:
         if not isinstance(r, dict):
             continue
+        tool_name = (
+            r.get("tool") if isinstance(r.get("tool"), str) else "<unknown tool>"
+        )
         for d in r.get("diagnostics", ()):
             if isinstance(d, dict) and d.get("severity") == "error":
-                findings.add((d.get("code") or "", d.get("file") or ""))
+                identity = _error_finding_identity(ticket_id, tool_name, d)
+                if identity is not None:
+                    findings.add(identity)
     return frozenset(findings)
+
+
+# frob:ticket T-2345
+def _error_finding_identity(
+    ticket_id: str, tool_name: str, diagnostic: dict
+) -> tuple[str, str] | None:
+    """One error-severity `diagnostic`'s `(code, file)` identity, or
+    `None` when BOTH fields are empty/missing -- split out of
+    `_parse_error_findings_from_json`'s own loop (T-2345, T-2214's
+    ARCH001 long-function budget) so that function stays under the
+    line-count threshold.
+
+    A both-empty diagnostic is malformed at its own SOURCE (the `tool`
+    that emitted it), not a real `(rule, file)` identity -- this was the
+    actual upstream source of the blank-identity defect T-2313 fixed
+    downstream in `_rapid_sweep.py::_normalize_identities` (a
+    defense-in-depth filter at ONE consumer, not the entry point).
+    Dropped here loudly (a WARNING naming the emitting tool), never
+    silently, so the real defect stays traceable back to its source."""
+    code = diagnostic.get("code") or ""
+    file = diagnostic.get("file") or ""
+    if not code and not file:
+        _log.warning(
+            "ticket %s: dropping an error-severity diagnostic with BOTH "
+            "code and file empty/missing from tool %r -- this is a "
+            "malformed diagnostic at its own source, not a real (rule, "
+            "file) identity: %r",
+            ticket_id,
+            tool_name,
+            diagnostic,
+        )
+        return None
+    return (code, file)
 
 
 # frob:ticket T-0846

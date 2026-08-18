@@ -2,7 +2,7 @@
 id: T-2345
 title: _parse_error_findings_from_json can add a genuinely identity-less (rule, file)
   pair (T-2313's root cause, out of its scope)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,15 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/_verify.py
+evidence_scope:
+- tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_blank_identity_diagnostic_is_dropped_not_added
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_drop_is_logged_naming_the_emitting_tool
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_a_diagnostic_with_only_file_set_is_kept
+designated_repro_test: tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity::test_blank_identity_diagnostic_is_dropped_not_added
 threat: null
 component: null
 anchor: false

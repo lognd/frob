@@ -731,3 +731,90 @@ class TestSharedCheckSpawnFn:
         env_items = cast("dict[str, str]", env_raw)
         assert env_items.get("FROB_ALLOW_FULL_CHECK") == "1"
         assert env_items.get("T2076_MARKER") == "present"
+
+
+# frob:ticket T-2345
+class TestParseErrorFindingsFromJsonDropsBlankIdentity:
+    """T-2345: `_parse_error_findings_from_json` was the actual SOURCE of
+    the blank-identity defect T-2313 fixed one layer downstream (in
+    `_rapid_sweep.py::_normalize_identities`, a consumer-side filter). Any
+    error-severity diagnostic with BOTH `code` and `file` empty/missing
+    used to become a genuine `("", "")` member of the returned set here;
+    it must now be dropped, loudly (a WARNING naming the emitting tool),
+    at this actual entry point instead."""
+
+    # frob:ticket T-2345
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity.test_blank_identity_diagnostic_is_dropped_not_added  # noqa: E501
+    def test_blank_identity_diagnostic_is_dropped_not_added(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Positive control 1 (T-2345): a diagnostic with both `code` and
+        `file` empty/missing does NOT appear as `("", "")` in the parsed
+        set -- this MUST FAIL on main (the old code unconditionally added
+        it)."""
+        import logging
+
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        data = {
+            "results": [
+                {
+                    "tool": "some-crashing-tool",
+                    "diagnostics": [
+                        {"severity": "error"},  # both code and file missing
+                        {"severity": "error", "code": "RULE1", "file": "a.py"},
+                    ],
+                }
+            ]
+        }
+        with caplog.at_level(logging.WARNING):
+            findings = _parse_error_findings_from_json("T-0001", data)
+        assert findings == frozenset({("RULE1", "a.py")})
+        assert ("", "") not in (findings or frozenset())
+
+    # frob:ticket T-2345
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity.test_drop_is_logged_naming_the_emitting_tool  # noqa: E501
+    def test_drop_is_logged_naming_the_emitting_tool(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Must-still-pass control: the drop is LOUD, not silent -- a
+        WARNING names the tool that emitted the malformed diagnostic, so
+        the real defect (a diagnostic missing its own identity) is
+        traceable back to its source."""
+        import logging
+
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        data = {
+            "results": [
+                {
+                    "tool": "some-crashing-tool",
+                    "diagnostics": [{"severity": "error"}],
+                }
+            ]
+        }
+        with caplog.at_level(logging.WARNING):
+            _parse_error_findings_from_json("T-0001", data)
+        messages = "\n".join(r.getMessage() for r in caplog.records)
+        assert "some-crashing-tool" in messages
+        assert "T-0001" in messages
+
+    # frob:ticket T-2345
+    # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJsonDropsBlankIdentity.test_a_diagnostic_with_only_file_set_is_kept  # noqa: E501
+    def test_a_diagnostic_with_only_file_set_is_kept(self) -> None:
+        """Must-still-pass control: a diagnostic with only ONE of the two
+        fields populated (a real, if unusual, identity) is still kept --
+        this fix targets the BOTH-empty case specifically, not any
+        partially-empty one."""
+        from frob.app.ticket_runner._verify import _parse_error_findings_from_json
+
+        data = {
+            "results": [
+                {
+                    "tool": "some-tool",
+                    "diagnostics": [{"severity": "error", "file": "only_file.py"}],
+                }
+            ]
+        }
+        findings = _parse_error_findings_from_json("T-0001", data)
+        assert findings == frozenset({("", "only_file.py")})
