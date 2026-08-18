@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 43791e5c5149634379237c60958855d71623d625
 ---
 T-2321 added 3 distinct `frob:waive PERF008 reason="..."` comments in
 `src/frob/app/ticket_runner/_land_cmd.py`, two with DIFFERENT reason
