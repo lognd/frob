@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.515.0] - unreleased
+
+- T-2406: deferred verification drains self-refuse and discard: 49% of post-land sweeps never run
+
 ## [0.514.0] - unreleased
 
 - T-2429: T-2390 child: validate [[native]] table against a declared schema

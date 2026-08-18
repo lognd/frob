@@ -33,6 +33,20 @@ class TestBuildStatus:
         assert status.watermark_commit is None
         assert status.quarantine_raised is False
         assert status.quarantine_findings == ()
+        assert status.drains_refused_since_watermark == 0
+        assert status.last_drain_refused_at is None
+
+    def test_reports_drains_refused_since_watermark(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"
+        # T-2406 criterion 4: a drain refusal must be observable via
+        # `frob verify status`, never silently invisible.
+        from frob.verify._drain import record_drain_refusal
+
+        record_drain_refusal(tmp_path, ticket_id="T-8999")
+        status = build_status(tmp_path)
+        assert status is not None
+        assert status.drains_refused_since_watermark == 1
+        assert status.last_drain_refused_at is not None
 
     def test_reports_depth_age_and_quarantine(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/verify_runner.py::build_status kind="unit"

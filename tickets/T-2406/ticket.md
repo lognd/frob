@@ -2,7 +2,7 @@
 id: T-2406
 title: 'deferred verification drains self-refuse and discard: 49% of post-land sweeps
   never run'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,25 +11,108 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/verify/_drain.py
+- src/frob/verify/__init__.py
+- src/frob/tickets/_leases.py
+- src/frob/app/verify_runner.py
+- tests/unit/verify/test_drain.py
+- tests/unit/verify/test_verify_runner.py
+- tests/test_ticket_leases.py
+- docs/modules/tickets-verify-sweep.md
+- design/frob.strata
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_drain.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/verify/__init__.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/verify_runner.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/verify/test_drain.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/verify/test_verify_runner.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: 'T-2406: self-refusal + drop-instead-of-queue fix touches the drain, its
+    lease-scan probe, and frob verify status'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: T-2406 lands doc updates in this file's automatic-watermark-drain and frob-verify-cli
+    sections
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: design/frob.strata
+  reason: T-2406 adds two new capability observations (env.read in cli, fs.read in
+    verify) that need declaring in the self-audit model
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: frob.lock
+  reason: frob ack src/frob/verify/_drain.py::run_drain_async writes the digest-ack
+    record here
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/verify/test_drain.py::TestRunDrainAsync::test_excludes_its_own_originating_land_pid
+- tests/unit/verify/test_drain.py::TestRunDrainAsync::test_a_genuinely_different_land_is_recorded_not_discarded
+- tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd::test_green_round_advances_watermark_a_subsequent_round_sees
+- tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_reports_drains_refused_since_watermark
+- tests/unit/verify/test_drain.py::TestRunDrainAsync::test_declines_while_a_land_is_in_progress
+- tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd::test_a_round_that_runs_clears_a_prior_refusal_record
 designated_repro_test: null
 acceptance:
 - text: Given a post-land drain spawned by its own land, when it starts, then it excludes
     that originating land from its process scan and runs, rather than self-refusing.
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_drain.py::TestRunDrainAsync::test_excludes_its_own_originating_land_pid
 - text: Given a drain refused because a genuinely different land is running, when
     it declines, then the request is queued or retried rather than discarded, and
     the pending entry is observable via frob verify status.
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_drain.py::TestRunDrainAsync::test_a_genuinely_different_land_is_recorded_not_discarded
 - text: Given a completed land, when its deferred sweep finishes, then the verify
     watermark commit_sha has advanced, asserted on the watermark value and not on
     exit status.
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd::test_green_round_advances_watermark_a_subsequent_round_sees
 - text: Given a drain that is genuinely blocked, when frob verify status runs, then
     it reports the count of drains refused since the watermark, so the condition cannot
     be silently invisible.
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_verify_runner.py::TestBuildStatus::test_reports_drains_refused_since_watermark
 threat: null
 component: verify
 anchor: false

@@ -381,7 +381,7 @@ wheels = [
 
 [[package]]
 name = "frob"
-version = "0.514.0"
+version = "0.515.0"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },

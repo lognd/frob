@@ -719,6 +719,24 @@
       "old_digest": null,
       "reason": "T-2165: rewired to key on _identity_scoped_state_key instead of _tree_state_key. Verified via TestRevalidateDispatchableSweepTickets: the new test_cache_hits_across_a_head_move_when_candidate_files_are_unchanged confirms only 1 spawn across 2 calls with an intervening unrelated land, and the new test_uncommitted_edit_to_candidate_file_still_forces_a_respawn confirms the pre-existing test_second_call_same_tree_reuses_cache_no_second_spawn's soundness guarantee still holds (2 spawns when the candidate's own file genuinely changes, even uncommitted).\n",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "840bbfa8a0a6e45abc92dd5c83c386e2cf9fdc1d776ff4c14361328d770ab3b1",
+      "old_digest": "4e5ff73e41f4ff27bf2dd4d3705f67a9a3e8c3080911899777e13d9953ed7607",
+      "reason": "T-2406: signature/body updated to add exclude_pid/land_ticket_id/wait_timeout_s and the self-refusal + queue-instead-of-discard fix; doc section (automatic watermark drain) updated in the same change",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "0c86754badbd98d23b5140e6b40667c6ffc96f959cb2eb3cdc5f67d1e7b5aade",
+      "old_digest": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
+      "reason": "T-2406: signature/body updated to add exclude_pid/land_ticket_id/wait_timeout_s and the self-refusal + queue-instead-of-discard fix; doc section (automatic watermark drain) updated in the same change",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
     }
   ],
   "entries": [
@@ -1663,12 +1681,12 @@
       "ref": "src/frob/tickets/clipboard.py::clipboard_image"
     },
     {
-      "digest": "4e5ff73e41f4ff27bf2dd4d3705f67a9a3e8c3080911899777e13d9953ed7607",
+      "digest": "840bbfa8a0a6e45abc92dd5c83c386e2cf9fdc1d776ff4c14361328d770ab3b1",
       "facet": "body",
       "ref": "src/frob/verify/_drain.py::run_drain_async"
     },
     {
-      "digest": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
+      "digest": "0c86754badbd98d23b5140e6b40667c6ffc96f959cb2eb3cdc5f67d1e7b5aade",
       "facet": "sig",
       "ref": "src/frob/verify/_drain.py::run_drain_async"
     },

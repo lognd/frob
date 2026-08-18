@@ -45,13 +45,17 @@ class TestRunDrainAsync:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests src/frob/verify/_drain.py::run_drain_async kind="unit"
-        # Positive control (2): a drain declines to start while a land is
-        # in flight -- and never falls through to run_coalesced_
-        # verification at all (no queuing, no retry).
+        # Must-still-refuse (T-2406): a GENUINELY different land (no
+        # exclude_pid given, so nothing is exempted) still declines to
+        # run concurrently -- and never falls through to
+        # run_coalesced_verification at all. wait_timeout_s=0 keeps the
+        # test fast: the bounded wait/retry itself is exercised by
+        # `refuse_if_land_in_progress`'s own test suite, not re-tested
+        # here.
         monkeypatch.setattr(
             leases_mod,
             "_probe_land_once",
-            lambda root, *, quiet: Err(LeaseError.LandInProgress),
+            lambda root, *, quiet, **kw: Err(LeaseError.LandInProgress),
         )
         calls: list[Path] = []
         monkeypatch.setattr(
@@ -59,10 +63,80 @@ class TestRunDrainAsync:
             "run_coalesced_verification",
             lambda root, **kw: calls.append(root) or Ok(WorkerOutcome(status="empty")),
         )
-        result = run_drain_async(tmp_path)
+        result = run_drain_async(tmp_path, land_ticket_id="T-9001", wait_timeout_s=0.0)
         assert result.is_err
         assert result.danger_err is DrainError.LandInProgress
         assert calls == []
+
+    def test_a_genuinely_different_land_is_recorded_not_discarded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_drain.py::run_drain_async kind="unit"
+        # T-2406 criterion 1/4: a refusal caused by a genuinely different
+        # land is OBSERVABLE afterward via `load_drain_refusal`, never
+        # silently discarded the way the pre-fix "not queuing, not
+        # retrying" log line was.
+        from frob.verify._drain import load_drain_refusal
+
+        monkeypatch.setattr(
+            leases_mod,
+            "_probe_land_once",
+            lambda root, *, quiet, **kw: Err(LeaseError.LandInProgress),
+        )
+        assert load_drain_refusal(tmp_path) is None
+
+        result = run_drain_async(tmp_path, land_ticket_id="T-9001", wait_timeout_s=0.0)
+        assert result.is_err
+
+        refusal = load_drain_refusal(tmp_path)
+        assert refusal is not None
+        assert refusal.refused_since_watermark == 1
+        assert refusal.last_refused_ticket_id == "T-9001"
+
+        # A second refusal increments the SAME record rather than
+        # overwriting it with a fresh count of 1.
+        run_drain_async(tmp_path, land_ticket_id="T-9001", wait_timeout_s=0.0)
+        refusal = load_drain_refusal(tmp_path)
+        assert refusal is not None
+        assert refusal.refused_since_watermark == 2
+
+    def test_excludes_its_own_originating_land_pid(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_drain.py::run_drain_async kind="unit"
+        # Must-now-run (T-2406): a drain spawned BY its own land (the
+        # SAME pid the process scan would otherwise find still running,
+        # e.g. mid-cleanup) must run rather than self-refuse, once that
+        # pid is passed as `exclude_pid`. This proves the exemption is
+        # scoped to the ONE pid given, not "any land": the fake probe
+        # below still refuses for every OTHER pid.
+        seen_exclude_pids: list[int | None] = []
+
+        def _fake_probe(root, *, quiet, exclude_pid=None):  # noqa: ANN001, ANN201
+            seen_exclude_pids.append(exclude_pid)
+            if exclude_pid == 424242:
+                return Ok(None)
+            return Err(LeaseError.LandInProgress)
+
+        monkeypatch.setattr(leases_mod, "_probe_land_once", _fake_probe)
+        calls: list[Path] = []
+        monkeypatch.setattr(
+            worker_mod,
+            "run_coalesced_verification",
+            lambda root, **kw: calls.append(root) or Ok(WorkerOutcome(status="empty")),
+        )
+
+        result = run_drain_async(tmp_path, exclude_pid=424242)
+        assert result.is_ok
+        assert len(calls) == 1
+        assert 424242 in seen_exclude_pids
+
+        # A DIFFERENT exclude_pid (a genuinely different land, not this
+        # drain's own originating one) still refuses.
+        result_other = run_drain_async(
+            tmp_path, exclude_pid=999, wait_timeout_s=0.0
+        )
+        assert result_other.is_err
 
     def test_never_blocks_or_loops_over_the_backlog(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -71,7 +145,7 @@ class TestRunDrainAsync:
         # Must-still-pass (4): run_coalesced_verification is called
         # EXACTLY ONCE per run_drain_async invocation -- never a loop.
         monkeypatch.setattr(
-            leases_mod, "_probe_land_once", lambda root, *, quiet: Ok(None)
+            leases_mod, "_probe_land_once", lambda root, *, quiet, **kw: Ok(None)
         )
         calls: list[Path] = []
 
@@ -137,7 +211,7 @@ class TestDrainAdvancesWatermarkEndToEnd:
     ) -> None:
         # frob:tests src/frob/verify/_drain.py::run_drain_async kind="unit"
         monkeypatch.setattr(
-            leases_mod, "_probe_land_once", lambda root, *, quiet: Ok(None)
+            leases_mod, "_probe_land_once", lambda root, *, quiet, **kw: Ok(None)
         )
         record_intent(
             tmp_path,
@@ -171,6 +245,51 @@ class TestDrainAdvancesWatermarkEndToEnd:
         assert watermark.danger_ok is not None
         assert watermark.danger_ok.commit_sha == "c1"
 
+    def test_a_round_that_runs_clears_a_prior_refusal_record(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests src/frob/verify/_drain.py::run_drain_async kind="unit"
+        # T-2406 criterion 4's complement: once a drain actually RUNS
+        # (the "genuinely blocked" state is resolved), the refused-
+        # since-watermark counter resets to zero rather than staying
+        # stuck reporting a stale count forever.
+        from frob.verify._drain import load_drain_refusal, record_drain_refusal
+
+        record_drain_refusal(tmp_path, ticket_id="T-8999")
+        seeded = load_drain_refusal(tmp_path)
+        assert seeded is not None
+        assert seeded.refused_since_watermark == 1
+
+        monkeypatch.setattr(
+            leases_mod, "_probe_land_once", lambda root, *, quiet, **kw: Ok(None)
+        )
+        record_intent(
+            tmp_path,
+            commit_sha="c1",
+            ticket_id="T-0001",
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        from frob.app.ticket_runner import _rapid_sweep
+
+        _rapid_sweep._write_baseline(tmp_path, frozenset({("RULE1", "a.py")}), "seed")
+
+        real_run = worker_mod.run_coalesced_verification
+
+        def _green(root, **kw):  # noqa: ANN001, ANN201
+            return real_run(
+                root, verify_fn=lambda r, sha: frozenset({("RULE1", "a.py")})
+            )
+
+        monkeypatch.setattr(worker_mod, "run_coalesced_verification", _green)
+
+        result = run_drain_async(tmp_path)
+        assert result.is_ok
+
+        refusal = load_drain_refusal(tmp_path)
+        assert refusal is not None
+        assert refusal.refused_since_watermark == 0
+
     def test_unmeasurable_round_leaves_watermark_untouched_not_corrupt(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -180,7 +299,7 @@ class TestDrainAdvancesWatermarkEndToEnd:
         # actually killing a process) leaves a VALID watermark -- here,
         # a pre-existing one is untouched, never rolled back or torn.
         monkeypatch.setattr(
-            leases_mod, "_probe_land_once", lambda root, *, quiet: Ok(None)
+            leases_mod, "_probe_land_once", lambda root, *, quiet, **kw: Ok(None)
         )
         advance_watermark(
             tmp_path, commit_sha="c0", run_id="seed-run", baseline_digest="seed"

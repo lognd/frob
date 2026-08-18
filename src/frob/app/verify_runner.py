@@ -87,6 +87,17 @@ class VerifyStatus(BaseModel):
     quarantine_raised: bool
     quarantine_batch_commit_shas: tuple[str, ...]
     quarantine_findings: tuple[VerifyQuarantineFindingView, ...]
+    #: T-2406: `DrainRefusalRecord.refused_since_watermark` -- how many
+    #: deferred-drain attempts have refused (a genuinely different land
+    #: was still running after the full wait budget) since the watermark
+    #: last advanced. `0` when there is no record (nothing has ever
+    #: refused, or the counter was cleared by a drain that actually ran)
+    #: -- never `None`, so this always renders and can never be silently
+    #: invisible the way the pre-fix condition was measured to be.
+    drains_refused_since_watermark: int
+    #: ISO-8601 UTC timestamp of the most recent refusal, or `None` if
+    #: `drains_refused_since_watermark` is `0`.
+    last_drain_refused_at: str | None
 
 
 def _resolve_root(cfg: AppConfig) -> Path:
@@ -143,52 +154,33 @@ def _load_status_inputs(root: Path):  # noqa: ANN201
 # frob:doc docs/modules/tickets-verify-sweep.md#frob-verify-cli-t-1697
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_depth_age_and_quarantine kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_clean_when_nothing_queued_and_no_quarantine kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_drains_refused_since_watermark kind="unit"  # noqa: E501
 def build_status(root: Path) -> VerifyStatus | None:
     """Assemble one `VerifyStatus` snapshot for `root`, or `None` on an
     unreadable queue/quarantine store -- "cannot verify is never verified"
     (T-1686's standing invariant) applies to reading this state too: an
     unreadable store must never render as an empty, healthy-looking
     status."""
-    import time
-
     loaded = _load_status_inputs(root)
     if loaded is None:
         return None
     entries, wm, record = loaded
 
-    now = time.time()
-    watermark_age_s = None
-    if wm is not None:
-        parsed = _parse_iso(wm.verified_at)
-        if parsed is not None:
-            watermark_age_s = max(0.0, now - parsed)
-
-    commit_gap: int | None = None
-    if wm is not None:
-        from frob.verify import commits_since_watermark
-
-        commit_gap = commits_since_watermark(root, wm.commit_sha)
+    watermark_age_s, commit_gap = _watermark_age_and_gap(root, wm)
 
     from frob.verify import rapid_soft_warning
 
     soft_warning = rapid_soft_warning(root)
 
-    oldest_age_s = None
-    oldest_commit = None
-    oldest_ticket = None
-    if entries:
-        oldest = entries[0]
-        oldest_commit = oldest.commit_sha
-        oldest_ticket = oldest.ticket_id
-        parsed = _parse_iso(oldest.enqueued_at)
-        if parsed is not None:
-            oldest_age_s = max(0.0, now - parsed)
+    oldest_age_s, oldest_commit, oldest_ticket = _oldest_unverified_fields(entries)
 
     raised = record is not None and record.cleared_at is None
     batch_shas: tuple[str, ...] = record.batch_commit_shas if raised and record else ()
     findings = (
         tuple(_finding_view(f) for f in record.findings) if raised and record else ()
     )
+
+    refused_count, refused_at = _drain_refusal_fields(root)
 
     return VerifyStatus(
         watermark_commit=wm.commit_sha if wm else None,
@@ -202,7 +194,26 @@ def build_status(root: Path) -> VerifyStatus | None:
         quarantine_raised=raised,
         quarantine_batch_commit_shas=batch_shas,
         quarantine_findings=findings,
+        drains_refused_since_watermark=refused_count,
+        last_drain_refused_at=refused_at,
     )
+
+
+# frob:ticket T-2406
+# frob:tests tests/unit/verify/test_verify_runner.py::TestBuildStatus.test_reports_drains_refused_since_watermark kind="unit"  # noqa: E501
+def _drain_refusal_fields(root: Path) -> tuple[int, str | None]:
+    """`build_status`'s `(drains_refused_since_watermark, last_drain_
+    refused_at)` pair (T-2406), split out to keep `build_status` under
+    the ARCH001 threshold: `(0, None)` when `frob.verify.load_drain_
+    refusal` has nothing to report, matching `VerifyStatus`'s own "never
+    invisible, defaults to zero rather than `None`" contract for this
+    field."""
+    from frob.verify import load_drain_refusal
+
+    refusal = load_drain_refusal(root)
+    if refusal is None:
+        return 0, None
+    return refusal.refused_since_watermark, refusal.last_refused_at
 
 
 def _parse_iso(value: str) -> float | None:
@@ -216,6 +227,42 @@ def _parse_iso(value: str) -> float | None:
         return datetime.fromisoformat(value).timestamp()
     except ValueError:
         return None
+
+
+def _watermark_age_and_gap(root: Path, wm) -> tuple[float | None, int | None]:  # noqa: ANN001
+    """`build_status`'s `(watermark_age_s, commits_since_watermark)` pair,
+    split out to keep `build_status` under the ARCH001 threshold: both
+    `None` when there is no watermark yet."""
+    import time
+
+    if wm is None:
+        return None, None
+    watermark_age_s = None
+    parsed = _parse_iso(wm.verified_at)
+    if parsed is not None:
+        watermark_age_s = max(0.0, time.time() - parsed)
+
+    from frob.verify import commits_since_watermark
+
+    return watermark_age_s, commits_since_watermark(root, wm.commit_sha)
+
+
+def _oldest_unverified_fields(
+    entries,  # noqa: ANN001
+) -> tuple[float | None, str | None, str | None]:
+    """`build_status`'s `(oldest_unverified_age_s, oldest_unverified_
+    commit, oldest_unverified_ticket)` triple, split out to keep `build_
+    status` under the ARCH001 threshold: all `None` on an empty queue."""
+    import time
+
+    if not entries:
+        return None, None, None
+    oldest = entries[0]
+    oldest_age_s = None
+    parsed = _parse_iso(oldest.enqueued_at)
+    if parsed is not None:
+        oldest_age_s = max(0.0, time.time() - parsed)
+    return oldest_age_s, oldest.commit_sha, oldest.ticket_id
 
 
 def _print_status_human(r: Renderer, status: VerifyStatus) -> None:
@@ -235,6 +282,12 @@ def _print_status_human(r: Renderer, status: VerifyStatus) -> None:
         )
     if status.rapid_soft_warning is not None:
         r.line(f"WARNING:          {status.rapid_soft_warning}")
+    if status.drains_refused_since_watermark > 0:
+        r.line(
+            f"drains refused since watermark: "
+            f"{status.drains_refused_since_watermark} "
+            f"(last: {status.last_drain_refused_at})"
+        )
     if status.quarantine_raised:
         n = len(status.quarantine_findings)
         r.line(f"quarantine:       RAISED ({n} finding(s))")
@@ -277,11 +330,31 @@ def _run_drain_async(cfg: AppConfig) -> None:
     verify._drain`'s own docstring); only a spawn/measurement failure
     (`DrainError.SpawnRefused`, or the underlying `WorkerError`) exits
     non-zero, so a human re-running this by hand can tell outcomes
-    apart, matching `frob ticket sweep-async`'s own precedent."""
-    from frob.verify._drain import DrainError, run_drain_async
+    apart, matching `frob ticket sweep-async`'s own precedent.
+
+    T-2406: reads `FROB_VERIFY_DRAIN_EXCLUDE_PID` -- `spawn_deferred_
+    drain` always sets it, to its own originating land's pid, on the
+    detached child's env -- and passes it through as `run_drain_async`'s
+    `exclude_pid`, so this specific drain never self-refuses against the
+    land that spawned it. A manual, human-run invocation (no such env
+    var set) passes `None`, unchanged from before this ticket -- a human
+    typing this command directly is never "the land that spawned it"."""
+    import os
+
+    from frob.verify._drain import (
+        _EXCLUDE_PID_ENV_VAR,
+        _LAND_TICKET_ID_ENV_VAR,
+        DrainError,
+        run_drain_async,
+    )
 
     root = _resolve_root(cfg)
-    result = run_drain_async(root)
+    raw_pid = os.environ.get(_EXCLUDE_PID_ENV_VAR)
+    exclude_pid = int(raw_pid) if raw_pid and raw_pid.isdigit() else None
+    land_ticket_id = os.environ.get(_LAND_TICKET_ID_ENV_VAR)
+    result = run_drain_async(
+        root, exclude_pid=exclude_pid, land_ticket_id=land_ticket_id
+    )
     if result.is_err:
         if result.danger_err is DrainError.LandInProgress:
             return

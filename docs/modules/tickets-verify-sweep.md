@@ -1003,6 +1003,20 @@ repo's verification healthy" without parsing prose. `--json` serializes
 `VerifyStatus` directly -- the pydantic model IS the wire contract, not a
 hand-maintained parallel dict.
 
+T-2406: `VerifyStatus.drains_refused_since_watermark` (plus
+`last_drain_refused_at`) surfaces the automatic watermark drain's own
+`DrainRefusalRecord` (see "Self-refusal and drop-instead-of-queue"
+above) -- a nonzero count, printed as a `drains refused since
+watermark:` line in the human-readable output, is exactly the "genuinely
+blocked, waiting on a different land" condition this ticket's own body
+measured invisible for 79 minutes on a clean tree. This is the ONE field
+on `VerifyStatus` that is NOT repo-verification health in the
+quarantine/backpressure sense -- it is drain-machinery health -- but it
+lives here rather than a separate command per the standing
+"automatic over commands" directive: an operator already reads `frob
+verify status` for this epic, so that is where a stuck drain must
+surface too.
+
 **`frob verify now [--json]`.** Drains and verifies the queue
 synchronously right now (`frob.verify.run_coalesced_verification`), for
 a human who wants the unverified window closed before walking away.
@@ -1374,6 +1388,10 @@ a different call-site timing:
 <!-- frob:describes src/frob/verify/_drain.py::spawn_deferred_drain -->
 <!-- frob:describes src/frob/verify/_drain.py::run_drain_async -->
 <!-- frob:describes src/frob/verify/_drain.py::DrainError -->
+<!-- frob:describes src/frob/verify/_drain.py::DrainRefusalRecord -->
+<!-- frob:describes src/frob/verify/_drain.py::record_drain_refusal -->
+<!-- frob:describes src/frob/verify/_drain.py::clear_drain_refusal -->
+<!-- frob:describes src/frob/verify/_drain.py::load_drain_refusal -->
 
 T-2290 measured this repo's own `rapid` checkout with a watermark stuck 6
 days / 530 real commits behind, growing every land: `ceilings_for_profile`
@@ -1394,9 +1412,12 @@ own never-block contract.
    sweep (above): a DETACHED background pass, spawned so the land does
    not wait on it, reusing that machinery rather than inventing a second
    one.
-3. Runs only when the fleet is idle -- gated on "no land currently in
-   progress" using the SAME check the land path already performs, and
-   simply skips (never queues, never retry-loops) when one is.
+3. Runs only when a GENUINELY DIFFERENT land is in progress -- gated on
+   "no OTHER land currently in progress" using the same check the land
+   path already performs (T-2406 narrowed "no land currently in
+   progress" to this, exempting exactly the one land that spawned this
+   drain -- see "Self-refusal and drop-instead-of-queue (T-2406,
+   measured incident)" below).
 4. Incremental and resumable -- advances the watermark in bounded
    rounds, so a killed drain leaves the watermark further along, never
    corrupt, never rolled back.
@@ -1415,15 +1436,14 @@ that exact call site, so a check performed there would always see
 itself and never spawn anything.
 
 The check that matters lives in the spawned child's own entrypoint,
-`run_drain_async`: one non-blocking probe
-(`frob.tickets._leases._probe_land_once`, the identical primitive
-`refuse_if_land_in_progress` itself calls per attempt) and, if a land is
-in progress anywhere against `root`, decline immediately -- no queue, no
-retry loop. By the time the detached child's own Python interpreter has
-started (measurably slower than the spawning land's own remaining
-cleanup), that land's lock has very likely already released; if it has
-not, the child correctly treats that as a live land and declines, which
-is the conservative behavior wanted, not a bug.
+`run_drain_async`. Before T-2406 this was one non-blocking probe
+(`frob.tickets._leases._probe_land_once`) declining IMMEDIATELY, no
+queue, no retry loop, the instant a land was in progress anywhere
+against `root` -- reasoning that by the time the detached child's own
+Python interpreter had started, the spawning land's lock had "very
+likely already released". See the next section for why that reasoning
+was measured wrong roughly half the time in practice, and what T-2406
+changed.
 
 Once clear, `run_drain_async` calls `frob.verify._worker.
 run_coalesced_verification` EXACTLY ONCE -- never a loop over the whole
@@ -1475,11 +1495,61 @@ preserves both hard constraints unchanged: rapid's never-block contract
 the drain runs) and "an unattributed/ownerless finding is never silently
 certified as verified" (the ownerless branch is untouched).
 
+**Self-refusal and drop-instead-of-queue (T-2406, measured incident).**
+Direct measurement of 47 real drain attempts (`.frob/verify-drain/*.log`)
+found 23 (49%) refused and DISCARDED the work -- of which 13 named the
+SAME ticket as the drain log itself: the detached child's very first
+probe racing its own still-cleaning-up originating land, i.e. the
+"very likely already released" reasoning above measured optimistic in
+practice. On a clean root with zero lands actually in flight, the
+watermark sat unchanged for 4732s across 70 commits -- not because
+nothing was queued, but because every attempt to drain that queue kept
+getting discarded before it ever ran.
+
+Two fixes, both scoped deliberately NARROW (an exemption shaped like
+the normal case would delete the guard rather than correct it -- see
+[[an-exemption-matching-the-normal-case-disables-the-guard]], T-1967's
+own lesson):
+
+- `spawn_deferred_drain` now passes its own pid (`os.getpid()` -- it
+  always runs INSIDE the land process it is spawned from) to the
+  detached child via `FROB_VERIFY_DRAIN_EXCLUDE_PID`, plus its own
+  ticket id via `FROB_VERIFY_DRAIN_LAND_TICKET_ID` (purely so a
+  refusal that survives the wait below names the originating ticket in
+  `DrainRefusalRecord.last_refused_ticket_id`). `run_drain_async`
+  excludes exactly that ONE pid from both the flock-holder probe and the
+  `/proc` process scan (`frob.tickets._leases`'s `exclude_pid`
+  parameter, threaded through `_land_flock_probe`/
+  `_scan_for_live_land_process`/`_probe_land_once`/
+  `refuse_if_land_in_progress`) -- so the drain never mistakes the very
+  land that spawned it for a competing one. A GENUINELY different
+  land's pid still refuses exactly as before; nothing about the
+  exclusion is keyed on "is a land running", only on "is it THIS one".
+- A refusal caused by a genuinely different land no longer discards the
+  attempt on the first probe: `run_drain_async` now waits it out via
+  `refuse_if_land_in_progress`'s existing bounded, config-driven poll
+  (the SAME budget an ordinary ledger-writing verb already waits on,
+  not a second independently-tuned constant) before giving up. A
+  refusal that survives the full wait is recorded to
+  `.frob/verify-drain-refused.json` (`record_drain_refusal`,
+  `DrainRefusalRecord`) -- `frob verify status` reports
+  `drains_refused_since_watermark` directly, so the condition this
+  ticket measured invisible for 79 minutes can never be silently
+  invisible again. The counter resets to zero (`clear_drain_refusal`)
+  the next time a drain actually runs, whatever that round's own
+  outcome.
+
+This entire wait-and-record path runs inside the DETACHED child --
+constraint 1 (never blocks the spawning land) is unaffected; only the
+disposition of a genuine refusal changed, from "discard, log once" to
+"wait, then record if still blocked".
+
 `frob verify drain-async` is a real subcommand, not a `-c` code string,
 for the same reason `frob ticket sweep-async` is: inspectable,
 re-runnable by hand, covered by ordinary CLI surface tests. It exits 0
-whether it drained, found nothing to drain, or declined because a land
-is in progress (all expected, benign outcomes); only a genuine
+whether it drained, found nothing to drain, or declined (after waiting
+out its bounded budget) because a genuinely different land is in
+progress (all expected, benign outcomes); only a genuine
 spawn/measurement failure exits non-zero.
 
 **The land-side trigger (T-2317):** `frob.app.ticket_runner._land_cmd.

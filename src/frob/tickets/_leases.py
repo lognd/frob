@@ -66,7 +66,7 @@ LEASES_DIRNAME = "frob-leases"
 # frob:ticket T-1680
 # frob:ticket T-1961
 def _refuse_for_held_land_lock(
-    root: Path, path: Path, *, quiet: bool = False
+    root: Path, path: Path, *, quiet: bool = False, exclude_pid: int | None = None
 ) -> Result[None, LeaseError]:
     """The refusal `_land_flock_probe` returns when the land lock is held
     by a live process (T-1680, split out for ARCH103): reads the holder
@@ -80,8 +80,25 @@ def _refuse_for_held_land_lock(
     loop already logs its OWN single "waiting..." message once at the
     start of the wait, and logging this same refusal on every poll tick
     would spam the log once per `poll_interval_s` for the whole wait
-    window instead of once."""
+    window instead of once.
+
+    T-2406: `exclude_pid`, when given, names the ONE specific process
+    (by pid) this probe must NOT treat as a competing land -- the
+    detached drain's own originating land, still holding this exact lock
+    at the moment its just-spawned child runs its very first probe (see
+    `frob.verify._drain`'s module docstring for why that race is
+    expected and benign). If the holder record's `pid` matches
+    `exclude_pid`, this returns `Ok(None)` (treat as free) instead of
+    refusing -- scoped to that ONE pid, never to "any land", so a
+    GENUINELY different concurrent land still refuses exactly as
+    before."""
     holder = _read_land_lock_holder_json(path)
+    if (
+        exclude_pid is not None
+        and holder is not None
+        and holder.get("pid") == exclude_pid
+    ):
+        return Ok(None)
     landing_ticket = holder.get("ticket_id") if holder else None
     if not quiet:
         _log.warning(
@@ -96,7 +113,9 @@ def _refuse_for_held_land_lock(
 
 # frob:ticket T-1680
 # frob:ticket T-1961
-def _land_flock_probe(root: Path, *, quiet: bool = False) -> Result[None, LeaseError]:
+def _land_flock_probe(
+    root: Path, *, quiet: bool = False, exclude_pid: int | None = None
+) -> Result[None, LeaseError]:
     """The `flock` half of `refuse_if_land_in_progress` (T-1619), split out
     to keep that function under the ARCH001 threshold (T-1680).
 
@@ -106,7 +125,11 @@ def _land_flock_probe(root: Path, *, quiet: bool = False) -> Result[None, LeaseE
     lock this process could itself acquire -- all of which mean "no live
     land", and none of which may block an ordinary `frob ticket new`. The
     acquire is a PROBE and is released immediately; the real land-side
-    critical section is `_land.py`'s own `_land_lock`."""
+    critical section is `_land.py`'s own `_land_lock`.
+
+    T-2406: `exclude_pid` is threaded straight to `_refuse_for_held_land_
+    lock` -- see that function's docstring for the exact, single-pid
+    scoping rule."""
     if fcntl is None:
         return Ok(None)
     path = root / LAND_LOCK_REL
@@ -120,7 +143,9 @@ def _land_flock_probe(root: Path, *, quiet: bool = False) -> Result[None, LeaseE
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         os.close(fd)
-        return _refuse_for_held_land_lock(root, path, quiet=quiet)
+        return _refuse_for_held_land_lock(
+            root, path, quiet=quiet, exclude_pid=exclude_pid
+        )
     fcntl.flock(fd, fcntl.LOCK_UN)
     os.close(fd)
     return Ok(None)
@@ -1820,7 +1845,9 @@ def scan_for_live_worktree_process(
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
-def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
+def _scan_for_live_land_process(
+    root: Path, *, exclude_pid: int | None = None
+) -> tuple[int, str | None] | None:
     """Belt-and-braces fallback (T-1619, the repo owner's explicit second
     requirement): find a currently-running `frob ticket land` process whose
     cwd is `root`, INDEPENDENT of whether it has (yet, or ever will, e.g. on
@@ -1839,7 +1866,13 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
     enough match for a backstop without needing to parse the full argv
     grammar. Returns `(pid, ticket_id)` where `ticket_id` is the first
     `T-####`-shaped argv token found (or `None` if none matched, e.g. a
-    `--plan`/`--queue`/`--drain` invocation with no positional ticket id)."""
+    `--plan`/`--queue`/`--drain` invocation with no positional ticket id).
+
+    T-2406: `exclude_pid`, like `self_pid`, is skipped outright -- the ONE
+    specific originating land a detached drain child must not treat as a
+    competing land (see `_refuse_for_held_land_lock`'s docstring for the
+    full rationale). A genuinely different `frob ticket land` pid still
+    matches normally."""
     proc_dir = Path("/proc")
     if not proc_dir.is_dir():
         return None
@@ -1853,7 +1886,7 @@ def _scan_for_live_land_process(root: Path) -> tuple[int, str | None] | None:
         if not entry.name.isdigit():
             continue
         pid = int(entry.name)
-        if pid == self_pid:
+        if pid == self_pid or pid == exclude_pid:
             continue
         argv = _proc_cmdline(pid)
         if not argv or "ticket" not in argv or "land" not in argv:
@@ -1917,6 +1950,7 @@ def refuse_if_land_in_progress(
     sleep: Callable[[float], None] = _time.sleep,
     monotonic: Callable[[], float] = _time.monotonic,
     now_wall: Callable[[], datetime] = lambda: datetime.now(UTC),
+    exclude_pid: int | None = None,
 ) -> Result[None, LeaseError]:
     """`Err(LeaseError.LandInProgress)` iff `root` currently has a LIVE
     `frob ticket land` holding its `LAND_LOCK_REL` advisory `flock`
@@ -1942,31 +1976,27 @@ def refuse_if_land_in_progress(
     -- the constants block above (`_LAND_WAIT_TIMEOUT_S`) documents the
     measured land-duration distribution the default is calibrated
     against, and that function's own docstring documents why the budget
-    is spent relative to the land's start."""
+    is spent relative to the land's start.
+
+    T-2406: `exclude_pid`, when given, is threaded to every `_probe_land_
+    once` call in the poll loop -- see `_refuse_for_held_land_lock`'s
+    docstring for the exact single-pid exclusion rule. `frob.verify.
+    _drain.run_drain_async` is this parameter's one caller: it waits out
+    (rather than immediately discarding) a GENUINELY different concurrent
+    land using this same bounded poll, while never treating its own
+    originating land as one."""
     resolved_timeout, remaining_budget = _resolve_land_wait_budget(
         root, wait_timeout_s, now_wall
     )
     deadline = monotonic() + remaining_budget
     warned = False
     while True:
-        result = _probe_land_once(root, quiet=warned)
+        result = _probe_land_once(root, quiet=warned, exclude_pid=exclude_pid)
         if result.is_ok:
             return result
         now = monotonic()
         if now >= deadline:
-            if warned:
-                _log.warning(
-                    "tickets: %s -- in-flight land did not finish within "
-                    "its %.0fs wait budget, refusing rather than waiting "
-                    "indefinitely",
-                    root,
-                    resolved_timeout,
-                )
-            # `warned=False` means never waited at all (remaining_budget<=0
-            # -- either an explicit non-positive timeout, or a land already
-            # at/past its own budget by the time this call started -- or
-            # the deadline was already past by the first probe) -- the
-            # ORIGINAL, non-quiet refusal already logged in that case.
+            _warn_wait_budget_exhausted(root, resolved_timeout, warned=warned)
             return result
         if not warned:
             _log.warning(
@@ -1979,17 +2009,42 @@ def refuse_if_land_in_progress(
         sleep(min(poll_interval_s, deadline - now))
 
 
+def _warn_wait_budget_exhausted(
+    root: Path, resolved_timeout: float, *, warned: bool
+) -> None:
+    """`refuse_if_land_in_progress`'s deadline-exceeded log, split out to
+    keep that function under the ARCH001 threshold: logs only if the
+    caller actually waited (`warned=True`) -- an immediate refusal
+    (never waited at all, `remaining_budget<=0`) already logged its own
+    non-quiet refusal inside `_probe_land_once`, so a second message
+    here would be a duplicate, not new information."""
+    if warned:
+        _log.warning(
+            "tickets: %s -- in-flight land did not finish within "
+            "its %.0fs wait budget, refusing rather than waiting "
+            "indefinitely",
+            root,
+            resolved_timeout,
+        )
+
+
 # frob:ticket T-1961
-def _probe_land_once(root: Path, *, quiet: bool) -> Result[None, LeaseError]:
+def _probe_land_once(
+    root: Path, *, quiet: bool, exclude_pid: int | None = None
+) -> Result[None, LeaseError]:
     """One flock-probe-plus-process-scan attempt, `refuse_if_land_in_
     progress`'s per-iteration body split out to keep that function under
     the ARCH001 threshold -- `quiet` silences BOTH refusal paths' warning
     logs (an intermediate poll tick inside the wait loop), matching
-    `_land_flock_probe`'s own `quiet` contract."""
-    probed = _land_flock_probe(root, quiet=quiet)
+    `_land_flock_probe`'s own `quiet` contract.
+
+    T-2406: `exclude_pid` is threaded to both the flock probe and the
+    process scan -- see `_refuse_for_held_land_lock`'s docstring for the
+    exact single-pid exclusion rule this implements."""
+    probed = _land_flock_probe(root, quiet=quiet, exclude_pid=exclude_pid)
     if probed.is_err:
         return probed
-    found = _scan_for_live_land_process(root)
+    found = _scan_for_live_land_process(root, exclude_pid=exclude_pid)
     if found is None:
         return Ok(None)
     pid, landing_ticket = found
