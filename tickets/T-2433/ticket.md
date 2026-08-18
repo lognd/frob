@@ -113,7 +113,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4f4d45f907786e0c9e65ddd6e409b70da1318dd8
 ---
 Validate the `[arch]` table (9 leaves) against a declared schema.
 Reader: frob.app._config_meta.load_arch_config -- hand-lists 10 named
