@@ -11,19 +11,50 @@ parent: null
 tier: epic
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_docblocks.py
+- docs/modules/gates.md
+- tests/test_doc012_promotion.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: promoting DOC012 WARN->ERROR now that the backlog measures zero
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/gates.md
+  reason: documenting the DOC012 WARN->ERROR promotion
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: tests/test_doc012_promotion.py
+  reason: must-fail fixture proving DOC012 ERROR promotion, disjoint from T-2314's
+    live lease on tests/test_gates.py
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_undocumented_subcommand_is_now_error
+- tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_documented_subcommand_still_passes
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given the DOC012 backlog, when it is re-measured, then a child ticket exists
     for every remaining undocumented subcommand grouped by owning doc file
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 - text: given all children are landed, when frob check --only docblocks runs, then
     DOC012 reports zero findings
-  evidence: []
+  evidence:
+  - tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_documented_subcommand_still_passes
 - text: given DOC012 measures zero, when the rule severity is promoted from WARN to
     ERROR, then a subsequent undocumented subcommand fails the gate
-  evidence: []
+  evidence:
+  - tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_undocumented_subcommand_is_now_error
+  - tests/test_doc012_promotion.py::TestDoc012PromotedToError::test_documented_subcommand_still_passes
 threat: null
 component: gates
 anchor: false

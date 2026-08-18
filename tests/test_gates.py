@@ -15834,6 +15834,12 @@ class TestDoc012CommandSectionGate:
     CLI so these tests never depend on frob's own live command count."""
 
     def test_undocumented_subcommand_fails(self, tmp_path: Path) -> None:
+        # T-2299: promoted WARN -> ERROR once the disclosed T-1783 backlog
+        # measured zero (children T-2315/T-2316) -- see
+        # tests/test_doc012_promotion.py::TestDoc012PromotedToError for
+        # the must-fail fixture that originally proved this severity
+        # change, added there instead of here because this class carried
+        # a live cross-worktree lease (T-2314) at promotion time.
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_FAKE_CONFIG)
         _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
@@ -15843,7 +15849,7 @@ class TestDoc012CommandSectionGate:
 
         stale = _by_rule(violations, "DOC012")
         assert any(
-            v.severity == Severity.WARN and "gadget" in v.message for v in stale
+            v.severity == Severity.ERROR and "gadget" in v.message for v in stale
         )
         assert not any("widget" in v.message for v in stale)
 

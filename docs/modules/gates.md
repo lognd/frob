@@ -100,7 +100,7 @@ declaration).
 | DOC004 | docblocks | a fenced code block in a tracked `.md` doc references the project's OWN code surface (manifest-derived python/rust/ts namespaces) and either does not resolve (error, "stale") or resolves but carries no nearby `frob:doc`/`frob:describes`/`frob:tests` anchor (warn, "unbound") -- see "Unbound/stale doc code blocks" below |
 | DOC005 | docblocks | `README.md`'s command table is out of sync with the live top-level subcommand registry: a real subcommand has no table row (error, "missing"), a table row names a subcommand that no longer exists (error, "stale"), or a "N commands" prose count claim does not equal the live count (error) -- see "DOC005 README command-table drift-lock" below |
 | DOC006 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a doc's PROSE (inline code span or markdown link, not a fenced code block -- DOC004's territory) contains a pointer of a RECOGNIZED, mechanically resolvable shape (file/path, cli invocation, config reference, code symbol, doc-anchor link, `path.py::symbol`/`path.rs::fn`, or a bare identifier within its doc's anchored module scope -- T-1228) <!-- frob:waive DOC006 reason="path.py::symbol/path.rs::fn here are the KIND'S OWN illustrative placeholder shape, not real pointers" --> that does not resolve, or a `frob:tests` directive's target uses pytest's `Class::method` collect-only separator where this graph wants a single `::` then a dotted `Class.method` qualname -- see "DOC006 doc-pointer resolution gate" below |
-| DOC012 | docblocks | (warn, T-0688 new-gate-at-WARN precedent) a real top-level subcommand the live `[[docblocks.commands]]` registry exposes has no dedicated `## `-level (or deeper) doc section anywhere under `docs/commands/` or `docs/modules/` naming it -- a DOC005 command-table row alone does not satisfy this, deliberately: DOC005 asks "is it listed", DOC012 asks "is it actually documented" -- see "DOC012 dedicated command-section drift-lock" below |
+| DOC012 | docblocks | (error, promoted T-2299; shipped warn at T-0688 new-gate-at-WARN precedent) a real top-level subcommand the live `[[docblocks.commands]]` registry exposes has no dedicated `## `-level (or deeper) doc section anywhere under `docs/commands/` or `docs/modules/` naming it -- a DOC005 command-table row alone does not satisfy this, deliberately: DOC005 asks "is it listed", DOC012 asks "is it actually documented" -- see "DOC012 dedicated command-section drift-lock" below |
 | EXCL001 | excludehazard | a `.git/info/exclude` entry shadows a git-tracked file or a directory containing tracked files -- see "EXCL001 (T-0465)" below |
 | ROOT001 | root_asset_dirs | (warn) a repo-root top-level directory (not `src/`/`tests/`, not on the docs/tickets/design allowlist, not referenced by the Makefile) has zero code references: no `src/frob/**` path token, no `pyproject.toml` mention, and no `frob:external-reader` declaration -- see "ROOT001 (T-1784)" below |
 | ENV001 | env_var_docs | (warn) a `FROB_*` string-literal constant assigned under `src/frob/**/*.py` is documented nowhere under `docs/` -- neither its literal env-var string nor its owning Python constant name appears in any tracked `docs/` file, and no file-scoped `frob:waive ENV001` covers it -- see "ENV001 (T-1782)" below |
@@ -3374,9 +3374,10 @@ until the row is deleted.
 ### DOC012 dedicated command-section drift-lock T-1783
 
 `frob.gates._docblocks` -- `doc012_gate` (gate name `docblocks`, same as
-DOC004/DOC005, default-on, WARN severity at first-turn-on per the T-0688
-new-gate-at-WARN precedent DOC006 already established -- see the
-disclosure paragraph below). Motivating case: T-1610's
+DOC004/DOC005, default-on, ERROR severity as of T-2299 -- shipped WARN
+at first-turn-on per the T-0688 new-gate-at-WARN precedent DOC006 also
+used; see the disclosure and promotion paragraphs below). Motivating
+case: T-1610's
 docs-completeness sweep found `frob coverage` (T-1516/T-1525) had a
 README/cli.md command-table row (satisfying DOC005) but no dedicated
 section anywhere describing its own flags/behavior -- its content lived
@@ -3400,7 +3401,7 @@ frob coverage (T-1525)`, and `` ## `frob doctor`: ... `` (the trailing
 colon-and-more after the second token is ignored, since the regex only
 anchors the first two tokens) all resolve; a heading that merely
 mentions the command mid-sentence does not. A subcommand with no
-resolving heading anywhere is one WARN finding (`_doc012_violation`).
+resolving heading anywhere is one finding (`_doc012_violation`).
 
 **Disclosed debt at ship time (T-1783's own investigation):** running
 `doc012_gate` over this repo at the moment the rule shipped found 24
@@ -3409,11 +3410,34 @@ top-level subcommands with no dedicated section (`ack`, `agent`, `arch`,
 `fleet`, `graph`, `mutate`, `ops`, `perf`, `pool`, `profile`, `quality`,
 `registry`, `serve`, `stats`, `test`, `vet`, `worktree`) -- real,
 pre-existing gaps, not new drift this ticket introduced. WARN (not
-ERROR) is deliberate per the T-0688 precedent: this is a genuine backlog
-to burn down over time (each entry is a candidate follow-up ticket, one
-new dedicated section at a time), not a signal to force every one of
-them into existence inside this ticket's own scope, and not a reason to
-red every unrelated land fleet-wide the moment this rule ships.
+ERROR) at ship time was deliberate per the T-0688 precedent: this was a
+genuine backlog to burn down over time, not a signal to force every one
+of them into existence inside T-1783's own scope, and not a reason to
+red every unrelated land fleet-wide the moment the rule shipped.
+
+**Burn-down and promotion (T-2299):** that disclosed 24-item backlog
+existed only as prose in T-1783's archived Done report until T-2299
+tracked it as a first-class epic ticket. T-2299 re-measured the backlog
+(confirmed still exactly 24, no drift since T-1783), filed two child
+tickets grouped by owning doc file so the work could parallelize --
+T-2315 (the 10 subcommands whose module already had a dedicated
+`docs/modules/*.md` file, just needing a `## frob <name>` heading added
+next to the existing prose: `arch`, `clean`, `dup`, `fleet`, `graph`,
+`mutate`, `perf`, `serve`, `stats`, `vet`) and T-2316 (the remaining 14
+with no dedicated file at all, documented as new `## frob <name>`
+sections in `docs/modules/cli.md`: `ack`, `agent`, `debt`, `deprecated`,
+`design`, `docs`, `explore`, `ops`, `pool`, `profile`, `quality`,
+`registry`, `test`, `worktree`) -- and landed both. With the measured
+count at zero, T-2299 promoted `_doc012_violation` from WARN to ERROR: a
+newly introduced undocumented subcommand now fails `frob check`
+immediately rather than silently re-accumulating the same backlog. See
+`tests/test_doc012_promotion.py::TestDoc012PromotedToError` for the
+must-fail fixture proving the promotion actually changed severity (filed
+in its own file, disjoint from `tests/test_gates.py`'s own
+`TestDoc012CommandSectionGate`, because that file carried a live
+cross-worktree lease -- T-2314 -- at promotion time; a follow-up
+`frob:todo T-2299` in that new file tracks folding it back in and
+updating the pre-promotion WARN assertion once the lease clears).
 
 No `[[docblocks.commands]]` entries configured means no checking happens
 -- fail-open, the same posture as DOC004/DOC005. T-1682 (filed by T-1610)

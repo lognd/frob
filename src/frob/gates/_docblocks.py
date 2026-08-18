@@ -115,10 +115,13 @@ frob <name>` / a backtick-quoted `frob <name>` heading, see
 the first two heading tokens after stripping markup must be `<prog>
 <name>`; trailing parenthetical ticket refs and inline code backticks
 around the whole phrase are both tolerated). A table-row mention alone
-never satisfies it -- only a dedicated heading does. WARN at first-turn-
-on (T-0688's new-gate-at-WARN precedent, same posture DOC006 shipped
-under -- this repo carries real DOC012 debt at ship time). See
-`doc012_gate`.
+never satisfies it -- only a dedicated heading does. Shipped WARN at
+first-turn-on (T-0688's new-gate-at-WARN precedent, same posture DOC006
+shipped under -- this repo carried real DOC012 debt at ship time).
+T-2299 tracked that disclosed 24-item backlog to zero (children T-2315/
+T-2316) and promoted DOC012 to ERROR (T-2299) once the measured count
+reached zero -- a new undocumented subcommand now fails `frob check`
+immediately instead of accumulating silently. See `doc012_gate`.
 """
 
 from __future__ import annotations
@@ -814,17 +817,16 @@ def _doc012_documented_commands(
 
 
 def _doc012_violation(name: str, prog: str) -> Violation:
-    """Build one DOC012 finding -- WARN at first-turn-on, per the T-0688
-    new-gate-at-WARN precedent DOC006 already established: this repo
-    itself has a real, non-trivial DOC012 debt (measured: 24 top-level
-    subcommands with no dedicated section, T-1783's own investigation) at
-    the moment this rule ships, so an immediate ERROR would red every
-    land fleet-wide over pre-existing content, not new drift this diff
-    introduced. See "DOC012 dedicated command-section drift-lock" in
-    docs/modules/gates.md for the burn-down disclosure."""
+    """Build one DOC012 finding -- ERROR (T-2299): the T-1783 first-turn-
+    on WARN period (T-0688 precedent, same posture DOC006 shipped under)
+    ended once T-2299's burn-down (children T-2315/T-2316) drove the
+    disclosed 24-subcommand backlog to zero, so a nonzero count now means
+    NEW drift introduced after the promotion, not pre-existing content.
+    See "DOC012 dedicated command-section drift-lock" in
+    docs/modules/gates.md for the promotion record."""
     return Violation(
         rule="DOC012",
-        severity=Severity.WARN,
+        severity=Severity.ERROR,
         file="docs/commands/",
         line=0,
         message=(
