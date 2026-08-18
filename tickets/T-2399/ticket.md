@@ -1,7 +1,7 @@
 ---
 id: T-2399
 title: Recovered from T-2386's phantom TICK006 citation of T-2388
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -32,3 +32,6 @@ directive) and T-2389 (source-root retarget group 1) queued as siblings, not
 completed in this ticket.
 
 ### Cha
+
+## Drop reason
+- 2026-08-18: false positive: T-2388 genuinely exists (tickets/T-2388/ticket.md, filed on main before T-2386 started) -- the TICK006 Tier-A auto-fix misread a citation in T-2386's Done report as a phantom filing
