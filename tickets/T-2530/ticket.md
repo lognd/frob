@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7a7756c6621c199e68589de54c993294d75247a6
 ---
 T-2502 (landed d520179c0) shipped the strata fragment mechanism with
 extend-only enforcement in two layers, and its author drew a distinction
