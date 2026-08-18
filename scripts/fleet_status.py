@@ -110,6 +110,7 @@ def root_dirt() -> list[str]:
 #: `LEASES`'s own pattern, so this script stays import-light rather than
 #: depending on the `frob` package being installed.
 QUARANTINE = REPO / ".frob" / "quarantine.json"
+# frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 # frob:ticket T-2126
 #: The verify-queue/watermark stores `frob.verify._watermark` owns --
 #: read directly as raw JSON, mirroring QUARANTINE's own raw-file
@@ -117,6 +118,7 @@ QUARANTINE = REPO / ".frob" / "quarantine.json"
 #: design, so it stays usable even when the native extensions/venv are
 #: not built).
 VERIFY_QUEUE = REPO / ".frob" / "verify-queue.json"
+# frob:doc docs/guides/coordinator-scripts.md#verify_queue_state
 VERIFY_WATERMARK = REPO / ".frob" / "verify-watermark.json"
 
 
@@ -1544,27 +1546,37 @@ def _rotting_entry(
     }
 
 
-# frob:doc docs/guides/coordinator-scripts.md#_print_rot_bucket
-# frob:ticket T-2229
-def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> None:
-    """Print one TICKET ROT bucket (`_print_ticket_rot`'s own shared
-    rendering, ARCH001 split): a `  HEADING (N):` line, then one `    id
-    ...` line per ticket with its priority/state/age, plus `detail`
-    appended verbatim (already ticket-specific text, or '') -- no-op if
-    `tickets` is empty. `tier=` is included only for a non-leaf ticket
-    (`tickets[0]["tier"] != "ticket"`), matching each bucket's own prior
-    rendering exactly."""
+def _rot_bucket_lines(heading: str, tickets: list[dict], detail: str = "") -> list[str]:
+    """Every line one TICKET ROT bucket renders to (T-2341's ARCH103
+    split of `_print_rot_bucket`'s formatting/branching half from its I/O
+    half below): a `  HEADING (N):` line, then one `    id ...` line per
+    ticket with its priority/state/age, plus `detail` appended verbatim
+    (already ticket-specific text, or ''), or `[]` if `tickets` is empty.
+    `tier=` is included only for a non-leaf ticket (`tickets[0]["tier"]
+    != "ticket"`), matching the prior single-function rendering exactly
+    -- pure computation, no I/O, so it is independently testable."""
     if not tickets:
-        return
-    print(f"  {heading} ({len(tickets)}):")
+        return []
+    lines = [f"  {heading} ({len(tickets)}):"]
     show_tier = tickets[0]["tier"] != "ticket"
     for t in tickets:
         tier_part = f"tier={t['tier']} " if show_tier else ""
-        print(
+        lines.append(
             f"    {t['id']} {tier_part}priority={t['priority']} state={t['state']} "
             f"age={t['age_days']}d (threshold {t['threshold_days']}d)"
             + (f" -- {detail.format(id=t['id'])}" if detail else "")
         )
+    return lines
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_rot_bucket
+# frob:ticket T-2229
+def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> None:
+    """Print one TICKET ROT bucket (`_print_ticket_rot`'s own shared
+    rendering) -- thin I/O wrapper over `_rot_bucket_lines`' pure
+    formatting/branching (T-2341's ARCH103 split)."""
+    for line in _rot_bucket_lines(heading, tickets, detail):
+        print(line)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_ticket_rot

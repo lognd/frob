@@ -1184,6 +1184,7 @@ def _read_text_at_commit_or_none(cwd: Path, commit: str, path: str) -> str | Non
 
 
 # frob:ticket T-2105
+# frob:doc docs/modules/tickets-landing.md#detect_duplicate_ticket_id_collisions-t-2105
 # frob:tests \
 # tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions.te\
 # st_flags_id_with_genuinely_different_content_on_both_sides

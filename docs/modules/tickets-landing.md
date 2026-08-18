@@ -2444,3 +2444,31 @@ def write_archived_ticket(root: Path, ticket: Ticket) -> Result[None, TicketErro
     # of write_ticket, which only ever writes to ACTIVE storage.
 ```
 
+
+## `detect_duplicate_ticket_id_collisions` (T-2105)
+
+<!-- frob:doc docs/modules/tickets-landing.md#detect_duplicate_ticket_id_collisions-t-2105 -->
+
+Compares every `tickets/<id>/ticket.md` path tracked on BOTH the landing
+worktree's pre-merge HEAD and main's HEAD, by raw blob content, before any
+`git merge` runs. Exactly one writer ever owns a given ticket id's record
+under normal operation, so a path whose content genuinely differs between
+the two sides means two DISTINCT records were independently written at
+the same id -- the T-2083/T-2090 field incident's exact shape, where a
+landing worktree's finalized draft and a concurrent `frob ticket new`
+direct on main collided on the same id and the land machinery's own
+internal merge-main-into-worktree step silently discarded one side's
+content entirely, caught only after the fact by grepping ticket content
+on main.
+
+Checking blob content directly, ahead of the merge, catches this
+regardless of whether git's own line-based merge would ever have flagged
+a textual conflict for it -- the two sides' edits need not overlap on the
+same lines to still be two unrelated records.
+
+An id whose `tickets/<id>/ticket.md` already existed at the worktree/main
+merge-base is NOT a collision -- it is an ordinary ticket both sides
+independently edited, a different, already-handled conflict kind
+(T-1914's sibling-ledger-merge path), not this function's concern. The
+landing ticket's own id is likewise excluded (its own worktree-vs-main
+divergence is the land itself, not a collision).

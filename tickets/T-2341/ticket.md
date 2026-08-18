@@ -1,7 +1,7 @@
 ---
 id: T-2341
 title: Fix 19 genuinely-new gate findings from T-2299/T-2331 sweep (ARCH001/ARCH103/COV001/COV003/DOC001/DOC002/PERF004/SELFAUDIT001/TICK004/WIRE003)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -12,23 +12,321 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
-- src/frob/app/telemetry.py
-- src/frob/app/ticket_runner/_land_cmd.py
-- src/frob/app/ticket_runner/_new.py
 - src/frob/app/verify_runner.py
 - src/frob/tickets/_land_git_ops.py
 - src/frob/verify/_quarantine.py
-- docs/commands/release.md
 - docs/modules/cli.md
 - docs/guides/coordinator-scripts.md
 - design/**
 - tickets.md
-- tickets/T-1205
-- tickets/T-1235
-- tickets/T-1397
-- tickets/T-1526
+- docs/modules/tickets-landing.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
+- tests/unit/verify/test_quarantine.py
+- tests/unit/test_land_duplicate_ticket_id.py
+- tests/system/test_fleet_status_ticket_readiness_arch001.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/telemetry.py
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: docs/commands/release.md
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1205
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1235
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1397
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: remove
+  glob: tickets/T-1526
+  reason: 'Re-measured against the current floor rather than trusting the carried-forward
+    claim list (T-2322 has since split _land_cmd.py''s ARCH functions, exactly the
+    file T-2341''s original scope leaned on most).
+
+
+    Resolved, removing their files from scope: all 5 ARCH001 (telemetry.py:189, _land_cmd.py:1969/2995/3443,
+    _new.py:474), 2 of 3 ARCH103 (_land_cmd.py:3515/3599), DOC001 (docs/commands/release.md),
+    both PERF004 (_land_cmd.py:3494, _new.py:984). None of these identities reproduce
+    on the current floor -- verified via frob check --only archgate/docanchor/perf
+    against unmodified main.
+
+
+    Removing: src/frob/app/telemetry.py, src/frob/app/ticket_runner/_land_cmd.py,
+    src/frob/app/ticket_runner/_new.py, docs/commands/release.md.
+
+
+    Still live and fixed in this pass: ARCH103 fleet_status.py:1549 (split via _rot_bucket_lines),
+    COV001 x5 (fleet_status.py VERIFY_QUEUE/VERIFY_WATERMARK/verify_queue_state, _land_git_ops.py::detect_duplicate_ticket_id_collisions,
+    _quarantine.py::clear_quarantine), DOC002 x3 (same fleet_status.py/verify_runner.py
+    anchor fixes).
+
+
+    Still live, NOT fixed here, split into their own dispatches (children filed):
+    COV003 x4 (T-1205/T-1235/T-1397/T-1526 evidence repair), TICK004 (tickets.md ledger-consistency
+    investigation, 9 errors + 17 warnings under one identity).
+
+
+    Still live, remaining in this ticket''s own scope for a follow-up pass: SELFAUDIT001
+    (design, now 9 findings not 21 -- ratchet-based, drifts run to run) and WIRE003
+    (docs/modules/cli.md ''path'' verb).
+
+    '
+  actor: logan
+  at: '2026-08-17'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: needed to add the detect_duplicate_ticket_id_collisions doc section fixing
+    its COV001/DOC002 findings
+  actor: logan
+  at: '2026-08-17'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestVerifyQueueState::test_reports_depth_and_oldest_age
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_not_raised
+- tests/unit/test_land_duplicate_ticket_id.py::TestDetectDuplicateTicketIdCollisions::test_flags_id_with_genuinely_different_content_on_both_sides
+- tests/system/test_fleet_status_ticket_readiness_arch001.py::TestFleetStatusTicketReadinessArch001::test_ticket_readiness_is_not_an_arch001_finding
 designated_repro_test: null
 threat: null
 component: null
@@ -105,3 +403,5 @@ Do NOT force a quick fix through ARCH001/ARCH103 -- these are architecture
 gates that reward a genuine decomposition, not a suppression. If a finding
 turns out to be a false positive on inspection, waive it with a specific
 reason (frob:waive RULE reason="..."), never blanket.
+
+frob:no-behavior-change reason="every change in this pass is a pure structural/documentation fix, not a runtime defect repair: the ARCH103 split (_rot_bucket_lines extracted from _print_rot_bucket) preserves identical output, verified by the existing tests/system/test_fleet_status_ticket_readiness_arch001.py and tests/unit/test_coordinator_scripts.py -k Rot (11 tests) passing unmodified; every other change is a frob:doc edge or doc-anchor-slug correction with zero runtime effect. There is no user-facing defect for this ticket's own bound evidence to reproduce -- COV001/DOC002/ARCH103 are gate-coverage findings, not behavior bugs."

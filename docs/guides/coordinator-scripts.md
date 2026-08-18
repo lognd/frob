@@ -179,6 +179,31 @@ is the place a coordinator already reads before dispatching a wave, so
 `main()` now prints this state unconditionally, before LEASES/
 WORKTREES, rather than adding a new command nobody would know to run.
 
+### `verify_queue_state`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#verify_queue_state -->
+
+`VERIFY_QUEUE`/`VERIFY_WATERMARK` are `.frob/verify-queue.json` and
+`.frob/verify-watermark.json`, the T-2126 verify-queue/watermark stores
+`frob.verify._watermark` owns -- read here as raw JSON, the same
+dependency-light convention `QUARANTINE`/`LEASES` above already use.
+
+`verify_queue_state()` returns `(depth, oldest_age_s)`: queue depth and
+the oldest still-pending entry's age in seconds. A MISSING file means
+nothing is queued: `(0, None)`. An UNREADABLE or malformed file returns
+`(-1, None)` -- never a silent `(0, None)`, mirroring `quarantine_state`'s
+own "cannot verify is never verified" posture immediately above:
+misreading unknown as empty would tell a coordinator it is safe to
+dispatch when the real depth could not be determined at all. This feeds
+`frob.verify._backpressure.block_until_watermark_advances` (the same
+function `_apply_backpressure` calls right after the quarantine
+override) -- the queue depth/age a coordinator sees here is the same
+number that decides whether a dispatched agent's own land will block on
+backpressure. Depth alone is a QUEUE-ENTRY count, not the full
+commit-gap reconciliation `frob verify status` (T-2290) computes; a
+coordinator wanting the reconciled commit count uses that command
+instead.
+
 ### `ticket_lease`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#ticket_lease -->

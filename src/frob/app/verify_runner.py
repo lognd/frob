@@ -265,7 +265,8 @@ def _run_status(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
-# frob:doc docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-t-2310
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2310
 def _run_drain_async(cfg: AppConfig) -> None:
     """`frob verify drain-async`: the CLI entry point the detached drain

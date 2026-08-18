@@ -458,8 +458,7 @@ def _refuse_if_undisposed(
         (f.rule_id, f.file, f.line) for f in disposed_findings if not f.disposition
     ]
     _log.error(
-        "quarantine: clear_quarantine refused -- %d finding(s) still "
-        "undisposed: %s",
+        "quarantine: clear_quarantine refused -- %d finding(s) still undisposed: %s",
         len(undisposed),
         undisposed,
     )
@@ -468,6 +467,7 @@ def _refuse_if_undisposed(
     return QuarantineError.FindingsNotDisposed
 
 
+# frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 def clear_quarantine(
     root: Path,
     *,
