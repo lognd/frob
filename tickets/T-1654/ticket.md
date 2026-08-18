@@ -12,9 +12,80 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- tests/**
+- tests/test_waive_gate.py
+- tests/test_graph.py
+- tests/test_dup.py
+- tests/test_gates.py
+- tests/test_secrets_gate.py
+- tests/test_vet.py
+- tests/conftest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_graph.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_dup.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_secrets_gate.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_vet.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-2446: the ticket''s own Plan section names these 6 files explicitly (''For
+    each file above, identify which test(s) call build_graph...'') plus tests/conftest.py
+    since the fix extends _SELF_SCAN_HEAVY_NAME_SUBSTRINGS/xdist_group there -- not
+    a guess, the ticket enumerates its own targets'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
