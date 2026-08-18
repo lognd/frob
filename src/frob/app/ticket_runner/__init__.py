@@ -116,6 +116,7 @@ from ._new import (
 )
 from ._query import (
     _active_large_glob_warnings,
+    _contention,
     _doable,
     _doable_row,
     _filter_by_state,
@@ -329,6 +330,8 @@ def _ticket_dispatch_table() -> dict:
         "doable": _doable,
         # frob:ticket T-1738
         "wave": _wave,
+        # frob:ticket T-2395
+        "contention": _contention,
         "plan": _plan,
         "start": _start,
         "work": _work,
@@ -438,6 +441,8 @@ _LAND_SAFE_READ_ONLY_VERBS = frozenset(
         "show",
         "doable",
         "wave",
+        # frob:ticket T-2395
+        "contention",
         "board",
         "epic",
         "brief",

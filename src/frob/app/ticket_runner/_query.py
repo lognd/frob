@@ -8,6 +8,7 @@ dispatch, tests that monkeypatch these names) keeps working."""
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import sys
 import time
@@ -533,7 +534,10 @@ def _render_doable_plain(
     leases, unlanded-branch summary, scope-breadth summary, and the
     already-landed markers, then either the "zero doable tickets" message
     or the ordered dispatchable section plus the in-flight section --
-    unchanged shape from before the split."""
+    unchanged shape from before the split. T-2395: also computes the hot-
+    file marker set (`_hot_files_for_tickets`) once here, for the same
+    automatic-over-commands reason `_render_already_landed_markers`
+    already runs unconditionally."""
     _render_active_leases(queue)
     _render_unlanded_branch_work_summary(root)
     _render_scope_breadth_summary(root, queue, breadth=breadth)
@@ -546,8 +550,16 @@ def _render_doable_plain(
         )
         return
 
+    hot_files_by_id = _hot_files_for_tickets(
+        root, queue, selection.ordered, breadth=breadth
+    )
     _render_doable_dispatchable(
-        selection.ordered, selection.alarm_by_id, queue, cfg, landed_ids=landed_ids
+        selection.ordered,
+        selection.alarm_by_id,
+        queue,
+        cfg,
+        landed_ids=landed_ids,
+        hot_files_by_id=hot_files_by_id,
     )
     _render_doable_in_flight(selection.in_flight, _stale_lease_reasons(root))
 
@@ -581,6 +593,7 @@ def _doable_row(
     color: bool,
     *,
     landed_ids: frozenset[str] = frozenset(),
+    hot_files_by_id: dict[str, tuple[str, int]] | None = None,
 ) -> str:
     """One doable-list line for `t`, including its UNDISPATCHED alarm (if
     any) -- shared by the flat and `--by-parent` grouped renders (T-0715)
@@ -588,7 +601,12 @@ def _doable_row(
     also appends an ALREADY-LANDED marker when `t.id` is in `landed_ids`
     (`_render_already_landed_markers`'s return value) -- the inline,
     per-row half of that wiring, alongside the summary line it prints
-    once per `doable` call."""
+    once per `doable` call. T-2395: also appends a HOT FILE marker when
+    `t.id` is in `hot_files_by_id` (`_hot_files_for_tickets`'s return
+    value) -- naming this row's single most-contended declared file and
+    its holder count, per the automatic-over-commands directive (a
+    coordinator who never runs `frob ticket contention` still sees the
+    collision risk on the exact ticket they were about to dispatch)."""
     row = "%s  %s  (%s)  priority=%s" % (
         style_ticket_id(t.id, color),
         t.title,
@@ -606,6 +624,12 @@ def _doable_row(
     # stale/forgotten, when a caller deliberately asks to see anchors.
     if t.anchor:
         row += "  [ANCHOR%s]" % (f": {t.anchor_reason}" if t.anchor_reason else "")
+    if hot_files_by_id and t.id in hot_files_by_id:
+        hot_file, holder_count = hot_files_by_id[t.id]
+        row += (
+            "  [HOT FILE: %s (%dx open tickets) -- run `frob ticket "
+            "contention` before dispatching]" % (hot_file, holder_count)
+        )
     return row
 
 
@@ -620,6 +644,7 @@ def _render_doable_dispatchable(
     cfg: AppConfig,
     *,
     landed_ids: frozenset[str] = frozenset(),
+    hot_files_by_id: dict[str, tuple[str, int]] | None = None,
 ) -> None:
     """Print the dispatchable section of `frob ticket doable`: a flat
     priority/age/alarm-ordered list, or (`--by-parent`, T-0715) the same
@@ -627,14 +652,23 @@ def _render_doable_dispatchable(
     together instead of scattered across one flat list. T-1822: `landed_ids`
     (`_render_already_landed_markers`'s return value) is threaded through
     to `_doable_row` unchanged so a flagged row is marked in EITHER render
-    shape, not just the flat one."""
+    shape, not just the flat one. T-2395: `hot_files_by_id` is threaded
+    through the same way for the HOT FILE marker."""
     from frob.app.ticket_runner import _stdout_color
 
     color = _stdout_color()
 
     if not cfg.ticket_doable_by_parent:
         for t in ordered:
-            _log.info(_doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
+            _log.info(
+                _doable_row(
+                    t,
+                    alarm_by_id,
+                    color,
+                    landed_ids=landed_ids,
+                    hot_files_by_id=hot_files_by_id,
+                )
+            )
         return
 
     # A row with no `parent` (or a parent id `queue` cannot resolve) falls
@@ -657,7 +691,51 @@ def _render_doable_dispatchable(
             else header,
         )
         for t in rows:
-            _log.info("  %s", _doable_row(t, alarm_by_id, color, landed_ids=landed_ids))
+            _log.info(
+                "  %s",
+                _doable_row(
+                    t,
+                    alarm_by_id,
+                    color,
+                    landed_ids=landed_ids,
+                    hot_files_by_id=hot_files_by_id,
+                ),
+            )
+
+
+# frob:ticket T-2395
+def _hot_files_for_tickets(
+    root: Path,
+    queue: "TicketQueue",
+    tickets,
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> dict[str, tuple[str, int]]:
+    """`ticket.id -> (most_contended_file, holder_count)` for every `t` in
+    `tickets` that sits on at least one file `_compute_contention` flags
+    (T-2395's own automatic-over-commands surfacing: a coordinator who
+    never runs `frob ticket contention` still sees the collision risk on
+    the exact ticket `doable` was about to hand them). Picks each
+    ticket's SINGLE most-contended file (highest holder count, then file
+    path) rather than listing every contended file it touches -- one
+    compact marker per row, matching `_doable_row`'s other markers; the
+    full per-file breakdown is what the dedicated `contention` command is
+    for. Pass a precomputed `breadth` (the caller already has one for its
+    own `doable` render) to avoid a second `git ls-files` spawn."""
+    outcome = _compute_contention(root, queue, breadth=breadth)
+    if not outcome.entries:
+        return {}
+    wanted = {t.id for t in tickets}
+    best: dict[str, tuple[str, int]] = {}
+    for entry in outcome.entries:
+        count = len(entry.ticket_ids)
+        for tid in entry.ticket_ids:
+            if tid not in wanted:
+                continue
+            current = best.get(tid)
+            if current is None or count > current[1]:
+                best[tid] = (entry.file, count)
+    return best
 
 
 # T-2127: TTL a `doable` caller reuses `_unlanded_branch_work`'s own
@@ -938,6 +1016,225 @@ def _render_wave_plain(outcome, agents: int) -> None:  # noqa: ANN001 -- WaveRes
                 r.colliding_ticket_id,
                 r.glob,
             )
+
+
+# frob:ticket T-2395
+# frob:tests \
+# tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_json_render_shape  # noqa: E501
+class _ContentionEntry(NamedTuple):
+    """One real file declared by 2+ currently-open tickets (T-2395): the
+    resolved path plus the tuple of owning ticket ids, sorted so the most-
+    contended file always sorts first. Scope is a write lease
+    (docs/modules/tickets.md#public-api's own T-0453 model), so a file
+    with N holders caps how many of those N tickets can ever be worked in
+    parallel at 1 -- this is the unit `_compute_contention` ranks."""
+
+    file: str
+    ticket_ids: tuple[str, ...]
+
+
+# frob:ticket T-2395
+# frob:tests \
+# tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_json_render_shape  # noqa: E501
+class _ContentionOutcome(NamedTuple):
+    """The full `frob ticket contention` answer (T-2395): every contended
+    file (`entries`, ranked most-contended first, then file path for
+    determinism), plus `batches` -- the connected components of the
+    contention graph (tickets transitively sharing at least one contended
+    file), each naming the tickets a single agent should take together
+    since splitting them across agents cannot avoid a collision anyway.
+    T-2391 FAIL-LOUDLY: `entries=()` is always a genuine zero-contention
+    MEASUREMENT (the ledger was read and no file cleared the 2+ bar), not
+    an absence of measurement -- `_compute_contention` never returns
+    `None`, and its caller renders an explicit "zero contention" line
+    rather than printing nothing (see `_render_contention_plain`)."""
+
+    entries: tuple[_ContentionEntry, ...]
+    batches: tuple[tuple[str, ...], ...]
+
+
+# frob:ticket T-2395
+def _suggested_contention_batches(
+    entries: tuple[_ContentionEntry, ...],
+) -> tuple[tuple[str, ...], ...]:
+    """Union-find over `entries`: two tickets that share ANY contended
+    file end up in the same batch, transitively, so a chain A-B (via file
+    X) and B-C (via file Y) is reported as one 3-ticket batch even though
+    A and C never directly share a file -- the real constraint a single
+    agent working the whole batch in sequence removes. Batches with a
+    single ticket are still returned (kept, not filtered) so every
+    contended ticket is accounted for in the union; `_render_contention_
+    plain`/`_render_contention_json` are the ones that choose to only
+    print batches of size >= 2, since a singleton is not actually a
+    batching decision."""
+    parent: dict[str, str] = {}
+
+    def _find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def _union(a: str, b: str) -> None:
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for entry in entries:
+        for tid in entry.ticket_ids:
+            parent.setdefault(tid, tid)
+    for entry in entries:
+        ids = entry.ticket_ids
+        for tid in ids[1:]:
+            _union(ids[0], tid)
+
+    groups: dict[str, list[str]] = {}
+    for tid in parent:
+        groups.setdefault(_find(tid), []).append(tid)
+    return tuple(
+        sorted(
+            (tuple(sorted(g)) for g in groups.values()),
+            key=lambda g: (-len(g), g[0]),
+        )
+    )
+
+
+# frob:ticket T-2395
+def _compute_contention(
+    root: Path,
+    queue: "TicketQueue",
+    *,
+    breadth: tuple[int, tuple[str, ...]] | None = None,
+) -> _ContentionOutcome:
+    """The decision step of `frob ticket contention` (T-2395): expand
+    every currently-open ticket's declared scope against the git-TRACKED
+    file universe (`scope_breadth_context`'s own `_repo_files`, the same
+    fast substrate T-0453's breadth/lease checks already use -- one
+    `git ls-files` per `doable`/`contention` call, not a filesystem
+    walk), groups ticket ids by matched file, then keeps only files with
+    2+ owners. Ranked by holder count descending, then file path, for a
+    deterministic report. Also returns the suggested single-agent
+    batching (`_suggested_contention_batches`).
+
+    Pass a precomputed `breadth` (`scope_breadth_context(root)`) when the
+    caller already has one, matching `doable`'s own convention -- an
+    earlier version of this function reused `frob ticket new`'s
+    filesystem-globbing `_expand_scope_globs_to_paths` instead, which (1)
+    re-walks the tree once per open ticket (measured: several seconds
+    per `doable` call, well past the harness's foreground cap, since
+    `doable` now calls this unconditionally) and (2) matches derived
+    files (`__pycache__/*.pyc`, `.venv/`) a broad `src/**` glob's
+    filesystem walk sees but `git ls-files` never does -- pure noise for
+    a contention report. `git ls-files` fixes both: one process spawn
+    total, tracked source only."""
+    from frob.tickets._doable import scope_breadth_context
+    from frob.tickets._models import LEDGER_PATH, _scope_globs
+
+    if breadth is None:
+        breadth = scope_breadth_context(root)
+    _threshold, files = breadth
+
+    _NON_TERMINAL = frozenset({"queued", "planned", "in-progress", "blocked"})
+    open_tickets = sorted(
+        (t for t in queue.tickets.values() if t.state in _NON_TERMINAL),
+        key=lambda t: t.id,
+    )
+
+    file_owners: dict[str, list[str]] = {}
+    for t in open_tickets:
+        # `_scope_globs` already expands each declared entry into its own
+        # concrete fnmatch pattern(s) (recursive `**` form included for a
+        # bare directory prefix) -- the SAME expansion `scope_overlap_
+        # globs`/T-0453's lease-collision check matches against, so this
+        # is the one place "does this scope glob cover this file" is
+        # decided, not a second, possibly-diverging definition.
+        globs = [g for g in _scope_globs(t.scope) if g != LEDGER_PATH]
+        matched: set[str] = set()
+        for glob in globs:
+            matched.update(fnmatch.filter(files, glob))
+        for f in matched:
+            owners = file_owners.setdefault(f, [])
+            if t.id not in owners:
+                owners.append(t.id)
+
+    entries = tuple(
+        _ContentionEntry(file=f, ticket_ids=tuple(ids))
+        for f, ids in file_owners.items()
+        if len(ids) >= 2
+    )
+    entries = tuple(sorted(entries, key=lambda e: (-len(e.ticket_ids), e.file)))
+    batches = _suggested_contention_batches(entries)
+    return _ContentionOutcome(entries=entries, batches=batches)
+
+
+# frob:ticket T-2395
+# frob:tests \
+# tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand.test_plain_render_ranks_and_names_owners  # noqa: E501
+def _contention(root: Path, cfg: AppConfig) -> None:
+    """Render `frob ticket contention` (T-2395): every real file declared
+    by 2+ currently-open tickets, ranked by holder count, with the owning
+    ticket ids and a suggested single-agent batching -- the question
+    `frob ticket new`'s own pairwise overlap warning cannot answer
+    (discoverable only as a side effect of filing an unrelated ticket).
+    Complements `frob ticket wave --agents N` (answers "how do I split
+    work"): contention answers "where is work already colliding"."""
+    from frob.tickets import load_queue
+
+    result = load_queue(root)
+    if result.is_err:
+        _log.error("ticket contention failed: %s", result.danger_err)
+        sys.exit(1)
+    queue = result.danger_ok
+    outcome = _compute_contention(root, queue)
+
+    if cfg.ticket_json:
+        _render_contention_json(outcome)
+        return
+    _render_contention_plain(outcome)
+
+
+# frob:ticket T-2395
+def _render_contention_json(outcome: _ContentionOutcome) -> None:
+    """`_contention`'s own `--json` render (ARCH001 split): `{"entries":
+    [...], "batches": [...]}`, singleton batches excluded (a batch of one
+    is not a batching decision -- see `_suggested_contention_batches`)."""
+    payload = {
+        "entries": [
+            {"file": e.file, "ticket_ids": list(e.ticket_ids), "count": len(e.ticket_ids)}
+            for e in outcome.entries
+        ],
+        "batches": [list(b) for b in outcome.batches if len(b) > 1],
+    }
+    _log.info(json.dumps(payload, indent=2))
+
+
+# frob:ticket T-2395
+def _render_contention_plain(outcome: _ContentionOutcome) -> None:
+    """`_contention`'s own human-readable render (ARCH001 split). T-2391
+    FAIL-LOUDLY: an empty `entries` tuple prints an explicit "zero
+    contention" line -- never silence, which would be indistinguishable
+    from a caller that forgot to run this at all."""
+    if not outcome.entries:
+        _log.info(
+            "zero contention: no file is declared by 2+ currently-open tickets"
+        )
+        return
+    _log.info("Contended files (declared by 2+ open tickets), most-contended first:")
+    for e in outcome.entries:
+        _log.info(
+            "  %s  (%d ticket(s): %s)",
+            e.file,
+            len(e.ticket_ids),
+            ", ".join(e.ticket_ids),
+        )
+    multi_batches = [b for b in outcome.batches if len(b) > 1]
+    if multi_batches:
+        _log.info(
+            "Suggested single-agent batching (tickets that transitively "
+            "share a contended file -- route to ONE agent):"
+        )
+        for batch in multi_batches:
+            _log.info("  %s", ", ".join(batch))
 
 
 # frob:ticket T-0453

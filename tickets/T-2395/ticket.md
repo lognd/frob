@@ -2,7 +2,7 @@
 id: T-2395
 title: 'scope contention is undiscoverable: no way to ask which files are declared
   by many open tickets'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -45,12 +45,25 @@ scope_changes:
   reason: implementing frob ticket contention per T-2395 body
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_plain_render_ranks_and_names_owners
+- tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_zero_contention_is_explicit_not_silent
+- tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_json_render_shape
+- tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_suggested_batching_is_transitive_across_files
+- tests/unit/test_app_runners_t2395_contention.py::TestDoableHotFileMarker::test_doable_row_carries_hot_file_marker
+- tests/unit/test_app_runners_t2395_contention.py::TestDoableHotFileMarker::test_doable_row_has_no_marker_without_contention
 designated_repro_test: null
 acceptance:
 - text: Given a ledger where several open tickets declare the same file, when frob
     ticket contention runs, then it reports each contended file ranked by ticket count
     with the owning ticket ids and a suggested single-agent batching.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_plain_render_ranks_and_names_owners
+  - tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_zero_contention_is_explicit_not_silent
+  - tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_json_render_shape
+  - tests/unit/test_app_runners_t2395_contention.py::TestContentionCommand::test_suggested_batching_is_transitive_across_files
+  - tests/unit/test_app_runners_t2395_contention.py::TestDoableHotFileMarker::test_doable_row_carries_hot_file_marker
+  - tests/unit/test_app_runners_t2395_contention.py::TestDoableHotFileMarker::test_doable_row_has_no_marker_without_contention
 threat: null
 component: tickets
 anchor: false

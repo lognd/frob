@@ -118,6 +118,17 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         "T-0453 scope-lease collision filter against IN_PROGRESS tickets",
     )
 
+    # frob:ticket T-2395
+    ticket_contention_p = ticket_sub.add_parser(
+        "contention",
+        help="report real files declared by 2+ currently-open tickets, "
+        "ranked by holder count, with owning ticket ids and a suggested "
+        "single-agent batching (T-2395) -- scope is a write lease, so "
+        "this is the number that caps how many agents can dispatch in "
+        "parallel right now",
+    )
+    ticket_contention_p.add_argument("--json", dest="ticket_json", action="store_true")
+
     # frob:ticket T-0454
     ticket_board_p = ticket_sub.add_parser(
         "board",
@@ -176,6 +187,7 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         ticket_show_p,
         ticket_doable_p,
         ticket_wave_p,
+        ticket_contention_p,
         ticket_board_p,
         ticket_epic_p,
         ticket_brief_p,
