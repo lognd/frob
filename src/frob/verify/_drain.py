@@ -155,7 +155,7 @@ def spawn_deferred_drain(root: Path, land_ticket_id: str) -> Result[int, DrainEr
 # frob:doc docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-t-2310
 # frob:ticket T-2310
 # frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_declines_while_a_land_is_in_progress kind="unit"  # noqa: E501
-# frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_green_round_advances_watermark_a_subsequent_round_sees kind="unit"  # noqa: E501
+# frob:tests tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd.test_green_round_advances_watermark_a_subsequent_round_sees kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_drain.py::TestRunDrainAsync.test_never_blocks_or_loops_over_the_backlog kind="unit"  # noqa: E501
 def run_drain_async(root: Path):  # noqa: ANN201 -- Result[WorkerOutcome, DrainError | WorkerError]
     """`frob verify drain-async`'s whole body -- the detached child's own

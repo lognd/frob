@@ -503,6 +503,24 @@
       "old_digest": null,
       "reason": "T-2325: _new_callable_records (called from wire_gate) now also rescues a pydantic model_validator/field_validator alongside the pre-existing autouse-fixture rescue; documented in the new 'Dynamic-dispatch rescues' subsection under this same anchor",
       "ref": "src/frob/gates/_wire.py::wire_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "body",
+      "new_digest": "4e5ff73e41f4ff27bf2dd4d3705f67a9a3e8c3080911899777e13d9953ed7607",
+      "old_digest": null,
+      "reason": "T-2337: verified run_drain_async's body against T-2324's landed fix\n(advance-on-green-or-owned-red, never advance on unmeasurable/unfiled-red).\nThe stale frob:tests directive named TestRunDrainAsync.\ntest_green_round_advances_watermark_a_subsequent_round_sees, but that\nmethod actually lives in a separate class, TestDrainAdvancesWatermarkEndToEnd\n(introduced alongside T-2324's fix), which TestRunDrainAsync does not\ndefine. Repointed the directive to the correct class; confirmed the\nmethod genuinely covers the watermark-advance behavior described (green\nround advances, unmeasurable round leaves watermark untouched) and that\nall 6 tests in tests/unit/verify/test_drain.py collect and pass.\n",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-17",
+      "facet": "sig",
+      "new_digest": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
+      "old_digest": null,
+      "reason": "T-2337: verified run_drain_async's body against T-2324's landed fix\n(advance-on-green-or-owned-red, never advance on unmeasurable/unfiled-red).\nThe stale frob:tests directive named TestRunDrainAsync.\ntest_green_round_advances_watermark_a_subsequent_round_sees, but that\nmethod actually lives in a separate class, TestDrainAdvancesWatermarkEndToEnd\n(introduced alongside T-2324's fix), which TestRunDrainAsync does not\ndefine. Repointed the directive to the correct class; confirmed the\nmethod genuinely covers the watermark-advance behavior described (green\nround advances, unmeasurable round leaves watermark untouched) and that\nall 6 tests in tests/unit/verify/test_drain.py collect and pass.\n",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
     }
   ],
   "entries": [
@@ -1345,6 +1363,16 @@
       "digest": "b1a83f11e01d1abc8e365d1c3369c57b882ef747d95e06bd5cfddc25f5ad3000",
       "facet": "sig",
       "ref": "src/frob/tickets/clipboard.py::clipboard_image"
+    },
+    {
+      "digest": "4e5ff73e41f4ff27bf2dd4d3705f67a9a3e8c3080911899777e13d9953ed7607",
+      "facet": "body",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
+    },
+    {
+      "digest": "54c27c78e702dd3634460c9d69e83f55343dd77d8df51593cdaf522cc5a3074c",
+      "facet": "sig",
+      "ref": "src/frob/verify/_drain.py::run_drain_async"
     },
     {
       "digest": "9bb4e2ac11958b6fe775d07a753bd5ca7dfdf77279f87c2908770cc6e238b3d0",

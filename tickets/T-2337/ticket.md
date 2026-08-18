@@ -2,7 +2,7 @@
 id: T-2337
 title: 'DRIFT002: repoint run_drain_async''s frob:tests edge after T-2324''s watermark
   fix lands'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-17'
@@ -15,14 +15,19 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/verify/_drain.py
+evidence_scope:
+- tests/unit/verify/test_drain.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd::test_green_round_advances_watermark_a_subsequent_round_sees
 designated_repro_test: null
 acceptance:
 - text: given T-2324 has landed, when run_drain_async's frob:tests directive is re-read
     against the current test_drain.py, then it points at a real, resolving test that
     accurately covers the described behavior
-  evidence: []
+  evidence:
+  - tests/unit/verify/test_drain.py::TestDrainAdvancesWatermarkEndToEnd::test_green_round_advances_watermark_a_subsequent_round_sees
 threat: null
 component: null
 anchor: false
