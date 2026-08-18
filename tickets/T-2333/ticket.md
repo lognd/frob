@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dced1dc9c988880e26e13a0882bfce493e91c0c3
 ---
 `frob worktree release-lease --force --reason TEXT` (T-1777) folds the
 operator's reason into `force_release_lease`'s own WARNING log line, not
