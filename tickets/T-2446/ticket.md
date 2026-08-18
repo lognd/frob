@@ -75,7 +75,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 62feac2eef699074f27cb9a0c41b5bb8ab6ca222
 ---
 Scope is simultaneously the evidence-coverage declaration AND the write
 lease, so an over-broad scope on an idle ticket silently caps how many
