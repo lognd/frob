@@ -2,7 +2,7 @@
 id: T-2323
 title: 'T-2303 child: SELFAUDIT001 capability declaration + ratchet ceiling bump (needs
   deliberate review, no auto-update per T-1870)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -17,6 +17,9 @@ scope:
 - tests/unit/test_new_ticket_scope_overlap_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+evidence:
+- tests/unit/test_land_sibling_regression.py::TestSiblingStateRegressionGuard::test_pre_fix_shape_would_have_silently_reverted_sibling
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_real_case_four_prior_tickets_all_named
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +74,4 @@ growth, not a mechanical fix. The assigned agent should:
 Scope: design (frob.strata + docs/design/registry/capability-via-ratchet.lock.json),
 tests/unit/test_land_sibling_regression.py,
 tests/unit/test_new_ticket_scope_overlap_warning.py.
+frob:waive BUG002 reason="this ticket's fix is a design/frob.strata capability declaration and docs/design/registry/capability-via-ratchet.lock.json ceiling correction, not a code-behavior change -- there is no pytest mutation-testable code path for a missing 'may' clause or a stale ratchet accepted_count. The real fail-before/pass-after signal was directly demonstrated via the SELFAUDIT001/SYS111 gate itself: 'frob check --only sys' reported 2 undeclared-capability-effect findings (tests/unit/test_land_sibling_regression.py:275 fs.read, tests/unit/test_new_ticket_scope_overlap_warning.py:24 fs.write) plus 3 SYS111 ratchet-ceiling findings BEFORE this change, and zero of either after -- measured directly in-worktree, not assumed. The bound pytest evidence (test_pre_fix_shape_would_have_silently_reverted_sibling, test_real_case_four_prior_tickets_all_named) exercises the two touched test files' own real behavior as a sanity check that the capability grant did not break anything, per the must-still-pass positive-control requirement -- it was never meant to reproduce the SELFAUDIT001 defect itself, which is a declarative gate finding, not a runtime code path."

@@ -66,9 +66,9 @@
       "ticket": "T-1628"
     },
     "core::fs.write": {
-      "accepted_count": 21,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 22,
+      "reason": "T-2323: ratchet had not caught up to an already-landed capability grant (src/frob/scaffold/_skills_sync.py, commit 1e460771a) -- verified via git log -S that the 22nd via-list site is a genuine, previously-reviewed addition, not new scope; bumping the stale ceiling to match, not approving a fresh expansion",
+      "ticket": "T-2323"
     },
     "core::process-control": {
       "accepted_count": 1,
@@ -176,14 +176,14 @@
       "ticket": "T-1628"
     },
     "testsuite::fs.read": {
-      "accepted_count": 130,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on testsuite from 129 to 130 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 131,
+      "reason": "T-2323: this ticket's own deliberate capability grant for tests/unit/test_land_sibling_regression.py (read_text() on a v2 tmp-repo test fixture, SELFAUDIT001-flagged undeclared effect) adds one via-list site",
+      "ticket": "T-2323"
     },
     "testsuite::fs.write": {
-      "accepted_count": 327,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.write on testsuite from 326 to 327 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 328,
+      "reason": "T-2323: this ticket's own deliberate capability grant for tests/unit/test_new_ticket_scope_overlap_warning.py (write_text() test-fixture helper, SELFAUDIT001-flagged undeclared effect) adds one via-list site",
+      "ticket": "T-2323"
     },
     "testsuite::install-hook": {
       "accepted_count": 2,
