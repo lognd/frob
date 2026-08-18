@@ -1,7 +1,7 @@
 ---
 id: T-2396
 title: the shared-root write guard fires at commit time, after the damage is done
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -49,21 +49,40 @@ scope_changes:
     and its own test
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_hook_root_write_guard.py::test_agent_context_write_to_root_is_refused
+- tests/test_hook_root_write_guard.py::test_worktree_fact_alone_is_sufficient_without_frob_agent
+- tests/test_hook_root_write_guard.py::test_ledger_paths_are_exempt_even_for_an_agent
+- tests/test_hook_root_write_guard.py::test_frob_land_internal_exempts_an_agent_write
+- tests/test_hook_root_write_guard.py::test_notebook_edit_to_root_is_refused_for_an_agent
+- tests/test_hook_root_write_guard.py::test_coordinator_or_human_write_to_root_is_allowed
+- tests/test_hook_root_write_guard.py::test_fake_frob_worktree_value_does_not_satisfy_the_fact_check
+- tests/test_hook_root_write_guard.py::test_agent_write_inside_its_own_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_non_guarded_tool_is_ignored
 designated_repro_test: null
 acceptance:
 - text: Given an agent with a worktree, when it attempts to WRITE a file in the shared
     root, then the write is refused at edit time and it is pointed at frob ticket
     work, before the root is dirtied.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_agent_context_write_to_root_is_refused
+  - tests/test_hook_root_write_guard.py::test_worktree_fact_alone_is_sufficient_without_frob_agent
+  - tests/test_hook_root_write_guard.py::test_ledger_paths_are_exempt_even_for_an_agent
+  - tests/test_hook_root_write_guard.py::test_frob_land_internal_exempts_an_agent_write
+  - tests/test_hook_root_write_guard.py::test_notebook_edit_to_root_is_refused_for_an_agent
 - text: Given the coordinator or a human editing the shared root legitimately, when
     they write, then the guard does not fire, proving the discriminator discriminates
     in both directions.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_coordinator_or_human_write_to_root_is_allowed
+  - tests/test_hook_root_write_guard.py::test_fake_frob_worktree_value_does_not_satisfy_the_fact_check
+  - tests/test_hook_root_write_guard.py::test_agent_write_inside_its_own_worktree_is_allowed
+  - tests/test_hook_root_write_guard.py::test_non_guarded_tool_is_ignored
 threat: null
 component: hooks
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2e33cc71767f3d5e357675e22aae1f78fa5b5360
 ---
 MEASURED TODAY: two agents in one wave edited the SHARED ROOT instead of
 their worktree, and a third agent's land was DirtyMain-blocked as a

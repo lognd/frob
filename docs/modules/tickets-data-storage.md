@@ -97,6 +97,8 @@ class Ticket(BaseModel):
     component: str | None = None   # T-0454: which module/area (freeform)
     labels: tuple[str, ...] = ()   # T-0454: freeform tags, orthogonal to component
     body: str                   # markdown after frontmatter, verbatim
+    body_changes: tuple[BodyChangeEntry, ...] = ()   # T-2392: audit trail of
+        # `frob ticket body --append/--set` mutations, append-only
 
 class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     title: str
@@ -383,6 +385,69 @@ partial command substitution before frob ever sees it.
 - Both are implemented in `frob.app.ticket_runner._resolve_new_body` /
   `_resolve_new_acceptance` / `_parse_acceptance_file` -- pure CLI-layer
   resolution, no change to `TicketSpec` or `new_ticket` itself.
+
+### `frob ticket body` (T-2392)
+
+Until this ticket, `--body-file`/`--body` (above) set a ticket's body only
+at CREATION time (`frob ticket new`) -- there was NO CLI verb to amend an
+EXISTING ticket's body at all. When the documented remedy for a gate
+refusal is "add a directive to the ticket body" (e.g. `frob:no-behavior-
+change reason="..."`, T-2393's own BUG002 front door), the only available
+action used to be hand-editing `tickets/T-####/ticket.md` directly and
+committing it -- the exact single-writer violation this repo learned to
+forbid the hard way (a hand-typed space-hash once broke the ledger YAML
+and took every gate down). Three agents hit this wall independently in
+one drive before this ticket closed it.
+
+`frob.tickets.set_body(root, ticket_id, text, *, mode, reason)` is the
+accountable, single-writer amendment path, same ledger-locked shape every
+other single-field setter in this module uses:
+
+- `mode="append"`: `text` is appended after the existing body, separated
+  by a blank line (matching how a maintainer would hand-type a new
+  paragraph). If the body was previously empty/whitespace-only, `text`
+  becomes the body outright (no leading blank line).
+- `mode="set"`: `text` REPLACES the body outright -- for a body that is
+  wrong, not merely missing a directive.
+- `reason` is REQUIRED (`Err(TicketError.BodyReasonMissing)` on a blank/
+  whitespace-only value) and recorded into a `BodyChangeEntry` appended to
+  `ticket.body_changes` (never edited, only appended) -- the
+  `TriageChangeEntry`/`ScopeChangeEntry` accountability (T-2353/T-0455)
+  applied to the body itself. Unlike those two audit-entry types, a
+  `BodyChangeEntry` records `old_length`/`new_length`, not the full
+  before/after text -- a ticket body can be many KB, and duplicating it
+  into every audit entry would make the ledger grow without bound on
+  repeated amendment; the full diff is `tickets.md`'s own git history.
+
+`frob ticket body <id> (--append TEXT|--append-file PATH | --set
+TEXT|--set-file PATH) --reason TEXT|--reason-file PATH` is the CLI front
+door (`frob.app.ticket_runner._mutate._body`) -- argparse's mutually-
+exclusive group refuses more than one of the four text sources at parse
+time; the `-file` variants follow the same T-0737 shell-injection-
+avoidance precedent as every other free-text ticket input.
+
+#### `frob ticket close --no-behavior-change` (T-2393)
+
+`frob:no-behavior-change reason="..."` (T-1616, `frob.gates.
+_mutation_evidence._no_behavior_change_reason`) is BUG002's pre-existing
+remedy for a bug/security ticket with no runtime defect to reproduce (an
+epic rollup, a structural refactor, a doc change): the directive INVERTS
+BUG002's obligation for that ticket -- its designated evidence must PASS
+at the parent commit (proving nothing changed there either), and a
+genuine FAILURE at the parent becomes the violation instead. Until
+T-2393, the ONLY way to add this directive to an existing ticket was the
+hand-edit `frob ticket body` (above) itself exists to eliminate.
+
+`frob ticket close <id> --no-behavior-change --no-behavior-change-reason
+TEXT|--no-behavior-change-reason-file PATH` is the first-class front
+door: `frob.app.ticket_runner._close_cmd._apply_no_behavior_change_
+directive` writes `frob:no-behavior-change reason="TEXT"` into the
+ticket's body via `set_body` (the SAME validated path `frob ticket body`
+uses) BEFORE `_close` computes `mutation_evidence`, so BUG002 sees it
+without any hand-edit. The reason is REQUIRED (exits 1 if blank/missing)
+-- this stays prove-or-justify, never a silent escape hatch, and BUG002
+itself is completely unchanged: a ticket with genuinely confirmatory-only
+evidence and no directive is still refused exactly as before.
 
 ### `frob ticket accept` (T-1029)
 

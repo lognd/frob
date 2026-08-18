@@ -407,6 +407,69 @@ def _add_ticket_tier_parser(ticket_sub):
     return ticket_tier_p
 
 
+# frob:ticket T-2392
+def _add_ticket_body_parser(ticket_sub):
+    """Register `frob ticket body <id> (--append TEXT|--append-file PATH |
+    --set TEXT|--set-file PATH) --reason TEXT` -- the validated,
+    single-writer way to amend a ticket's free-text body (T-2392),
+    replacing the hand-edit of `tickets/T-####/ticket.md` that was
+    previously the ONLY way to add a directive (e.g. `frob:no-behavior-
+    change reason=...`, T-2393's remedy) to an existing ticket. `--append`/
+    `--set` are mutually exclusive and exactly one (in TEXT or -file form)
+    is required, same enforcement shape `anchor --set/--clear` already
+    uses in this module. `--reason`/`--reason-file` follow the same
+    T-0737 file-input precedent as every other free-text CLI input here,
+    to avoid shell command-substitution corrupting the text (docs/guides/
+    agent-playbook.md section 1d)."""
+    ticket_body_p = ticket_sub.add_parser(
+        "body",
+        help="amend a ticket's free-text body (T-2392) -- the validated "
+        "front door replacing a hand-edit of tickets/T-####/ticket.md",
+    )
+    ticket_body_p.add_argument("ticket_id", metavar="id")
+    mode_group = ticket_body_p.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--append",
+        dest="ticket_body_append",
+        metavar="TEXT",
+        help="append TEXT to the existing body, separated by a blank line",
+    )
+    mode_group.add_argument(
+        "--append-file",
+        dest="ticket_body_append_file",
+        metavar="PATH",
+        help="read the text to append verbatim from PATH (T-0737)",
+    )
+    mode_group.add_argument(
+        "--set",
+        dest="ticket_body_set",
+        metavar="TEXT",
+        help="replace the body outright with TEXT",
+    )
+    mode_group.add_argument(
+        "--set-file",
+        dest="ticket_body_set_file",
+        metavar="PATH",
+        help="read the replacement body verbatim from PATH (T-0737)",
+    )
+    ticket_body_p.add_argument(
+        "--reason",
+        dest="ticket_body_reason",
+        metavar="TEXT",
+        help="why this body change (recorded in the ticket's body_changes "
+        "audit trail); required unless --reason-file is given",
+    )
+    ticket_body_p.add_argument(
+        "--reason-file",
+        dest="ticket_body_reason_file",
+        metavar="PATH",
+        help="read the body-change reason verbatim from PATH instead of "
+        "the shell (T-0737); mutually exclusive with --reason",
+    )
+    _add_no_commit_flag(ticket_body_p)  # frob:ticket T-1615
+    return ticket_body_p
+
+
 # frob:ticket T-1613
 def _add_ticket_runs_last_parser(ticket_sub):
     """Register `frob ticket runs-last <id> <on|off>` -- flip an

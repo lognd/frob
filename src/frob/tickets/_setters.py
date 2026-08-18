@@ -34,6 +34,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._models import (
+    BodyChangeEntry,
     DesignatedReproChangeEntry,
     Priority,
     SprintReport,
@@ -299,6 +300,91 @@ def set_tier(
     return _set_ticket_field(
         root, ticket_id, "tier", tier, log_value=tier.value, reason=reason
     )
+
+
+# frob:ticket T-2392
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_appends_text
+# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_set_replaces_text
+# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_reason_missing_refuses
+# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_records_body_change_entry  # noqa: E501
+def set_body(
+    root: Path,
+    ticket_id: str,
+    text: str,
+    *,
+    mode: str,
+    reason: str,
+) -> Result[Ticket, TicketError]:
+    """`frob ticket body <id> (--append TEXT|--append-file PATH | --set
+    TEXT|--set-file PATH) --reason TEXT`: amend `ticket_id`'s free-text
+    `body` (T-2392) -- the accountable, single-writer front door this
+    ticket adds so a directive (e.g. `frob:no-behavior-change reason=...`,
+    T-2393's own remedy) can be added to a ticket's body WITHOUT hand-
+    editing `tickets/T-####/ticket.md`, the exact operation this repo
+    learned to forbid after a hand-typed space-hash broke the ledger YAML
+    and took every gate down (see T-2392's own body for the incident).
+
+    `mode` is `"append"` (default shape: `text` is appended after a blank
+    line separating it from the existing body, matching how a maintainer
+    would hand-type a new paragraph) or `"set"` (replace the body
+    outright -- rare, but needed for a genuinely wrong body rather than
+    one missing a directive). Held under `ledger_lock` (same discipline as
+    every other single-field setter in this module) so this can never
+    interleave with a concurrent ledger mutation.
+
+    `reason` is REQUIRED (`Err(TicketError.BodyReasonMissing)` on a
+    blank/whitespace-only value) and recorded into a `BodyChangeEntry`
+    (T-2392) appended to `ticket.body_changes` -- the `TriageChangeEntry`/
+    `ScopeChangeEntry` accountability (T-2353/T-0455) applied to the body
+    itself. Unlike those two, the entry stores lengths, not the full text,
+    since a ticket body can be many KB (see `BodyChangeEntry`'s own
+    docstring) -- the full before/after diff is `tickets.md`'s own git
+    history."""
+    if not reason.strip():
+        return Err(TicketError.BodyReasonMissing)
+    if mode not in ("append", "set"):
+        return Err(TicketError.BodyModeConflict)
+    from frob.tickets import _load_ticket_and_queue
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        old_body = ticket.body
+        if mode == "append":
+            new_body = f"{old_body}\n\n{text}" if old_body.strip() else text
+        else:
+            new_body = text
+        entry = BodyChangeEntry(
+            mode=mode,
+            reason=reason,
+            actor=_current_actor(),
+            at=date.today(),
+            old_length=len(old_body),
+            new_length=len(new_body),
+        )
+        update: dict[str, object] = {
+            "body": new_body,
+            "body_changes": ticket.body_changes + (entry,),
+        }
+        updated = ticket.model_copy(update=update)
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s body %s (%d -> %d chars): %s",
+        ticket_id,
+        mode,
+        len(old_body),
+        len(new_body),
+        reason,
+    )
+    return Ok(updated)
 
 
 # frob:ticket T-1613

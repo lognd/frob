@@ -132,6 +132,12 @@ _STRING_FIELDS = (
     # frob:ticket T-2353
     "ticket_triage_reason",
     "ticket_triage_reason_file",
+    # frob:ticket T-2392
+    "ticket_body_append",
+    "ticket_body_set",
+    "ticket_body_reason",
+    # frob:ticket T-2393
+    "ticket_close_no_behavior_change_reason",
     # frob:ticket T-0715
     "ticket_tier",
     # frob:ticket T-1069
@@ -241,6 +247,12 @@ _PATH_FIELDS = (
     "ticket_accept_criterion_file",
     # frob:ticket T-1422
     "ticket_accept_amend_reason_file",
+    # frob:ticket T-2392
+    "ticket_body_append_file",
+    "ticket_body_set_file",
+    "ticket_body_reason_file",
+    # frob:ticket T-2393
+    "ticket_close_no_behavior_change_reason_file",
     "test_path",
     "vet_path",
     "vet_cve_mirror",
@@ -435,6 +447,8 @@ _BOOL_FLAGS = (
     # frob:ticket T-1369
     "ticket_allow_cross_ticket",
     "ticket_close_skip_mutation_evidence",
+    # frob:ticket T-2393
+    "ticket_close_no_behavior_change",
     # frob:ticket T-1929
     "ticket_designate_repro_force",
     "ticket_land_push",

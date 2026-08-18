@@ -132,6 +132,48 @@ genuinely stuck agent can still report-and-stop on the second attempt.
 any read/parse error, and prints the block decision only when one fires.
 Tested end-to-end via `tests/test_hook_pending_background_guard.py`.
 
+## `root-write-guard.py`
+
+A PreToolUse hook (`Write`/`Edit`/`NotebookEdit`) that refuses a dispatched
+agent's write into the SHARED ROOT (the primary git checkout) at edit
+time -- before the tree is dirtied and every concurrent `frob ticket land`
+starts refusing with DirtyMain. The pre-existing `_WORKTREE_LEASE_HOOK_
+SCRIPT` git hook (`src/frob/scaffold/project.py`) only guards COMMIT time,
+which is too late for the failure this closes (T-2396: measured twice in
+one drive -- two agents edited the shared root instead of their leased
+worktree, and a third agent's land was DirtyMain-blocked as a result).
+
+`_is_agent_context` is the discriminator, and it must fire for an agent
+and never for the coordinator or a human (both directions matter): it
+fires when `FROB_AGENT` is truthy OR `_worktree_fact` independently holds.
+`FROB_AGENT` alone is insufficient -- `_WORKTREE_LEASE_HOOK_SCRIPT`'s own
+T-2071 comment measured it UNSET in real Agent-tool shells -- so
+`_worktree_fact` pairs it with a FACT check: `FROB_WORKTREE` (the sibling
+var the same `frob agent env <worktree-path>` call always exports
+alongside `FROB_AGENT`) must resolve to a directory that ACTUALLY appears
+as a registered linked worktree per `git worktree list --porcelain`, not
+just an unverified string. A coordinator or human shell carries neither
+var (`frob agent env` is only ever invoked for a dispatched worktree
+agent's own shell), so neither disjunct fires and the guard stays silent.
+
+The refusal itself is scoped narrowly: `_target_path` resolves the file a
+call targets (`file_path` for `Write`/`Edit`, `notebook_path` for
+`NotebookEdit`), and `main` only denies when that path resolves (via
+`git worktree list --porcelain`'s first `worktree ` line) to the PRIMARY
+checkout -- a write inside the agent's own leased worktree, the normal
+case, is never touched. `_is_ledger_path` exempts `tickets.md`/
+`tickets/**` (the `frob ticket` CLI's own ledger writes), matching the
+same carve-out `_WORKTREE_LEASE_HOOK_SCRIPT` already uses; `FROB_LAND_
+INTERNAL=1` exempts everything, matching every other land-owned-file
+guard (playbook section 4b). `REASON` is the exact refusal text, naming
+`frob ticket work <id>` as the correct next step. `main` reads the JSON
+payload from stdin and fails open (silent allow) on any parse or lookup
+failure. Tested end-to-end via `tests/test_hook_root_write_guard.py`,
+including a positive control proving the discriminator actually
+discriminates: it fires under a simulated agent env and does not fire
+under a plain coordinator/human env, both against the identical target
+path.
+
 ## `sync-claude-config.py`
 
 Materialises the git-tracked canonical `.claude/hooks/**` /

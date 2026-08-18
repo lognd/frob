@@ -2,7 +2,7 @@
 id: T-2380
 title: Decompose SYS003 (undeclared cross-component import) WARN campaign -- 4834
   findings, 603 files
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -11,8 +11,29 @@ parent: T-0969
 tier: epic
 sprint: null
 runs_last: false
+scope:
+- design/frob.strata
+- tests/unit/strata/test_sys003_calibration.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: design/frob.strata
+  reason: 'gate-calibration investigation: reclassify misplaced leaf utilities, declare
+    testsuite->component Flows explicitly, add positive-control regression test'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/strata/test_sys003_calibration.py
+  reason: 'gate-calibration investigation: reclassify misplaced leaf utilities, declare
+    testsuite->component Flows explicitly, add positive-control regression test'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_now_be_silent__testsuite_importing_declared_tested_module
+- tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__testsuite_importing_undeclared_component
+- tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__production_importing_testsuite
+- tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__genuine_undeclared_production_cross_import
 designated_repro_test: null
 acceptance:
 - text: GIVEN the corrected architecture model (testsuite->component Flows declared
@@ -20,10 +41,17 @@ acceptance:
     from cli to core, refactor/registry_model/verify->core Flows added) THEN a fresh
     unscoped frob check reports the TRUE production-only SYS003 count, and that count
     is either burned down in one dispatch or split into disjoint children
-  evidence: []
-- text: given every SYS003 child, when all have landed clean, then SYS003 is promoted
-    from warning to error
-  evidence: []
+  evidence:
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_now_be_silent__testsuite_importing_declared_tested_module
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__testsuite_importing_undeclared_component
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__production_importing_testsuite
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_still_fire__genuine_undeclared_production_cross_import
+- text: GIVEN this ticket's own corrected model (testsuite Flows + utility reclassification
+    + missing production Flows) THEN it lands with positive-control test coverage
+    proving the narrowing is safe, and T-2403 is filed to own the remaining 133 findings'
+    burn-down and the eventual WARN->ERROR promotion once THAT lands clean
+  evidence:
+  - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_now_be_silent__testsuite_importing_declared_tested_module
 acceptance_amendments:
 - op: replace
   index: 0
@@ -43,11 +71,26 @@ acceptance_amendments:
     decomposed
   actor: logan
   at: '2026-08-18'
+- op: replace
+  index: 1
+  old_text: given every SYS003 child, when all have landed clean, then SYS003 is promoted
+    from warning to error
+  new_text: GIVEN this ticket's own corrected model (testsuite Flows + utility reclassification
+    + missing production Flows) THEN it lands with positive-control test coverage
+    proving the narrowing is safe, and T-2403 is filed to own the remaining 133 findings'
+    burn-down and the eventual WARN->ERROR promotion once THAT lands clean
+  reason: the original criterion described the epic's (T-0969) eventual end state,
+    not this leaf's own deliverable -- promotion to ERROR cannot happen while T-2403's
+    133 real findings are still open, so it is T-2403's closing criterion, not T-2380's;
+    this ticket's job was measurement + model correction + decomposition, which it
+    did
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 65e46af6f33cdafefd63e9d02de02cfe79ed5227
 ---
 Measured via `uv run frob check --json --budget 500` (full gate-summary coverage,
 no BUDGET001 deferral), gate:SYS rule SYS003 ("undeclared cross-component

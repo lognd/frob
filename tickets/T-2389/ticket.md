@@ -16,8 +16,29 @@ scope:
 - src/frob/gates/_root_asset_dirs.py
 - tests/unit/gates/test_env_var_docs.py
 - tests/unit/gates/test_root_asset_dirs.py
+- src/frob/gates/_walk_lint.py
+- tests/unit/gates/test_walk_lint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_walk_lint.py
+  reason: T-2388's Done report found _walk_lint.py::tracked_python_files_for_gate
+    hardcodes 'git ls-files -- src/frob' -- the same literal-package-path class this
+    ticket already retargets, one layer below every gate (PORT001/WALK001/RENDER001
+    alike) that reuses this shared helper to enumerate tracked files; folding in per
+    coordinator instruction (2026-08-18) rather than filing a fourth sibling
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/gates/test_walk_lint.py
+  reason: T-2388's Done report found _walk_lint.py::tracked_python_files_for_gate
+    hardcodes 'git ls-files -- src/frob' -- the same literal-package-path class this
+    ticket already retargets, one layer below every gate (PORT001/WALK001/RENDER001
+    alike) that reuses this shared helper to enumerate tracked files; folding in per
+    coordinator instruction (2026-08-18) rather than filing a fourth sibling
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null

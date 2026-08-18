@@ -6,7 +6,9 @@ MUST-STILL-PASS instruction)."""
 
 from __future__ import annotations
 
+import json
 import re
+import shutil
 from pathlib import Path
 
 from frob.gates._render_lint import render_lint_gate
@@ -60,19 +62,31 @@ class TestSyncSkills:
         sync_skills(repo, claude_dir)
         assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v2"
 
-    def test_removes_stale_claude_side_entry(self, tmp_path: Path) -> None:
-        """T-2241's own MUST-STILL-PASS: an existing ~/.claude entry with no
-        repo-side counterpart is removed -- stale-entry cleanup, verified
-        against a temp directory rather than the real ~/.claude."""
+    def test_removes_stale_claude_side_entry_this_repo_previously_installed(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2241's own MUST-STILL-PASS, narrowed by T-2386's provenance fix:
+        an existing ~/.claude entry THIS REPO installed on a prior sync,
+        with no repo-side counterpart left, is removed -- stale-entry
+        cleanup still works for entries this repo actually owns, verified
+        against a temp directory rather than the real ~/.claude. (The
+        pre-T-2386 version of this test synced a claude-side entry with NO
+        prior manifest record and asserted removal -- that was the exact
+        cross-repo-deletion defect T-2386 fixes; see
+        `TestSyncSkillsProvenance.test_hand_maintained_entry_is_never_deleted_or_overwritten`  # noqa: E501
+        for the corrected first-run behavior.)"""
         repo = tmp_path / "repo"
         claude_dir = tmp_path / "claude"
-        _make_entry(claude_dir, "agents", "stale-agent")
-        (repo / "agents").mkdir(parents=True)  # repo side now empty
+        _make_entry(repo, "agents", "temp-agent")
+        first = sync_skills(repo, claude_dir)
+        assert first["agents"].synced == ("temp-agent",)
+
+        shutil.rmtree(repo / "agents" / "temp-agent")  # repo side now empty
 
         reports = sync_skills(repo, claude_dir)
 
-        assert reports["agents"].removed == ("stale-agent",)
-        assert not (claude_dir / "agents" / "stale-agent").exists()
+        assert reports["agents"].removed == ("temp-agent",)
+        assert not (claude_dir / "agents" / "temp-agent").exists()
 
     def test_missing_repo_directories_are_a_no_op(self, tmp_path: Path) -> None:
         """A repo with neither agents/ nor skills/ still creates both
@@ -110,6 +124,144 @@ class TestSyncSkills:
         assert stray_file.exists()
 
 
+# frob:ticket T-2386
+class TestSyncSkillsProvenance:
+    """T-2386 (child of T-2384): provenance-manifest-backed cooperation
+    between two frob repos syncing agents/skills into the same
+    `~/.claude` -- must-now-fire/must-not-delete coverage for the
+    epic's acceptance[1]/[2]. Never touches the real `~/.claude`."""
+
+    def test_second_repo_does_not_delete_first_repos_entries(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2384 acceptance[1]: two different repos syncing into the same
+        claude_dir never remove each other's entries. Repo A installs
+        `agents/alpha`; repo B (no `alpha` of its own) then syncs its own
+        `agents/beta` -- repo A's `alpha` must survive repo B's run, even
+        though `alpha` has no counterpart in repo B."""
+        claude_dir = tmp_path / "claude"
+        repo_a = tmp_path / "repo-a"
+        repo_b = tmp_path / "repo-b"
+        _make_entry(repo_a, "agents", "alpha")
+        _make_entry(repo_b, "agents", "beta")
+
+        sync_skills(repo_a, claude_dir)
+        sync_skills(repo_b, claude_dir)
+
+        assert (claude_dir / "agents" / "alpha").is_dir()
+        assert (claude_dir / "agents" / "beta").is_dir()
+
+        # Alternating a second time must not flap alpha out either.
+        sync_skills(repo_a, claude_dir)
+        sync_skills(repo_b, claude_dir)
+        assert (claude_dir / "agents" / "alpha").is_dir()
+        assert (claude_dir / "agents" / "beta").is_dir()
+
+    def test_hand_maintained_entry_is_never_deleted_or_overwritten(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2384 acceptance[2]: a ~/.claude containing a hand-maintained
+        agent no frob repo installed survives a repo's first sync
+        untouched -- neither deleted (it has no repo-side counterpart)
+        nor overwritten (the repo happens to ship a same-named entry)."""
+        claude_dir = tmp_path / "claude"
+        repo = tmp_path / "repo"
+        hand = _make_entry(claude_dir, "agents", "hand-made", content="mine")
+        (repo / "agents").mkdir(parents=True)  # repo side has nothing
+
+        reports = sync_skills(repo, claude_dir)
+
+        assert reports["agents"].removed == ()
+        assert hand.exists()
+        assert (hand / "content.txt").read_text() == "mine"
+
+    def test_hand_maintained_entry_collides_instead_of_being_overwritten(
+        self, tmp_path: Path
+    ) -> None:
+        """Same as above, but the repo DOES ship a same-named entry: the
+        collision is reported and the hand-maintained content is left
+        alone, not silently overwritten."""
+        claude_dir = tmp_path / "claude"
+        repo = tmp_path / "repo"
+        _make_entry(claude_dir, "agents", "foo", content="hand-made")
+        _make_entry(repo, "agents", "foo", content="repo-version")
+
+        reports = sync_skills(repo, claude_dir)
+
+        assert reports["agents"].collisions == ("foo",)
+        assert reports["agents"].synced == ()
+        assert (
+            claude_dir / "agents" / "foo" / "content.txt"
+        ).read_text() == "hand-made"
+
+    def test_force_overwrites_collision_and_claims_ownership(
+        self, tmp_path: Path
+    ) -> None:
+        """`force=True` overwrites a collision and this repo now owns the
+        entry -- a subsequent unforced sync updates it in place rather
+        than colliding again."""
+        claude_dir = tmp_path / "claude"
+        repo = tmp_path / "repo"
+        _make_entry(claude_dir, "agents", "foo", content="hand-made")
+        _make_entry(repo, "agents", "foo", content="v1")
+
+        reports = sync_skills(repo, claude_dir, force=True)
+        assert reports["agents"].synced == ("foo",)
+        assert reports["agents"].collisions == ()
+        assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v1"
+
+        _make_entry(repo, "agents", "foo", content="v2")
+        reports2 = sync_skills(repo, claude_dir)  # no force needed now
+        assert reports2["agents"].synced == ("foo",)
+        assert reports2["agents"].collisions == ()
+        assert (claude_dir / "agents" / "foo" / "content.txt").read_text() == "v2"
+
+    def test_same_repo_sync_twice_is_a_no_op_second_run(self, tmp_path: Path) -> None:
+        """T-2384 acceptance[1]: running the same repo's sync twice in a
+        row produces no further change on the second run -- no new
+        collisions, no removals, and the manifest's ownership set is
+        stable."""
+        claude_dir = tmp_path / "claude"
+        repo = tmp_path / "repo"
+        _make_entry(repo, "agents", "foo")
+        _make_entry(repo, "skills", "bar")
+
+        sync_skills(repo, claude_dir)
+        manifest_after_first = json.loads(
+            (claude_dir / ".frob-sync-manifest.json").read_text(encoding="utf-8")
+        )
+
+        reports = sync_skills(repo, claude_dir)
+        manifest_after_second = json.loads(
+            (claude_dir / ".frob-sync-manifest.json").read_text(encoding="utf-8")
+        )
+
+        assert reports["agents"].removed == ()
+        assert reports["agents"].collisions == ()
+        assert reports["skills"].removed == ()
+        assert reports["skills"].collisions == ()
+        assert manifest_after_first == manifest_after_second
+
+    def test_manifest_records_only_this_repos_owned_entries(
+        self, tmp_path: Path
+    ) -> None:
+        """The on-disk manifest is keyed by resolved repo root and lists
+        exactly the `<kind>/<name>` entries that repo installed -- the
+        provenance record `sync_skills`'s cross-repo/hand-maintained
+        guards read back on every subsequent call."""
+        claude_dir = tmp_path / "claude"
+        repo = tmp_path / "repo"
+        _make_entry(repo, "agents", "foo")
+
+        sync_skills(repo, claude_dir)
+
+        manifest = json.loads(
+            (claude_dir / ".frob-sync-manifest.json").read_text(encoding="utf-8")
+        )
+        assert manifest[str(repo.resolve())]["agents"] == ["foo"]
+        assert manifest[str(repo.resolve())]["skills"] == []
+
+
 # frob:ticket T-2268
 class TestSkillsSyncRenderLint:
     """T-2268: `_skills_sync.py::run` used to write through bare `print`
@@ -127,8 +279,7 @@ class TestSkillsSyncRenderLint:
         offenders = [
             v
             for v in violations
-            if v.rule == "RENDER001"
-            and v.file == "src/frob/scaffold/_skills_sync.py"
+            if v.rule == "RENDER001" and v.file == "src/frob/scaffold/_skills_sync.py"
         ]
         assert offenders == []
 
@@ -154,14 +305,21 @@ class TestRun:
     ) -> None:
         """`run` exits 0 and prints the total synced/removed counts,
         exercising the same `--claude-dir` override tests use to avoid
-        ever touching the real `~/.claude` (T-2241's own instruction)."""
+        ever touching the real `~/.claude` (T-2241's own instruction).
+        The stale entry removed here is one THIS repo installed on a
+        prior `run` -- an unowned/hand-maintained entry is never removed
+        (T-2386), covered separately by `TestSyncSkillsProvenance`."""
         repo = tmp_path / "repo"
         claude_dir = tmp_path / "claude"
         _make_entry(repo, "agents", "foo")
-        _make_entry(claude_dir, "skills", "stale-skill")
-        (repo / "skills").mkdir(parents=True)
-
+        _make_entry(repo, "skills", "stale-skill")
         monkeypatch.setenv("HOME", str(tmp_path / "unused-home"))
+        try:
+            run([str(repo), "--claude-dir", str(claude_dir)])  # first: installs both
+        except SystemExit:
+            pass
+        shutil.rmtree(repo / "skills" / "stale-skill")  # repo side drops it
+
         try:
             run([str(repo), "--claude-dir", str(claude_dir)])
         except SystemExit as exc:

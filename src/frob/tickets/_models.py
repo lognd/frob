@@ -1230,6 +1230,35 @@ class TriageChangeEntry(BaseModel):
     at: date
 
 
+# frob:ticket T-2392
+# frob:doc docs/modules/tickets-data-storage.md#data-models
+# frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_records_body_change_entry  # noqa: E501
+class BodyChangeEntry(BaseModel):
+    """One append-only audit line for a `frob ticket body` mutation
+    (T-2392): which mode (`append`/`set`) touched the free-text body, why,
+    who did it, when, and the resulting body's length -- the
+    `TriageChangeEntry`/`ScopeChangeEntry` discipline (T-2353/T-0455)
+    applied to the ticket's own free-text body, so amending it never again
+    requires the hand-edit this ticket removes the last reason for.
+
+    The full before/after body text is intentionally NOT stored here (only
+    its length) -- unlike `TriageChangeEntry`'s single-value old/new, a
+    ticket body can be many KB, and duplicating it into every audit entry
+    would make the ledger grow without bound on repeated amendment. The
+    body's own git history in `tickets.md` already carries the full diff;
+    this entry exists to make the FACT and REASON of a change visible
+    inline on the ticket, not to duplicate its content."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    mode: str  # "append" | "set"
+    reason: str
+    actor: str
+    at: date
+    old_length: int
+    new_length: int
+
+
 # frob:ticket T-2333
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests \
@@ -1541,6 +1570,14 @@ class Ticket(BaseModel):
     # applied to triage-classification fields, closing the "priority
     # change leaves no trace" gap T-2353 found.
     triage_changes: tuple[TriageChangeEntry, ...] = ()
+    # frob:ticket T-2392
+    # append-only audit trail of every `frob ticket body --append/--set`
+    # mutation this ticket's free-text `body` has gone through (never
+    # edited, only appended) -- the `TriageChangeEntry`/`ScopeChangeEntry`
+    # discipline (T-2353/T-0455) applied to the body itself, so a body
+    # amendment made through the CLI is always distinguishable from a
+    # silent hand-edit of `tickets/T-####/ticket.md`.
+    body_changes: tuple[BodyChangeEntry, ...] = ()
     # frob:ticket T-2333
     # append-only audit trail of every `frob worktree release-lease
     # --force --reason TEXT` forced release of THIS ticket's own
@@ -1904,6 +1941,14 @@ class TicketError(ErrorSet):
     TriageReasonMissing = (
         "priority/kind/component/tier change requires a non-empty --reason"
     )
+    # frob:ticket T-2392
+    BodyReasonMissing = "body change requires a non-empty --reason"
+    # frob:ticket T-2392
+    BodyTextMissing = (
+        "body change requires --text/--text-file (or --append-file/--set-file)"
+    )
+    # frob:ticket T-2392
+    BodyModeConflict = "body change accepts exactly one of --append or --set"
     ScopeLeaseConflict = (
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )

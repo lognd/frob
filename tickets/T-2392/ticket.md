@@ -1,7 +1,7 @@
 ---
 id: T-2392
 title: no CLI verb amends a ticket body, forcing agents to hand-edit the ledger
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -10,20 +10,111 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/tickets/_setters.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/__init__.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/config.py
+- docs/modules/app.md
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets.md
+- tests/test_tickets_body.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-2392: add frob ticket body verb for validated body amendment (front door
+    replacing the hand-edit forced by no CLI verb)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-2392: docs + evidence coverage for the new body verb'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-2392: docs + evidence coverage for the new body verb'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-2392: docs + evidence coverage for the new body verb'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_tickets_body.py
+  reason: 'T-2392: docs + evidence coverage for the new body verb'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_tickets_body.py::TestBodyAmend::test_append_appends_text
+- tests/test_tickets_body.py::TestBodyAmend::test_set_replaces_text
+- tests/test_tickets_body.py::TestBodyAmend::test_reason_missing_refuses
+- tests/test_tickets_body.py::TestBodyAmend::test_append_records_body_change_entry
+- tests/test_tickets_body.py::TestBodyAmend::test_positive_control_priority_reason_still_required
+- tests/test_tickets_body.py::TestBodyCli::test_cli_append_writes_body
+- tests/test_tickets_body.py::TestBodyCli::test_cli_missing_text_exits_nonzero
+designated_repro_test: tests/test_tickets_body.py::TestBodyCli::test_cli_append_writes_body
 acceptance:
 - text: Given an existing ticket, when a maintainer or agent needs to add a directive
     to its free-text body, then a frob ticket CLI verb writes it through the validated
     mutation path with a recorded audit trail, and no hand-edit of tickets/T-####/ticket.md
     is required.
-  evidence: []
+  evidence:
+  - tests/test_tickets_body.py::TestBodyCli::test_cli_append_writes_body
 threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 477176777f9cf94e1978628ebec06d342639197a
 ---
 MEASURED TODAY: two independent agents (Series U twice, Series V once)
 hit the same wall and resolved it the same unsafe way.

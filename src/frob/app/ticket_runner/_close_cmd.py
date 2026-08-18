@@ -1023,6 +1023,93 @@ def _close_guards_for_ticket(root: Path, cfg: AppConfig, fresh_ticket) -> tuple:
 # frob:ticket T-0215
 # frob:ticket T-0398
 # frob:ticket T-0571
+# frob:ticket T-2393
+def _resolve_no_behavior_change_reason(cfg: AppConfig) -> str | None:
+    """Resolve `frob ticket close --no-behavior-change`'s reason:
+    `--no-behavior-change-reason-file` wins if given (read verbatim,
+    T-0737 pattern), else the inline `--no-behavior-change-reason`
+    string. Exits 1 if both are given; returns `None` if neither is given
+    (the caller reports the "reason required" error), same shape as
+    `_resolve_triage_reason`/`_resolve_body_reason`."""
+    reason_file = cfg.ticket_close_no_behavior_change_reason_file
+    reason = cfg.ticket_close_no_behavior_change_reason
+    if reason_file is not None and reason:
+        _log.error(
+            "frob ticket close --no-behavior-change: --no-behavior-change-reason "
+            "and --no-behavior-change-reason-file are mutually exclusive"
+        )
+        sys.exit(1)
+    if reason_file is not None:
+        try:
+            return reason_file.read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.error(
+                "frob ticket close: could not read --no-behavior-change-reason-file "
+                "%s: %s",
+                reason_file,
+                exc,
+            )
+            sys.exit(1)
+    return reason
+
+
+# frob:ticket T-2393
+# frob:doc docs/modules/tickets-data-storage.md#frob-ticket-body-t-2392
+# frob:tests \
+# tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_flag_writes_directive_before_close  # noqa: E501
+# frob:tests \
+# tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_reason_missing_exits_nonzero  # noqa: E501
+def _apply_no_behavior_change_directive(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket close --no-behavior-change --no-behavior-change-reason
+    TEXT`: the first-class front door (T-2393) for BUG002's pre-existing
+    `frob:no-behavior-change reason="..."` body directive. Writes the
+    directive into the ticket's body via `frob.tickets.set_body` (T-2392)
+    -- the validated mutation path -- BEFORE `_close` computes
+    `mutation_evidence`, so the SAME `_no_behavior_change_reason` parser
+    BUG002 already reads (`frob.gates._mutation_evidence`) sees it without
+    a hand-edit of `tickets/T-####/ticket.md` ever being necessary. A
+    no-op (returns immediately) unless `--no-behavior-change` was given.
+    Exits 1 if the reason is missing -- this must stay mandatory, the same
+    prove-or-justify discipline `set_body`'s own reason requirement and
+    T-2353's triage-change reasons already enforce, so this front door can
+    never become a silent, unaccountable escape hatch from BUG002."""
+    if not cfg.ticket_close_no_behavior_change:
+        return
+    if cfg.ticket_id is None:
+        _log.error("frob ticket close requires <id>")
+        sys.exit(1)
+    from frob.tickets import set_body
+
+    reason = _resolve_no_behavior_change_reason(cfg)
+    if not reason or not reason.strip():
+        _log.error(
+            "frob ticket close --no-behavior-change requires "
+            "--no-behavior-change-reason TEXT or --no-behavior-change-reason-file PATH"
+        )
+        sys.exit(1)
+
+    # The directive's own regex parser (`frob.gates._mutation_evidence.
+    # _NO_BEHAVIOR_CHANGE_RE`) expects a double-quoted reason with no
+    # embedded double quote -- sanitize rather than let a stray `"` in the
+    # reason silently truncate the parsed value.
+    safe_reason = reason.strip().replace('"', "'")
+    directive = f'frob:no-behavior-change reason="{safe_reason}"'
+    result = set_body(
+        root,
+        cfg.ticket_id,
+        directive,
+        mode="append",
+        reason=f"BUG002 front door (T-2393): {reason.strip()}",
+    )
+    if result.is_err:
+        _log.error("--no-behavior-change directive write failed: %s", result.danger_err)
+        sys.exit(1)
+    _log.info(
+        "%s: recorded frob:no-behavior-change directive before close (T-2393)",
+        cfg.ticket_id,
+    )
+
+
 def _close(root: Path, cfg: AppConfig) -> None:
     """Transition a ticket to done; if `--evidence` ids or `--evidence-cmd`
     were given, validate and append them first (`_apply_evidence` /
@@ -1072,6 +1159,8 @@ def _close(root: Path, cfg: AppConfig) -> None:
         sys.exit(1)
 
     ticket = _load_ticket_or_exit(root, cfg.ticket_id, verb="close")
+    # frob:ticket T-2393
+    _apply_no_behavior_change_directive(root, cfg)
     _apply_close_time_evidence(root, cfg)
 
     # Re-load: evidence may have just changed above, and covers_scope must

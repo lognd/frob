@@ -17,6 +17,22 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.509.0] - unreleased
+
+- T-2380: Decompose SYS003 (undeclared cross-component import) WARN campaign -- 4834 findings, 603 files
+
+## [0.508.0] - unreleased
+
+- T-2392: no CLI verb amends a ticket body, forcing agents to hand-edit the ledger
+
+## [0.507.0] - unreleased
+
+- T-2396: the shared-root write guard fires at commit time, after the damage is done
+
+## [0.506.0] - unreleased
+
+- T-2386: sync-skills: provenance-aware sync to stop cross-repo agents/skills deletion
+
 ## [0.505.0] - unreleased
 
 - T-2360: Profile-collapse: build LandProfileSettings resolver for the 5 remaining if-rapid branches
