@@ -1,7 +1,7 @@
 ---
 id: T-2441
 title: Register bare PORT001 gate rule id in _waive.py _KNOWN_GATE_RULES
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,9 +12,15 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_waive.py
+evidence_scope:
+- tests/gates/test_rule_id_scan_branches.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
+- tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered
+designated_repro_test: tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered
 threat: null
 component: null
 anchor: false

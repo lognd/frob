@@ -16348,6 +16348,18 @@ class TestKnownGateRuleIds:
         caller could accidentally mutate shared state through."""
         assert isinstance(known_gate_rule_ids(), frozenset)
 
+    # frob:ticket T-2441
+    # frob:tests tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered  # noqa: E501
+    def test_bare_port001_registered(self) -> None:
+        """T-2441 (BUG002 repro): bare "PORT001" -- the T-2391 fail-loudly
+        UNRESOLVED rule id `_port_selfcheck.py` constructs at
+        `_unresolved_project_name_violation`, distinct from the
+        PORT001-PATH/PORT001-IDENT pair T-2397 already registered -- must
+        be a real, registered gate rule id. FAILS at T-2441's own parent
+        (only PORT001-PATH/PORT001-IDENT were registered), PASSES once
+        this ticket's _KNOWN_GATE_RULES entry lands."""
+        assert "PORT001" in known_gate_rule_ids()
+
     # frob:ticket T-0924
     # T-0924: paid the allowlist down to empty -- every id T-0901 carried
     # here (COMPLIANCE001-004/HOST001/HOST002/HOST-BLAST/KRB001-004/

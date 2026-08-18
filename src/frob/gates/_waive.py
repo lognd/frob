@@ -803,6 +803,33 @@ _KNOWN_GATE_RULES = frozenset(
         # PORT001 split decision this turn.
         "PORT001-PATH",
         "PORT001-IDENT",
+        # frob:ticket T-2441
+        # T-2441: registers the THIRD PORT001-family rule id -- bare
+        # "PORT001" (Violation(rule="PORT001", ...) at
+        # src/frob/gates/_port_selfcheck.py:347), the T-2391 fail-loudly
+        # UNRESOLVED case for an unreadable/unparseable pyproject.toml
+        # [project].name -- distinct from PORT001-PATH/PORT001-IDENT
+        # above (T-2397's own courtesy registration), missed there
+        # because T-2397 only registered the two ids visible in that
+        # ticket's own body at the time. Landing T-2388 (PORT001's own
+        # gate wiring) refused with UnregisteredGateRuleConstructed
+        # until this entry existed.
+        "PORT001",
+        # frob:ticket T-2441
+        # T-2441: cross-ticket courtesy registration (same pattern as
+        # T-2397's own PORT001-PATH/PORT001-IDENT courtesy registration
+        # above) for three T-2390 config-validation children, fully
+        # implemented and committed in .claude/worktrees/t-2390-series
+        # but blocked on this same file's lease: T-2435 (GATESSCHEMA001,
+        # src/frob/gates/_gates_schema.py), T-2436 (DUPSCHEMA001/
+        # GRAPHSCHEMA001, src/frob/gates/_dup_graph_schema.py), T-2437
+        # (TESTRUNNERSCHEMA001, src/frob/gates/_test_runner_schema.py).
+        # Registration ONLY -- gate wiring, docs, and everything else
+        # belongs to and lands with those tickets, not this one.
+        "GATESSCHEMA001",
+        "TESTRUNNERSCHEMA001",
+        "DUPSCHEMA001",
+        "GRAPHSCHEMA001",
         # frob:ticket T-0924
         # T-0924: the larger pre-existing batch T-0901's drift-lock test
         # surfaced beyond T-0903/T-0923's ids, carried in that test's
