@@ -2,7 +2,7 @@
 id: T-2309
 title: 'post-land sweep regression from T-2164: 1 new (rule, file) identit(ies), 1
   finding(s) ()'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -33,3 +33,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 -     -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-17: blank (rule, file) identity: ledger body's 'New identit(ies) filed here' bullet and attribution line are both empty (no rule, no file, empty candidate list) -- the degenerate sweep-filer artifact matching T-2326/T-2332, already fixed at source by T-2345 and at the choke point by T-2313. No real regression to fix.
