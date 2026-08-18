@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PORT001-IDENT,PORT001-PATH,PRE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TESTINGSCHEMA001,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PORT001-IDENT,PORT001-PATH,PRE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TESTINGSCHEMA001,TEST019,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -98,6 +98,10 @@ declaration).
 | TESTINGSCHEMA001 | testing_schema | (error/unresolved) T-2390 epic child (T-2432): an unknown/misspelled key in the `[testing]` table, silently dropped by `_load_test_config`'s own pre-filter before the existing `TestPolicy` pydantic model is even constructed; UNRESOLVED when no `[testing_schema] known_keys` is declared or it fails to resolve (`frob.gates._testing_schema`, see [TESTINGSCHEMA001](#testingschema001-t-2390-epic-child-t-2432) below) |
 | ARCHSCHEMA001 | arch_schema | (error/unresolved) T-2390 epic child (T-2433): an unknown/misspelled key in the `[arch]` table (e.g. "max_fuction_lines"), silently reverting to `load_arch_config`'s own calibrated default with no diagnostic; nested `[arch.layering]` sub-table excluded (a genuinely different, deliberately inert T-0620 schema, not a stray leaf value); UNRESOLVED when no `[arch_schema] known_keys` is declared or it fails to resolve (`frob.gates._arch_schema`, see [ARCHSCHEMA001](#archschema001-t-2390-epic-child-t-2433) below) |
 | DOCBLOCKSSCHEMA001 | docblocks_schema | (error/unresolved) T-2390 epic child (T-2434): an unknown/misspelled key in a `[[docblocks.commands]]` entry, undetected by `_console_command_sources`'s own prog/parser/config/forwarded-only `.get()` reads; UNRESOLVED when no `[docblocks_schema] known_keys` is declared or it fails to resolve (`frob.gates._docblocks_schema`, see [DOCBLOCKSSCHEMA001](#docblocksschema001-t-2390-epic-child-t-2434) below) |
+| GATESSCHEMA001 | gates_schema | (error) T-2390 epic child (T-2435): TWO shapes -- an unknown key in `[gates.ratchet]` (UNRESOLVED when no `[gates_schema] ratchet_known_keys` is declared or it fails to resolve) PLUS an unregistered rule id as a key in `[gates.severity]` (checked against the live `_KNOWN_GATE_RULES` registry directly, never UNRESOLVED) (`frob.gates._gates_schema`, see [GATESSCHEMA001](#gatesschema001-t-2390-epic-child-t-2435) below) |
+| TESTRUNNERSCHEMA001 | test_runner_schema | (error/unresolved) T-2390 epic child (T-2436): an unknown/misspelled key in a `[[test.runner]]` entry, undetected by `_parse_runner_entry`'s own known-key-only reads; UNRESOLVED when no `[test_runner_schema] known_keys` is declared or it fails to resolve (`frob.gates._test_runner_schema`, see [TESTRUNNERSCHEMA001](#testrunnerschema001-t-2390-epic-child-t-2436) below) |
+| DUPSCHEMA001 | dup_schema | (error/unresolved) T-2390 epic child (T-2437): an unknown/misspelled key in the `[dup]` table, undetected by `_dup_config`'s own known-key-only reads; UNRESOLVED when no `[dup_schema] known_keys` is declared or it fails to resolve (`frob.gates._dup_graph_schema`, see [DUPSCHEMA001/GRAPHSCHEMA001](#dupschema001graphschema001-t-2390-epic-child-t-2437) below) |
+| GRAPHSCHEMA001 | graph_schema | (error/unresolved) T-2390 epic child (T-2437): an unknown/misspelled key in the `[graph]` table, undetected by `frob.excludes`'s own known-key-only reads; UNRESOLVED when no `[graph_schema] known_keys` is declared or it fails to resolve (`frob.gates._dup_graph_schema`, see [DUPSCHEMA001/GRAPHSCHEMA001](#dupschema001graphschema001-t-2390-epic-child-t-2437) below) |
 | PII010 | pii_structural | a pydantic/dataclass/TypedDict/attrs field's name or type annotation matches a PII-shaped signature (`FIELD_SIGNATURES`), a TS `interface`/`type`/`class` field, or a Rust `struct` field (T-0352), with no `frob:waive PII010 reason="..."` -- see "PII010/SEC110" below |
 | PII011 | pii_structural | a tracked `.py` file's string-literal constant is structurally email-shaped (`_is_email_shaped`, `email.utils.parseaddr`-based) with no `frob:secret-fake` marker or `frob:waive PII011 reason="..."` -- see "PII010/SEC110" below |
 | PII012 | pii_structural | a plain identifier or `#`-comment word token resembles a `FIELD_SIGNATURES` keyword (suggestion severity, not deny-by-default) -- see "PII010/SEC110" below |
@@ -2870,6 +2874,93 @@ UNRESOLVED`, same posture as every other T-2390 child): no
 that is neither a set nor a set-returning callable all report
 `Severity.UNRESOLVED` -- never a silently empty (and therefore falsely
 "clean") violation list.
+
+## GATESSCHEMA001 (T-2390 epic child, T-2435)
+
+T-2390's finding applied to the full `[gates]` namespace (19 leaves
+total: 18 in `[gates.severity]`, 1 in `[gates.ratchet]` -- there is no
+bare `[gates]` table itself in this repo's own frob.toml). TWO
+genuinely different validation shapes live under one rule:
+
+- `[gates.ratchet]` (`frob.gates._ratchet`) is an ordinary fixed-key-set
+  table, same shape as every other T-2390 child -- its only known key is
+  `rules`, declared via `[gates_schema] ratchet_known_keys = "module:
+  symbol"` the same way every other child declares its known-key set.
+- `[gates.severity]` (`frob.gates._waive._severity_overrides`) is
+  structurally different: its KEYS are themselves gate rule ids (e.g.
+  `COV001 = "error"`). The existing reader already degrades a malformed
+  VALUE gracefully (a non-"warn"/"error" value logs a warning and is
+  ignored) -- what it does NOT catch is a malformed KEY: a misspelled
+  rule id silently sits in the overrides dict forever, matching against
+  nothing. This half validates every KEY against the canonical live
+  rule-id registry (`frob.gates._waive._KNOWN_GATE_RULES`) directly --
+  same component, imported directly, no cross-component Flow question,
+  and no "declared schema" state at all (a frob.toml-configurable
+  known-key set for "which rule ids exist" would be circular), so this
+  half never reports UNRESOLVED, only findings or a clean pass.
+
+FAIL-LOUDLY (T-2391's doctrine): the `[gates.ratchet]` half reports
+`Severity.UNRESOLVED` (never a silently empty, falsely "clean" list) when
+no `ratchet_known_keys` is declared or it fails to resolve, same posture
+as every other T-2390 child.
+
+## TESTRUNNERSCHEMA001 (T-2390 epic child, T-2436)
+
+T-2390's finding applied to `[[test.runner]]` (16 leaves across 4
+entries in this repo's own frob.toml). `frob.testing._runners._parse_
+runner_entry` reads `command`/`all_command`/`language` (required) plus
+`cwd`/`collector`/`timeout_s` (optional) -- a seventh key (a typo, or a
+stray field) is never read, never validated, never reported.
+
+COMPONENT MEMBERSHIP (the T-2429 lesson, re-applied): `frob.testing.
+_runners` lives in a different strata component from `frob.gates` -- so,
+exactly as with T-2433's `[arch]` child, the known-key set here is a
+plain hardcoded literal tuple in `frob.gates._test_runner_schema` rather
+than an import of `frob.testing._runners`'s own internals, which would
+introduce an undeclared cross-component Flow and trip SYS003/
+SELFAUDIT001.
+
+PORTABILITY (T-2384's doctrine): the known-key set is declared via
+`[test_runner_schema] known_keys = "module:symbol"`, resolved through
+the same `resolve_dotted_symbol` idiom every other T-2390 child uses --
+any project can declare its own known-key set for its own
+`[[test.runner]]`-shaped table without touching this module.
+
+FAIL-LOUDLY (T-2391's doctrine, via the already-shipped `Severity.
+UNRESOLVED`, same posture as every other T-2390 child): no `known_keys`
+declared, an unresolvable dotted path, or a resolved value that is
+neither a set nor a set-returning callable all report `Severity.
+UNRESOLVED` -- never a silently empty (and therefore falsely "clean")
+violation list.
+
+## DUPSCHEMA001/GRAPHSCHEMA001 (T-2390 epic child, T-2437)
+
+T-2390's finding applied to `[dup]` (`frob.gates._dup._dup_config`, 4
+known keys: `enforce`, `threshold`, `region_kernel`, `native_rungs`) and
+`[graph]` (`frob.excludes`, 1 known key: `exclude`) in ONE child --
+unlike this epic's other children, one table each -- because each
+currently carries only 1 leaf value in this repo's own frob.toml: two
+genuinely disjoint readers, but each too small on its own to justify a
+separate ticket. The two schema declarations and their checks stay
+clearly separated (`dup_schema_gate`/`graph_schema_gate`, two distinct
+rule ids) so a future split-out is mechanical if either table grows.
+
+COMPONENT MEMBERSHIP (the T-2429 lesson, re-applied): `frob.excludes`
+lives in a different strata component from `frob.gates`, so `[graph]`'s
+known-key set is a plain hardcoded literal here, never an import of
+`frob.excludes`'s own internals.
+
+PORTABILITY (T-2384's doctrine): each table's known-key set is declared
+via its own dotted path (`[dup_schema] known_keys` / `[graph_schema]
+known_keys`), resolved through the same `resolve_dotted_symbol` idiom
+every other T-2390 child uses.
+
+FAIL-LOUDLY (T-2391's doctrine, via the already-shipped `Severity.
+UNRESOLVED`, same posture as every other T-2390 child): for EACH table
+independently, no known_keys declared, an unresolvable dotted path, or a
+resolved value that is neither a set nor a set-returning callable
+reports `Severity.UNRESOLVED` for that table's half -- never a silently
+empty (and therefore falsely "clean") violation list.
 
 ## FLAGCOV001 (T-2397)
 

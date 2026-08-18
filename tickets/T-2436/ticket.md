@@ -1,7 +1,7 @@
 ---
 id: T-2436
 title: 'T-2390 child: validate [test] table against a declared schema'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,10 +11,89 @@ tier: story
 sprint: null
 runs_last: false
 scope:
-- src/frob/check/_native.py
 - tests/unit/test_test_table_schema.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- frob.toml
+- docs/modules/gates.md
+- docs/design/registry/check-coverage.yaml
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/_native.py
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: frob.toml
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: .frob-release.json
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: CHANGELOG.md
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: pyproject.toml
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: uv.lock
+  reason: actual reader is frob.testing._runners (not check._native/gates.__init__
+    as originally guessed); gate registration + release wiring, same pattern as prior
+    T-2390 children
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null

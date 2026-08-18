@@ -1,7 +1,7 @@
 ---
 id: T-2437
 title: 'T-2390 child: validate [dup] and [graph] tables against declared schemas'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,8 +14,72 @@ scope:
 - src/frob/gates/_dup.py
 - src/frob/excludes.py
 - tests/unit/test_dup_graph_table_schema.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- frob.toml
+- docs/modules/gates.md
+- docs/design/registry/check-coverage.yaml
+- .frob-release.json
+- CHANGELOG.md
+- pyproject.toml
+- uv.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: frob.toml
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: .frob-release.json
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: CHANGELOG.md
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: pyproject.toml
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: uv.lock
+  reason: gate registration + release wiring, same pattern as prior T-2390 children
+    (src/frob/gates/_waive.py deferred -- T-2441 holds a live lease on it)
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null

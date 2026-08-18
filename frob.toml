@@ -51,6 +51,13 @@ known_keys = "frob.gates._toplevel_scalar_schema:TOPLEVEL_SCALAR_KNOWN_KEYS"
 #   settles around 40-45s total, clones itself ~20-22s -- comfortably
 #   inside the ~90s per-stage foreground budget either way. `enforce`
 #   flips on here with `native_rungs` left off.
+# T-2390 epic child (T-2437): known_keys declares this table's own
+# known-key set for DUPSCHEMA001 (an unknown/misspelled key, previously
+# silently ignored), resolved through the same module:symbol idiom as
+# [refs] entrypoint_schema.
+[dup_schema]
+known_keys = "frob.gates._dup_graph_schema:DUP_KNOWN_KEYS"
+
 [dup]
 enforce = true
 
@@ -136,6 +143,13 @@ lang = ["src/frob/lang"]
 [arch.layering.allow]
 app = ["lang"]
 lang = []
+
+# T-2390 epic child (T-2437): known_keys declares this table's own
+# known-key set for GRAPHSCHEMA001 (an unknown/misspelled key,
+# previously silently ignored), resolved through the same module:symbol
+# idiom as [refs] entrypoint_schema.
+[graph_schema]
+known_keys = "frob.gates._dup_graph_schema:GRAPH_KNOWN_KEYS"
 
 [graph]
 # design/litmus/**: strata litmus fixtures (T-0130) -- example models used
@@ -434,6 +448,13 @@ unit_branch_cov = 75
 module_line_cov = 70
 system_line_cov = 80
 
+# T-2390 epic child (T-2436): known_keys declares this table's own
+# known-key set for TESTRUNNERSCHEMA001 (an unknown/misspelled key in a
+# [[test.runner]] entry, previously silently ignored), resolved through
+# the same module:symbol idiom as [refs] entrypoint_schema.
+[test_runner_schema]
+known_keys = "frob.gates._test_runner_schema:TEST_RUNNER_KNOWN_KEYS"
+
 [[test.runner]]
 language = "python"
 command = ["uv", "run", "pytest", "-q", "{ids}"]
@@ -519,6 +540,15 @@ language = "rust"
 # deleted -- 338 waivers, zero unwaived findings across its whole
 # lifetime; see docs/modules/gates.md's T-1763 note. No rule is
 # currently ratcheted.
+#
+# T-2390 epic child (T-2435): ratchet_known_keys declares [gates.
+# ratchet]'s own known-key set for GATESSCHEMA001 (an unknown key,
+# previously silently ignored); [gates.severity]'s own keys are
+# validated separately, against the live gate-rule registry itself
+# rather than a project-declared set (see the module's own docstring).
+[gates_schema]
+ratchet_known_keys = "frob.gates._gates_schema:GATES_RATCHET_KNOWN_KEYS"
+
 [gates.ratchet]
 rules = []
 
