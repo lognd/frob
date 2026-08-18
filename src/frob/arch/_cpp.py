@@ -82,6 +82,7 @@ def _check_long_functions(
     """Flag C++ function definitions that are BOTH longer than
     `max_function_lines` AND structurally complex (`_cpp_is_complex`, T-0289)."""
     from frob.lang import cpp_function_nodes
+    from frob.lang._common import _cpp_symref_qualname
 
     t: Tree = cast("Tree", tree)
     for node, name in cpp_function_nodes(t):
@@ -101,9 +102,14 @@ def _check_long_functions(
                 line=node.start_point[0] + 1,
                 category="long-function",
                 severity="warning",
+                # T-2470: `name` keeps the native `Class::method` spelling
+                # here (human-facing) -- `symref=` below uses the
+                # canonical dot-joined form instead, so this waives
+                # against the SAME spelling the DSL binds a symbol-bound
+                # waive directive to.
                 message=f"function `{name}` has {n_lines} lines"
                 f" (threshold: {max_function_lines})",
-                symref=f"{rel}::{name}",
+                symref=f"{rel}::{_cpp_symref_qualname(name)}",
                 metric=n_lines,
             )
         )

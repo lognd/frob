@@ -640,3 +640,30 @@ def _iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
         if fn is not None:
             out.append(fn)
     return tuple(out)
+
+
+# frob:ticket T-2470
+def _cpp_symref_qualname(display_name: str) -> str:
+    """`display_name` (this module's own `_iter_cpp_functions`/`_cpp_class_
+    methods` native C++ spelling, e.g. `"ClassName::method"`) rewritten to
+    frob's CANONICAL qualname join character `.` -- the same convention
+    `frob.lang._walk_c` uses when it builds `RawSymbol.qualname` via
+    `".".join(...)`, and therefore the same spelling the DSL/graph symbol
+    table produces when it binds a symbol-bound `frob:waive` comment to
+    its enclosing symbol.
+
+    T-2470: before this existed, `frob.arch._cpp`/`_cpp_mayraise` fed the
+    native `"::"`-spelled name straight into a `Violation`'s `symref=`,
+    which never matched a waiver bound via the DSL's dot-joined spelling
+    (confirmed live repro, T-2438: `violation.symref ==
+    "<path>::Foo::bar"` vs `waiver.src == "<path>::Foo.bar"`, the same
+    method spelled two ways by two independently-written qualname
+    builders). `::` is never a legal identifier substring in any grammar
+    frob parses, so this replacement cannot make two genuinely different
+    symbols collide -- it only removes a spelling difference that was
+    never semantically meaningful.
+
+    Call this ONLY when building a `symref=` (identity, matched exactly
+    against a waiver); never for a human-facing `message=` string, which
+    should keep the native `"::"`-spelled name a C++ reader expects."""
+    return display_name.replace("::", ".")

@@ -2,7 +2,7 @@
 id: T-2470
 title: 'C++ ARCH symref producer spells qualnames with :: instead of frob''s canonical
   . join'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -15,10 +15,27 @@ scope:
 - src/frob/lang/_common.py
 - src/frob/arch/_cpp.py
 - src/frob/arch/_cpp_mayraise.py
+- tests/unit/test_arch.py
+- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: regression tests for the producer-side C++ symref fix live in this file
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/arch.md
+  reason: AFFECT001 requires the doc file itself touched in the same diff when check_cpp_noexcept_violations
+    changes; a note about the symref/message split satisfies it
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_symref_matches_dsl_waiver_binding_exactly
+- tests/unit/test_arch.py::TestCppSymrefCanonicalization::test_long_function_symref_is_dot_joined_message_keeps_native_spelling
 designated_repro_test: null
 threat: null
 component: null

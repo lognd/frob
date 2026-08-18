@@ -60,6 +60,7 @@ import re
 from pydantic import BaseModel
 
 from frob.arch._models import ArchSuggestion
+from frob.lang._common import _cpp_symref_qualname
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -447,7 +448,17 @@ def check_cpp_noexcept_violations(
                     "(`catch (...)`), fix the throwing call, or drop "
                     "noexcept if this really can fail"
                 ),
-                symref=f"{rel}::{func.name}",
+                # T-2470: `func.name` is ALREADY bare here (this module's
+                # own `_FN_SIG_RE` captures only `\w+`, so it never
+                # contains "::" even for an out-of-line `Class::method`
+                # definition -- a separate, pre-existing, disclosed model
+                # limitation from this module's own docstring: no class-
+                # scope tracking at all, same-file bare-NAME resolution
+                # only). `_cpp_symref_qualname` is therefore a no-op on
+                # today's inputs; called anyway for the same reason
+                # `_cpp.py` calls it -- so this site does not silently
+                # regress if the scanner ever gains class-qualified names.
+                symref=f"{rel}::{_cpp_symref_qualname(func.name)}",
             )
         )
 

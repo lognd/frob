@@ -809,6 +809,42 @@
       "old_digest": null,
       "reason": "T-2454: verified run's own affects()-closure docs (docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560, docs/modules/app.md, docs/guides/exhaustive-research.md) still accurately describe --sync-gate-rules' behavior -- the added T-2454 log line reports the full live registered set for auditability, it does not change what the command writes or when",
       "ref": "src/frob/app/registry_runner.py::run"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "1d4d5ebd103f5fcc6afee231277d41b1a336c25ce233f743bca60cea5cdb237f",
+      "old_digest": null,
+      "reason": "T-2470: symref= now uses _cpp_symref_qualname (dot-joined identity) instead of the raw func.name; message= text and the documented cpp-noexcept-throws behavior/finding shape are unchanged -- verified directly, no doc content needs updating",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
+      "old_digest": null,
+      "reason": "T-2470: symref= now uses _cpp_symref_qualname (dot-joined identity) instead of the raw func.name; message= text and the documented cpp-noexcept-throws behavior/finding shape are unchanged -- verified directly, no doc content needs updating",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "1d4d5ebd103f5fcc6afee231277d41b1a336c25ce233f743bca60cea5cdb237f",
+      "old_digest": "1d4d5ebd103f5fcc6afee231277d41b1a336c25ce233f743bca60cea5cdb237f",
+      "reason": "T-2470: symref= now uses _cpp_symref_qualname (dot-joined identity) instead of the raw func.name; message= text and the documented cpp-noexcept-throws behavior/finding shape are unchanged -- verified directly, no doc content needs updating",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
+      "old_digest": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
+      "reason": "T-2470: symref= now uses _cpp_symref_qualname (dot-joined identity) instead of the raw func.name; message= text and the documented cpp-noexcept-throws behavior/finding shape are unchanged -- verified directly, no doc content needs updating",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
     }
   ],
   "entries": [
@@ -961,6 +997,16 @@
       "digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
       "facet": "sig",
       "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "digest": "1d4d5ebd103f5fcc6afee231277d41b1a336c25ce233f743bca60cea5cdb237f",
+      "facet": "body",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
+    },
+    {
+      "digest": "beb48e83241e95c75856d7181ed6c3b1cabed604242f3d92cfe70238533b4f9d",
+      "facet": "sig",
+      "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
     },
     {
       "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",

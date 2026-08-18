@@ -7746,6 +7746,107 @@ class TestConcurrencyModelMismatch:
         assert hits == []
 
 
+# frob:ticket T-2470
+class TestCppSymrefCanonicalization:
+    """T-2470: the producer-side fix for T-2438's confirmed live symref
+    mismatch -- `frob.lang._common._cpp_symref_qualname` separates a C++
+    method's `symref=` identity (canonical `.`-joined, matching the DSL/
+    graph symbol table's own `frob.lang._walk_c` convention) from its
+    human-facing `message=` display (native `Class::method` spelling)."""
+
+    # frob:ticket T-2470
+    # frob:tests tests/unit/test_arch.py::TestCppSymrefCanonicalization.test_long_function_symref_is_dot_joined_message_keeps_native_spelling  # noqa: E501
+    def test_long_function_symref_is_dot_joined_message_keeps_native_spelling(
+        self, tmp_path
+    ):
+        """A long, complex C++ method's `symref=` uses `.` between class
+        and method (matching the DSL's own qualname), while `message=`
+        keeps the idiomatic `Class::method` spelling a C++ reader
+        expects -- the exact identity/display split T-2470 introduces."""
+        from frob.arch._cpp import _check_long_functions
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        ifs = "\n".join("    if (x) { x += 1; }" for _ in range(12))
+        source = (
+            "class Foo {\n"
+            "public:\n"
+            "    int bar() {\n"
+            "        int x = 1;\n"
+            + ifs
+            + "\n"
+            "        return x;\n"
+            "    }\n"
+            "};\n"
+        )
+        cpp_path = src_dir / "long.cpp"
+        cpp_path.write_text(source)
+
+        import tree_sitter_cpp as tscpp
+        from tree_sitter import Language, Parser
+
+        parser = Parser(Language(tscpp.language()))
+        tree = parser.parse(cpp_path.read_bytes())
+        out = []
+        _check_long_functions(tree, "long.cpp", 2, out)
+        hits = [s for s in out if s.category == "long-function"]
+        assert hits
+        assert any(s.symref == "long.cpp::Foo.bar" for s in hits)
+        assert any("Foo::bar" in s.message for s in hits)
+        assert not any(s.symref == "long.cpp::Foo::bar" for s in hits)
+
+    # frob:ticket T-2470
+    # frob:tests tests/unit/test_arch.py::TestCppSymrefCanonicalization.test_symref_matches_dsl_waiver_binding_exactly  # noqa: E501
+    def test_symref_matches_dsl_waiver_binding_exactly(self, tmp_path):
+        """T-2438's own confirmed repro, now closed at the producer: the
+        `Violation.symref` this scanner emits for a class method is now
+        BYTE-FOR-BYTE identical to the `Edge.src` the DSL binds a
+        symbol-bound `frob:waive` comment to above that same method --
+        `_match_waiver`'s T-2438 `_canonical_symref` normalization is
+        provably unnecessary for this producer once this fix lands
+        (though it still stands as defense in depth for any other
+        producer with the same disease)."""
+        from frob.arch._cpp import _check_long_functions
+        from frob.graph.dsl import parse_directives
+        from frob.lang import parse_file
+
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        ifs = "\n".join("    if (x) { x += 1; }" for _ in range(12))
+        cpp_path = src_dir / "long.cpp"
+        source = (
+            "class Foo {\n"
+            "public:\n"
+            '    // frob:waive ARCH001 reason="test"\n'
+            "    int bar() {\n"
+            "        int x = 1;\n"
+            + ifs
+            + "\n"
+            "        return x;\n"
+            "    }\n"
+            "};\n"
+        )
+        cpp_path.write_text(source)
+
+        import tree_sitter_cpp as tscpp
+        from tree_sitter import Language, Parser
+
+        parser = Parser(Language(tscpp.language()))
+        tree = parser.parse(cpp_path.read_bytes())
+        out = []
+        _check_long_functions(tree, str(cpp_path), 2, out)
+        assert out
+        violation_symref = out[0].symref
+
+        parsed = parse_file(cpp_path).danger_ok
+        edges, _malformed = parse_directives(parsed)
+        waive_edges = [e for e in edges if e.kind.value == "waive"]
+        assert waive_edges
+        waiver_src = waive_edges[0].src
+
+        assert violation_symref == waiver_src
+
+
 # frob:ticket T-0687
 class TestCppMayThrow:
     """T-0687: frob.arch._cpp_mayraise -- C++ may-throw analysis wired

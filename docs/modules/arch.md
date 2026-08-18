@@ -1201,6 +1201,26 @@ calls -- the `UNKNOWN` fail-closed default is the approximation the
 parent ticket explicitly asked for instead of a to-be-improved
 placeholder.
 
+**`symref=` is dot-joined, `message=` keeps `::` (T-2470).** `check_
+cpp_noexcept_violations` builds its finding's `symref=` through `frob.
+lang._common._cpp_symref_qualname`, which rewrites any native C++
+`ClassName::method` scope operator to frob's canonical `.`-joined
+qualname before it becomes the `Violation`'s identity -- the same
+convention the DSL/graph symbol table (`frob.lang._walk_c`) already uses
+to bind a symbol-bound `frob:waive` comment. Before T-2470 this scanner
+fed the raw `"::"`-spelled name straight into `symref=`, which never
+matched a waiver bound via the DSL's dot-joined spelling (T-2438's
+confirmed live repro on the sibling `frob.arch._cpp` long-function
+check). The human-facing `message=` text is unaffected: it still names
+the function with the idiomatic `Class::method` spelling a C++ reader
+expects. This particular scanner's own `func.name` never actually
+contains `"::"` (its regex-based signature match captures only `\w+`,
+so an out-of-line `Class::method` definition is already read bare, a
+separate, pre-existing, disclosed model limitation, not something T-2470
+changes) -- the conversion is called anyway, at zero behavioral cost
+today, so this site does not silently regress if the scanner ever gains
+class-qualified names.
+
 ### Misc design smells: `mutable-default-arg` / `feature-envy` / `data-clumps` / `magic-literal` / `dead-private-code` / `deep-inheritance` / `temporal-coupling` (T-0624)
 
 <a id="misc-design-smells"></a>
