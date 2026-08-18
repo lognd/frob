@@ -11,8 +11,26 @@ parent: null
 tier: epic
 sprint: null
 runs_last: false
+scope:
+- src/frob/_cli_parsers/_ticket/_progress.py
+- src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_progress.py
+  reason: 'part a: wire --scope-breadth-ack/--scope-breadth-ack-reason onto start,
+    mandatory when the T-1866 guard would otherwise refuse; part b done via direct
+    ticket-CLI scope edits on the 55 flagged tickets, no source scope needed for those'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_lifecycle.py
+  reason: 'part a: wire --scope-breadth-ack/--scope-breadth-ack-reason onto start,
+    mandatory when the T-1866 guard would otherwise refuse; part b done via direct
+    ticket-CLI scope edits on the 55 flagged tickets, no source scope needed for those'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a ticket whose declared scope contains an over-broad glob, when frob
