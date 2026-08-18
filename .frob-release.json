@@ -724,6 +724,8 @@
     "src/frob/gates/_deprecated_baseline.py::tighten_deprecated_baseline": "a60c02358828da63241adceaeee5e7cc742785578958388a92e2910fc86b34aa",
     "src/frob/gates/_design_invariants.py::inv007_violations": "47b5143f092cb284e415305a9567fc7194f3441eb754eb06024ca1b1a9c26f39",
     "src/frob/gates/_design_invariants.py::inv008_violations": "80da5748ae1d167e2ec9e20c9279df3ec77fdc9dba04a8ffd9e94cf46f7f0cca",
+    "src/frob/gates/_detector_scope.py::DETECTOR_PACKAGE_ROOTS": "dc520ed068112baf5021530a2e0e59e6928146933abb340a9e2534937ab10ccf",
+    "src/frob/gates/_detector_scope.py::is_detector_package_file": "3f26c4d6c60527a6a1ce85e907de6b747665d6f8d95cb7eb6058d1dffda9818d",
     "src/frob/gates/_docblocks.py::CLI_COMMAND_TABLE_END": "43c056a3cf571aba448115fda2a58cbf8116c933f7887bf0dec28fac53824255",
     "src/frob/gates/_docblocks.py::CLI_COMMAND_TABLE_START": "29324777398a90b98a489a85691196975440e05ef4ca3e89efa078a207fd212c",
     "src/frob/gates/_docblocks.py::doc004_gate": "ae1933bdb3d41939434b20539b217c3b3ea97d541ac837ded6bf3098bf6ba8a9",
@@ -2477,5 +2479,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.528.0"
+  "version": "0.529.0"
 }

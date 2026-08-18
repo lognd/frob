@@ -10,9 +10,43 @@ DEAD001-OPAQUE001's symref gap/T-1683, and the addendum's T-2178/T-2201/
 T-2187/T-2188/T-2243) -- this module is the guard that stops a NINTH one
 from landing silently the same way the first eight did.
 
-Detection shape (v1, module-scanning `src/frob/gates/**/*.py`): a single
-FUNCTION that (a) calls a `re.search`/`re.match`/`re.fullmatch`/
-`re.findall`/`re.finditer` -- the unambiguous "decide something from a
+T-2466 (SCOPE + TRIGGER widening, filed from T-2457's own Done report):
+this gate used to scan `src/frob/gates/**` only and trigger on `re.*`
+calls only. T-2457 shipped and survived review BECAUSE of that double
+narrowness: the `fs.write` capability detector doing `bytes.find`
+substring matching lived in `src/frob/vet/_capability_core.py`, which
+this gate never examined (wrong package) and whose trigger (`.find(`,
+not `re.search`) would not have fired even if it had been scanned (wrong
+trigger). A meta-check narrower than the class of code it polices
+manufactures FALSE COVERAGE: its green result reads as "no detector does
+lexical matching" when it actually means "no detector in the scanned
+packages does lexical matching via the scanned trigger set" -- the
+[[silent-zero]] shape applied to a meta-check instead of an ordinary
+gate. Both axes are now widened:
+
+  - SCOPE: `frob.gates._detector_scope.DETECTOR_PACKAGE_ROOTS` (shared
+    with PORT001's own widening, T-2405, so the two meta-checks cannot
+    drift into two different answers for "what is a detector package")
+    replaces the old `src/frob/gates/` prefix, MEASURED (that module's
+    own docstring) rather than guessed at.
+  - TRIGGER: `.find(` (the literal mechanism T-2457's bug used --
+    `bytes.find`/`str.find`, both real stdlib methods with no other
+    common builtin sharing the name) joins `re.search`/`match`/
+    `fullmatch`/`findall`/`finditer`, excluding an ElementTree-shaped
+    `.find(` call (this repo's own `_el`/`_element` naming convention
+    for a parsed XML node, e.g. `_coverage.py`'s `class_el.find("lines")`
+    -- a tree lookup, not a text search) the same way the pre-existing
+    `_RE`/`_PATTERN` suffix convention already disambiguates a `re`-
+    trigger from an unrelated `.search`/`.findall` method call.
+
+Every run now DISCLOSES its own scanned scope in its log line (PORT001's
+own T-2388 convention, copied exactly) so a count can never be read as
+repo-wide when it is not.
+
+Detection shape (v1, module-scanning every tracked `.py` file under
+`DETECTOR_PACKAGE_ROOTS`): a single FUNCTION that (a) calls a
+`re.search`/`re.match`/`re.fullmatch`/`re.findall`/`re.finditer`, OR a
+non-ElementTree `.find(` -- the unambiguous "decide something from a
 text pattern" signal -- AND (b) constructs at least one `Violation(...)`
 call with no `symref=` keyword, is flagged, UNLESS the (module, function)
 pair is in `_ALLOWLIST` with a stated reason.
@@ -32,14 +66,24 @@ this file's own list is a review artifact, not a rubber stamp.
 Known v1 limitation, disclosed rather than silently accepted (same
 disclosure convention as RENDER001's shadowed-`print` gap and WALK001's
 aliased-traversal gap): detection is PER-FUNCTION, so a module that splits
-the regex decision and the Violation construction across two different
-functions (e.g. a `_scan_text` loop calling a separate `_foo_violation`
-per hit -- the exact shape `_render_lint.py`/`_secrets.py` both use, both
-already allowlisted) is not caught by this pass. Raising this to a whole-
-module call-graph trace is real future work, not attempted here -- v1
-catches the single-function shape RENDER001's own pre-fix incidents and
-this epic's addendum items shared, and reports what it did NOT check via
-its own scanned-vs-flagged count rather than pretending completeness.
+the regex/`.find(`-decision and the Violation construction across two
+different functions (e.g. a `_scan_text` loop calling a separate `_foo_
+violation` per hit -- the exact shape `_render_lint.py`/`_secrets.py`
+both use, both already allowlisted; T-2457's OWN pre-fix code was this
+exact shape too, split across TWO MODULES rather than two functions in
+one -- `_capability_core.py`'s needle matchers vs `_sys_selfaudit.py`'s
+`Violation` construction) is not caught by this pass. Raising this to a
+whole-module (or whole-CALL-GRAPH) trace is real future work, not
+attempted here (T-2466 widened SCOPE and TRIGGER, not detection SHAPE --
+a second, larger ticket's job, filed as a candidate but not forced into
+this one) -- v1 catches the single-function shape RENDER001's own
+pre-fix incidents and this epic's addendum items shared, and reports
+what it did NOT check via its own scanned-vs-flagged count rather than
+pretending completeness. T-2466's own test fixture for "a vet/-style
+detector is now caught" is therefore necessarily a single-function
+COLLAPSE of T-2457's real (cross-module) needle-matching logic, not a
+byte-for-byte reproduction of the production layout -- see that test's
+own docstring.
 """
 
 from __future__ import annotations
@@ -47,6 +91,10 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from frob.gates._detector_scope import (
+    DETECTOR_PACKAGE_ROOTS,
+    is_detector_package_file,
+)
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
 from frob.gates._walk_lint import tracked_python_files_for_gate
@@ -105,26 +153,50 @@ _ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
 )
 
 
-def _calls_re_decision(node: ast.AST) -> bool:
+#: Base-variable name SUFFIXES excluded from the `.find(` trigger
+#: (T-2466): this repo's own naming convention for a parsed XML/
+#: ElementTree node (`_coverage.py`'s `class_el.find("lines")`,
+#: `root_el.find("sources")`) -- `Element.find(...)` is an XPath-shaped
+#: TREE lookup, not a text-pattern search, even though it shares the
+#: method name `find` with `str`/`bytes`. Measured, not guessed: `git
+#: grep -n "\.find("` restricted to `DETECTOR_PACKAGE_ROOTS` at T-2466
+#: time found exactly two non-string-search hits, both `*_el.find(...)`.
+_FIND_TRIGGER_EXCLUDED_BASE_SUFFIXES: tuple[str, ...] = ("_el", "_element")
+
+
+def _calls_lexical_decision(node: ast.AST) -> bool:
     """Whether `node`'s subtree contains a `re.search`/`re.match`/
-    `re.fullmatch`/`re.findall`/`re.finditer` call, OR the same method on a
-    module-level compiled pattern (this codebase's own `_FOO_RE`/`_FOO_
+    `re.fullmatch`/`re.findall`/`re.finditer` call (OR the same method on a
+    module-level compiled pattern, this codebase's own `_FOO_RE`/`_FOO_
     PATTERN` naming convention, e.g. `_TICK011_NO_TICKET_NEEDED_RE.search
-    (...)`) -- the unambiguous "decide something from a text pattern"
-    signal this gate flags on. Deliberately narrow: matching ANY
+    (...)`), OR a `.find(` call on a non-ElementTree-shaped base (T-2466:
+    `bytes.find`/`str.find` is the literal mechanism T-2457's own pre-fix
+    detector used to substring-match a needle -- see module docstring) --
+    the unambiguous "decide something from a text pattern" signal this
+    gate flags on. Deliberately narrow on the `re` axis: matching ANY
     `.search`/`.findall`-named method regardless of base would fire on
     unrelated APIs (dict/graph lookups); requiring the `re` module or a
     name ending `_RE`/`_PATTERN` keeps this to the regex idiom this
-    epic's own incidents actually used."""
+    epic's own incidents actually used. Deliberately narrow on the `.find(`
+    axis too: `_FIND_TRIGGER_EXCLUDED_BASE_SUFFIXES` excludes the one
+    measured non-string-search `.find(` shape in this repo's detector
+    packages (an `Element.find(...)` XPath lookup) rather than firing on
+    every `.find(`-named method regardless of what it is called on."""
     for sub in ast.walk(node):
         if not isinstance(sub, ast.Call) or not isinstance(sub.func, ast.Attribute):
             continue
-        if sub.func.attr not in ("search", "match", "fullmatch", "findall", "finditer"):
-            continue
         base = sub.func.value
-        if not isinstance(base, ast.Name):
+        if sub.func.attr in ("search", "match", "fullmatch", "findall", "finditer"):
+            if isinstance(base, ast.Name) and (
+                base.id == "re" or base.id.endswith(("_RE", "_PATTERN"))
+            ):
+                return True
             continue
-        if base.id == "re" or base.id.endswith(("_RE", "_PATTERN")):
+        if sub.func.attr == "find":
+            if isinstance(base, ast.Name) and base.id.endswith(
+                _FIND_TRIGGER_EXCLUDED_BASE_SUFFIXES
+            ):
+                continue
             return True
     return False
 
@@ -189,13 +261,16 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
 
 
 def _tracked_gate_files(root: Path) -> tuple[str, ...]:
-    """Every git-tracked `.py` file under `src/frob/gates/`, reusing WALK001/
+    """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`
+    (T-2466: widened past `src/frob/gates/` alone), reusing WALK001/
     RENDER001's shared tracked-file helper (T-0861) rather than a third
-    private copy, filtered to this gate's own narrower scope."""
+    private copy, filtered to this gate's own scope via the ONE shared
+    membership test (`is_detector_package_file`) PORT001's own widening
+    (T-2405) is expected to reuse rather than re-hardcode."""
     return tuple(
         rel
         for rel in tracked_python_files_for_gate(root, log_prefix="lexcheck_gate")
-        if rel.startswith("src/frob/gates/")
+        if is_detector_package_file(rel)
     )
 
 
@@ -204,20 +279,30 @@ def _tracked_gate_files(root: Path) -> tuple[str, ...]:
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_allowlisted_function_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_semantic_function_with_incidental_regex_is_silent  # noqa: E501
 # frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_non_gate_code_never_scanned  # noqa: E501
-# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_every_known_gates_module_module_stays_clean  # noqa: E501
+# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_every_known_detector_package_module_stays_clean  # noqa: E501
+# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_vet_needle_matcher_shape_is_flagged  # noqa: E501
+# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_elementtree_find_is_not_a_trigger  # noqa: E501
+# frob:tests tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001.test_scans_scope_is_disclosed_in_log  # noqa: E501
 # frob:ticket T-2344
+# frob:ticket T-2466
 def lexical_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
-    """LEXCHECK001: every git-tracked `src/frob/gates/**/*.py` function that
-    both decides from a `re.search`/`re.match`/`re.fullmatch`/`re.findall`/
-    `re.finditer` call AND constructs a symref-less `Violation`, unless the
-    (module, function) pair is in `_ALLOWLIST` with a stated reason (see
-    module docstring for the v1 per-function detection scope and its known
-    cross-function limitation). A file this gate cannot read/parse fires
+    """LEXCHECK001: every git-tracked `.py` file under `DETECTOR_PACKAGE_
+    ROOTS` (T-2466 -- see `_detector_scope.py`), scanned for a function
+    that both decides from a `re.search`/`re.match`/`re.fullmatch`/
+    `re.findall`/`re.finditer`/non-ElementTree-`.find(` call AND
+    constructs a symref-less `Violation`, unless the (module, function)
+    pair is in `_ALLOWLIST` with a stated reason (see module docstring for
+    the v1 per-function detection shape and its known cross-function/
+    cross-module limitation). A file this gate cannot read/parse fires
     PARSE001 instead of silently dropping out of the scan, matching
-    RENDER001's own convention."""
+    RENDER001's own convention. Discloses its own scanned scope in the
+    log line on every call (T-2466, PORT001's T-2388 convention, copied
+    exactly) -- a count read without that line is a statement about the
+    scanned subset, never the whole repo."""
     root = Path(root)
     violations: list[Violation] = []
-    for rel_path in _tracked_gate_files(root):
+    scanned_files = _tracked_gate_files(root)
+    for rel_path in scanned_files:
         if rel_path in _SELF_EXCLUDED_FILES:
             continue
         try:
@@ -231,13 +316,21 @@ def lexical_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
                 continue
             if (rel_path, node.name) in _ALLOWLIST:
                 continue
-            if not _calls_re_decision(node):
+            if not _calls_lexical_decision(node):
                 continue
             symref_less = _symref_less_violation_calls(node)
             if symref_less:
                 violations.append(
                     _lexcheck001_violation(rel_path, node.name, node.lineno)
                 )
+    _log.warning(
+        "lexical_selfcheck_gate: scanned %d tracked file(s) under %s ONLY "
+        "(not repo-wide -- see frob.gates._detector_scope.DETECTOR_"
+        "PACKAGE_ROOTS), %d violation(s)",
+        len(scanned_files),
+        ", ".join(DETECTOR_PACKAGE_ROOTS),
+        len(violations),
+    )
     return tuple(violations)
 
 

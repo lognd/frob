@@ -17,6 +17,11 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.529.0] - unreleased
+
+- T-2445: T-2445: every land writes CHANGELOG.md and the version line, so scope-disjoint lands still conflict
+- T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
+
 ## [0.528.0] - unreleased
 
 - T-2445: T-2445: every land writes CHANGELOG.md and the version line, so scope-disjoint lands still conflict

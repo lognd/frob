@@ -2,7 +2,7 @@
 id: T-2466
 title: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching
   security detector in vet/
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -13,23 +13,92 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_lexical_selfcheck.py
+- src/frob/gates/_detector_scope.py
+- tests/unit/gates/test_lexical_selfcheck.py
+- docs/modules/gates.md
+- tests/unit/gates/test_detector_scope.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_lexical_selfcheck.py
+  reason: 'widen LEXCHECK001''s scanned scope past gates/ (vet/ proven necessary by
+    T-2457, strata/+check/ confirmed by measurement: git grep for Violation( construction),
+    report scanned scope on every run (PORT001/T-2388 convention), and share the scope
+    declaration as its own tiny module so T-2405''s PORT001 widening can reuse it
+    instead of drift-prone duplicate hardcoding'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_detector_scope.py
+  reason: 'widen LEXCHECK001''s scanned scope past gates/ (vet/ proven necessary by
+    T-2457, strata/+check/ confirmed by measurement: git grep for Violation( construction),
+    report scanned scope on every run (PORT001/T-2388 convention), and share the scope
+    declaration as its own tiny module so T-2405''s PORT001 widening can reuse it
+    instead of drift-prone duplicate hardcoding'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/gates/test_lexical_selfcheck.py
+  reason: 'widen LEXCHECK001''s scanned scope past gates/ (vet/ proven necessary by
+    T-2457, strata/+check/ confirmed by measurement: git grep for Violation( construction),
+    report scanned scope on every run (PORT001/T-2388 convention), and share the scope
+    declaration as its own tiny module so T-2405''s PORT001 widening can reuse it
+    instead of drift-prone duplicate hardcoding'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'widen LEXCHECK001''s scanned scope past gates/ (vet/ proven necessary by
+    T-2457, strata/+check/ confirmed by measurement: git grep for Violation( construction),
+    report scanned scope on every run (PORT001/T-2388 convention), and share the scope
+    declaration as its own tiny module so T-2405''s PORT001 widening can reuse it
+    instead of drift-prone duplicate hardcoding'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/gates/test_detector_scope.py
+  reason: new shared module _detector_scope.py needs its own unit test file
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_vet_needle_matcher_shape_is_flagged
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_semantic_function_with_incidental_regex_is_silent
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_elementtree_find_is_not_a_trigger
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_detector_package_module_stays_clean
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_non_gate_code_never_scanned
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_scans_scope_is_disclosed_in_log
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_gates_vet_strata_check_are_members
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_arch_is_not_a_member
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_unrelated_package_is_not_a_member
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_roots_are_sorted_and_slash_terminated
 designated_repro_test: null
 acceptance:
 - text: Given a detector in src/frob/vet/ performing needle matching via bytes.find,
     when LEXCHECK001 runs, then it is reported -- using T-2457's own pre-fix code
     as the fixture.
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_vet_needle_matcher_shape_is_flagged
+  - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_gates_vet_strata_check_are_members
+  - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_arch_is_not_a_member
+  - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_unrelated_package_is_not_a_member
+  - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_roots_are_sorted_and_slash_terminated
 - text: Given the sites LEXCHECK001 legitimately exempts today, when its scope is
     widened, then those remain exempt, proving coverage was gained without loosening
     exemptions.
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_allowlisted_function_is_silent
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_semantic_function_with_incidental_regex_is_silent
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_elementtree_find_is_not_a_trigger
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_detector_package_module_stays_clean
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_non_gate_code_never_scanned
 - text: Given any LEXCHECK001 result, when it is emitted, then it names the scope
     actually scanned, so a count cannot be read as repo-wide when it is not.
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_scans_scope_is_disclosed_in_log
 threat: tampering
 component: gates
 anchor: false
