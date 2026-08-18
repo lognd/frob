@@ -874,6 +874,8 @@
     "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
     "src/frob/gates/_tickets_gate.py::tickets_gate": "151a5c8106999e9e13e65e15aef2837187687aa7310a7762ce24aaf82af05844",
     "src/frob/gates/_todo_fmt.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
+    "src/frob/gates/_toplevel_scalar_schema.py::TOPLEVEL_SCALAR_KNOWN_KEYS": "df9b3abff1d34b5c5d152f68d0aa8d5a5ec74bf39b3630afd24960dca459b3a5",
+    "src/frob/gates/_toplevel_scalar_schema.py::toplevel_scalar_schema_gate": "08b8d73f11496334562d3afa39fd360982a4edcfafd68f12c5d99638de5d2686",
     "src/frob/gates/_tracked_files.py::tracked_files": "a841d05ec934e8ad48b91c71faaaf5aa844d3c77c8db282e25969ec5b5d928a3",
     "src/frob/gates/_waive.py::RuleCensusEntry": "f30e2b034420b2ce4923da7c4713249fdb0d0034a57bbe3c9c16a6cc2f75cf01",
     "src/frob/gates/_waive.py::SCOPED_RUN_FLAKY_RULE_IDS": "eccec9442287c94baf320554cbed12c317246e8b8907dea1ab52876f8f606c97",
@@ -2442,5 +2444,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.517.0"
+  "version": "0.518.0"
 }

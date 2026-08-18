@@ -17,6 +17,14 @@ min_frob_version = "0.447.0"
 
 check_base = "main"
 
+# T-2390 epic child (T-2431): known_keys declares the known-key set
+# for frob.toml's top-level SCALAR keys (min_frob_version, check_base)
+# for TOPSCALARSCHEMA001 (an unknown/misspelled top-level scalar key,
+# previously silently ignored), resolved through the same module:symbol
+# idiom as [refs] entrypoint_schema / [native_schema] / [profile_schema].
+[toplevel_scalar_schema]
+known_keys = "frob.gates._toplevel_scalar_schema:TOPLEVEL_SCALAR_KNOWN_KEYS"
+
 # T-0399 (gates-quality audit finding 2) / T-0974: [dup] is now ON by
 # default in this repo's own gate path. History: T-0399 measured
 # `enforce = true` alone blowing past this repo's ~150s single-stage
