@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 69fd92288e201ccf5f944d97b6f36dc60dd7ac2c
 ---
 Found while working T-2288 (recovery of three branches `frob ticket reconcile`
 misattributed as stranded work under T-1238).
