@@ -308,6 +308,8 @@ _STAGE_GROUPS: dict[str, frozenset[str]] = {
             "refs_schema",
             # T-2390 epic child T-2429: NATIVESCHEMA001, same shape.
             "native_schema",
+            # T-2390 epic child T-2430: PROFILESCHEMA001, same shape.
+            "profile_schema",
             "parse_failures",
             "lang_conformance",
             "lang_project_conformance",

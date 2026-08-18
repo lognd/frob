@@ -769,6 +769,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2390 epic child: NATIVESCHEMA001 -- an unknown/misspelled key
         # in a [[native]] entry (frob.gates._native_schema).
         "NATIVESCHEMA001",
+        # frob:ticket T-2430
+        # T-2390 epic child: PROFILESCHEMA001 -- an unknown/misspelled key
+        # in the [profile] table (frob.gates._profile_schema).
+        "PROFILESCHEMA001",
         # frob:ticket T-2388
         # T-2397: courtesy registration to unblock T-2388 (Series Y) --
         # T-2388's land refused at UnregisteredGateRuleConstructed (T-1937)

@@ -488,6 +488,13 @@ language = "rust"
 [gates.ratchet]
 rules = []
 
+# T-2390 epic child (T-2430): known_keys declares this table's own
+# known-key set for PROFILESCHEMA001 (an unknown/misspelled key in
+# [profile], previously silently ignored), resolved through the same
+# module:symbol idiom as [refs] entrypoint_schema / [native_schema].
+[profile_schema]
+known_keys = "frob.gates._profile_schema:PROFILE_KNOWN_KEYS"
+
 [profile]
 profile = "rapid"
 override_ratchet = true
