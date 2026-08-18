@@ -118,7 +118,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2fee4f665c08a30439b5366a8282c379689bcaef
 ---
 `frob ticket land` runs `frob check --budget 300`. A budget in this
 codebase DROPS GATES rather than extending time (measured previously:
