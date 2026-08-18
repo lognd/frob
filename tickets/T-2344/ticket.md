@@ -81,7 +81,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fde3b21c255f251fefb3f8ad2d47f83acffdee5a
 ---
 T-1662's own directive #4 asks for a meta-check: "a new gate rule
 constructed from raw text without a symref or AST node should itself be
