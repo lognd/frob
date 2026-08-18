@@ -46,7 +46,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cbde58e8a94a4b2a17ddb0ab8d7d1b744af9bbb5
 ---
 T-2494 fixed `_capability_import_graph_status` (`src/frob/lang/_support.py`)
 to derive its implemented-language set from `frob.lang._extract.
