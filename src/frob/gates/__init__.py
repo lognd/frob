@@ -5206,6 +5206,37 @@ def _rel001_land_owned(root: Path, ticket_id: str | None) -> bool:
     return False
 
 
+# frob:ticket T-2462
+def _rel001_plain_checkout_violations(
+    root: Path, snapshot: GraphSnapshot, manifest, current_version: str
+) -> tuple:  # noqa: ANN001
+    """`release_gate`'s plain-root-checkout branch (T-2462 split, ARCH001):
+    the strict, non-land-owned REL001 posture -- `_rel001_version`'s
+    under-bumped-version check plus `_changelog_mentions`'s missing-
+    changelog check, EXACTLY as before T-2462, UNLESS `changelog.d/`
+    fragments (T-2445) already track whatever bump/changelog demand those
+    two checks would otherwise ERROR on, in which case this downgrades to
+    the same informational WARN family `_rel001_land_note` already uses
+    for the land-owned case (`_rel001_deferred_note`). `pyproject.toml`
+    no longer bumps every land (T-2462: `_apply_release_bump_for_land`
+    defers that to an explicit release cut), so without this a plain
+    `frob check` on main would ERROR on REL001 forever the moment nothing
+    advances the manifest between release cuts -- the fragment check is
+    what tells "deferred, tracked" apart from "genuinely missing"."""
+    bump, violations = _rel001_version(manifest, snapshot, current_version)
+    missing_changelog = bump != 0 and not _changelog_mentions(root, current_version)
+    if missing_changelog:
+        violations.append(_rel001_missing_changelog(current_version))
+    if (violations or missing_changelog) and _rel001_fragments_pending(root):
+        _log.info(
+            "release_gate: REL001 bump/changelog demand deferred via "
+            "T-2445 changelog.d/ fragment(s) (T-2462) -- reporting as "
+            "an informational note, not an error"
+        )
+        violations = _rel001_deferred_note(bump, manifest, current_version)
+    return bump, violations
+
+
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0003
 # frob:ticket T-0807
@@ -5263,11 +5294,9 @@ def release_gate(
         bump = diff_class(manifest_result.danger_ok, snapshot)
         violations = _rel001_land_note(bump, manifest_result.danger_ok, current_version)
     else:
-        bump, violations = _rel001_version(
-            manifest_result.danger_ok, snapshot, current_version
+        bump, violations = _rel001_plain_checkout_violations(
+            root, snapshot, manifest_result.danger_ok, current_version
         )
-        if bump != 0 and not _changelog_mentions(root, current_version):
-            violations.append(_rel001_missing_changelog(current_version))
     # T-0412: a release must never ship with ANY open frob:debt, expired or
     # not -- debt is collected and re-raised before shipping, never
     # silently carried forward as a de facto permanent waiver.
@@ -5400,6 +5429,68 @@ def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]: 
             message=(
                 f"REL001: public API changed ({cls}) since {manifest.version}; "
                 f"land-owned -- frob ticket land will bump to >= {need.danger_ok}"
+            ),
+        )
+    ]
+
+
+# frob:ticket T-2462
+# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_true_with_a_fragment  # noqa: E501
+# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_with_no_fragments  # noqa: E501
+# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001FragmentsPending.test_false_on_malformed_fragment  # noqa: E501
+def _rel001_fragments_pending(root: Path) -> bool:
+    """T-2462: whether `root/changelog.d/` has at least one parseable
+    `frob.release._fragments` entry -- the signal `release_gate`'s plain-
+    root-checkout branch uses to tell "a version bump is deferred, and
+    T-2445's own collision-free mechanism is tracking it" apart from
+    "a version bump is simply missing, with nothing recording it" (T-2462:
+    the case a hand-edited public API change outside `frob ticket land`
+    would produce, which must still ERROR). `False` (not deferred, keep
+    the strict ERROR posture) on ANY parse failure -- fail-closed, same
+    posture `read_changelog_fragments` itself already takes: an
+    unparseable fragment must never silently count as "tracked"."""
+    from frob.release._fragments import read_changelog_fragments
+
+    fragments = read_changelog_fragments(root)
+    if fragments.is_err:
+        return False
+    return len(fragments.danger_ok) > 0
+
+
+# frob:ticket T-2462
+# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_names_bump_and_fragment_mechanism  # noqa: E501
+# frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_empty_for_none_bump  # noqa: E501
+def _rel001_deferred_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
+    """T-2462: `release_gate`'s plain-root-checkout WARN note when a real
+    bump would otherwise ERROR (`_rel001_version`) but `changelog.d/`
+    fragments (T-2445) already track it -- mirrors `_rel001_land_note`'s
+    shape/message convention exactly, substituting "land-owned" for
+    "deferred via changelog.d/ fragments" so the two notes read as the
+    same FAMILY of informational bump-pending signal, just with a
+    different reason the ERROR is suppressed. `[]` when `bump` is the
+    no-op class or the required version cannot be computed -- nothing
+    changed (or nothing computable), nothing to note, matching `_rel001_
+    land_note`'s own identical short-circuit."""
+    from frob.release import required_version
+
+    if bump == 0:
+        return []
+    need = required_version(manifest.version, bump)
+    if need.is_err:
+        return []
+    cls = bump.name.lower()
+    return [
+        Violation(
+            rule="REL001",
+            severity=Severity.WARN,
+            file="pyproject.toml",
+            line=0,
+            message=(
+                f"REL001: public API changed ({cls}) since {manifest.version}; "
+                f"bump to >= {need.danger_ok} is deferred via T-2445 "
+                f"changelog.d/ fragment(s) (T-2462) -- run an explicit "
+                f"release cut (frob release check/sync/stamp, or frob "
+                f"release publish) to apply it"
             ),
         )
     ]

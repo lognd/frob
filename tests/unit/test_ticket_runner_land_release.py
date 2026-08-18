@@ -31,20 +31,35 @@ def _write_repo_files(root: Path, *, version: str = "0.1.0") -> None:
 
 
 class TestWriteReleaseBump:
+    """T-2462: `_write_release_bump` no longer touches `pyproject.toml` at
+    all -- it only writes the `changelog.d/T-####.md` fragment and
+    regenerates CHANGELOG.md's pending section from the current fragment
+    set. `pre_bump_version` is required (labels the fragment's `bump:`
+    header via `_bump_class_between`)."""
+
     def test_rewrites_version_and_prepends_changelog_entry(
-        self, tmp_path: Path
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump.test_rewrites_version_and_prepends_changelog_entry  # noqa: E501
         _write_repo_files(tmp_path)
+        monkeypatch.setattr(
+            "frob.gitio.run_argv", lambda argv, **kw: Ok(_FakeProc(0))
+        )
 
         result = ticket_runner._write_release_bump(
-            tmp_path, _FakeTicket(), "T-0001", "0.2.0"
+            tmp_path, _FakeTicket(), "T-0001", "0.2.0", "0.1.0"
         )
         assert result.is_ok
 
+        # T-2462: pyproject.toml is UNCHANGED -- the version bump is
+        # deferred to an explicit release cut, not written per land.
         pyproject = (tmp_path / "pyproject.toml").read_text()
-        assert 'version = "0.2.0"' in pyproject
-        assert 'version = "0.1.0"' not in pyproject
+        assert 'version = "0.1.0"' in pyproject
+        assert 'version = "0.2.0"' not in pyproject
+
+        fragment = (tmp_path / "changelog.d" / "T-0001.md").read_text()
+        assert "bump: minor" in fragment
+        assert "T-0001: Do the thing" in fragment
 
         changelog = (tmp_path / "CHANGELOG.md").read_text()
         assert "## [0.2.0] - unreleased" in changelog
@@ -52,13 +67,18 @@ class TestWriteReleaseBump:
         # The old entry must survive underneath the new one, unmodified.
         assert "## [0.1.0] - unreleased" in changelog
 
-    def test_missing_version_line_fails(self, tmp_path: Path) -> None:
+    def test_missing_version_line_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump.test_missing_version_line_fails  # noqa: E501
-        (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
-        (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
+        _write_repo_files(tmp_path)
+        monkeypatch.setattr(
+            "frob.release._fragments.write_changelog_fragment",
+            lambda root, ticket_id, bump, note: Err(ReleaseError.WriteFailed),
+        )
 
         result = ticket_runner._write_release_bump(
-            tmp_path, _FakeTicket(), "T-0001", "0.2.0"
+            tmp_path, _FakeTicket(), "T-0001", "0.2.0", "0.1.0"
         )
         assert result.is_err
         assert result.danger_err == LandError.ReleaseBumpFailed
@@ -106,6 +126,15 @@ class TestApplyReleaseBumpForLand:
     def test_bump_applies_writes_and_stamps(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """T-2462: when a bump IS needed, `_apply_release_bump_for_land`
+        writes the T-2445 fragment (`_write_release_bump`'s own job) but
+        still returns `Ok(None)` -- never `Ok(new_version)` -- and never
+        calls `frob.release.stamp` or touches `pyproject.toml` at all.
+        Returning `Ok(None)` unconditionally is what makes `frob.tickets.
+        _land_release._apply_release_bump`'s caller take its "no bump
+        applied" branch, whose monotonicity/coherence checks then trust
+        `pyproject.toml`/`.frob-release.json` to stay exactly at whatever
+        `_reset_release_artifacts_to_pre_land` reset them to."""
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_bump_applies_writes_and_stamps  # noqa: E501
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
@@ -123,7 +152,6 @@ class TestApplyReleaseBumpForLand:
 
         def _fake_stamp(root: Path, snapshot: object, version: str):  # noqa: ANN202
             stamp_calls.append(version)
-            (root / ".frob-release.json").write_text("{}")
             return Ok(version)
 
         monkeypatch.setattr("frob.release.stamp", _fake_stamp)
@@ -137,9 +165,16 @@ class TestApplyReleaseBumpForLand:
             tmp_path, _FakeTicket(), "T-0001"
         )
         assert result.is_ok
-        assert result.danger_ok == "0.2.0"
-        assert stamp_calls == ["0.2.0"]
-        assert 'version = "0.2.0"' in (tmp_path / "pyproject.toml").read_text()
+        assert result.danger_ok is None
+        assert stamp_calls == []
+        # T-2462: pyproject.toml is untouched -- deferred to a release cut.
+        assert 'version = "0.1.0"' in (tmp_path / "pyproject.toml").read_text()
+        assert 'version = "0.2.0"' not in (tmp_path / "pyproject.toml").read_text()
+        # The fragment IS written, though -- this is the tracked-not-lost
+        # signal `_rel001_fragments_pending`/`_rel001_fragment_exists_for_
+        # ticket` (T-2462) both read.
+        fragment = (tmp_path / "changelog.d" / "T-0001.md").read_text()
+        assert "T-0001: Do the thing" in fragment
 
     def test_unreadable_graph_fails(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -158,21 +193,19 @@ class TestApplyReleaseBumpForLand:
         assert result.is_err
         assert result.danger_err == LandError.ReleaseBumpFailed
 
-    # frob:ticket T-1368
+    # frob:ticket T-2462
     def test_stamp_failure_propagates_instead_of_staging_stale_manifest(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """T-1368: `stamp`'s Result used to be discarded -- a write
-        failure fell through to `git add .frob-release.json` regardless,
-        staging whatever (possibly stale) content already happened to be
-        on disk. It must now propagate as `Err(ReleaseBumpFailed)` and
-        never reach the `git add` staging step at all."""
-        # frob:tests \
-        # tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.te\
-        # st_stamp_failure_propagates_instead_of_staging_stale_manifest
+        """T-2462: since `_apply_release_bump_for_land` no longer calls
+        `frob.release.stamp` at all (that write moved to an explicit
+        release cut), the fail-closed path this class used to prove via a
+        `stamp` failure is now proven via the fragment write's own
+        failure -- it must still propagate as `Err(ReleaseBumpFailed)`."""
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand.test_stamp_failure_propagates_instead_of_staging_stale_manifest  # noqa: E501
         _write_repo_files(tmp_path)
         manifest = ReleaseManifest(version="0.1.0", api={})
-        staged_calls: list[list[str]] = []
+        stamp_calls: list[str] = []
         monkeypatch.setattr(
             ticket_runner, "_root_release_manifest", lambda root: manifest
         )
@@ -184,23 +217,23 @@ class TestApplyReleaseBumpForLand:
             lambda previous, bump: Ok("0.2.0"),
         )
         monkeypatch.setattr(
-            "frob.release.stamp",
-            lambda root, snapshot, version: Err(ReleaseError.WriteFailed),
+            "frob.release._fragments.write_changelog_fragment",
+            lambda root, ticket_id, bump, note: Err(ReleaseError.WriteFailed),
         )
+
+        def _fake_stamp(root: Path, snapshot: object, version: str):  # noqa: ANN202
+            stamp_calls.append(version)
+            return Ok(version)
+
+        monkeypatch.setattr("frob.release.stamp", _fake_stamp)
         monkeypatch.setattr(ticket_runner, "_graph_snapshot", lambda root: Ok(object()))
-
-        def _fake_run_argv(argv, **kw):  # noqa: ANN001, ANN202
-            staged_calls.append(argv)
-            return Ok(_FakeProc(0))
-
-        monkeypatch.setattr("frob.gitio.run_argv", _fake_run_argv)
 
         result = ticket_runner._apply_release_bump_for_land(
             tmp_path, _FakeTicket(), "T-0001"
         )
         assert result.is_err
         assert result.danger_err == LandError.ReleaseBumpFailed
-        assert staged_calls == []
+        assert stamp_calls == []
 
 
 # frob:ticket T-1007

@@ -2,7 +2,7 @@
 id: T-2462
 title: defer pyproject.toml/.frob-release.json version bump to an explicit release-cut,
   matching T-2445's CHANGELOG.md fragment deferral
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -16,11 +16,76 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/release/_fragments.py
+- tests/unit/test_ticket_runner_land_release.py
+- tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
+- tests/unit/test_close_rel001_bump.py
+- tests/unit/gates/test_rel001_deferred_bump.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: T-2462 changes _write_release_bump/_apply_release_bump_for_land's tested
+    contract (pyproject.toml/.frob-release.json no longer bumped per-land); these
+    two files directly assert the old per-land bump behavior and must be updated to
+    match
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: T-2462 changes _write_release_bump/_apply_release_bump_for_land's tested
+    contract (pyproject.toml/.frob-release.json no longer bumped per-land); these
+    two files directly assert the old per-land bump behavior and must be updated to
+    match
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'step 9.6''s own documented REL001 land-time behavior changes: pyproject.toml/.frob-release.json
+    are no longer rewritten per land'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_close_rel001_bump.py
+  reason: T-2462 adds _rel001_fragment_exists_for_ticket (_close_cmd.py, existing
+    test file) and _rel001_fragments_pending/_rel001_deferred_note (gates/__init__.py,
+    new file -- tests/test_gates.py is leased by concurrent T-2454)
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/gates/test_rel001_deferred_bump.py
+  reason: T-2462 adds _rel001_fragment_exists_for_ticket (_close_cmd.py, existing
+    test file) and _rel001_fragments_pending/_rel001_deferred_note (gates/__init__.py,
+    new file -- tests/test_gates.py is leased by concurrent T-2454)
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+- tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
+- tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
+- tests/unit/gates/test_rel001_deferred_bump.py::TestReleaseGatePlainCheckoutDeferredPosture::test_pending_bump_with_fragment_is_warn_not_error
+- tests/unit/gates/test_rel001_deferred_bump.py::TestReleaseGatePlainCheckoutDeferredPosture::test_pending_bump_without_fragment_stays_error
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyFragmentSatisfies::test_fragment_present_satisfies_even_though_pyproject_undeclared
+- tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyFragmentSatisfies::test_no_fragment_and_no_bump_still_dirty
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_writes_fragment_and_regenerates_changelog_no_pyproject_touch
+  new_node: tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump::test_rewrites_version_and_prepends_changelog_entry
+  reason: renamed back to the pre-existing evidence-bound name shared by T-0338/T-1089
+    to avoid orphaning their evidence (OrphanedEvidenceDeletion land guard); content
+    updated in place to match the new deferred-bump contract
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_needed_writes_fragment_but_returns_none_and_never_stamps
+  new_node: tests/unit/test_ticket_runner_land_release.py::TestApplyReleaseBumpForLand::test_bump_applies_writes_and_stamps
+  reason: renamed back to the pre-existing evidence-bound name shared by T-1007/T-1009/T-1089/T-1593/T-0338
+    to avoid orphaning their evidence (OrphanedEvidenceDeletion land guard); content
+    updated in place to match the new deferred-bump contract
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false

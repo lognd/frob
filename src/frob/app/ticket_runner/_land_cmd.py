@@ -2703,27 +2703,50 @@ def _required_release_bump(root: Path, final_id: str):  # noqa: ANN201
 # frob:ticket T-1007
 # frob:ticket T-1368
 def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: ANN001, ANN201
-    """Compute the REL001 bump class for `root`'s just-squashed public API
+    """T-2462: defer `pyproject.toml`'s version line and `.frob-release.
+    json`'s stamped manifest to an explicit release-cut (`frob release
+    check`/`sync`/`stamp`, or `frob release publish`), the other half of
+    T-2445's changelog-collision fix -- `pyproject.toml`/`.frob-release.
+    json` are the SAME two shared paths T-2445 already moved CHANGELOG.md
+    off of (measured: 6 of 7 land commits touched both), so bumping them
+    every land still serializes every disjoint-scope land on one pair of
+    files even after T-2445.
+
+    Computes the REL001 bump class for `root`'s just-squashed public API
     against its release manifest -- read from ROOT's OWN git HEAD via
     `_root_release_manifest` (T-1007: never the worktree-carried on-disk
     copy that rides the squash-apply, the root cause of the repeat
     monotonicity-guard refusals T-0992 could only catch, not prevent) --
-    and, if the declared version does not already cover it, bump
-    `pyproject.toml`'s `version`, append a minimal CHANGELOG.md entry
-    (satisfies `_changelog_mentions`'s "the version string appears
-    somewhere" contract), and `frob release stamp` the new manifest --
-    staging all three files in `root`'s index so they land in the same
-    commit as the squash-apply (T-0338).
+    and, if the declared version does not already cover it, writes a
+    `changelog.d/T-####.md` fragment recording the bump class this land
+    needs (T-2445's collision-free mechanism) and regenerates CHANGELOG.
+    md's pending section from the full current fragment set. UNLIKE the
+    pre-T-2462 shape, this function never rewrites `pyproject.toml` and
+    never calls `frob release stamp` -- those become the explicit release-
+    cut's job, reading the accumulated `changelog.d/` fragments (or simply
+    re-running the same `diff_class`-against-manifest computation this
+    function itself uses, since the manifest stays frozen at its last real
+    stamp until that cut happens) to compute the real target version once,
+    not once per land.
 
-    Returns `Ok(None)` (no write at all) when no manifest exists yet (the
-    repo has never opted into `frob release stamp`) or when the diff class
-    is `BumpClass.NONE`; `Ok(new_version)` after a successful bump+stamp;
-    `Err(LandError.ReleaseBumpFailed)` on any failure along the way (an
-    unreadable manifest, an unparsable `pyproject.toml` version, a graph
-    build failure, or -- T-1368 -- `stamp`'s own write failing, e.g. its
-    `enforce_worktree_lease` refusal) -- fail-closed, since a silently-
-    skipped bump would let a landed API change slip past REL001
-    undetected."""
+    ALWAYS returns `Ok(None)` -- even when a fragment WAS written -- so the
+    caller (`frob.tickets._land_release._apply_release_bump`) takes its
+    `bumped.danger_ok is None` branch unconditionally: that branch already
+    trusts `pyproject.toml`/`.frob-release.json` to sit at whatever `_reset_
+    release_artifacts_to_pre_land` reset them to (unchanged, by
+    construction, since this function no longer touches them), so its own
+    monotonicity/coherence checks stay trivially satisfied (nothing moved).
+    Reporting a `new_version` here the way the old shape did would instead
+    walk the caller's OTHER branch, which expects `pyproject.toml` to
+    already show that version on disk -- exactly the write this function
+    now deliberately skips.
+
+    `Err(LandError.ReleaseBumpFailed)` on any failure computing the bump
+    or writing the fragment (an unreadable manifest, a graph build
+    failure, or the fragment write's own I/O failure) -- fail-closed,
+    since a silently-skipped fragment would let a landed API change slip
+    past this deferred bookkeeping entirely, the same posture the old
+    per-land pyproject bump held for the bump itself."""
     needed = _required_release_bump(root, final_id)
     if needed.is_err:
         return Err(needed.danger_err)
@@ -2739,74 +2762,7 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
     if written.is_err:
         return Err(written.danger_err)
 
-    return _stamp_and_stage_release_bump(root, final_id, new_version)
-
-
-# frob:ticket T-0338
-# frob:ticket T-1368
-# frob:ticket T-2445
-def _stamp_and_stage_release_bump(  # noqa: ANN201
-    root: Path, final_id: str, new_version: str
-):
-    """`_apply_release_bump_for_land`'s own ARCH001 split (T-2445): the
-    post-write half -- rebuild the graph snapshot against the just-
-    written `pyproject.toml`, `frob release stamp` the manifest to
-    `new_version`, then stage every land-owned release file (T-2445
-    added `changelog.d` to the list -- `_write_release_bump`'s own
-    fragment write plus this call's own regenerated-section write both
-    land there). No behavior change from inlining this back into the
-    caller; pure line-count extraction."""
-    from frob.app import ticket_runner as _ticket_runner
-    from frob.gitio import run_argv
-    from frob.release import stamp
-    from frob.tickets._land import LandError
-
-    fresh_snapshot = _ticket_runner._graph_snapshot(root)
-    if fresh_snapshot.is_err:
-        _log.error(
-            "land: %s graph unavailable post-bump (%s), cannot stamp release manifest",
-            final_id,
-            fresh_snapshot.danger_err,
-        )
-        return Err(LandError.ReleaseBumpFailed)
-    stamped = stamp(root, fresh_snapshot.danger_ok, new_version)
-    if stamped.is_err:
-        # T-1368: `stamp`'s Result used to be discarded here -- a write
-        # failure (its own `enforce_worktree_lease` refusal, or any future
-        # failure mode `stamp` grows) silently fell through to `git add
-        # .frob-release.json` below, staging whatever (possibly stale)
-        # content already happened to be on disk instead of the fresh
-        # bump. Propagate it the same fail-closed way every other error
-        # path in this function already does.
-        _log.error(
-            "land: %s failed to stamp release manifest at %s (%s)",
-            final_id,
-            new_version,
-            stamped.danger_err,
-        )
-        return Err(LandError.ReleaseBumpFailed)
-
-    staged = run_argv(
-        [
-            "git",
-            "-C",
-            str(root),
-            "add",
-            "pyproject.toml",
-            "CHANGELOG.md",
-            ".frob-release.json",
-            # T-2445: this land's own fragment plus (if this is not the
-            # first bump-worthy land at `new_version`) any earlier
-            # fragments the just-ran assembly step also read -- all
-            # already on disk, `git add` on the directory stages
-            # whichever are new/changed since the last commit.
-            "changelog.d",
-        ]
-    )
-    if staged.is_err or staged.danger_ok.returncode != 0:
-        _log.error("land: %s failed to stage the REL001 bump files", final_id)
-        return Err(LandError.ReleaseBumpFailed)
-    return Ok(new_version)
+    return Ok(None)
 
 
 # frob:ticket T-0338
@@ -2845,44 +2801,36 @@ def _bump_class_between(old_version: str, new_version: str) -> str:  # noqa: ANN
 def _write_release_bump(  # noqa: ANN201
     root: Path, ticket, final_id: str, new_version: str, pre_bump_version: str
 ):
-    """Rewrite `root/pyproject.toml`'s `version = "..."` line to
-    `new_version` (T-0338, unchanged by T-2445) and record this land's
-    changelog entry via the T-2445 fragment mechanism instead of
-    splicing prose into `CHANGELOG.md` directly: `frob.release.
-    _fragments.write_changelog_fragment` writes `changelog.d/T-####.md`
-    (a brand-new, uniquely-named file -- never a shared, previously-
-    existing path, so this step can never collide with any OTHER
-    ticket's own land, disjoint scope or not), then `assemble_changelog_
-    from_fragments` regenerates `new_version`'s `CHANGELOG.md` section
-    from the FULL current fragment set (this land's own fragment plus
-    any earlier still-unreleased ones at the same version) -- a pure,
-    deterministic, idempotent function of the fragment set, run once
-    per land under `land.lock`'s own serialization, so it never disagrees
-    with itself across lands the way an ad hoc text splice could.
+    """T-2462: record this land's changelog entry via the T-2445 fragment
+    mechanism and stage it -- `pyproject.toml`'s own version line is NO
+    LONGER rewritten here (that write, and `.frob-release.json`'s stamp,
+    are now an explicit release-cut's job, not every land's -- see
+    `_apply_release_bump_for_land`'s docstring for the full rationale).
+
+    `frob.release._fragments.write_changelog_fragment` writes `changelog.
+    d/T-####.md` (a brand-new, uniquely-named file -- never a shared,
+    previously-existing path, so this step can never collide with any
+    OTHER ticket's own land, disjoint scope or not), then `assemble_
+    changelog_from_fragments` regenerates `new_version`'s `CHANGELOG.md`
+    section from the FULL current fragment set (this land's own fragment
+    plus any earlier still-unreleased ones at the same target version) --
+    a pure, deterministic, idempotent function of the fragment set, run
+    once per land under `land.lock`'s own serialization, so it never
+    disagrees with itself across lands the way an ad hoc text splice
+    could. Both writes are staged directly (`changelog.d`, `CHANGELOG.
+    md`) -- unlike `pyproject.toml`/`.frob-release.json`, staging these
+    two land-owned artifacts every bump-worthy land is unchanged from
+    T-2445, since a fragment write can never collide across tickets and
+    the CHANGELOG.md regenerate is a cheap, idempotent derived step.
 
     See `frob.release._fragments`'s own module docstring for the full
-    rationale (self-healing under land interruption) and this ticket's
-    Done report for what is DELIBERATELY still unchanged (`pyproject.
-    toml`/`.frob-release.json` still bump every land, unlike the fully
-    deferred design a fuller follow-up leaf would apply to CHANGELOG.md's
-    version-bump sibling too)."""
-    from frob.release import rewrite_pyproject_version
+    fragment-mechanism rationale (self-healing under land interruption)."""
+    from frob.gitio import run_argv
     from frob.release._fragments import (
         assemble_changelog_from_fragments,
         write_changelog_fragment,
     )
     from frob.tickets._land import LandError
-
-    pyproject_path = root / "pyproject.toml"
-    rewritten = rewrite_pyproject_version(root, new_version)
-    if rewritten.is_err:
-        _log.error(
-            'land: %s could not find a `version = "..."` line in %s (%s)',
-            final_id,
-            pyproject_path,
-            rewritten.danger_err,
-        )
-        return Err(LandError.ReleaseBumpFailed)
 
     bump_class = _bump_class_between(pre_bump_version, new_version)
     fragment_written = write_changelog_fragment(
@@ -2905,12 +2853,23 @@ def _write_release_bump(  # noqa: ANN201
         )
         return Err(LandError.ReleaseBumpFailed)
 
+    staged = run_argv(
+        ["git", "-C", str(root), "add", "CHANGELOG.md", "changelog.d"]
+    )
+    if staged.is_err or staged.danger_ok.returncode != 0:
+        _log.error(
+            "land: %s failed to stage the T-2445 fragment/CHANGELOG.md files",
+            final_id,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+
     _log.info(
-        "land: %s wrote REL001 bump -> %s in %s, and a T-2445 fragment "
-        "(%d fragment(s) assembled into CHANGELOG.md)",
+        "land: %s deferred the REL001 pyproject.toml/.frob-release.json bump "
+        "(T-2462) -- wrote a T-2445 fragment labeled %s toward a future %s "
+        "release cut (%d fragment(s) assembled into CHANGELOG.md)",
         final_id,
+        bump_class,
         new_version,
-        pyproject_path,
         assembled.danger_ok,
     )
     return Ok(None)

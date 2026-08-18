@@ -5027,6 +5027,7 @@ class TestReleaseBumpQuartetAtomicity:
 
 
 # frob:ticket T-1007
+# frob:ticket T-2462
 class TestRealCallbackStaleWorktreeManifest:
     """T-1007: the SAME T-0992 acceptance criterion (a stale worktree-
     carried value must never win over root's own state), now proven
@@ -5041,7 +5042,16 @@ class TestRealCallbackStaleWorktreeManifest:
     `.frob-release.json` from root's own git HEAD (never the working-tree
     copy the squash just wrote), computes main-plus-one correctly, and
     lands clean on the FIRST attempt -- the guard becomes a never-fires
-    invariant for this callback, exactly as T-1007 required."""
+    invariant for this callback, exactly as T-1007 required.
+
+    T-2462: the bump itself is now DEFERRED -- `pyproject.toml`/`.frob-
+    release.json` are no longer rewritten by this callback at all, so the
+    T-1007 correctness claim now shows up in the `changelog.d/T-####.md`
+    fragment's `bump:` label and CHANGELOG.md's regenerated pending
+    section instead of in a rewritten `pyproject.toml`/`.frob-release.
+    json`: main-plus-one (0.184.0), computed from ROOT's committed
+    manifest (0.183.0) -- never the worktree's stale 0.181.0 copy, which
+    would have under-computed 0.182.0."""
 
     def test_stale_worktree_manifest_still_lands_main_plus_one(
         self, repo: Path
@@ -5084,13 +5094,31 @@ class TestRealCallbackStaleWorktreeManifest:
             bump_version=ticket_runner._land_bump_version_fn(),
         )
         assert result.is_ok, result.err
-        # main-plus-one (0.184.0), computed from ROOT's committed manifest
-        # (0.183.0) -- never the worktree's stale 0.181.0 copy, which would
-        # have under-computed 0.182.0 and tripped the T-0992 guard instead.
-        assert result.danger_ok.release_bumped_to == "0.184.0"
-        assert (repo / "pyproject.toml").read_text().count('version = "0.184.0"') == 1
+        # T-2462: the bump is deferred -- this callback ALWAYS reports
+        # `None`, even though a fragment was written (see its own
+        # docstring for why reporting a version here is incompatible with
+        # leaving pyproject.toml unwritten).
+        assert result.danger_ok.release_bumped_to is None
+        # pyproject.toml/.frob-release.json stay EXACTLY at main's own
+        # pre-land values -- never touched by this land at all.
+        assert (repo / "pyproject.toml").read_text().count('version = "0.183.0"') == 1
+        assert (repo / "pyproject.toml").read_text().count('version = "0.184.0"') == 0
         manifest_text = (repo / ".frob-release.json").read_text()
-        assert '"version": "0.184.0"' in manifest_text
+        assert '"version": "0.183.0"' in manifest_text
+        assert '"version": "0.184.0"' not in manifest_text
+        # The T-1007 correctness claim now lives in the fragment: computed
+        # from ROOT's own committed 0.183.0 manifest (never the
+        # worktree's stale 0.181.0 copy), the real target is 0.184.0/
+        # minor -- CHANGELOG.md's regenerated pending section names it.
+        changelog_text = (repo / "CHANGELOG.md").read_text()
+        assert "## [0.184.0] - unreleased" in changelog_text
+        # T-2462: the fragment is filed under the RENUMBERED final id
+        # (T-0001 in this fixture's fresh ledger), not the draft id `tid`
+        # was allocated as -- same id `_write_release_bump` receives as
+        # `final_id`.
+        fragment_path = repo / "changelog.d" / "T-0001.md"
+        assert fragment_path.is_file()
+        assert "bump: minor" in fragment_path.read_text()
 
 
 # frob:ticket T-0793

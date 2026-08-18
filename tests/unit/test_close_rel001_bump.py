@@ -16,6 +16,7 @@ from typani.result import Err, Ok
 from frob.app.ticket_runner._close_cmd import (
     _declared_pyproject_version,
     _own_obligations_rel_bump_dirty,
+    _rel001_fragment_exists_for_ticket,
     _version_covers,
 )
 
@@ -175,3 +176,85 @@ class TestOwnObligationsRelBumpDirtyRapidSkip:
 
         ticket = SimpleNamespace(id="T-0001")
         assert _own_obligations_rel_bump_dirty(tmp_path, ticket) is False
+
+
+# frob:ticket T-2462
+class TestRel001FragmentExistsForTicket:
+    """T-2462: `_rel001_fragment_exists_for_ticket` -- whether
+    `root/changelog.d/<ticket_id>.md` exists, the "deferred, not missing"
+    satisfying signal `_own_obligations_rel_bump_dirty` now accepts
+    alongside "pyproject.toml already covers the diff"."""
+
+    def test_true_when_fragment_present(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_true_when_fragment_present  # noqa: E501
+        from frob.release._fragments import write_changelog_fragment
+
+        assert write_changelog_fragment(tmp_path, "T-0042", "minor", "note").is_ok
+        assert _rel001_fragment_exists_for_ticket(tmp_path, "T-0042") is True
+
+    def test_false_when_absent(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_false_when_absent  # noqa: E501
+        assert _rel001_fragment_exists_for_ticket(tmp_path, "T-0042") is False
+
+
+# frob:ticket T-2462
+class TestOwnObligationsRelBumpDirtyFragmentSatisfies:
+    """T-2462: `_own_obligations_rel_bump_dirty` treats an existing T-2445
+    fragment for THIS ticket as satisfying, the same as an already-applied
+    pyproject.toml bump -- the fix for the "permanently un-closeable
+    between release cuts" gap `pyproject.toml` no longer bumping per land
+    would otherwise leave open."""
+
+    def test_fragment_present_satisfies_even_though_pyproject_undeclared(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyFragmentSatisfies.test_fragment_present_satisfies_even_though_pyproject_undeclared  # noqa: E501
+        from frob.release._fragments import write_changelog_fragment
+
+        monkeypatch.setattr(
+            "frob.tickets._profile.effective_profile",
+            lambda root: Ok(SimpleNamespace()),
+        )
+        monkeypatch.setattr(
+            "frob.verify.settings_for_profile",
+            lambda profile: SimpleNamespace(rel001_preflight_enabled=True),
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._required_release_bump",
+            lambda root, ticket_id: Ok("0.400.0"),
+        )
+        # pyproject.toml stays UNDECLARED for the needed version (T-2462:
+        # this is now the expected state between release cuts) -- only
+        # the fragment records the obligation.
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.399.0"\n', encoding="utf-8"
+        )
+        assert write_changelog_fragment(tmp_path, "T-0001", "minor", "note").is_ok
+
+        ticket = SimpleNamespace(id="T-0001")
+        assert _own_obligations_rel_bump_dirty(tmp_path, ticket) is False
+
+    def test_no_fragment_and_no_bump_still_dirty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_close_rel001_bump.py::TestOwnObligationsRelBumpDirtyFragmentSatisfies.test_no_fragment_and_no_bump_still_dirty  # noqa: E501
+        """Neither satisfying condition holds -- still dirty, unchanged
+        from the pre-T-2462 posture."""
+        monkeypatch.setattr(
+            "frob.tickets._profile.effective_profile",
+            lambda root: Ok(SimpleNamespace()),
+        )
+        monkeypatch.setattr(
+            "frob.verify.settings_for_profile",
+            lambda profile: SimpleNamespace(rel001_preflight_enabled=True),
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._required_release_bump",
+            lambda root, ticket_id: Ok("0.400.0"),
+        )
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "x"\nversion = "0.399.0"\n', encoding="utf-8"
+        )
+
+        ticket = SimpleNamespace(id="T-0001")
+        assert _own_obligations_rel_bump_dirty(tmp_path, ticket) is True

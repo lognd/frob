@@ -437,6 +437,25 @@ def _close_gate_claims_for_ticket(root: Path, ticket) -> bool | None:  # noqa: A
     return all_clean
 
 
+# frob:ticket T-2462
+# frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_true_when_fragment_present  # noqa: E501
+# frob:tests tests/unit/test_close_rel001_bump.py::TestRel001FragmentExistsForTicket.test_false_when_absent  # noqa: E501
+def _rel001_fragment_exists_for_ticket(root: Path, ticket_id: str) -> bool:
+    """T-2462: whether `root/changelog.d/<ticket_id>.md` exists -- the
+    "deferred, not missing" satisfying signal `_own_obligations_rel_bump_
+    dirty` accepts alongside "pyproject.toml already covers the diff"
+    now that `frob ticket land` no longer bumps `pyproject.toml` per
+    land (only writes this fragment). Most useful on a REVERIFY of an
+    already-landed ticket (`root` = main, post-land): before this,
+    `pyproject.toml` staying frozen between explicit release cuts made
+    every such reverify re-flag the SAME already-handled bump as
+    outstanding, forever, since nothing ever advances the version to
+    satisfy the OTHER check between cuts."""
+    from frob.release._fragments import fragment_path
+
+    return fragment_path(root, ticket_id).is_file()
+
+
 # frob:ticket T-1387
 # frob:ticket T-1705
 def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
@@ -488,15 +507,35 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
         return True
     if rel_result.danger_ok is None:
         return False
+    return _own_obligations_rel_bump_outstanding(root, ticket, rel_result.danger_ok)
 
-    # T-1684: `_required_release_bump` answers "what version does the API
-    # at HEAD's manifest require", NOT "is that bump still outstanding" --
-    # it never looks at the version the working tree already DECLARES.
-    # `_apply_release_bump_for_land` compares the two before writing
-    # anything; this guard did not, so a developer who had already bumped
-    # pyproject.toml and re-stamped was told to bump again, forever, with
-    # no reachable state that satisfied the check. Compare here too.
-    needed = rel_result.danger_ok
+
+# frob:ticket T-1684
+# frob:ticket T-2462
+def _own_obligations_rel_bump_outstanding(root: Path, ticket, needed: str) -> bool:  # noqa: ANN001
+    """`_own_obligations_rel_bump_dirty`'s own ARCH001 split (T-2462): the
+    "is `needed` actually still outstanding" half, run once a bump has
+    already been confirmed non-`None`.
+
+    T-1684: `_required_release_bump` answers "what version does the API
+    at HEAD's manifest require", NOT "is that bump still outstanding" --
+    it never looks at the version the working tree already DECLARES.
+    `_apply_release_bump_for_land` compares the two before writing
+    anything; this guard did not, so a developer who had already bumped
+    pyproject.toml and re-stamped was told to bump again, forever, with
+    no reachable state that satisfied the check. Compare here too.
+
+    T-2462: `pyproject.toml` no longer bumps per land (`_apply_release_
+    bump_for_land` defers that to an explicit release cut) -- ONLY the
+    `changelog.d/T-####.md` fragment write still happens unconditionally,
+    inside `frob ticket land` itself. Before T-2462 the `declared covers
+    needed` check below was the ONLY satisfying state, and it could never
+    become true again once land stopped bumping pyproject.toml -- every
+    API-touching ticket would go permanently un-closeable between release
+    cuts. A fragment already present for THIS ticket id (the T-1929-style
+    repeat-close/reverify path -- close is re-run on `root` after a land
+    already wrote it) is the equivalent satisfying signal under the
+    deferred posture: the bump is tracked, not missing."""
     declared = _declared_pyproject_version(root)
     if declared is not None and _version_covers(declared, needed):
         _log.info(
@@ -505,6 +544,16 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
             ticket.id,
             needed,
             declared,
+        )
+        return False
+    if _rel001_fragment_exists_for_ticket(root, ticket.id):
+        _log.info(
+            "ticket close: %s REL001 bump to %s is deferred via an "
+            "existing T-2445 changelog.d/%s.md fragment (T-2462) -- "
+            "satisfied",
+            ticket.id,
+            needed,
+            ticket.id,
         )
         return False
     # T-1705: name the ACTUAL remedy. The bump is applied by

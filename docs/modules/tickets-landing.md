@@ -284,29 +284,53 @@ Order of operations, and why it is this order:
     reported back as `LandReport.worktree_changeset`, and the actually
     landed paths as `LandReport.files_changed` -- on a real (non-dry-run)
     success the former is always a subset of the latter, by construction.
-9.6. **REL001 version bump** (T-0338, only when `bump_version` was
-    supplied, runs right after step 9's squash and BEFORE the step 9.5
-    completeness assertion): `bump_version(root, ticket, final_id)`
-    computes the semver class the just-squashed public API demands
-    (`frob.release.diff_class`/`required_version` against the tracked
-    `.frob-release.json` manifest), and if the declared `pyproject.toml`
-    version does not already cover it, rewrites `version = "..."`, then
-    (T-2445) writes a `changelog.d/T-####.md` fragment for this ticket
-    and regenerates the `## [<version>] - unreleased` CHANGELOG.md
-    section from the FULL current fragment set (`frob.release._fragments.
-    write_changelog_fragment`/`assemble_changelog_from_fragments` --
-    docs/modules/release.md#changelog-fragments-t-2445 has the full
-    rationale: a fragment is a brand-new, uniquely-named file, so this
-    step can never collide with a concurrent, scope-disjoint ticket's own
-    land the way splicing directly into CHANGELOG.md's single shared
-    insertion point could), and `frob release stamp`s the new manifest --
-    staging `pyproject.toml`/`CHANGELOG.md`/`.frob-release.json`/
-    `changelog.d/` so they land in the SAME commit as the squash-apply.
-    `Ok(None)` (no manifest yet, or no bump needed) is a
-    no-op; `Err(LandError.ReleaseBumpFailed)` unwinds the squash (`git
-    reset --hard && git clean -fd`) exactly like any other land failure --
-    a silently-skipped bump would let a landed API change slip past
-    REL001 undetected. Reported back as `LandReport.release_bumped_to`.
+9.6. **REL001 version bump, DEFERRED (T-2462)** (T-0338, only when
+    `bump_version` was supplied, runs right after step 9's squash and
+    BEFORE the step 9.5 completeness assertion): `bump_version(root,
+    ticket, final_id)` computes the semver class the just-squashed public
+    API demands (`frob.release.diff_class`/`required_version` against the
+    tracked `.frob-release.json` manifest), and if the declared
+    `pyproject.toml` version does not already cover it, (T-2445) writes a
+    `changelog.d/T-####.md` fragment for this ticket and regenerates the
+    `## [<version>] - unreleased` CHANGELOG.md section from the FULL
+    current fragment set (`frob.release._fragments.write_changelog_
+    fragment`/`assemble_changelog_from_fragments` -- docs/modules/
+    release.md#changelog-fragments-t-2445 has the full rationale: a
+    fragment is a brand-new, uniquely-named file, so this step can never
+    collide with a concurrent, scope-disjoint ticket's own land the way
+    splicing directly into CHANGELOG.md's single shared insertion point
+    could) -- staging `CHANGELOG.md`/`changelog.d/` so they land in the
+    SAME commit as the squash-apply.
+
+    **T-2462: `pyproject.toml`'s `version = "..."` line and `.frob-
+    release.json`'s stamped manifest are DELIBERATELY NOT rewritten
+    here.** Before T-2462, this step also bumped both -- the SAME two
+    shared paths every land touched (measured, T-2445: 6 of the last 7
+    land commits touched both `CHANGELOG.md` AND `pyproject.toml`), so
+    even after T-2445 moved CHANGELOG.md off the shared-splice path,
+    `pyproject.toml`/`.frob-release.json` kept every land serialized on
+    one pair of files regardless of how disjoint the tickets' own code
+    scopes were. Bumping them is now an explicit, separate release-cut
+    step (`frob release check`/`sync`/`stamp`, or `frob release
+    publish`) that reads the SAME `diff_class`-against-manifest
+    computation this callback itself uses (the manifest stays frozen at
+    its last real stamp until that cut runs, so the cut naturally sees
+    the FULL accumulated diff across every deferred land, not just the
+    last one) -- cut once per release, not once per land.
+
+    This callback therefore ALWAYS returns `Ok(None)` now, even when a
+    fragment was written -- see `_apply_release_bump_for_land`'s own
+    docstring for why reporting a `new_version` here (the pre-T-2462
+    shape) is incompatible with `pyproject.toml` staying unwritten.
+    `Err(LandError.ReleaseBumpFailed)` unwinds the squash (`git reset
+    --hard && git clean -fd`) exactly like any other land failure -- a
+    silently-skipped fragment would let a landed API change slip past
+    this deferred bookkeeping entirely. `LandReport.release_bumped_to`
+    is therefore always `None` under this callback post-T-2462; it stays
+    on `LandReport` for the OTHER `bump_version` implementations the
+    `land()` signature still accepts (`frob ticket land`'s tests supply
+    a synthetic one that reports a real version, see
+    `tests/test_ticket_land.py::TestReleaseBump`).
 
     **T-0992 monotonicity assertion**: `_apply_release_bump` independently
     reads main's own pre-land `pyproject.toml` version via `git show
