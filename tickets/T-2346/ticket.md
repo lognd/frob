@@ -74,7 +74,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1abc2ff25ba11a18085fdda14a7c2a6df4a312d4
 ---
 MEASURED 2026-08-17, after an implementer lost real time to it.
 
