@@ -7724,6 +7724,98 @@ class TestTestGate:
             == package_waiver
         )
 
+    # frob:ticket T-2338
+    def test_match_waiver_picks_line_nearest_of_two_same_file_same_rule(
+        self,
+    ) -> None:
+        """T-2338: a file with 2+ `frob:waive PERF008` comments at
+        DIFFERENT lines (the real T-2321 incident shape) must have each
+        violation matched to the waiver comment nearest ITS OWN line, not
+        whichever waiver happens to come first in build order -- this
+        MUST FAIL on main (the old code always returned `candidates[0]`)."""
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        far_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/x.py",
+            target="PERF008",
+            origin="src/frob/x.py:10",
+            attrs={"reason": "far waiver, near line 10"},
+        )
+        near_waiver = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/x.py",
+            target="PERF008",
+            origin="src/frob/x.py:500",
+            attrs={"reason": "near waiver, near line 500"},
+        )
+        violation_near_500 = Violation(
+            rule="PERF008",
+            severity=Severity.WARN,
+            file="src/frob/x.py",
+            line=501,
+            message="x",
+        )
+        matched = _match_waiver(
+            violation_near_500, {"PERF008": [far_waiver, near_waiver]}
+        )
+        assert matched is near_waiver, (
+            f"expected the line-501 violation matched to the line-500 waiver, "
+            f"got reason={matched.attrs.get('reason') if matched else None!r}"
+        )
+
+        violation_near_10 = Violation(
+            rule="PERF008",
+            severity=Severity.WARN,
+            file="src/frob/x.py",
+            line=11,
+            message="x",
+        )
+        matched2 = _match_waiver(
+            violation_near_10, {"PERF008": [far_waiver, near_waiver]}
+        )
+        assert matched2 is far_waiver, (
+            f"expected the line-11 violation matched to the line-10 waiver, "
+            f"got reason={matched2.attrs.get('reason') if matched2 else None!r}"
+        )
+
+    # frob:ticket T-2338
+    def test_match_waiver_still_suppresses_regardless_of_which_one_wins(
+        self,
+    ) -> None:
+        """Must-still-pass control: suppression itself is unaffected by
+        this fix -- ANY matching waiver (near or far) still suppresses
+        the finding; only the DISPLAYED reason's attribution changes."""
+        # frob:tests src/frob/gates/_waive.py::_match_waiver
+        from frob.gates import _match_waiver
+        from frob.graph import Edge, EdgeKind
+
+        waiver_a = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/x.py",
+            target="PERF008",
+            origin="src/frob/x.py:10",
+            attrs={"reason": "A"},
+        )
+        waiver_b = Edge(
+            kind=EdgeKind.WAIVE,
+            src="src/frob/x.py",
+            target="PERF008",
+            origin="src/frob/x.py:500",
+            attrs={"reason": "B"},
+        )
+        violation = Violation(
+            rule="PERF008",
+            severity=Severity.WARN,
+            file="src/frob/x.py",
+            line=250,
+            message="x",
+        )
+        matched = _match_waiver(violation, {"PERF008": [waiver_a, waiver_b]})
+        assert matched is not None
+
     def test_waive003_flags_waiver_reaching_multiple_packages(self) -> None:
         """T-0470: one `frob:waive TEST003` written in a file nested under
         `src/frob/pkg/sub` also reaches the ANCESTOR package `src/frob/pkg`

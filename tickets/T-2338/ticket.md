@@ -2,7 +2,7 @@
 id: T-2338
 title: PERF008 waiver reason display can be misattributed between two same-rule waivers
   in one file
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -13,9 +13,14 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_waive.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_gates.py::TestTestGate::test_match_waiver_picks_line_nearest_of_two_same_file_same_rule
+- tests/test_gates.py::TestTestGate::test_match_waiver_still_suppresses_regardless_of_which_one_wins
+designated_repro_test: tests/test_gates.py::TestTestGate::test_match_waiver_picks_line_nearest_of_two_same_file_same_rule
 threat: null
 component: null
 anchor: false

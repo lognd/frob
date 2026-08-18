@@ -1829,12 +1829,51 @@ def _ceiling_ok(waiver: Edge, violation: Violation) -> bool:
 
 
 # invariant spec: [INV-006](invariants/INV-006.md)
+def _waiver_origin_line(waiver: Edge) -> int | None:
+    """T-2338: the source line of `waiver`'s own `frob:waive` comment,
+    parsed from `Edge.origin` (`dsl.py::_parse_line` always sets it to
+    `f"{path}:{lineno}"`), or `None` if that shape is somehow absent --
+    never raises, since this is a display-attribution refinement, not a
+    suppression decision (a `None` here just means this candidate cannot
+    win a proximity tie-break, not that it stops matching)."""
+    _, _, line_text = waiver.origin.rpartition(":")
+    return int(line_text) if line_text.isdigit() else None
+
+
+def _closest_by_line(waiver: Edge, violation: Violation) -> tuple[int, int]:
+    """Sort key for picking the LINE-NEAREST of 2+ same-file, same-rule
+    waivers (T-2338): `(distance-to-violation, origin-line)`, ascending --
+    the closest waiver comment wins, and an unparseable/missing origin
+    line sorts last (`_LARGE_DISTANCE`) rather than winning by accident."""
+    origin_line = _waiver_origin_line(waiver)
+    if origin_line is None:
+        return (_LARGE_DISTANCE, 0)
+    return (abs(origin_line - violation.line), origin_line)
+
+
+_LARGE_DISTANCE = 1 << 30
+
+
 def _match_waiver(
     violation: Violation, waivers_by_rule: dict[str, list[Edge]]
 ) -> Edge | None:
-    """The first WAIVE edge whose site matches `violation` (symbol-exact,
+    """The WAIVE edge whose site matches `violation` (symbol-exact,
     file-scoped, or package-prefix -- see the comment above) AND whose
-    optional `ceiling=` still covers it (`_ceiling_ok`), or None."""
+    optional `ceiling=` still covers it (`_ceiling_ok`), or None.
+
+    T-2338: suppression itself was always correct (any matching waiver in
+    a file suppresses the finding), but for DISPLAY/attribution purposes
+    a file with 2+ waivers for the SAME rule id used to return whichever
+    one happened to come first in `candidates`' build order -- so a
+    genuine, differently-worded waiver comment two functions down could
+    have its reason text shown against a DIFFERENT finding than the one
+    its own comment actually sits above. When `violation.symref` is None
+    (the file-scoped/package-prefix path), every matching candidate is
+    now collected and the LINE-NEAREST one (`_closest_by_line`) is
+    returned, so the displayed `[waived: ...]` reason traces back to the
+    comment actually closest to the finding it explains. The symref-exact
+    path above is already precise (a symbol can only be one waiver's
+    target) and is unchanged."""
     if violation.rule in _UNWAIVABLE_RULES:
         return None
     candidates = waivers_by_rule.get(violation.rule, ())
@@ -1845,6 +1884,7 @@ def _match_waiver(
         return None
     package_scoped = violation.rule in _PACKAGE_SCOPED_RULES
     package_prefix = violation.file.rstrip("/") + "/"
+    matches: list[Edge] = []
     for waiver in candidates:
         waiver_file = waiver.src.split("::", 1)[0]
         if (
@@ -1852,8 +1892,12 @@ def _match_waiver(
             or waiver_file == violation.file
             or (package_scoped and waiver_file.startswith(package_prefix))
         ) and _ceiling_ok(waiver, violation):
-            return waiver
-    return None
+            matches.append(waiver)
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+    return min(matches, key=lambda w: _closest_by_line(w, violation))
 
 
 def _apply_waivers(
