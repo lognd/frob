@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 22a4e5530d9fd622e42888a1c61fd73862f956a1
 ---
 T-2466 widened LEXCHECK001's scanned scope from `src/frob/gates/**` to
 `DETECTOR_PACKAGE_ROOTS` (gates/, vet/, strata/, check/ -- measured by
