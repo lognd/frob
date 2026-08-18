@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ca56da99d71c351df13d21531c014ebb7bf52d3c
 ---
 `scripts/fleet_status.py`'s new NEEDS CLOSE bucket (T-2468) classifies a
 non-leaf ticket as closeable whenever it has at least one child
