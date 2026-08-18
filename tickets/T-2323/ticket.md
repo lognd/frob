@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a09991a89cc2abb5b6144a6ef8b30d4734540324
 ---
 Child of T-2303 (parent scope: ARCH001/ARCH103/PERF004/SELFAUDIT001 debt
 found by T-2206's sweep). This is the SELFAUDIT001 piece.
