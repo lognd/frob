@@ -132,7 +132,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4d1f6991682cfbcb650fd7774760ca51d584e478
 ---
 Narrower, coordinator-confirmed root cause for the class of defect T-2328
 was originally filed against. T-2328 itself fixed a REAL, reproduced bug
