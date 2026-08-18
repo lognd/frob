@@ -2,7 +2,7 @@
 id: T-2458
 title: scan_candidate_rule_id_literals false positive on docstring prose (COV0011
   example)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,14 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_gates_schema.py
+evidence_scope:
+- tests/gates/test_rule_id_scan_branches.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_real_repo_registry_is_complete
 designated_repro_test: null
 threat: null
 component: null

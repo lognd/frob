@@ -19,8 +19,9 @@ fully surveyed at filing time:
   legitimately override the severity of any registered rule. The
   existing reader already degrades a malformed VALUE gracefully (a
   non-"warn"/"error" value logs a warning and is ignored) -- what it does
-  NOT catch is a malformed KEY: a misspelled rule id (e.g. "COV0011")
-  silently sits in the overrides dict forever, matching against nothing,
+  NOT catch is a malformed KEY: a misspelled rule id (e.g. `COV0011`,
+  an extra trailing digit on `COV001`) silently sits in the overrides
+  dict forever, matching against nothing,
   doing nothing. This rule's job for `[gates.severity]` is validating
   every KEY against the canonical live rule-id registry (`frob.gates.
   _waive._KNOWN_GATE_RULES`), not re-deriving a project-configurable
