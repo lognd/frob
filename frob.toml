@@ -88,6 +88,16 @@ forwarded = "frob.app._config_external:_all_forwarded_field_names"
 # holds itself to; unset keys fall back to load_arch_config's defaults,
 # which match these same values, so this table is documentation of the
 # decision as much as it is wiring.
+#
+# T-2390 epic child (T-2433): known_keys (below, its own sub-table so
+# it never collides with a real [arch] key) declares this table's
+# known-key set for ARCHSCHEMA001 (an unknown/misspelled key, e.g.
+# "max_fuction_lines", previously silently reverting to the calibrated
+# default with no diagnostic), resolved through the same module:symbol
+# idiom as [testing_schema] / [profile_schema].
+[arch_schema]
+known_keys = "frob.gates._arch_schema:arch_known_keys"
+
 [arch]
 max_function_lines = 60
 max_class_methods = 12
