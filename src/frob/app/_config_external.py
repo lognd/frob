@@ -334,6 +334,10 @@ _LIST_FIELDS = (
     "verify_dispose_dismissed",
 )
 
+# frob:ticket T-2387
+# frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_from_external_carries_all_three_ruff_flags_from_parsed_argv  # noqa: E501
+# frob:tests tests/unit/test_app_config_flag_coverage.py::TestT2320RuffFlagsReachAppConfig.test_absent_ruff_flags_default_false  # noqa: E501
+# frob:tests tests/unit/test_app_config_flag_coverage.py::TestFindDroppedCliFlags.test_current_tree_has_zero_dropped_flags  # noqa: E501
 _BOOL_FLAGS = (
     "scaffold_force",
     "cycle_suggest",
@@ -355,6 +359,10 @@ _BOOL_FLAGS = (
     "exports_json",
     "exports_write",
     "check_skip_ruff",
+    # frob:ticket T-2387
+    "check_skip_ruff_check",
+    "check_skip_ruff_format",
+    "check_ruff_fix",
     "check_skip_ty",
     "check_skip_arch",
     "check_skip_cycle",
