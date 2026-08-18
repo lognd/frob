@@ -523,6 +523,21 @@ per-PROCESS table a single real land fans out across (bash wrapper,
 `timeout`, `uv run`, the python process itself). `land_invocations`
 collapses this to distinct invocations.
 
+T-2475: `ps -eo args`'s text is a space-JOINED rendering that cannot
+tell a real invocation (`ticket`/`land` as two separate argv elements)
+from a process whose command line merely CONTAINS that text glued
+inside one argv element -- measured incident: a coordinator's own
+wait-loop shell running `pgrep -f "frob ticket land T-2408"` read
+identically to a real land in `ps -eo args` text (elapsed=306s,
+cpu=0s reported as a live land) after the real land had already
+finished. Every row that passes the cheap text pre-filter is now
+re-verified against `/proc/<pid>/cmdline`'s own NUL-delimited argv
+(`_pid_has_land_argv_tokens`, mirroring `concurrent_check_count`'s own
+token-not-substring contract, T-2473) before being kept; a row whose
+pid cannot be re-read (already exited, `/proc` unavailable) is kept on
+the text pre-filter alone, same as before T-2475 -- 'cannot confirm' is
+never 'confirmed absent'.
+
 ### `land_invocations`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#land_invocations -->
@@ -864,14 +879,35 @@ T-2182. Prints the TICKET ROT section: `rotting_tickets`'s count, split
 under headings naming the required action -- 'NEEDS DISPATCH' for a leaf
 ticket with NO open/unresolved blocker (T-2449), 'BLOCKED (dependency
 not yet resolved)' (T-2449) for a leaf ticket whose `blocked_by` still
-names an open or unresolved id, 'NEEDS CLOSE' (T-2468) for an epic/story
-that has at least one child ANYWHERE (active or archived) but none of
-them non-terminal -- the epic's own work is done, it only needs a
-rollup Done report and a close -- 'NEEDS DECOMPOSITION' for a genuinely
-undecomposed `tier=epic`/`tier=story` (no child exists yet, anywhere),
-and (T-2229) 'DECOMPOSED, BEING WORKED' for an epic/story that already
-has a non-terminal child (`has_active_child`) -- 'work it'/'needs
-decomposition' is a lie for it, the action is already effectively taken.
+names an open or unresolved id -- and, as of T-2475, ALSO a non-leaf
+(epic/story) whose own `blocked_by` still names an open or unresolved
+id, checked before any child-based classification below ever runs on
+it -- 'NEEDS CLOSE' (T-2468) for an epic/story that has at least one
+child ANYWHERE (active or archived), none of them non-terminal, AND no
+open/unresolved `blocked_by` edge of its own (T-2475) -- the epic's own
+work is done, it only needs a rollup Done report and a close -- 'NEEDS
+DECOMPOSITION' for a genuinely undecomposed `tier=epic`/`tier=story` (no
+child exists yet, anywhere), and (T-2229) 'DECOMPOSED, BEING WORKED' for
+an epic/story that already has a non-terminal child (`has_active_
+child`) -- 'work it'/'needs decomposition' is a lie for it, the action
+is already effectively taken.
+
+T-2475's own incident: T-1599's live shape (tier=story, one
+archived-done child covering 2 of 5 deliverables, the other 3 genuinely
+open and blocked on T-2411) satisfied NEEDS CLOSE's own
+`has_any_child`-without-`has_active_child` trigger despite having live,
+unfinished work behind an unresolved `blocked_by` edge -- routing it to
+NEEDS CLOSE told a coordinator to write a rollup Done report for work
+that was not done. `_rotting_entry` already computed `open_blockers`/
+`unresolved_blockers` for every ticket, leaf or not (T-2449); `_print_
+ticket_rot` now consults that data for non-leaves too, siphoning a
+blocked non-leaf into the shared BLOCKED bucket BEFORE the has_active_
+child/has_any_child split ever sees it, so a terminal-children-but-
+blocked story cannot reach NEEDS CLOSE regardless of its children's
+state. `_rot_bucket_lines`' `tier=` display, previously a single
+bucket-wide flag keyed off the first ticket in a bucket, is now
+per-ticket, so a blocked epic/story mixed into BLOCKED alongside blocked
+leaf tickets still discloses its own tier.
 Epics are NOT exempted from the report either way, only reported under
 their own action heading (measured incident: 10 of 15 rotting tickets
 were epics, 1 a story, only 4 leaf tickets -- one undifferentiated count

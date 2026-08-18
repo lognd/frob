@@ -1025,11 +1025,53 @@ def _parse_land_argv_ticket_id(argv: str) -> str | None:
 
 
 # frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-2475
+#: `/proc/<pid>/cmdline`'s NUL-delimited token pair identifying a REAL
+#: `... ticket land ...` invocation -- `ticket` and `land` as two
+#: SEPARATE argv elements, mirroring `_FROB_CHECK_TOKEN_RE`/
+#: `_CHECK_TOKEN_RE`'s own token-not-substring contract below (T-2473).
+#: This is the structural check `_LAND_ARGV_TICKET_RE`'s text-substring
+#: match cannot make: a coordinator's own wait-loop shell running
+#: `pgrep -f "frob ticket land T-2408"` has `ticket` and `land` GLUED
+#: inside one single argv element (the quoted pattern string handed to
+#: `-f`), never as two adjacent elements -- `ps -eo args`'s space-joined
+#: text renders both shapes identically, which is exactly why the
+#: text-only match misclassified the watcher as the land itself.
+_LAND_CMDLINE_TOKEN_RE = re.compile(rb"\x00ticket\x00land\x00")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
+# frob:ticket T-2475
+def _pid_has_land_argv_tokens(pid: int, proc: Path = Path("/proc")) -> bool | None:
+    """`True`/`False` if `pid`'s `/proc/<pid>/cmdline` structurally DOES
+    or DOES NOT contain `ticket`/`land` as two separate, adjacent argv
+    elements (`_LAND_CMDLINE_TOKEN_RE`) -- `None` if the cmdline could
+    not be read (pid already exited, `/proc` unavailable/unreadable),
+    which the caller must treat as 'cannot confirm', never as 'confirmed
+    absent' (fail-loudly, T-2391) -- `land_process_rows` falls back to
+    its own text-substring verdict in that case rather than silently
+    dropping a row it cannot structurally re-check."""
+    try:
+        raw = (proc / str(pid) / "cmdline").read_bytes()
+    except OSError:
+        return None
+    if not raw.startswith(b"\x00"):
+        raw = b"\x00" + raw
+    if not raw.endswith(b"\x00"):
+        raw += b"\x00"
+    return _LAND_CMDLINE_TOKEN_RE.search(raw) is not None
+
+
+# frob:doc docs/guides/coordinator-scripts.md#land_process_rows
 # frob:ticket T-2180
+# frob:ticket T-2475
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestLandProcessRows.test_parses_matching_rows\
 # _and_skips_others
-def land_process_rows() -> list[dict]:
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestLandProcessRows.test_watcher_pgrep_patter\
+# n_is_not_counted_as_a_land
+def land_process_rows(proc: Path = Path("/proc")) -> list[dict]:
     """Every live process whose argv contains a `ticket land` invocation,
     parsed from `ps -eo pid,etimes,time,args`'s own structured columns:
     pid, elapsed seconds, cumulative CPU time (raw `ps` TIME string), and
@@ -1042,19 +1084,33 @@ def land_process_rows() -> list[dict]:
     overcounting bug this ticket exists to fix (two agents independently
     reported '15-16 concurrent lands' when there were 4).
 
-    Known residual limitation (playbook section 13): a plain argv
-    substring match cannot distinguish a REAL `frob ticket land`
-    invocation from another process whose command line merely CONTAINS
-    that text -- e.g. a coordinator's own wait-loop shell running
-    `pgrep -f "frob ticket land T-..."`. Such a row parses no ticket id
-    (`_parse_land_argv_ticket_id` returns `None`) and `land_invocations`
-    DROPS any row it cannot parse a ticket id from (T-2193: an earlier
-    version reported it as its own `ticket_id=None` invocation instead,
-    which still inflated the reported count by one per such row --
-    dropping it is the fix), so this residual noise never reaches the
-    printed report at all. A caller auditing raw process-table rows
-    directly (bypassing `land_invocations`'s own filtering) still sees
-    it here."""
+    T-2475: `ps -eo args`'s own text is a space-JOINED rendering that
+    cannot tell a real invocation (`ticket`/`land` as two separate argv
+    elements) from a process whose command line merely CONTAINS that
+    text glued inside ONE argv element -- e.g. a coordinator's own
+    wait-loop shell running `pgrep -f "frob ticket land T-2408"` reads
+    identically to a real land in `ps -eo args` text, and was measured
+    misclassified as a live land (elapsed=306s, cpu=0s -- the watcher,
+    not the work) while the real land had already finished. Every row
+    that passes the initial cheap text pre-filter is now RE-VERIFIED
+    structurally against `/proc/<pid>/cmdline`'s own NUL-delimited argv
+    (`_pid_has_land_argv_tokens`) before being kept; a row whose
+    structural check comes back `False` (glued substring, not a real
+    invocation) is dropped here, before `land_invocations` ever sees it.
+    A row whose pid could not be re-read (`None` -- already exited, or
+    `/proc` unavailable on this host) is kept on the strength of the
+    text pre-filter alone, matching this function's pre-T-2475 behavior
+    exactly in the case it cannot improve on -- 'cannot confirm' is
+    never treated as 'confirmed a false positive' (fail-loudly, T-2391).
+
+    Known residual limitation (playbook section 13, narrowed by T-2475):
+    a row whose ticket id cannot be parsed from its argv
+    (`_parse_land_argv_ticket_id` returns `None`) is still dropped by
+    `land_invocations`, not reported (T-2193) -- this row-level function
+    still returns everything it can structurally confirm (or cannot
+    disconfirm); the id-parse filtering happens one layer up. A caller
+    auditing raw process-table rows directly (bypassing `land_
+    invocations`'s own filtering) still sees whatever survives here."""
     try:
         done = subprocess.run(
             ["ps", "-eo", "pid,etimes,time,args"],
@@ -1079,6 +1135,11 @@ def land_process_rows() -> list[dict]:
             pid = int(pid_s)
             etimes = int(etimes_s)
         except ValueError:
+            continue
+        # T-2475: a structural `False` (glued substring inside one argv
+        # element, e.g. a `pgrep -f "... ticket land ..."` watcher) drops
+        # the row here; `None` (cannot re-confirm) or `True` both keep it.
+        if _pid_has_land_argv_tokens(pid, proc) is False:
             continue
         rows.append({"pid": pid, "etimes": etimes, "cputime": cputime_s, "argv": argv})
     return rows
@@ -1898,15 +1959,18 @@ def _rot_bucket_lines(heading: str, tickets: list[dict], detail: str = "") -> li
     half below): a `  HEADING (N):` line, then one `    id ...` line per
     ticket with its priority/state/age, plus `detail` appended verbatim
     (already ticket-specific text, or ''), or `[]` if `tickets` is empty.
-    `tier=` is included only for a non-leaf ticket (`tickets[0]["tier"]
-    != "ticket"`), matching the prior single-function rendering exactly
-    -- pure computation, no I/O, so it is independently testable."""
+    `tier=` is included per-ticket, for every non-leaf ticket in the
+    bucket (`t["tier"] != "ticket"`) -- T-2475: this used to be a single
+    bucket-wide flag keyed off `tickets[0]` alone, which silently hid the
+    tier on every OTHER non-leaf entry in a bucket that mixes leaf and
+    non-leaf tickets (BLOCKED, once T-2475 routes a still-blocked
+    epic/story there alongside blocked leaves) -- pure computation, no
+    I/O, so it is independently testable."""
     if not tickets:
         return []
     lines = [f"  {heading} ({len(tickets)}):"]
-    show_tier = tickets[0]["tier"] != "ticket"
     for t in tickets:
-        tier_part = f"tier={t['tier']} " if show_tier else ""
+        tier_part = f"tier={t['tier']} " if t["tier"] != "ticket" else ""
         lines.append(
             f"    {t['id']} {tier_part}priority={t['priority']} state={t['state']} "
             f"age={t['age_days']}d (threshold {t['threshold_days']}d)"
@@ -1929,6 +1993,7 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 # frob:ticket T-2182
 # frob:ticket T-2200
 # frob:ticket T-2229
+# frob:ticket T-2475
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_splits_by_tier_under_\
 # distinct_action_headings
@@ -1944,6 +2009,9 @@ def _print_rot_bucket(heading: str, tickets: list[dict], detail: str = "") -> No
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_epic_with_no_children\
 # _at_all_still_prints_under_needs_decomposition
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintTicketRot.test_blocked_story_with_te\
+# rminal_child_prints_under_blocked_not_needs_close
 def _print_ticket_rot() -> None:
     """Print the TICKET ROT section: `rotting_tickets`'s own count, split
     into headings by required ACTION -- 'NEEDS DISPATCH' (a leaf ticket,
@@ -1953,14 +2021,21 @@ def _print_ticket_rot() -> None:
     ticket appeared under NEEDS DISPATCH while `ticket_readiness` reported
     `dispatchable: False` for the exact same id, the T-2449 incident:
     T-1696 was flagged for dispatch on three consecutive coordinator ticks
-    while every attempt was refused), 'DEFERRED (RUNS LAST)' (T-2200:
-    `frob ticket start` structurally refuses a `runs_last` ticket, so
-    'NEEDS DISPATCH' is an action the tool itself rejects), 'NEEDS CLOSE'
-    (T-2468: an epic/story with at least one child ANYWHERE -- active or
-    archived -- but none of them non-terminal; the epic's own work is
-    done, it just needs a rollup Done report and a close, not more
-    decomposition -- T-1135/T-1137/T-1219 sat here mislabelled for three
-    weeks before this bucket existed), 'NEEDS DECOMPOSITION' (a
+    while every attempt was refused; T-2475: a non-leaf with its OWN
+    still-open/unresolved `blocked_by` edge lands here too, checked
+    BEFORE the NEEDS CLOSE split below ever runs on it -- T-1599's live
+    shape, a story with one archived-done child covering only part of
+    the work and the rest genuinely blocked, must never read as
+    closeable just because one child happens to be terminal), 'DEFERRED
+    (RUNS LAST)' (T-2200: `frob ticket start` structurally refuses a
+    `runs_last` ticket, so 'NEEDS DISPATCH' is an action the tool itself
+    rejects), 'NEEDS CLOSE' (T-2468: an epic/story with at least one
+    child ANYWHERE -- active or archived -- but none of them
+    non-terminal, AND no open/unresolved `blocked_by` edge of its own
+    (T-2475); the epic's own work is done, it just needs a rollup Done
+    report and a close, not more decomposition -- T-1135/T-1137/T-1219
+    sat here mislabelled for three weeks before this bucket existed),
+    'NEEDS DECOMPOSITION' (a
     genuinely undecomposed epic/story -- no child ticket exists yet,
     anywhere, for it; T-2468 acceptance [1]: this bucket must NOT go
     empty just because NEEDS CLOSE now siphons off the finished-epic
@@ -1987,6 +2062,20 @@ def _print_ticket_rot() -> None:
     leaves = [t for t in ticket_tier if t not in still_blocked]
     deferred = [t for t in rotting if t["tier"] == "ticket" and t.get("runs_last")]
     non_leaves = [t for t in rotting if t["tier"] != "ticket"]
+    # T-2475: a non-leaf with its OWN still-open/unresolved blocked_by
+    # edge (T-1599's live shape: an archived-done child covers only part
+    # of the story, the rest is genuinely open and blocked) must never
+    # land in NEEDS CLOSE -- there is no rollup to write, the work is not
+    # finished. Route it into the same BLOCKED bucket a blocked leaf
+    # already uses, BEFORE the has_active_child/has_any_child split below
+    # ever runs on it, so a terminal-children-but-blocked story cannot
+    # reach NEEDS CLOSE via that later split no matter how its children
+    # look.
+    non_leaves_blocked = [
+        t for t in non_leaves if t.get("open_blockers") or t.get("unresolved_blockers")
+    ]
+    non_leaves = [t for t in non_leaves if t not in non_leaves_blocked]
+    still_blocked = still_blocked + non_leaves_blocked
     # T-2468: split non-leaves into three, not two -- 'no children at all
     # yet' (still NEEDS DECOMPOSITION, acceptance [1]) is a different
     # action from 'children exist but every one is terminal' (NEEDS

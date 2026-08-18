@@ -624,14 +624,22 @@ class TestScopeIntersections:
 
 
 class TestLandProcessRows:
-    """`fleet_status.land_process_rows` (T-2180)."""
+    """`fleet_status.land_process_rows` (T-2180, T-2475)."""
 
     def test_parses_matching_rows_and_skips_others(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """Rows whose argv contains `ticket land` are parsed into
         structured dicts (pid, etimes, cputime, argv); the header line
-        and rows for unrelated commands are skipped."""
+        and rows for unrelated commands are skipped. `proc` is an
+        isolated empty tmp dir (T-2475: `_pid_has_land_argv_tokens`
+        cannot re-confirm a pid it has no `/proc/<pid>/cmdline` for, so
+        it returns `None` and the row is kept on the text pre-filter
+        alone) -- never the real host `/proc`, which would make this
+        test's verdict depend on whatever pid 100 happens to be on
+        whatever machine runs it."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
         stdout = (
             "    PID  ETIMES     TIME COMMAND\n"
             "    100     300    00:10 /venv/bin/python -m frob ticket land "
@@ -641,7 +649,7 @@ class TestLandProcessRows:
         monkeypatch.setattr(
             subprocess, "run", lambda *a, **k: _completed(stdout)
         )
-        rows = fleet_status.land_process_rows()
+        rows = fleet_status.land_process_rows(proc)
         assert len(rows) == 1
         assert rows[0]["pid"] == 100
         assert rows[0]["etimes"] == 300
@@ -654,6 +662,45 @@ class TestLandProcessRows:
             subprocess, "run", lambda *a, **k: _completed("", returncode=1)
         )
         assert fleet_status.land_process_rows() == []
+
+    # frob:ticket T-2475
+    def test_watcher_pgrep_pattern_is_not_counted_as_a_land(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """T-2475's measured incident: a coordinator's own wait-loop
+        shell running `pgrep -f "frob ticket land T-2408"` reads
+        identically to a real land in `ps -eo args` TEXT (both contain
+        the substring 'ticket land T-2408'), and was misreported as a
+        live land (elapsed=306s, cpu=0s) after the real land had
+        already finished. The watcher's `/proc/<pid>/cmdline` has
+        `ticket`/`land` GLUED inside one single argv element (the
+        quoted `-f` pattern), never as two separate elements -- this
+        must be dropped, while a genuine land row (pid 101, `ticket`/
+        `land` as separate argv elements) must survive alongside it."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        watcher = proc / "100"
+        watcher.mkdir()
+        (watcher / "cmdline").write_bytes(
+            b"pgrep\x00-f\x00frob ticket land T-2408\x00"
+        )
+        real_land = proc / "101"
+        real_land.mkdir()
+        (real_land / "cmdline").write_bytes(
+            b"timeout\x00540\x00uv\x00run\x00frob\x00ticket\x00land\x00T-2408\x00"
+            b"--worktree\x00/w\x00"
+        )
+        stdout = (
+            "    PID  ETIMES     TIME COMMAND\n"
+            "    100     306    00:00 bash -c pgrep -f frob ticket land T-2408\n"
+            "    101     300    00:10 timeout 540 uv run frob ticket land "
+            "T-2408 --worktree /w\n"
+        )
+        monkeypatch.setattr(
+            subprocess, "run", lambda *a, **k: _completed(stdout)
+        )
+        rows = fleet_status.land_process_rows(proc)
+        assert [r["pid"] for r in rows] == [101]
 
 
 class TestLandInvocations:
@@ -2440,6 +2487,57 @@ class TestPrintTicketRot:
         assert "NEEDS CLOSE (1):" in out
         assert "T-1135" in out
         assert "NEEDS DECOMPOSITION" not in out
+
+    # frob:ticket T-2475
+    def test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2475 positive control: T-1599's live shape -- tier=story,
+        one archived-done child (so `has_active_child=False`,
+        `has_any_child=True`, the exact NEEDS CLOSE trigger from T-2468's
+        own test above) but an open `blocked_by` edge naming a still-open
+        id. This must NOT print under NEEDS CLOSE -- there is no rollup
+        to write, the other deliverables are still blocked -- it must
+        print under BLOCKED (dependency not yet resolved) instead, with
+        its tier disclosed even though a blocked LEAF ticket in the same
+        bucket has no tier of its own (T-2475's per-ticket tier-display
+        fix)."""
+        monkeypatch.setattr(
+            fleet_status,
+            "rotting_tickets",
+            lambda: [
+                {
+                    "id": "T-1599",
+                    "priority": "high",
+                    "tier": "story",
+                    "state": "queued",
+                    "age_days": 20,
+                    "threshold_days": 3,
+                    "has_active_child": False,
+                    "has_any_child": True,
+                    "open_blockers": ["T-2411"],
+                    "unresolved_blockers": [],
+                },
+                {
+                    "id": "T-2000",
+                    "priority": "high",
+                    "tier": "ticket",
+                    "state": "queued",
+                    "age_days": 12,
+                    "threshold_days": 7,
+                    "open_blockers": ["T-2001"],
+                    "unresolved_blockers": [],
+                },
+            ],
+        )
+        fleet_status._print_ticket_rot()
+        out = capsys.readouterr().out
+        assert "TICKET ROT: 2" in out
+        assert "NEEDS CLOSE" not in out
+        assert "BLOCKED (dependency not yet resolved) (2):" in out
+        blocked_section = out.split("BLOCKED (dependency")[1]
+        assert "T-1599 tier=story" in blocked_section
+        assert "T-2000 priority=" in blocked_section
 
     # frob:ticket T-2468
     def test_epic_with_no_children_at_all_still_prints_under_needs_decomposition(

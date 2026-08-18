@@ -30,6 +30,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2469: T-2469: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
 - T-2470: T-2470: C++ ARCH symref producer spells qualnames with :: instead of frob's canonical . join
 - T-2473: T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
+- T-2475: T-2475: fleet_status NEEDS CLOSE bucket can misclassify a partially-split, still-blocked story as closeable
 - T-2476: T-2476: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001 has a doc entry
 - T-2481: T-2481: the root-write guard does not cover Bash, which is how all three root-dirtying incidents actually happened
 - T-2482: T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)

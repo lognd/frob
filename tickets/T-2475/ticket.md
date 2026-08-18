@@ -2,7 +2,7 @@
 id: T-2475
 title: fleet_status NEEDS CLOSE bucket can misclassify a partially-split, still-blocked
   story as closeable
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,31 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-2475's fix needs a repro test + doc update alongside the fleet_status.py
+    change
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: T-2475's fix needs a repro test + doc update alongside the fleet_status.py
+    change
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
+- tests/unit/test_coordinator_scripts.py::TestLandProcessRows::test_watcher_pgrep_pattern_is_not_counted_as_a_land
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestPrintTicketRot::test_blocked_story_with_terminal_child_prints_under_blocked_not_needs_close
 threat: null
 component: null
 anchor: false
