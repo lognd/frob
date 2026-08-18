@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6ee576e6c423c6d85ba79219d5098d77766c8387
 ---
 GATERULE001 (landed as part of T-2448, wiring find_unregistered_rule_ids
 into the standing sys gate) still needs its catalog entry in
