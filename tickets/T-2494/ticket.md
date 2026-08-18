@@ -1,7 +1,7 @@
 ---
 id: T-2494
 title: capability_import_graph_status hardcodes language set, stale after T-2408
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,10 +12,22 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/lang/_support.py
+- tests/test_lang_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_lang_support.py
+  reason: T-2365's own positive-control test asserted the pre-fix KNOWN_GAP behavior
+    for typescript import_graph; must be updated to assert IMPLEMENTED now that _capability_import_graph_status
+    derives from _IMPORT_WALKERS
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_typescript_import_graph_is_implemented
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_import_graph_known_gap_tracks_a_language_absent_from_walkers
 designated_repro_test: null
 threat: null
 component: null

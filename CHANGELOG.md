@@ -43,6 +43,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2489: T-2489: post-land sweep regression from T-2411: 1 new (rule, file) identit(ies) (E501)
 - T-2490: T-2490: SYS100: T-2411's wiring test in test_lang_conformance_gate.py declares no exec capability
 - T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
+- T-2494: T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
 
 ## [0.530.0] - unreleased
 

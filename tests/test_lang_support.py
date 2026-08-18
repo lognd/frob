@@ -180,14 +180,35 @@ class TestDeriveCapabilityRegistry:
         assert status.state == FacetState.NOT_APPLICABLE
         assert status.detail.strip()
 
-    # frob:ticket T-2365
-    def test_typescript_import_graph_is_a_reasoned_known_gap(self) -> None:
-        """typescript has no frob.lang._extract._IMPORT_WALKERS entry
-        today -- a real, ticketed gap, not silence."""
+    # frob:ticket T-2494
+    def test_typescript_import_graph_is_implemented(self) -> None:
+        """T-2494: typescript has a real frob.lang._extract._IMPORT_
+        WALKERS entry (T-2408) -- this capability derives its
+        implemented-language set from that dict's own keys, so it
+        reports IMPLEMENTED, not KNOWN_GAP, the moment a walker exists.
+        Anti-regression for the exact T-2408/T-2494 incident: a walker
+        landed while this status function's own hardcoded membership set
+        still reported the language KNOWN_GAP because nothing forced the
+        two to stay in sync."""
         registry = derive_capability_registry()
         status = registry["typescript"].capabilities["import_graph"]
-        assert status.state == FacetState.KNOWN_GAP
-        assert "T-" in status.detail
+        assert status.state == FacetState.IMPLEMENTED
+
+    # frob:ticket T-2494
+    def test_import_graph_known_gap_tracks_a_language_absent_from_walkers(
+        self,
+    ) -> None:
+        """A language genuinely absent from `_IMPORT_WALKERS` still
+        reports KNOWN_GAP (never silently IMPLEMENTED) -- proves the
+        derivation is a real membership check against the live dict,
+        not a function that always returns IMPLEMENTED regardless."""
+        from unittest.mock import patch
+
+        with patch("frob.lang._extract._IMPORT_WALKERS", {}):
+            registry = derive_capability_registry()
+            status = registry["typescript"].capabilities["import_graph"]
+            assert status.state == FacetState.KNOWN_GAP
+            assert "absent from frob.lang._extract._IMPORT_WALKERS" in status.detail
 
 
 # frob:ticket T-2365

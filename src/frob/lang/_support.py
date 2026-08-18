@@ -405,10 +405,6 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_arch_status`'s known-gap detail for every language frob.arch has
     # no per-language dispatch branch for yet (c/rust/typescript today).
     "T-0329": True,
-    # T-2365: `_capability_import_graph_status`'s known-gap detail for
-    # typescript/rust/kotlin -- `frob.lang._extract._IMPORT_WALKERS` has
-    # no walker for any of these three yet.
-    "T-2408": True,
     # T-2365: `_capability_test_discovery_status`'s known-gap detail for
     # kotlin -- `frob.testing` has no `collect_kotlin_tests` entrypoint yet.
     "T-2409": True,
@@ -730,12 +726,20 @@ def _capability_call_graph_status(language: str) -> CapabilityStatus:
     return _cap_implemented(CapabilityRequirement.REQUIRED, _CALL_GRAPH_NOTE)
 
 
+# frob:ticket T-2494
 def _capability_import_graph_status(language: str) -> CapabilityStatus:
-    """`frob.lang._extract._IMPORT_WALKERS` has python/c/cpp only --
-    typescript/rust/kotlin are a real, ticketed gap (T-2365); `.strata`
-    has no `#include`/`import` analogue frob.lang.extract_imports models
+    """IMPLEMENTED iff `language` has a real
+    `frob.lang._extract._IMPORT_WALKERS` entry, derived directly from that
+    dict's own keys (T-2494) rather than a hand-maintained membership set
+    -- the T-2408 incident this replaces: a walker was added for
+    typescript/rust/kotlin but this function's own hardcoded
+    `{"python", "c", "cpp"}` set kept reporting them KNOWN_GAP anyway,
+    because nothing forced the two to stay in sync. `.strata` has no
+    `#include`/`import` analogue frob.lang.extract_imports models
     (strata's own module-dependency syntax is resolved by strata-core
-    directly, not this walker)."""
+    directly, not this walker) -- checked first since strata is not a
+    tree-sitter grammar language and so is never a member of
+    `_IMPORT_WALKERS` regardless."""
     if language == "strata":
         return _cap_not_applicable(
             CapabilityRequirement.OPTIONAL,
@@ -743,7 +747,9 @@ def _capability_import_graph_status(language: str) -> CapabilityStatus:
             "own parser directly, not frob.lang.extract_imports's "
             "tree-sitter-only walker table",
         )
-    if language in {"python", "c", "cpp"}:
+    from frob.lang._extract import _IMPORT_WALKERS
+
+    if language in _IMPORT_WALKERS:
         return _cap_implemented(
             CapabilityRequirement.REQUIRED,
             "frob.lang._extract._IMPORT_WALKERS entry",
@@ -751,7 +757,7 @@ def _capability_import_graph_status(language: str) -> CapabilityStatus:
     return _cap_known_gap(
         CapabilityRequirement.REQUIRED,
         f"{language} absent from frob.lang._extract._IMPORT_WALKERS -- "
-        f"tracked by T-2408",
+        f"no walker registered for it yet",
     )
 
 
