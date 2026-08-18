@@ -2,7 +2,7 @@
 id: T-2385
 title: frob --help renders grouped-subcommand section headers at the same indent as
   the commands they label
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-08-17'
