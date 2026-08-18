@@ -11,11 +11,42 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- src/frob/lang/**
-- docs/**
-- tests/**
+- tickets/T-1597/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/lang/**
+  reason: 'T-2446: umbrella epic (''the research/ranking child and the adapter-contract
+    child come FIRST'' -- sequences into children); NEEDS DECOMPOSITION per fleet_status.py
+    -- narrowing the parent to its own ledger shard, real file scopes belong to the
+    children (T-1599, T-1600..T-1607)'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/**
+  reason: 'T-2446: umbrella epic (''the research/ranking child and the adapter-contract
+    child come FIRST'' -- sequences into children); NEEDS DECOMPOSITION per fleet_status.py
+    -- narrowing the parent to its own ledger shard, real file scopes belong to the
+    children (T-1599, T-1600..T-1607)'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tests/**
+  reason: 'T-2446: umbrella epic (''the research/ranking child and the adapter-contract
+    child come FIRST'' -- sequences into children); NEEDS DECOMPOSITION per fleet_status.py
+    -- narrowing the parent to its own ledger shard, real file scopes belong to the
+    children (T-1599, T-1600..T-1607)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-1597/**
+  reason: 'T-2446: umbrella epic (''the research/ranking child and the adapter-contract
+    child come FIRST'' -- sequences into children); NEEDS DECOMPOSITION per fleet_status.py
+    -- narrowing the parent to its own ledger shard, real file scopes belong to the
+    children (T-1599, T-1600..T-1607)'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
