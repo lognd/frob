@@ -17,8 +17,9 @@ runs_last: false
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'standing periodic audit ticket per T-2467: scope is intentionally
   repo-wide since any file may contain a frob:waive directive to review'
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'bounded scan-and-classify pass: read-only classification,
+  cop-outs filed as separate scoped tickets rather than edited here'
 scope_changes:
 - op: remove
   glob: src/frob/**
