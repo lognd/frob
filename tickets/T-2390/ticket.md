@@ -132,7 +132,7 @@ threat: null
 component: config
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 22c8221ec939ece2f398d81517e391479a1f5eb7
 ---
 MEASURED 2026-08-18. frob validates its two input channels to wildly
 different standards, and the file channel is the unvalidated one.
