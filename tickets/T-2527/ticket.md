@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a9dd9c55682b295a6f0b2f70ea43578594c92cac
 ---
 T-2240 retired tests/unit/test_makefile_coverage.py's Makefile-text-slicing
 tests as part of the T-1382 Makefile-removal epic. Those tests were the ONLY
