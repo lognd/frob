@@ -113,7 +113,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 85631de26ab7c90aff58f3c5dbc575f38a80a8d4
 ---
 Validate the `[testing]` table (5 leaves) against a declared schema.
 NOTE (worth doing early): `TestPolicy` (frob.gates._models) is ALREADY a
