@@ -62,7 +62,7 @@ threat: null
 component: process
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 040c99eb76d045dd46c52958e7fdf04ce8b003c2
 ---
 T-2484 fixed one human-readable line leaking to STDOUT under
 `frob check --json`. That fix is correct and landed. This ticket is
