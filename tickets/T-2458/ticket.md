@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7adf323038bf711bcc0efde351dd19db59c3a6e8
 ---
 T-2448's own standing-gate work surfaced a pre-existing false positive
 in scan_candidate_rule_id_literals (frob.gates._rule_id_scan): the
