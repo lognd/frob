@@ -9,12 +9,14 @@ created: '2026-08-05'
 priority: medium
 parent: T-1597
 tier: story
-sprint: null
+sprint: post-1.0
 runs_last: false
 scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
