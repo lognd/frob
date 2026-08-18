@@ -112,7 +112,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 268fe5437285ff4f31030af8fab35c82819fec6b
 ---
 Validate the two top-level SCALAR keys (min_frob_version, check_base --
 no enclosing table at all) against a declared schema. Readers:
