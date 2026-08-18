@@ -54,7 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: daea15d8072f0b62469b3a990c7b0fd29ac22639
 ---
 frob.gates._rule_id_scan.find_unregistered_rule_ids (T-1937) is a
 proven, working, repo-wide completeness scanner -- it has its own
