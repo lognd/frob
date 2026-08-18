@@ -8,13 +8,24 @@ origin: human
 created: '2026-08-18'
 priority: high
 parent: null
-tier: ticket
+tier: epic
 sprint: null
 runs_last: false
 scope:
 - src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: epic
+  reason: 'restructured per coordinator instruction: 12-table, ~121-leaf surface with
+    ~10 disjoint hand-rolled readers needs a schema-declaration idiom applied per-table,
+    each with its own must-fire/must-still-pass fixture -- epic-shaped, not a single
+    ticket; the T-2390 investigation (attempt 1''s fail-log) is the design input for
+    this decomposition'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: Given a frob.toml containing a key no declared config schema claims, when
