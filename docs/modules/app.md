@@ -30,6 +30,12 @@ def main() -> None
     # this is the `frob` console-script entry point. An unhandled exception
     # from dispatch (T-1022) is logged and printed as `frob: <exc>` with
     # exit 1, never a raw traceback crossing the CLI boundary.
+    #
+    # T-2443: installs a SIGTERM reaper (frob.process.install_sigterm_
+    # reaper) FIRST, before any dispatch -- see docs/modules/process.md
+    # #forkserver-reaping-t-2443 for the leaked-forkserver defect this
+    # closes. Every real invocation is a fresh process, so this is the one
+    # place that reliably runs once per invocation regardless of subcommand.
 
 # frob/app/app.py
 class App

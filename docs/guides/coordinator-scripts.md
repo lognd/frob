@@ -578,6 +578,25 @@ directly. `swap is None` (unknown) or `swap_total_kb == 0` (no swap
 configured) both fall through to the ordinary guidance -- pressure is
 only ever claimed from a real reading.
 
+### `orphaned_forkserver_count`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count -->
+
+T-2443. How many live `multiprocessing.forkserver` helper processes on
+this host are reparented to init (`ppid == 1`, i.e. their creating
+process is dead) -- the exact process-table signature of the ticket's own
+incident: `frob check` killed by this fleet's routine `timeout 540 ...`
+wrapper used to leave its process-pool workers, and therefore the
+forkserver helper they keep alive, running forever, 94 of them measured
+reparented to `/init` at once, holding 17.3GB of swap. Mirrors
+`frob.process._reap`'s own cmdline+ppid detection in plain form (this
+script's "no `frob` import" contract), read directly from `/proc` (no
+subprocess), matching `host_load`/`swap_pressure`'s own contract exactly.
+Returns `None` (never a fabricated zero) when `/proc` is unreadable. See
+`docs/modules/process.md#forkserver-reaping-t-2443` for the fix this
+number makes actionable -- the fix itself lives in `frob.process._reap`,
+not here; this function only reports.
+
 ### `_land_status_lines`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_land_status_lines -->
@@ -600,6 +619,13 @@ ticket claiming a stale lock deadlocked the fleet. Each land's `cpu=`
 line also shows `child_cpu_s` (`land_invocations`' own field) when
 nonzero.
 
+T-2443: also renders an `ORPHANED FORKSERVERS: N ...` line from
+`orphaned_forkserver_count`'s own reading -- `None` prints as "unknown
+(/proc unreadable)", `0` prints as a real zero (never omitted), and a
+positive count names the T-2443 leak signature directly so a coordinator
+seeing an unexplained `_swap_guidance` '1 agent (SWAP ...)' clause knows
+immediately whether this specific, fixable leak is the cause.
+
 ### `_print_land_status`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_print_land_status -->
@@ -608,9 +634,10 @@ T-2180. Prints the LANDS section: `land_invocations` (ticket id, pids,
 elapsed, cpu, child cpu), `land.lock` holder liveness, and a LOAD line
 (`host_load`'s load average and available memory, `swap_pressure`
 (T-2249), plus the live/total held-lease counts, T-2222) against this
-host's recorded concurrency guidance (`_swap_guidance`). Printed
-unconditionally inside `_print_fleet_report`, in the standing report a
-coordinator already runs -- not behind a separate command (the
+host's recorded concurrency guidance (`_swap_guidance`), followed by
+`orphaned_forkserver_count`'s own line (T-2443). Printed unconditionally
+inside `_print_fleet_report`, in the standing report a coordinator
+already runs -- not behind a separate command (the
 "automatic over commands"
 rule). Six concurrent agents against the documented cap went unnoticed
 on this host until someone
@@ -777,7 +804,7 @@ alongside `_print_all_ticket_readiness` above.
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-main -->
 
 CLI entry point: parses `--idle-minutes`/`--ticket` (repeatable, T-2180),
-then (T-draft-354a6b64) delegates the actual printing to
+then delegates the actual printing to
 `_print_ticket_readiness` (once per given `--ticket` -- printed FIRST,
 ahead of the general report, so "is T-#### dispatchable" is the first
 thing read) and `_print_fleet_report`; exits 1 when the root is dirty OR

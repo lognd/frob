@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.523.0] - unreleased
+
+- T-2443: frob check leaks multiprocessing forkservers: 94 orphans held 17GB of swap and stalled the fleet
+
 ## [0.522.0] - unreleased
 
 - T-2407: Burn down the final 8 SYS003 findings (X -> cli coupling), then promote to error

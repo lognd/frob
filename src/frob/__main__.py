@@ -433,18 +433,32 @@ def _add_workflow_subparsers(sub) -> None:
 # frob:doc docs/modules/app.md#entry-point
 # frob:ticket T-0355
 # frob:ticket T-0358
+# frob:ticket T-2443
 # frob:tests tests/unit/test_main_entry.py::TestMainSigint.test_keyboard_interrupt_prints_clean_message_and_exits_130  # noqa: E501
 # frob:tests \
 # tests/unit/test_main_entry.py::TestMainSigint.test_normal_dispatch_is_unaffected
+# frob:tests tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper.test_main_installs_the_reaper_before_dispatch  # noqa: E501
 def main() -> None:
     """CLI entry point: parses argv and dispatches to `App`, or straight to
     `frob bind` (T-0355: SIGINT during a long-running command -- e.g. a
     synchronous pre-work sweep on a slow mount -- used to fall through to a
     bare `KeyboardInterrupt` traceback; that's noise for a deliberate Ctrl-C,
     not a crash, so it is caught here and reported as a clean one-line
-    message with the conventional 128+SIGINT exit code instead)."""
+    message with the conventional 128+SIGINT exit code instead).
+
+    T-2443: `install_sigterm_reaper` runs FIRST, before any dispatch --
+    every real invocation of this CLI is a fresh process, so this is the
+    one place that reliably runs once per invocation regardless of which
+    subcommand follows. See `frob.process._reap`'s module docstring for the
+    leaked-forkserver defect this closes (a `frob check` killed by this
+    fleet's routine `timeout 540 ...` wrapper used to leave its process-pool
+    workers, and therefore the forkserver helper they keep alive, running
+    forever reparented to init)."""
     import sys as _sys
 
+    from frob.process import install_sigterm_reaper
+
+    install_sigterm_reaper()
     try:
         _dispatch(_sys.argv[1:])
     except KeyboardInterrupt:
@@ -484,6 +498,14 @@ def _is_release_publish(argv: list[str]) -> bool:
 # frob:ticket T-1483
 # frob:ticket T-1567
 # frob:ticket T-1808
+# frob:ticket T-2443
+# frob:waive ARCH001 follow_up="T-2452" reason="already 81 lines on main \
+# before this ticket touched it -- T-2443 added one 2-line branch (`if argv[0] == \
+# 'check': _reap_orphaned_forkservers_best_effort()`), which the diff-driven gate then \
+# attributed to this ticket even though the function was over threshold beforehand; \
+# splitting the whole argv-routing table is a real refactor with its own risk surface, \
+# out of scope for a critical process-leak bug fix -- filed as a follow-up rather than \
+# folded in silently"
 # frob:tests \
 # tests/unit/test_main_entry.py::TestRefactorDispatch.test_refactor_subcommand_dispatch\
 # es_to_run_refactor_command kind="unit"  # noqa: E501
@@ -566,8 +588,28 @@ def _dispatch(argv: list[str]) -> None:
         args = parser.parse_args(argv)
         pyproject = Path("pyproject.toml")
         _print_startup_warnings(pyproject.parent.resolve())
+        if argv and argv[0] == "check":
+            _reap_orphaned_forkservers_best_effort()
         cfg = AppConfig.from_external(args, pyproject)
         App(cfg)()
+
+
+# frob:ticket T-2443
+def _reap_orphaned_forkservers_best_effort() -> None:
+    """`frob check` startup call into `reap_orphaned_forkservers` -- best-
+    effort and NEVER fatal to the real command that follows: an exception
+    here (an unreadable `/proc` entry the function's own defenses did not
+    anticipate, e.g.) is logged and swallowed rather than allowed to crash
+    a `frob check` invocation that has nothing to do with this cleanup.
+    Split out of `_dispatch` so that function's own body stays the pure
+    argv-routing table its docstring claims (ARCH001 precedent, same
+    reasoning as `_print_startup_warnings`'s own split)."""
+    from frob.process import reap_orphaned_forkservers
+
+    try:
+        reap_orphaned_forkservers()
+    except Exception as exc:  # noqa: BLE001 -- best-effort cleanup, never fatal
+        _log.debug("_reap_orphaned_forkservers_best_effort: %s", exc, exc_info=True)
 
 
 # frob:ticket T-1808

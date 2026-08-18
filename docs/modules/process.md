@@ -222,6 +222,51 @@ parent never held `derived_state_lock` for that root) never sees its key in
 the marker, so it falls through to a real, fully cross-process-exclusive
 `flock(LOCK_EX)` exactly as before this fix.
 
+## Forkserver reaping (T-2443)
+
+`frob.process._reap` closes a measured leak: `frob check`'s gate-running
+`ProcessPoolExecutor` (`frob.gates._open_process_pool`, `forkserver` start
+method) tears itself down correctly on every NORMAL return/exception path,
+but Python's DEFAULT `SIGTERM` disposition terminates the interpreter
+immediately with no exception raised and no `finally` block run -- and this
+fleet routinely wraps `frob check` in `timeout 540 ...`, which sends exactly
+that signal. The worker processes `ProcessPoolExecutor` spawned survive
+that kill untouched, and because each worker holds its own duplicate of the
+forkserver helper's "alive" pipe write-end (stdlib
+`multiprocessing.forkserver.ForkServer.connect_to_new_process` hands
+`self._forkserver_alive_fd` to every child it creates), the helper's own
+EOF-triggered shutdown only fires once EVERY holder of that fd -- the
+parent AND every worker it ever spawned -- has exited. A live-fleet
+measurement found 94 forkserver processes reparented to `/init`, 100% with
+no live ancestor, holding 17.3GB of swap.
+
+Two functions close this, both process-pool-construction-agnostic (neither
+touches `frob.gates._open_process_pool`/`_run_combined_jobs` at all):
+
+- `reap_active_multiprocessing_children` terminates (then, if needed,
+  kills) every `multiprocessing.active_children()` process this
+  interpreter still tracks -- a shared primitive generalized from
+  `frob.serve._socketd._reap_multiprocessing_children`'s own T-1378
+  daemon-shutdown precedent. `install_sigterm_reaper` (called once, from
+  `frob.__main__.main`, before any subcommand dispatch) installs a
+  `SIGTERM` handler that calls this, then chains to whatever handler was
+  previously registered (or the platform default) -- so a killed `frob
+  check`'s workers get reaped, their `alive`-pipe duplicates close, and
+  the forkserver helper self-terminates exactly as it would on an
+  unkilled, normal exit.
+- `reap_orphaned_forkservers` is the defensive half: a `/proc` sweep
+  (`_is_orphaned_forkserver` matches `multiprocessing.forkserver`'s own
+  cmdline text plus `ppid == 1`) for forkserver helpers already reparented
+  to init and older than `DEFAULT_ORPHAN_AGE_FLOOR_S` (300s), `SIGTERM`'d
+  proactively. Called once at `frob check` startup (best-effort, never
+  fatal to the real command) so a machine that already accumulated leaked
+  forkservers keeps getting cleaned up going forward.
+
+`scripts/fleet_status.py`'s `orphaned_forkserver_count` mirrors the same
+cmdline+ppid detection in plain form (that script's own "no `frob` import"
+contract) and surfaces the live count in `_print_land_status`'s report,
+next to the existing swap-pressure guidance line.
+
 ## Dependencies
 
 Pure stdlib + `pydantic` for the shared models; no dependency on `frob.check`

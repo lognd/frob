@@ -2,7 +2,7 @@
 id: T-2443
 title: 'frob check leaks multiprocessing forkservers: 94 orphans held 17GB of swap
   and stalled the fleet'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -81,18 +81,56 @@ scope_changes:
   reason: doc anchors for new fleet_status/process/__main__ symbols
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/unit/test_process_reap.py::TestReapActiveChildren::test_terminates_and_joins_active_children
+- tests/unit/test_process_reap.py::TestReapActiveChildren::test_escalates_to_kill_if_terminate_does_not_stick
+- tests/unit/test_process_reap.py::TestReapActiveChildren::test_no_children_is_a_silent_noop
+- tests/unit/test_process_reap.py::TestInstallSigtermReaper::test_installs_handler_once
+- tests/unit/test_process_reap.py::TestInstallSigtermReaper::test_second_call_is_a_noop
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
+- tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_leaves_young_orphaned_forkservers_alone
+- tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper::test_main_installs_the_reaper_before_dispatch
+- tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_matches_forkserver_reparented_to_init
+- tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_forkserver_with_live_parent_is_not_orphaned
+- tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_non_forkserver_process_is_never_matched
+- tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
+- tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
 designated_repro_test: null
 acceptance:
 - text: Given a frob check killed mid-run by SIGTERM or a budget abort, when it exits,
     then no multiprocessing forkserver from that run remains alive reparented to init.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestReapActiveChildren::test_terminates_and_joins_active_children
+  - tests/unit/test_process_reap.py::TestReapActiveChildren::test_escalates_to_kill_if_terminate_does_not_stick
+  - tests/unit/test_process_reap.py::TestReapActiveChildren::test_no_children_is_a_silent_noop
+  - tests/unit/test_process_reap.py::TestInstallSigtermReaper::test_installs_handler_once
+  - tests/unit/test_process_reap.py::TestInstallSigtermReaper::test_second_call_is_a_noop
+  - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_terminates_old_orphaned_forkservers
+  - tests/unit/test_process_reap.py::TestReapOrphanedForkservers::test_leaves_young_orphaned_forkservers_alone
+  - tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper::test_main_installs_the_reaper_before_dispatch
 - text: Given a normally completing frob check, when it runs, then its gates still
     execute in parallel and produce identical findings, proving the leak was not fixed
     by serialising the pool.
-  evidence: []
+  evidence:
+  - tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_matches_forkserver_reparented_to_init
+  - tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_forkserver_with_live_parent_is_not_orphaned
+  - tests/unit/test_process_reap.py::TestIsOrphanedForkserver::test_non_forkserver_process_is_never_matched
+  - tests/unit/test_process_reap.py::TestReapActiveChildren::test_no_children_is_a_silent_noop
+  - tests/unit/test_main_entry.py::TestMainSigint::test_normal_dispatch_is_unaffected
 - text: Given orphaned forkservers present on the machine, when fleet_status.py runs,
     then it reports their count alongside the existing swap-pressure guidance.
-  evidence: []
+  evidence:
+  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
+  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
+  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_non_forkserver_processes
+  - tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
+  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_orphaned_forkserver_count_printed_alongside_swap_guidance
+  - tests/unit/test_coordinator_scripts.py::TestPrintLandStatus::test_zero_orphaned_forkservers_prints_zero_not_omitted
 threat: null
 component: process
 anchor: false

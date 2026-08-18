@@ -1309,6 +1309,83 @@ def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
     return max(swap_total_kb - swap_free_kb, 0), swap_total_kb
 
 
+# frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
+# frob:ticket T-2443
+#: `/proc/<pid>/cmdline` substring identifying a `multiprocessing.
+#: forkserver` helper process -- mirrors `frob.process._reap.
+#: _FORKSERVER_CMDLINE_RE` exactly (duplicated here in plain form rather
+#: than imported, per this script's own "no `frob` import" module-docstring
+#: contract, same posture as `_ROT_DAYS_DEFAULT`'s duplication of
+#: `frob.gates._tickets_gate`'s rot-day thresholds just above).
+_FORKSERVER_CMDLINE_RE = re.compile(r"multiprocessing\.forkserver")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
+# frob:ticket T-2443
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_counts_forks\
+# erver_reparented_to_init
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_ignores_fork\
+# server_with_live_parent
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_ignores_non_\
+# forkserver_processes
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_missing_proc\
+# _returns_none
+def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
+    """How many live `multiprocessing.forkserver` helper processes on this
+    host are reparented to init (ppid == 1, i.e. their creating process is
+    dead) -- the exact, process-table-measured signature of T-2443's own
+    incident: `frob check` killed by this fleet's routine `timeout 540
+    ...` wrapper used to leave its process-pool workers (and therefore the
+    forkserver helper they keep alive) running forever, 94 of them
+    reparented to `/init` at measurement time, holding 17.3GB of swap. Read
+    directly from `/proc` (no `frob` import, no subprocess -- matching
+    `host_load`/`swap_pressure`'s own contract exactly) so an operator
+    staring at `_swap_guidance`'s '1 agent (SWAP ...)' clause can see
+    WHETHER this specific, actionable leak is the cause, rather than
+    guessing. Returns `None` if `/proc` is missing/unreadable (a non-Linux
+    host, a sandboxed container) -- the caller must treat that as
+    'unknown', never '0 orphans', mirroring every other best-effort
+    `/proc`-scanning function in this module."""
+    if not proc.is_dir():
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    count = 0
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            cmdline = (entry / "cmdline").read_bytes().replace(b"\0", b" ")
+        except OSError:
+            continue
+        if not _FORKSERVER_CMDLINE_RE.search(cmdline.decode("utf-8", errors="replace")):
+            continue
+        try:
+            stat_text = (entry / "stat").read_text(encoding="utf-8")
+        except OSError:
+            continue
+        close_paren = stat_text.rfind(")")
+        if close_paren == -1:
+            continue
+        # Fields after ")": [state, ppid, pgrp, ...] -- ppid is fields[1].
+        fields = stat_text[close_paren + 2 :].split()
+        if len(fields) < 2:
+            continue
+        try:
+            ppid = int(fields[1])
+        except ValueError:
+            continue
+        if ppid == 1:
+            count += 1
+    return count
+
+
 # frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
 # frob:ticket T-2249
 # frob:tests \
@@ -1858,6 +1935,7 @@ def _land_status_lines(
     held_lease_count: int,
     live_lease_count_: int,
     swap: tuple[int, int] | None = None,
+    orphaned_forkservers: int | None = None,
 ) -> list[str]:
     """Render the LANDS/LAND LOCK/LOAD block as plain text lines from
     already-computed inputs -- the PURE-COMPUTE half of the ARCH103 split
@@ -1868,7 +1946,13 @@ def _land_status_lines(
     live-held lock from a resting/free one. `load` is `host_load`'s
     `(1-minute load average, MemAvailable kb)`, or `None` when unknown.
     `swap` is `swap_pressure`'s own `(swap_used_kb, swap_total_kb)`, or
-    `None` when unknown (T-2249).
+    `None` when unknown (T-2249). `orphaned_forkservers` is `orphaned_
+    forkserver_count`'s own reading, or `None` when `/proc` is unreadable
+    (T-2443) -- surfaced alongside the swap-pressure guidance so '1 agent
+    (SWAP ...)' turns from an unexplained number into an actionable one: a
+    coordinator seeing both together knows whether the specific, fixable
+    T-2443 leak is the cause before spending time investigating anything
+    else.
 
     T-2222: `held_lease_count` (the raw `len(leases())`) and `live_lease_
     count_` (`live_lease_count(leases())`, T-2222's own live-vs-reclaimable
@@ -1922,6 +2006,16 @@ def _land_status_lines(
             f"{live_lease_count_} live lease(s) ({held_lease_count} total) "
             f"-- guidance is {_swap_guidance(swap)}"
         )
+    if orphaned_forkservers is None:
+        lines.append("ORPHANED FORKSERVERS: unknown (/proc unreadable)")
+    elif orphaned_forkservers > 0:
+        lines.append(
+            f"ORPHANED FORKSERVERS: {orphaned_forkservers} reparented to "
+            "init (T-2443 leak signature -- SIGTERM them or wait for the "
+            "next `frob check`'s own startup reaper)"
+        )
+    else:
+        lines.append("ORPHANED FORKSERVERS: 0")
     return lines
 
 
@@ -1962,6 +2056,7 @@ def _print_land_status() -> None:
         len(held),
         live_lease_count(held),
         swap,
+        orphaned_forkserver_count(),
     ):
         print(line)
 

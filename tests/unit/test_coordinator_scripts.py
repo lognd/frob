@@ -868,6 +868,43 @@ class TestPrintLandStatus:
         assert "4 live lease(s) (6 total)" in out
         assert "6 lease(s) --" not in out
 
+    # frob:ticket T-2443
+    def test_orphaned_forkserver_count_printed_alongside_swap_guidance(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Acceptance [2]: orphaned forkservers present must show up in
+        the same report as the swap-pressure guidance -- turning an
+        unexplained '1 agent (SWAP ...)' clause into an actionable
+        number."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
+        monkeypatch.setattr(fleet_status, "host_load", lambda: (1.0, 1024 * 1024))
+        monkeypatch.setattr(
+            fleet_status, "swap_pressure", lambda: (2 * 1024 * 1024, 24 * 1024 * 1024)
+        )
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 0)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: 94)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "ORPHANED FORKSERVERS: 94 reparented to init" in out
+
+    # frob:ticket T-2443
+    def test_zero_orphaned_forkservers_prints_zero_not_omitted(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """MUST-STILL-PASS: a clean host (0 orphans) prints the line as
+        '0', never omits it -- the same 'absence of data vs. a real zero'
+        distinction `swap_pressure`/`host_load` already enforce."""
+        monkeypatch.setattr(fleet_status, "land_invocations", lambda: [])
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [])
+        monkeypatch.setattr(fleet_status, "host_load", lambda: None)
+        monkeypatch.setattr(fleet_status, "swap_pressure", lambda: None)
+        monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: 0)
+        fleet_status._print_land_status()
+        out = capsys.readouterr().out
+        assert "ORPHANED FORKSERVERS: 0" in out
+
 
 class TestLeaseClassification:
     """`fleet_status.lease_classification` / `live_lease_count` (T-2222)."""
@@ -1071,6 +1108,51 @@ class TestSwapPressure:
         proc = tmp_path / "proc"
         proc.mkdir()
         assert fleet_status.swap_pressure(proc) is None
+
+
+# frob:ticket T-2443
+class TestOrphanedForkserverCount:
+    """`fleet_status.orphaned_forkserver_count` (T-2443)."""
+
+    @staticmethod
+    def _write_entry(
+        proc: Path, pid: int, *, cmdline: bytes, ppid: int
+    ) -> None:
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(cmdline)
+        (entry / "stat").write_text(f"{pid} (python3) S {ppid} {pid} 0 0 -1 0\n")
+
+    def test_counts_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
+            ppid=1,
+        )
+        assert fleet_status.orphaned_forkserver_count(proc) == 1
+
+    def test_ignores_forkserver_with_live_parent(self, tmp_path: Path) -> None:
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(
+            proc,
+            4242,
+            cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
+            ppid=999,
+        )
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    def test_ignores_non_forkserver_processes(self, tmp_path: Path) -> None:
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(proc, 4242, cmdline=b"sleep\x00600\x00", ppid=1)
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
+        assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
 
 
 class TestSwapGuidance:

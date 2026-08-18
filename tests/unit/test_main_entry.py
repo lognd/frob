@@ -53,6 +53,35 @@ class TestMainSigint:
         assert calls == [["outline", "x.py"]]
 
 
+# frob:ticket T-2443
+class TestMainInstallsSigtermReaper:
+    """`main` must install T-2443's SIGTERM reaper before dispatching --
+    the fix for `frob check` leaking `multiprocessing.forkserver`
+    processes on a `timeout`-driven SIGTERM kill only takes effect if it
+    runs on every real CLI invocation, before whatever subcommand follows
+    has a chance to construct a process pool."""
+
+    def test_main_installs_the_reaper_before_dispatch(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestMainInstallsSigtermReaper.test_main_installs_the_reaper_before_dispatch  # noqa: E501
+        calls: list[str] = []
+
+        def _record_install() -> None:
+            calls.append("install")
+
+        def _record_dispatch(argv: list[str]) -> None:
+            calls.append("dispatch")
+
+        monkeypatch.setattr(
+            "frob.process.install_sigterm_reaper", _record_install
+        )
+        monkeypatch.setattr(main_module, "_dispatch", _record_dispatch)
+        monkeypatch.setattr("sys.argv", ["frob", "outline", "x.py"])
+
+        main_module.main()
+
+        assert calls == ["install", "dispatch"]
+
+
 # frob:ticket T-1022
 class TestMainUnhandledException:
     """An unhandled exception during dispatch must be logged (with a real

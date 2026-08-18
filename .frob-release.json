@@ -224,6 +224,7 @@
     "scripts/fleet_status.py::leases": "37d17c7eccb22b1aa2078e0fcfe9b1e670fd0cc7b89af4c3b2379fecbfa93544",
     "scripts/fleet_status.py::live_lease_count": "ed3e0148c99bc8711355d5f1b987b861df4f5b36ab67b6b5e6138cb0231b4955",
     "scripts/fleet_status.py::main": "945bb53a03a3ea009d89db43a17643dd0ce349e0469531105b307e5242b12654",
+    "scripts/fleet_status.py::orphaned_forkserver_count": "e2cafb98dc9508b7626d94e3359e01a251412185fe3c91562ca6d1e23c146997",
     "scripts/fleet_status.py::quarantine_state": "b83fb4a44381d70b72cd11ecbbfd2d76f8e32212b093b7380eb4d12a55e5c72d",
     "scripts/fleet_status.py::root_dirt": "37e0dbca57009139c2690e28bab8a4bc1c437b07db4940bc0499574dc0cb4ba7",
     "scripts/fleet_status.py::rotting_tickets": "502ecbc592cf2c07c5ef99808067f6164f057bcf773359d3498dafed82bded62",
@@ -1226,6 +1227,10 @@
     "src/frob/process/_lock.py::derived_state_lock": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
     "src/frob/process/_lock.py::derived_state_write_lock": "8f3655d4128cd1cc86bef512a762b085e8f22e1092657824d4f5d1b51745ff66",
     "src/frob/process/_lock.py::held_registry_keys": "07107d79cacc0f61193ff4af3fa4c8e5bd5a0345fc9869603aa171901e1fe8a3",
+    "src/frob/process/_reap.py::DEFAULT_ORPHAN_AGE_FLOOR_S": "31772c7eee6a950812cbcd57e81deab5ba51af98e9a4526e2dc28a8ca28f7e70",
+    "src/frob/process/_reap.py::install_sigterm_reaper": "3e7b1cc9a52ec31bebae2466d34cd8196965c096ffaea80285075e2b70282c2b",
+    "src/frob/process/_reap.py::reap_active_multiprocessing_children": "d92e7d5753db40b3d922a8e460ac64f4f09189aa5649976c62a362dda5b56854",
+    "src/frob/process/_reap.py::reap_orphaned_forkservers": "f978080011fbbf73edafc09144af8e02f6efc9653fb8bbbdc2ee2a23eed5f119",
     "src/frob/process/parsers/cargo.py::parse_cargo": "1a3486be31c610b31191ae5d538e27ff27c586cf663a2c669d5b343a686b16ca",
     "src/frob/process/parsers/clang.py::parse_clang": "9add94500c3700c994062f83b277c202d4570a4e02f662aac6c794b878869a72",
     "src/frob/process/parsers/clang_tidy.py::parse_clang_tidy": "f108390d5bf1d8a69a0e56dfd659acfbff563e40cc8350357fe729698cb71d76",
@@ -2454,5 +2459,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.522.0"
+  "version": "0.523.0"
 }
