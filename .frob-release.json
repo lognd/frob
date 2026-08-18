@@ -872,6 +872,8 @@
     "src/frob/gates/_suppress.py::suppression_dialects": "b67c24daeeb4668b973210bd690aa891c5f23600da6a2eef8e9c66e38bac385d",
     "src/frob/gates/_sys.py::sys_gate": "97e404c968e25f99fb1a9e2b52983b2930330a1f0779ba2b9d5bd81bcdbcf475",
     "src/frob/gates/_taint_gate.py::taint_gate": "8eb1266f83ddfad99829c392afa9d623ce2365e1f607a0b4c004dac2543204c8",
+    "src/frob/gates/_testing_schema.py::testing_known_keys": "dce2e75d10a7e765610ca7612772d435d91df11ef344a57d26a8e90fe2c18985",
+    "src/frob/gates/_testing_schema.py::testing_schema_gate": "063744e2dae86e020fbfa702fde0df171f53a6f66a1f3e96a8385376a487d155",
     "src/frob/gates/_tickets_gate.py::tickets_gate": "151a5c8106999e9e13e65e15aef2837187687aa7310a7762ce24aaf82af05844",
     "src/frob/gates/_todo_fmt.py::fmt_gate": "aec42d9d7eee011aa4c46caf371d6ab09dcbbb6aac70815a9b7c7722c1878ca3",
     "src/frob/gates/_toplevel_scalar_schema.py::TOPLEVEL_SCALAR_KNOWN_KEYS": "df9b3abff1d34b5c5d152f68d0aa8d5a5ec74bf39b3630afd24960dca459b3a5",
@@ -2444,5 +2446,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.518.0"
+  "version": "0.519.0"
 }

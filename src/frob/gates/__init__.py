@@ -97,6 +97,7 @@ from frob.gates._refs_schema import refs_schema_gate
 from frob.gates._native_schema import native_schema_gate
 from frob.gates._profile_schema import profile_schema_gate
 from frob.gates._toplevel_scalar_schema import toplevel_scalar_schema_gate
+from frob.gates._testing_schema import testing_schema_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
@@ -5650,6 +5651,8 @@ _ALL_GATES = frozenset(
         "profile_schema",
         # T-2390 epic child T-2431: TOPSCALARSCHEMA001, same shape.
         "toplevel_scalar_schema",
+        # T-2390 epic child T-2432: TESTINGSCHEMA001, same shape.
+        "testing_schema",
         # T-0558: PARSE001, a swallowed frob.lang parse/IO failure.
         "parse_failures",
         # T-0422: DEAD001, an unreferenced private symbol.
@@ -6051,6 +6054,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "native_schema",
     "profile_schema",
     "toplevel_scalar_schema",
+    "testing_schema",
     "parse_failures",
     "dead_symbols",
     # frob:ticket T-1428
@@ -6608,6 +6612,9 @@ def _build_process_jobs(st: _GateInputs) -> dict[str, _ProcessJob]:
         # T-2390 epic child T-2431: TOPSCALARSCHEMA001 -- cheap, same
         # shape as profile_schema above.
         "toplevel_scalar_schema": _ProcessJob(toplevel_scalar_schema_gate, (st.repo_root,)),
+        # T-2390 epic child T-2432: TESTINGSCHEMA001 -- cheap, same
+        # shape as toplevel_scalar_schema above.
+        "testing_schema": _ProcessJob(testing_schema_gate, (st.repo_root,)),
         # T-0422: per-package build_call_graph calls are CPU-bound like the
         # rest of this pool (archgate/perf/sys), not I/O-bound.
         "dead_symbols": _ProcessJob(dead_symbol_gate, (st.root, st.snapshot)),
@@ -7869,6 +7876,7 @@ __all__ = [
     "native_schema_gate",
     "profile_schema_gate",
     "toplevel_scalar_schema_gate",
+    "testing_schema_gate",
     "perf_gate",
     "PERF_REACH_DEGRADED_SKIP_MARKER",
     "pii_structural_gate",

@@ -777,6 +777,10 @@ _KNOWN_GATE_RULES = frozenset(
         # T-2390 epic child: TOPSCALARSCHEMA001 -- an unknown/misspelled
         # top-level scalar key (frob.gates._toplevel_scalar_schema).
         "TOPSCALARSCHEMA001",
+        # frob:ticket T-2432
+        # T-2390 epic child: TESTINGSCHEMA001 -- an unknown/misspelled key
+        # in the [testing] table (frob.gates._testing_schema).
+        "TESTINGSCHEMA001",
         # frob:ticket T-2388
         # T-2397: courtesy registration to unblock T-2388 (Series Y) --
         # T-2388's land refused at UnregisteredGateRuleConstructed (T-1937)

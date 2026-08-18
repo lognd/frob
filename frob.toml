@@ -377,6 +377,14 @@ PERF004 = "error"
 OPAQUE001 = "error"
 # frob-zone-end gates.severity T-1002
 
+# T-2390 epic child (T-2432): known_keys declares this table's
+# known-key set for TESTINGSCHEMA001 (an unknown/misspelled key,
+# previously silently dropped by _load_test_config's own pre-filter
+# before TestPolicy is even constructed), sourced directly from
+# TestPolicy.model_fields itself rather than a hand-duplicated list.
+[testing_schema]
+known_keys = "frob.gates._testing_schema:testing_known_keys"
+
 [testing]
 # min_unit_cases dropped from the 3-case aspirational target to 1 while the
 # gates dogfood milestone is in progress (see ticket for raising it back).

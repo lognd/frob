@@ -17,6 +17,10 @@ list is derived mechanically from every `state: done` ticket in
 `tickets.md` + `tickets-archive.md` at merge time; the claimed count
 matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
+## [0.519.0] - unreleased
+
+- T-2432: T-2390 child: validate [testing] table against a declared schema (already has TestPolicy model)
+
 ## [0.518.0] - unreleased
 
 - T-2431: T-2390 child: validate top-level scalar keys (min_frob_version, check_base) against a declared schema
