@@ -13,10 +13,23 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/testing/_coverage_refresh.py
+- tests/test_coverage.py
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_coverage.py
+  reason: 'scope closure: doc/test edges for native_coverage_refresh'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'scope closure: doc/test edges for native_coverage_refresh'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
