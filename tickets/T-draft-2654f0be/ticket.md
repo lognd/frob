@@ -13,9 +13,20 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_refs.py
-- tests/**
+- tests/unit/test_refs_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+scope_changes:
+- op: remove
+  glob: tests/**
+  reason: narrow the broad glob to the new test file this child will actually create
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_refs_schema.py
+  reason: narrow the broad glob to the new test file this child will actually create
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
