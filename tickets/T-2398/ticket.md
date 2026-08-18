@@ -1,7 +1,7 @@
 ---
 id: T-2398
 title: Recovered from T-2386's phantom TICK006 citation of T-2389
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -31,3 +31,6 @@ completed in this ticket.
 ### Changed
 ```
  tickets/T-2386/ticket.md | 18 ++++++++++++++
+
+## Drop reason
+- 2026-08-18: false positive: T-2389 genuinely exists (tickets/T-2389/ticket.md, filed on main before T-2386 started) -- the TICK006 Tier-A auto-fix misread a citation in T-2386's Done report as a phantom filing
