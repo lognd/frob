@@ -70,7 +70,7 @@ threat: tampering
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 44381f28fc9bad0417a7da8cd91925cfcd79657b
 ---
 The dangerous-ops capability detector cannot distinguish a READ-mode
 `open()` from a write, so it reports `fs.write` for modules that only
