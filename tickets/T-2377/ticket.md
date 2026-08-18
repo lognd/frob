@@ -10,8 +10,54 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/arch/_normalized.py
+- src/frob/arch/_python.py
+- src/frob/arch/_mayraise.py
+- src/frob/gates/_exhaustive_handling.py
+- docs/modules/arch.md
+- tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/arch/_normalized.py
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/arch/_python.py
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/arch/_mayraise.py
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: 'EXHAUST002/003 burn-down: the may-raise resolver, its python adapter, the
+    exhaustiveness gate that consumes it, their docs and tests'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
