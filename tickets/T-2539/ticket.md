@@ -88,7 +88,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8a93de7c083453b38d57cfce25fa8ef0c8c4da1a
 ---
 Found while burning EXHAUST002 down for T-2377. Two independent modeling
 defects in `frob.arch._mayraise`'s inputs made the exhaustiveness gate
