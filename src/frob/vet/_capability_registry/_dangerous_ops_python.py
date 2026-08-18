@@ -359,6 +359,19 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         (),
     ),
     # -- python: fs-write --------------------------------------------------
+    # T-2457: "open(" removed from this entry's needles. The bare
+    # substring matched ANY open() call regardless of mode -- a read-mode
+    # `open(path, "rb")` satisfied this fs-write rule on its own, which is
+    # exactly the false-positive this ticket fixes (it forced seven false
+    # `fs.write` declarations into design/frob.strata for modules that
+    # provably only read). `open(`/`.open(` calls are now classified by
+    # `frob.vet._capability_core._has_write_mode_open_call`, a mode-aware
+    # token-level parse of the call's arguments wired in via
+    # `_SPECIAL_CHECKS`/`_operation_entry_matches` (this entry's own empty
+    # `needles` tuple is what routes it through that fallback -- see
+    # `_operation_entry_matches`'s T-2457 comment). `.write(` stays a
+    # plain needle: any `.write(...)` call is unambiguously a write
+    # regardless of what it's called on.
     _op(
         "python",
         "builtins",
@@ -367,7 +380,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "writes/overwrites local filesystem state",
         "validate the target path is inside an expected root before writing",
         "low",
-        ("open(", ".write("),
+        (".write(",),
         ("CWE-22",),
     ),
     _op(

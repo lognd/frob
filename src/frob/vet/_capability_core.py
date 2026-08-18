@@ -602,6 +602,218 @@ def _has_bare_compile_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> 
         idx += len(needle)
 
 
+# frob:ticket T-2457
+def _matching_close_paren(text: bytes, open_idx: int) -> int | None:
+    """The byte index of the `)` that closes the `(` at `open_idx`, or
+    `None` if the file's syntax is malformed enough that no matching close
+    is found before EOF (T-2457). A token-level scan, not a substring
+    search: tracks nested `()`/`[]`/`{}` depth and skips over the contents
+    of string literals (single/double/triple-quoted, backslash-escaped) so
+    a stray paren or comma INSIDE a string/nested-call argument can never
+    be mistaken for the call's own closing paren or a top-level argument
+    boundary -- exactly the class of mistake a plain substring/regex match
+    would make and the standing "parse, don't grep" rule this ticket
+    exists to restore."""
+    depth = 1
+    idx = open_idx
+    n = len(text)
+    while idx < n:
+        ch = text[idx : idx + 1]
+        if ch in (b'"', b"'"):
+            quote = ch
+            triple = text[idx : idx + 3] == quote * 3
+            qlen = 3 if triple else 1
+            idx += qlen
+            while idx < n:
+                if text[idx : idx + 1] == b"\\":
+                    idx += 2
+                    continue
+                if text[idx : idx + qlen] == quote * qlen:
+                    idx += qlen
+                    break
+                idx += 1
+            continue
+        if ch in (b"(", b"[", b"{"):
+            depth += 1
+        elif ch in (b")", b"]", b"}"):
+            depth -= 1
+            if depth == 0:
+                return idx
+        idx += 1
+    return None
+
+
+# frob:ticket T-2457
+def _top_level_arg_strings(text: bytes, args_start: int, args_end: int) -> list[bytes]:
+    """Split one call's raw argument-list bytes (`text[args_start:args_end]`,
+    NOT including the enclosing parens) into its top-level comma-separated
+    argument substrings (T-2457), skipping over commas nested inside
+    `()`/`[]`/`{}` or inside a string literal -- so `open(p, mode="r" if x
+    else "w")` splits into exactly two arguments, not three."""
+    args: list[bytes] = []
+    depth = 0
+    start = args_start
+    idx = args_start
+    n = args_end
+    while idx < n:
+        ch = text[idx : idx + 1]
+        if ch in (b'"', b"'"):
+            quote = ch
+            triple = text[idx : idx + 3] == quote * 3
+            qlen = 3 if triple else 1
+            idx += qlen
+            while idx < n:
+                if text[idx : idx + 1] == b"\\":
+                    idx += 2
+                    continue
+                if text[idx : idx + qlen] == quote * qlen:
+                    idx += qlen
+                    break
+                idx += 1
+            continue
+        if ch in (b"(", b"[", b"{"):
+            depth += 1
+        elif ch in (b")", b"]", b"}"):
+            depth -= 1
+        elif ch == b"," and depth == 0:
+            args.append(text[start:idx])
+            start = idx + 1
+        idx += 1
+    tail = text[start:n].strip()
+    if tail:
+        args.append(tail)
+    return args
+
+
+#: Simple string-literal-content matcher: a plain (non-f-string, non-
+#: concatenated) single/double/triple quoted literal with only ASCII
+#: letters/`+` inside -- exactly the shape a real `open()` mode argument
+#: ever legitimately takes ("r", "rb", "w", "a+", ...). Anything else
+#: (an f-string, a variable, a ternary, a function call) does not match
+#: and is treated as OPAQUE by `_open_call_mode` below.
+_MODE_LITERAL_RE = re.compile(rb"""^[a-zA-Z]*\+?[a-zA-Z]*$""")
+
+
+# frob:ticket T-2457
+def _literal_mode_value(arg: bytes) -> bytes | None:
+    """The bare content of `arg` if it is a plain quoted string literal
+    holding a plausible file-open mode spelling (T-2457), else `None` for
+    anything opaque (an f-string, a name, a call, string concatenation).
+    `None` is the FAIL-CLOSED case: `_open_call_mode` treats an opaque
+    mode expression as a possible write, never silently as a read."""
+    arg = arg.strip()
+    for quote in (b'"""', b"'''", b'"', b"'"):
+        if arg.startswith(quote) and arg.endswith(quote) and len(arg) >= 2 * len(quote):
+            inner = arg[len(quote) : len(arg) - len(quote)]
+            if _MODE_LITERAL_RE.match(inner):
+                return inner
+            return None
+    return None
+
+
+class _OpenCallMode:
+    """The three outcomes `_open_call_mode` classifies one `open(...)`/
+    `Path.open(...)` call site into (T-2457): `READ` (mode is absent, or a
+    literal containing neither `w`/`a`/`x`/`+`), `WRITE` (mode is a
+    literal containing any of `w`/`a`/`x`/`+`), or `OPAQUE` (a mode
+    argument is present but is not a plain string literal -- classified as
+    WRITE by every caller here, fail-closed: a security detector's false
+    negative is worse than its false positive, per this ticket's own
+    acceptance criteria)."""
+
+    READ = "read"
+    WRITE = "write"
+    OPAQUE = "opaque"
+
+
+def _open_call_mode(text: bytes, call_end: int) -> str:
+    """Classify the `open(`/`.open(` call whose `(` is the byte just
+    before `call_end` (T-2457): reads the argument list, finds the mode
+    argument (second positional, or a `mode=` keyword), and returns one of
+    `_OpenCallMode`'s three outcomes. No mode argument at all means
+    Python's own default (`"r"`), i.e. READ. A malformed/unterminated
+    call (`_matching_close_paren` finds no match) is classified OPAQUE,
+    fail-closed for the same reason an opaque mode expression is."""
+    close = _matching_close_paren(text, call_end)
+    if close is None:
+        return _OpenCallMode.OPAQUE
+    args = _top_level_arg_strings(text, call_end, close)
+    mode_arg: bytes | None = None
+    positional_idx = 0
+    for arg in args:
+        stripped = arg.strip()
+        if stripped.startswith(b"mode") and re.match(rb"^mode\s*=", stripped):
+            mode_arg = stripped.split(b"=", 1)[1]
+            break
+        if b"=" in stripped and re.match(rb"^[A-Za-z_]\w*\s*=", stripped):
+            # a DIFFERENT keyword argument (e.g. buffering=, encoding=) --
+            # does not count as a positional slot.
+            continue
+        if positional_idx == 1:
+            mode_arg = stripped
+            break
+        positional_idx += 1
+    if mode_arg is None:
+        return _OpenCallMode.READ
+    literal = _literal_mode_value(mode_arg)
+    if literal is None:
+        return _OpenCallMode.OPAQUE
+    if any(c in literal for c in (b"w", b"a", b"x", b"+")):
+        return _OpenCallMode.WRITE
+    return _OpenCallMode.READ
+
+
+# frob:ticket T-2457
+def _open_call_sites(
+    text: bytes, comment_spans: tuple[ByteSpan, ...]
+) -> list[str]:
+    """Every `open(`/`.open(` call site's `_OpenCallMode` classification in
+    `text`, outside `comment_spans` (T-2457) -- one entry per occurrence of
+    the literal `open(` substring (both the bare builtin and a `Path.
+    open(...)`/`some_stream.open(...)` method call: both take the same
+    read/write mode argument shape, and the false-positive report this
+    ticket fixes was itself a `Path.open("rb")` call), so a caller can ask
+    "was ANY site a write" / "was ANY site a read" without re-scanning."""
+    needle = b"open("
+    modes: list[str] = []
+    start = 0
+    while True:
+        idx = text.find(needle, start)
+        if idx == -1:
+            break
+        call_end = idx + len(needle)
+        if not _fully_in_any_span(idx, call_end, comment_spans):
+            modes.append(_open_call_mode(text, call_end))
+        start = idx + 1
+    return modes
+
+
+# frob:ticket T-2457
+def _has_write_mode_open_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> bool:
+    """True if any `open(`/`.open(` call site in `text` is write-mode or
+    mode-opaque (T-2457's `fs-write` special check, registered in
+    `_SPECIAL_CHECKS` below) -- the mode-aware replacement for the old bare
+    `"open("` needle, which fired on every `open()` call regardless of
+    mode."""
+    return any(
+        mode in (_OpenCallMode.WRITE, _OpenCallMode.OPAQUE)
+        for mode in _open_call_sites(text, comment_spans)
+    )
+
+
+# frob:ticket T-2457
+def _has_read_mode_open_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> bool:
+    """True if any `open(`/`.open(` call site in `text` is read-mode
+    (T-2457's `fs-read` special check, registered in `_SPECIAL_CHECKS`
+    below) -- a call with no mode argument (Python's own `"r"` default) or
+    an explicit non-write literal mode counts; a mode-opaque call does
+    NOT count here (it already counts toward `fs-write`, fail-closed --
+    this function only asserts genuine, provable read-only access)."""
+    return any(
+        mode == _OpenCallMode.READ for mode in _open_call_sites(text, comment_spans)
+    )
+
+
 # language -> capability -> extra callable(text, comment_spans) -> bool,
 # applied ON TOP of the plain substring needles above for needles that need
 # one bit more context than "does this substring appear anywhere" (T-0151:
@@ -610,7 +822,15 @@ def _has_bare_compile_call(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> 
 # comment-exclusion the plain needles get).
 _SpecialCheck = Callable[[bytes, tuple[ByteSpan, ...]], bool]
 _SPECIAL_CHECKS: dict[str, dict[str, tuple[_SpecialCheck, ...]]] = {
-    "python": {"eval": (_has_bare_compile_call,)},
+    "python": {
+        "eval": (_has_bare_compile_call,),
+        # T-2457: mode-aware open()/`.open()` classification replaces the
+        # old bare "open(" needle (which fired for fs-write regardless of
+        # read/write mode -- see module docstring / this ticket for the
+        # false-positive this fixed).
+        "fs-write": (_has_write_mode_open_call,),
+        "fs-read": (_has_read_mode_open_call,),
+    },
     # T-0019: "napi" needs identifier-boundary matching so it does not fire
     # inside the unrelated word "openapi" -- see _has_word_boundary_napi.
     "typescript": {"ffi": (_has_word_boundary_napi,)},
@@ -700,25 +920,44 @@ def _matched_capabilities(
 def _operation_entry_matches(
     entry: _DangerousOperation, raw: bytes, comment_spans: tuple[ByteSpan, ...]
 ) -> bool:
-    """Whether one `DANGEROUS_OPERATIONS` entry's needle(s) (or bare-compile
-    special check) hit in `raw` outside `comment_spans`. T-0882: a needle in
-    `_BARE_CALL_NEEDLES` (`eval(`/`exec(`) requires a bare-builtin-call
+    """Whether one `DANGEROUS_OPERATIONS` entry's needle(s) (or a special
+    per-entry check) hit in `raw` outside `comment_spans`. T-0882: a needle
+    in `_BARE_CALL_NEEDLES` (`eval(`/`exec(`) requires a bare-builtin-call
     boundary here too, the same rule `_matched_capabilities` applies -- an
     entry citing `eval(`/`exec(` must not fire on an identifier that merely
-    ends with that text (`_mutation_for_eval(`)."""
-    if entry.needles:
-        return any(
-            (
-                _needle_hits_as_bare_call(raw, needle.encode("utf-8"), comment_spans)
-                if needle.encode("utf-8") in _BARE_CALL_NEEDLES
-                else _needle_hits_outside_comments(
-                    raw, needle.encode("utf-8"), comment_spans
-                )
+    ends with that text (`_mutation_for_eval(`).
+
+    T-2457: needle hits and the special checks are OR'd, not mutually
+    exclusive on "entry has needles" -- the `open()` (read-mode) entry
+    keeps its own `"json.load("` needle AND is asked about mode-aware
+    `open()`/`.open()` reads, so this per-entry path (`_scan_file_
+    operations`, named-entry reporting) attributes a bare `open(p, "rb")`
+    read to the SAME registry row `scan_file_capabilities`'s kind-only
+    path reports it under, instead of going silent just because that row
+    also happens to have a real needle of its own."""
+    if entry.needles and any(
+        (
+            _needle_hits_as_bare_call(raw, needle.encode("utf-8"), comment_spans)
+            if needle.encode("utf-8") in _BARE_CALL_NEEDLES
+            else _needle_hits_outside_comments(
+                raw, needle.encode("utf-8"), comment_spans
             )
-            for needle in entry.needles
         )
+        for needle in entry.needles
+    ):
+        return True
     if entry.language == "python" and entry.function_or_pattern.startswith("compile("):
         return _has_bare_compile_call(raw, comment_spans)
+    # T-2457: both `open()` entries (fs-write "write/append mode", fs-read
+    # "read mode") are asked about mode-aware open()/`.open()` classifi-
+    # cation regardless of their own needles, keeping this per-entry path
+    # consistent with the kind-only `scan_file_capabilities` path's
+    # `_SPECIAL_CHECKS` wiring on the same file.
+    if entry.language == "python" and entry.function_or_pattern.startswith("open("):
+        if entry.capability_kind == "fs-write":
+            return _has_write_mode_open_call(raw, comment_spans)
+        if entry.capability_kind == "fs-read":
+            return _has_read_mode_open_call(raw, comment_spans)
     return False
 
 

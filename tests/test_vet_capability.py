@@ -284,3 +284,94 @@ class TestSymbolResolvedContainerAndPartialEvasions:
             "    wrapped()\n"
         )
         assert "exec" in scan_file_capabilities(pkg)
+
+
+class TestModeAwareOpenCall:
+    """T-2457: `open()`/`.open()` must be classified by its MODE ARGUMENT,
+    not by the bare presence of the substring `open(` -- the pre-fix
+    detector reported `fs-write` for a read-only `toml_path.open("rb")`
+    call, forcing seven false capability declarations into
+    `design/frob.strata` (ticket body). Covers all three of the ticket's
+    own acceptance controls: must-now-be-silent, must-still-fire, and
+    must-still-fire-indirect."""
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_read_mode_open_reports_fs_read_not_fs_write(self, tmp_path: Path) -> None:
+        """Control 1 (must-now-be-silent): a module whose only filesystem
+        access is `open(path, "rb")` must report `fs-read`, never
+        `fs-write`."""
+        pkg = tmp_path / "read_only.py"
+        pkg.write_text(
+            "def load(toml_path):\n"
+            '    with toml_path.open("rb") as f:\n'
+            "        return f.read()\n"
+        )
+        observed = scan_file_capabilities(pkg)
+        assert "fs-write" not in observed
+        assert "fs-read" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_default_mode_open_is_read_not_write(self, tmp_path: Path) -> None:
+        """A bare `open(path)` (Python's own default mode is `"r"`) must
+        report `fs-read`, never `fs-write` -- default-mode opens are the
+        most common shape and must not regress into a false positive."""
+        pkg = tmp_path / "default_mode.py"
+        pkg.write_text("def load(path):\n    with open(path) as f:\n        return f.read()\n")
+        observed = scan_file_capabilities(pkg)
+        assert "fs-write" not in observed
+        assert "fs-read" in observed
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_write_mode_open_still_reports_fs_write(self, tmp_path: Path) -> None:
+        """Control 2 (must-still-fire): `open(path, "w")` must still report
+        `fs-write` -- the false-positive fix must not become a false
+        negative."""
+        pkg = tmp_path / "write_mode.py"
+        pkg.write_text('def save(path):\n    with open(path, "w") as f:\n        f.write("x")\n')
+        assert "fs-write" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_append_mode_open_still_reports_fs_write(self, tmp_path: Path) -> None:
+        """Control 2 (must-still-fire): `open(path, "a")` must still report
+        `fs-write`."""
+        pkg = tmp_path / "append_mode.py"
+        pkg.write_text('def log(path):\n    with open(path, "a") as f:\n        f.write("x")\n')
+        assert "fs-write" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_dotwrite_call_still_reports_fs_write(self, tmp_path: Path) -> None:
+        """Control 2 (must-still-fire): a bare `.write(...)` call (the
+        entry's other, unambiguous needle) must still report `fs-write`
+        independent of the mode-aware `open()` classification."""
+        pkg = tmp_path / "dotwrite.py"
+        pkg.write_text("def dump(stream):\n    stream.write('x')\n")
+        assert "fs-write" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_indirect_write_operations_still_reported(self, tmp_path: Path) -> None:
+        """Control 3 (must-still-fire-indirect): `Path.write_text`,
+        `shutil.move`, and `os.replace` -- write operations that never go
+        through `open()` at all -- must still report `fs-write`, proving
+        the mode-aware `open()` change did not disturb the OTHER,
+        already-precise fs-write registry entries."""
+        pkg = tmp_path / "indirect.py"
+        pkg.write_text(
+            "from pathlib import Path\n"
+            "import shutil, os\n\n\n"
+            "def mutate(p, q):\n"
+            '    Path(p).write_text("x")\n'
+            "    shutil.move(p, q)\n"
+            "    os.replace(p, q)\n"
+        )
+        assert "fs-write" in scan_file_capabilities(pkg)
+
+    # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    def test_dynamic_mode_expression_fails_closed_to_write(self, tmp_path: Path) -> None:
+        """A non-literal mode expression (a variable, not a plain string
+        literal) is classified OPAQUE and treated as `fs-write`, fail-
+        closed -- a security detector's false negative is worse than its
+        false positive (ticket body, "the direction that actually hurts
+        in a security detector")."""
+        pkg = tmp_path / "dynamic_mode.py"
+        pkg.write_text("def load(path, mode):\n    with open(path, mode) as f:\n        return f\n")
+        assert "fs-write" in scan_file_capabilities(pkg)

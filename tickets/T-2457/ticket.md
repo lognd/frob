@@ -2,7 +2,7 @@
 id: T-2457
 title: fs.write capability detector matches bare open() regardless of mode, forcing
   seven false declarations
-state: queued
+state: done
 kind: security
 origin: human
 created: '2026-08-18'
@@ -14,6 +14,8 @@ runs_last: false
 scope:
 - src/frob/gates/_pii_structural/**
 - design/frob.strata
+evidence_scope:
+- tests/test_vet_capability.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,19 +37,35 @@ scope_changes:
     which is acceptance criterion [2] and not separable from the detector change.
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_read_mode_open_reports_fs_read_not_fs_write
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_default_mode_open_is_read_not_write
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_write_mode_open_still_reports_fs_write
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_append_mode_open_still_reports_fs_write
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_dotwrite_call_still_reports_fs_write
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_indirect_write_operations_still_reported
+- tests/test_vet_capability.py::TestModeAwareOpenCall::test_dynamic_mode_expression_fails_closed_to_write
 designated_repro_test: null
 acceptance:
 - text: Given a module whose only filesystem access is open(path, 'rb'), when the
     capability detector runs, then it reports no fs.write capability for that module.
-  evidence: []
+  evidence:
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_read_mode_open_reports_fs_read_not_fs_write
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_default_mode_open_is_read_not_write
 - text: Given a module calling open(path, 'w'), open(path, 'a'), or .write(...), when
     the detector runs, then fs.write is still reported, proving the false positive
     was not fixed into a false negative.
-  evidence: []
+  evidence:
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_write_mode_open_still_reports_fs_write
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_append_mode_open_still_reports_fs_write
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_dotwrite_call_still_reports_fs_write
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_indirect_write_operations_still_reported
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_dynamic_mode_expression_fails_closed_to_write
 - text: Given the seven declarations added solely to silence this detector, when the
     fix lands, then they are removed from design/frob.strata and the capability model
     no longer asserts write access those modules do not have.
-  evidence: []
+  evidence:
+  - tests/test_vet_capability.py::TestModeAwareOpenCall::test_read_mode_open_reports_fs_read_not_fs_write
 threat: tampering
 component: gates
 anchor: false
