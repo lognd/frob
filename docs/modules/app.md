@@ -328,7 +328,21 @@ semantics live in `AppConfig` and in each subcommand's own docs page.
   registered Tier-A auto-fix, re-run the gates stage once, and splice a
   `fixed`/`rolled_back`/`fixits` `fix` report into the summary/JSON output
   (docs/design/check-fix-engine.md) -- a plain `frob check` (no `--fix`)
-  is untouched by this, byte-identical to before T-1260.
+  is untouched by this, byte-identical to before T-1260. T-2486: every
+  risky `--json`-mode span in this runner (stage running, the daemon-
+  delta RPC probe, `--land-parity`, `--census`, `--fix`'s ruff re-run)
+  is wrapped in `_guard_json_stdout_writes` -- a structural boundary that
+  redirects ANY stray stdout write (not just a misleveled log call) to
+  stderr for the guarded span's duration, closed before this runner's own
+  final JSON payload emission. T-2492 promoted that guard (and its
+  `_StderrRedirectStdout` proxy) out of this file into the shared
+  `src/frob/app/_json_guard.py` -- `check_runner.py` now imports it
+  rather than defining it, byte-identical behavior -- and, having
+  execution-verified all 26 other `--json`-bearing runners against this
+  repo, applied the same guard to the 8 that were genuinely leaking:
+  `bind_runner`, `clean_runner`, `docs_runner`, `fmt_runner`,
+  `graph_runner` (`query`/`why`/`affects`), `map_runner`, `test_runner`,
+  and `vet_runner`.
 - `ack_runner.run` -- builds/loads the graph, acknowledges refs, writes the
   lock file (docs/modules/graph.md); requires `--reason`/`--reason-file`
   (refuses otherwise) and appends an `AckAuditEntry` per acked `(ref,
@@ -700,6 +714,14 @@ how many findings still surface (`fired`), how many a `frob:waive`
 suppresses (`waived`), the resulting waive-rate, and how many of those
 waivers are DEAD (`WAIVE004` -- a directive matching zero live findings
 this run, pure decay).
+
+T-2486: the unscoped gate run itself is the risky span for `--json`
+output, so it runs inside `_guard_json_stdout_writes()` (T-2492: now
+`src/frob/app/_json_guard.py`, imported rather than defined locally in
+`check_runner.py`) -- the guarded `with` block closes before this
+function's own `_print_census`/JSON payload write, so a stray write
+anywhere in that whole-tree gate run reaches stderr, never corrupts the
+report.
 
 The methodological correction T-1763 forced: a rule only ever evaluated
 against a DIFF (`frob.gates._waive._WAIVE004_STRUCTURALLY_UNVERIFIABLE_

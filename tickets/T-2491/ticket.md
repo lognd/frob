@@ -1,7 +1,7 @@
 ---
 id: T-2491
 title: sync docs/modules/app.md#runners for T-2486's structural --json stdout guard
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-18'
@@ -16,6 +16,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -c "_guard_json_stdout_writes" docs/modules/app.md exit=0 sha256=53c234e5e847
 designated_repro_test: null
 threat: null
 component: null
