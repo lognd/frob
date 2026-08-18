@@ -540,6 +540,26 @@ if [ -z "$FROB_LAND_INTERNAL" ]; then
             fi
             ;;
     esac
+    # T-2445: changelog.d/T-####.md fragments are the same land-owned
+    # artifact class as CHANGELOG.md itself (frob.release._fragments'
+    # own module docstring) -- `frob ticket land` writes them exclusively,
+    # never a worktree agent.
+    case "$staged" in
+        changelog.d/*)
+            for f in $staged; do
+                case "$f" in
+                    changelog.d/*)
+                        if _t1742_staged_diverges_from_main "$f"; then
+                            echo "frob: refusing commit -- $f is land-owned" >&2
+                            echo "frob: (T-2445) fragments are written by" \\
+                                "\\`frob ticket land\\`" >&2
+                            exit 1
+                        fi
+                        ;;
+                esac
+            done
+            ;;
+    esac
     case "$staged" in
         *uv.lock*)
             if _t1742_staged_diverges_from_main uv.lock; then

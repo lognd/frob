@@ -2,7 +2,7 @@
 id: T-2445
 title: every land writes CHANGELOG.md and the version line, so scope-disjoint lands
   still conflict
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,21 +11,150 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/release/_fragments.py
+- src/frob/release/__init__.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/scaffold/project.py
+- docs/modules/release.md
+- docs/modules/tickets-landing.md
+- tests/test_release.py
+- tests/test_ticket_land.py
+- tests/unit/test_land_cmd_backpressure.py
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/release/_fragments.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/release/__init__.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/scaffold/project.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/release.md
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_release.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_land_cmd_backpressure.py
+  reason: 'T-2445: fragment-per-ticket CHANGELOG.md (changelog.d/T-####.md), assembled
+    deterministically every land under the existing land.lock -- kills the ad-hoc
+    text-splice merge/interruption hazard; pyproject.toml/.frob-release.json bump-per-land
+    left unchanged in this stage (REL001 gate change needs gates/__init__.py, leased
+    by T-2435 -- filed as a follow-up)'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_scaffold_worktree_lease_hook.py
+  reason: 'T-2445: new guard-regression test for changelog.d/ land-owned refusal'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_release.py::TestChangelogFragments::test_write_then_read_round_trips
+- tests/test_release.py::TestChangelogFragments::test_read_sorts_numerically_not_lexically
+- tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
+- tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
+- tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
+- tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+- tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 designated_repro_test: null
 acceptance:
 - text: Given two lands whose declared code scopes are disjoint, when both run, then
     neither requires a manual CHANGELOG or version conflict-resolution step.
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestChangelogFragments::test_write_then_read_round_trips
+  - tests/test_release.py::TestChangelogFragments::test_read_sorts_numerically_not_lexically
+  - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
+  - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
+  - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
+  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 - text: Given a release cut after several concurrent lands, when the CHANGELOG is
     produced, then it contains every landed ticket's entry in correct order and the
     version bumped exactly once, proving conflicts were not resolved by dropping entries.
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestChangelogFragments::test_write_then_read_round_trips
+  - tests/test_release.py::TestChangelogFragments::test_read_sorts_numerically_not_lexically
+  - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
+  - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
+  - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
+  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 - text: Given a worktree attempting to hand-edit a land-owned release artifact, when
     it commits, then the existing guard still refuses, proving the fix did not weaken
     artifact ownership.
-  evidence: []
+  evidence:
+  - tests/test_release.py::TestChangelogFragments::test_write_then_read_round_trips
+  - tests/test_release.py::TestChangelogFragments::test_read_sorts_numerically_not_lexically
+  - tests/test_release.py::TestChangelogFragments::test_read_fails_closed_on_a_malformed_fragment
+  - tests/test_release.py::TestChangelogFragments::test_assemble_writes_every_fragment_as_a_bullet
+  - tests/test_release.py::TestChangelogFragments::test_assemble_is_idempotent_and_picks_up_new_fragments
+  - tests/test_ticket_land.py::TestRealCallbackStaleWorktreeManifest::test_stale_worktree_manifest_still_lands_main_plus_one
+  - tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook::test_land_owned_file_commit_refused_changelog_fragment
 threat: null
 component: release
 anchor: false

@@ -269,6 +269,155 @@ class TestChangelogSkeletonEntry:
         assert changelog_skeleton_entry(tmp_path, "2.0.0") is False
 
 
+# frob:ticket T-2445
+class TestChangelogFragments:
+    """T-2445: `changelog.d/T-####.md` fragments -- write/read round trip,
+    numeric (not lexical) ticket-id ordering, fail-closed parsing, and
+    deterministic/idempotent CHANGELOG.md section assembly."""
+
+    def test_write_then_read_round_trips(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips
+        from frob.release._fragments import (
+            read_changelog_fragments,
+            write_changelog_fragment,
+        )
+
+        written = write_changelog_fragment(
+            tmp_path, "T-0042", "minor", "T-0042: a thing"
+        )
+        assert written.is_ok
+        fragments = read_changelog_fragments(tmp_path)
+        assert fragments.is_ok
+        assert len(fragments.danger_ok) == 1
+        frag = fragments.danger_ok[0]
+        assert frag.ticket_id == "T-0042"
+        assert frag.bump == "minor"
+        assert frag.note == "T-0042: a thing"
+
+    def test_read_with_no_directory_is_empty_ok(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_read_with_no_directory_is_\
+        # empty_ok
+        from frob.release._fragments import read_changelog_fragments
+
+        fragments = read_changelog_fragments(tmp_path)
+        assert fragments.is_ok
+        assert fragments.danger_ok == ()
+
+    def test_read_sorts_numerically_not_lexically(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_read_sorts_numerically_not\
+        # _lexically
+        from frob.release._fragments import (
+            read_changelog_fragments,
+            write_changelog_fragment,
+        )
+
+        write_changelog_fragment(tmp_path, "T-10", "patch", "T-10: ten")
+        write_changelog_fragment(tmp_path, "T-2", "patch", "T-2: two")
+        fragments = read_changelog_fragments(tmp_path)
+        assert fragments.is_ok
+        ids = [f.ticket_id for f in fragments.danger_ok]
+        assert ids == ["T-2", "T-10"]
+
+    def test_read_fails_closed_on_a_malformed_fragment(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_read_fails_closed_on_a_mal\
+        # formed_fragment
+        from frob.release import ReleaseError
+        from frob.release._fragments import fragment_dir, read_changelog_fragments
+
+        directory = fragment_dir(tmp_path)
+        directory.mkdir(parents=True)
+        (directory / "T-0001.md").write_text("not a real fragment\n")
+        fragments = read_changelog_fragments(tmp_path)
+        assert fragments.is_err
+        assert fragments.danger_err is ReleaseError.Malformed
+
+    def test_assemble_is_a_noop_with_no_fragments(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_is_a_noop_with_no\
+        # _fragments
+        from frob.release._fragments import assemble_changelog_from_fragments
+
+        (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
+        assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert assembled.is_ok
+        assert assembled.danger_ok == 0
+        assert (tmp_path / "CHANGELOG.md").read_text() == "# Changelog\n"
+
+    def test_assemble_writes_every_fragment_as_a_bullet(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_writes_every_frag\
+        # ment_as_a_bullet
+        from frob.release._fragments import (
+            assemble_changelog_from_fragments,
+            write_changelog_fragment,
+        )
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.0.0] - unreleased\n"
+        )
+        write_changelog_fragment(tmp_path, "T-0001", "minor", "T-0001: first thing")
+        write_changelog_fragment(tmp_path, "T-0002", "patch", "T-0002: second thing")
+        assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert assembled.is_ok
+        assert assembled.danger_ok == 2
+        text = (tmp_path / "CHANGELOG.md").read_text()
+        assert "## [2.0.0] - unreleased" in text
+        assert "T-0001: first thing" in text
+        assert "T-0002: second thing" in text
+        assert "## [1.0.0] - unreleased" in text  # old entry survives
+
+    def test_assemble_is_idempotent_and_picks_up_new_fragments(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_is_idempotent_and\
+        # _picks_up_new_fragments
+        from frob.release._fragments import (
+            assemble_changelog_from_fragments,
+            write_changelog_fragment,
+        )
+
+        (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
+        write_changelog_fragment(tmp_path, "T-0001", "minor", "T-0001: first thing")
+        first = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert first.is_ok and first.danger_ok == 1
+        text_after_first = (tmp_path / "CHANGELOG.md").read_text()
+        assert text_after_first.count("## [2.0.0]") == 1
+
+        # Re-running with an UNCHANGED fragment set reproduces the same
+        # content byte-for-byte (idempotent).
+        second = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert second.is_ok and second.danger_ok == 1
+        assert (tmp_path / "CHANGELOG.md").read_text() == text_after_first
+
+        # A second land at the SAME still-unreleased version grows the
+        # section instead of leaving it frozen at the first land's bullet.
+        write_changelog_fragment(tmp_path, "T-0002", "patch", "T-0002: second thing")
+        third = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert third.is_ok and third.danger_ok == 2
+        text_after_third = (tmp_path / "CHANGELOG.md").read_text()
+        assert text_after_third.count("## [2.0.0]") == 1  # still ONE heading
+        assert "T-0001: first thing" in text_after_third
+        assert "T-0002: second thing" in text_after_third
+
+    def test_assemble_missing_changelog_is_an_error(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_missing_changelog\
+        # _is_an_error
+        from frob.release import ReleaseError
+        from frob.release._fragments import (
+            assemble_changelog_from_fragments,
+            write_changelog_fragment,
+        )
+
+        write_changelog_fragment(tmp_path, "T-0001", "minor", "T-0001: first thing")
+        assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert assembled.is_err
+        assert assembled.danger_err is ReleaseError.WriteFailed
+
+
 # frob:ticket T-1009
 # invariant spec: [INV-044](invariants/INV-044.md)
 class TestReleaseGateCoherence:
@@ -576,7 +725,11 @@ class TestPublish:
 
         from frob.graph import GraphSnapshot
 
-        result = publish(tmp_path, GraphSnapshot(root=str(tmp_path), symbols={}, edges=()), dry_run=False)
+        result = publish(
+            tmp_path,
+            GraphSnapshot(root=str(tmp_path), symbols={}, edges=()),
+            dry_run=False,
+        )
 
         assert result.is_err
         assert result.danger_err == ReleaseError.SyncFailed
@@ -591,9 +744,7 @@ class TestPublish:
         at all. A fake `.env` here uses a placeholder token, never a real
         secret, per the ticket's own instruction."""
         _write_pyproject(tmp_path, "1.0.0")
-        (tmp_path / ".env").write_text(
-            "UV_PUBLISH_TOKEN=pypi-XXXX\n", encoding="utf-8"
-        )
+        (tmp_path / ".env").write_text("UV_PUBLISH_TOKEN=pypi-XXXX\n", encoding="utf-8")
         monkeypatch.delenv("UV_PUBLISH_TOKEN", raising=False)
 
         publish(tmp_path, snapshot=None, dry_run=True)
@@ -607,7 +758,11 @@ class TestPublish:
         monkeypatch.setattr("frob.gitio.run_argv", _stub_run_argv)
         from frob.graph import GraphSnapshot
 
-        publish(tmp_path, GraphSnapshot(root=str(tmp_path), symbols={}, edges=()), dry_run=False)
+        publish(
+            tmp_path,
+            GraphSnapshot(root=str(tmp_path), symbols={}, edges=()),
+            dry_run=False,
+        )
         assert os.environ.get("UV_PUBLISH_TOKEN") == "pypi-XXXX"
         monkeypatch.delenv("UV_PUBLISH_TOKEN", raising=False)
 
@@ -616,9 +771,7 @@ class TestRunReleasePublishCommand:
     """`frob.release._cli.run_release_publish_command` -- the CLI-facing
     wrapper `frob.__main__._dispatch` calls for `frob release publish`."""
 
-    def test_dry_run_prints_the_plan_and_exits_0(
-        self, tmp_path, monkeypatch, capsys
-    ):
+    def test_dry_run_prints_the_plan_and_exits_0(self, tmp_path, monkeypatch, capsys):
         # frob:tests \
         # tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_p\
         # lan_and_exits_0

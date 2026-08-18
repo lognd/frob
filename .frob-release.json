@@ -1349,6 +1349,13 @@
     "src/frob/release/__init__.py::stamp": "1d74b40b9cc448592803987ec23e886cc461892dd080cfe8d967b218d02b09dd",
     "src/frob/release/_cli.py::add_release_publish_parser": "8fb6ccbe171c2b13885eebed803f3b526b4e3455d02e7cec7c3d4120081ad707",
     "src/frob/release/_cli.py::run_release_publish_command": "e2bb7af1446ab352020742cd59f2bed941e8cbad20707c2d32e2c7ffe81c0fb9",
+    "src/frob/release/_fragments.py::ChangelogFragment": "599291c46fd33d658405f72493f9971658f644339d71fb97871c676c9fc97cbb",
+    "src/frob/release/_fragments.py::FRAGMENT_DIR_NAME": "95925a6e57ed322adbdde4b95c763fa6a0c9939c76c9428a8663f2b28a1d6ad4",
+    "src/frob/release/_fragments.py::assemble_changelog_from_fragments": "51ceac8dc801922ea6080765131176150e076f3cf3bb80e88db0f5dcf37829d8",
+    "src/frob/release/_fragments.py::fragment_dir": "b8aea282247ac7cb7a0448ad2a9f438b2a4cbeea2a3cd352e007509b2d0ff379",
+    "src/frob/release/_fragments.py::fragment_path": "8ab8c287feceaacbb4b7e09600e7b010771815b8b5731514c4fbb81c2935ca54",
+    "src/frob/release/_fragments.py::read_changelog_fragments": "e4722ecf825ccbba8fa43b9881815df2b4d310e8febf638f7cdda08d7d817c2b",
+    "src/frob/release/_fragments.py::write_changelog_fragment": "af4458f5ec245c58e885d3d4d84ab86e8325515a9f19f95e95e4e6ab99b85bd1",
     "src/frob/release/_publish.py::PublishPlan": "53b11503f9d9bc1a8f1b5d7bd936300d782cb47632f05370d4c41f0ca5bd60c2",
     "src/frob/release/_publish.py::PublishReport": "2162743c1c456cd790675c1c9c33a1086073b47e2e2e69fb3b73ed079ccdb378",
     "src/frob/release/_publish.py::publish": "6c1dcfe00d5515284cf5c7c18d5fede94aa73291d3c6010e23122b1445abe7cc",
@@ -2470,5 +2477,5 @@
     "strata-core/src/lib.rs::worst_age": "a93684004b952a10c71a461c406ec342485d2cb8333c5589a9327c12d6821248",
     "strata-core/src/parse/mod.rs::parse_source_impl": "c682339b4819a3bcc81c188694b62370a95194e3cfecfafd65b3456977f01d06"
   },
-  "version": "0.527.0"
+  "version": "0.528.0"
 }

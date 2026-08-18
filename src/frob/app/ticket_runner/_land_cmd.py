@@ -2656,10 +2656,6 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
     `enforce_worktree_lease` refusal) -- fail-closed, since a silently-
     skipped bump would let a landed API change slip past REL001
     undetected."""
-    from frob.gitio import run_argv
-    from frob.release import stamp
-    from frob.tickets._land import LandError
-
     needed = _required_release_bump(root, final_id)
     if needed.is_err:
         return Err(needed.danger_err)
@@ -2667,11 +2663,35 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
         return Ok(None)
     new_version = needed.danger_ok
 
-    written = _write_release_bump(root, ticket, final_id, new_version)
+    from frob.app import ticket_runner as _ticket_runner
+
+    pre_bump_manifest = _ticket_runner._root_release_manifest(root)
+    pre_bump_version = pre_bump_manifest.version if pre_bump_manifest else new_version
+    written = _write_release_bump(root, ticket, final_id, new_version, pre_bump_version)
     if written.is_err:
         return Err(written.danger_err)
 
+    return _stamp_and_stage_release_bump(root, final_id, new_version)
+
+
+# frob:ticket T-0338
+# frob:ticket T-1368
+# frob:ticket T-2445
+def _stamp_and_stage_release_bump(  # noqa: ANN201
+    root: Path, final_id: str, new_version: str
+):
+    """`_apply_release_bump_for_land`'s own ARCH001 split (T-2445): the
+    post-write half -- rebuild the graph snapshot against the just-
+    written `pyproject.toml`, `frob release stamp` the manifest to
+    `new_version`, then stage every land-owned release file (T-2445
+    added `changelog.d` to the list -- `_write_release_bump`'s own
+    fragment write plus this call's own regenerated-section write both
+    land there). No behavior change from inlining this back into the
+    caller; pure line-count extraction."""
     from frob.app import ticket_runner as _ticket_runner
+    from frob.gitio import run_argv
+    from frob.release import stamp
+    from frob.tickets._land import LandError
 
     fresh_snapshot = _ticket_runner._graph_snapshot(root)
     if fresh_snapshot.is_err:
@@ -2707,6 +2727,12 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
             "pyproject.toml",
             "CHANGELOG.md",
             ".frob-release.json",
+            # T-2445: this land's own fragment plus (if this is not the
+            # first bump-worthy land at `new_version`) any earlier
+            # fragments the just-ran assembly step also read -- all
+            # already on disk, `git add` on the directory stages
+            # whichever are new/changed since the last commit.
+            "changelog.d",
         ]
     )
     if staged.is_err or staged.danger_ok.returncode != 0:
@@ -2717,14 +2743,66 @@ def _apply_release_bump_for_land(root: Path, ticket, final_id: str):  # noqa: AN
 
 # frob:ticket T-0338
 # frob:ticket T-1009
-def _write_release_bump(root: Path, ticket, final_id: str, new_version: str):  # noqa: ANN001, ANN201
+# frob:ticket T-2445
+def _bump_class_between(old_version: str, new_version: str) -> str:  # noqa: ANN201
+    """The `frob.release.BumpClass` NAME (lowercased) implied by `old_
+    version -> new_version` alone, from the version numbers themselves
+    (T-2445) -- used ONLY to label a `changelog.d/T-####.md` fragment;
+    the authoritative bump-class computation stays `frob.release.
+    diff_class`'s public-API diff (`_required_release_bump`, already run
+    by this function's caller). Falls back to `"patch"` on anything
+    unparsable -- a mislabeled fragment header is cosmetic (it only
+    affects how loudly `frob release assemble`'s eventual max-bump-class
+    reduction reports itself), never a correctness hazard, so this never
+    raises."""
+    from frob.release import BumpClass
+
+    try:
+        old_parts = tuple(int(p) for p in old_version.split(".")[:3])
+        new_parts = tuple(int(p) for p in new_version.split(".")[:3])
+    except ValueError:
+        return BumpClass.PATCH.name.lower()
+    if len(old_parts) != 3 or len(new_parts) != 3:
+        return BumpClass.PATCH.name.lower()
+    if new_parts[0] != old_parts[0]:
+        return BumpClass.MAJOR.name.lower()
+    if new_parts[1] != old_parts[1]:
+        return BumpClass.MINOR.name.lower()
+    return BumpClass.PATCH.name.lower()
+
+
+# frob:ticket T-0338
+# frob:ticket T-1009
+# frob:ticket T-2445
+def _write_release_bump(  # noqa: ANN201
+    root: Path, ticket, final_id: str, new_version: str, pre_bump_version: str
+):
     """Rewrite `root/pyproject.toml`'s `version = "..."` line to
-    `new_version` and add a `## [new_version] - unreleased` CHANGELOG.md
-    entry naming `final_id`/`ticket.title` (T-0338), via the shared
-    `frob.release` helpers (T-1009 -- the same regex/insertion logic
-    `frob release sync` uses, kept in one home rather than duplicated
-    here)."""
-    from frob.release import changelog_skeleton_entry, rewrite_pyproject_version
+    `new_version` (T-0338, unchanged by T-2445) and record this land's
+    changelog entry via the T-2445 fragment mechanism instead of
+    splicing prose into `CHANGELOG.md` directly: `frob.release.
+    _fragments.write_changelog_fragment` writes `changelog.d/T-####.md`
+    (a brand-new, uniquely-named file -- never a shared, previously-
+    existing path, so this step can never collide with any OTHER
+    ticket's own land, disjoint scope or not), then `assemble_changelog_
+    from_fragments` regenerates `new_version`'s `CHANGELOG.md` section
+    from the FULL current fragment set (this land's own fragment plus
+    any earlier still-unreleased ones at the same version) -- a pure,
+    deterministic, idempotent function of the fragment set, run once
+    per land under `land.lock`'s own serialization, so it never disagrees
+    with itself across lands the way an ad hoc text splice could.
+
+    See `frob.release._fragments`'s own module docstring for the full
+    rationale (self-healing under land interruption) and this ticket's
+    Done report for what is DELIBERATELY still unchanged (`pyproject.
+    toml`/`.frob-release.json` still bump every land, unlike the fully
+    deferred design a fuller follow-up leaf would apply to CHANGELOG.md's
+    version-bump sibling too)."""
+    from frob.release import rewrite_pyproject_version
+    from frob.release._fragments import (
+        assemble_changelog_from_fragments,
+        write_changelog_fragment,
+    )
     from frob.tickets._land import LandError
 
     pyproject_path = root / "pyproject.toml"
@@ -2738,12 +2816,34 @@ def _write_release_bump(root: Path, ticket, final_id: str, new_version: str):  #
         )
         return Err(LandError.ReleaseBumpFailed)
 
-    changelog_skeleton_entry(root, new_version, note=f"{final_id}: {ticket.title}")
+    bump_class = _bump_class_between(pre_bump_version, new_version)
+    fragment_written = write_changelog_fragment(
+        root, final_id, bump_class, f"{final_id}: {ticket.title}"
+    )
+    if fragment_written.is_err:
+        _log.error(
+            "land: %s could not write the T-2445 changelog fragment (%s)",
+            final_id,
+            fragment_written.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+
+    assembled = assemble_changelog_from_fragments(root, new_version)
+    if assembled.is_err:
+        _log.error(
+            "land: %s could not assemble CHANGELOG.md from changelog.d/ fragments (%s)",
+            final_id,
+            assembled.danger_err,
+        )
+        return Err(LandError.ReleaseBumpFailed)
+
     _log.info(
-        "land: %s wrote REL001 bump -> %s in %s and CHANGELOG.md",
+        "land: %s wrote REL001 bump -> %s in %s, and a T-2445 fragment "
+        "(%d fragment(s) assembled into CHANGELOG.md)",
         final_id,
         new_version,
         pyproject_path,
+        assembled.danger_ok,
     )
     return Ok(None)
 
@@ -3754,9 +3854,9 @@ def _long_function_symrefs_over_threshold(
     keeping this the same "two small parses per touched file" cost T-2114's
     doc/test-edge check already pays, not the ~208s T-1684 took off the
     land critical path."""
-    from frob.repo_meta import load_arch_config
     from frob.arch import _python as arch_python
     from frob.lang import raw_tree
+    from frob.repo_meta import load_arch_config
 
     parsed = raw_tree(path)
     if parsed.is_err:
@@ -4150,9 +4250,7 @@ def _new_file_local_errors_in_file(
     # inside a per-identity loop), then group by identity -- each group
     # comes out highest-line-first, so the "assume the newest lines are
     # the new ones" attribution below is a cheap slice, not a fresh sort.
-    current_sorted = sorted(
-        current, key=lambda v: (_violation_identity(v), -v.line)
-    )
+    current_sorted = sorted(current, key=lambda v: (_violation_identity(v), -v.line))
     by_identity: dict[str, list[Violation]] = {}
     for identity, group in itertools.groupby(current_sorted, key=_violation_identity):
         by_identity[identity] = list(group)

@@ -290,11 +290,19 @@ Order of operations, and why it is this order:
     computes the semver class the just-squashed public API demands
     (`frob.release.diff_class`/`required_version` against the tracked
     `.frob-release.json` manifest), and if the declared `pyproject.toml`
-    version does not already cover it, rewrites `version = "..."`,
-    prepends a minimal `## [<version>] - unreleased` CHANGELOG.md entry
-    naming the ticket, and `frob release stamp`s the new manifest --
-    staging all three files so they land in the SAME commit as the
-    squash-apply. `Ok(None)` (no manifest yet, or no bump needed) is a
+    version does not already cover it, rewrites `version = "..."`, then
+    (T-2445) writes a `changelog.d/T-####.md` fragment for this ticket
+    and regenerates the `## [<version>] - unreleased` CHANGELOG.md
+    section from the FULL current fragment set (`frob.release._fragments.
+    write_changelog_fragment`/`assemble_changelog_from_fragments` --
+    docs/modules/release.md#changelog-fragments-t-2445 has the full
+    rationale: a fragment is a brand-new, uniquely-named file, so this
+    step can never collide with a concurrent, scope-disjoint ticket's own
+    land the way splicing directly into CHANGELOG.md's single shared
+    insertion point could), and `frob release stamp`s the new manifest --
+    staging `pyproject.toml`/`CHANGELOG.md`/`.frob-release.json`/
+    `changelog.d/` so they land in the SAME commit as the squash-apply.
+    `Ok(None)` (no manifest yet, or no bump needed) is a
     no-op; `Err(LandError.ReleaseBumpFailed)` unwinds the squash (`git
     reset --hard && git clean -fd`) exactly like any other land failure --
     a silently-skipped bump would let a landed API change slip past

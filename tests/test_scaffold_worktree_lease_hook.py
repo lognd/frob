@@ -207,6 +207,41 @@ class TestInstallWorktreeLeaseHook:
         assert "CHANGELOG.md" in (commit.stdout + commit.stderr)
         assert "land-owned" in (commit.stdout + commit.stderr)
 
+    # frob:ticket T-2445
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_land_owned_file_commit_refused_changelog_fragment(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_land_owned_file_commit_refused_changelog_fragment  # noqa: E501
+        """T-2445: a worktree commit touching `changelog.d/T-####.md` is
+        refused, the same land-owned posture as `CHANGELOG.md` itself --
+        `frob ticket land` writes fragments exclusively."""
+        _init_repo(tmp_path)
+        _git("commit", "-q", "-m", "init", cwd=tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+
+        (tmp_path / "changelog.d").mkdir()
+        (tmp_path / "changelog.d" / "T-9999.md").write_text(
+            "bump: minor\nT-9999: hand-edited\n"
+        )
+        _git("add", "-A", cwd=tmp_path)
+
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "hand-write a changelog fragment"],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0
+        assert "changelog.d/T-9999.md" in (commit.stdout + commit.stderr)
+        assert "land-owned" in (commit.stdout + commit.stderr)
+
     # frob:ticket T-0731
     @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
     def test_land_owned_file_commit_refused_uv_lock(self, tmp_path: Path) -> None:
@@ -487,7 +522,12 @@ class TestInstallWorktreeLeaseHook:
 
         worktree_dir = tmp_path.parent / "linked-worktree"
         added = _git(
-            "worktree", "add", "-b", "agent-branch", str(worktree_dir), "main",
+            "worktree",
+            "add",
+            "-b",
+            "agent-branch",
+            str(worktree_dir),
+            "main",
             cwd=tmp_path,
         )
         assert added.returncode == 0, added.stdout + added.stderr

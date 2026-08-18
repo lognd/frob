@@ -145,6 +145,51 @@ def rewrite_pyproject_version(root, version) -> Result[bool, ReleaseError]
 def changelog_skeleton_entry(root, version, note=None) -> bool
 ```
 
+## Changelog fragments (T-2445)
+
+<!-- frob:describes src/frob/release/_fragments.py::ChangelogFragment -->
+<!-- frob:describes src/frob/release/_fragments.py::write_changelog_fragment -->
+<!-- frob:describes src/frob/release/_fragments.py::read_changelog_fragments -->
+<!-- frob:describes src/frob/release/_fragments.py::assemble_changelog_from_fragments -->
+
+MEASURED: 6 of the last 7 land commits touched BOTH `CHANGELOG.md` and
+`pyproject.toml`'s version line -- every land writes the same shared
+paths, independent of how disjoint the tickets' own code scopes are.
+The frob.release._fragments module (T-2445) gives `frob ticket land` a
+collision-free alternative for the CHANGELOG.md half: instead of
+splicing prose into `CHANGELOG.md`'s single shared "unreleased" section,
+each land writes its own uniquely-named fragment file --
+`changelog.d/T-####.md`, keyed by ticket id, which by construction can
+never collide with any other ticket's fragment.
+
+```python
+def write_changelog_fragment(root, ticket_id, bump, note) -> Result[Path, ReleaseError]
+def read_changelog_fragments(root) -> Result[tuple[ChangelogFragment, ...], ReleaseError]
+def assemble_changelog_from_fragments(root, version) -> Result[int, ReleaseError]
+```
+
+`frob.app.ticket_runner._land_cmd._write_release_bump` calls both --
+`write_changelog_fragment` first (the durable, collision-free artifact),
+then `assemble_changelog_from_fragments` to regenerate `CHANGELOG.md`'s
+`version` section as a pure, deterministic function of the FULL current
+fragment set (every land runs this, under `land.lock`'s own
+serialization, so it never disagrees with itself across lands). Unlike
+`changelog_skeleton_entry` (insert-once, no-op forever after), this
+REPLACES the section body every call -- a second land at the same
+still-unreleased version correctly grows the bullet list.
+
+`changelog.d/*.md` fragments are land-owned, same posture as
+`CHANGELOG.md` itself (`frob.scaffold.project`'s worktree-lease
+pre-commit hook refuses a worktree hand-edit to either).
+
+**Disclosed scope cut.** `pyproject.toml`'s version line and
+`.frob-release.json`'s stamped manifest are UNCHANGED by T-2445 -- they
+still bump on every land. A fuller design that also defers THAT bump to
+an explicit cut needs `frob.gates.release_gate`'s REL001 check and
+`frob.app.ticket_runner._close_cmd`'s close-time bump preflight to both
+learn a new "deferred, not missing" posture; T-2445's own Done report
+names the follow-up ticket.
+
 ## frob release publish (T-2242)
 
 <!-- frob:describes src/frob/release/_publish.py::PublishPlan -->
