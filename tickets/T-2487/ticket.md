@@ -90,7 +90,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e5988278cd1cfc6d9aa42972b0bec4270f590f8d
 ---
 A fourth root-dirtying incident occurred during T-2481's own work (fresh
 evidence from the coordinator): another agent's Bash cwd silently reset
