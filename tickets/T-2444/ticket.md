@@ -24,7 +24,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1b23dcb9557789cc778768d16fc9cd91f12a775a
 ---
 tests/unit/test_app_runners_t1738_wave.py::TestWaveCommand::test_json_render_shape
 and ::test_plain_render_lists_groups_and_remainder both fail with
