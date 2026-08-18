@@ -2,7 +2,7 @@
 id: T-2454
 title: _KNOWN_GATE_RULES is a hand-maintained literal that serializes every gate-adding
   ticket
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,21 +11,109 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_rule_id_scan.py
+- src/frob/app/registry_runner.py
+- tests/gates/test_rule_id_scan_branches.py
+- tests/unit/test_app_runners_t0875_leaf_collision.py
+- src/frob/gates/_wire.py
+- tests/test_gates.py
+- docs/design/registry/EXHAUSTIVENESS-GATE.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_rule_id_scan.py
+  reason: GATERULE001/T-1956 close-time preflight both compare a scanned candidate
+    against ONLY the hand-maintained _KNOWN_GATE_RULES literal, forcing every new-gate-adding
+    ticket to edit src/frob/gates/_waive.py and collide on its scope lease; find_unregistered_rule_ids
+    now unions in the already-existing generated_gate_rule_ids scan so a standard
+    rule= construction is auto-recognized without a hand edit, and frob registry audit
+    --sync-gate-rules reports the full generated set for auditability
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/registry_runner.py
+  reason: GATERULE001/T-1956 close-time preflight both compare a scanned candidate
+    against ONLY the hand-maintained _KNOWN_GATE_RULES literal, forcing every new-gate-adding
+    ticket to edit src/frob/gates/_waive.py and collide on its scope lease; find_unregistered_rule_ids
+    now unions in the already-existing generated_gate_rule_ids scan so a standard
+    rule= construction is auto-recognized without a hand edit, and frob registry audit
+    --sync-gate-rules reports the full generated set for auditability
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/gates/test_rule_id_scan_branches.py
+  reason: GATERULE001/T-1956 close-time preflight both compare a scanned candidate
+    against ONLY the hand-maintained _KNOWN_GATE_RULES literal, forcing every new-gate-adding
+    ticket to edit src/frob/gates/_waive.py and collide on its scope lease; find_unregistered_rule_ids
+    now unions in the already-existing generated_gate_rule_ids scan so a standard
+    rule= construction is auto-recognized without a hand edit, and frob registry audit
+    --sync-gate-rules reports the full generated set for auditability
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_app_runners_t0875_leaf_collision.py
+  reason: GATERULE001/T-1956 close-time preflight both compare a scanned candidate
+    against ONLY the hand-maintained _KNOWN_GATE_RULES literal, forcing every new-gate-adding
+    ticket to edit src/frob/gates/_waive.py and collide on its scope lease; find_unregistered_rule_ids
+    now unions in the already-existing generated_gate_rule_ids scan so a standard
+    rule= construction is auto-recognized without a hand edit, and frob registry audit
+    --sync-gate-rules reports the full generated set for auditability
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_wire.py
+  reason: the actual diff-scoped WIRE001 case 2 (_wire001_rule_id_violations, T-1421/BUG002)
+    fires the moment a tickets OWN diff constructs a new rule= literal, checking known_gate_rule_ids()
+    directly -- the same hand-literal-only comparison the GATERULE001/T-1956 fix already
+    addressed, and very likely the actual mechanism serializing the 4 deadlocked tickets
+    since it fires diff-locally, same session
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: wire_gate/_wire001_rule_id_violations own test coverage lives here; adding
+    a positive-control test for the T-2454 union fix
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/registry/EXHAUSTIVENESS-GATE.md
+  reason: 'AFFECT001: registry_runner.run changed (T-2454 --sync-gate-rules audit
+    line); update the REG010 doc section to mention the new generated-audit-list log
+    line'
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
+- tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
+- tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+- tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
+- tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun::test_sync_gate_rules_logs_the_full_generated_rule_id_set
 designated_repro_test: null
 acceptance:
 - text: Given two tickets each adding a different new gate rule, when both are worked,
     then neither needs to edit a file the other holds, and both can land independently.
-  evidence: []
+  evidence:
+  - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
+  - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
+  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
 - text: Given a gate constructing a rule id declared nowhere, when the registry check
     runs, then it is still reported, proving the check was not removed along with
     the bottleneck.
-  evidence: []
+  evidence:
+  - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_new_standard_shape_rule_recognized_without_hand_registration
+  - tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds::test_disclosed_gap_shape_still_requires_hand_registration
+  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_standard_shape_new_rule_not_flagged_without_hand_registration
+  - tests/test_gates.py::TestWire001RuleIdViolationsUnion::test_shape_outside_scanned_bases_still_flagged
 - text: Given the derived registry, when a maintainer asks for the complete list of
     registered rule ids, then it is obtainable in one place as a generated artifact
     rather than a hand-kept literal.
-  evidence: []
+  evidence:
+  - tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun::test_sync_gate_rules_logs_the_full_generated_rule_id_set
 threat: null
 component: gates
 anchor: false

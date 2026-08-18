@@ -74,6 +74,34 @@ class TestRegistryRunnerRun:
         registry_run(cfg)
         assert "does not exist" in caplog.text
 
+    # frob:ticket T-2454
+    def test_sync_gate_rules_logs_the_full_generated_rule_id_set(
+        self, tmp_path, caplog
+    ):
+        # frob:tests \
+        # tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.te\
+        # st_sync_gate_rules_logs_the_full_generated_rule_id_set
+        """T-2454 acceptance[2]: `--sync-gate-rules` logs the FULL live
+        registered rule-id set (hand literal unioned with a fresh
+        `generated_gate_rule_ids` scan) as the one-place, generated
+        answer to "what is the complete list of registered rule ids" --
+        obtainable without reading `_KNOWN_GATE_RULES`'s source text by
+        hand."""
+        import logging
+
+        registry_dir = tmp_path / "docs" / "design" / "registry"
+        registry_dir.mkdir(parents=True)
+        (registry_dir / "check-coverage.yaml").write_text("entries: []\n")
+        cfg = AppConfig(registry_path=registry_dir, registry_sync_gate_rules=True)
+        with caplog.at_level(logging.INFO):
+            registry_run(cfg)
+        [line] = [
+            r.message
+            for r in caplog.records
+            if "live registered rule id(s)" in r.message
+        ]
+        assert "COV001" in line
+
 
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestFmtRunnerRun.test_check_mode_reports_all_canonical_on_empty_tree  # noqa: E501
 # frob:ticket T-0875

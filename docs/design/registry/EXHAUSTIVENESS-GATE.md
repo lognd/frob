@@ -123,6 +123,19 @@ check-fix-engine.md`), and `sync_gate_rule_fixability` (same module)
 backfills that field onto any EXISTING entry that predates T-1264 and
 does not carry one yet, idempotently.
 
+T-2454: `frob registry audit --sync-gate-rules` now ALSO logs the full
+live registered rule-id set -- `known_gate_rule_ids()` (the
+hand-maintained `_KNOWN_GATE_RULES` literal) unioned with a fresh
+`generated_gate_rule_ids` scan, the SAME union `find_unregistered_
+rule_ids` now applies wherever a rule id's registration is checked
+(GATERULE001, the T-0756 close/land preflight, and WIRE001 case 2).
+This is the one-place, GENERATED answer to "what is the complete list
+of registered rule ids" -- T-2454's own acceptance criterion that
+auditability survive the union without requiring a maintainer to read
+`_KNOWN_GATE_RULES`'s literal source text by hand. A LOG line, not a
+registry-file write: `check-coverage.yaml`'s own sync behavior above
+is unchanged.
+
 <!-- frob:describes src/frob/registry/_staleness.py::missing_gate_rule_ids -->
 <!-- frob:describes src/frob/registry/_staleness.py::sync_gate_rule_entries -->
 <!-- frob:describes src/frob/registry/_staleness.py::sync_gate_rule_fixability -->

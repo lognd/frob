@@ -381,9 +381,33 @@ def find_unregistered_rule_ids(
     `known_gate_rule_ids()`) nor `retired` (`RETIRED_RULE_IDS` by
     default) -- the completeness check `_KNOWN_GATE_RULES` must return
     empty against, repo-wide, not just across `SCANNED_BASES`.
-    """
+
+    T-2454: `known` is unioned with a FRESH `generated_gate_rule_ids
+    (repo_root, retired)` scan before comparison -- the same live scan
+    `_KNOWN_GATE_RULES` itself is generated-and-verified against (T-1010's
+    own design-choice doc). Both this function's two production callers
+    (`gate_rule_registry_violations`/GATERULE001, and
+    `frob.tickets._new_gate_rule_acceptance.unregistered_rule_ids_in_
+    scope`'s T-0756/T-1956 close/land preflight) were, before this,
+    comparing a scanned candidate against ONLY the hand-maintained
+    literal -- meaning a ticket that adds a brand-new gate module using
+    the ordinary `rule="..."`/`rule=CONST_NAME` construction shape
+    (`scan_emitted_rule_ids`'s own recognized shape, T-0964) could not
+    land or close without ALSO editing `_KNOWN_GATE_RULES` in `frob.
+    gates._waive` first -- a single hand-maintained literal every such
+    ticket then had to take a write lease on, serializing an entire class
+    of otherwise scope-disjoint work by construction (T-2454's own
+    measured incident: four tickets deadlocked behind one registration
+    ticket in one session). This union closes that: a rule id the NARROW
+    scan already recognizes needs no hand edit at all. The DISCLOSED
+    residual gap this deliberately does NOT close -- ids constructed via
+    a bare positional argument, a dict-literal value, or defined outside
+    `SCANNED_BASES` entirely (this module's own module docstring) --
+    still require the hand-maintained literal exactly as before, so a
+    truly undeclared id is still reported (must-still-refuse)."""
     if retired is None:
         retired = RETIRED_RULE_IDS
+    known = known | generated_gate_rule_ids(repo_root, retired)
     candidates = scan_candidate_rule_id_literals(repo_root)
     return {
         rule_id: loc

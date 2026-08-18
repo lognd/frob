@@ -3999,6 +3999,68 @@ class TestWireGate:
         assert violations == []
 
 
+class TestWire001RuleIdViolationsUnion:
+    """T-2454: `_wire001_rule_id_violations` (WIRE001 case 2, T-1421's
+    BUG002 shape) is the diff-scoped check that actually serialized this
+    ticket's measured incident -- it fires the instant a ticket's OWN
+    diff constructs a new `rule="..."` literal, well before land/close
+    time, and used to compare only against the hand-maintained
+    `_KNOWN_GATE_RULES` literal. It now also recognizes a standard-shape
+    construction via a fresh `generated_gate_rule_ids` scan, so a ticket
+    adding a brand-new gate rule in its own module never needs to also
+    take a write lease on `src/frob/gates/_waive.py` in the same diff."""
+
+    # frob:ticket T-2454
+    def test_standard_shape_new_rule_not_flagged_without_hand_registration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/gates/_new_synthetic_gate.py",
+            "def new_synthetic_violation():\n"
+            "    return Violation(" + "rule" + '="ZZZTEST034", severity=Severity.ERROR)\n',
+        )
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/gates/_new_synthetic_gate.py", span=(1, 2)),),
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        rule_id_hits = [v for v in violations if "ZZZTEST034" in v.message]
+        assert rule_id_hits == []
+
+    # frob:ticket T-2454
+    def test_shape_outside_scanned_bases_still_flagged(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_wire.py::wire_gate kind="unit"
+        """The must-still-refuse control: `rule="..."` constructed
+        OUTSIDE `SCANNED_BASES` (`src/frob/gates`, `src/frob/strata`) is
+        the disclosed residual `generated_gate_rule_ids` does not cover
+        (T-1010's own module docstring) -- still caught here exactly as
+        before, proving this ticket did not widen what counts as safely
+        auto-known beyond what was already proven."""
+        from frob.gates._wire import wire_gate
+
+        _write(
+            tmp_path,
+            "src/frob/perf/_new_synthetic_check.py",
+            "def new_synthetic_violation():\n"
+            "    return Violation(" + "rule" + '="ZZZTEST035", severity=Severity.ERROR)\n',
+        )
+        diff = Diff(
+            base="x",
+            hunks=(Hunk(file="src/frob/perf/_new_synthetic_check.py", span=(1, 2)),),
+        )
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        rule_id_hits = [v for v in violations if "ZZZTEST035" in v.message]
+        assert len(rule_id_hits) == 1
+
+
 # frob:ticket T-0813
 class TestProtocolSummaryGate:
     """T-0813: the production `mark_unresolved=True` wiring into
@@ -16465,7 +16527,7 @@ class TestKnownGateRuleIds:
         assert isinstance(known_gate_rule_ids(), frozenset)
 
     # frob:ticket T-2441
-    # frob:tests tests/test_gates.py::TestKnownGateRuleIds::test_bare_port001_registered  # noqa: E501
+    # frob:tests tests/test_gates.py::TestKnownGateRuleIds.test_bare_port001_registered  # noqa: E501
     def test_bare_port001_registered(self) -> None:
         """T-2441 (BUG002 repro): bare "PORT001" -- the T-2391 fail-loudly
         UNRESOLVED rule id `_port_selfcheck.py` constructs at

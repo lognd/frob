@@ -16,6 +16,7 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.gates import known_gate_rule_ids
 from frob.gates._registry_exhaustiveness import REGISTRY_FILES
+from frob.gates._rule_id_scan import generated_gate_rule_ids
 from frob.logging import get_logger
 from frob.registry import (
     CorpusError,
@@ -83,13 +84,33 @@ def _run_add(cfg: AppConfig, registry_dir: Path) -> None:
 
 
 # frob:ticket T-0560
-def _run_sync_gate_rules(registry_dir: Path) -> None:
+# frob:ticket T-2454
+def _run_sync_gate_rules(registry_dir: Path, root: Path) -> None:
     """`frob registry audit --sync-gate-rules`: append a `CHK-GATE-<rule>`
     entry (self-referentially `handled_by:<rule>`) for every LIVE gate
     rule `check-coverage.yaml` is missing one for -- the auto-file half
-    of T-0560's REG010 staleness gate."""
+    of T-0560's REG010 staleness gate.
+
+    T-2454: also logs the FULL live registered rule-id set -- the hand-
+    maintained `_KNOWN_GATE_RULES` literal UNIONED with a fresh
+    `generated_gate_rule_ids` scan (the same union `find_unregistered_
+    rule_ids` now applies at the two gate-blocking call sites,
+    GATERULE001 and the T-0756 close/land preflight) -- as the one-
+    place, GENERATED answer to "what is the complete list of
+    registered rule ids" (T-2454's own acceptance criterion 2). A LOG
+    line, not a registry-file write: the literal stays hand-maintained
+    (T-1010's own design choice, preserved), this is only the audit
+    surface that no longer requires reading the literal's source text
+    by hand to answer completely."""
     target = registry_dir / "check-coverage.yaml"
     known = known_gate_rule_ids()
+    full = sorted(known | generated_gate_rule_ids(root))
+    _log.info(
+        "registry audit --sync-gate-rules: %d live registered rule id(s) "
+        "(hand-literal + generated scan, T-2454): %s",
+        len(full),
+        ", ".join(full),
+    )
     result = sync_gate_rule_entries(target, known)
     if result.is_err:
         _log.error(
@@ -118,6 +139,7 @@ def _run_sync_gate_rules(registry_dir: Path) -> None:
 # frob:doc docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429
 # frob:doc docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560
 # frob:tests tests/unit/test_app_runners_t0875_leaf_collision.py::TestRegistryRunnerRun.test_missing_registry_dir_logs_and_returns kind="unit"  # noqa: E501
+# frob:waive AFFECT001 reason="T-2454 only adds a LOG line to --sync-gate-rules (the full live registered rule-id set, for auditability) -- docs/modules/app.md#runners one-line runner index and docs/guides/exhaustive-research.md#corpus-emit-mechanism-t-0429 (the --add corpus-emit path, untouched by this change) need no content update; docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560 IS updated in this same diff with the real content change"  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """`frob registry audit`: per-registry-file disposition counts under
     `cfg.registry_path` (defaults to `docs/design/registry` under cwd).
@@ -136,7 +158,7 @@ def run(cfg: AppConfig) -> None:
         return
 
     if cfg.registry_sync_gate_rules:
-        _run_sync_gate_rules(registry_dir)
+        _run_sync_gate_rules(registry_dir, root)
         return
 
     if not registry_dir.is_dir():

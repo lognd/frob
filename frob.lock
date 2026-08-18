@@ -773,6 +773,42 @@
       "old_digest": "9737be041690e769b1c4f72ca6d55ae92a52547133ac7c18d369ce579ff75c03",
       "reason": "T-2453 (root-recovery re-ack of T-2407's earlier work, lost when frob.lock was reverted during a shared-root cleanup): re-verified against docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138 -- that section describes the Tier-A handler CLASSES (DOC007/DOC002/TICK002/FMT001/REG010/REL002/WAIVE004/SUPPRESS001/SYS111) and their invariants, none of which changed; T-2400's additive merge_target_ids: MergeTargetKnownIds | None = None parameter (threaded uniformly to every handler, documented in the function's own T-2400 docstring block) is an internal renumber-collision-avoidance detail the doc's higher level of abstraction never claimed anything about -- still accurate as written",
       "ref": "src/frob/gates/_fix_engine.py::apply_tier_a_fixes"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "6f0f4786b2055919d7737b40dd28ee540375b5f188e46b78031a3dc4addb0925",
+      "old_digest": "d0bfccc952a4a900d602237f1484a453cded2c295dc08a3c62a675e7bf721b95",
+      "reason": "T-2454: verified wire_gate's own doc anchors (docs/modules/gates.md#rule-catalog, #wire001wire002-t-1428) still accurately describe WIRE001 case 2's behavior after unioning known_gate_rule_ids() with a fresh generated_gate_rule_ids scan -- the catalog describes WHAT the rule enforces (unregistered rule id constructions), not the internal known-set computation, so no content change is needed",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
+      "old_digest": "523a95fc23e85d4d1abc68457e0870b4f5c5d39641cf1aae67538de71ee8003a",
+      "reason": "T-2454: verified wire_gate's own doc anchors (docs/modules/gates.md#rule-catalog, #wire001wire002-t-1428) still accurately describe WIRE001 case 2's behavior after unioning known_gate_rule_ids() with a fresh generated_gate_rule_ids scan -- the catalog describes WHAT the rule enforces (unregistered rule id constructions), not the internal known-set computation, so no content change is needed",
+      "ref": "src/frob/gates/_wire.py::wire_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "deefcc2ed5a1e2d4d86f46a36176b9905210048d87a0b6f757d025732947cdd9",
+      "old_digest": null,
+      "reason": "T-2454: verified run's own affects()-closure docs (docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560, docs/modules/app.md, docs/guides/exhaustive-research.md) still accurately describe --sync-gate-rules' behavior -- the added T-2454 log line reports the full live registered set for auditability, it does not change what the command writes or when",
+      "ref": "src/frob/app/registry_runner.py::run"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+      "old_digest": null,
+      "reason": "T-2454: verified run's own affects()-closure docs (docs/design/registry/EXHAUSTIVENESS-GATE.md#reg010-gate-rule-staleness-t-0560, docs/modules/app.md, docs/guides/exhaustive-research.md) still accurately describe --sync-gate-rules' behavior -- the added T-2454 log line reports the full live registered set for auditability, it does not change what the command writes or when",
+      "ref": "src/frob/app/registry_runner.py::run"
     }
   ],
   "entries": [
@@ -795,6 +831,16 @@
       "digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
       "facet": "sig",
       "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "digest": "deefcc2ed5a1e2d4d86f46a36176b9905210048d87a0b6f757d025732947cdd9",
+      "facet": "body",
+      "ref": "src/frob/app/registry_runner.py::run"
+    },
+    {
+      "digest": "055e2788a85569eb96a53b8c1c23c5ef035e0b6252d2bc399cc76df35277533e",
+      "facet": "sig",
+      "ref": "src/frob/app/registry_runner.py::run"
     },
     {
       "digest": "d8a3c5c4826e6a25c933a99e591e993f4baec194ced85dd46bf1fbb14bf070af",
@@ -1187,7 +1233,7 @@
       "ref": "src/frob/gates/_protocol_summary.py::protocol_summary_gate"
     },
     {
-      "digest": "d0bfccc952a4a900d602237f1484a453cded2c295dc08a3c62a675e7bf721b95",
+      "digest": "6f0f4786b2055919d7737b40dd28ee540375b5f188e46b78031a3dc4addb0925",
       "facet": "body",
       "ref": "src/frob/gates/_wire.py::wire_gate"
     },

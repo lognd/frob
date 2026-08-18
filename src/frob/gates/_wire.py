@@ -539,13 +539,29 @@ def _wire001_unwired_symbol_violations(
 
 
 def _wire001_rule_id_violations(
+    root: Path,
     added_lines: dict[str, list[tuple[int, str]]],
 ) -> list[Violation]:
     """WIRE001 case 2: a new `rule=<literal>` construction (a gate/check
     emitting a fresh rule id) whose id is absent from `_KNOWN_GATE_RULES`
     -- the gate fires findings under an id `frob:waive`/`WAIVE002`/tooling
-    has never heard of, T-1421's BUG002 shape."""
-    known = known_gate_rule_ids()
+    has never heard of, T-1421's BUG002 shape.
+
+    T-2454: `known` is unioned with a fresh `generated_gate_rule_ids`
+    scan of `root`, the SAME union `find_unregistered_rule_ids` now
+    applies (GATERULE001, the T-0756 close/land preflight). This is the
+    call site that actually serialized T-2454's measured incident: a
+    DIFF-SCOPED check firing the instant a ticket's OWN diff constructs
+    a new `rule="..."` literal, well before land/close time, forcing the
+    ticket to also take a write lease on `_KNOWN_GATE_RULES` (`src/frob/
+    gates/_waive.py`) in the SAME diff just to pass this gate -- exactly
+    the scope-lease collision this ticket exists to remove. A rule id
+    the narrow scan does not recognize (the disclosed bare-positional/
+    dict-literal/outside-SCANNED_BASES residual) still requires the
+    hand-maintained literal exactly as before."""
+    from frob.gates._rule_id_scan import generated_gate_rule_ids
+
+    known = known_gate_rule_ids() | generated_gate_rule_ids(root)
     violations: list[Violation] = []
     for file, lines in added_lines.items():
         if not file.endswith(".py"):
@@ -1202,6 +1218,7 @@ def _wire003_stale_verb_references(root: Path) -> list[Violation]:
 # frob:enforces CHK-GATE-WIRE001
 # frob:enforces CHK-GATE-WIRE002
 # frob:enforces CHK-GATE-WIRE003
+# frob:waive AFFECT001 reason="T-2454 only unions known_gate_rule_ids() with a fresh generated_gate_rule_ids scan inside _wire001_rule_id_violations -- the documented WIRE001 case 2 behavior (docs/modules/gates.md#rule-catalog, #wire001wire002-t-1428) is unchanged from a caller perspective, so no doc content update is needed; docs/modules/gates.md is under a concurrent T-2466 lease this ticket cannot take, so even a no-op touch is blocked -- filed as a disclosed gap, same T-1371/T-1372 precedent this file already carries elsewhere"  # noqa: E501
 def wire_gate(
     root: Path, snapshot: GraphSnapshot, diff: Diff, queue: TicketQueue
 ) -> tuple[Violation, ...]:
@@ -1219,7 +1236,7 @@ def wire_gate(
     added_lines = _added_lines(root, hunks_by_file)
     violations = [
         *_wire001_unwired_symbol_violations(root, snapshot, hunks_by_file, diff),
-        *_wire001_rule_id_violations(added_lines),
+        *_wire001_rule_id_violations(root, added_lines),
         *_wire001_cli_dest_violations(root, added_lines),
         *_wire001_new_kwonly_param_violations(root, diff, snapshot, hunks_by_file),
         *_wire002_violations(snapshot, queue),

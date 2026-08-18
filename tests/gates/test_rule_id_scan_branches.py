@@ -288,6 +288,53 @@ class TestFindUnregisteredRuleIds:
             f"RETIRED_RULE_IDS: {missing}"
         )
 
+    def test_new_standard_shape_rule_recognized_without_hand_registration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_n\
+        # ew_standard_shape_rule_recognized_without_hand_registration
+        # T-2454's own acceptance[0]/[1]: a ticket adding a brand-new gate
+        # module using the ORDINARY `rule="..."` construction shape needs
+        # NO hand edit to `_KNOWN_GATE_RULES` at all -- `known=frozenset()`
+        # here simulates that the literal was never touched, and the
+        # union with a fresh `generated_gate_rule_ids` scan still resolves
+        # it as known.
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_new_synthetic_gate.py").write_text(
+            "def new_synthetic_violation():\n"
+            "    return Violation(" + "rule" + '="ZZZTEST031", severity=Severity.ERROR)\n'
+        )
+
+        missing = find_unregistered_rule_ids(tmp_path, known=frozenset())
+
+        assert "ZZZTEST031" not in missing
+
+    def test_disclosed_gap_shape_still_requires_hand_registration(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/gates/test_rule_id_scan_branches.py::TestFindUnregisteredRuleIds.test_d\
+        # isclosed_gap_shape_still_requires_hand_registration
+        # T-2454's own must-still-refuse control: a rule id constructed
+        # via a BARE POSITIONAL argument (the disclosed residual gap
+        # `generated_gate_rule_ids` deliberately does not cover, T-1937's
+        # own module docstring) is NOT auto-recognized by the T-2454
+        # union -- it still requires the hand-maintained literal, proving
+        # this ticket did not silently widen what counts as "safely
+        # auto-known" beyond what was already proven.
+        gates_dir = tmp_path / "src" / "frob" / "gates"
+        gates_dir.mkdir(parents=True)
+        (gates_dir / "_new_synthetic_gate.py").write_text(
+            "def new_synthetic_violation():\n"
+            '    return _selfaudit_violation("ZZZTEST032", node, detail)\n'
+        )
+
+        missing = find_unregistered_rule_ids(tmp_path, known=frozenset())
+
+        assert missing.get("ZZZTEST032") == "src/frob/gates/_new_synthetic_gate.py:2"
+
 
 class TestGateRuleRegistryGate:
     """GATERULE001 (T-2448): `find_unregistered_rule_ids` run repo-wide
