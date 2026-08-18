@@ -583,14 +583,20 @@ The seven capabilities, and what each one actually checks:
   language.
 - **`publicness`** -- every `RawSymbol` this adapter emits carries a
   real, language-correct `public: bool` (T-0841's per-grammar rule), not
-  a placeholder. `IMPLEMENTED` for every language EXCEPT `.strata`:
-  `_walk_strata.py` hardcodes `public=True` unconditionally for every
-  symbol regardless of the construct's real clearance/visibility (the
-  surface syntax has one -- `design/litmus/chirp.strata` declares
-  `clearance Public` on some nodes -- the walker just does not read it),
-  which this ticket's own behavioral suite caught live rather than
-  trusting the "every walker sets it" claim at face value; tracked
-  `KNOWN_GAP`, T-2410.
+  a placeholder. `IMPLEMENTED` for every registered language, `.strata`
+  included as of T-2410: `_walk_strata.py` derives `public` from each
+  construct's own `clearance` clause (`node`/`store`/`queue` are the
+  only constructs whose grammar carries one --
+  `strata-core/src/parse/grammar_node.rs`/`grammar_infra.rs`'s
+  `parse_store`/`parse_queue`) -- `public = (clearance == "Public")`.
+  Every other construct kind (`module`/`flow`/`boundary`/`cache`/`cdn`/
+  `balancer`/`resource`/`assert`/`assume`/`refine`/`policy`/`operation`/
+  `scenario`) has no surface-syntax visibility concept at all, so those
+  stay `public=True` -- an honest "no such concept here", not the old
+  blanket placeholder. `design/litmus/chirp.strata` (this repo's own
+  behavioral fixture source) exercises both truth values directly:
+  `node author` declares `clearance Public` (`public=True`), `node api`
+  and friends declare `clearance Internal` (`public=False`).
 - **`doc_extract`** -- this adapter extracts `RawComment`s at all,
   either `frob.lang._extract.COMMENT_TYPES` (the five tree-sitter
   grammars plus kotlin) or `.strata`'s own whole-line `//` comment scan

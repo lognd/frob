@@ -70,10 +70,23 @@ class TestParseStrata:
         claim_sym = _symbol(pf, "chirp.c_hot_shard_utilization")
         assert claim_sym.kind == SymbolKind.CONST
 
-    def test_all_symbols_are_public(self) -> None:
-        # frob:tests src/frob/lang/__init__.py::parse_file kind="unit"
+    # frob:ticket T-2410
+    def test_publicness_is_derived_from_clearance_not_a_blanket_true(self) -> None:
+        """T-2410: `chirp.strata` declares `node author { clearance
+        Public; }` (public=True) alongside several `clearance Internal`
+        nodes (public=False) -- a real mixed shape, not the pre-T-2410
+        `public=True` placeholder every symbol used to get regardless of
+        its own clearance clause."""
+        # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"
         pf = parse_file(_LITMUS).danger_ok
-        assert all(s.public for s in pf.symbols)
+        author_sym = _symbol(pf, "chirp.author")
+        assert author_sym.public is True
+        api_sym = _symbol(pf, "chirp.api")
+        assert api_sym.public is False
+        publics = {s.public for s in pf.symbols}
+        assert publics == {True, False}, (
+            f"expected both public and non-public symbols, got {publics}"
+        )
 
     def test_multiline_construct_span_covers_its_block(self) -> None:
         # frob:tests src/frob/lang/_walk_strata.py::walk_strata kind="unit"

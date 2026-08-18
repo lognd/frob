@@ -408,12 +408,10 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # T-2365: `_capability_test_discovery_status`'s known-gap detail for
     # kotlin -- `frob.testing` has no `collect_kotlin_tests` entrypoint yet.
     "T-2409": True,
-    # T-2365: `_capability_publicness_status`'s known-gap detail for
-    # strata -- `_walk_strata.py` hardcodes `public=True` unconditionally,
-    # a placeholder, not language-correct publicness (T-0841's rule).
-    # Caught BY this ticket's own behavioral suite, not a pre-existing
-    # entry.
-    "T-2410": True,
+    # T-2410 (`_capability_publicness_status`'s prior strata KNOWN_GAP)
+    # removed -- the gap is closed, `_walk_strata.py` now derives a real
+    # clearance-based `public` value; no live tracking ticket references
+    # it here any more.
 }
 
 
@@ -681,19 +679,12 @@ def _capability_symbol_walk_status(language: str) -> CapabilityStatus:
 
 def _capability_publicness_status(language: str) -> CapabilityStatus:
     """`RawSymbol.public` is a required field for every walker -- see
-    `_PUBLICNESS_NOTE`. `.strata` is a real, ticketed EXCEPTION discovered
-    by this ticket's own behavioral suite: `_walk_strata.py` hardcodes
-    `public=True` unconditionally rather than deriving it from the
-    surface syntax's own clearance/visibility concept -- a placeholder
-    satisfying the required-field shape, not T-0841's language-correct
-    rule every other adapter implements."""
-    if language == "strata":
-        return _cap_known_gap(
-            CapabilityRequirement.REQUIRED,
-            "_walk_strata.py hardcodes public=True unconditionally for "
-            "every symbol -- not a real, language-correct publicness "
-            "rule; tracked by T-2410",
-        )
+    `_PUBLICNESS_NOTE`. T-2410 closed `.strata`'s prior placeholder:
+    `_walk_strata.py` now derives `public` from each construct's own
+    `clearance` clause (`node`/`store`/`queue`, the only construct kinds
+    whose grammar carries one) instead of hardcoding `True` -- a real,
+    language-correct rule per T-0841, not merely a required-field-shaped
+    placeholder."""
     return _cap_implemented(CapabilityRequirement.REQUIRED, _PUBLICNESS_NOTE)
 
 

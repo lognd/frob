@@ -210,9 +210,39 @@ def _declared_items(parsed_ok: dict) -> list[tuple[str, str]]:
     return items
 
 
+# frob:ticket T-2410
+def _declared_clearances(parsed_ok: dict) -> dict[tuple[str, str], str | None]:
+    """`(keyword, exact_id_text)` -> the construct's own `clearance` field
+    (`"Public"`/`"Internal"`/`"Secret"`), or `None` when the construct's
+    grammar has no `clearance` clause at all (T-2410: only `node`/`store`/
+    `queue` carry one -- `strata-core/src/parse/grammar_node.rs` and
+    `grammar_infra.rs`'s `parse_store`/`parse_queue` are the sole
+    producers of a `"clearance"` key; `module`/`flow`/`boundary`/`cache`/
+    `cdn`/`balancer`/`resource`/`assert`/`assume`/`refine`/`policy`/
+    `operation`/`scenario` entries never have one). Threaded alongside
+    `_declared_items`'s own `(keyword, id)` list rather than folded into
+    it, so that function's existing return shape (and every other caller
+    of it) is untouched by this ticket."""
+    clearances: dict[tuple[str, str], str | None] = {}
+    if parsed_ok.get("name"):
+        clearances[("module", parsed_ok["name"])] = None
+    for field, keyword in _FIELD_TO_KEYWORD:
+        for entry in parsed_ok.get(field, ()):
+            clearances[(keyword, entry["id"])] = entry.get("clearance")
+    for entry in parsed_ok.get("refines", ()):
+        clearances[("refine", entry["target"])] = None
+    for entry in parsed_ok.get("claims", ()):
+        keyword = "assume" if entry.get("assumed") else "assert"
+        clearances[(keyword, entry["id"])] = None
+    return clearances
+
+
 # frob:ticket T-2187
+# frob:ticket T-2410
 def _locate_declared_items(
-    lines: list[str], declared: list[tuple[str, str]]
+    lines: list[str],
+    declared: list[tuple[str, str]],
+    clearances: dict[tuple[str, str], str | None] | None = None,
 ) -> tuple[tuple[RawSymbol, ...], list[tuple[str, str]]]:
     """Match every entry of `declared` (grammar-authoritative) to its own
     header line in `lines`, building the real `RawSymbol` span/tokens for
@@ -227,8 +257,19 @@ def _locate_declared_items(
     `strata-core` rejects duplicate top-level ids at parse time (a source
     file that reaches here already has unique `(keyword, id)` pairs
     within each construct family), so first-available-match is
-    unambiguous, not merely convenient."""
+    unambiguous, not merely convenient.
+
+    T-2410: `RawSymbol.public` is now derived from `clearances` (`None`
+    when the caller omits it, matching every pre-T-2410 caller/test that
+    constructs a symbol set with no clearance concept in mind) --
+    `clearance == "Public"` for a construct whose grammar carries a real
+    `clearance` clause (`node`/`store`/`queue`), `True` for every other
+    construct kind (module/flow/boundary/cache/cdn/balancer/resource/
+    assert/assume/refine/policy/operation/scenario have no surface-syntax
+    visibility concept at all -- see `_declared_clearances`'s own
+    docstring), never a blanket placeholder."""
     remaining = list(declared)
+    clearance_lookup = clearances or {}
     out: list[RawSymbol] = []
     module_name: str | None = None
     idx = 0
@@ -240,49 +281,80 @@ def _locate_declared_items(
             continue
         keyword = kw_match.group(1)
         rest = line[kw_match.end() :].lstrip()
-        located_at = next(
-            (
-                i
-                for i, (d_keyword, d_id) in enumerate(remaining)
-                if d_keyword == keyword and _rest_starts_with_id(rest, d_id)
-            ),
-            None,
-        )
+        located_at = _find_located_index(remaining, keyword, rest)
         if located_at is None:
             # A keyword-shaped line that does not correspond to any
-            # remaining declared item. Never fabricated into a symbol --
-            # either it is legitimately nested inside an already-located
-            # `refine` block's span (skipped below via `end_idx` advance,
-            # since a refine's own span already consumed those lines) or
-            # it is a genuine mismatch the caller's `unmatched` return
-            # would not itself catch (only OMISSIONS are tracked, never
-            # extras) -- left for a future ticket if this repo's corpus
-            # ever exercises `refine` nesting; see `_declared_items`.
+            # remaining declared item -- see `_find_located_index`'s own
+            # docstring for why this is never fabricated into a symbol.
             idx += 1
             continue
         _keyword, ident = remaining.pop(located_at)
         end_idx = _find_block_end(lines, idx)
-        span = (idx + 1, end_idx + 1)
-        qualname = (
-            f"{module_name}.{ident}" if module_name and keyword != "module" else ident
-        )
         if keyword == "module":
             module_name = ident
-        header_code = _code_only(line).split("{", 1)[0]
-        body_code = " ".join(_code_only(text) for text in lines[idx : end_idx + 1])
         out.append(
-            RawSymbol(
-                qualname=qualname,
-                kind=_KEYWORD_KIND[keyword],
-                public=True,
-                span=span,
-                sig_tokens=tuple(header_code.split()),
-                body_tokens=tuple(body_code.split()),
-                doc_text=_leading_doc_comment(lines, idx),
+            _build_symbol(
+                lines, idx, end_idx, keyword, ident, module_name, clearance_lookup
             )
         )
         idx = end_idx + 1
     return tuple(out), remaining
+
+
+def _find_located_index(
+    remaining: list[tuple[str, str]], keyword: str, rest: str
+) -> int | None:
+    """First index in `remaining` whose `(keyword, id)` this source
+    `line` (already split into `keyword`/`rest`) matches -- `None` if
+    the keyword-shaped line does not correspond to any remaining
+    declared item, either because it is legitimately nested inside an
+    already-located `refine` block's span (its own span already
+    consumed those lines) or a genuine mismatch `_locate_declared_
+    items`'s `unmatched` return does not itself catch (only omissions
+    are tracked, never extras) -- left for a future ticket if this
+    repo's corpus ever exercises `refine` nesting; see `_declared_
+    items`."""
+    return next(
+        (
+            i
+            for i, (d_keyword, d_id) in enumerate(remaining)
+            if d_keyword == keyword and _rest_starts_with_id(rest, d_id)
+        ),
+        None,
+    )
+
+
+# frob:ticket T-2410
+def _build_symbol(
+    lines: list[str],
+    idx: int,
+    end_idx: int,
+    keyword: str,
+    ident: str,
+    module_name: str | None,
+    clearance_lookup: dict[tuple[str, str], str | None],
+) -> RawSymbol:
+    """Build one located construct's `RawSymbol` -- span/tokens plus
+    T-2410's clearance-derived `public` (see `_locate_declared_items`'s
+    own docstring for the derivation rule)."""
+    line = lines[idx]
+    span = (idx + 1, end_idx + 1)
+    qualname = (
+        f"{module_name}.{ident}" if module_name and keyword != "module" else ident
+    )
+    header_code = _code_only(line).split("{", 1)[0]
+    body_code = " ".join(_code_only(text) for text in lines[idx : end_idx + 1])
+    clearance = clearance_lookup.get((keyword, ident))
+    public = True if clearance is None else clearance == "Public"
+    return RawSymbol(
+        qualname=qualname,
+        kind=_KEYWORD_KIND[keyword],
+        public=public,
+        span=span,
+        sig_tokens=tuple(header_code.split()),
+        body_tokens=tuple(body_code.split()),
+        doc_text=_leading_doc_comment(lines, idx),
+    )
 
 
 def _rest_starts_with_id(rest: str, id_text: str) -> bool:
@@ -380,7 +452,8 @@ def walk_strata(
 
     lines = source.splitlines()
     declared = _declared_items(parsed["ok"])
-    symbols, unmatched = _locate_declared_items(lines, declared)
+    clearances = _declared_clearances(parsed["ok"])
+    symbols, unmatched = _locate_declared_items(lines, declared, clearances)
     if unmatched:
         message = (
             f"strata-core declared {len(unmatched)} construct(s) this walker's "
