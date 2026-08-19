@@ -917,6 +917,24 @@
       "old_digest": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
       "reason": "T-2575: parse_file gained an expect_heterogeneous keyword-only param declaring the caller expects heterogeneous, non-source extensions; docs/modules/graph.md#public-api's description of the Result contract is still accurate, re-verified against the new signature",
       "ref": "src/frob/lang/__init__.py::parse_file"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "body",
+      "new_digest": "62d877f3f3ade6ac2302b34dd9107589ec28adb0cbc27fc55d9ca5abf6829863",
+      "old_digest": "f8dc3d8b3b8f93c1a383789fb57761176956f5f0de01c9d500c6f6c35c110f9f",
+      "reason": "T-2595: re-verified after replacing the unconditional baseline write with a locked CAS write -- the function's documented contract (one check per sweep, file a ticket for new findings, record the fresh set as the next baseline) is unchanged",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "sig",
+      "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "reason": "T-2595: re-verified after replacing the unconditional baseline write with a locked CAS write -- the function's documented contract (one check per sweep, file a ticket for new findings, record the fresh set as the next baseline) is unchanged",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     }
   ],
   "entries": [
@@ -1031,7 +1049,7 @@
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
     },
     {
-      "digest": "f8dc3d8b3b8f93c1a383789fb57761176956f5f0de01c9d500c6f6c35c110f9f",
+      "digest": "62d877f3f3ade6ac2302b34dd9107589ec28adb0cbc27fc55d9ca5abf6829863",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     },

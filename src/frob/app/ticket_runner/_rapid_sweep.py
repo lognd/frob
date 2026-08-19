@@ -63,6 +63,7 @@ identity count alone be misread as a completeness claim."""
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import re
@@ -70,14 +71,25 @@ import shutil
 import subprocess
 import sys
 import time
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING
 
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+
+# T-2595: same posix-only degradation as `frob.tickets._land`'s own
+# `_land_lock` -- degrades to a documented no-op (see `_baseline_lock`'s
+# docstring) on a platform without `fcntl`, rather than failing import.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
 
 if TYPE_CHECKING:
     # frob:ticket T-2312
@@ -97,6 +109,22 @@ _log = get_logger(__name__)
 #: plus the filed tickets, both tracked. Losing this file costs one
 #: skipped comparison, never a lost obligation.
 _BASELINE_REL = Path(".frob") / "rapid-sweep-baseline.json"
+
+#: T-2595: advisory lock guarding ONLY the tiny read-decide-write of
+#: `_BASELINE_REL` below, never the multi-minute `frob check` a sweep runs
+#: to produce `fresh` -- matching `_land.py`'s `land.lock` posture (same
+#: `.frob/` directory, same flock mechanism) but scoped far more tightly,
+#: since serializing sweeps themselves would defeat T-1684's whole point
+#: of keeping them off the land critical path.
+_BASELINE_LOCK_REL = Path(".frob") / "rapid-sweep-baseline.lock"
+
+#: T-2595: how long `_baseline_lock` waits for a concurrent sweep's own
+#: lock hold before giving up and degrading to an unlocked write (see its
+#: docstring) -- generous relative to the sub-millisecond critical section
+#: it actually protects, but still bounded so a crashed holder (whose
+#: flock the kernel already released) or a genuinely stuck one cannot wedge
+#: every other sweep on this shared root forever.
+_BASELINE_LOCK_TIMEOUT_S = 30.0
 
 #: Detached-child stdout/stderr, one file per swept ticket, so a sweep
 #: that dies (OOM, reboot) leaves its partial output behind to read.
@@ -510,7 +538,13 @@ def _write_baseline(
 ) -> None:
     """Record `findings` as the baseline the NEXT deferred sweep diffs
     against. Written on every sweep, red or green -- see this module's
-    docstring on why an already-filed error must not be re-filed."""
+    docstring on why an already-filed error must not be re-filed.
+
+    Unlocked, unconditional overwrite -- callers that must survive a
+    concurrent sweep racing on the same shared root (T-2595) want
+    `_write_baseline_cas` instead, which wraps this same write in a lock
+    plus an ancestry check. Kept as the low-level primitive both that
+    function and every pre-T-2595 test still exercise directly."""
     path = _baseline_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -523,6 +557,173 @@ def _write_baseline(
         len(findings),
         commit[:12],
     )
+
+
+def _baseline_lock_path(root: Path) -> Path:
+    """`.frob/rapid-sweep-baseline.lock` for a checkout rooted at `root`
+    (T-2595) -- a dedicated lock file, never the unrelated `land.lock`
+    (`_land.py`'s `_LAND_LOCK_REL`): a sweep must never contend with, or
+    be blocked by, an actual `frob ticket land` in flight."""
+    return root / _BASELINE_LOCK_REL
+
+
+# frob:ticket T-2595
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_serializes_two_concurrent_holders  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_fcntl_degrades_to_unlocked  # noqa: E501
+@contextmanager
+def _baseline_lock(
+    root: Path, *, timeout: float = _BASELINE_LOCK_TIMEOUT_S
+) -> Iterator[None]:
+    """T-2595: exclusive, cross-process lock around ONLY the tiny read-
+    decide-write of the rolling baseline -- never around the multi-minute
+    `frob check` that produces the findings being written. Same mechanism
+    as `_land.py`'s `_land_lock` (`fcntl.flock` on a dedicated file under
+    `.frob/`, degrading to a logged no-op on a platform without `fcntl`,
+    e.g. non-POSIX), deliberately NOT the same lock file -- serializing
+    sweeps against an in-flight `land()` would defeat T-1684's entire
+    point of keeping them off the land critical path.
+
+    A blocking `flock` (not `_land_lock`'s poll-with-holder-logging
+    dance) is enough here: the critical section is a few milliseconds of
+    file I/O plus one `git merge-base --is-ancestor` call, so contention
+    is rare and brief, and unlike a land there is no interactive human
+    waiting on the other end to name. Still timeout-bounded (`timeout`,
+    default `_BASELINE_LOCK_TIMEOUT_S`) rather than an unbounded wait, in
+    case a holder is genuinely wedged -- on timeout, this degrades to
+    proceeding WITHOUT the lock (logged at WARNING) rather than raising
+    and losing this sweep's findings entirely; the CAS ancestry check the
+    caller performs under (or without) the lock is the actual correctness
+    guarantee, this lock only narrows the race window against an ORDINARY
+    concurrent sweep, so degrading to unlocked on a stuck lock is a
+    reduced guarantee, never a silent corruption."""
+    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
+        _log.warning(
+            "rapid sweep: _baseline_lock: fcntl unavailable on this "
+            "platform, lock is a NO-OP -- concurrent sweep writes against "
+            "%s are not serialized here",
+            root,
+        )
+        yield
+        return
+    path = _baseline_lock_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    deadline = time.monotonic() + timeout
+    acquired = False
+    try:
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    _log.warning(
+                        "rapid sweep: _baseline_lock: %s still held after "
+                        "%.0fs -- proceeding WITHOUT the lock (the CAS "
+                        "ancestry check is the correctness backstop, this "
+                        "is a reduced guarantee, not corruption)",
+                        path,
+                        timeout,
+                    )
+                    break
+                time.sleep(0.05)
+        yield
+    finally:
+        if acquired:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+
+
+# frob:ticket T-2595
+# frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_true_when_older_is_ancestor  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_false_when_not_an_ancestor  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_none_on_git_failure  # noqa: E501
+def _is_ancestor(root: Path, older: str, newer: str) -> bool | None:
+    """`True` iff `older` is an ancestor of (or equal to) `newer` in
+    `root`'s git history, `False` if git resolved the question and it is
+    not, `None` when the question could not be resolved at all (a
+    non-repo `tmp_path`, an unknown/GC'd commit, or any other git
+    failure) -- mirrors this module's existing `_land_ids_between`/
+    `_resolve_actual_head` posture of a third `None`/unmeasurable state
+    that is never conflated with a definite `False` (T-2391's silent-zero
+    doctrine: "could not tell" and "checked, and no" are different
+    facts). `_write_baseline_cas` treats `None` as "cannot prove safety",
+    which means it does NOT skip the write -- see that function's
+    docstring for why degrading to the pre-T-2595 unconditional-write
+    behavior is correct there specifically."""
+    if older == newer:
+        return True
+    from frob.gitio import run_argv
+
+    result = run_argv(
+        ["git", "-C", str(root), "merge-base", "--is-ancestor", older, newer]
+    )
+    if result.is_err:
+        return None
+    returncode = result.danger_ok.returncode
+    if returncode == 0:
+        return True
+    if returncode == 1:
+        return False
+    return None
+
+
+# frob:ticket T-2595
+# frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_no_prior_baseline  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_prior_is_an_ancestor  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_skips_when_prior_is_not_an_ancestor  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_ancestry_is_unresolvable  # noqa: E501
+def _write_baseline_cas(
+    root: Path, findings: frozenset[tuple[str, str]], commit: str
+) -> bool:
+    """T-2595: the race fix. Under `_baseline_lock`, re-reads whatever
+    commit is CURRENTLY on disk (not the `prev_baseline_commit` the
+    caller read minutes ago, before its multi-minute `frob check` ran --
+    that snapshot is exactly what makes the unlocked write in `_write_
+    baseline` racy: sweep B reads it stale, then unconditionally
+    overwrites whatever sweep A wrote in the meantime) and only performs
+    the write when it cannot possibly discard newer information than it
+    is contributing:
+
+    - no prior baseline on disk at all -> write (nothing to lose).
+    - the on-disk commit is an ANCESTOR of (or equal to) `commit` -> this
+      sweep's view is at least as fresh -> write.
+    - the on-disk commit is NOT an ancestor of `commit` (concurrent sweep
+      B here would be about to overwrite concurrent sweep A's fresher
+      write with B's own stale one) -> SKIP, log loudly, and return
+      `False` so the caller can report the skip rather than pretend it
+      wrote.
+    - ancestry could not be resolved at all (`_is_ancestor` returned
+      `None` -- non-repo, GC'd commit, git failure) -> write anyway,
+      matching this module's "an unmeasurable condition never blocks a
+      sweep that already has real findings to record" posture used
+      throughout (`_files_deleted_between`, `_land_ids_between`); refusing
+      to ever persist a baseline again on a transient git hiccup would be
+      strictly worse than the rare unnecessary overwrite this case
+      accepts.
+
+    Returns `True` iff the write actually happened."""
+    with _baseline_lock(root):
+        on_disk_commit = _read_baseline_commit(root)
+        if on_disk_commit is not None:
+            ancestry = _is_ancestor(root, on_disk_commit, commit)
+            if ancestry is False:
+                _log.warning(
+                    "rapid sweep: baseline write at %s SKIPPED -- the "
+                    "baseline currently on disk (commit %s) is not an "
+                    "ancestor of this write's commit, meaning it was "
+                    "written by a concurrent sweep with a FRESHER view; "
+                    "overwriting it here would discard real findings "
+                    "that sweep just recorded (T-2595, the "
+                    "read-modify-write race T-2571's _baseline_write_"
+                    "survived could only detect, not prevent)",
+                    commit[:12],
+                    on_disk_commit[:12],
+                )
+                return False
+        _write_baseline(root, findings, commit)
+        return True
 
 
 # frob:tests \
@@ -2572,11 +2773,21 @@ def _resolve_regression_attribution(
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
 # frob:ticket T-2077
 # frob:ticket T-1952
+# frob:ticket T-2595
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_no_new_findings_is_clean
 # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_new_findings_file_a_ticket_and_rebaseline  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace.test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline  # noqa: E501
+# frob:waive AFFECT001 reason="T-2595 only replaces the baseline write's internal \
+# mechanics (an unconditional unlocked write becomes a locked compare-and-swap) -- it \
+# does not change this function's own documented external contract (still: one check \
+# per sweep, file a ticket for new findings, record the fresh set as the next \
+# baseline). docs/modules/tickets-verify-sweep.md is a shared doc other in-flight \
+# tickets also touch; a prose note on the internal race-safety mechanism belongs in a \
+# follow-up doc pass, not blocking this bug fix, matching T-2521's identical posture \
+# on this same file just above"
 # frob:ticket T-1684
 def run_deferred_post_land_sweep(
     root: Path, final_id: str, commit_sha: str
@@ -2634,12 +2845,19 @@ def run_deferred_post_land_sweep(
     fresh = _filter_phantom_deleted_findings(final_id, fresh, deleted_files)
 
     baseline = _read_baseline(root)
-    _write_baseline(root, fresh, actual_head)
+    # T-2595: was an unconditional, unlocked `_write_baseline` -- now a
+    # locked compare-and-swap that refuses to overwrite a concurrent
+    # sweep's FRESHER write with this sweep's stale one (see `_write_
+    # baseline_cas`'s docstring for the full race this closes).
+    wrote = _write_baseline_cas(root, fresh, actual_head)
     # T-2571 acceptance criterion 0: detect (never silently trust) a
     # concurrent sweep clobbering this write before the next sweep ever
     # reads it -- root is the SHARED checkout every land's own detached
-    # sweep writes to (T-1684), and concurrent lands are routine.
-    if not _baseline_write_survived(root, actual_head):
+    # sweep writes to (T-1684), and concurrent lands are routine. Only
+    # meaningful when this sweep actually wrote: a CAS-skipped write
+    # (`wrote` is `False`) already logged its own, more precise reason
+    # above and has nothing new to survive.
+    if wrote and not _baseline_write_survived(root, actual_head):
         _log.warning(
             "rapid sweep: %s: the rolling baseline this sweep just wrote "
             "at %s did NOT survive -- another process (almost certainly "
@@ -2647,7 +2865,9 @@ def run_deferred_post_land_sweep(
             "shared root) overwrote it before this check could even "
             "finish; the NEXT sweep may re-report identities from THIS "
             "sweep's fresh set as new again through no fault of its own "
-            "(T-2571)",
+            "(T-2571; T-2595 closed the common case of this via CAS, but "
+            "a write that itself raced past this same check's read can "
+            "still in principle be observed here)",
             final_id,
             actual_head[:12],
         )

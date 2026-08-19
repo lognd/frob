@@ -4,6 +4,7 @@ rapid profile's deferred, non-blocking post-land unscoped sweep."""
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -243,6 +244,206 @@ class TestBaselineWriteSurvived:
         # right after this sweep's own write, before this check runs.
         _write_baseline(tmp_path, frozenset({("OTHER", "z.py")}), "clobbered-by-x")
         assert _baseline_write_survived(tmp_path, "abc123") is False
+
+
+# frob:ticket T-2595
+class TestDeferredSweepBaselineCasRace:
+    """T-2595 repro, exercised entirely through the same public entry
+    point (`run_deferred_post_land_sweep`) `TestDeferredSweepMultiLandAttribution`
+    above already uses -- deliberately does NOT reference `_write_
+    baseline_cas`/`_baseline_lock`/`_is_ancestor` directly, so this test
+    stays collectible (and thus a genuine FAILED_AT_PARENT, not a
+    collection error) against the pre-T-2595 tree where those symbols do
+    not exist yet."""
+
+    def test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace.test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline  # noqa: E501
+        import subprocess
+
+        _init_git_repo(tmp_path)
+        c0 = _git_commit(tmp_path, "chore: init")
+        _write_baseline(tmp_path, frozenset(), c0)
+
+        commit_older = _git_commit(tmp_path, "fix(tickets): land T-AAAA older view")
+        commit_newer = _git_commit(tmp_path, "fix(tickets): land T-BBBB newer view")
+
+        # Sweep NEW: computed against the fresher head, finishes and
+        # writes first.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("COV003", "fresh.py")}),
+        )
+        result_new = run_deferred_post_land_sweep(tmp_path, "T-BBBB", commit_newer)
+        assert result_new.is_ok
+        assert _read_baseline_commit(tmp_path) == commit_newer
+        assert _read_baseline(tmp_path) == frozenset({("COV003", "fresh.py")})
+
+        # Sweep OLD: had been computing against the OLDER head all along
+        # (modeled here by moving this shared root's real HEAD backward,
+        # matching a genuinely stale writer's view of the tree) and
+        # finishes SECOND, racing on the same shared root T-1684 always
+        # writes to.
+        subprocess.run(
+            ["git", "-C", str(tmp_path), "checkout", "-q", commit_older], check=True
+        )
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset({("F401", "stale.py")}),
+        )
+        result_old = run_deferred_post_land_sweep(tmp_path, "T-AAAA", commit_older)
+        assert result_old.is_ok
+
+        # The FRESHER write must survive -- a sweep computed against an
+        # older tree state must never discard one computed against a
+        # newer one. Fails against the pre-T-2595 unconditional
+        # `_write_baseline` this replaced (the older sweep always won
+        # there, purely by finishing second).
+        assert _read_baseline_commit(tmp_path) == commit_newer
+        assert _read_baseline(tmp_path) == frozenset({("COV003", "fresh.py")})
+
+
+# frob:ticket T-2595
+class TestBaselineLock:
+    """T-2595: the lock guards only the tiny read-decide-write, never the
+    multi-minute check that produces a sweep's findings."""
+
+    def test_no_fcntl_degrades_to_unlocked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_fcntl_degrades_to_unlocked  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _baseline_lock
+
+        monkeypatch.setattr(_rapid_sweep, "fcntl", None)
+        entered = False
+        with _baseline_lock(tmp_path):
+            entered = True
+        assert entered is True
+
+    def test_serializes_two_concurrent_holders(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_serializes_two_concurrent_holders  # noqa: E501
+        # A foreign holder keeps the lock file exclusively locked; this
+        # call must not block forever -- it degrades to proceeding
+        # WITHOUT the lock once `timeout` elapses (logged, not raised).
+        import fcntl as _fcntl
+
+        from frob.app.ticket_runner._rapid_sweep import _baseline_lock
+
+        lock_path = tmp_path / ".frob" / "rapid-sweep-baseline.lock"
+        lock_path.parent.mkdir(parents=True)
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        _fcntl.flock(fd, _fcntl.LOCK_EX)
+        try:
+            entered = False
+            with _baseline_lock(tmp_path, timeout=0.2):
+                entered = True
+            assert entered is True
+        finally:
+            _fcntl.flock(fd, _fcntl.LOCK_UN)
+            os.close(fd)
+
+
+# frob:ticket T-2595
+class TestIsAncestor:
+    """T-2595's CAS ordering primitive: reuses `git merge-base
+    --is-ancestor`, matching `_land_cmd._is_ancestor_with_retry`'s own
+    posture of trusting git as the source of truth for commit ordering."""
+
+    def test_true_when_older_is_ancestor(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_true_when_older_is_ancestor  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _is_ancestor
+
+        _init_git_repo(tmp_path)
+        older = _git_commit(tmp_path, "c1")
+        newer = _git_commit(tmp_path, "c2")
+        assert _is_ancestor(tmp_path, older, newer) is True
+
+    def test_equal_commits_are_ancestors(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_equal_commits_are_ancestors  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _is_ancestor
+
+        _init_git_repo(tmp_path)
+        commit = _git_commit(tmp_path, "c1")
+        assert _is_ancestor(tmp_path, commit, commit) is True
+
+    def test_false_when_not_an_ancestor(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_false_when_not_an_ancestor  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _is_ancestor
+
+        _init_git_repo(tmp_path)
+        older = _git_commit(tmp_path, "c1")
+        newer = _git_commit(tmp_path, "c2")
+        # `newer` is NOT an ancestor of `older` -- the reverse direction.
+        assert _is_ancestor(tmp_path, newer, older) is False
+
+    def test_none_on_git_failure(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestIsAncestor.test_none_on_git_failure  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _is_ancestor
+
+        # tmp_path is not a git repo at all.
+        assert _is_ancestor(tmp_path, "deadbeef" * 5, "beefdead" * 5) is None
+
+
+# frob:ticket T-2595
+class TestWriteBaselineCas:
+    """T-2595's actual fix: `_write_baseline_cas` must never let a write
+    computed from a STALE (older) view of the tree discard a baseline a
+    concurrent sweep already wrote from a FRESHER one."""
+
+    def test_writes_when_no_prior_baseline(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_no_prior_baseline  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
+
+        findings = frozenset({("COV003", "a.py")})
+        assert _write_baseline_cas(tmp_path, findings, "deadbeef" * 5) is True
+        assert _read_baseline(tmp_path) == findings
+
+    def test_writes_when_prior_is_an_ancestor(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_prior_is_an_ancestor  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
+
+        _init_git_repo(tmp_path)
+        commit1 = _git_commit(tmp_path, "c1")
+        commit2 = _git_commit(tmp_path, "c2")
+        _write_baseline(tmp_path, frozenset({("OLD", "a.py")}), commit1)
+        fresh = frozenset({("NEW", "b.py")})
+        assert _write_baseline_cas(tmp_path, fresh, commit2) is True
+        assert _read_baseline(tmp_path) == fresh
+        assert _read_baseline_commit(tmp_path) == commit2
+
+    def test_skips_when_prior_is_not_an_ancestor(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_skips_when_prior_is_not_an_ancestor  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
+
+        # Reproduces the T-2595 race directly: a "sweep A" with a FRESHER
+        # view (commit2) writes first; a "sweep B" that had been
+        # computing against the OLDER view (commit1) all along finishes
+        # second and must not be allowed to discard A's write.
+        _init_git_repo(tmp_path)
+        commit1 = _git_commit(tmp_path, "c1")
+        commit2 = _git_commit(tmp_path, "c2")
+        fresh_a = frozenset({("COV003", "a.py")})
+        assert _write_baseline_cas(tmp_path, fresh_a, commit2) is True
+        fresh_b = frozenset({("F401", "b.py")})
+        assert _write_baseline_cas(tmp_path, fresh_b, commit1) is False
+        # A's fresher write survives intact -- this is the exact
+        # assertion that fails against the pre-T-2595 unconditional
+        # `_write_baseline` call this replaced.
+        assert _read_baseline(tmp_path) == fresh_a
+        assert _read_baseline_commit(tmp_path) == commit2
+
+    def test_writes_when_ancestry_is_unresolvable(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestWriteBaselineCas.test_writes_when_ancestry_is_unresolvable  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import _write_baseline_cas
+
+        # tmp_path is not a git repo, so `_is_ancestor` cannot resolve the
+        # ordering -- an unmeasurable condition must never permanently
+        # block a sweep that already has real findings to record.
+        _write_baseline(tmp_path, frozenset({("OLD", "a.py")}), "deadbeef" * 5)
+        fresh = frozenset({("NEW", "b.py")})
+        assert _write_baseline_cas(tmp_path, fresh, "beefdead" * 5) is True
+        assert _read_baseline(tmp_path) == fresh
 
 
 # frob:ticket T-2571

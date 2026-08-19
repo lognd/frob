@@ -2,7 +2,7 @@
 id: T-2593
 title: 'over-broad scope is disclosed but never enforced: 21 open tickets hold wildcard
   write leases, 0 acknowledged'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -105,3 +105,6 @@ so the first agent to hit a refusal understands it is intended.
   with no new friction and no new prompt
 - a queued wildcard ticket that is never started: still blocks nothing,
   confirming the in-progress-only lease semantics are untouched
+
+## Drop reason
+- 2026-08-19: obsolete: enforcement already landed by T-1866 plus T-2446 (frob ticket start refuses an over-broad scope unless scope_breadth_ack is set with a reason, via the same large_glob_warnings/TICK009 breadth measure); verified directly in worktree, 5 of 5 positive-control tests pass (test_start_refuses_over_broad_scope, test_start_over_broad_scope_ack_bypasses_refusal, test_start_precise_scope_warns_nothing, test_start_scope_breadth_ack_flag_sets_field_before_refusal, test_start_scope_breadth_ack_without_reason_refuses); re-measured the 21 wildcard-scope tickets directly and only the 6 genuinely over-broad ones (T-1608 T-1609 T-1656 T-1661 T-1598 T-1549) fail to start unacked, narrow ones are correctly left alone; one unrelated gap found and filed separately as its own ticket rather than folded in here (absorbed by T-1866)

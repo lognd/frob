@@ -2,7 +2,7 @@
 id: T-2595
 title: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep
   writers
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
