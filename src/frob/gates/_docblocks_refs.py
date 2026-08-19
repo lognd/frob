@@ -227,14 +227,97 @@ def _resolve_command_chain(tree: dict, words: list[str]) -> bool:
     return True
 
 
+# frob:ticket T-2533
+#: `frob.__main__._build_parser()`'s own registration is a decorative
+#: mirror for `frob --help`'s grouped overview only -- several verbs are
+#: dispatched directly via a `_dispatch_*` bypass (`frob.__main__._dispatch`)
+#: that NEVER goes through `_build_parser()`'s tree at argv-parse time, so
+#: that mirror can silently fall out of sync with the REAL subcommand set
+#: (T-2533: `frob worktree` registered only `sweep`, missing the real
+#: `remove`/`release-lease`; `frob release` never registered `publish` at
+#: all). `_BYPASS_SUBTREE_PATCHES` names, per bypassed verb word, the
+#: dotted path to that verb's OWN dispatch-time parser/registration
+#: function -- the actual source of truth `_dispatch_*` uses -- so DOC006's
+#: walker sees CLI reality instead of `_build_parser()`'s incomplete
+#: mirror. Keyed by `(source.parser, verb)` so this only ever patches
+#: frob's own tree (`frob.__main__:_build_parser`); a downstream project's
+#: `[[docblocks.commands]]` entry for its OWN prog is untouched -- this is
+#: NOT a generic bypass-detection mechanism, it is this repo's own known,
+#: named list of dispatch bypasses (matching frob.__main__._dispatch's own
+#: routing table one for one).
+_BYPASS_SUBTREE_PATCHES: dict[tuple[str, str], str] = {
+    # `_dispatch_worktree` bypasses `_build_parser()` entirely for the
+    # WHOLE `worktree` verb -- replace the incomplete `sweep`-only mirror
+    # with the real tree `frob.app.worktree_runner._build_worktree_parser`
+    # registers (sweep/remove/release-lease).
+    (
+        "frob.__main__:_build_parser",
+        "worktree",
+    ): "frob.app.worktree_runner:_build_worktree_parser",
+}
+
+#: `_dispatch_release_publish` bypasses `_build_parser()` only for the
+#: LEAF `release publish` subcommand -- `release`'s other subcommands
+#: (`stamp`/`check`/`sync`) ARE genuinely registered through
+#: `_build_parser()` and dispatch normally, so this adds one leaf into
+#: the existing tree rather than replacing the whole `release` node the
+#: way `_BYPASS_SUBTREE_PATCHES` does for `worktree`. `release publish`
+#: itself takes no further subcommands (an empty `{}` leaf is exactly
+#: what `_subparser_tree` would produce for it).
+_BYPASS_LEAF_PATCHES: dict[tuple[str, str], tuple[str, ...]] = {
+    ("frob.__main__:_build_parser", "release"): ("publish",),
+}
+
+
+def _apply_bypass_subtree_patches(parser_dotted: str, tree: dict) -> dict:
+    """Splice `_BYPASS_SUBTREE_PATCHES`/`_BYPASS_LEAF_PATCHES` (T-2533)
+    into `tree` (already the live `_build_parser()`-derived subparser
+    tree for `parser_dotted`) -- a no-op for every verb/parser this repo
+    has not explicitly named as a dispatch bypass, so a downstream
+    project's own `[[docblocks.commands]]` tree is never touched. Failure
+    to resolve/call a patch factory degrades to leaving the ORIGINAL
+    (possibly incomplete) tree for that one verb alone -- same fail-open
+    posture as the rest of this console-tree walk, never a gate crash."""
+    for (owner_parser, verb), dotted in _BYPASS_SUBTREE_PATCHES.items():
+        if owner_parser != parser_dotted:
+            continue
+        factory = _load_parser_factory(dotted)
+        if factory is None:
+            continue
+        try:
+            real_subtree = _subparser_tree(factory())
+        except Exception as exc:  # noqa: BLE001 -- fail open, never crash the gate
+            _log.warning(
+                "doc006: bypass subtree patch %r for verb %r raised: %s",
+                dotted,
+                verb,
+                exc,
+            )
+            continue
+        tree[verb] = real_subtree
+    for (owner_parser, verb), leaves in _BYPASS_LEAF_PATCHES.items():
+        if owner_parser != parser_dotted or verb not in tree:
+            continue
+        for leaf in leaves:
+            tree[verb].setdefault(leaf, {})
+    return tree
+
+
 # frob:ticket T-1195
+# frob:ticket T-2533
 def _console_trees(
     root: Path, console_sources: tuple[_ConsoleCommandSource, ...]
 ) -> dict[str, dict]:
     """`{source.parser: live subparser tree}` for every configured
     `[[docblocks.commands]]` entry -- the SAME live-registry walk DOC004's
     console tier and DOC005's README-table tier both consume, so neither
-    duplicates the argparse-import-and-walk logic (T-0435)."""
+    duplicates the argparse-import-and-walk logic (T-0435).
+
+    T-2533: after the live `_build_parser()`-derived tree is built, patch
+    it against `_BYPASS_SUBTREE_PATCHES`/`_BYPASS_LEAF_PATCHES` -- a
+    `_dispatch_*`-bypassed verb's REAL subcommand set, not
+    `_build_parser()`'s own decorative (and possibly incomplete)
+    `--help`-only mirror of it."""
     console_trees: dict[str, dict] = {}
     for source in console_sources:
         factory = _load_parser_factory(source.parser)
@@ -245,7 +328,10 @@ def _console_trees(
         except Exception as exc:  # noqa: BLE001 -- a broken factory never fails the gate
             _log.warning("doc004: parser factory %r raised: %s", source.parser, exc)
             continue
-        console_trees[source.parser] = _subparser_tree(parser)
+        tree = _subparser_tree(parser)
+        console_trees[source.parser] = _apply_bypass_subtree_patches(
+            source.parser, tree
+        )
     return console_trees
 
 

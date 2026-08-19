@@ -166,6 +166,102 @@ class TestDoc006Cli:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
 
+    # frob:ticket T-2533
+    def test_dispatch_bypassed_worktree_remove_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2533: `_dispatch_worktree` bypasses `_build_parser()` entirely
+        for the whole `worktree` verb, and `_build_parser()`'s own
+        `--help`-only mirror used to register `sweep` alone -- a doc
+        naming the REAL `frob worktree remove` command (confirmed working:
+        `frob worktree remove --help` resolves cleanly) must not be
+        flagged as pointing at a nonexistent subcommand."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(tmp_path, "docs/guide.md", "Run `frob worktree remove` to clean up.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2533
+    def test_dispatch_bypassed_worktree_release_lease_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2533: same bypass class as `worktree remove`, for
+        `worktree release-lease` -- also genuinely real and also missing
+        from `_build_parser()`'s incomplete `sweep`-only mirror."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob worktree release-lease` to free a stale lease.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2533
+    def test_dispatch_bypassed_release_publish_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2533: `_dispatch_release_publish` bypasses `_build_parser()`
+        for the LEAF `release publish` subcommand only -- `release`'s
+        other subcommands (`stamp`/`check`/`sync`) genuinely register
+        through `_build_parser()`, `publish` never did. A doc naming the
+        real `frob release publish` command (confirmed working: `frob
+        release publish --help` resolves cleanly) must not be flagged."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(tmp_path, "docs/guide.md", "Run `frob release publish` to ship.\n")
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2533
+    def test_worktree_subcommand_still_genuinely_nonexistent_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """POSITIVE CONTROL (T-2533): the bypass-subtree patch replaces
+        `worktree`'s incomplete mirror with its REAL tree -- it must not
+        become a rubber stamp that waves through EVERY word under
+        `worktree`. A genuinely nonexistent `worktree` subcommand still
+        fires, proving the patched tree is still a real, closed set, not
+        an accidental always-pass."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob worktree nonexistent-subcommand` first.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("nonexistent-subcommand" in v.message for v in found)
+
+    # frob:ticket T-2533
+    def test_release_subcommand_still_genuinely_nonexistent_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """POSITIVE CONTROL (T-2533): same proof as the `worktree` control
+        above, for `release`'s leaf-patch path -- adding the `publish`
+        leaf must not accidentally widen `release` into accepting
+        anything."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob release nonexistent-subcommand` first.\n",
+        )
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("nonexistent-subcommand" in v.message for v in found)
+
 
 class TestDoc006Config:
     """Kind 3: CONFIG REFERENCE -- `[section]`/`[section.key]` checked

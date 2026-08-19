@@ -2,7 +2,7 @@
 id: T-2533
 title: DOC006 CLI-invocation walker misses several _dispatch_*-bypassed verbs' real
   subcommands
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,37 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_docblocks_refs.py
+- tests/test_docptr_gate.py
+- docs/modules/tickets-landing.md
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: regression tests for the DOC006 CLI-invocation bypass-subtree fix
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: remove the T-2374 frob:waive DOC006 sites this fix makes dead weight, per
+    this ticket's own body
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: remove the T-2374 frob:waive DOC006 sites this fix makes dead weight, per
+    this ticket's own body
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Cli::test_dispatch_bypassed_worktree_remove_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_dispatch_bypassed_worktree_release_lease_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_dispatch_bypassed_release_publish_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_worktree_subcommand_still_genuinely_nonexistent_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_release_subcommand_still_genuinely_nonexistent_flagged
 designated_repro_test: null
 threat: null
 component: null

@@ -313,7 +313,7 @@ Order of operations, and why it is this order:
     `pyproject.toml`/`.frob-release.json` kept every land serialized on
     one pair of files regardless of how disjoint the tickets' own code
     scopes were. Bumping them is now an explicit, separate release-cut
-    step (`frob release check`/`sync`/`stamp`, or <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob release publish`) that reads the SAME `diff_class`-against-manifest
+    step (`frob release check`/`sync`/`stamp`, or `frob release publish`) that reads the SAME `diff_class`-against-manifest
     computation this callback itself uses (the manifest stays frozen at
     its last real stamp until that cut runs, so the cut naturally sees
     the FULL accumulated diff across every deferred land, not just the
@@ -1490,13 +1490,13 @@ can afford to treat "cannot confirm" the same as "looks gone" and let a
 human decide.
 
 **`frob.tickets._leases.release_orphaned_lease(root, ticket_id)`**
-(<!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree release-lease TICKET-ID`) is the targeted, SAFE release
+(`frob worktree release-lease TICKET-ID`) is the targeted, SAFE release
 verb this incident needed and did not have: it releases exactly ONE
 ticket's lease, and ONLY after confirming (via the same raw-parse
 lookup) that the lease's recorded worktree path is genuinely gone --
 `Err(NoLeaseForTicket)` if there is no lease at all, `Err(
 LeaseWorktreeMismatch)` if the lease is not actually orphaned (its
-worktree still exists -- use <!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree remove`/the ordinary
+worktree still exists -- use `frob worktree remove`/the ordinary
 ticket-close path instead). This is the fix for the actual recovery
 T-1766 forced: the coordinator ran `rm .git/frob-leases/T-1766.json` by
 hand with five live agents running, because no scoped verb existed to
@@ -1633,7 +1633,7 @@ produces a new `kept:live` verdict naming the pid
 (`kept:live(pid <N>) <path>`) -- unconditionally, regardless of whether
 the worktree is clean, leased, or old, which is exactly the property the
 2026-08-07 incident needed and the old three-gate design did not have.
-<!-- frob:waive DOC006 reason="verified real via frob <cmd> --help; DOC006's CLI walker only sees _build_parser()'s decorative subparser registration, which this dispatch-only verb (_dispatch_worktree/_dispatch_release_publish in src/frob/__main__.py) never populates fully -- gate walker gap, not stale doc, tracked separately" -->`frob worktree sweep --force` overrides the `kept:live` gate specifically
+<!-- frob:waive DOC006 reason="T-2533 fixed the SUBCOMMAND-chain false positive for dispatch-bypassed verbs (worktree/release-publish), but --force is a genuinely real flag on frob worktree sweep (_add_worktree_parser's own --help mirror in src/frob/_cli_parsers/_core.py never registered it, a separate flag-level gap in the SAME decorative-mirror class DOC006's CLI walker reads flags from -- tracked as a follow-up, not fixed by T-2533" -->`frob worktree sweep --force` overrides the `kept:live` gate specifically
 (dirty/age are unaffected by `--force`); refuse-by-default is the point
 of the flag existing at all, so reach for it narrowly, worktree by
 worktree, not as a blanket unblock for a whole sweep.
