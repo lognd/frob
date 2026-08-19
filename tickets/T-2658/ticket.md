@@ -1,7 +1,7 @@
 ---
 id: T-2658
 title: Recovered from T-2615's phantom TICK006 citation of T-draft-b8d1b183
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -33,3 +33,6 @@ T-draft-b8d1b183 (will renumber at land).
 
 Did NOT retroactively rewrite the 101 historical CHANGELOG.md lines
 (explicitly out of scope per the ticket
+
+## Drop reason
+- 2026-08-19: Draft T-draft-b8d1b183's intended work (design an explicit author-controlled 'what changed' changelog field, since generated entries currently read as bug reports not release notes) is already tracked by a separately-promoted real id: T-2642, same exact title 'changelog entries read as bug reports, not release notes', same scope (src/frob/release/_fragments.py, src/frob/app/ticket_runner/_land_cmd.py), state=queued (not yet done, still live and doable). Measured: 'sed -n' on tickets/T-2642/ticket.md confirms identical title/scope on current main. The draft commit (cfd1b1e9f, T-2615's worktree branch) never merged into main (git merge-base --is-ancestor cfd1b1e9f main -> false) -- the TICK006 citation is phantom because the work was independently promoted/refiled as T-2642 through a different path, not lost. No action needed here; T-2642 is the live tracking ticket for this design question. (absorbed by T-2642)

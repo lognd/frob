@@ -1,7 +1,7 @@
 ---
 id: T-2657
 title: Recovered from T-2615's phantom TICK006 citation of T-draft-5d1d5de0
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -32,3 +32,6 @@ those are data artifacts outside this ticket's declared scope
 that cleanup now that the generator is fixed and won't recreate it.
 
 Positive controls verified by test (all in `tests/test_relea
+
+## Drop reason
+- 2026-08-19: Draft T-draft-5d1d5de0's intended work (delete stray changelog.d/T-2593.md fragment, decide on the CHANGELOG.md T-2593 duplicated-id line) is already tracked and DONE under a separately-promoted real id: T-2641, same exact title 'clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug', state=done. Measured: changelog.d/T-2593.md does not exist on current main (ls: No such file); CHANGELOG.md line 152 reads '- T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug', confirming T-2641 performed exactly this cleanup. The draft commit (9dff023e0, T-2615's worktree branch) never merged into main (git merge-base --is-ancestor 9dff023e0 main -> false) -- the TICK006 citation is phantom because the work was independently promoted/refiled as T-2641 through a different path, not lost. (absorbed by T-2641)
