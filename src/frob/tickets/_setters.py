@@ -478,6 +478,57 @@ def set_runs_last(
     )
 
 
+# frob:ticket T-2624
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests \
+# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_reason_missing_r\
+# efuses
+# frob:tests \
+# tests/test_tickets_organization.py::TestSetRunsLastParallelSafe.test_ack_sets_both_fi\
+# elds
+def set_runs_last_parallel_safe(
+    root: Path, ticket_id: str, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket runs-last-parallel-safe <id> --reason TEXT`: the
+    retroactive setter T-2579 (M4b) left unbuilt -- declares `ticket_id`
+    safe to run in parallel with another `runs_last` ticket in the same
+    milestone despite neither ordering the other via `blocked_by`
+    (MILE004's escape hatch), sets `runs_last_parallel_safe=True` and
+    records `reason` in `runs_last_parallel_safe_reason` in one
+    ledger-locked write. Same bool+reason shape and same non-blank
+    `reason` requirement as `set_scope_breadth_ack`'s T-1484 precedent --
+    a declaration with no stated justification is exactly the ambiguity
+    MILE004 exists to catch, so it is refused here rather than silently
+    accepted."""
+    if not reason.strip():
+        return Err(TicketError.RunsLastParallelSafeReasonMissing)
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    from frob.tickets import _load_ticket_and_queue
+
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, _queue = loaded.danger_ok
+        updated = ticket.model_copy(
+            update={
+                "runs_last_parallel_safe": True,
+                "runs_last_parallel_safe_reason": reason,
+            }
+        )
+        write_result = write_ticket(root, updated)
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s runs_last_parallel_safe set to True (reason=%s)",
+        ticket_id,
+        reason,
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-2574
 # frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_valid_semver_sets_field

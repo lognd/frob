@@ -98,6 +98,8 @@ _STRING_FIELDS = (
     "ticket_reason",
     # frob:ticket T-2302
     "ticket_scope_breadth_ack_reason",
+    # frob:ticket T-2624
+    "ticket_runs_last_parallel_safe_reason",
     # frob:ticket T-1762
     "ticket_force_reason",
     # frob:ticket T-1768
@@ -498,6 +500,8 @@ _BOOL_FLAGS = (
     "ticket_ack_related",
     # frob:ticket T-2302
     "ticket_scope_breadth_ack",
+    # frob:ticket T-2624
+    "ticket_runs_last_parallel_safe",
     "deploy_check",
     "clean_all",
     "clean_deep",

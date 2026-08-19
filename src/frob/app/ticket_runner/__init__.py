@@ -100,6 +100,7 @@ from ._mutate import (
     _priority,
     _resolve_scope_reason,
     _runs_last,
+    _runs_last_parallel_safe,
     _scope,
     _scope_ack,
     _sprint,
@@ -272,6 +273,7 @@ __all__ = [
     "_run_sweep",
     "_run_tests_count_fn",
     "_runs_last",
+    "_runs_last_parallel_safe",
     "_scope",
     "_scope_ack",
     "_scope_closure_warnings",
@@ -390,6 +392,8 @@ def _ticket_dispatch_table() -> dict:
         "tier": _tier,
         # frob:ticket T-1613
         "runs-last": _runs_last,
+        # frob:ticket T-2624
+        "runs-last-parallel-safe": _runs_last_parallel_safe,
         # frob:ticket T-2574
         "milestone": _milestone,
         "archive": lambda root, cfg: _archive(

@@ -951,6 +951,46 @@ def _runs_last(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: runs-last now %s", cfg.ticket_id, ticket.runs_last)
 
 
+# frob:ticket T-2624
+# frob:tests \
+# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_reason_missi\
+# ng_exits_nonzero
+# frob:tests \
+# tests/test_tickets_organization.py::TestRunsLastParallelSafeCli.test_cli_sets_both_fi\
+# elds
+def _runs_last_parallel_safe(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket runs-last-parallel-safe <id> (--reason TEXT |
+    --reason-file PATH)`: MILE004's escape hatch (T-2579) actually reached
+    from the CLI (T-2624) -- forwards to `frob.tickets.
+    set_runs_last_parallel_safe`, reusing `_resolve_scope_reason`'s
+    `--reason`/`--reason-file` resolution (same mutual-exclusivity/
+    required-ness rules `scope-ack` already enforces, T-0737)."""
+    from frob.tickets import set_runs_last_parallel_safe
+
+    if cfg.ticket_id is None:
+        _log.error("frob ticket runs-last-parallel-safe requires <id>")
+        sys.exit(1)
+
+    reason = _resolve_scope_reason(cfg)
+    if not reason:
+        _log.error(
+            "frob ticket runs-last-parallel-safe requires --reason TEXT "
+            "or --reason-file PATH"
+        )
+        sys.exit(1)
+
+    result = set_runs_last_parallel_safe(root, cfg.ticket_id, reason)
+    if result.is_err:
+        _log.error("runs-last-parallel-safe failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info(
+        "%s: runs_last_parallel_safe now True (MILE004 exempt) -- %s",
+        cfg.ticket_id,
+        ticket.runs_last_parallel_safe_reason,
+    )
+
+
 # frob:ticket T-2574
 def _milestone(root: Path, cfg: AppConfig) -> None:
     """`frob ticket milestone <id> <value>`: the ONLY thing this command

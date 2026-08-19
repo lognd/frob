@@ -534,6 +534,20 @@ class AppConfig(BaseModel):
     # required justification for `--scope-breadth-ack`, same non-blank
     # requirement `frob ticket scope-ack --reason` already enforces.
     ticket_scope_breadth_ack_reason: str | None = None
+    # frob:ticket T-2624
+    # `frob ticket new --runs-last-parallel-safe` -- the filing-time twin
+    # of `frob ticket runs-last-parallel-safe <id>` (T-2579/T-2624):
+    # declares a runs_last ticket parallel-safe with another runs_last
+    # ticket in the same milestone immediately at creation, same
+    # `ticket_scope_breadth_ack` shape (T-2302 precedent). Default False:
+    # unacknowledged, same posture every other bool+reason declaration
+    # defaults to.
+    ticket_runs_last_parallel_safe: bool = False
+    # frob:ticket T-2624
+    # required justification for `--runs-last-parallel-safe`, same
+    # non-blank requirement `ticket_scope_breadth_ack_reason` already
+    # enforces.
+    ticket_runs_last_parallel_safe_reason: str | None = None
     # frob:ticket T-0472
     # `frob ticket requeue <id> [--reason TEXT]` -- optional, logged only.
     ticket_reason: str | None = None

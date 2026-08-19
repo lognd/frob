@@ -894,6 +894,12 @@ frozensets computed from `LEDGER_VERB_STRATEGY` rather than declared a
 second time, kept under their original names because tests and other
 modules still import them that way.
 
+T-2624 added `"runs-last-parallel-safe"` to `LEDGER_VERB_STRATEGY` as
+`GENERIC_COMMIT_MIRRORED` -- same shape as `"scope-ack"`/`"runs-last"`,
+its two closest siblings: a single-value, ledger-locked bool+reason
+setter with no transaction of its own, mirrored onto the primary
+checkout via the generic per-dispatch commit path.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

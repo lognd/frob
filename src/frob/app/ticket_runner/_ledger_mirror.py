@@ -147,6 +147,8 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     "priority": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "review": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "runs-last": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-2624
+    "runs-last-parallel-safe": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "scope": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "scope-ack": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "sprint": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,

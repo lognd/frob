@@ -501,6 +501,43 @@ def _add_ticket_runs_last_parser(ticket_sub):
     return ticket_runs_last_p
 
 
+# frob:ticket T-2624
+def _add_ticket_runs_last_parallel_safe_parser(ticket_sub):
+    """Register `frob ticket runs-last-parallel-safe <id> (--reason TEXT
+    | --reason-file PATH)` -- MILE004's escape hatch (T-2579's model-only
+    `runs_last_parallel_safe`/`runs_last_parallel_safe_reason` pair)
+    actually reachable from the CLI (T-2624): declares two unordered
+    `runs_last` tickets in the same milestone safe to run in parallel.
+    Same `--reason`/`--reason-file` shape as `_add_ticket_scope_ack_
+    parser`'s T-1484 precedent -- reuses the SAME `ticket_scope_reason`/
+    `ticket_scope_reason_file` dests (T-0737's shared-dest reuse pattern,
+    since exactly one of `scope`/`scope-ack`/`runs-last-parallel-safe`
+    runs per invocation)."""
+    ticket_runs_last_parallel_safe_p = ticket_sub.add_parser(
+        "runs-last-parallel-safe",
+        help="declare a runs_last ticket safe to run in parallel with "
+        "another runs_last ticket in the same milestone (T-2579's "
+        "MILE004 escape hatch)",
+    )
+    ticket_runs_last_parallel_safe_p.add_argument("ticket_id", metavar="id")
+    ticket_runs_last_parallel_safe_p.add_argument(
+        "--reason",
+        dest="ticket_scope_reason",
+        metavar="TEXT",
+        help="why this ticket is safe to run in parallel with its "
+        "runs-last sibling; required unless --reason-file is given",
+    )
+    ticket_runs_last_parallel_safe_p.add_argument(
+        "--reason-file",
+        dest="ticket_scope_reason_file",
+        metavar="PATH",
+        help="read the parallel-safe reason verbatim from PATH instead of "
+        "the shell (T-0737); mutually exclusive with --reason",
+    )
+    _add_no_commit_flag(ticket_runs_last_parallel_safe_p)
+    return ticket_runs_last_parallel_safe_p
+
+
 # frob:ticket T-2574
 def _add_ticket_milestone_parser(ticket_sub):
     """Register `frob ticket milestone <id> <value>` -- assign an

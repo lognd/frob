@@ -366,6 +366,9 @@ def _ticket_spec_from_cfg(
         # frob:ticket T-2302
         scope_breadth_ack=cfg.ticket_scope_breadth_ack,
         scope_breadth_ack_reason=cfg.ticket_scope_breadth_ack_reason,
+        # frob:ticket T-2624
+        runs_last_parallel_safe=cfg.ticket_runs_last_parallel_safe,
+        runs_last_parallel_safe_reason=cfg.ticket_runs_last_parallel_safe_reason,
     )
 
 

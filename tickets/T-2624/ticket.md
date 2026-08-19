@@ -1,7 +1,7 @@
 ---
 id: T-2624
 title: CLI wiring for runs_last_parallel_safe
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -112,6 +112,13 @@ scope_changes:
     touched in the same diff'
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_tickets_organization.py::TestSetRunsLastParallelSafe::test_reason_missing_refuses
+- tests/test_tickets_organization.py::TestSetRunsLastParallelSafe::test_ack_sets_both_fields
+- tests/test_tickets_organization.py::TestRunsLastParallelSafeCli::test_cli_sets_both_fields
+- tests/test_tickets_organization.py::TestRunsLastParallelSafeCli::test_cli_reason_missing_exits_nonzero
+- tests/test_tickets_organization.py::TestMile004ParallelSafeCliEndToEnd::test_undeclared_unordered_pair_still_fires
+- tests/test_tickets_organization.py::TestMile004ParallelSafeCliEndToEnd::test_two_sided_declaration_via_setter_clears_it
 designated_repro_test: null
 threat: null
 component: null

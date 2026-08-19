@@ -187,3 +187,24 @@ def _add_ticket_new_parser(ticket_sub) -> None:
         "same non-blank requirement `frob ticket scope-ack --reason` "
         "already enforces",
     )
+    # frob:ticket T-2624
+    ticket_new_p.add_argument(
+        "--runs-last-parallel-safe",
+        dest="ticket_runs_last_parallel_safe",
+        action="store_true",
+        help="declare this ticket safe to run in parallel with another "
+        "runs_last ticket in the same milestone at FILING time (T-2624, "
+        "the filing-time twin of `frob ticket runs-last-parallel-safe`): "
+        "sets runs_last_parallel_safe=True immediately, so MILE004 never "
+        "fires for an unordered pair that already declared itself "
+        "parallel-safe -- requires --runs-last-parallel-safe-reason",
+    )
+    # frob:ticket T-2624
+    ticket_new_p.add_argument(
+        "--runs-last-parallel-safe-reason",
+        dest="ticket_runs_last_parallel_safe_reason",
+        metavar="TEXT",
+        help="required justification for --runs-last-parallel-safe "
+        "(T-2624), same non-blank requirement "
+        "`frob ticket runs-last-parallel-safe --reason` already enforces",
+    )

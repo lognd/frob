@@ -8,6 +8,10 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
+import pytest
+
+from frob.app.config import AppConfig
+from frob.app.ticket_runner import _runs_last_parallel_safe
 from frob.tickets import (
     BOARD_STATES,
     Origin,
@@ -25,6 +29,21 @@ from frob.tickets import (
     set_component,
 )
 from frob.tickets._store import _serialize_ticket, load_all, write_ticket
+
+
+# frob:ticket T-2624
+def _init_git_repo(tmp_path: Path) -> None:
+    """Bare `git init` + `main` branch + identity config, the shared
+    fixture body every `set_runs_last*`/T-2624 test class in this module
+    needs before `new_ticket` can write a ledger (extracted, T-2624, to
+    stop DUP001/DUP002 firing on N per-class copies of the identical
+    body)."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    # frob:secret-fake reason="fixture git identity for a scratch tmp_path repo, not a \
+    # real person"
+    subprocess.run(["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
 
 
 def _ticket(
@@ -517,23 +536,12 @@ class TestRunsLast:
     runs-last ticket is IN_PROGRESS warns loudly (does not block)."""
 
     # frob:ticket T-1613
-    @staticmethod
-    def _init_repo(tmp_path: Path) -> None:
-        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-        subprocess.run(
-            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
-        )
-        subprocess.run(
-            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
-        )
-        subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
-
-    # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_set_runs_last_updates_field(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_setters.py::set_runs_last kind="unit"
         from frob.tickets import set_runs_last
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
@@ -544,13 +552,14 @@ class TestRunsLast:
         assert result.danger_ok.runs_last is True
 
     # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_doable_excludes_runs_last_while_other_ticket_open(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
         from frob.tickets import doable, load_queue, set_runs_last
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         runs_last_spec = TicketSpec(
             title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
         )
@@ -572,13 +581,14 @@ class TestRunsLast:
         assert runs_last_id not in {t.id for t in candidates}
 
     # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_doable_includes_runs_last_once_all_other_tickets_terminal(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
         from frob.tickets import doable, drop_ticket, load_queue, set_runs_last
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         runs_last_spec = TicketSpec(
             title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
         )
@@ -604,13 +614,14 @@ class TestRunsLast:
         assert runs_last_id in {t.id for t in candidates}
 
     # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_start_refuses_runs_last_while_other_ticket_open(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/tickets/_evidence.py::_transition_guard kind="unit"
         from frob.tickets import TicketError, TicketState, set_runs_last, transition
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         runs_last_spec = TicketSpec(
             title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
         )
@@ -633,13 +644,14 @@ class TestRunsLast:
         assert result.danger_err is TicketError.RunsLastBlocked
 
     # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_multiple_runs_last_tickets_do_not_block_each_other(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/tickets/_doable.py::_doable_candidates kind="unit"
         from frob.tickets import doable, load_queue, set_runs_last
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         spec_a = TicketSpec(title="audit a", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
         created_a = new_ticket(tmp_path, spec_a)
         assert created_a.is_ok
@@ -659,6 +671,7 @@ class TestRunsLast:
         assert id_b in candidates
 
     # frob:ticket T-1613
+    # frob:ticket T-2624
     def test_filing_new_ticket_while_runs_last_in_progress_warns(
         self, tmp_path: Path, caplog
     ) -> None:
@@ -667,7 +680,7 @@ class TestRunsLast:
 
         from frob.tickets import TicketState, set_runs_last, transition
 
-        self._init_repo(tmp_path)
+        _init_git_repo(tmp_path)
         runs_last_spec = TicketSpec(
             title="audit", kind=TicketKind.FEATURE, origin=Origin.HUMAN
         )
@@ -690,3 +703,188 @@ class TestRunsLast:
             runs_last_id in record.getMessage() and "IN_PROGRESS" in record.getMessage()
             for record in caplog.records
         )
+
+
+# frob:ticket T-2624
+class TestSetRunsLastParallelSafe:
+    """`set_runs_last_parallel_safe` (T-2624): the retroactive setter
+    T-2579 (M4b) left the model/gate carrying but unreachable from the
+    CLI -- mirrors `set_scope_breadth_ack`'s T-1484 mandatory-reason
+    shape exactly."""
+
+    # frob:ticket T-2624
+    def test_reason_missing_refuses(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_runs_last_parallel_safe \
+        # kind="unit"
+        from frob.tickets import set_runs_last_parallel_safe
+
+        _init_git_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_runs_last_parallel_safe(tmp_path, ticket_id, "")
+        assert result.is_err
+        assert result.danger_err is TicketError.RunsLastParallelSafeReasonMissing
+
+        result_blank = set_runs_last_parallel_safe(tmp_path, ticket_id, "   ")
+        assert result_blank.is_err
+        assert (
+            result_blank.danger_err is TicketError.RunsLastParallelSafeReasonMissing
+        )
+
+    # frob:ticket T-2624
+    def test_ack_sets_both_fields(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_runs_last_parallel_safe \
+        # kind="unit"
+        from frob.tickets import set_runs_last_parallel_safe
+
+        _init_git_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_runs_last_parallel_safe(
+            tmp_path, ticket_id, "these two are independent subsystems"
+        )
+        assert result.is_ok
+        assert result.danger_ok.runs_last_parallel_safe is True
+        assert (
+            result.danger_ok.runs_last_parallel_safe_reason
+            == "these two are independent subsystems"
+        )
+
+
+# frob:ticket T-2624
+class TestMile004ParallelSafeCliEndToEnd:
+    """End-to-end: two runs_last tickets sharing a milestone, driven
+    entirely through `set_runs_last`/`set_runs_last_parallel_safe` (the
+    same primitives the CLI verbs forward to) into the real MILE004 gate
+    (`frob.gates._milestone.milestone_gate`) -- proves the CLI wiring
+    actually reaches the gate T-2579 built, both directions: an
+    undeclared unordered pair still fires, and a two-sided declaration
+    silences it."""
+
+    # frob:ticket T-2624
+    def test_undeclared_unordered_pair_still_fires(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_milestone.py::milestone_gate kind="integration"
+        from frob.gates._milestone import milestone_gate
+        from frob.tickets import load_queue, set_runs_last
+
+        _init_git_repo(tmp_path)
+        spec_a = TicketSpec(
+            title="a runs-last job",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="1.0.0",
+        )
+        spec_b = TicketSpec(
+            title="another runs-last job",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="1.0.0",
+        )
+        created_a = new_ticket(tmp_path, spec_a)
+        created_b = new_ticket(tmp_path, spec_b)
+        assert created_a.is_ok and created_b.is_ok
+        id_a, id_b = created_a.danger_ok.id, created_b.danger_ok.id
+        assert set_runs_last(tmp_path, id_a, True).is_ok
+        assert set_runs_last(tmp_path, id_b, True).is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        violations = [
+            v for v in milestone_gate(tmp_path, queue.danger_ok) if v.rule == "MILE004"
+        ]
+        assert len(violations) == 1
+
+    # frob:ticket T-2624
+    def test_two_sided_declaration_via_setter_clears_it(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_milestone.py::milestone_gate kind="integration"
+        from frob.gates._milestone import milestone_gate
+        from frob.tickets import load_queue, set_runs_last, set_runs_last_parallel_safe
+
+        _init_git_repo(tmp_path)
+        spec_a = TicketSpec(
+            title="a runs-last job",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="1.0.0",
+        )
+        spec_b = TicketSpec(
+            title="another runs-last job",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="1.0.0",
+        )
+        created_a = new_ticket(tmp_path, spec_a)
+        created_b = new_ticket(tmp_path, spec_b)
+        assert created_a.is_ok and created_b.is_ok
+        id_a, id_b = created_a.danger_ok.id, created_b.danger_ok.id
+        assert set_runs_last(tmp_path, id_a, True).is_ok
+        assert set_runs_last(tmp_path, id_b, True).is_ok
+        assert set_runs_last_parallel_safe(
+            tmp_path, id_a, "independent subsystems, verified safe"
+        ).is_ok
+        assert set_runs_last_parallel_safe(
+            tmp_path, id_b, "independent subsystems, verified safe"
+        ).is_ok
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok
+        violations = [
+            v for v in milestone_gate(tmp_path, queue.danger_ok) if v.rule == "MILE004"
+        ]
+        assert violations == []
+
+
+# frob:ticket T-2624
+class TestRunsLastParallelSafeCli:
+    """`frob ticket runs-last-parallel-safe <id> --reason TEXT` -- CLI
+    dispatch (`frob.app.ticket_runner._runs_last_parallel_safe`) forwards
+    to `set_runs_last_parallel_safe`, same shape `TestSetScopeBreadthAck`'s
+    CLI-level pair (tests/test_tickets_scope_mutation.py) already covers
+    for `scope-ack`."""
+
+    # frob:ticket T-2624
+    def test_cli_sets_both_fields(self, tmp_path: Path) -> None:
+        from frob.tickets import load_queue
+
+        _init_git_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        cfg = AppConfig(
+            ticket_command="runs-last-parallel-safe",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+            ticket_scope_reason="independent subsystems, verified safe",
+        )
+        _runs_last_parallel_safe(tmp_path, cfg)
+        queue = load_queue(tmp_path).danger_ok
+        assert queue.tickets[ticket_id].runs_last_parallel_safe is True
+        assert (
+            queue.tickets[ticket_id].runs_last_parallel_safe_reason
+            == "independent subsystems, verified safe"
+        )
+
+    # frob:ticket T-2624
+    def test_cli_reason_missing_exits_nonzero(self, tmp_path: Path) -> None:
+        _init_git_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        cfg = AppConfig(
+            ticket_command="runs-last-parallel-safe",
+            ticket_id=ticket_id,
+            ticket_path=tmp_path,
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            _runs_last_parallel_safe(tmp_path, cfg)
+        assert exc_info.value.code == 1
