@@ -61,7 +61,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f52f503e552db13af02e301ecb3030d130522d83
 ---
 T-1649's PERF014 rule-level audit (AST-based ancestor-loop-depth rewrite,
 replacing the flat token-count heuristic) reclassified all 9 originally-live
