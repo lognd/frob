@@ -2,7 +2,7 @@
 id: T-2543
 title: 'may-raise resolver still mis-types two EXHAUST002 classes: subscript KeyError
   default and int()/float() TypeError'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,18 +11,43 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/arch/_mayraise.py
+- tests/unit/test_arch.py
+- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/arch/_mayraise.py
+  reason: the may-raise resolver builtin-raiser tables, their tests and docs
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_arch.py
+  reason: the may-raise resolver builtin-raiser tables, their tests and docs
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/arch.md
+  reason: the may-raise resolver builtin-raiser tables, their tests and docs
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
+- tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
+designated_repro_test: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 acceptance:
 - text: given a python function whose only subscript indexes a statically list-shaped
     value, when compute_may_raise resolves it, then the leaked set does not name KeyError
   evidence: []
 - text: given a python function that calls int() on a statically str-typed value,
     when compute_may_raise resolves it, then the leaked set does not name TypeError
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 - text: given this repo's own source, when the exhaustive_handling gate runs unbudgeted
     with the gate cache bypassed, then the EXHAUST002 count is below 25
   evidence: []

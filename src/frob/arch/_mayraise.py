@@ -94,6 +94,7 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 from frob.arch._normalized import (
+    NormalizedCall,
     NormalizedCatch,
     NormalizedFunction,
     NormalizedModule,
@@ -181,8 +182,18 @@ _EXCEPTION_PARENT: dict[str, str | None] = {
 #: function is fail-closed to `UNKNOWN`, not silently assumed safe.
 # frob:ticket T-0686
 _BUILTIN_RAISERS: dict[str, frozenset[str]] = {
-    "int": frozenset({"ValueError", "TypeError"}),
-    "float": frozenset({"ValueError", "TypeError"}),
+    # T-2552: `TypeError` deliberately ABSENT from both. `int(x)`/`float(x)`
+    # raise it only when `x` is not string/number-shaped at all -- a static
+    # type error, owned by the `ty` gate (measured: `ty` reports
+    # `int(str | None)` and `int(dict)` at ERROR severity inside `frob
+    # check`, and correctly stays silent once the `None` is narrowed away,
+    # which this resolver structurally cannot do). Attributing it here made
+    # EXHAUST002 demand a handler for an impossible path at 26 of 74 sites
+    # while every one of them already handled the possible one
+    # (`ValueError`), and the only cheap way to satisfy it is the blanket
+    # `except Exception:` this gate family exists to prevent.
+    "int": frozenset({"ValueError"}),
+    "float": frozenset({"ValueError"}),
     "open": frozenset({"OSError"}),
     "getattr": frozenset({"AttributeError"}),
     "next": frozenset({"StopIteration"}),
@@ -394,6 +405,35 @@ def _resolve_direct_raises(func: NormalizedFunction) -> set[str]:
     return direct
 
 
+#: Builtins whose `_BUILTIN_RAISERS` row is discharged ENTIRELY by passing
+#: a default argument (T-2552): `getattr(o, name, default)` returns the
+#: default instead of raising `AttributeError`, and `next(it, default)`
+#: returns it instead of raising `StopIteration`. Maps the bare callee name
+#: to the POSITIONAL arity at which the default is present -- a purely
+#: syntactic arity test, no type inference involved, and exact rather than
+#: heuristic (these are the documented two-arity/three-arity overloads, not
+#: a guess about the receiver). Every one of the 4 sites this cleared in
+#: this repo's own source passes a literal default.
+# frob:ticket T-2552
+_DEFAULT_ARG_DISCHARGES: dict[str, int] = {
+    "getattr": 3,
+    "next": 2,
+}
+
+
+# frob:ticket T-2552
+def _default_arg_discharges(bare: str, call: NormalizedCall) -> bool:
+    """True when `call` passes the default argument that makes its
+    builtin's documented raise impossible (`_DEFAULT_ARG_DISCHARGES`) --
+    counts POSITIONAL arguments only, since both overloads take their
+    default positionally."""
+    needed = _DEFAULT_ARG_DISCHARGES.get(bare)
+    if needed is None:
+        return False
+    positional = sum(1 for a in call.args if a.index is not None)
+    return positional >= needed
+
+
 # frob:ticket T-0976
 def _resolve_call_contributions(
     func: NormalizedFunction, name_to_func: dict[str, NormalizedFunction]
@@ -421,7 +461,11 @@ def _resolve_call_contributions(
         if call.callee in _STDLIB_QUALIFIED_RAISERS:
             catchable |= _STDLIB_QUALIFIED_RAISERS[call.callee]
         elif bare in _BUILTIN_RAISERS:
-            catchable |= _BUILTIN_RAISERS[bare]
+            # T-2552: `getattr(o, n, default)`/`next(it, default)` return
+            # the default instead of raising -- a resolved call that
+            # contributes nothing, NOT an unresolved one.
+            if not _default_arg_discharges(bare, call):
+                catchable |= _BUILTIN_RAISERS[bare]
         elif bare in name_to_func:
             resolved_callees.add(bare)
         else:

@@ -1777,6 +1777,29 @@ Measured on this repo's own source: EXHAUST002 went 74 -> 69 (tuple
 clauses) -> 56 (slices), with no code outside these two model changes
 touched.
 
+**T-2552 -- the curated builtin-raiser table must not attribute an
+exception the call provably cannot raise.** Three over-attributions, all
+fixed by a syntactic test, none needing type inference:
+
+- `int`/`float` no longer contribute `TypeError`. They raise it only when
+  the argument is not string/number-shaped at all -- a STATIC type error,
+  owned by the `ty` gate. Verified by positive control rather than
+  assumed: `ty` reports `int(str | None)` and `int(dict)` at ERROR
+  severity inside `frob check`, and correctly stays silent once the
+  `None` is narrowed away, which this resolver structurally cannot do.
+  `ValueError` -- the genuine runtime input condition -- stays, and all
+  26 affected sites in this repo already handled it.
+- `getattr(o, name, default)` (3 positional args) contributes no
+  `AttributeError`, and `next(it, default)` (2) contributes no
+  `StopIteration`: the default argument IS the failure result, so the
+  raise is impossible by the documented overload. `_DEFAULT_ARG_
+  DISCHARGES` keys the bare callee name to that arity; the 2-arg
+  `getattr` / 1-arg `next` forms are unaffected.
+
+Measured on this repo's own source: EXHAUST002 56 -> 47, and every
+`TypeError`/`AttributeError`/`StopIteration` mention removed from the
+family's messages.
+
 `LanguageAdapter` is a `typing.Protocol` (`runtime_checkable`): one
 `language` label (a `frob.lang` grammar name) and one method,
 `adapt(tree, source, rel) -> NormalizedModule`, that maps a parsed

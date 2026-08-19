@@ -6557,6 +6557,117 @@ class TestSliceSubscriptRaisesNothing:
         assert result["pkg/mod.py::indexed"].raises == frozenset({"KeyError"})
 
 
+# frob:ticket T-2552
+class TestBuiltinRaiserPrecision:
+    """`frob.arch._mayraise._BUILTIN_RAISERS` (T-2552): the curated table
+    must not attribute an exception the call provably cannot raise --
+    EXHAUST002 demanding a handler for an impossible path is the
+    false-positive direction whose cheapest fix is the blanket `except
+    Exception:` the gate family exists to prevent."""
+
+    # frob:ticket T-2552
+    def test_int_does_not_contribute_type_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `int(x)` raises TypeError only when x is not string/number-shaped
+        # at all -- a STATIC type error the `ty` gate owns and reports at
+        # ERROR severity, and one this resolver cannot narrow (it has no
+        # None-guard flow analysis). ValueError, the genuine runtime input
+        # condition, stays.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(callee="int", line=2, args=[NormalizedCallArg(index=0)])
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset(
+            {"ValueError"}
+        )
+
+    # frob:ticket T-2552
+    def test_getattr_with_default_raises_nothing(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # `getattr(o, name, default)` returns the default instead of
+        # raising; the two-argument form still can.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        three = NormalizedFunction(
+            name="three",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="getattr",
+                    line=2,
+                    args=[NormalizedCallArg(index=i) for i in range(3)],
+                )
+            ],
+        )
+        two = NormalizedFunction(
+            name="two",
+            line=5,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="getattr",
+                    line=6,
+                    args=[NormalizedCallArg(index=i) for i in range(2)],
+                )
+            ],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[three, two]
+        )
+
+        result = compute_may_raise(module)
+        assert result["pkg/mod.py::three"].raises == frozenset()
+        assert result["pkg/mod.py::two"].raises == frozenset({"AttributeError"})
+
+    # frob:ticket T-2552
+    def test_next_with_default_raises_no_stop_iteration(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedCallArg,
+            NormalizedFunction,
+            NormalizedModule,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=2,
+            calls=[
+                NormalizedCall(
+                    callee="next",
+                    line=2,
+                    args=[NormalizedCallArg(index=0), NormalizedCallArg(index=1)],
+                )
+            ],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
+
+
 # frob:ticket T-0686
 class TestMayRaiseResolver:
     """`frob.arch._mayraise.compute_may_raise` (T-0686, child 1 of T-0685):
