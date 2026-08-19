@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/commands/release.md
 - docs/modules/cli.md
-- docs/modules/gates.md
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/app/fmt_runner.py
 - src/frob/app/ticket_runner/__init__.py
@@ -62,6 +61,12 @@ scope_changes:
     collision this SELFAUDIT001 finding is largely about); working it here would collide.
     Narrowing to the non-design identities first; SELFAUDIT001/design stays queued
     in this ticket's tracked list for a later pass once T-2666 lands.
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md is under T-2670's active lease (DOC008/DOCENUM001
+    collide); deferring that pair until T-2670 lands.
   actor: logan
   at: '2026-08-19'
 body_changes:
