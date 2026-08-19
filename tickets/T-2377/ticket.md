@@ -168,6 +168,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'owner decision: mint EXHAUST004 approved, promote to ERROR after burn-down'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 1338
+  new_length: 3834
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
@@ -204,3 +211,56 @@ Closure is two-part per the epic (T-0969):
 Narrow `scope` to the actual files this family's findings live in once you've
 run the gate and can see them -- do not take a broad blanket scope; this keeps
 you disjoint from sibling children of T-0969.
+
+
+
+## OWNER DECISION (2026-08-19): mint EXHAUST004, promote to ERROR
+
+The repo owner has decided both open questions on this ticket:
+
+1. **Minting a new rule id is APPROVED.** EXHAUST004 may be created as
+   part of the split, and it belongs in the v1.0.0 gate surface. Do not
+   defer it to a later milestone.
+2. **Promotion to ERROR is the preferred outcome**, not a permanent WARN.
+   EXHAUST003 (and EXHAUST002) should end as ERROR-severity gates once
+   the burn-down reaches zero.
+
+So the sequence stands as this ticket's title describes: burn to zero
+FIRST, promote SECOND. Do not promote while findings remain -- an ERROR
+gate that fires on landing main blocks every agent, and this repo has
+already paid for that shape (a single unused import raised quarantine and
+forced fleet-wide synchronous lands for hours).
+
+### The 26 waivers
+
+The split surfaces ~26 waivers across ~20 files that need retargeting.
+Retarget them as part of this work. Do NOT bulk-rewrite them: T-2612
+audited 12 expired-premise waivers and found 9 of them hiding REAL owed
+work, not merely stale text. Expect a similar split here. For each, check
+whether the finding still fires once retargeted; if the underlying work was
+never done, do it or file a ticket, but do not re-word a reason to keep a
+live finding suppressed.
+
+### Still blocked
+
+This ticket is `blocked_by` T-2568 (queued as of this decision), so it is
+not yet startable. The decision is recorded now so the work is unambiguous
+the moment T-2568 lands.
+
+NOTE for whoever picks this up: this ticket previously leaked a write lease
+on `docs/modules/gates.md` for nine hours -- in-progress, blocked, worktree
+removed by hand. It blocked T-2613 and forced four other tickets to skip
+Tier-A doc fixes. It has been requeued. If you start it and then find
+yourself blocked again, REQUEUE IT rather than leaving it in-progress; a
+blocked ticket must not hold a lease it cannot use. T-2654 is adding a
+check that flags exactly this shape.
+
+### Positive controls, both directions
+
+- after the burn-down, EXHAUST002/EXHAUST003 report ZERO findings on an
+  unscoped `frob check`, measured and stated against a denominator
+- promoted to ERROR, a deliberately planted violation FAILS the gate
+- a legitimate, correctly-waived case still passes -- without this the
+  promotion is indistinguishable from a gate that always fires
+- EXHAUST004 fires on the case it was minted to catch, and does NOT fire
+  on the cases EXHAUST002/003 already cover (no double-reporting)
