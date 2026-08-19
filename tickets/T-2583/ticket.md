@@ -25,6 +25,7 @@ scope:
 - src/frob/app/stats_runner.py
 - tests/test_stats.py
 - docs/modules/serve.md
+- tickets/T-draft-fa6c6a24/ticket.md
 evidence_scope:
 - tests/test_stats.py
 scope_breadth_ack: false
@@ -58,6 +59,12 @@ scope_changes:
   reason: T-2583's candidate-2 fix touches stats.md (signature doc), stats_runner.py
     (collect() caller), test_stats.py (evidence tests), and serve.md (frob_stats doc,
     AFFECT001 closure)
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-fa6c6a24/ticket.md
+  reason: residue ticket filed from this ticket's own investigation; SCOPE001 flags
+    the new file
   actor: logan
   at: '2026-08-19'
 body_changes:
