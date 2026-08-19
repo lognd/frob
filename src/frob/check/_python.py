@@ -379,13 +379,82 @@ def _cycle_diags(cycles) -> list[Diagnostic]:  # noqa: ANN001
     return diags
 
 
+# frob:ticket T-2584
+def _cycle001_violations(diags: list[Diagnostic]) -> tuple:
+    """`Violation`s `_run_cycle`'s CYCLE001 `diags` correspond to, for
+    waiver cross-reference only -- never re-emitted as findings themselves
+    (T-2584: `frob.gates.Violation` is a diagnostic-model TWIN of
+    `frob.process.parsers.common.Diagnostic`, not a supertype, so there is
+    no shared base to reuse; this maps one to the other the same way
+    `_arch001_violations` already does for ARCH001). `symref=None` on
+    every entry -- a cycle's `file` is a deterministic REPRESENTATIVE node
+    (`_cycle_representative_file`), not the specific symbol at fault, so
+    `_match_waiver`'s file-level fallback (exact-equality against `file`)
+    is the correct match granularity here, same as every other file/
+    module-scoped rule."""
+    from frob.gates import Severity as GateSeverity
+    from frob.gates import Violation as GateViolation
+
+    return tuple(
+        GateViolation(
+            rule=_CYCLE_RULE_ID,
+            severity=GateSeverity.ERROR
+            if d.severity == "error"
+            else GateSeverity.WARN,
+            file=d.file or "",
+            line=d.line or 0,
+            message=d.message,
+        )
+        for d in diags
+    )
+
+
+# frob:ticket T-2584
+def _cycle_apply_waivers(root: Path, diags: list[Diagnostic]) -> list[Diagnostic]:
+    """Drop any `diags` entry covered by a matching `frob:waive CYCLE001
+    reason="..."` placed in its representative file (T-2584): before this,
+    `_run_cycle`'s `Diagnostic` list went straight into its `ToolResult`
+    with zero calls into `frob.gates._waive` anywhere in this module or
+    `frob.check.__init__` -- a documented CYCLE001 waiver was silently
+    inert, permanently unsuppressible, no matter how deliberate the
+    repo-owner decision behind it. Reuses the SAME `_apply_waivers`/
+    `_match_waiver` spine every other gate's `Violation` stream already
+    goes through (the T-0375 `_arch001_violations`/
+    `_arch_long_function_waived_symrefs` precedent this mirrors), so a
+    waiver here has identical semantics -- `reason=` required (WAIVE001),
+    a rule id that can never match is still WAIVE002, an unused waiver is
+    still WAIVE004 -- never a hand-rolled second matching rule that could
+    drift from the real one. Falls back to returning `diags` unchanged
+    (no waivers applied) if the snapshot needed for waiver lookup cannot
+    be built -- degrading to the pre-fix behavior on a build failure,
+    never crashing the whole `cycle` stage over a waiver lookup."""
+    from frob.gates import _apply_waivers
+
+    if not diags:
+        return diags
+    scan = (root if root.is_dir() else root.parent).resolve()
+    snapshot = _cached_snapshot(scan)
+    if snapshot is None:
+        return diags
+    violations = _cycle001_violations(diags)
+    _kept, waived = _apply_waivers(violations, snapshot)
+    waived_files = {v.file for v in waived}
+    return [d for d in diags if d.file not in waived_files]
+
+
 def _run_cycle(root: Path) -> ToolResult:
-    """Import-cycle detection over the project's local dependency graph."""
+    """Import-cycle detection over the project's local dependency graph.
+
+    T-2584: CYCLE001 findings now pass through the same waiver pipeline
+    every other gate's `Violation` stream uses (`_cycle_apply_waivers`) --
+    a `frob:waive CYCLE001 reason="..."` in a cycle's representative file
+    actually suppresses it, instead of being silently inert."""
     from frob.cycle.graph import find_cycles
 
     scan_root = root if root.is_dir() else root.parent
     cycles = find_cycles(_build_import_graph(scan_root))
     diags = _cycle_diags(cycles)
+    diags = _cycle_apply_waivers(root, diags)
     return ToolResult(
         tool="frob-cycle",
         exit_code=1 if any(d.severity == "error" for d in diags) else 0,

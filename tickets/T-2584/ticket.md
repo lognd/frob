@@ -2,7 +2,7 @@
 id: T-2584
 title: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001
   is silently inert
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -35,7 +35,12 @@ scope_changes:
     pipeline fix'
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_unwaived_cycle_reports
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_matching_waiver_suppresses_the_cycle
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_unrelated_files_waiver_does_not_suppress
+- tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_missing_reason_is_not_silently_honored
+designated_repro_test: tests/unit/test_cycle_waiver.py::TestCycleWaiverPipeline::test_matching_waiver_suppresses_the_cycle
 threat: null
 component: null
 anchor: false
