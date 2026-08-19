@@ -21,6 +21,9 @@ scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets.md
 - src/frob/gates/_waive.py
+- frob.toml
+- tests/test_gates_milestone.py
+- tests/test_tickets_milestone_sort.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -85,6 +88,26 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: MILE003 registration requires editing the _KNOWN_GATE_RULES merge zone (frob-zone-managed,
     safe for concurrent edits)
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: frob.toml
+  reason: 'config surface: [tickets].default_milestone setting for this repo; new
+    gate test file for MILE003 behavioral coverage'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates_milestone.py
+  reason: 'config surface: [tickets].default_milestone setting for this repo; new
+    gate test file for MILE003 behavioral coverage'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_tickets_milestone_sort.py
+  reason: extending effective_milestone's return-type second element from bool to
+    MilestoneSource enum (T-2576 M2's terminal-default addition) requires updating
+    M3's existing True/False assertions to the new enum values -- same function, same
+    test file, not a second implementation
   actor: logan
   at: '2026-08-19'
 body_changes:
