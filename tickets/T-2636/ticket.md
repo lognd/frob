@@ -1,7 +1,7 @@
 ---
 id: T-2636
 title: tmLanguage grammar missing 'exclusive' clause keyword (test red on main)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -11,6 +11,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_strata_tmlanguage.py
 - editors/vscode-strata/**
@@ -18,7 +20,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
+designated_repro_test: tests/unit/test_strata_tmlanguage.py::test_clause_keywords_covered_by_grammar
 threat: null
 component: null
 anchor: false
