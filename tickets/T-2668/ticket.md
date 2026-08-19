@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_reporting.py
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/tickets/_land_verify.py
+- src/frob/tickets/_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,14 @@ scope_changes:
   reason: land-side reverify skips the identity-based (findings) comparison outright
     whenever gate_errors is None, even when error_findings IS measured -- the exact
     'discard a finding you already have' gap item 2 targets, on the land side
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: check_gates' Callable type signature here (land()'s own param, two occurrences)
+    must widen alongside _verify.py/_land_verify.py/_reporting.py's matching widening
+    (tuple[int,int,int] -> tuple[int, int|None, int|None]) or ty flags a real type
+    mismatch across the same call chain this ticket's fix touches
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
