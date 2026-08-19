@@ -2,7 +2,7 @@
 id: T-2525
 title: 'post-land sweep regression from T-2503: 38 new (rule, file) identit(ies) (ARCH103,
   COV001, COV003, DOC001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -143,3 +143,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: measured false positive: land commit 75f62ad7 (chore(tickets): file T-2523, single-file ticket-ledger add) touches only tickets/T-2523/ticket.md; NONE of the 38 flagged (rule,file) identities overlap with that file. All 38 UNATTRIBUTED, empty candidate_commits. Identity set overlaps heavily with sibling sweep tickets T-2381/T-2474/T-2560, each filed against different unrelated single-file lands -- diagnostic of a stale/non-persisting rolling baseline (recurring phantom findings, e.g. TICK003/TICK004 against tickets.md which was deleted by the unrelated T-2356 ledger-v2 land and no longer exists on main), not a regression caused by T-2503.
