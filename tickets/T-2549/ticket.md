@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ef519d6a017157246aef1e090c3510c5841d2e58
 ---
 COV007 ("frob:doc on private symbol") fires on 25 `design/frob.strata`
 component nodes -- `frob.cli`, `frob.security`, `frob.gates`, ... -- none
