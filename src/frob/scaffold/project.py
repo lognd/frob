@@ -112,7 +112,8 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
             "types/python-tool/app/app.py.j2", "src/{{ project.name }}/app/app.py"
         ),
         _ManifestEntry(
-            "types/python-tool/app/config.py.j2", "src/{{ project.name }}/app/config.py"
+            "types/python-tool/app/config.py.j2",
+            "src/{{ project.name }}/app/config.py",
         ),
         _ManifestEntry(
             "shared/python/logging/__init__.py.j2",
@@ -245,7 +246,8 @@ _MANIFESTS: dict[str, list[_ManifestEntry]] = {
             "{{ project.name }}/__init__.py",
         ),
         _ManifestEntry(
-            "types/pybind11-library/tests/test_bindings.py.j2", "tests/test_bindings.py"
+            "types/pybind11-library/tests/test_bindings.py.j2",
+            "tests/test_bindings.py",
         ),
         _ManifestEntry(
             "types/pybind11-library/github/ci.yml.j2", ".github/workflows/ci.yml"
@@ -702,21 +704,18 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
 def install_worktree_lease_hook(
     root: Path, *, force: bool = False
 ) -> Result[tuple[Path, ...], ScaffoldError]:
-    """Install the T-0431 worktree-lease `pre-commit`/`pre-merge-commit`
-    git hooks into `root`'s real hooks directory (`_hooks_dir`): each
-    hook aborts loudly if `FROB_AGENT` is set and the commit lands
-    outside the agent's own leased worktree (T-2556 -- the T-2556 comment
-    in `_WORKTREE_LEASE_HOOK_SCRIPT` gives the exact conditions). T-2071: both hooks ALSO carry a second, FACT-based guard
-    that does NOT depend on `FROB_AGENT` (measured UNSET in every
-    Agent-tool shell) -- see the T-2071 comment in
-    `_WORKTREE_LEASE_HOOK_SCRIPT`. `pre-merge-commit` ALSO carries the
-    T-0577 raw-ticket-branch-merge guard
-    (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): refuses a real merge commit
-    whose incoming side is a `worktree-agent-*` branch from ANY shell,
-    forcing `frob ticket land` as the only path onto main. `pre-commit`
-    ALSO carries the T-0731 land-owned-files guard
-    (`_FORBID_LAND_OWNED_FILES_SCRIPT`): refuses a worktree commit
-    touching `pyproject.toml`'s version line, CHANGELOG.md, or uv.lock
+    """Install the T-0431 worktree-lease `pre-commit`/`pre-merge-commit` git hooks into
+    `root`'s real hooks directory (`_hooks_dir`): each hook aborts loudly if
+    `FROB_AGENT` is set and the commit lands outside the agent's own leased worktree
+    (T-2556 -- the T-2556 comment in `_WORKTREE_LEASE_HOOK_SCRIPT` gives the exact
+    conditions). T-2071: both hooks ALSO carry a second, FACT-based guard that does NOT
+    depend on `FROB_AGENT` (measured UNSET in every Agent-tool shell) -- see the T-2071
+    comment in `_WORKTREE_LEASE_HOOK_SCRIPT`. `pre-merge-commit` ALSO carries the T-0577
+    raw-ticket-branch-merge guard (`_FORBID_RAW_TICKET_MERGE_SCRIPT`): refuses a real
+    merge commit whose incoming side is a `worktree-agent-*` branch from ANY shell,
+    forcing `frob ticket land` as the only path onto main. `pre-commit` ALSO carries the
+    T-0731 land-owned-files guard (`_FORBID_LAND_OWNED_FILES_SCRIPT`): refuses a
+    worktree commit touching `pyproject.toml`'s version line, CHANGELOG.md, or uv.lock
     (all `frob ticket land`'s exclusively), and warns on tickets.md.
 
     `Err(OutputExists)` if either hook file already exists and `force`

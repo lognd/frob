@@ -108,6 +108,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2586: T-2586: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
 - T-2587: T-2587: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is visible on main immediately, not only after land
 - T-2588: T-2588: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
+- T-2596: T-2596: four real E501 lines in src/ raised quarantine and forced the whole fleet into synchronous lands
 - T-2598: T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
 
 ## [0.530.0] - unreleased
