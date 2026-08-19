@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/__init__.py
 - tests/test_gates_milestone.py
 - docs/modules/tickets-data-storage.md
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-data-storage.md
   reason: MILE001/MILE002 tests + doc anchor for milestone_gate closure
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: REG010 sync-gate-rules entries for MILE001/MILE002
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
