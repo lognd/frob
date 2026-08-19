@@ -15,11 +15,23 @@ milestone: null
 scope:
 - docs/modules/app.md
 - src/frob/app/cycle_runner.py
+- tests/unit/test_cycle_runner_doc_waiver_t2598.py
+evidence_scope:
+- tests/unit/test_cycle_runner_doc_waiver_t2598.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_cycle_runner_doc_waiver_t2598.py
+  reason: new repro test for this ticket's fix
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_cycle_runner_doc_waiver_t2598.py::TestCycleRunnerDocWaiver::test_app_doc_describes_current_cycle_runner_contract
+- tests/unit/test_cycle_runner_doc_waiver_t2598.py::TestCycleRunnerDocWaiver::test_affect001_waiver_removed_arch103_waiver_kept
+designated_repro_test: tests/unit/test_cycle_runner_doc_waiver_t2598.py::TestCycleRunnerDocWaiver::test_app_doc_describes_current_cycle_runner_contract
 threat: null
 component: null
 anchor: false
