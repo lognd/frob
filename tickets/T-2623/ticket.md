@@ -12,12 +12,17 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
-scope:
-- tests/unit/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tests/unit/
+  reason: 'triage ticket: the deliverable is a published list plus per-group follow-up
+    tickets, not edits across 448 test files'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
