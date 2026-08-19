@@ -2,7 +2,7 @@
 id: T-2538
 title: 'post-land sweep regression from T-2523: 5 new (rule, file) identit(ies) (E501,
   F401)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -49,3 +49,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - F401  /home/logan/projects/frob/tests/unit/test_ticket_runner_repro_merge_base.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: sweep false positive: all 5 (rule,file) identities pre-existing at T-2523's parent commit bc41a659757f849dc6464d158161a9db95822f31, not introduced by T-2523's land (which touched only design/frob.strata, src/frob/gates/_sys_selfaudit.py, src/frob/gates/_waive.py, src/frob/strata/_effects.py, tests/test_gates.py, tests/unit/strata/test_effects.py -- none of the 5 flagged files). Measured directly: scripts/fleet_status.py (101 lines >88 chars), src/frob/app/ticket_runner/_verify.py (25), src/frob/graph/summary.py (32), src/frob/testing/_collect_kotlin.py (10) all already over line-length at parent; tests/unit/test_ticket_runner_repro_merge_base.py already has the unused 'from typani import Ok' import at parent (never referenced in file body). Attribution engine already independently answered UNATTRIBUTED for all 5 with empty candidate lists. Stale rolling-sweep-baseline false positive, matching the known class documented in the T-2467-adjacent trap.
