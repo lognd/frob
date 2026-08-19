@@ -55,6 +55,22 @@ that compares an IN_PROGRESS ticket's live lease scope against its
 current declared scope and flags/logs when the lease is a strict
 superset the ticket no longer claims -- surfacing the drift instead of
 requiring another empty-declared-scope incident to notice it. Whether
-this belongs as a new gate code, a `frob ticket doctor`-style diagnostic,
+this belongs as a new gate code, a <!-- frob:waive DOC006 reason="illustrative hypothetical name for a not-yet-built diagnostic subcommand, not a claim that `frob ticket doctor` currently exists" -->`frob ticket doctor`-style diagnostic,
 or a `mutate_scope`-adjacent write-time guard is an open design question
 for whoever picks this up.
+
+## Resolution (this pass)
+
+Implemented as a read-time gate, TICK012
+(`frob.gates._tickets_gate._tick012_lease_scope_drift`), not a
+`mutate_scope`-adjacent write-time guard -- both `mutate_scope`
+(`src/frob/tickets/_scope.py`) and every ticket_runner write path that
+could call it sit outside this ticket's declared scope
+(`src/frob/tickets/_leases.py`, `src/frob/gates`), and a write-time guard
+placed there would have been an undeclared scope expansion. TICK012
+compares each IN_PROGRESS ticket's live lease scope
+(`read_all_leases`) against its CURRENT declared scope via
+`scope_matches` (T-0241's shared directory/glob-aware matcher, not a
+literal string/set diff) and emits one WARN per drifted lease, naming
+the stale paths -- covering every `read_all_leases` consumer generally,
+not only the CrossTicketLeakage/empty-scope case T-2547 already closed.
