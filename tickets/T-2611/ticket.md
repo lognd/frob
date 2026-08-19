@@ -2,7 +2,7 @@
 id: T-2611
 title: core.autocrlf=true puts CRLF in every source file, silently breaking any length
   or byte-level measurement
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -14,10 +14,18 @@ runs_last: false
 milestone: null
 scope:
 - .gitattributes
+- tests/unit/test_gitattributes_crlf_normalization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_gitattributes_crlf_normalization.py
+  reason: regression lock proving the repo-wide eol=lf normalization is declared and
+    effective
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
