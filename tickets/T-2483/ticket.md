@@ -40,3 +40,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - E501  /home/logan/projects/frob/src/frob/app/ticket_runner/_waive_audit.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Failure log
+- 2026-08-18 attempt 1: 1 of 2 identities resolved by measurement (DRIFT002 src/frob/process/_reap.py confirmed pre-existing at T-2467's parent 58893878498f3761a1d8679d17269e39cae85fcc: 5 dangling frob:tests edges to tests/unit/test_process_reap.py already present, file untouched by T-2467's land). The other, E501 src/frob/app/ticket_runner/_waive_audit.py, is genuinely new (T-2467's land created this file; measured 10 lines over 88 chars at land commit 7f8193fc958ef608da902730128c6278347b3355) but that path is currently OFF LIMITS (leased by live agents per dispatch instructions) so the fix cannot be made in this pass. Requeue for a dispatch once the ticket_runner/ lease clears; the DRIFT002 half needs no further action.
