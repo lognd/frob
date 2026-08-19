@@ -52,6 +52,10 @@ scope:
 - tickets/T-2570/ticket.md
 - docs/modules/app.md
 - docs/strata/surface.md
+evidence_scope:
+- tests/unit/test_refs_schema.py
+- tests/gates/test_rule_id_scan_branches.py
+- tests/unit/strata/test_fragments.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -109,6 +113,18 @@ body_changes:
   at: '2026-08-19'
   old_length: 6542
   new_length: 6542
+- mode: append
+  reason: 'BUG002 land-time gate: this ticket''s batches are doc-anchor/coverage-metadata
+    wiring with zero behavior change, not classic bug repros -- opt into the no-behavior-change
+    BUG002 posture per the land error''s own suggested remedy (2)'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 6541
+  new_length: 7352
+evidence:
+- tests/unit/test_refs_schema.py::TestRefsSchemaGate::test_must_now_fire_reports_the_undeclared_key
+- tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_missing_scanned_base_directory_is_skipped_not_an_error
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_widen_on_declared_atom_still_works
 designated_repro_test: null
 threat: null
 component: null
@@ -242,3 +258,5 @@ files), DRIFT001 (3 files, digest-moved-since-ack), TICK003/004
 (tickets.md), SEC004/SEC110/PII012/SELFAUDIT001/TEST001/RENDER001/
 WIRE002/WIRE003 (one file each, likely independent). File a follow-up
 for anything that needs a design decision rather than forcing it.
+
+frob:no-behavior-change reason="This ticket's fixable-groups are doc-anchor/frob:doc-directive wiring and similar metadata corrections (COV001/DOC002/DOC001/DOC005/DOC008/DOCENUM001/TICK003/TICK004 and similar coverage-gate findings) -- purely additive comments/directives with zero runtime behavior change. BUG002's designated-repro requirement (a test that fails at main and passes at the fix) does not apply to this class of fix: the gate findings themselves are what changed (verified directly via before/after frob check --json diffs in each batch's Done report), not test-observable behavior. Any batch in this ticket that DOES change real behavior (a genuine bug fix rather than a coverage/doc-metadata fix) will bind and designate its own real repro test per BUG002, not rely on this blanket waiver."
