@@ -1,7 +1,7 @@
 ---
 id: T-2588
 title: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -34,7 +34,16 @@ scope_changes:
     collateral repair of pre-existing TestCycleRunner fixtures)'
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_naive_relative_resolution_would_have_missed_this
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_all_path_shapes_agree_on_a_real_cycle
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_all_path_shapes_stay_clean_on_an_acyclic_tree
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_unresolvable_path_refuses_instead_of_reporting_clean
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_run_exits_nonzero_on_a_found_cycle
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_run_exits_zero_on_a_clean_tree
+- tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_run_exits_nonzero_error_on_unresolvable_path
+- tests/unit/test_app_runners_batch5.py::TestCycleRunner::test_cycle_found_with_suggest
+designated_repro_test: tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution::test_naive_relative_resolution_would_have_missed_this
 threat: null
 component: null
 anchor: false

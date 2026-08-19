@@ -338,6 +338,17 @@ class TestBindRunner:
         assert "wrap.cpp" in payload
 
 
+def _make_project_root(tmp_path):
+    """Stamp `tmp_path` with a `pyproject.toml` (T-2588): `_build_graph`
+    now REQUIRES a resolvable project root -- a bare `tmp_path` with
+    neither a `pyproject.toml` nor an enclosing git repo is, correctly,
+    an unresolved path, not an acyclic project, so every `TestCycleRunner`
+    fixture needs one to keep exercising the graph-building path instead
+    of the new refusal path."""
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "fixture"\n')
+    return tmp_path
+
+
 class TestCycleRunner:
     """`frob cycle`: missing-path error, no-cycle path, cycle-found + suggest."""
 
@@ -350,6 +361,7 @@ class TestCycleRunner:
 
     def test_no_cycles_logs_message(self, tmp_path, caplog):
         """An acyclic single-file project logs 'no cycles found'."""
+        _make_project_root(tmp_path)
         _make_py_project(tmp_path)
         cfg = AppConfig(cycle_path=tmp_path)
         with caplog.at_level("INFO"):
@@ -358,16 +370,19 @@ class TestCycleRunner:
 
     def test_cycle_found_with_suggest(self, tmp_path, caplog):
         """A real import cycle is reported, with a suggestion when requested."""
+        _make_project_root(tmp_path)
         (tmp_path / "a.py").write_text("import b\n")
         (tmp_path / "b.py").write_text("import a\n")
         cfg = AppConfig(cycle_path=tmp_path, cycle_suggest=True)
-        with caplog.at_level("INFO"):
+        with caplog.at_level("INFO"), pytest.raises(SystemExit) as exc:
             cycle_run(cfg)
+        assert exc.value.code != 0, "a run with a real cycle must exit nonzero"
         assert any("cycle" in r.message.lower() for r in caplog.records)
         assert any("suggestion" in r.message for r in caplog.records)
 
     def test_single_file_target(self, tmp_path, caplog):
         """A single-file `cycle_path` (not a directory) is also accepted."""
+        _make_project_root(tmp_path)
         f = tmp_path / "solo.py"
         f.write_text("x = 1\n")
         cfg = AppConfig(cycle_path=f)
@@ -377,6 +392,7 @@ class TestCycleRunner:
 
     def test_parse_error_logs_warning(self, tmp_path, caplog):
         """A file that fails to parse produces a warning, not a hard failure."""
+        _make_project_root(tmp_path)
         (tmp_path / "bad.py").write_text("def f(:\n")
         cfg = AppConfig(cycle_path=tmp_path)
         with caplog.at_level("WARNING"):
@@ -385,6 +401,7 @@ class TestCycleRunner:
 
     def test_excluded_and_skipped_paths_ignored(self, tmp_path, caplog):
         """Files under a skipped dir (.git) or a `[graph].exclude` glob are not scanned."""
+        _make_project_root(tmp_path)
         skipped = tmp_path / ".git"
         skipped.mkdir()
         (skipped / "hooks.py").write_text("import nope\n")
@@ -397,6 +414,7 @@ class TestCycleRunner:
 
     def test_lang_filter_skips_non_matching_extension(self, tmp_path, caplog):
         """`--lang python` skips a .cpp file's import edges (want_cpp is False)."""
+        _make_project_root(tmp_path)
         (tmp_path / "a.cpp").write_text('#include "b.h"\n')
         cfg = AppConfig(cycle_path=tmp_path, cycle_lang="python")
         with caplog.at_level("INFO"):
