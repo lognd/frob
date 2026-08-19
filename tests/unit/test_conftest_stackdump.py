@@ -99,6 +99,12 @@ class TestSelfScanHeavyGrouping:
                 self.name = name
                 self.own_markers: list = []
 
+            def get_closest_marker(self, name: str):  # noqa: ANN001
+                """T-2637: stub matches the real pytest.Item API surface
+                `pytest_collection_modifyitems` calls (T-2099's
+                heavy_subprocess check) -- this fixture carries none."""
+                return None
+
             def add_marker(self, marker) -> None:  # noqa: ANN001
                 self.own_markers.append(marker)
 
