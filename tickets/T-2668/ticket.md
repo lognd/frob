@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting.py
 - src/frob/app/ticket_runner/_verify.py
+- src/frob/tickets/_land_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,13 @@ scope_changes:
   reason: root cause of the unmeasured-gate-state bug lives in this file's gate-summary
     count regex (drifted since T-1664 added an unresolved term), not in _reporting.py
     alone
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_land_verify.py
+  reason: land-side reverify skips the identity-based (findings) comparison outright
+    whenever gate_errors is None, even when error_findings IS measured -- the exact
+    'discard a finding you already have' gap item 2 targets, on the land side
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
