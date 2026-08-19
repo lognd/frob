@@ -90,12 +90,8 @@ def _declared_python_source_roots(root: Path) -> tuple[Path, ...]:
     return tuple(deduped)
 
 
+# frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:waive COV001 reason="docs/modules/lang.md still has no frob:describes anchor \
-# for this function -- the original waiver's promised doc-anchor follow-up ticket was \
-# never actually filed; filed T-2618 to add the anchor and remove this \
-# waiver once it lands (T-2612 lease-premise audit; the original reason cited T-2365's \
-# now-terminal lease as the blocker)"
 # frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
 # frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 def declared_project_package_name(root: Path) -> str | None:
@@ -122,12 +118,8 @@ def declared_project_package_name(root: Path) -> str | None:
     return name if isinstance(name, str) and name else None
 
 
+# frob:doc docs/modules/lang.md#declared-project-identity-t-2195t-2389
 # frob:ticket T-2389
-# frob:waive COV001 reason="docs/modules/lang.md still has no frob:describes anchor \
-# for this function -- the original waiver's promised doc-anchor follow-up ticket was \
-# never actually filed; filed T-2618 to add the anchor and remove this \
-# waiver once it lands (T-2612 lease-premise audit; the original reason cited T-2365's \
-# now-terminal lease as the blocker)"
 # frob:tests tests/test_gates.py::TestEnvVarDocGate.test_undocumented_env_var_fires_for_a_differently_named_project  # noqa: E501
 # frob:tests tests/test_gates.py::TestRootAssetDirGate.test_unreferenced_root_directory_fires_for_a_differently_named_project  # noqa: E501
 def declared_source_prefixes(root: Path) -> tuple[str, ...]:

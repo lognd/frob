@@ -325,6 +325,43 @@ logic is never re-derived per grammar.
 - `_iter_cpp_functions` -- `(node, qualified_name)` for every C/C++ function
   under a root, shared by `frob.arch` and `frob.dup`.
 
+## Declared project identity (T-2195/T-2389)
+
+<!-- frob:describes src/frob/lang/_nodes.py::declared_project_package_name -->
+<!-- frob:describes src/frob/lang/_nodes.py::declared_source_prefixes -->
+
+`declared_project_package_name`/`declared_source_prefixes` are the single
+public home T-2389 promotes for "what is this project's own package
+called, and what path prefix(es) can its own tracked source live under" --
+answering that question used to be duplicated per caller (`_env_var_docs.
+py`/`_root_asset_dirs.py` each hardcoded `"src/frob/"`/`"FROB_"` literals
+independently), the exact "same rule, two copies" shape NO DUPLICATION
+forbids. Both functions were built and shipped under T-2389 with a live
+cross-worktree lease on this file (T-2365); this section is the promised
+doc-anchor follow-up that lease deferred.
+
+`declared_project_package_name(root)` reads `root`'s own `pyproject.toml`
+`[project].name` via `tomllib`, returning `None` (never a guessed
+default) if the file is missing, unparseable, or the key is absent --
+UNRESOLVED is a distinct, load-bearing outcome from "this project is
+named X" (T-2391's fail-loudly doctrine: a caller that silently treated
+`None` as some fallback name would mismatch every file in a
+differently-named project, exactly the bug T-2618's own waivers were
+filed against).
+
+`declared_source_prefixes(root)` combines that package name with
+`_declared_python_source_roots` (this module's own T-2195 helper, see
+"Primitives" above) to produce every `root`-relative POSIX prefix
+(`"src/frob/"`-shaped, always trailing `/`) this project's tracked Python
+source can start with -- `()`, not a wildcard match-everything or
+match-nothing default, when the package name cannot be resolved. For
+this repo it resolves to `("src/frob/",)`; a flat-layout project with no
+declared `src/` root resolves to `("frob/",)` (or whatever `[project].
+name` says) instead. Both `ENVDOC001`/`ROOT001` (`docs/modules/gates.md`)
+consume `declared_source_prefixes` as their own project-identity
+denominator, replacing the pre-T-2389 hardcoded literals each gate used
+to carry independently.
+
 ## Error types
 
 <!-- frob:describes src/frob/lang/__init__.py::LangError -->
