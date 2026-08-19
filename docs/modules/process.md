@@ -33,6 +33,7 @@ case a tool by name.
 <!-- frob:describes src/frob/process/parsers/common.py::tool_unavailable_result -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_disabled_result -->
 <!-- frob:describes src/frob/process/parsers/common.py::tool_crash_result -->
+<!-- frob:describes src/frob/process/parsers/common.py::tool_parse_failure_result -->
 <!-- frob:describes src/frob/process/_guard.py::EXEC_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::NET_KILL_SWITCH_ENV -->
 <!-- frob:describes src/frob/process/_guard.py::ProcessGuardError -->
@@ -112,7 +113,27 @@ def tool_disabled_result(tool: str, flag_env: str) -> ToolResult
     # An exec-kill-switch refusal as a failing ToolResult (T-0200), naming the env var.
 def tool_crash_result(tool: str, exc: BaseException) -> ToolResult
     # An unexpected exception (T-1022 EXHAUST001/002) as a failing ToolResult, naming the exception.
+def tool_parse_failure_result(tool, detail, *, exit_code=1, summary=None) -> ToolResult
+    # Unparsable tool OUTPUT (malformed JSON/XML) as a failing ToolResult carrying a real
+    # error Diagnostic (T-2537) -- never exit_code=1 with an empty diagnostic list, which
+    # is indistinguishable from a clean run to any caller that only reads `diagnostics`.
 ```
+
+### Unparsable output is never silence (T-2537)
+
+Every parser whose input can fail to decode -- `parse_ruff_json`,
+`parse_eslint`, `parse_junit_xml`, valgrind's XML branch, and cargo's
+per-line JSON stream -- routes its failure through
+`tool_parse_failure_result` (or, for cargo, appends an equivalent error
+`Diagnostic` for the offending line). Before T-2537 those branches
+returned a nonzero exit code with `diagnostics=[]`, which is byte-
+identical at the `ToolResult` level to a genuinely clean run; a ruff
+crash under fleet contention read as "measured, found nothing" and
+auto-dropped seven sweep tickets. A genuinely clean run is unchanged:
+zero diagnostics, zero exit code. A warning-only nonzero exit (ruff-
+format's "N files would be reformatted") is untouched -- it never enters
+a parse-failure branch. T-2521's consumer-side guard
+(`_incomplete_tool_results`) remains in place as the second layer.
 
 ## Kill switch (T-0200)
 

@@ -268,9 +268,6 @@ def tool_crash_result(tool: str, exc: BaseException) -> ToolResult:
     )
 
 
-# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
-# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
-# as residue"
 # frob:doc docs/modules/process.md#public-api
 # frob:ticket T-2537
 # frob:tests \

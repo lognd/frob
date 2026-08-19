@@ -2,7 +2,7 @@
 id: T-2544
 title: document tool_parse_failure_result in docs/modules/process.md and drop T-2537's
   AFFECT001 waivers
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-18'
@@ -18,6 +18,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:uv run pytest tests/unit/test_parser_failure_diagnostics.py -q exit=0 sha256=e6894dd97db4
 designated_repro_test: null
 threat: null
 component: null

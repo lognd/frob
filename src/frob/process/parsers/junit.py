@@ -68,9 +68,6 @@ def _summarize_cases(cases: list[TestCase]) -> tuple[int, str]:
     return failed, summary
 
 
-# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
-# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
-# as residue"
 # frob:ticket T-2537
 # frob:doc docs/modules/process.md#public-api
 def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult:

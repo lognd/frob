@@ -80,6 +80,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2533: T-2533: DOC006 CLI-invocation walker misses several _dispatch_*-bypassed verbs' real subcommands
 - T-2537: T-2537: tool parsers report a crashed run as zero findings: attach an error diagnostic on unparsable output
 - T-2539: T-2539: may-raise resolver reports false EXHAUST002 leaks for multi-type except clauses and slice subscripts
+- T-2544: T-2544: document tool_parse_failure_result in docs/modules/process.md and drop T-2537's AFFECT001 waivers
 - T-2547: T-2547: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed file
 - T-2549: T-2549: COV007 reads a strata security clearance as API privacy: 25 false findings on design/frob.strata
 - T-2552: T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads

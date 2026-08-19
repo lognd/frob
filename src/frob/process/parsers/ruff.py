@@ -35,9 +35,6 @@ def _ruff_json_diagnostic(item: dict) -> Diagnostic:
     )
 
 
-# frob:waive AFFECT001 reason="T-2537: docs/modules/process.md is held by T-2374's \
-# live cross-worktree lease, so this change cannot touch it; the doc update is filed \
-# as residue"
 # frob:ticket T-2537
 # frob:doc docs/modules/process.md#public-api
 def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult:
