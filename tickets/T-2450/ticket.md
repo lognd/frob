@@ -10,10 +10,33 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
-- src/frob/verify/**;src/frob/app/ticket_runner/**
+- src/frob/verify/**
+- src/frob/app/ticket_runner/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/verify/**;src/frob/app/ticket_runner/**
+  reason: 'T-2614: split single semicolon-joined glob string into two valid scope
+    entries; the joined string is not a valid glob pattern and matched nothing'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/verify/**
+  reason: 'T-2614: split single semicolon-joined glob string into two valid scope
+    entries; the joined string is not a valid glob pattern and matched nothing'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/**
+  reason: 'T-2614: split single semicolon-joined glob string into two valid scope
+    entries; the joined string is not a valid glob pattern and matched nothing'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null

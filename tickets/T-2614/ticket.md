@@ -1,7 +1,7 @@
 ---
 id: T-2614
 title: T-2450 scope is a single semicolon-joined glob string, not two scope entries
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -13,6 +13,8 @@ runs_last: false
 milestone: null
 scope:
 - tickets/T-2450/**
+- tickets/T-2450/ticket.md
+- tests/unit/test_t2450_scope_repair.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,7 +30,21 @@ scope_changes:
   reason: narrow to the ticket's own directory instead of the whole tickets tree
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: add
+  glob: tickets/T-2450/ticket.md
+  reason: already covered by tickets/T-2450/**, no-op ack
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_t2450_scope_repair.py
+  reason: T-2614 needs a designated FAILED_AT_PARENT repro test proving the scope
+    fix; this ticket's bug kind requires a pytest node id, not a docs-only evidence-cmd
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair::test_no_scope_entry_contains_a_semicolon
+- tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair::test_every_scope_entry_is_independently_matchable
+designated_repro_test: tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair::test_no_scope_entry_contains_a_semicolon
 threat: null
 component: null
 anchor: false
