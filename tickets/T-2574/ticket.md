@@ -1,7 +1,7 @@
 ---
 id: T-2574
 title: 'M1: Ticket.milestone field, semver ordering, CLI surface'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -16,6 +16,10 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - src/frob/app/ticket_runner/_mutate.py
 - docs/modules/tickets-data-storage.md
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +63,42 @@ scope_changes:
   glob: docs/modules/tickets-data-storage.md
   reason: removed nonexistent _filing.py; added the doc that must gain the milestone
     field/setter/CLI doc closure
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: T-0446/T-1848 CLI-wiring grant covers __main__.py/app/config.py/ticket_runner/__init__.py
+    but the actual argparse flag definitions for --milestone and the milestone mutate
+    verb live in _cli_parsers/_ticket/_new.py and _metadata.py (plus __init__.py's
+    registration list), and the argparse-Namespace-to-kwargs copy lives in _config_external.py;
+    without these the CLI surface the ticket requires cannot be wired at all
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: T-0446/T-1848 CLI-wiring grant covers __main__.py/app/config.py/ticket_runner/__init__.py
+    but the actual argparse flag definitions for --milestone and the milestone mutate
+    verb live in _cli_parsers/_ticket/_new.py and _metadata.py (plus __init__.py's
+    registration list), and the argparse-Namespace-to-kwargs copy lives in _config_external.py;
+    without these the CLI surface the ticket requires cannot be wired at all
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: T-0446/T-1848 CLI-wiring grant covers __main__.py/app/config.py/ticket_runner/__init__.py
+    but the actual argparse flag definitions for --milestone and the milestone mutate
+    verb live in _cli_parsers/_ticket/_new.py and _metadata.py (plus __init__.py's
+    registration list), and the argparse-Namespace-to-kwargs copy lives in _config_external.py;
+    without these the CLI surface the ticket requires cannot be wired at all
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: T-0446/T-1848 CLI-wiring grant covers __main__.py/app/config.py/ticket_runner/__init__.py
+    but the actual argparse flag definitions for --milestone and the milestone mutate
+    verb live in _cli_parsers/_ticket/_new.py and _metadata.py (plus __init__.py's
+    registration list), and the argparse-Namespace-to-kwargs copy lives in _config_external.py;
+    without these the CLI surface the ticket requires cannot be wired at all
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
