@@ -2,7 +2,7 @@
 id: T-2560
 title: 'post-land sweep regression from T-2552: 38 new (rule, file) identit(ies),
   58 finding(s) (ARCH103, COV001, COV003, COV004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -141,3 +141,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: measured false positive: land commit c1328b82 (T-2552, mayraise builtin-raiser table fix) touches only CHANGELOG.md, changelog.d/T-2552.md, docs/modules/arch.md, rapid-debt.jsonl, src/frob/arch/_mayraise.py, tests/unit/test_arch.py, tickets/T-2543, tickets/T-2552; NONE of the 38 flagged (rule,file) identities overlap with those files. All 38 UNATTRIBUTED, empty candidate_commits. Identity set overlaps heavily with sibling sweep tickets T-2381/T-2474/T-2525, each filed against different unrelated lands -- diagnostic of a stale/non-persisting rolling baseline (recurring phantom findings, e.g. TICK003/TICK004 against tickets.md which was deleted by the unrelated T-2356 ledger-v2 land and no longer exists on main), not a regression caused by T-2552.
