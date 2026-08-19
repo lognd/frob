@@ -184,6 +184,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1927
 # frob:ticket T-1784
 # frob:ticket T-1782
+# frob:ticket T-2580
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -511,6 +512,13 @@ _KNOWN_GATE_RULES = frozenset(
         # read site; this rule closes the write-time drift generally, for
         # every `read_all_leases` consumer.
         "TICK012",
+        # T-2580: MILE001 (frob.gates._milestone.milestone_gate) -- an
+        # OPEN ticket `blocked_by` an OPEN ticket in a LATER effective
+        # milestone -- a provable release deadlock.
+        "MILE001",
+        # T-2580: MILE002 (same module) -- the same deadlock reached via
+        # the parent/descendant hierarchy instead of `blocked_by`.
+        "MILE002",
         # T-2576: MILE003 (frob.gates._milestone.milestone_gate) -- an
         # OPEN ticket whose effective milestone (declared, inherited, or
         # the repo's configured `[tickets].default_milestone`) cannot be
@@ -1757,10 +1765,9 @@ def _waive009_violation(
 # frob:waive COV001 reason="a docs/modules/gates.md WAIVE009 subsection (matching \
 # WAIVE006/007/008's own catalog entries) is the real doc home for this symbol, but \
 # docs/modules/gates.md was under T-2377's live lease for this ticket's whole working \
-# window -- follow-up ticket T-2639 adds the doc subsection AND the frob \
-# check wiring this symbol also needs (src/frob/gates/__init__.py was under T-2580's \
-# live lease at the same time) once both leases clear; remove this waiver when that \
-# doc anchor lands"
+# window -- follow-up ticket T-2639 adds the doc subsection AND the frob check wiring \
+# this symbol also needs (src/frob/gates/__init__.py was under T-2580's live lease at \
+# the same time) once both leases clear; remove this waiver when that doc anchor lands"
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
 # frob:tests \

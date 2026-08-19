@@ -101,9 +101,7 @@ class TestEffectiveMilestoneDefault:
             MilestoneSource.DEFAULTED,
         )
 
-    def test_declared_value_is_not_overridden_by_default(
-        self, tmp_path: Path
-    ) -> None:
+    def test_declared_value_is_not_overridden_by_default(self, tmp_path: Path) -> None:
         """A ticket with its own milestone set keeps it verbatim even when
         the repo default differs -- the default must never win over a
         real, explicit choice."""
@@ -115,16 +113,12 @@ class TestEffectiveMilestoneDefault:
             MilestoneSource.DECLARED,
         )
 
-    def test_inherited_value_is_not_overridden_by_default(
-        self, tmp_path: Path
-    ) -> None:
+    def test_inherited_value_is_not_overridden_by_default(self, tmp_path: Path) -> None:
         """A ticket inheriting from an ancestor keeps INHERITED, unchanged
         from M3, even when the repo configures a (different) default --
         M3's own resolution stays the nearer answer."""
         _write_frob_toml(tmp_path, default_milestone="9.9.9")
-        story = _ticket(
-            ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0"
-        )
+        story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0")
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf, tmp_path) == (
@@ -186,9 +180,7 @@ class TestMile003:
         """An inheriting leaf is silent even with no repo default
         configured -- M3's own resolution already satisfies MILE003."""
         _write_frob_toml(tmp_path, default_milestone=None)
-        story = _ticket(
-            ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0"
-        )
+        story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0")
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert milestone_gate(tmp_path, queue) == ()
@@ -214,6 +206,180 @@ class TestMile003:
         queue = TicketQueue(tickets={t.id: t})
         violations = milestone_gate(tmp_path, queue)
         assert [v.rule for v in violations] == ["MILE003"]
+
+
+# frob:ticket T-2580
+class TestMile001:
+    """MILE001 (T-2580 M5): a `blocked_by` edge pointing INTO a later
+    effective milestone is a provable release deadlock -- the blocked
+    ticket's own (earlier) milestone can never ship first."""
+
+    def test_blocked_by_later_milestone_fires(self, tmp_path: Path) -> None:
+        """Positive control: T-1 (milestone 1.0.0) blocked_by T-2
+        (milestone 2.0.0) -- T-1 can never ship before T-2 does, MILE001
+        must fire."""
+        blocker = _ticket(ticket_id="T-2", milestone="2.0.0")
+        t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert len(violations) == 1
+        assert "T-1" in violations[0].message
+        assert "T-2" in violations[0].message
+
+    def test_blocked_by_earlier_milestone_does_not_fire(self, tmp_path: Path) -> None:
+        """Negative control: T-1 (milestone 2.0.0) blocked_by T-2
+        (milestone 1.0.0) -- the blocker ships FIRST, no deadlock, must
+        not fire."""
+        blocker = _ticket(ticket_id="T-2", milestone="1.0.0")
+        t = _ticket(ticket_id="T-1", milestone="2.0.0", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
+    def test_blocked_by_same_milestone_does_not_fire(self, tmp_path: Path) -> None:
+        """Negative control: same milestone on both sides -- ordinary
+        in-milestone sequencing, not a deadlock."""
+        blocker = _ticket(ticket_id="T-2", milestone="1.0.0")
+        t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
+    def test_terminal_blocker_does_not_fire(self, tmp_path: Path) -> None:
+        """A DONE blocker in a later milestone is not a live deadlock --
+        the dependency is already satisfied."""
+        blocker = _ticket(ticket_id="T-2", milestone="2.0.0", state=TicketState.DONE)
+        t = _ticket(ticket_id="T-1", milestone="1.0.0", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
+    def test_terminal_ticket_never_fires(self, tmp_path: Path) -> None:
+        """A DONE/DROPPED ticket does not sequence again -- its own stale
+        blocked_by edge must not fire even if the milestones would
+        otherwise deadlock."""
+        blocker = _ticket(ticket_id="T-2", milestone="2.0.0")
+        t = _ticket(
+            ticket_id="T-1",
+            milestone="1.0.0",
+            blocked_by=("T-2",),
+            state=TicketState.DONE,
+        )
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
+    def test_unresolved_milestone_does_not_fire(self, tmp_path: Path) -> None:
+        """Neither side has a resolvable milestone -- MILE003's concern,
+        not MILE001's; must not fire (and must not crash on `None`)."""
+        blocker = _ticket(ticket_id="T-2")
+        t = _ticket(ticket_id="T-1", blocked_by=("T-2",))
+        queue = TicketQueue(tickets={blocker.id: blocker, t.id: t})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE001"]
+        assert violations == []
+
+
+# frob:ticket T-2580
+class TestMile002:
+    """MILE002 (T-2580 M5): the same deadlock as MILE001, reached via the
+    parent/descendant hierarchy instead of `blocked_by`."""
+
+    def test_descendant_in_later_milestone_fires(self, tmp_path: Path) -> None:
+        """Positive control: an epic in milestone 1.0.0 with a child in
+        milestone 2.0.0 -- the epic cannot close over the open child
+        (`_done_transition_guard`), so it can never ship first."""
+        epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="1.0.0")
+        child = _ticket(
+            ticket_id="T-CHILD",
+            parent="T-EPIC",
+            milestone="2.0.0",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        assert len(violations) == 1
+        assert "T-EPIC" in violations[0].message
+        assert "T-CHILD" in violations[0].message
+
+    def test_descendant_in_earlier_or_same_milestone_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        """Negative control: descendant's milestone is earlier-or-equal
+        -- ordinary hierarchy, no deadlock."""
+        epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="2.0.0")
+        child = _ticket(
+            ticket_id="T-CHILD",
+            parent="T-EPIC",
+            milestone="1.0.0",
+        )
+        sibling = _ticket(
+            ticket_id="T-SIB",
+            parent="T-EPIC",
+            milestone="2.0.0",
+        )
+        queue = TicketQueue(
+            tickets={epic.id: epic, child.id: child, sibling.id: sibling}
+        )
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        assert violations == []
+
+    def test_terminal_descendant_does_not_fire(self, tmp_path: Path) -> None:
+        """A DONE descendant in a later milestone is not a live deadlock
+        -- `_done_transition_guard` only blocks on OPEN descendants."""
+        epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="1.0.0")
+        child = _ticket(
+            ticket_id="T-CHILD",
+            parent="T-EPIC",
+            milestone="2.0.0",
+            state=TicketState.DONE,
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        assert violations == []
+
+    def test_terminal_ancestor_never_fires(self, tmp_path: Path) -> None:
+        """A DONE/DROPPED ancestor already closed (or was dropped) --
+        stale hierarchy, must not fire."""
+        epic = _ticket(
+            ticket_id="T-EPIC",
+            tier=TicketTier.EPIC,
+            milestone="1.0.0",
+            state=TicketState.DONE,
+        )
+        child = _ticket(
+            ticket_id="T-CHILD",
+            parent="T-EPIC",
+            milestone="2.0.0",
+        )
+        queue = TicketQueue(tickets={epic.id: epic, child.id: child})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        assert violations == []
+
+    def test_grandchild_descendant_fires(self, tmp_path: Path) -> None:
+        """The hierarchy walk is any-depth, not just direct children --
+        a grandchild in a later milestone must still fire against the
+        top-level epic."""
+        epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="1.0.0")
+        story = _ticket(
+            ticket_id="T-STORY",
+            tier=TicketTier.STORY,
+            parent="T-EPIC",
+            milestone="1.0.0",
+        )
+        grandchild = _ticket(
+            ticket_id="T-LEAF",
+            parent="T-STORY",
+            milestone="2.0.0",
+        )
+        queue = TicketQueue(
+            tickets={epic.id: epic, story.id: story, grandchild.id: grandchild}
+        )
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE002"]
+        # Both the epic and the intermediate story are ancestors of the
+        # later-milestone leaf -- each independently cannot close over it
+        # (`_done_transition_guard` applies at every level), so both fire.
+        assert len(violations) == 2
+        assert any("T-EPIC" in v.message and "T-LEAF" in v.message for v in violations)
+        assert any("T-STORY" in v.message and "T-LEAF" in v.message for v in violations)
 
 
 class TestMile004:

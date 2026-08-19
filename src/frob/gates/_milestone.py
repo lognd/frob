@@ -101,6 +101,173 @@ def _mile003_unresolved_milestone(
     return tuple(violations)
 
 
+# frob:ticket T-2580
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_later_milestone_fires  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_earlier_milestone_does_not_fire  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_same_milestone_does_not_fire  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_blocker_does_not_fire  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_terminal_ticket_never_fires  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile001.test_unresolved_milestone_does_not_fire  # noqa: E501
+def _mile001_blocked_by_later_milestone(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """MILE001 (ERROR): an OPEN ticket `blocked_by` another OPEN ticket
+    whose EFFECTIVE milestone (`effective_milestone`) is LATER (real
+    semver order, `packaging.version.Version` -- same comparison
+    `_doable_sort_key` uses, never a string compare) than the blocked
+    ticket's own effective milestone. This is a provable release
+    deadlock: the earlier milestone can never ship, since it depends on
+    work the later milestone has not done yet.
+
+    A blocker that has already gone terminal (done/dropped) is not a live
+    deadlock -- the dependency is satisfied regardless of what milestone
+    it was ever filed against, so it is excluded here the same way
+    `_TERMINAL_STATES` excludes a terminal blocked-ticket outright. An
+    unresolved id in `blocked_by` (no matching ticket in `queue`) is
+    TICK-family's concern, not this one's -- skipped, not flagged twice.
+    Either side's milestone failing to resolve at all is MILE003's
+    concern -- this gate only compares two REAL values, never guesses one
+    is "later" than an absent one."""
+    from packaging.version import Version
+
+    from frob.tickets._doable import effective_milestone
+
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state in _TERMINAL_STATES:
+            continue
+        t_milestone, _t_source = effective_milestone(queue, t, root)
+        if t_milestone is None:
+            continue
+        for blocker_id in sorted(t.blocked_by):
+            blocker = queue.tickets.get(blocker_id)
+            if blocker is None or blocker.state in _TERMINAL_STATES:
+                continue
+            blocker_milestone, _b_source = effective_milestone(queue, blocker, root)
+            if blocker_milestone is None:
+                continue
+            if Version(blocker_milestone) <= Version(t_milestone):
+                continue
+            violations.append(
+                Violation(
+                    rule="MILE001",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"MILE001: {t.id} (milestone {t_milestone}) is "
+                        f"blocked_by {blocker.id} (milestone "
+                        f"{blocker_milestone}) -- a release deadlock, "
+                        f"{t_milestone} can never ship while it depends "
+                        f"on work scheduled for the later milestone "
+                        f"{blocker_milestone}"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
+# frob:ticket T-2580
+def _children_by_parent(queue: TicketQueue) -> dict[str, list[Ticket]]:
+    """`{parent_id: [direct children]}` over every ticket in `queue` --
+    the adjacency map both `_mile002_descendant_later_milestone`'s BFS
+    and any future hierarchy walk in this module can reuse, factored out
+    so the caller stays under the module's line-count budget rather than
+    building it inline."""
+    children_of: dict[str, list[Ticket]] = {}
+    for t in queue.tickets.values():
+        if t.parent is not None:
+            children_of.setdefault(t.parent, []).append(t)
+    return children_of
+
+
+# frob:ticket T-2580
+def _descendants_of(
+    ticket_id: str, children_of: dict[str, list[Ticket]]
+) -> list[Ticket]:
+    """Every descendant of `ticket_id` at any depth, via BFS over
+    `children_of` (`_children_by_parent`'s output) -- same walk shape
+    `_open_descendant_ids` (`frob.tickets._evidence`) uses for its own
+    open-descendant check, kept as a local helper rather than importing
+    that private one since this caller needs the full `Ticket` objects
+    for milestone comparison, not a bare open/closed id list."""
+    frontier = [ticket_id]
+    seen = {ticket_id}
+    descendants: list[Ticket] = []
+    while frontier:
+        current = frontier.pop()
+        for child in children_of.get(current, ()):
+            if child.id in seen:
+                continue
+            seen.add(child.id)
+            descendants.append(child)
+            frontier.append(child.id)
+    return descendants
+
+
+# frob:ticket T-2580
+# frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_later_milestone_fires  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_earlier_or_same_milestone_does_not_fire  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_descendant_does_not_fire  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile002.test_terminal_ancestor_never_fires  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestMile002.test_grandchild_descendant_fires  # noqa: E501
+def _mile002_descendant_later_milestone(
+    root: Path, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """MILE002 (ERROR): an OPEN ticket with an OPEN descendant (any depth
+    via `parent`, `_descendants_of`) whose EFFECTIVE milestone is LATER
+    than the ancestor's own. Same deadlock as MILE001, reached via the
+    hierarchy instead of `blocked_by`: `_done_transition_guard` already
+    forbids an epic/story from closing DONE while any descendant is
+    still open, so an ancestor can never close before its later-milestone
+    descendant does -- meaning the ancestor's own (earlier) milestone can
+    never ship either. This is that existing structural rule projected
+    onto milestones, caught statically instead of only at close time."""
+    from packaging.version import Version
+
+    from frob.tickets._doable import effective_milestone
+
+    children_of = _children_by_parent(queue)
+
+    violations: list[Violation] = []
+    for ancestor in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if ancestor.state in _TERMINAL_STATES:
+            continue
+        ancestor_milestone, _a_source = effective_milestone(queue, ancestor, root)
+        if ancestor_milestone is None:
+            continue
+        descendants = _descendants_of(ancestor.id, children_of)
+        for descendant in sorted(descendants, key=lambda t: t.id):
+            if descendant.state in _TERMINAL_STATES:
+                continue
+            descendant_milestone, _d_source = effective_milestone(
+                queue, descendant, root
+            )
+            if descendant_milestone is None:
+                continue
+            if Version(descendant_milestone) <= Version(ancestor_milestone):
+                continue
+            violations.append(
+                Violation(
+                    rule="MILE002",
+                    severity=Severity.ERROR,
+                    file="tickets.md",
+                    line=0,
+                    message=(
+                        f"MILE002: {ancestor.id} (milestone "
+                        f"{ancestor_milestone}) has descendant "
+                        f"{descendant.id} (milestone "
+                        f"{descendant_milestone}) -- a release deadlock, "
+                        f"{ancestor.id} cannot close over an open "
+                        f"descendant (_done_transition_guard) so "
+                        f"{ancestor_milestone} can never ship before the "
+                        f"later milestone {descendant_milestone} does"
+                    ),
+                )
+            )
+    return tuple(violations)
+
+
 # frob:ticket T-2579
 def _ordered(a: Ticket, b: Ticket) -> bool:
     """`True` if `a`/`b` (both `Ticket`) are ordered against each other by
@@ -200,15 +367,20 @@ def _mile004_unordered_runs_last(
 
 # frob:ticket T-2576
 # frob:ticket T-2579
+# frob:ticket T-2580
 # frob:doc docs/modules/tickets-data-storage.md#mile003-t-2576-m2
+# frob:doc docs/modules/tickets-data-storage.md#mile001--mile002-t-2580-m5
 # frob:tests tests/test_gates_milestone.py::TestMile003.test_fires_on_open_ticket_with_no_resolvable_milestone  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_once_stamped  # noqa: E501
 def milestone_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
-    """MILE003 + MILE004: the T-2576 M2 / T-2579 M4b milestone gate
-    family. MILE001/MILE002 (blocking semantics over the milestone
-    ordering) are M5, explicitly out of this ticket's scope."""
-    return _mile003_unresolved_milestone(root, queue) + _mile004_unordered_runs_last(
-        root, queue
+    """MILE001 + MILE002 + MILE003 + MILE004: the full T-2573 milestone
+    gate family (M5 T-2580 added MILE001/MILE002, the two provable
+    release-deadlock checks, alongside M2/M4b's MILE003/MILE004)."""
+    return (
+        _mile001_blocked_by_later_milestone(root, queue)
+        + _mile002_descendant_later_milestone(root, queue)
+        + _mile003_unresolved_milestone(root, queue)
+        + _mile004_unordered_runs_last(root, queue)
     )
 
 

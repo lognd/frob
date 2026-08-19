@@ -1,7 +1,7 @@
 ---
 id: T-2580
 title: 'M5: MILE001/MILE002 milestone-deadlock gates'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'

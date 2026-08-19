@@ -369,6 +369,41 @@ declared-then-ancestor walk has already returned nothing. And with no
 -- MILE003 (below) still fires; the default is an opt-in per-repo
 setting, not a hardcoded assumption baked into the gate.
 
+### MILE001 / MILE002 (T-2580 M5)
+
+MILE001 and MILE002 (both ERROR, `frob.gates._milestone.milestone_gate`)
+are the two provable release-deadlock checks: a milestone that depends
+(directly via `blocked_by`, or structurally via the `parent` hierarchy)
+on work scheduled for a LATER milestone can never ship, because the
+dependency cannot resolve first.
+
+- **MILE001**: an OPEN ticket `blocked_by` another OPEN ticket whose
+  EFFECTIVE milestone is later (real semver order, never a string
+  compare -- same `packaging.version.Version` comparison
+  `_doable_sort_key` uses). A blocker that has already gone terminal
+  (done/dropped) is not a live deadlock and is excluded; an unresolved
+  `blocked_by` id, or either side's milestone failing to resolve at all,
+  is a different gate's concern (TICK-family / MILE003 respectively) and
+  is skipped here rather than guessed at.
+- **MILE002**: the same deadlock reached via the hierarchy instead of
+  `blocked_by` -- an OPEN ticket with an OPEN descendant (any depth via
+  `parent`) whose EFFECTIVE milestone is later than its own.
+  `_done_transition_guard` (`frob.tickets._evidence`) already forbids an
+  epic/story from closing DONE while any descendant is still open;
+  MILE002 is that existing structural rule projected onto milestones,
+  caught statically instead of only surfacing at close time. A terminal
+  descendant or terminal ancestor never fires, for the same "already
+  resolved, not a live deadlock" reason MILE001 excludes a terminal
+  blocker.
+
+Both use the same EFFECTIVE milestone resolution
+(`frob.tickets._doable.effective_milestone`) as MILE003/MILE004 and
+`doable`'s own display -- never the bare declared `Ticket.milestone`
+field -- so a deadlock finding always agrees with what an operator sees
+in `frob ticket doable`. Both are registered in `_KNOWN_GATE_RULES`
+(`frob.gates._waive`) like every other rule, so `frob:waive MILE001`/
+`frob:waive MILE002 reason="..."` bind normally.
+
 ### MILE003 (T-2576 M2)
 
 MILE003 (ERROR, `frob.gates._milestone.milestone_gate`): one violation
