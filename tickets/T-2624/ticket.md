@@ -11,8 +11,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
-runs_last_parallel_safe: false
-runs_last_parallel_safe_reason: null
+runs_last_parallel_safe: true
+runs_last_parallel_safe_reason: test declaration for CLI smoke check
 scope:
 - src/frob/tickets/_setters.py
 - src/frob/app/ticket_runner/_mutate.py
