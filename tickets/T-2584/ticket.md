@@ -2,7 +2,7 @@
 id: T-2584
 title: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001
   is silently inert
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -16,6 +16,7 @@ scope:
 - src/frob/check/__init__.py
 - src/frob/check/_python.py
 - src/frob/gates/_waive.py
+- tests/unit/test_cycle_waiver.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   reason: 'T-2584: reusing frob.gates'' own public _apply_waivers re-export (the T-0375
     ARCH001 precedent) needs no edit to gates/__init__.py itself; narrowing avoids
     T-2575''s live lease collision on that file'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_cycle_waiver.py
+  reason: 'T-2584: new positive/negative-control test file for the CYCLE001 waiver
+    pipeline fix'
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
