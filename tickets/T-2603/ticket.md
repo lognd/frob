@@ -14,10 +14,18 @@ runs_last: false
 milestone: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: T-2603 public symbols moved into _ledger_mirror.py doc into this file per
+    COV/SCOPE002
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
