@@ -51,6 +51,7 @@ scope:
 - tickets/T-2365
 - tickets/T-2570/ticket.md
 - docs/modules/app.md
+- docs/strata/surface.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,13 @@ scope_changes:
   glob: docs/modules/app.md
   reason: 'COV001 fix: fmt_runner.py::run''s existing frob:describes anchor already
     lives in docs/modules/app.md#runners; adding the reciprocal frob:doc directive'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/strata/surface.md
+  reason: 'COV001 fix: SealedGrantSet''s methods (from_root_node/grants/widen) already
+    have a frob:describes anchor at docs/strata/surface.md#fragments-t-2502 (the class
+    itself); adding the reciprocal frob:doc directives to each public method'
   actor: logan
   at: '2026-08-19'
 body_changes:
