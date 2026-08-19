@@ -12,14 +12,25 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
 - src/frob/tickets/_models.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: register MILE004 in _KNOWN_GATE_RULES so frob:waive MILE004 binds, per coordinator
+    instruction
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
