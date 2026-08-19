@@ -2,7 +2,7 @@
 id: T-2618
 title: declared_source_prefixes/declared_project_package_name never got their promised
   lang.md anchor (T-2612 audit)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -12,12 +12,21 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/lang.md
+- src/frob/lang/_nodes.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/_nodes.py
+  reason: removing the two COV001 waivers this ticket's doc anchor discharges
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
