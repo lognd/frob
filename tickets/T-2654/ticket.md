@@ -1,7 +1,7 @@
 ---
 id: T-2654
 title: 'fleet_status: flag an in-progress ticket that is also blocked_by an open blocker'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -15,11 +15,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: test file for the fleet_status.py fix must be in scope (COV002/SCOPE002)
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
+- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_no_blockers_not_flagged
+- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_only_terminal_blockers_not_flagged
+- tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_queued_ticket_with_open_blocker_not_flagged
+- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_flags_blocked_open_lease
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases::test_in_progress_with_open_blocker_flagged
 threat: null
 component: null
 anchor: false
