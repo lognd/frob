@@ -2,7 +2,7 @@
 id: T-2237
 title: 'T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved
   via git archaeology, blocked by live leases on the target docs'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -14,8 +14,22 @@ runs_last: false
 scope:
 - docs/design/gate-semantics-classification.md
 - docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/gates/test_doc011.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 fired on a pure doc-citation fix with no behavior to reproduce; recording
+    frob:no-behavior-change per the land error's remedy 2
+  actor: logan
+  at: '2026-08-19'
+  old_length: 2481
+  new_length: 2841
+evidence:
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_known_active_ticket_id_passes
 designated_repro_test: null
 threat: null
 component: null
@@ -72,3 +86,5 @@ force a lease conflict.
    regex/sed across the whole doc -- these are the ONE known-resolved
    occurrence each; verify no OTHER stale draft-id citation exists
    nearby before editing).
+
+frob:no-behavior-change reason="a ledger/doc correction (T-2226 residue): one stale T-draft prose citation swapped for its resolved real ticket id, no code path or runtime behavior changes. The bound evidence (test_known_active_ticket_id_passes) demonstrates the DOC011 check accepts a resolved citation the way the fixed doc now reads, per BUG002 remedy 2."
