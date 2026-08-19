@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7004e1fdc4c5f35d391c04f443d89dbc73aef470
 ---
 T-2615 fixed the generator (src/frob/release/_fragments.py) so a
 dropped ticket never again produces a changelog.d/T-####.md fragment or
