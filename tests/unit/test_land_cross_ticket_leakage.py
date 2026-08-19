@@ -496,6 +496,129 @@ class TestCrossTicketLeakage:
             f"(T-2111): {result.err if result.is_err else None}"
         )
 
+    # frob:ticket T-2547
+    def test_empty_declared_scope_never_attributes_an_unclaimed_file_even_with_a_stale_broad_lease(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # T-2547 (MUST FAIL on the pre-fix code): reproduces the live
+        # T-2374 incident directly -- a sibling ticket's DECLARED scope on
+        # `root`'s ledger is empty (`scope=[]`), but its cross-worktree
+        # lease file (`.git/frob-leases/<id>.json`) still lists a broad
+        # set of paths from earlier in its own history, never refreshed
+        # down to the empty set (T-2111's `_effective_leakage_scope`
+        # trusts a live lease unconditionally when present, which is
+        # correct for a narrowing that WAS published but wrong for a
+        # lease that predates a narrowing that was never re-recorded).
+        # Landing an unrelated ticket that happens to touch a path the
+        # stale lease still lists must NOT be attributed to a ticket that
+        # currently claims nothing.
+        # Both tickets share ONE worktree (the real T-2374/T-2524 shape:
+        # a series worktree hosting several tickets back to back) so the
+        # sibling's ledger record genuinely CHANGES on this branch (T-1390
+        # requires that -- a sibling never touched on this branch is
+        # exempted regardless of scope, so the repro must actually work
+        # it here).
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-2547", str(wt)], repo)
+
+        sibling = new_ticket(wt, _spec("Broad early work", scope=("src/**",)))
+        assert sibling.is_ok
+        sibling_id = sibling.danger_ok.id
+        assert transition(wt, sibling_id, TicketState.PLANNED).is_ok
+        # Real `start` transition records a genuine, broad lease (mirrors
+        # the T-2374 incident: many paths accumulated over the ticket's
+        # own history).
+        assert transition(wt, sibling_id, TicketState.IN_PROGRESS).is_ok
+        _commit_all(wt, f"{sibling_id}: started, broad lease recorded")
+
+        # Simulate the observed drift directly: the ticket's OWN declared
+        # scope is narrowed all the way to empty by some means other than
+        # a fully lease-synced `mutate_scope` call (the exact shape this
+        # ticket's own body flags as a second, undetected finding -- an
+        # in-progress ticket whose declared scope no longer matches its
+        # still-broad lease), while the stale lease file on disk is left
+        # untouched.
+        sibling_ticket = load_all(wt).danger_ok.get(sibling_id)
+        assert sibling_ticket is not None
+        narrowed_sibling = sibling_ticket.model_copy(update={"scope": ()})
+        assert write_ticket(wt, narrowed_sibling).is_ok
+        _commit_all(wt, f"{sibling_id}: simulate declared scope narrowed to empty")
+
+        landing = new_ticket(
+            wt,
+            _spec(
+                "Independent fix, unrelated to the empty-scope sibling",
+                scope=("src/fix.py",),
+            ),
+        )
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src").mkdir(exist_ok=True)
+        # A path the STALE lease still lists (matches "src/**") but the
+        # sibling's current declared scope (empty) does not claim at all.
+        (wt / "src" / "fix.py").write_text(
+            "# touches a path only the sibling's stale, unrefreshed lease\n"
+            "# still lists -- its current declared scope is empty\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, (
+            "land refused on a path an empty-declared-scope sibling's "
+            f"stale lease still listed (T-2547): "
+            f"{result.err if result.is_err else None}"
+        )
+        assert (repo / "src" / "fix.py").exists()
+
+    # frob:ticket T-2547
+    def test_genuine_leak_via_live_lease_still_refused_with_nonempty_declared_scope(
+        self, repo: Path
+    ) -> None:
+        # T-2547 positive control (the other direction): a sibling with a
+        # genuinely NON-EMPTY declared scope and a live, current lease
+        # covering the same path must still be refused -- the T-2547 fix
+        # only voids attribution when the declared scope is empty; it
+        # must not widen the escape for a real, live claim.
+        wt_sibling = repo.parent / "wt-sibling"
+        _run(
+            ["git", "worktree", "add", "-b", "sibling-real-claim", str(wt_sibling)],
+            repo,
+        )
+        sibling = new_ticket(
+            wt_sibling, _spec("Real in-progress work", scope=("src/held.py",))
+        )
+        assert sibling.is_ok
+        sibling_id = sibling.danger_ok.id
+        assert transition(wt_sibling, sibling_id, TicketState.PLANNED).is_ok
+        assert transition(wt_sibling, sibling_id, TicketState.IN_PROGRESS).is_ok
+        (wt_sibling / "src").mkdir(exist_ok=True)
+        (wt_sibling / "src" / "held.py").write_text("# genuinely held work\n")
+        _commit_all(wt_sibling, f"{sibling_id}: real work in flight")
+
+        wt_land = repo.parent / "wt-land"
+        _run(["git", "worktree", "add", "-b", "leaking-fix-2547", str(wt_land)], repo)
+        landing = new_ticket(wt_land, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt_land, landing_id)
+        (wt_land / "src").mkdir(exist_ok=True)
+        (wt_land / "src" / "held.py").write_text(
+            "# leaked from the sibling's own worktree onto this branch\n"
+        )
+        sibling_ticket = load_all(wt_sibling).danger_ok[sibling_id]
+        assert write_ticket(wt_land, sibling_ticket).is_ok
+        (wt_land / "src" / "fix.py").write_text("# independent fix\n")
+        _commit_all(wt_land, f"{landing_id}: independent fix plus leaked sibling file")
+
+        result = land(repo, landing_id, wt_land, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.CrossTicketLeakage
+        assert not (repo / "src" / "fix.py").exists()
+        assert not (repo / "src" / "held.py").exists()
+
 
 # frob:ticket T-1618
 # frob:ticket T-2183

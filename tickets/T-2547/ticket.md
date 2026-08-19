@@ -2,7 +2,7 @@
 id: T-2547
 title: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed
   file
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,27 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets
+evidence_scope:
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_empty_declared_scope_never_attributes_an_unclaimed_file_even_with_a_stale_broad_lease
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_genuine_leak_via_live_lease_still_refused_with_nonempty_declared_scope
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_empty_declared_scope_never_attributes_an_unclaimed_file_even_with_a_stale_broad_lease
+acceptance:
+- text: given a sibling ticket whose declared scope is empty, when CrossTicketLeakage
+    checks a file it does not claim, then the file is not attributed to it even if
+    a stale live lease still lists it
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_empty_declared_scope_never_attributes_an_unclaimed_file_even_with_a_stale_broad_lease
+- text: given a sibling ticket with a genuine non-empty declared scope and a live
+    matching lease, when it has committed real work on this branch, then CrossTicketLeakage
+    still refuses the land unless --allow-cross-ticket is passed
+  evidence:
+  - tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_genuine_leak_via_live_lease_still_refused_with_nonempty_declared_scope
 threat: null
 component: null
 anchor: false

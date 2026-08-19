@@ -3500,6 +3500,7 @@ def _explicitly_used_wiring_path(other: Ticket, path: str) -> bool:
 
 
 # frob:ticket T-2111
+# frob:ticket T-2547
 def _effective_leakage_scope(
     root: Path, other_id: str, other: Ticket
 ) -> tuple[str, ...]:
@@ -3524,7 +3525,31 @@ def _effective_leakage_scope(
     is authoritative when present (it is the single side-channel every
     OTHER `frob ticket` verb already trusts for "what does this ticket
     currently claim") -- never unioned with the declared scope, since a
-    union could only ever keep the stale, broader path alive."""
+    union could only ever keep the stale, broader path alive.
+
+    T-2547: a ticket whose DECLARED scope is empty is checked FIRST and
+    short-circuits to `()` before any lease is even consulted. A live
+    lease is only ever (re)recorded on `start`/`scope --add`/`scope
+    --remove` (`record_lease`, T-0473/T-2095) -- narrowing scope all the
+    way down to nothing does not guarantee a fresh, empty lease write
+    landed for every path that used to be in the (possibly much broader)
+    lease snapshot; a lease recorded once, early, before a long series of
+    later narrowings can sit on disk for the ticket's entire in-progress
+    lifetime without ever being refreshed to reflect the shrunken
+    declared scope. Trusting a stale lease's OWN staleness (a narrowing
+    that was published) is exactly T-2111's fix above; trusting a stale
+    lease's broadness against a ticket that currently declares NOTHING is
+    the opposite failure the T-2111 fix did not anticipate -- confirmed
+    live in this repo: T-2374 (`scope=[]` on its ticket record, state
+    in-progress) still held a lease file listing dozens of paths from
+    earlier in its own history, including an unrelated sibling's ledger
+    shard, and `_check_cross_ticket_leakage` attributed that unclaimed
+    file to T-2374 solely because the lease had never been re-recorded
+    down to the empty set. An empty declared scope means "claims
+    nothing" here, full stop -- it is never treated as a catch-all for
+    whatever a stale lease still happens to list."""
+    if not other.scope:
+        return ()
     for lease in read_all_leases(root):
         if lease.ticket_id == other_id:
             return lease.scope
