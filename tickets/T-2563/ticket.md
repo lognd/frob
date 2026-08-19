@@ -14,6 +14,7 @@ runs_last: false
 scope:
 - src/frob/app/ticket_runner/
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,7 +25,19 @@ scope_changes:
   reason: the positive controls for the mirror live here
   actor: logan
   at: '2026-08-18'
-designated_repro_test: null
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: the mirror's public surface needs a documented anchor for its frob:doc edges
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_scope_edit_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_block_edit_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_attachment_file_reaches_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse::test_worktree_source_changes_do_not_leak_to_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse::test_primary_worktree_is_left_clean
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope::test_running_in_the_primary_checkout_is_a_no_op
+designated_repro_test: tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_scope_edit_from_worktree_is_visible_on_primary
 threat: null
 component: null
 anchor: false
