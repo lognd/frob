@@ -19,6 +19,8 @@ scope:
 - src/frob/app/ticket_runner/_query.py
 - src/frob/_cli_parsers/_ticket/_query.py
 - src/frob/app/_config_external.py
+- docs/modules/tickets.md
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +46,24 @@ scope_changes:
     CLI wiring for it lives in the argparse registration and the external-config
 
     allowlist, mirroring the existing --sprint flag pattern (ticket_doable_sprint).
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: '_doable_sort_key doc-closure target; documenting the milestone-primary
+
+    ordering change in the same module doc T-2574 already anchored.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: '_doable_sort_key doc-closure target; documenting the milestone-primary
+
+    ordering change in the same module doc T-2574 already anchored.
 
     '
   actor: logan
