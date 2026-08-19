@@ -16,6 +16,7 @@ scope:
 - tests/test_vet.py
 - tests/test_lang.py
 - tests/test_ticket_land.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +73,18 @@ scope_changes:
   reason: 'corrected path: tests live directly under tests/, not tests/unit/'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: add unit-level positive/negative controls for the relative-import re-export
+    chase fix (_cov006_resolve_relative_module), following this file existing _cov006_third_file_reachable
+    test convention
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_public_sibling_wrapper_exec_is_resolved_one_hop
+- tests/test_lang.py::TestFromImportSubmoduleResolution::test_from_package_import_submodule_resolves_to_the_file
+- tests/test_ticket_land.py::TestArchiveSpliceDiscipline::test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+- tests/test_ticket_land.py::TestWipAddIgnoredPathFallback::test_gitignored_frob_falls_back_and_still_lands
 designated_repro_test: null
 threat: null
 component: null
