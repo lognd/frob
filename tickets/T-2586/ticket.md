@@ -1,7 +1,7 @@
 ---
 id: T-2586
 title: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -46,7 +46,13 @@ body_changes:
   at: '2026-08-19'
   old_length: 2189
   new_length: 5845
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_clean_repo
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_dirty_repo
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_phantom_modified_entry_dropped
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_genuine_modified_entry_kept
+- tests/unit/test_coordinator_scripts.py::TestRootDirt::test_untracked_entry_never_reverified
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestRootDirt::test_phantom_modified_entry_dropped
 threat: null
 component: null
 anchor: false

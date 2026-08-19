@@ -127,8 +127,24 @@ checkout directory, and the cross-worktree lease directory. `TICKETS_DIR`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#root_dirt -->
 
-Returns the `git status --short --porcelain` lines for the root checkout;
-an empty list means the root is clean and safe to dispatch onto.
+Returns the `git status --short --porcelain` lines for the root checkout,
+CONTENT-confirmed; an empty list means the root is clean and safe to
+dispatch onto.
+
+T-2586: a bare `M`/`MM`-only status line is re-verified against
+`git diff --stat HEAD -- <path>` (the same normalizing comparison
+`git diff` uses) and dropped if that comes back empty -- `git status`'s
+fast stat-comparison path can report a tracked file "modified" from a
+byte-count mismatch alone (this repo's `core.autocrlf=true`, a Windows
+setting present on this Linux/WSL clone, previously reintroduced CRLF on
+checkout for any file with no pinned `eol` attribute; `.gitattributes`
+now pins `eol=lf` for `rapid-debt.jsonl`/`force-overrides.jsonl`, the two
+files a deferred rapid-profile sweep rewrites with LF-only content on
+every land) without there being any real content difference. Untracked
+(`??`) and added/deleted/renamed paths are never re-verified -- those
+codes come from tree/index PRESENCE, not a stat comparison, so a
+genuinely dirty root (including retry-loop untracked residue) is still
+reported correctly.
 
 ### `leases`
 

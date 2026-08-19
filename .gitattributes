@@ -34,6 +34,29 @@
 /rapid-debt.jsonl merge=union
 /force-overrides.jsonl merge=union
 
+# T-2586: this repo's own `core.autocrlf=true` (a Windows-checkout
+# setting, present on this Linux/WSL clone) converts LF to CRLF on
+# checkout for any tracked text file with no explicit `text`/`eol`
+# attribute -- `git check-attr text eol -- rapid-debt.jsonl` read both
+# "unspecified" before this line. Every deferred rapid-profile sweep
+# rewrites `rapid-debt.jsonl` with LF-only content; without a pinned
+# attribute, `autocrlf` reintroduces CRLF on the next checkout, and the
+# resulting byte-count mismatch against the LF-only index blob is
+# exactly what fooled `git status`'s stat-comparison fast path into a
+# false "modified" report (root_dirt's own content-confirmation fix in
+# this same ticket is the second, independent layer -- this line
+# removes the CAUSE; that one makes the report correct regardless of
+# cause). `eol=lf` pins this file to LF on checkout AND normalizes CRLF
+# to LF on commit, matching the `merge=union` line immediately above --
+# both attributes are declared HERE, in the tracked repo, rather than
+# left to a per-clone `git config core.autocrlf=false`, because a config
+# change does not travel with the repo and a clone that skips it
+# silently falls back to the broken behavior (the same argument that
+# chose a built-in merge driver over a per-clone git config for the
+# `merge=union` line above).
+/rapid-debt.jsonl text eol=lf
+/force-overrides.jsonl text eol=lf
+
 # T-1433 incident: attachment shas are byte-exact; CRLF conversion breaks COV004.
 # T-2239: T-1433's glob only matched the OLD v1 flat layout (tickets/attachments/**).
 # Ledger v2 stores attachments per-ticket (tickets/<id>/attachments/**), a path shape

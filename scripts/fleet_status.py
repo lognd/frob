@@ -94,14 +94,61 @@ def _git(args: list[str], cwd: Path) -> str:
     return done.stdout.strip() if done.returncode == 0 else ""
 
 
+#: Porcelain status codes for which `git status`'s fast stat-comparison
+#: path can produce a false "modified" (T-2586) -- a plain, untracked-free
+#: "M"/"MM" report (whitespace already collapsed by the `str.split()`
+#: parse below, so a leading-space-only "M " unstaged-only code and a
+#: bare "M" staged-only code both normalize to "M" here). Any OTHER code
+#: (`??` untracked, `A`/`D`/`R`/`C` add/delete/rename/copy) is trusted
+#: verbatim: those are derived from tree/index PRESENCE, not a stat
+#: comparison, so they cannot be fooled by a CRLF-vs-LF byte-count
+#: mismatch the way a content-unchanged rewrite of an existing tracked
+#: file can.
+_STAT_SHORTCUT_CODES = frozenset({"M", "MM"})
+
+
 # frob:doc docs/guides/coordinator-scripts.md#root_dirt
 # frob:ticket T-1863
+# frob:ticket T-2586
 # frob:tests tests/unit/test_coordinator_scripts.py::TestRootDirt.test_clean_repo
 # frob:tests tests/unit/test_coordinator_scripts.py::TestRootDirt.test_dirty_repo
+# frob:tests tests/unit/test_coordinator_scripts.py::TestRootDirt.test_phantom_modified_entry_dropped kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_coordinator_scripts.py::TestRootDirt.test_genuine_modified_entry_kept kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_coordinator_scripts.py::TestRootDirt.test_untracked_entry_never_reverified kind="unit"  # noqa: E501
 def root_dirt() -> list[str]:
-    """Porcelain lines for the root checkout; empty means safe to dispatch."""
+    """Porcelain lines for the root checkout, content-confirmed; empty
+    means safe to dispatch.
+
+    T-2586: `git status --porcelain`'s fast path can flag a tracked path
+    "M" from a stat mismatch (mtime/size) alone, without comparing
+    content -- with `core.autocrlf=true` and no `.gitattributes`
+    normalization for a given path, a tool that rewrites a tracked file
+    with byte-identical LOGICAL content (the index stores LF; the
+    working tree gets CRLF on checkout) trips exactly this: `git status`
+    reports modified, `git diff` (which normalizes line endings the same
+    way checkout did before comparing) reports nothing changed. Every
+    stat-shortcut-susceptible candidate (`_STAT_SHORTCUT_CODES`) is
+    re-verified against `git diff --stat HEAD -- <path>` -- the same
+    normalizing comparison `git diff` uses -- and dropped as a phantom
+    if that comes back empty. Untracked (`??`) and added/deleted/
+    renamed paths are never stat-shortcut candidates in the first place
+    (git derives those from tree/index PRESENCE, not a stat comparison),
+    so they are trusted as-is and never re-verified -- this is what
+    keeps a genuinely dirty root, or the retry-loop untracked-residue
+    case, reported correctly in both directions."""
+    _git(["update-index", "-q", "--refresh"], REPO)
     out = _git(["status", "--short", "--porcelain"], REPO)
-    return [line for line in out.splitlines() if line.strip()]
+    candidates = [line for line in out.splitlines() if line.strip()]
+    confirmed = []
+    for line in candidates:
+        parts = line.split(maxsplit=1)
+        code = parts[0] if parts else ""
+        path = parts[1].strip() if len(parts) > 1 else ""
+        if path and code in _STAT_SHORTCUT_CODES:
+            if not _git(["diff", "--stat", "HEAD", "--", path], REPO):
+                continue  # phantom: stat differs, content does not (T-2586)
+        confirmed.append(line)
+    return confirmed
 
 
 # frob:doc docs/guides/coordinator-scripts.md#quarantine

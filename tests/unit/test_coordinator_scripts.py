@@ -160,6 +160,57 @@ class TestRootDirt:
         )
         assert fleet_status.root_dirt() == ["M foo.py", " ?? bar.py"]
 
+    def test_phantom_modified_entry_dropped(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T-2586: a bare 'M' status whose content-comparing `git diff --stat
+        HEAD` comes back empty is a stat-shortcut phantom (CRLF/mtime
+        churn with no logical change) and must NOT be reported dirty."""
+
+        def _fake_run(args, **_k):  # noqa: ANN001
+            if "status" in args:
+                return _completed("M rapid-debt.jsonl\n")
+            if "diff" in args:
+                return _completed("")  # no real content difference
+            return _completed("")
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+        assert fleet_status.root_dirt() == []
+
+    def test_genuine_modified_entry_kept(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T-2586: a bare 'M' status whose `git diff --stat HEAD` DOES show
+        a real difference must still be reported dirty -- the positive
+        control that proves this is content confirmation, not a blanket
+        suppression of the 'M' status class."""
+
+        def _fake_run(args, **_k):  # noqa: ANN001
+            if "status" in args:
+                return _completed("M rapid-debt.jsonl\n")
+            if "diff" in args:
+                return _completed(" rapid-debt.jsonl | 1 +\n 1 file changed\n")
+            return _completed("")
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+        assert fleet_status.root_dirt() == ["M rapid-debt.jsonl"]
+
+    def test_untracked_entry_never_reverified(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T-2586: an untracked ('??') path is never a stat-shortcut
+        candidate -- it must be reported dirty without ever calling
+        `git diff` to confirm it (untracked residue, e.g. from a killed
+        retry loop, has no HEAD blob to diff against in the first
+        place)."""
+        calls: list[list[str]] = []
+
+        def _fake_run(args, **_k):  # noqa: ANN001
+            calls.append(args)
+            if "status" in args:
+                return _completed("?? stray-file.txt\n")
+            return _completed("")
+
+        monkeypatch.setattr(subprocess, "run", _fake_run)
+        assert fleet_status.root_dirt() == ["?? stray-file.txt"]
+        assert not any("diff" in c for c in calls), (
+            "an untracked entry must never trigger a content re-verification call"
+        )
+
 
 class TestLeases:
     """`fleet_status.leases`."""
