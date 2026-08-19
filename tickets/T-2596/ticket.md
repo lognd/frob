@@ -14,11 +14,22 @@ runs_last: false
 milestone: null
 scope:
 - src/frob/scaffold/project.py
+- tests/unit/test_scaffold_project_e501_t2596.py
+evidence_scope:
+- tests/unit/test_scaffold_project_e501_t2596.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_scaffold_project_e501_t2596.py
+  reason: new repro test for this ticket's fix
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_scaffold_project_e501_t2596.py::TestScaffoldProjectLineLength::test_no_unexempted_long_lines
+designated_repro_test: tests/unit/test_scaffold_project_e501_t2596.py::TestScaffoldProjectLineLength::test_no_unexempted_long_lines
 threat: null
 component: null
 anchor: false
