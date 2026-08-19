@@ -8,6 +8,7 @@ created: '2026-08-17'
 priority: medium
 blocked_by:
 - T-2543
+- T-2568
 parent: T-0969
 tier: ticket
 sprint: null
