@@ -1,7 +1,7 @@
 ---
 id: T-2586
 title: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,6 +14,8 @@ milestone: null
 scope:
 - scripts/fleet_status.py
 - docs/guides/coordinator-scripts.md
+- .gitattributes
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +26,18 @@ scope_changes:
   reason: 'scope closure: fleet_status frob:doc targets live here'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: .gitattributes
+  reason: layer-1 config fix (pin line endings for the repo generated artifact) plus
+    the unit tests covering root_dirt content-confirmation
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: layer-1 config fix (pin line endings for the repo generated artifact) plus
+    the unit tests covering root_dirt content-confirmation
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: append
   reason: 'root cause found: core.autocrlf=true on WSL, plus a measured genuine variant
