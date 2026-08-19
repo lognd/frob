@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 696659925a629ff0467720e762f48087237f2050
 ---
 Observed live during T-2188 (2026-08-16). `frob ticket promote T-draft-XXXX`
 run inside a per-ticket worktree succeeds, prints a real id (e.g. T-2195),
