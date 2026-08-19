@@ -1,7 +1,7 @@
 ---
 id: T-2641
 title: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -27,7 +27,9 @@ scope_changes:
   reason: 'T-2641: new repro test for the stray non-DONE fragment cleanup'
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/test_release.py::TestNoStrayFragmentForNonDoneTicket::test_every_changelog_fragment_belongs_to_a_done_ticket
+designated_repro_test: tests/test_release.py::TestNoStrayFragmentForNonDoneTicket::test_every_changelog_fragment_belongs_to_a_done_ticket
 threat: null
 component: null
 anchor: false

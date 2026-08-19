@@ -958,3 +958,43 @@ class TestAddReleasePublishParser:
         args = parser.parse_args(["release", "publish", "some/path", "--dry-run"])
         assert args.path == "some/path"
         assert args.dry_run is True
+
+
+class TestNoStrayFragmentForNonDoneTicket:
+    """T-2641: after T-2615's generator fix, the real repo's `changelog.d/`
+    must never carry a fragment for a ticket that is not DONE -- a live
+    check on THIS repo's own tree, not just the tmp_path unit coverage
+    above, since T-2615's own incident was a stray artifact left on the
+    real repo by the pre-fix generator."""
+
+    def test_every_changelog_fragment_belongs_to_a_done_ticket(self) -> None:
+        # frob:tests tests/test_release.py::TestNoStrayFragmentForNonDoneTicket.test_every_changelog_fragment_belongs_to_a_done_ticket  # noqa: E501
+        """Repro: before T-2641's cleanup, changelog.d/T-2593.md existed
+        for T-2593, which is DROPPED, not DONE -- a stray artifact from
+        the T-2615 bug the generator fix does not retroactively clean up.
+        Every OTHER fragment on disk must belong to a DONE ticket."""
+        from frob.tickets._store import _parse_ticket_file, v2_ticket_path
+
+        repo_root = Path(__file__).resolve().parents[1]
+        fragments_dir = repo_root / "changelog.d"
+        assert fragments_dir.is_dir()
+
+        offenders: list[str] = []
+        for fragment in sorted(fragments_dir.glob("T-*.md")):
+            ticket_id = fragment.stem
+            ticket_path = v2_ticket_path(repo_root, ticket_id)
+            if not ticket_path.exists():
+                # Archived/renumbered tickets are out of scope for this
+                # check -- it only guards the DROPPED-ticket defect class.
+                continue
+            parsed = _parse_ticket_file(ticket_path)
+            if parsed.is_err:
+                continue
+            ticket = parsed.danger_ok
+            if ticket.state.value != "done":
+                offenders.append(f"{fragment.name} (ticket state={ticket.state.value})")
+
+        assert not offenders, (
+            "stray changelog.d fragment(s) for non-DONE ticket(s): "
+            f"{offenders}"
+        )

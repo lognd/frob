@@ -114,7 +114,6 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2586: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
 - T-2587: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is visible on main immediately, not only after land
 - T-2588: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
-- T-2593: over-broad scope is disclosed but never enforced: 21 open tickets hold wildcard write leases, 0 acknowledged
 - T-2595: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep writers
 - T-2596: four real E501 lines in src/ raised quarantine and forced the whole fleet into synchronous lands
 - T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
@@ -136,6 +135,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
 - T-2637: test_conftest_stackdump.py: _FakeItem stub missing get_closest_marker, red on main
 - T-2638: disclosure-remainder guard is lexical and blind to draft ids: rewording a heading defeats it, drafts can never satisfy it
+- T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide
 - T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
 
