@@ -5,13 +5,13 @@ outside `frob.render`, including the `--json` escape hatch)."""
 
 from __future__ import annotations
 
-import contextlib
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.gitlog import git_log
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger
+from frob.logging.quiet import quiet_query_stdout
 from frob.render import Renderer
 
 _log = get_logger(__name__)
@@ -31,13 +31,12 @@ def run(cfg: AppConfig) -> None:
     DEBUG-level by default (`src/frob/logging/config.toml`), so an
     unguarded call here would leak that line into `--json` output.
 
-    T-0815: aligned to the conditional pattern every other `--json` runner
-    uses (`frob.app.xref_runner`) -- `quiet_stdout_logs()` only when
-    `--json` is requested, so human mode keeps the diagnostic spawn line
-    visible instead of always suppressing it."""
+    T-2582: quieted in BOTH modes now (`FROB_VERBOSE=1` opts back into
+    the diagnostic spawn line) -- human mode used to keep it always
+    visible, which drowned the answer in the same way `--json` was
+    already protected from."""
     root = cfg.gitlog_path or Path(".")
-    ctx = quiet_stdout_logs() if cfg.gitlog_json else contextlib.nullcontext()
-    with ctx:
+    with quiet_query_stdout():
         result = git_log(
             root,
             granularity=cfg.gitlog_granularity,  # type: ignore[arg-type]

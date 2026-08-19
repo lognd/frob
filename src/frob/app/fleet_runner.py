@@ -5,7 +5,6 @@ over a `fleet.toml` manifest of sibling repos.
 
 from __future__ import annotations
 
-import contextlib
 import json
 import sys
 from pathlib import Path
@@ -18,7 +17,8 @@ from frob.fleet import (
     rollup,
     route_ticket,
 )
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger
+from frob.logging.quiet import quiet_query_stdout
 from frob.render import Renderer
 from frob.tickets import Origin, Priority, TicketKind, TicketSpec
 
@@ -58,15 +58,15 @@ def _run_status(cfg: AppConfig) -> None:
     """Load the manifest, roll up every repo's status, print a reddest-first
     table (or `--json`). Exits 1 on a missing/malformed manifest.
 
-    T-0815: the entire payload path -- `load_manifest`'s own INFO log plus
-    `rollup`'s `git`/gate probes spawned through `guarded_subprocess_run`
-    (which DEBUG-logs every spawn) -- can leak log lines into stdout ahead
-    of the JSON payload, since this repo's stdout log handler is
-    DEBUG-level by default. Wrapped in `quiet_stdout_logs()` only when
-    `--json` is requested (matching `frob.app.xref_runner`'s conditional
-    pattern); human mode keeps the diagnostic lines visible."""
-    ctx = quiet_stdout_logs() if cfg.fleet_json else contextlib.nullcontext()
-    with ctx:
+    T-0815/T-2582: the entire payload path -- `load_manifest`'s own INFO
+    log plus `rollup`'s `git`/gate probes spawned through
+    `guarded_subprocess_run` (which DEBUG-logs every spawn) -- can leak
+    log lines into stdout ahead of the answer, since this repo's stdout
+    log handler is DEBUG-level by default. Quieted in BOTH modes now
+    (`FROB_VERBOSE=1` opts back into the diagnostic lines); human mode
+    used to keep them always visible, which is exactly the drowned-answer
+    defect T-2582 fixed repo-wide."""
+    with quiet_query_stdout():
         manifest_path = _manifest_path(cfg)
         manifest_result = load_manifest(manifest_path)
         if manifest_result.is_err:

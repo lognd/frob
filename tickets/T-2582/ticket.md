@@ -2,7 +2,7 @@
 id: T-2582
 title: 'human-mode query commands drown their answer in DEBUG chatter: xref emits
   5958 lines for a 13-line result'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/logging/quiet.py
 - src/frob/app/debt_runner.py

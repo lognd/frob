@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import contextlib
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.exports import exports_consumers, exports_package
 from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging.quiet import quiet_query_stdout
 
 _log = get_logger(__name__)
 
@@ -21,8 +21,8 @@ def _run_consumers(cfg: AppConfig) -> None:
     entry point T-0876 was filed to wire on."""
     assert cfg.exports_consumers is not None  # guarded by run()'s caller check
     root = cfg.exports_path or Path(".")
-    ctx = quiet_stdout_logs() if cfg.exports_json else contextlib.nullcontext()
-    with ctx:
+    # T-2582: quiet parse-diagnostic chatter in both modes.
+    with quiet_query_stdout():
         result = exports_consumers(cfg.exports_consumers, root, lang=cfg.exports_lang)
     if result.is_err:
         _log.error(result.danger_err.value)
@@ -114,8 +114,8 @@ def run(cfg: AppConfig) -> None:
     if _try_exports_via_daemon(cfg.exports_path, cfg):
         return
 
-    ctx = quiet_stdout_logs() if cfg.exports_json else contextlib.nullcontext()
-    with ctx:
+    # T-2582: quiet parse-diagnostic chatter in both modes.
+    with quiet_query_stdout():
         result = exports_package(
             cfg.exports_path,
             include_private=cfg.exports_all,

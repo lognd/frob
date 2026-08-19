@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import contextlib
 import sys
 from pathlib import Path
 
 from frob.app.config import AppConfig
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger
+from frob.logging.quiet import quiet_query_stdout
 from frob.xref import xref
 
 _log = get_logger(__name__)
@@ -26,8 +26,10 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
     root = cfg.xref_path or Path(".")
-    ctx = quiet_stdout_logs() if cfg.xref_json else contextlib.nullcontext()
-    with ctx:
+    # T-2582: quiet stdout-bound DEBUG/INFO for BOTH modes -- previously
+    # only --json was protected, drowning the human-mode answer in
+    # thousands of parse-diagnostic lines. FROB_VERBOSE=1 restores them.
+    with quiet_query_stdout():
         result = xref(cfg.xref_symbol, root, lang=cfg.xref_lang)
 
     if result.is_err:

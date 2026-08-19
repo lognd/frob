@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import contextlib
 import sys
 
 from frob.app.config import AppConfig
-from frob.logging import get_logger, quiet_stdout_logs
+from frob.logging import get_logger
+from frob.logging.quiet import quiet_query_stdout
 from frob.outline import outline_file
 
 _log = get_logger(__name__)
@@ -42,8 +42,8 @@ def run(cfg: AppConfig) -> None:
         _fall_back_to_map(cfg, target)
         return
 
-    ctx = quiet_stdout_logs() if cfg.outline_json else contextlib.nullcontext()
-    with ctx:
+    # T-2582: quiet parse-diagnostic chatter in both modes.
+    with quiet_query_stdout():
         result = outline_file(target)
     if result.is_err:
         _log.error(result.danger_err.value)

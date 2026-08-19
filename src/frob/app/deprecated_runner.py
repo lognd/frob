@@ -11,7 +11,6 @@ command over it -- there is no `--apply` here, matching `frob debt`.
 
 from __future__ import annotations
 
-import contextlib
 from datetime import date
 from pathlib import Path
 
@@ -72,11 +71,11 @@ def run(cfg: AppConfig) -> None:
     `cfg.deprecated_path`, each annotated with its since/sunset/ticket and a
     computed status (`in-window`/`past-sunset`/`orphaned`)."""
     from frob.gates import list_deprecated
-    from frob.logging import quiet_stdout_logs
+    from frob.logging.quiet import quiet_query_stdout
 
     root = (cfg.deprecated_path or Path(".")).resolve()
-    ctx = quiet_stdout_logs() if cfg.deprecated_json else contextlib.nullcontext()
-    with ctx:
+    # T-2582: quiet snapshot-loading chatter in both modes, not just --json.
+    with quiet_query_stdout():
         snapshot = load_or_build_snapshot(root, log_context="deprecated")
         entries = list_deprecated(snapshot, current_date=date.today().isoformat())
         ticket_states = _load_ticket_states(root)

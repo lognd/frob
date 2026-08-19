@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import os
 import sys
 import threading
 from collections.abc import Iterator
@@ -106,6 +107,47 @@ def quiet_stdout_logs() -> Iterator[None]:
                 for h, level in zip(stdout_handlers, _saved_levels, strict=True):
                     h.setLevel(level)
                 _saved_levels = None
+
+
+@contextlib.contextmanager
+# frob:doc docs/modules/logging.md#public-api
+# frob:ticket T-2582
+# frob:tests \
+# tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_quiets_by_default \
+# kind="unit"
+# frob:tests tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_frob_verbose_env_var_restores_full_chatter kind="unit"  # noqa: E501
+# frob:tests \
+# tests/unit/test_logging_quiet.py::TestQuietQueryStdout.test_restores_on_exception \
+# kind="unit"
+def quiet_query_stdout() -> Iterator[None]:
+    """Quiet stdout-bound DEBUG/INFO logs by default for a human-mode query
+    command; `FROB_VERBOSE=1` opts back into the full diagnostic stream.
+
+    T-2582: `--json` mode was always wrapped in `quiet_stdout_logs()`
+    (protecting the machine-readable payload), but the human-mode path
+    used `contextlib.nullcontext()` -- backwards, since a human invoking
+    `frob explore xref foo` gets thousands of `gitio: spawning`/`parse
+    cache hit` lines ahead of a 13-line answer. Diagnostics belong off the
+    default stdout view in BOTH modes; this is the one shared default the
+    8 affected runners (`debt`/`deprecated`/`exports`/`fleet`/`gitlog`/
+    `mutate`/`outline`/`xref`) now call unconditionally instead of gating
+    `quiet_stdout_logs()` on `cfg.<name>_json`, so a ninth runner does not
+    need its own copy of this branch next time. `FROB_VERBOSE=1` is the
+    escape hatch (an env var rather than a new per-command CLI flag,
+    since `--verbose` plumbing here would need a change to
+    `AppConfig`/`_config_external.py`'s field registries, both under a
+    live lease from a concurrent ticket at the time this landed) -- it
+    restores the FULL chatter (equivalent to `nullcontext()`), never a
+    lossy partial view; a debugging session that needs
+    `gitio: spawning`/`parse cache hit` output still gets it verbatim.
+    """
+    # frob:waive SEC110 reason="FROB_VERBOSE is a local verbosity toggle (log-chatter \
+    # on/off), not a secret source -- nothing sensitive flows through this read"
+    if os.environ.get("FROB_VERBOSE") == "1":
+        yield
+        return
+    with quiet_stdout_logs():
+        yield
 
 
 @contextlib.contextmanager

@@ -239,6 +239,14 @@ Each runner exposes exactly one public function, `run(cfg: AppConfig) -> None`,
 invoked by `App.__call__`. They are documented here one line each; flag
 semantics live in `AppConfig` and in each subcommand's own docs page.
 
+T-2582: the human-mode query runners (`debt`/`exports`/`gitlog`/`mutate`/
+`outline`/`xref`, plus `deprecated`/`fleet`) now quiet stdout-bound
+DEBUG/INFO chatter by DEFAULT in both `--json` and human mode, via
+`frob.logging.quiet.quiet_query_stdout` (docs/modules/logging.md#public-api)
+-- previously only `--json` mode was quieted, so a bare human-mode
+invocation could drown a short answer under thousands of parse-diagnostic
+lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
+
 <!-- frob:describes src/frob/app/gitlog_runner.py::run -->
 <!-- frob:describes src/frob/app/vet_runner.py::run -->
 <!-- frob:describes src/frob/app/stats_runner.py::run -->

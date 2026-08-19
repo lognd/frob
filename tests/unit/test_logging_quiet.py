@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-from frob.logging.quiet import quiet_stdout_logs, stdout_log_level
+from frob.logging.quiet import quiet_query_stdout, quiet_stdout_logs, stdout_log_level
 
 
 def _install_stdout_handler(level: int) -> logging.StreamHandler:
@@ -149,6 +149,67 @@ class TestStdoutLogLevel:
             try:
                 with stdout_log_level(logging.INFO):
                     assert handler.level == logging.INFO
+                    raise ValueError("boom")
+            except ValueError:
+                pass
+            assert handler.level == before
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+
+class TestQuietQueryStdout:
+    # frob:ticket T-2582
+    """T-2582: `quiet_query_stdout` quiets by default; FROB_VERBOSE=1
+    opts back into the full diagnostic stream."""
+
+    # frob:ticket T-2582
+    # frob:tests src/frob/logging/quiet.py::quiet_query_stdout kind="unit"
+    def test_quiets_by_default(self, monkeypatch) -> None:
+        """With no FROB_VERBOSE set, behaves exactly like quiet_stdout_logs:
+        raises the stdout handler to WARNING for the duration of the block.
+        This is the repro for T-2582 -- at the parent commit this helper
+        did not exist and every human-mode query path used
+        contextlib.nullcontext(), so the equivalent assertion (handler
+        stays at its original DEBUG/INFO level during the "quiet" block)
+        would have FAILED before this fix."""
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        handler = _install_stdout_handler(logging.DEBUG)
+        try:
+            before = handler.level
+            with quiet_query_stdout():
+                assert handler.level == logging.WARNING
+            assert handler.level == before
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+    # frob:ticket T-2582
+    # frob:tests src/frob/logging/quiet.py::quiet_query_stdout kind="unit"
+    def test_frob_verbose_env_var_restores_full_chatter(self, monkeypatch) -> None:
+        """FROB_VERBOSE=1 is the escape hatch: the block must NOT raise the
+        stdout handler's level at all, so a debugging session gets the
+        full gitio/parse-cache diagnostic stream verbatim -- a fix that
+        deletes the diagnostics instead of gating them would fail this."""
+        monkeypatch.setenv("FROB_VERBOSE", "1")
+        handler = _install_stdout_handler(logging.DEBUG)
+        try:
+            before = handler.level
+            with quiet_query_stdout():
+                assert handler.level == before
+            assert handler.level == before
+        finally:
+            logging.getLogger().removeHandler(handler)
+
+    # frob:ticket T-2582
+    # frob:tests src/frob/logging/quiet.py::quiet_query_stdout kind="unit"
+    def test_restores_on_exception(self, monkeypatch) -> None:
+        """Handler level is restored even when the wrapped block raises."""
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        handler = _install_stdout_handler(logging.DEBUG)
+        try:
+            before = handler.level
+            try:
+                with quiet_query_stdout():
+                    assert handler.level == logging.WARNING
                     raise ValueError("boom")
             except ValueError:
                 pass

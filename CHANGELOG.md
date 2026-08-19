@@ -100,6 +100,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2565: T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
 - T-2569: T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
 - T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
+- T-2582: T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
 
 ## [0.530.0] - unreleased
 

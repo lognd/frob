@@ -29,6 +29,7 @@ _log.info("did the thing: %s", detail)
 <!-- frob:describes src/frob/logging/color.py::paint -->
 <!-- frob:describes src/frob/logging/quiet.py::quiet_stdout_logs -->
 <!-- frob:describes src/frob/logging/quiet.py::stdout_log_level -->
+<!-- frob:describes src/frob/logging/quiet.py::quiet_query_stdout -->
 <!-- frob:describes src/frob/logging/handler.py::_LazyStdoutHandler -->
 <!-- frob:describes src/frob/logging/handler.py::_LazyStdoutHandler.stream -->
 <!-- frob:describes src/frob/logging/handler.py::_LazyStderrHandler -->
@@ -84,6 +85,14 @@ stdout_log_level(level: int) -> Iterator[None]
     # check`'s -v/-vv verbosity gating (WARNING default, INFO at -v, DEBUG
     # at -vv). Not reentrant/thread-safe like quiet_stdout_logs -- for a
     # single top-level CLI invocation, not concurrent library code.
+
+quiet_query_stdout() -> Iterator[None]
+    # T-2582: quiet_stdout_logs(), unless FROB_VERBOSE=1 is set. The shared
+    # default for human-mode query commands (debt/deprecated/exports/
+    # fleet/gitlog/mutate/outline/xref) -- previously only their --json
+    # mode called quiet_stdout_logs(), drowning the human-mode answer in
+    # thousands of parse-diagnostic lines. FROB_VERBOSE=1 restores the
+    # full diagnostic stream verbatim for debugging.
 
 # frob/logging/handler.py
 class _LazyStdoutHandler(logging.StreamHandler)

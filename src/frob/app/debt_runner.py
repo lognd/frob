@@ -12,7 +12,6 @@ command over it.
 
 from __future__ import annotations
 
-import contextlib
 import tomllib
 from datetime import date
 from pathlib import Path
@@ -50,15 +49,13 @@ def _current_version(root: Path) -> str:
 def run(cfg: AppConfig) -> None:
     """List every outstanding `frob:debt` entry under `cfg.debt_path`."""
     from frob.gates import list_debt
-    from frob.logging import quiet_stdout_logs
+    from frob.logging.quiet import quiet_query_stdout
 
     root = (cfg.debt_path or Path(".")).resolve()
-    # T-0563: `--json` wraps snapshot-loading in `quiet_stdout_logs`,
-    # matching `frob map`/`frob dup` -- the graph-build INFO/DEBUG chatter
-    # must not land ahead of the JSON payload on the same stdout-bound
-    # `_log.info` channel now that both go through the logger.
-    ctx = quiet_stdout_logs() if cfg.debt_json else contextlib.nullcontext()
-    with ctx:
+    # T-0563/T-2582: quiet snapshot-loading's INFO/DEBUG chatter in BOTH
+    # modes -- the graph-build lines must not land ahead of the answer on
+    # the same stdout-bound `_log.info` channel, human mode included.
+    with quiet_query_stdout():
         snapshot = load_or_build_snapshot(root, log_context="debt")
         entries = list_debt(
             snapshot,
