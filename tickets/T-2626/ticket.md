@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8bd384ab4abaa3b5f3f9505820a7d9ba21e3ac8a
 ---
 Found while working T-2614 (T-2450's scope was recorded as one
 semicolon-joined glob string, not two valid scope entries).
