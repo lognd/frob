@@ -2,7 +2,7 @@
 id: T-2595
 title: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep
   writers
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -14,11 +14,32 @@ runs_last: false
 milestone: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: the repro tests and CAS/lock unit coverage live here
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_fcntl_degrades_to_unlocked
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders
+- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_true_when_older_is_ancestor
+- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_equal_commits_are_ancestors
+- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_false_when_not_an_ancestor
+- tests/unit/test_rapid_sweep.py::TestIsAncestor::test_none_on_git_failure
+- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_no_prior_baseline
+- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_prior_is_an_ancestor
+- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_skips_when_prior_is_not_an_ancestor
+- tests/unit/test_rapid_sweep.py::TestWriteBaselineCas::test_writes_when_ancestry_is_unresolvable
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace::test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline
 threat: null
 component: null
 anchor: false
