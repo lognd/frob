@@ -2,7 +2,7 @@
 id: T-2669
 title: rapid-profile land fails to commit its own rapid-debt.jsonl, dirtying the shared
   root and DirtyMain-blocking the fleet (70x today)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -28,7 +28,10 @@ scope_changes:
     fixture has no scaffolded hook/worktree so it cannot catch this
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_guard_still_refuses_a_genuinely_foreign_file
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_survives_the_scaffolded_root_write_guard
 threat: null
 component: null
 anchor: false

@@ -935,6 +935,54 @@ class TestCommitRapidDebt:
         assert _git(repo, "status", "--porcelain").strip() == ""
         assert "rapid-debt.jsonl" in _git(repo, "ls-files")
 
+    # frob:ticket T-2669
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_guard_still_refuses_a_genuinely_foreign_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuinely_foreign_file  # noqa: E501
+        """Must-fire control, other direction from the test above: T-2669's
+        fix scopes `FROB_LAND_INTERNAL=1` to ONLY the one `git commit`
+        spawn `_commit_rapid_debt` makes for `rapid-debt.jsonl` -- it must
+        not leak into, or otherwise weaken, the T-2071 guard's refusal of
+        an UNRELATED non-ledger file committed the same way a stray agent
+        write would be. Proves the fix is a narrow exemption for this
+        module's own machinery file, not a general bypass."""
+        import subprocess
+
+        from frob.scaffold import install_worktree_lease_hook
+
+        repo = _seed_repo(tmp_path)
+        installed = install_worktree_lease_hook(repo)
+        assert installed.is_ok
+
+        worktree_dir = tmp_path.parent / "linked-worktree-t2669-control"
+        current_branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+        _git(
+            repo,
+            "worktree",
+            "add",
+            "-b",
+            "agent-branch-t2669-control",
+            str(worktree_dir),
+            current_branch,
+        )
+
+        (repo / "stray.py").write_text("z = 1\n", encoding="utf-8")
+        _git(repo, "add", "--", "stray.py")
+
+        monkeypatch.delenv("FROB_LAND_INTERNAL", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "stray agent write"],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode != 0, commit.stdout + commit.stderr
+        assert _git(repo, "status", "--porcelain").strip() != ""
+
     def test_stages_only_the_debt_file(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_stages_only_the_debt_file  # noqa: E501
         from frob.tickets._evidence import record_rapid_debt
@@ -961,6 +1009,61 @@ class TestCommitRapidDebt:
         # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_a_non_repo_never_raises  # noqa: E501
         # Best-effort: it must never fail a land that already succeeded.
         _rapid_sweep._commit_rapid_debt(tmp_path, "T-0004")
+
+    # frob:ticket T-2669
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_survives_the_scaffolded_root_write_guard(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_survives_the_scaffolded_root_write_guard  # noqa: E501
+        """T-2669: `_seed_repo` above has no scaffolded pre-commit hook and
+        no linked worktree, so none of the other tests in this class can
+        reproduce the real incident -- a rapid land's shared-root checkout
+        has BOTH (the T-0731/T-2071 `pre-commit` hook is scaffolded onto
+        every real clone, and a dispatched fleet always has at least one
+        linked worktree). Under that real shape, `_commit_rapid_debt`'s
+        `git commit` spawn hits the T-2071 guard (`non-ledger file staged
+        directly in the primary checkout while worktrees exist`) exactly
+        like any other unflagged non-ledger commit would, because it never
+        sets `FROB_LAND_INTERNAL=1` around the spawn the way every other
+        land-internal commit in `_land_git_ops.py` does -- reproduced here
+        by installing the real hook and adding a real linked worktree
+        before calling it, not by asserting on the hook's shell source."""
+        from frob.scaffold import install_worktree_lease_hook
+        from frob.tickets._evidence import record_rapid_debt
+
+        repo = _seed_repo(tmp_path)
+        installed = install_worktree_lease_hook(repo)
+        assert installed.is_ok
+
+        worktree_dir = tmp_path.parent / "linked-worktree-t2669"
+        current_branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+        _git(
+            repo,
+            "worktree",
+            "add",
+            "-b",
+            "agent-branch-t2669",
+            str(worktree_dir),
+            current_branch,
+        )
+
+        record_rapid_debt(repo, "T-2669", "post-land-unscoped-sweep-deferred")
+        assert _git(repo, "status", "--porcelain").strip() != ""
+
+        # The real incident's shell has neither var set -- this is a
+        # dispatched land process's own environment, not an agent shell.
+        monkeypatch.delenv("FROB_LAND_INTERNAL", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+        _rapid_sweep._commit_rapid_debt(repo, "T-2669")
+
+        # The actual invariant: the shared root must be left CLEAN, not
+        # merely "a commit helper ran without raising".
+        assert _git(repo, "status", "--porcelain").strip() == "", (
+            "rapid-debt.jsonl commit was refused by the scaffolded "
+            "pre-commit hook (T-2071) and the root was left dirty"
+        )
+        assert "rapid-debt.jsonl" in _git(repo, "ls-files")
 
 
 class TestDescribeRootDirt:

@@ -733,7 +733,14 @@ def _write_baseline_cas(
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_is_a_noop_when_nothing_was_appended  # noqa: E501
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_a_non_repo_never_raises
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_survives_the_scaffolded_root\
+# _write_guard
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuin\
+# ely_foreign_file
 # frob:ticket T-1698
+# frob:ticket T-2669
 def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     """Commit the `rapid-debt.jsonl` line this land just appended, so the
     land leaves `root` CLEAN.
@@ -754,8 +761,19 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
 
     Best-effort: a failure here must never fail a land that has already
     succeeded, but it is logged at ERROR, because the resulting dirty root
-    is invisible in the `DirtyMain` error every other agent then hits."""
+    is invisible in the `DirtyMain` error every other agent then hits.
+
+    T-2669: the `commit` spawn below is wrapped in `_land_internal_git_
+    env()` (T-0828), same as every other land-internal commit in `_land_
+    git_ops.py`. Without it, this commit is indistinguishable from an
+    ordinary non-ledger write to the shared root checkout, and the T-2071
+    scaffolded `pre-commit` hook refuses exactly that (a non-ledger file
+    staged directly in the primary checkout while linked worktrees exist)
+    unless `FROB_LAND_INTERNAL=1` is set -- measured directly as the cause
+    of 70 hand-committed `rapid-debt.jsonl` DirtyMain recoveries in one
+    day (T-2669's own measurement) before this fix."""
     from frob.gitio import run_argv
+    from frob.tickets._land_git_ops import _land_internal_git_env
 
     rel = "rapid-debt.jsonl"
     status = run_argv(["git", "-C", str(root), "status", "--porcelain", "--", rel])
@@ -776,18 +794,19 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     if staged.is_err or staged.danger_ok.returncode != 0:
         _log.error("rapid sweep: %s could not stage %s in %s", ticket_id, rel, root)
         return
-    committed = run_argv(
-        [
-            "git",
-            "-C",
-            str(root),
-            "commit",
-            "-m",
-            f"chore(rapid): record {ticket_id}'s deferred post-land sweep",
-            "--",
-            rel,
-        ]
-    )
+    with _land_internal_git_env():
+        committed = run_argv(
+            [
+                "git",
+                "-C",
+                str(root),
+                "commit",
+                "-m",
+                f"chore(rapid): record {ticket_id}'s deferred post-land sweep",
+                "--",
+                rel,
+            ]
+        )
     if committed.is_err or committed.danger_ok.returncode != 0:
         _log.error(
             "rapid sweep: %s could not commit %s in %s -- root is now DIRTY "
