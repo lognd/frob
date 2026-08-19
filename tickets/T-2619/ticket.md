@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: aab3dc95c54dfdfc9f38db6dabbd17175aebbc7d
 ---
 src/frob/tickets/_reconcile.py::ReconcileReport and ::reconcile both carry
 AFFECT001 waivers whose reason cited T-1720's "LIVE cross-worktree lease"
