@@ -272,10 +272,55 @@ historical bad value existed anywhere in it. `extra="allow"` (T-0838)
 means this field is safely additive -- no ledger migration needed, an
 older binary preserves it verbatim even if it predates this field.
 
-M1 (this ticket) is field + validator + setter + CLI surface only:
-`milestone` never blocks or reorders anything on its own yet. M2 (a
-separate, later ticket) is where `MILE00x` gates and `doable`'s sort key
-start caring what a ticket's milestone is.
+M1 was field + validator + setter + CLI surface only: `milestone` did not
+yet block or reorder anything. M3 (T-2577, below) is where `doable`'s
+sort key starts caring; `MILE00x` gates (M2/M4/M5) are separate tickets.
+
+### Milestone as the doable sort axis, and inheritance (T-2577 M3)
+
+`_doable_sort_key` (`frob.tickets`) sorts milestone FIRST, ahead of
+priority: `(milestone_rank, milestone_version, -priority_rank, created,
+id)`. `milestone_version` is a real `packaging.version.Version` compare
+(never a string compare -- `"1.10.0"` correctly outranks `"1.9.0"`), so a
+critical v1.1 ticket can never outrank a low v1.0 ticket while 1.0 is
+still shipping.
+
+Milestone ORDERS, it never HIDES. `doable()`/`doable_blocked()`/`wave()`
+still return every candidate regardless of milestone -- a later-milestone
+ticket sorts LAST among milestoned tickets, it is never filtered out of
+the result by default (hiding work is this repo's dominant silent-zero
+bug class, T-2391). An operator who wants only one milestone's tickets
+asks for it explicitly: `frob ticket doable --milestone VALUE`, an
+opt-in post-filter (`frob.app.ticket_runner._query._select_doable_
+tickets`), the same shape `--sprint` already uses -- never the default.
+
+**Effective milestone and inheritance.** `frob.tickets.effective_
+milestone(queue, ticket)` returns `(value, declared)`: `ticket.milestone`
+itself if set (`declared=True`), else the nearest ANCESTOR's (walking
+`parent` -- a story, then that story's own epic, stopping at the first
+one that has a milestone set) (`declared=False`). `(None, False)` when
+neither the ticket nor any ancestor declares one. `frob ticket doable`'s
+row render shows this as `milestone=VALUE` (declared) or
+`milestone=VALUE (inherited)` -- an inherited value must never read as
+indistinguishable from a declared one (this was a hard constraint, not a
+nice-to-have: a coordinator scanning the list needs to know at a glance
+whether THIS ticket was actually assigned to a release or is only
+riding its epic's).
+
+**Unmilestoned placement.** `_doable_sort_key` places an unmilestoned
+ticket (`effective_milestone` returns `None`) AFTER every declared-or-
+inherited milestone value, regardless of what that value is -- an unknown
+ship target must not let a ticket jump ahead of work already scheduled
+into a real milestone, but "unmilestoned" is not itself a specific later
+milestone either, so "after everything scheduled" is the only
+deterministic placement that does not require guessing which release it
+belongs to. This matters today because M2's backfill (a separate ticket,
+T-2576) has not yet run -- most open tickets are still unmilestoned, and
+without this rule they would sort arbitrarily (dict/set iteration order)
+rather than deterministically. Once M2's backfill lands this bucket is
+normally empty; it still governs anything filed between M1 landing and
+M2's backfill running, and anything that slips past a not-yet-landed
+MILE003 gate.
 
 ### Sprints (T-0715)
 

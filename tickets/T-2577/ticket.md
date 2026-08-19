@@ -1,7 +1,7 @@
 ---
 id: T-2577
 title: 'M3: milestone as primary doable sort axis, inheritance, --milestone filter'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -78,6 +78,18 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_own_milestone_is_declared
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_inherits_from_parent_story
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_inherits_from_grandparent_epic
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_nearest_ancestor_wins_over_farther_one
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_no_milestone_anywhere_in_chain_is_none
+- tests/test_tickets_milestone_sort.py::TestEffectiveMilestone::test_cycle_does_not_infinite_loop
+- tests/test_tickets_milestone_sort.py::TestDoableSortKey::test_earlier_milestone_outranks_critical_later_milestone
+- tests/test_tickets_milestone_sort.py::TestDoableSortKey::test_later_milestone_still_appears_sorted_last_never_absent
+- tests/test_tickets_milestone_sort.py::TestDoableSortKey::test_unmilestoned_sorts_after_every_declared_milestone
+- tests/test_tickets_milestone_sort.py::TestDoableSortKey::test_semver_numeric_not_lexical_ordering
+- tests/test_tickets_milestone_sort.py::TestDoableSortKey::test_no_queue_falls_back_to_own_milestone_only
 designated_repro_test: null
 threat: null
 component: null

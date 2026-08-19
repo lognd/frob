@@ -153,6 +153,8 @@ _STRING_FIELDS = (
     "ticket_milestone",
     "ticket_sprint",
     "ticket_doable_sprint",
+    # frob:ticket T-2577
+    "ticket_doable_milestone",
     "ticket_sprint_command",
     # frob:ticket T-1738
     "ticket_wave_agents",

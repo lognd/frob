@@ -73,6 +73,16 @@ def _add_ticket_query_parsers(ticket_sub) -> list:
         metavar="LABEL",
         help="restrict the doable queue to one sprint's commitment (T-0715)",
     )
+    # frob:ticket T-2577
+    ticket_doable_p.add_argument(
+        "--milestone",
+        dest="ticket_doable_milestone",
+        metavar="VALUE",
+        help="restrict the doable queue to one milestone's EFFECTIVE "
+        "value (T-2577 M3) -- own-or-inherited, exact string match "
+        "against a real semver value; explicit opt-in, distinct from "
+        "the default doable list, which never hides a later milestone",
+    )
     # frob:ticket T-0715
     ticket_doable_p.add_argument(
         "--by-parent",

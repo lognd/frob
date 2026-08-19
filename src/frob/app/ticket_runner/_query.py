@@ -504,6 +504,20 @@ def _select_doable_tickets(
     if cfg.ticket_doable_sprint is not None:
         tickets = tuple(t for t in tickets if t.sprint == cfg.ticket_doable_sprint)
 
+    # T-2577: `--milestone` is an explicit, opt-in FILTER against the
+    # EFFECTIVE (own-or-inherited) milestone -- `doable()` itself already
+    # returned every later-milestone candidate, sorted last, never hidden
+    # (constraint 1); this narrows the rendered set only when the operator
+    # asks for it, same post-filter shape `--sprint` already uses above.
+    if cfg.ticket_doable_milestone is not None:
+        from frob.tickets import effective_milestone
+
+        tickets = tuple(
+            t
+            for t in tickets
+            if effective_milestone(queue, t)[0] == cfg.ticket_doable_milestone
+        )
+
     # PERF001: test membership against a set of ids, not the `in_flight`
     # list itself, on every iteration of the comprehension below.
     in_flight = [t for t in tickets if has_live_lease(t, root)]
@@ -592,6 +606,7 @@ def _doable_row(
     alarm_by_id: dict,
     color: bool,
     *,
+    queue: "TicketQueue | None" = None,
     landed_ids: frozenset[str] = frozenset(),
     hot_files_by_id: dict[str, tuple[str, int]] | None = None,
 ) -> str:
@@ -606,13 +621,31 @@ def _doable_row(
     value) -- naming this row's single most-contended declared file and
     its holder count, per the automatic-over-commands directive (a
     coordinator who never runs `frob ticket contention` still sees the
-    collision risk on the exact ticket they were about to dispatch)."""
+    collision risk on the exact ticket they were about to dispatch).
+
+    T-2577 M3: also appends `milestone=VALUE` (declared) or
+    `milestone=VALUE (inherited)` when `queue` is given and `t` has an
+    EFFECTIVE milestone (`frob.tickets.effective_milestone`) -- an
+    inherited value renders visibly distinct from a declared one
+    (constraint 3, T-2577's own body: "must never be indistinguishable").
+    Nothing is appended for an unmilestoned ticket (pre-M2-backfill, the
+    common case today) or when `queue` is omitted -- no existing caller
+    of this row format loses anything by not passing it."""
     row = "%s  %s  (%s)  priority=%s" % (
         style_ticket_id(t.id, color),
         t.title,
         t.kind.value,
         t.priority.value,
     )
+    if queue is not None:
+        from frob.tickets import effective_milestone
+
+        milestone, declared = effective_milestone(queue, t)
+        if milestone is not None:
+            row += "  milestone=%s%s" % (
+                milestone,
+                "" if declared else " (inherited)",
+            )
     if t.id in alarm_by_id:
         elapsed, threshold = alarm_by_id[t.id]
         row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
@@ -665,6 +698,7 @@ def _render_doable_dispatchable(
                     t,
                     alarm_by_id,
                     color,
+                    queue=queue,
                     landed_ids=landed_ids,
                     hot_files_by_id=hot_files_by_id,
                 )
@@ -697,6 +731,7 @@ def _render_doable_dispatchable(
                     t,
                     alarm_by_id,
                     color,
+                    queue=queue,
                     landed_ids=landed_ids,
                     hot_files_by_id=hot_files_by_id,
                 ),

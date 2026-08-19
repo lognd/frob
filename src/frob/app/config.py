@@ -904,6 +904,11 @@ class AppConfig(BaseModel):
     # `frob ticket doable --sprint LABEL [--by-parent]`.
     ticket_doable_sprint: str | None = None
     ticket_doable_by_parent: bool = False
+    # frob:ticket T-2577
+    # `frob ticket doable --milestone VALUE` -- explicit, OPT-IN filter to
+    # one milestone's effective (own-or-inherited) value; `doable()` itself
+    # never hides a later milestone by default (constraint 1, T-2577 M3).
+    ticket_doable_milestone: str | None = None
     # frob:ticket T-1867
     # `frob ticket doable --show-anchors` -- include anchor=True tickets in
     # the result (excluded by default, T-1867's own doable()-level filter).

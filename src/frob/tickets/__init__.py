@@ -55,6 +55,7 @@ from frob.tickets._doable import (
     display_state,
     doable,
     doable_blocked,
+    effective_milestone,
     has_live_lease,
     large_glob_warnings,
     leased_by,
@@ -350,14 +351,62 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
 
 
 # frob:ticket T-0411
+# frob:ticket T-2577
+# frob:doc docs/modules/tickets-data-storage.md#milestone-as-the-doable-sort-axis-and-inheritance-t-2577-m3  # noqa: E501
 # frob:tests tests/test_tickets_priority.py::TestDoablePriorityOrdering.test_high_priority_surfaces_before_older_low_priority  # noqa: E501
-def _doable_sort_key(t: Ticket) -> tuple[int, date, str]:
-    """`doable`/`doable_blocked` ordering key (T-0411): highest PRIORITY_RANK
-    first, then oldest-created, then id -- priority is the primary axis so a
-    high-value ticket never rots behind a pile of older low-value ones, with
-    age still breaking ties within the same priority (the prior behavior for
-    tickets that were all effectively MEDIUM)."""
-    return (-PRIORITY_RANK[t.priority], t.created, t.id)
+# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_earlier_milestone_outranks_critical_later_milestone  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_unmilestoned_sorts_after_every_declared_milestone  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_semver_numeric_not_lexical_ordering  # noqa: E501
+def _doable_sort_key(
+    t: Ticket, queue: "TicketQueue | None" = None
+) -> tuple[int, object, int, date, str]:
+    """`doable`/`doable_blocked`/`board_view` ordering key (T-0411, milestone
+    axis added T-2577 M3): milestone FIRST (earlier ships before later,
+    real semver order via `packaging.version.Version` -- never a string
+    compare, so `"1.10.0"` correctly outranks `"1.9.0"`), then highest
+    `PRIORITY_RANK`, then oldest-created, then id.
+
+    Milestone ORDERS here, it never HIDES (constraint 1 of T-2577's own
+    body): a later-milestone ticket still sorts into the result, just
+    last among milestoned tickets -- callers must never filter it out of
+    `doable`'s dispatchable set on this key's account, only `--milestone`
+    (an explicit, opt-in operator filter, T-2577) does that.
+
+    `queue`, when given, resolves the EFFECTIVE milestone via
+    `frob.tickets._doable.effective_milestone` (own if declared, else the
+    nearest ancestor's) -- this is what `doable`/`doable_blocked`/`wave`
+    (T-2577's own declared scope) pass. `queue=None` (every pre-T-2577
+    caller: `board_view`, `_brief.py`'s heap/dispatch ordering, all
+    outside this ticket's scope) falls back to `t.milestone` alone, no
+    ancestor walk -- unaffected in practice today since no ticket has
+    `milestone` set until M2's backfill lands, at which point every
+    candidate's milestone key is the same placeholder and the tuple falls
+    straight through to the unchanged priority/age/id ordering below.
+
+    An UNMILESTONED ticket (`effective_milestone`/`t.milestone` is `None`)
+    sorts AFTER every declared-or-inherited milestone value, regardless of
+    what that value is (T-2577 M3 decision, documented per this ticket's
+    own "must not sort arbitrarily" requirement): an unknown ship target
+    must not let a ticket jump ahead of work already scheduled into a
+    real milestone, but it is also not "later" than any specific milestone
+    -- "after everything scheduled" is the only deterministic placement
+    that does not require guessing which release it belongs to. Once M2's
+    backfill runs, this bucket is empty in practice for any ticket that
+    predates the backfill; it still matters for anything filed between M1
+    and M2 landing, and for any future MILE003 violation before it is
+    caught."""
+    from packaging.version import Version
+
+    if queue is not None:
+        from frob.tickets._doable import effective_milestone
+
+        milestone, _declared = effective_milestone(queue, t)
+    else:
+        milestone = t.milestone
+    milestone_key: tuple[int, object] = (
+        (1, Version("0")) if milestone is None else (0, Version(milestone))
+    )
+    return (*milestone_key, -PRIORITY_RANK[t.priority], t.created, t.id)
 
 
 # frob:ticket T-0454
@@ -644,6 +693,7 @@ __all__ = [
     "display_state",
     "doable",
     "doable_blocked",
+    "effective_milestone",
     "drain_next",
     "drop_ticket",
     "enqueue",

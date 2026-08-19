@@ -69,6 +69,45 @@ def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
     )
 
 
+# frob:ticket T-2577
+# frob:doc docs/modules/tickets-data-storage.md#milestone-as-the-doable-sort-axis-and-inheritance-t-2577-m3  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_own_milestone_is_declared  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_parent_story  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_grandparent_epic  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_nearest_ancestor_wins_over_farther_one  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_no_milestone_anywhere_in_chain_is_none  # noqa: E501
+# frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_cycle_does_not_infinite_loop  # noqa: E501
+def effective_milestone(queue: TicketQueue, ticket: Ticket) -> tuple[str | None, bool]:
+    """`(value, declared)` for `ticket`'s EFFECTIVE milestone (T-2577 M3):
+    `ticket.milestone` itself if set (`declared=True`), else the nearest
+    ancestor's (walking `parent` -- story, then that story's own epic, and
+    so on) that has one set (`declared=False`). `(None, False)` when
+    neither `ticket` nor any ancestor in the chain declares a milestone.
+
+    `declared` exists so a caller (M3's own doable render) can show an
+    inherited value WITHOUT letting it read as indistinguishable from a
+    declared one -- constraint 3 in this ticket's own body. Walks with a
+    `seen` id set so a malformed/cyclic `parent` chain (should not exist,
+    but `parent` is deliberately unvalidated against cycles at the model
+    layer, same reasoning `validate_milestone`'s own docstring gives for
+    `blocked_by`/`parent` staying permissive) terminates instead of
+    looping forever, and a dangling `parent` id (points at a ticket not in
+    `queue`) simply stops the walk rather than raising."""
+    if ticket.milestone is not None:
+        return (ticket.milestone, True)
+    seen = {ticket.id}
+    current = ticket
+    while current.parent is not None and current.parent not in seen:
+        seen.add(current.parent)
+        parent = queue.tickets.get(current.parent)
+        if parent is None:
+            break
+        if parent.milestone is not None:
+            return (parent.milestone, False)
+        current = parent
+    return (None, False)
+
+
 # frob:invariant INV-032
 # frob:tests tests/test_tickets.py::TestDoable.test_blocked_excluded
 # frob:ticket T-0715
@@ -648,6 +687,7 @@ def undispatched_stale(
 # tests/test_tickets_tiers.py::TestDoableLeafOnly.test_epic_and_story_never_surface
 # frob:invariant INV-024
 # frob:ticket T-0715
+# frob:ticket T-2577
 # invariant spec: [INV-024](invariants/INV-024.md)
 def doable(
     queue: TicketQueue,
@@ -699,7 +739,18 @@ def doable(
     exactly as before; only the default POP-THE-TOP path stops surfacing
     it. Pass `show_anchors=True` (`frob ticket doable --show-anchors`) to
     include anchors in the result again, annotated at the display layer
-    (`_render_doable_dispatchable`) rather than hidden."""
+    (`_render_doable_dispatchable`) rather than hidden.
+
+    T-2577 M3: ordering is now milestone-PRIMARY, priority/age secondary
+    (`_doable_sort_key(t, queue)` -- see its own docstring). This function
+    never filters on milestone itself -- a later-milestone candidate still
+    comes back here, sorted last, never hidden (constraint 1); an explicit
+    per-milestone filter is the CALLER's job (`frob ticket doable
+    --milestone VALUE`, applied post-`doable()` in
+    `frob.app.ticket_runner._query._select_doable_tickets`, the same shape
+    `--sprint`'s existing post-filter already uses) so a caller who wants
+    "just what's doable in one release" can still ask for it without this
+    function itself ever making later work invisible by default."""
     from frob.tickets import _doable_sort_key
 
     candidates = _doable_candidates(queue, root)
@@ -714,7 +765,7 @@ def doable(
             for t in candidates
             if not leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
         ]
-    return tuple(sorted(candidates, key=_doable_sort_key))
+    return tuple(sorted(candidates, key=lambda t: _doable_sort_key(t, queue)))
 
 
 # frob:ticket T-1738
@@ -785,6 +836,7 @@ class WaveResult:
 
 # frob:ticket T-1738
 # frob:ticket T-1825
+# frob:ticket T-2577
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
 # tests/test_tickets_wave.py::TestWave.test_disjoint_scopes_pack_into_separate_groups
@@ -850,7 +902,9 @@ def wave(
 
     groups = tuple(
         WaveGroup(
-            tickets=tuple(sorted(members, key=_doable_sort_key)),
+            tickets=tuple(
+                sorted(members, key=lambda t: _doable_sort_key(t, queue))
+            ),
             scope=tuple(scope),
         )
         for members, scope in zip(group_tickets, group_scope, strict=True)
@@ -947,6 +1001,7 @@ def _extend_unique(target: list[str], addition: Sequence[str]) -> None:
 
 
 # frob:ticket T-0453
+# frob:ticket T-2577
 # frob:doc docs/modules/tickets.md#public-api
 # frob:tests \
 # tests/test_tickets_lease.py::TestShowBlocked.test_show_blocked_lists_reasons
@@ -972,7 +1027,7 @@ def doable_blocked(
         breadth = scope_breadth_context(root)
     all_leases = _all_leases(queue, root)
     blocked: list[tuple[Ticket, tuple[tuple[str, str], ...]]] = []
-    for t in sorted(candidates, key=_doable_sort_key):
+    for t in sorted(candidates, key=lambda t: _doable_sort_key(t, queue)):
         hits = leased_by(queue, t, root, breadth=breadth, all_leases=all_leases)
         if hits:
             blocked.append((t, hits))
