@@ -13,6 +13,10 @@ blocked_by:
 parent: T-1686
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_worker.py
 - src/frob/serve/_daemon.py
@@ -26,6 +30,8 @@ scope:
 - src/frob/verify/_watermark.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/verify/test_worker.py
@@ -86,6 +92,14 @@ scope_changes:
     waivers; those waiver deletions live in this file
   actor: logan
   at: '2026-08-07'
+body_changes:
+- mode: append
+  reason: 'COV003 disposition: recording obsolete-superseded per T-2324''s own redesign,
+    not a rebind -- coordinator-approved (T-2669 triage)'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 2748
+  new_length: 4498
 evidence:
 - tests/test_serve_daemon.py::TestFrobDaemonStatus::test_reads_current_status
 - tests/test_serve_daemon.py::TestPollPostLand::test_head_moved_refreshes_verdict
@@ -148,6 +162,9 @@ threat: null
 component: verification
 labels:
 - watermark-epic
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 The trailing-edge-debounce half of the epic, and where the wall-clock
 saving actually comes from.
@@ -200,3 +217,33 @@ Standing repo constraints (binding, not restatement):
 - Docs land in the same change as the code. No follow-up docs ticket.
 - No waivers. If a gate fires, fix the cause or fix the gate; a waiver
   here is a structural defect, not a resolution.
+
+COV003 OBSOLETE-SUPERSEDED (T-2669 triage, 2026-08-19): this ticket's
+evidence citation
+`tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_file_a_ticket_and_do_not_advance`
+no longer resolves. Investigated: this is NOT a rename. Read T-2324
+in full (the ticket that replaced this behavior).
+
+This ticket's original design: "New findings file a regression ticket
+and report 'red' without touching the watermark" -- advance-only-on-
+green. T-2324 (done) diagnosed that contract as unsound for a BACKLOG
+drain specifically: it makes progress conditional on the entire
+backlog being clean at once, which this repo's non-zero error floor
+makes structurally impossible, so the watermark could never advance
+and debt was unbounded (measured directly: 567 -> 570 commits behind
+across one drain run). T-2324 deliberately chose to advance the
+watermark PAST commits whose findings are already attributed to an
+owning ticket ("a finding with an owner is accounted for... it should
+not also pin the watermark forever") -- the new test,
+`test_new_findings_filed_to_a_real_ticket_still_advance`, asserts
+exactly the opposite of this ticket's original contract, by design.
+
+Disposition: the ORIGINAL INVARIANT this test proved ("new findings
+never advance the watermark") was REPLACED by T-2324's own redesign,
+not merely re-proven under a new name elsewhere. Do NOT rebind this
+citation -- the successor test proves the opposite of what this
+ticket originally claimed, and binding to it would misrepresent this
+ticket as still proving an invariant it now disproves. This COV003
+finding is accepted, permanent, disclosed residue: the policy this
+ticket implemented was deliberately superseded by a later, better-
+reasoned design.
