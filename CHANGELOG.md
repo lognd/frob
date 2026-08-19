@@ -107,6 +107,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2578: M4: rescope runs_last to the ticket's own milestone
 - T-2579: M4b: MILE004 gate for multiple runs-last tickets in one milestone
 - T-2580: M5: MILE001/MILE002 milestone-deadlock gates
+- T-2581: M6: REL001 extension -- refuse release cut with open milestone-X tickets
 - T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
 - T-2584: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001 is silently inert
 - T-2585: frob check has no durable result: replay an unchanged-tree verdict automatically, never as a flag

@@ -4157,7 +4157,9 @@ class TestWire001RuleIdViolationsUnion:
             tmp_path,
             "src/frob/gates/_new_synthetic_gate.py",
             "def new_synthetic_violation():\n"
-            "    return Violation(" + "rule" + '="ZZZTEST034", severity=Severity.ERROR)\n',
+            "    return Violation("
+            + "rule"
+            + '="ZZZTEST034", severity=Severity.ERROR)\n',
         )
         diff = Diff(
             base="x",
@@ -4184,7 +4186,9 @@ class TestWire001RuleIdViolationsUnion:
             tmp_path,
             "src/frob/perf/_new_synthetic_check.py",
             "def new_synthetic_violation():\n"
-            "    return Violation(" + "rule" + '="ZZZTEST035", severity=Severity.ERROR)\n',
+            "    return Violation("
+            + "rule"
+            + '="ZZZTEST035", severity=Severity.ERROR)\n',
         )
         diff = Diff(
             base="x",
@@ -5461,6 +5465,109 @@ class TestDebtGate:
 
         assert _rel001_is_linked_worktree(main_root) is False
         assert _rel001_is_linked_worktree(worktree_root) is True
+
+
+# frob:ticket T-2581
+class TestReleaseOpenMilestoneViolations:
+    """`_release_open_milestone_violations(root, release_version)`
+    (T-2581 M6): REL001 must refuse to cut a release while any OPEN
+    ticket still carries that (effective) milestone, and must name every
+    blocking ticket by id -- never a bare count."""
+
+    def _milestone_ticket(
+        self,
+        *,
+        ticket_id: str,
+        state: TicketState = TicketState.QUEUED,
+        milestone: str | None = None,
+    ) -> Ticket:
+        """Minimal `Ticket` fixture carrying a `milestone` field -- this
+        file's own shared `_ticket` helper predates M1 (T-2574) and has
+        no `milestone` parameter; kept as a small local twin rather than
+        widening that helper's signature for every one of its many other
+        call sites."""
+        return Ticket(
+            id=ticket_id,
+            title="Sample",
+            state=state,
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=(),
+            evidence=(),
+            attachments=(),
+            body="## Description\nx\n\n## Done report\ndone\n",
+            milestone=milestone,
+        )
+
+    def test_open_ticket_in_cut_milestone_refuses(self, tmp_path: Path) -> None:
+        """Positive control: an OPEN ticket declares the exact milestone
+        being cut -- REL001 must fire, naming the ticket."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        t = self._milestone_ticket(ticket_id="T-0001", milestone="1.0.0")
+        write_ticket(tmp_path, t).danger_ok
+        violations = _release_open_milestone_violations(tmp_path, "1.0.0")
+        assert len(violations) == 1
+        assert violations[0].rule == "REL001"
+        assert "T-0001" in violations[0].message
+        assert "1.0.0" in violations[0].message
+
+    def test_open_ticket_in_other_milestone_does_not_refuse(
+        self, tmp_path: Path
+    ) -> None:
+        """Negative control: the open ticket's milestone does not match
+        the release being cut -- must succeed (no violation)."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        t = self._milestone_ticket(ticket_id="T-0001", milestone="2.0.0")
+        write_ticket(tmp_path, t).danger_ok
+        assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
+
+    def test_terminal_ticket_in_cut_milestone_does_not_refuse(
+        self, tmp_path: Path
+    ) -> None:
+        """A DONE ticket in the cut milestone is not a live blocker --
+        it already shipped its own work."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        t = self._milestone_ticket(
+            ticket_id="T-0001", milestone="1.0.0", state=TicketState.DONE
+        )
+        write_ticket(tmp_path, t).danger_ok
+        assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
+
+    def test_no_open_tickets_in_milestone_succeeds(self, tmp_path: Path) -> None:
+        """Explicit acceptance case: a release cut with no open tickets in
+        that milestone at all must succeed (empty queue)."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
+
+    def test_names_every_blocking_ticket(self, tmp_path: Path) -> None:
+        """Two separate open tickets in the cut milestone -- the refusal
+        must name BOTH, not just report that something blocks."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        a = self._milestone_ticket(ticket_id="T-0001", milestone="1.0.0")
+        b = self._milestone_ticket(ticket_id="T-0002", milestone="1.0.0")
+        write_ticket(tmp_path, a).danger_ok
+        write_ticket(tmp_path, b).danger_ok
+        violations = _release_open_milestone_violations(tmp_path, "1.0.0")
+        assert len(violations) == 1
+        assert "T-0001" in violations[0].message
+        assert "T-0002" in violations[0].message
+
+    def test_queue_unavailable_does_not_crash(self, tmp_path: Path) -> None:
+        """A queue-load failure degrades to "skip this check", never a
+        hard crash of the whole release gate -- write a malformed ledger
+        file that `load_queue` cannot parse."""
+        from frob.gates._debt_deprecated import _release_open_milestone_violations
+
+        (tmp_path / "tickets.md").write_text(
+            "not a valid ticket ledger at all: [[[", encoding="utf-8"
+        )
+        assert _release_open_milestone_violations(tmp_path, "1.0.0") == ()
 
 
 class TestDeprecatedGate:
@@ -12125,9 +12232,7 @@ class TestFixEngineTierA:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             created=date.today(),
-            body=(
-                "## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"
-            ),
+            body=("## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"),
         )
         write_result = write_ticket(root, claiming)
         assert write_result.is_ok
@@ -12173,9 +12278,7 @@ class TestFixEngineTierA:
         _git("commit", "-q", "-m", "cite a genuinely phantom id")
 
         queue = TicketQueue(tickets={"T-0001": claiming})
-        merge_target_ids = MergeTargetKnownIds(
-            ids=frozenset({"T-2388"}), measured=True
-        )
+        merge_target_ids = MergeTargetKnownIds(ids=frozenset({"T-2388"}), measured=True)
         applied = fix_tick006_phantom_refile(root, queue, merge_target_ids)
         assert len(applied) == 1
         assert applied[0].rule == "TICK006"
@@ -12205,9 +12308,7 @@ class TestFixEngineTierA:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             created=date.today(),
-            body=(
-                "## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"
-            ),
+            body=("## Done report\n\nFiled T-2388 (sibling fix) as a follow-up.\n"),
         )
         write_result = write_ticket(root, claiming)
         assert write_result.is_ok
@@ -16098,7 +16199,7 @@ class TestSelfAuditGate:
         own test module."""
         design = (
             "module m\n"
-            'node widget : trusted {\n'
+            "node widget : trusted {\n"
             '    code "src/frob/widget/**";\n'
             '    may "exec";\n'
             "}\n"
@@ -16125,7 +16226,7 @@ class TestSelfAuditGate:
         `sys_gate`."""
         design = (
             "module m\n"
-            'node widget : trusted {\n'
+            "node widget : trusted {\n"
             '    code "src/frob/widget/**";\n'
             '    may "exec";  // because: "widget shells out to its own helper tools"\n'
             "}\n"

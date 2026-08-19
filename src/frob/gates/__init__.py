@@ -82,6 +82,7 @@ from frob.gates._dead_symbols import dead_symbol_gate
 from frob.gates._debt_deprecated import (
     _release_expired_deprecated_violations,
     _release_open_debt_violations,
+    _release_open_milestone_violations,
     debt_gate,
     deprecated_current_references,
     deprecated_gate,
@@ -2633,9 +2634,7 @@ def _cov006_resolve_import_files(
     """
     files: set[str] = set()
     for module_path, names in _cov006_imported_names(source):
-        absolute_module_path = _cov006_resolve_relative_module(
-            anchor_file, module_path
-        )
+        absolute_module_path = _cov006_resolve_relative_module(anchor_file, module_path)
         for name in names:
             if name not in names_of_interest:
                 continue
@@ -5410,6 +5409,11 @@ def release_gate(
             snapshot, current_date=date.today().isoformat()
         )
     )
+    # T-2581 (M6): a release must never ship while OPEN tickets still carry
+    # the (effective) milestone being cut -- a release-vs-ticket-ledger
+    # analog of the debt/deprecated checks above, over the M1-M5 milestone
+    # field instead of frob:debt/frob:deprecated directives.
+    violations.extend(_release_open_milestone_violations(root, current_version))
     # T-1009: REL002 -- .frob-release.json is the ONE version authority;
     # every derived artifact (pyproject.toml/uv.lock/CHANGELOG.md) must
     # agree with it at all times, independent of REL001's land-owned/

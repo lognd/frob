@@ -1,7 +1,7 @@
 ---
 id: T-2581
 title: 'M6: REL001 extension -- refuse release cut with open milestone-X tickets'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -40,6 +40,13 @@ scope_changes:
   reason: TestReleaseOpenMilestoneViolations evidence for REL001 M6
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_cut_milestone_refuses
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_open_ticket_in_other_milestone_does_not_refuse
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_terminal_ticket_in_cut_milestone_does_not_refuse
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_no_open_tickets_in_milestone_succeeds
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_names_every_blocking_ticket
+- tests/test_gates.py::TestReleaseOpenMilestoneViolations::test_queue_unavailable_does_not_crash
 designated_repro_test: null
 threat: null
 component: null

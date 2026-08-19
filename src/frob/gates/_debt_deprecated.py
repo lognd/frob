@@ -985,3 +985,80 @@ def _release_expired_deprecated_violations(
             )
         )
     return tuple(violations)
+
+
+# frob:ticket T-2581
+# frob:enforces CHK-GATE-REL001
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_cut_milestone_refuses  # noqa: E501
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_open_ticket_in_other_milestone_does_not_refuse  # noqa: E501
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_terminal_ticket_in_cut_milestone_does_not_refuse  # noqa: E501
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_no_open_tickets_in_milestone_succeeds  # noqa: E501
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_names_every_blocking_ticket  # noqa: E501
+# frob:tests tests/test_gates.py::TestReleaseOpenMilestoneViolations.test_queue_unavailable_does_not_crash  # noqa: E501
+def _release_open_milestone_violations(
+    root: Path, release_version: str
+) -> tuple[Violation, ...]:
+    """REL001 (M6, T-2581): refuse to cut release `release_version` while
+    any OPEN ticket carries that EFFECTIVE milestone (declared, inherited,
+    or the repo's configured `[tickets].default_milestone` --
+    `frob.tickets._doable.effective_milestone`, the SAME resolution
+    `doable`'s own display and the MILE00x family (M1-M5, T-2574/2576/
+    2577/2579/2580) use, so this check never disagrees with what an
+    operator sees in `frob ticket doable`). This is M2's own dependency
+    (T-2576's backfill/default resolution) made load-bearing here for the
+    first time: without every open ticket actually carrying a resolvable
+    milestone, comparing "milestone X" against the release being cut would
+    not mean anything.
+
+    Names every blocking ticket id in the message (never a bare count) --
+    an operator who cannot see the blocking set will override the gate
+    blind, the same reasoning `_release_open_debt_violations` above
+    already reports each individual `frob:debt` site by name rather than
+    a total.
+
+    Loads the ticket queue independently (`frob.tickets.load_queue`)
+    rather than requiring `release_gate`'s caller to thread one through --
+    `release_gate`'s signature (`root, snapshot, ticket_id`) lives outside
+    this module's scope, and a queue load failure here degrades to "skip
+    this check" (logged, not raised) the same fail-open shape
+    `_default_milestone` (`frob.tickets._doable`) uses for an unreadable
+    `frob.toml` -- a release gate must not hard-crash the whole `frob
+    check`/release-cut run over a queue-load hiccup a DIFFERENT gate
+    (`tickets`/`milestone`) already reports on its own terms."""
+    from frob.tickets import _OPEN_STATES, load_queue
+    from frob.tickets._doable import effective_milestone
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.warning(
+            "release_gate: ticket queue unavailable (%s) -- skipping the "
+            "REL001 open-milestone-tickets check for this run",
+            queue_result.danger_err,
+        )
+        return ()
+    queue = queue_result.danger_ok
+
+    blockers: list[str] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state not in _OPEN_STATES:
+            continue
+        milestone, _source = effective_milestone(queue, t, root)
+        if milestone == release_version:
+            blockers.append(t.id)
+    if not blockers:
+        return ()
+    return (
+        Violation(
+            rule="REL001",
+            severity=Severity.ERROR,
+            file="tickets.md",
+            line=0,
+            message=(
+                f"REL001: release {release_version} cannot be cut -- "
+                f"{len(blockers)} open ticket(s) still carry (effective) "
+                f"milestone {release_version}: {', '.join(blockers)}; "
+                f"close them, drop them, or re-milestone them before "
+                f"cutting this release"
+            ),
+        ),
+    )
