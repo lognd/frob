@@ -2,7 +2,7 @@
 id: T-2100
 title: 'TestRevalidateDispatchableSweepTickets: two tests intermittently interfere
   when run together (pre-existing)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-10'
@@ -14,8 +14,19 @@ runs_last: false
 scope:
 - tests/unit/test_rapid_sweep.py
 - src/frob/tickets/_store.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: T-2100's root cause is _store.py's v2 index cache mtime-only staleness key;
+    fix lives there, existing TestV2IndexCache class in tests/test_tickets.py is where
+    its regression coverage belongs alongside the class it extends
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
