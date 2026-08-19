@@ -173,3 +173,84 @@ class TestDocenum001Gate:
         assert len(violations) == 1
         assert violations[0].severity.value == "warn"
         assert "cannot resolve" in violations[0].message
+
+
+class TestDocenum001UndocumentedMembers:
+    """T-2664: a claimed member with no table row/heading anywhere in the
+    doc file is a separate WARN finding from the member-list-mismatch
+    check above -- covers both directions plus the pre-existing mismatch
+    check still firing unchanged."""
+
+    def test_claimed_member_with_no_doc_row_fires_warn(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        _write(tmp_path, "code.py", '_RULES = {"AAA001": 1, "BBB002": 2}\n')
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n"
+            "| Rule | Fails when |\n"
+            "|---|---|\n"
+            "| AAA001 | thing happens |\n",
+        )
+        edges = (_enumerates_edge("code.py::_RULES", "AAA001,BBB002"),)
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        # member list itself matches exactly -- no mismatch finding.
+        assert not [v for v in violations if "member list" in v.message]
+        undoc = [v for v in violations if "no resolvable documentation" in v.message]
+        assert len(undoc) == 1
+        assert undoc[0].severity.value == "warn"
+        assert "BBB002" in undoc[0].message
+        assert "AAA001" not in undoc[0].message
+
+    def test_claimed_member_with_doc_row_does_not_fire(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        _write(tmp_path, "code.py", '_RULES = {"AAA001": 1, "BBB002": 2}\n')
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n"
+            "| Rule | Fails when |\n"
+            "|---|---|\n"
+            "| AAA001 | thing happens |\n"
+            "| BBB002 | other thing happens |\n",
+        )
+        edges = (_enumerates_edge("code.py::_RULES", "AAA001,BBB002"),)
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert violations == ()
+
+    def test_documented_via_heading_section_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        # Combined-id headings (this file's own catalog shape, e.g.
+        # "## AFFECT001 AFFECT002 (T-0628)") must also count as
+        # documentation, not just a table row.
+        _write(tmp_path, "code.py", '_RULES = {"AAA001": 1, "BBB002": 2}\n')
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n## AAA001 BBB002 (T-0000)\n\nProse.\n",
+        )
+        edges = (_enumerates_edge("code.py::_RULES", "AAA001,BBB002"),)
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert violations == ()
+
+    def test_member_mismatch_still_fires_alongside_undocumented(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        # Existing ERROR-severity mismatch detection is unchanged by the
+        # new WARN check -- both can fire on the same edge independently.
+        _write(tmp_path, "code.py", '_RULES = {"AAA001": 1, "BBB002": 2}\n')
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n| Rule | Fails when |\n|---|---|\n| AAA001 | x |\n",
+        )
+        edges = (_enumerates_edge("code.py::_RULES", "AAA001"),)
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        rules_by_severity = {v.severity.value for v in violations}
+        assert "error" in rules_by_severity
+        mismatch = [v for v in violations if "member list" in v.message]
+        assert len(mismatch) == 1
+        assert "BBB002" in mismatch[0].message

@@ -151,6 +151,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2655: T-2651 landed new fleet_status symbols without test/doc edges (COV001+DOC002), raising quarantine
 - T-2656: Fix 13 stale lease/binding-premise waivers surfaced by WAIVE006's T-2622 extension
 - T-2662: docs/modules/gates.md: add table rows for CYCLE001/MILE001-004/TICK012/WAIVE009
+- T-2664: DOCENUM001 passes with member ids listed but never documented
 
 ## [0.530.0] - unreleased
 

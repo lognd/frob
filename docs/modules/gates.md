@@ -2077,6 +2077,35 @@ Every DOCENUM001 finding is `frob:waive DOCENUM001 reason="..."`-able via
 the normal source-level waiver path (the markdown anchor's own `origin`
 line carries the edge, same as every other doc-facing gate).
 
+**Per-member documentation presence (T-2664, WARN).** The AST-diff above
+only verifies that the CLAIMED member LIST matches the code collection's
+real members -- it never checked that a correctly-claimed member id has
+any actual documentation anywhere in the file. That gap was directly
+observed: T-2613 synced this file's own `frob:enumerates members="..."`
+list (the rule catalog above) to match `_KNOWN_GATE_RULES` exactly, and
+DOCENUM001 read clean throughout even though several of the ids it added
+(MILE001, MILE002, WAIVE009 before T-2639) had zero documentation rows --
+a bare id in the member list was sufficient to pass. Same failure shape
+as a rule declared in `_KNOWN_GATE_RULES` but never wired into
+`run_gates`: correct by its own enumeration check while delivering none
+of the protection the enumeration exists for.
+
+DOCENUM001 now also checks, per claimed member id, whether it resolves to
+a documentation row/section anywhere in the SAME doc file -- either of
+this file's own two documentation shapes: a leading table cell
+(`| RULEID | ... |`, including combined cells like `DUP001/DUP002`) or a
+`#`/`##`/`###` heading naming the id (including combined headings like
+`## AFFECT001 AFFECT002 (T-0628)`). A claimed member matching neither
+shape fires a **WARN**, not an ERROR: measured at introduction against
+this file's own 336-member catalog, 80 pre-existing ids had zero
+documentation (a filed backlog ticket tracks clearing it). Landing this check
+at ERROR severity would have reddened `frob check` on main the moment it
+shipped, for pre-existing gaps unrelated to whoever's diff happened to
+touch this file next -- WARN surfaces the gap without blocking. The
+existing member-list-mismatch check above is unaffected and remains
+ERROR-severity; the two checks are independent and can both fire on the
+same edge.
+
 ## Ack accountability (T-1317)
 
 <a id="ack-accountability-t-1317"></a>

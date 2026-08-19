@@ -1,7 +1,7 @@
 ---
 id: T-2664
 title: DOCENUM001 passes with member ids listed but never documented
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -47,6 +47,11 @@ body_changes:
   at: '2026-08-19'
   old_length: 1702
   new_length: 2326
+evidence:
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_claimed_member_with_no_doc_row_fires_warn
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_claimed_member_with_doc_row_does_not_fire
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_documented_via_heading_section_does_not_fire
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_member_mismatch_still_fires_alongside_undocumented
 designated_repro_test: null
 threat: null
 component: null

@@ -42,6 +42,7 @@ false "matches" result.
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 from frob.gates._models import Severity, Violation
@@ -240,6 +241,71 @@ def _resolve_edge_tree(
     return tree_cache[code_path]
 
 
+_ID_TOKEN_RE = re.compile(r"^[A-Z][A-Z0-9_-]*[0-9]$|^[A-Z][A-Z-]{3,}$")
+
+
+def _ids_in_cell(cell: str) -> frozenset[str]:
+    """Every rule-id-shaped token in one table cell, splitting combined
+    cells like `DUP001/DUP002` or `WIRE001, WIRE002` on `/`, `,`, and
+    whitespace (T-2664 -- this file's own catalog uses both combined-cell
+    and combined-heading shapes for sibling rules, so a naive one-id-per-
+    cell/heading match would false-positive every one of them as
+    undocumented)."""
+    ids: set[str] = set()
+    for tok in re.split(r"[/,\s]+", cell.strip("`").strip()):
+        tok = tok.strip("`")
+        if _ID_TOKEN_RE.match(tok):
+            ids.add(tok)
+    return frozenset(ids)
+
+
+def _documented_ids(doc_text: str) -> frozenset[str]:
+    """Every rule id documented anywhere in `doc_text` -- a leading table
+    cell (`| RULEID | ... |`, first column, combined cells split) or a
+    heading line (`## RULEID (...)`, `### RULEID/RULEID2 (...)`) -- the
+    two documentation shapes this file's own catalog and prose sections
+    already use (T-2664: DOCENUM001's member-list-integrity check never
+    verified a listed member had either shape anywhere in the file, so a
+    bare id added to `members=` was enough to pass with zero
+    documentation delivered)."""
+    ids: set[str] = set()
+    for line in doc_text.splitlines():
+        row = re.match(r"^\|\s*([^|]+?)\s*\|", line)
+        if row is not None:
+            ids |= _ids_in_cell(row.group(1))
+            continue
+        heading = re.match(r"^#{2,4}\s+(.*)$", line)
+        if heading is not None:
+            ids |= _ids_in_cell(heading.group(1))
+    return frozenset(ids)
+
+
+def _undocumented_members_violation(
+    file: str, line: int, edge, claimed: frozenset[str], documented: frozenset[str]
+) -> Violation | None:
+    """(WARN, T-2664) the DOCENUM001 finding for one edge's claimed
+    members that resolve to no table row/heading anywhere in the doc
+    file, or `None` if every claimed member is documented. WARN, not
+    ERROR: measured at introduction against `docs/modules/gates.md`'s own
+    336-member list, ~79 pre-existing ids had zero documentation --
+    landing this at ERROR would redden main on introduction (filed as a
+    separate backlog ticket, not blocked on here)."""
+    undocumented = sorted(claimed - documented)
+    if not undocumented:
+        return None
+    return Violation(
+        rule="DOCENUM001",
+        severity=Severity.WARN,
+        file=file,
+        line=line,
+        message=(
+            f"DOCENUM001: frob:enumerates at {edge.src} lists member(s) with "
+            f"no resolvable documentation row/section in this file: "
+            f"{', '.join(undocumented)}"
+        ),
+    )
+
+
 def _member_mismatch_violation(
     file: str, line: int, edge, claimed: frozenset[str], actual: frozenset[str]
 ) -> Violation | None:
@@ -268,72 +334,110 @@ def _member_mismatch_violation(
 
 
 # frob:enforces CHK-GATE-DOCENUM001
-def _docenum001_violation_for_edge(
-    root: Path, edge, tree_cache: dict[str, ast.Module | None]
-) -> Violation | None:
-    """The DOCENUM001 `Violation` for one `frob:enumerates` markdown edge,
-    or `None` if its claimed member list matches the literal's actual
-    members exactly."""
+def _docenum001_violations_for_edge(
+    root: Path,
+    edge,
+    tree_cache: dict[str, ast.Module | None],
+    doc_cache: dict[str, str | None],
+) -> tuple[Violation, ...]:
+    """Every DOCENUM001 `Violation` for one `frob:enumerates` markdown
+    edge -- the existing claimed-vs-actual member-set mismatch (ERROR),
+    plus (T-2664, WARN) a claimed member resolving to no documentation
+    row/section anywhere in the SAME doc file. Empty if the claim is
+    exact and every claimed member is documented."""
     file, line = _site_from_origin(edge.origin)
     parsed = _parse_symref(edge.target)
     if parsed is None:
-        return Violation(
-            rule="DOCENUM001",
-            severity=Severity.ERROR,
-            file=file,
-            line=line,
-            message=(
-                f"DOCENUM001: frob:enumerates target {edge.target!r} at "
-                f"{edge.src} is not a `path.py::Qualname` reference"
+        return (
+            Violation(
+                rule="DOCENUM001",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DOCENUM001: frob:enumerates target {edge.target!r} at "
+                    f"{edge.src} is not a `path.py::Qualname` reference"
+                ),
             ),
         )
     code_path, qualname = parsed
     tree = _resolve_edge_tree(root, code_path, tree_cache)
     if tree is None:
-        return Violation(
-            rule="DOCENUM001",
-            severity=Severity.ERROR,
-            file=file,
-            line=line,
-            message=(
-                f"DOCENUM001: frob:enumerates at {edge.src} targets "
-                f"{edge.target!r}, but {code_path} could not be read/parsed"
+        return (
+            Violation(
+                rule="DOCENUM001",
+                severity=Severity.ERROR,
+                file=file,
+                line=line,
+                message=(
+                    f"DOCENUM001: frob:enumerates at {edge.src} targets "
+                    f"{edge.target!r}, but {code_path} could not be read/parsed"
+                ),
             ),
         )
     actual = _extract_members(tree, qualname)
     if actual is None:
-        return Violation(
-            rule="DOCENUM001",
-            severity=Severity.WARN,
-            file=file,
-            line=line,
-            message=(
-                f"DOCENUM001: frob:enumerates at {edge.src} targets "
-                f"{edge.target!r}, whose collection shape this gate cannot "
-                "resolve (unsupported literal/class shape) -- member "
-                "claim left unverified, not silently passed"
+        return (
+            Violation(
+                rule="DOCENUM001",
+                severity=Severity.WARN,
+                file=file,
+                line=line,
+                message=(
+                    f"DOCENUM001: frob:enumerates at {edge.src} targets "
+                    f"{edge.target!r}, whose collection shape this gate cannot "
+                    "resolve (unsupported literal/class shape) -- member "
+                    "claim left unverified, not silently passed"
+                ),
             ),
         )
     claimed = frozenset(
         m.strip() for m in edge.attrs.get("members", "").split(",") if m.strip()
     )
-    return _member_mismatch_violation(file, line, edge, claimed, actual)
+    violations = []
+    mismatch = _member_mismatch_violation(file, line, edge, claimed, actual)
+    if mismatch is not None:
+        violations.append(mismatch)
+    documented = _resolve_doc_ids(root, file, doc_cache)
+    if documented is not None:
+        undoc = _undocumented_members_violation(file, line, edge, claimed, documented)
+        if undoc is not None:
+            violations.append(undoc)
+    return tuple(violations)
+
+
+def _resolve_doc_ids(
+    root: Path, doc_path: str, doc_cache: dict[str, str | None]
+) -> frozenset[str] | None:
+    """Memoized `_documented_ids` for `doc_path`'s own text, or `None` if
+    the doc file cannot be read -- a read failure never counts a member
+    as undocumented (T-2664: an unreadable file is a different failure
+    the mismatch/unresolvable-shape checks above already surface)."""
+    if doc_path not in doc_cache:
+        try:
+            doc_cache[doc_path] = (root / doc_path).read_text(encoding="utf-8")
+        except OSError as exc:
+            _log.warning("DOCENUM001: cannot read doc %s: %s", doc_path, exc)
+            doc_cache[doc_path] = None
+    text = doc_cache[doc_path]
+    return _documented_ids(text) if text is not None else None
 
 
 # frob:doc docs/modules/gates.md#docenum001-t-1227
 def docenum001_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOCENUM001: every `frob:enumerates` doc anchor's claimed
     `members="..."` list must AST-match its bound collection literal's
-    real members exactly, checked fresh every run (content-verified,
-    ack-immune -- T-1227)."""
+    real members exactly (ERROR), and (T-2664, WARN) every claimed member
+    must resolve to a documentation row/section somewhere in the same doc
+    file -- checked fresh every run (content-verified, ack-immune)."""
     root = Path(root)
     tree_cache: dict[str, ast.Module | None] = {}
+    doc_cache: dict[str, str | None] = {}
     violations = [
         v
         for edge in snapshot.edges
         if edge.kind == EdgeKind.ENUMERATES
-        for v in (_docenum001_violation_for_edge(root, edge, tree_cache),)
-        if v is not None
+        for v in _docenum001_violations_for_edge(root, edge, tree_cache, doc_cache)
     ]
     _log.info("docenum001: %d violation(s)", len(violations))
     return tuple(violations)
