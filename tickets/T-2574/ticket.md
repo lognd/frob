@@ -133,7 +133,23 @@ scope_changes:
     precedent), so evidence and the file write are both accounted for
   actor: logan
   at: '2026-08-18'
+evidence:
+- tests/test_tickets.py::TestValidateMilestone::test_valid_semver_accepted
+- tests/test_tickets.py::TestValidateMilestone::test_invalid_string_refused
+- tests/test_tickets.py::TestValidateMilestone::test_ordering_is_numeric_not_lexical
+- tests/test_tickets.py::TestSetMilestone::test_valid_semver_sets_field
+- tests/test_tickets.py::TestSetMilestone::test_invalid_semver_refused
+- tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_with_valid_milestone
+- tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_with_invalid_milestone_refused
+- tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_without_milestone_is_unmilestoned
 designated_repro_test: null
+acceptance:
+- text: Ticket.milestone/TicketSpec.milestone exist, extra=allow preserved, invalid
+    semver refused at write time, and semver ordering is real (1.10.0 > 1.9.0)
+  evidence: []
+- text: frob ticket milestone <id> <value> and --milestone on frob ticket new both
+    work end to end
+  evidence: []
 threat: null
 component: null
 anchor: false
