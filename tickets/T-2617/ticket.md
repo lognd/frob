@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 scope:
 - scripts/fleet_status.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: T-2617 fix changes worktree_content_classification's documented algorithm
+    (land_commit ancestry + deletion-ratio short-circuits); docs move in the same
+    change per playbook sec 4
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: T-2617 fix changes worktree_content_classification's documented algorithm
+    (land_commit ancestry + deletion-ratio short-circuits); docs move in the same
+    change per playbook sec 4
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
