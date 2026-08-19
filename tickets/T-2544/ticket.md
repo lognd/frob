@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dad9d57333aa1b01a392b32fe2dfad30675ba84c
 ---
 T-2537 added tool_parse_failure_result (src/frob/process/parsers/common.py)
 and routed parse_ruff_json / parse_eslint / parse_junit_xml / valgrind's
