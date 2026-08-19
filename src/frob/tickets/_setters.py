@@ -53,6 +53,7 @@ from frob.tickets._models import (
     TicketTier,
     TriageChangeEntry,
     replace_done_report_section,
+    validate_milestone,
 )
 from frob.tickets._store import (
     _split_done_report,
@@ -474,6 +475,32 @@ def set_runs_last(
     flips the label."""
     return _set_ticket_field(
         root, ticket_id, "runs_last", runs_last, log_value=runs_last
+    )
+
+
+# frob:ticket T-2574
+# frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
+# frob:tests tests/test_tickets.py::TestSetMilestone.test_valid_semver_sets_field
+# frob:tests tests/test_tickets.py::TestSetMilestone.test_invalid_semver_refused
+def set_milestone(
+    root: Path, ticket_id: str, milestone: str | None
+) -> Result[Ticket, TicketError]:
+    """`frob ticket milestone <id> <value>`: set `ticket_id`'s `milestone`
+    field (T-2574 M1) -- the accountable, single-writer way to assign a
+    ticket to a shippable milestone, same ledger-locked `_set_ticket_
+    field` pattern `set_runs_last`/`set_priority`/`set_kind` all share.
+    Unlike `set_runs_last`'s bare bool, a non-`None` `milestone` is
+    validated via `validate_milestone` (real semver, T-2574) BEFORE the
+    write -- an invalid string is refused here, never accepted and sorted
+    arbitrarily later (that read-time-arbitrary-order failure mode is
+    exactly what M1 exists to prevent). `milestone=None` clears the field
+    unconditionally and needs no validation."""
+    if milestone is not None:
+        validated = validate_milestone(milestone)
+        if validated.is_err:
+            return Err(validated.danger_err)
+    return _set_ticket_field(
+        root, ticket_id, "milestone", milestone, log_value=milestone
     )
 
 

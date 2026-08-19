@@ -342,6 +342,8 @@ def _ticket_spec_from_cfg(
         tier=TicketTier(cfg.ticket_tier) if cfg.ticket_tier else TicketTier.TICKET,
         # frob:ticket T-0715
         sprint=cfg.ticket_sprint,
+        # frob:ticket T-2574
+        milestone=cfg.ticket_milestone,
         # T-0572: `--acceptance TEXT` (repeatable) gives plain strings;
         # TicketSpec's `_coerce_acceptance_field` validator wraps each into
         # a fresh, unbound {text, evidence: ()} AcceptanceCriterion --

@@ -80,6 +80,14 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         help="free-form sprint commitment label (e.g. 2026-W30, "
         "sprint-14, T-0715); omit for uncommitted/backlog",
     )
+    # frob:ticket T-2574
+    ticket_new_p.add_argument(
+        "--milestone",
+        dest="ticket_milestone",
+        metavar="VALUE",
+        help="which shippable milestone this ticket belongs to, a real "
+        "semver string (e.g. 1.10.0, T-2574); omit for unmilestoned",
+    )
     # frob:ticket T-0454
     ticket_new_p.add_argument(
         "--component",

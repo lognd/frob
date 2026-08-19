@@ -86,6 +86,13 @@ class Ticket(BaseModel):
     parent: str | None
     tier: TicketTier = TicketTier.TICKET   # T-0715: epic|story|ticket, default ticket
     sprint: str | None = None   # T-0715: free-form commitment label, e.g. "2026-W30"
+    milestone: str | None = None   # T-2574: real semver, totally ordered
+        # ("what ships together"), distinct from `sprint` ("when we
+        # worked", unordered). Validated via `validate_milestone` at
+        # every write site (setter + `frob ticket new`), never at ledger
+        # LOAD time -- an invalid value is refused, not sorted
+        # arbitrarily. Never blocks on its own at this stage (M1); M2's
+        # MILE00x gates give it teeth.
     scope: tuple[str, ...]      # path globs and/or symrefs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
     kind_history: tuple[str, ...] = ()   # T-1616: `frob ticket kind` changes made
@@ -110,6 +117,7 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     parent: str | None = None
     tier: TicketTier = TicketTier.TICKET   # T-0715
     sprint: str | None = None   # T-0715
+    milestone: str | None = None   # T-2574: `frob ticket new --milestone VALUE`
     acceptance: tuple[AcceptanceCriterion, ...] = ()   # `frob ticket new --acceptance TEXT` (repeatable)
     component: str | None = None   # `frob ticket new --component NAME`
     labels: tuple[str, ...] = ()   # `frob ticket new --label TAG` (repeatable)
@@ -232,6 +240,42 @@ at all and loads as `tier=ticket` (a plain leaf), unaffected.
 Mechanically backfilling existing `EPIC`-titled tickets to `tier: epic`
 is a separate child ticket of T-0715 (T-0936, a one-time ledger
 migration, not a code change) that this verb unblocks.
+
+### Milestones (T-2574 M1)
+
+`Ticket.milestone` is a REAL semver string (`"1.10.0"`); `None` means
+unmilestoned. Deliberately distinct from BOTH sibling fields it could be
+confused with:
+
+- `sprint` is a free-form, UNORDERED label ("when we worked"); `milestone`
+  is totally ordered ("what ships together") via `packaging.version.
+  Version` -- `"1.10.0" > "1.9.0"` holds, unlike a plain string compare.
+- `manifest.version` (REL001, the package version) is a DIFFERENT
+  concept: `milestone` is not renamed to `version` specifically so the
+  two are never confused in code or in conversation.
+
+`validate_milestone` (`frob.tickets._models`) is the single source of
+truth for whether a string is a legal milestone -- both write sites call
+it BEFORE the ledger write, so an invalid value is refused loudly, never
+accepted and sorted arbitrarily later:
+
+- `frob ticket new --milestone VALUE` validates via `_validate_new_
+  ticket_spec` at filing time.
+- `frob ticket milestone <id> <value>` (`set_milestone`) validates the
+  same way on an already-created ticket, same single-writer, ledger-
+  locked `_set_ticket_field` shape `set_runs_last`/`set_priority` share.
+
+`Ticket` itself (the ledger LOAD path) stays lenient on `milestone`, same
+T-1132 reasoning `blocked_by`/`parent` already document: a strict
+`field_validator` there would hard-fail the WHOLE ledger the moment one
+historical bad value existed anywhere in it. `extra="allow"` (T-0838)
+means this field is safely additive -- no ledger migration needed, an
+older binary preserves it verbatim even if it predates this field.
+
+M1 (this ticket) is field + validator + setter + CLI surface only:
+`milestone` never blocks or reorders anything on its own yet. M2 (a
+separate, later ticket) is where `MILE00x` gates and `doable`'s sort key
+start caring what a ticket's milestone is.
 
 ### Sprints (T-0715)
 

@@ -1,7 +1,7 @@
 ---
 id: T-2574
 title: 'M1: Ticket.milestone field, semver ordering, CLI surface'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -146,10 +146,18 @@ designated_repro_test: null
 acceptance:
 - text: Ticket.milestone/TicketSpec.milestone exist, extra=allow preserved, invalid
     semver refused at write time, and semver ordering is real (1.10.0 > 1.9.0)
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestValidateMilestone::test_valid_semver_accepted
+  - tests/test_tickets.py::TestValidateMilestone::test_invalid_string_refused
+  - tests/test_tickets.py::TestValidateMilestone::test_ordering_is_numeric_not_lexical
+  - tests/test_tickets.py::TestSetMilestone::test_valid_semver_sets_field
+  - tests/test_tickets.py::TestSetMilestone::test_invalid_semver_refused
 - text: frob ticket milestone <id> <value> and --milestone on frob ticket new both
     work end to end
-  evidence: []
+  evidence:
+  - tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_with_valid_milestone
+  - tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_with_invalid_milestone_refused
+  - tests/test_tickets.py::TestNewTicketMilestone::test_new_ticket_without_milestone_is_unmilestoned
 threat: null
 component: null
 anchor: false

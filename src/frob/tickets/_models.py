@@ -31,6 +31,7 @@ from pydantic import (
     model_validator,
 )
 from typani.error_set import ErrorSet
+from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
@@ -101,6 +102,41 @@ def _validate_parent(value: str | None) -> str | None:
     if value is None:
         return None
     return _validate_ticket_id_ref(value, field="parent")
+
+
+# frob:ticket T-2574
+# frob:doc docs/modules/tickets-data-storage.md#milestones-t-2574-m1
+# frob:tests tests/test_tickets.py::TestValidateMilestone.test_valid_semver_accepted
+# frob:tests tests/test_tickets.py::TestValidateMilestone.test_invalid_string_refused
+# frob:tests tests/test_tickets.py::TestValidateMilestone.test_ordering_is_numeric_not_lexical  # noqa: E501
+def validate_milestone(value: str) -> Result[str, TicketError]:
+    """Refuse an invalid `Ticket.milestone`/`TicketSpec.milestone` string
+    at WRITE time (T-2574 M1) rather than accepting it and sorting
+    arbitrarily at read time -- `frob.tickets._new_renumder._validate_
+    new_ticket_spec` and `frob.tickets._setters.set_milestone` both call
+    this before the ledger write, the same "plain function-level guard,
+    not a pydantic validator" shape `_validate_new_ticket_spec`'s own
+    `scope_breadth_ack_reason` check already established (T-2302's
+    docstring explains why: `Ticket.model_validate` is also the LEDGER
+    LOAD path, so a strict validator there would hard-fail the whole
+    ledger on one historical bad value, same reasoning T-1132 gives for
+    leaving `blocked_by`/`parent` unvalidated on `Ticket` itself).
+
+    Uses `packaging.version.Version` (already a project dependency --
+    `frob.vet._cve`/`frob.tickets._land_release` precedent) for a REAL
+    ordered comparison, not a string compare: `"1.10.0"` must sort AFTER
+    `"1.9.0"`, which a lexical compare gets wrong. Returns the original
+    string unchanged on success (the `Ticket.milestone` field stores the
+    string, not a `Version` object -- callers that need the ORDER re-parse
+    via `Version(value)` once the string is known-valid, e.g. M2's
+    doable-sort key, out of this ticket's own scope)."""
+    from packaging.version import InvalidVersion, Version
+
+    try:
+        Version(value)
+    except InvalidVersion:
+        return Err(TicketError.InvalidMilestone)
+    return Ok(value)
 
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models
@@ -1516,6 +1552,20 @@ class Ticket(BaseModel):
     # loudly if a runs-last ticket is currently IN_PROGRESS, since filing
     # new ordinary work invalidates the precondition it started under.
     runs_last: bool = False
+    # frob:ticket T-2574
+    # M1 of the T-2573 milestone epic: which shippable milestone this
+    # ticket belongs to, a REAL semver string (validated via `validate_
+    # milestone` at every write site, never here -- see T-1132's
+    # docstring above on why `Ticket` itself stays lenient on the ledger
+    # LOAD path). `None` means unmilestoned; deliberately distinct from
+    # `sprint` (a free-form, UNORDERED "when we worked" label) -- this
+    # field is totally ordered ("what ships together") and NOT named
+    # `version` (REL001 already owns that word for the package version).
+    # Milestone never blocks on its own at this stage: it only orders,
+    # never gates -- M2 (`MILE00x`) is where an unmilestoned OPEN ticket
+    # starts to matter. Settable via `frob ticket new --milestone` or
+    # `frob ticket milestone <id> <value>` (`set_milestone`).
+    milestone: str | None = None
     scope: tuple[str, ...] = ()
     # frob:ticket T-1944
     # paths that cover only PRE-EXISTING evidence this ticket cites --
@@ -1808,6 +1858,13 @@ class TicketSpec(BaseModel):
     # see `Ticket.runs_last` -- settable at filing time via
     # `frob ticket new --runs-last`.
     runs_last: bool = False
+    # frob:ticket T-2574
+    # see `Ticket.milestone` -- settable at filing time via `frob ticket
+    # new --milestone VALUE`; validated by `_validate_new_ticket_spec`
+    # via `validate_milestone`, not by a field_validator here (same T-2302
+    # reasoning as `scope_breadth_ack_reason`'s own plain function-level
+    # guard).
+    milestone: str | None = None
     # given/when/then acceptance criteria, each bound to evidence id(s)
     # (T-0572); see `Ticket.acceptance`
     acceptance: tuple[AcceptanceCriterion, ...] = ()
@@ -1947,6 +2004,10 @@ class TicketError(ErrorSet):
     BlockerOpen = "Cannot start: blocked_by contains open tickets"
     # frob:ticket T-1613
     RunsLastBlocked = "Cannot start: runs-last ticket while other tickets are open"
+    # frob:ticket T-2574
+    InvalidMilestone = (
+        "milestone must be a valid semver string (e.g. 1.10.0) or omitted"
+    )
     WriteFailed = "Atomic ticket write failed"
     UnknownEvidence = "Evidence id does not resolve to a collected test"
     # T-0215: non-pytest evidence channel for docs-kind tickets

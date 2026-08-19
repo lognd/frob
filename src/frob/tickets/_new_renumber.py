@@ -37,6 +37,7 @@ from frob.tickets._models import (
     TicketKind,
     TicketSpec,
     TicketState,
+    validate_milestone,
 )
 from frob.tickets._provisional import mint_draft_id, on_default_branch
 from frob.tickets._store import (
@@ -281,6 +282,8 @@ def _ticket_from_spec(
         tier=spec.tier,
         sprint=spec.sprint,
         runs_last=spec.runs_last,
+        # frob:ticket T-2574
+        milestone=spec.milestone,
         scope=spec.scope,
         evidence=evidence,
         attachments=(),
@@ -399,9 +402,10 @@ def _validate_new_ticket_spec(
 ) -> Result[tuple[str, ...], TicketError]:
     """`new_ticket`'s pre-write validation gauntlet, split out to keep that
     function under ARCH001's line threshold (T-1813): runs-last warning,
-    scope-breadth-ack reason requirement (T-2302), worktree-lease
-    enforcement, exact-duplicate refusal, evidence schema validation, and
-    evidence resolution checking, in that order. Returns the validated
+    scope-breadth-ack reason requirement (T-2302), milestone semver
+    validation (T-2574), worktree-lease enforcement, exact-duplicate
+    refusal, evidence schema validation, and evidence resolution
+    checking, in that order. Returns the validated
     (and normalized) evidence tuple on success, or the first stage's
     `Err` -- the caller passes this straight through to
     `_ticket_from_spec`. T-2302's check is a plain function-level guard
@@ -423,6 +427,12 @@ def _validate_new_ticket_spec(
     # frob:ticket T-2302
     if spec.scope_breadth_ack and not (spec.scope_breadth_ack_reason or "").strip():
         return Err(TicketError.ScopeBreadthAckReasonMissing)
+
+    # frob:ticket T-2574
+    if spec.milestone is not None:
+        milestone_check = validate_milestone(spec.milestone)
+        if milestone_check.is_err:
+            return Err(milestone_check.danger_err)
 
     leased = enforce_worktree_lease(root)
     if leased.is_err:

@@ -484,6 +484,12 @@ class AppConfig(BaseModel):
     # LABEL` / `frob ticket sprint show LABEL` -- the same field carries
     # all three (same reuse pattern as `ticket_component`).
     ticket_sprint: str | None = None
+    # frob:ticket T-2574
+    # `frob ticket new --milestone VALUE` -- the filing-time twin of
+    # `ticket_milestone_value`'s `frob ticket milestone <id> <value>`
+    # mutate verb (same `ticket_tier`/`ticket_tier_value` split). Validated
+    # by `_validate_new_ticket_spec` via `validate_milestone`, not here.
+    ticket_milestone: str | None = None
     ticket_body: str = ""
     # frob:ticket T-0737
     # `frob ticket new --body-file PATH` -- read the ticket body verbatim
@@ -614,6 +620,12 @@ class AppConfig(BaseModel):
     # enum-choice field validator is needed here the way `ticket_tier_value`
     # has one.
     ticket_runs_last_value: str | None = None
+    # frob:ticket T-2574
+    # `frob ticket milestone <id> <value>` -- the mutate verb's positional
+    # semver value, same shape as `ticket_tier_value`/`ticket_runs_last_
+    # value`. Validated by `set_milestone` (real semver, T-2574), not
+    # here.
+    ticket_milestone_value: str | None = None
     # frob:ticket T-2392
     # `frob ticket body <id> --append TEXT|--set TEXT ... --reason TEXT` --
     # the validated body-amendment verb (T-2392); `--append`/`--set` (and

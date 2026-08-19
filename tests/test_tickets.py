@@ -2540,6 +2540,154 @@ class TestUnknownFieldForwardCompat:
         assert result.danger_err is TicketError.MalformedFrontmatter
 
 
+# frob:ticket T-2574
+class TestValidateMilestone:
+    """`validate_milestone` (T-2574 M1): a real semver ordered comparison,
+    not a string compare -- refused at write time, never sorted
+    arbitrarily at read time."""
+
+    def test_valid_semver_accepted(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::validate_milestone kind="unit"
+        from frob.tickets._models import validate_milestone
+
+        result = validate_milestone("1.10.0")
+        assert result.is_ok
+        assert result.danger_ok == "1.10.0"
+
+    def test_invalid_string_refused(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::validate_milestone kind="unit"
+        from frob.tickets._models import validate_milestone
+
+        result = validate_milestone("not-a-semver!!")
+        assert result.is_err
+        assert result.danger_err is TicketError.InvalidMilestone
+
+    def test_ordering_is_numeric_not_lexical(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::validate_milestone kind="unit"
+        # the exact case a lexical/string compare gets wrong: "1.10.0" >
+        # "1.9.0" numerically, but "1.10.0" < "1.9.0" as plain strings
+        # (lexical '1' < '9').
+        from packaging.version import Version
+
+        from frob.tickets._models import validate_milestone
+
+        assert "1.10.0" < "1.9.0"  # sanity: string compare IS wrong here
+        higher = validate_milestone("1.10.0")
+        lower = validate_milestone("1.9.0")
+        assert higher.is_ok
+        assert lower.is_ok
+        assert Version(higher.danger_ok) > Version(lower.danger_ok)
+
+
+# frob:ticket T-2574
+class TestSetMilestone:
+    """`set_milestone` (T-2574 M1): the `frob ticket milestone <id>
+    <value>` library entrypoint -- validates via `validate_milestone`
+    BEFORE the ledger write, mirroring `set_runs_last`'s single-writer
+    `_set_ticket_field` shape."""
+
+    @staticmethod
+    def _init_repo(tmp_path: Path) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
+
+    def test_valid_semver_sets_field(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_milestone kind="unit"
+        from frob.tickets import set_milestone
+
+        self._init_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_milestone(tmp_path, ticket_id, "1.10.0")
+        assert result.is_ok
+        assert result.danger_ok.milestone == "1.10.0"
+
+    def test_invalid_semver_refused(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_setters.py::set_milestone kind="unit"
+        from frob.tickets import set_milestone
+
+        self._init_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+
+        result = set_milestone(tmp_path, ticket_id, "not-a-semver!!")
+        assert result.is_err
+        assert result.danger_err is TicketError.InvalidMilestone
+        # refused BEFORE the write -- the ticket's milestone stays unset
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert reloaded.danger_ok.tickets[ticket_id].milestone is None
+
+
+# frob:ticket T-2574
+class TestNewTicketMilestone:
+    """`TicketSpec.milestone` / `--milestone` on `frob ticket new` (T-2574
+    M1): filing-time validation via `_validate_new_ticket_spec`, the same
+    plain function-level guard shape `scope_breadth_ack_reason` (T-2302)
+    established -- refused at write time, `extra="allow"` on `Ticket`
+    (T-0838) means the field is safely additive with no ledger migration."""
+
+    @staticmethod
+    def _init_repo(tmp_path: Path) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        subprocess.run(
+            ["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
+
+    def test_new_ticket_with_valid_milestone(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::_validate_new_ticket_spec kind="unit"  # noqa: E501
+        self._init_repo(tmp_path)
+        spec = TicketSpec(
+            title="a ticket",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="1.10.0",
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.milestone == "1.10.0"
+
+    def test_new_ticket_with_invalid_milestone_refused(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::_validate_new_ticket_spec kind="unit"  # noqa: E501
+        self._init_repo(tmp_path)
+        spec = TicketSpec(
+            title="a ticket",
+            kind=TicketKind.FEATURE,
+            origin=Origin.HUMAN,
+            milestone="garbage",
+        )
+        created = new_ticket(tmp_path, spec)
+        assert created.is_err
+        assert created.danger_err is TicketError.InvalidMilestone
+
+    def test_new_ticket_without_milestone_is_unmilestoned(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_new_renumber.py::_validate_new_ticket_spec kind="unit"  # noqa: E501
+        self._init_repo(tmp_path)
+        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        assert created.danger_ok.milestone is None
+
+
 # frob:ticket T-1029
 class TestAddAcceptance:
     """T-1029: `add_acceptance` appends criteria to an EXISTING ticket --

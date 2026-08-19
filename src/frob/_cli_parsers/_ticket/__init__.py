@@ -32,6 +32,7 @@ from ._metadata import (
     _add_ticket_component_parser,
     _add_ticket_kind_parser,
     _add_ticket_label_parser,
+    _add_ticket_milestone_parser,
     _add_ticket_priority_parser,
     _add_ticket_runs_last_parser,
     _add_ticket_scope_ack_parser,
@@ -66,6 +67,7 @@ __all__ = [
     "_add_ticket_land_parser",
     "_add_ticket_lifecycle_parsers",
     "_add_ticket_merge_driver_parser",
+    "_add_ticket_milestone_parser",
     "_add_ticket_new_graph_args",
     "_add_ticket_new_identity_args",
     "_add_ticket_new_parser",
@@ -89,7 +91,7 @@ __all__ = [
 def _add_ticket_closeout_parsers(ticket_sub) -> list:
     """Register the ticket closeout subcommands: attach/block/close/
     reverify/fail/evidence/done-report/scope/priority/kind/component/
-    label/accept/review/sprint/tier."""
+    label/accept/review/sprint/tier/runs-last/milestone."""
     return (
         _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub)
         + _add_ticket_fail_evidence_archive_parsers(ticket_sub)
@@ -119,6 +121,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_tier_parser(ticket_sub),
             # frob:ticket T-1613
             _add_ticket_runs_last_parser(ticket_sub),
+            # frob:ticket T-2574
+            _add_ticket_milestone_parser(ticket_sub),
             # frob:ticket T-2392
             _add_ticket_body_parser(ticket_sub),
         ]

@@ -95,6 +95,7 @@ from ._mutate import (
     _flow,
     _kind,
     _label,
+    _milestone,
     _priority,
     _resolve_scope_reason,
     _runs_last,
@@ -228,6 +229,7 @@ __all__ = [
     "_maybe_attach_clipboard_image",
     "_merge_driver",
     "_migrate",
+    "_milestone",
     "_new",
     "_order_dispatchable_with_alarms",
     "_parse_acceptance_file",
@@ -387,6 +389,8 @@ def _ticket_dispatch_table() -> dict:
         "tier": _tier,
         # frob:ticket T-1613
         "runs-last": _runs_last,
+        # frob:ticket T-2574
+        "milestone": _milestone,
         "archive": lambda root, cfg: _archive(
             root,
             force=cfg.ticket_force,

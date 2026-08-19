@@ -951,6 +951,28 @@ def _runs_last(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: runs-last now %s", cfg.ticket_id, ticket.runs_last)
 
 
+# frob:ticket T-2574
+def _milestone(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket milestone <id> <value>`: the ONLY thing this command
+    does is forward to `frob.tickets.set_milestone` -- no validation is
+    re-derived here (same `_runs_last`/T-1613 mirror shape the ticket
+    explicitly asked for). Unlike `runs-last`'s `on|off` argparse
+    `choices`, `value` is a free-form semver string; `set_milestone`
+    itself is where an invalid one gets refused (T-2574)."""
+    from frob.tickets import set_milestone
+
+    if cfg.ticket_id is None or cfg.ticket_milestone_value is None:
+        _log.error("frob ticket milestone requires <id> <value>")
+        sys.exit(1)
+
+    result = set_milestone(root, cfg.ticket_id, cfg.ticket_milestone_value)
+    if result.is_err:
+        _log.error("milestone change failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: milestone now %s", cfg.ticket_id, ticket.milestone)
+
+
 # frob:ticket T-0715
 def _sprint(root: Path, cfg: AppConfig) -> None:
     """Dispatch `frob ticket sprint assign|show` (T-0715) to its handler."""

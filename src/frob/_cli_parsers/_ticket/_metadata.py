@@ -501,6 +501,27 @@ def _add_ticket_runs_last_parser(ticket_sub):
     return ticket_runs_last_p
 
 
+# frob:ticket T-2574
+def _add_ticket_milestone_parser(ticket_sub):
+    """Register `frob ticket milestone <id> <value>` -- assign an
+    already-created ticket to a shippable milestone (T-2574 M1), a REAL
+    semver string validated by `set_milestone` at write time. Same
+    mutate-in-place shape as `_add_ticket_runs_last_parser`'s T-1613
+    precedent, except `value` is a free-form string (semver validation
+    happens library-side, not via argparse `choices`)."""
+    ticket_milestone_p = ticket_sub.add_parser(
+        "milestone", help="set an existing ticket's milestone (T-2574)"
+    )
+    ticket_milestone_p.add_argument("ticket_id", metavar="id")
+    ticket_milestone_p.add_argument(
+        "ticket_milestone_value",
+        metavar="value",
+        help="a semver string (e.g. 1.10.0) this ticket ships with",
+    )
+    _add_no_commit_flag(ticket_milestone_p)
+    return ticket_milestone_p
+
+
 # frob:ticket T-0715
 def _add_ticket_sprint_parser(ticket_sub):
     """Register `frob ticket sprint assign|show` (T-0715): `assign <id>
