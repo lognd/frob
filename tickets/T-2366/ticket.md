@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7fc58704d3f388c9736370997f6f98e6498c71a5
 ---
 Split from T-2341's re-measured still-live remainder (measured 2026-08-18):
 four old tickets' COV003 findings are still live -- their bound pytest
