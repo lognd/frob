@@ -17,10 +17,19 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/testing/_coverage_wait.py
 - src/frob/app/_daemon_proxy.py
+- src/frob/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/__init__.py
+  reason: the CYCLE001 declaration comment for the 160-node SCC lives at its representative
+    (lowest-sorted) file, src/frob/__init__.py; frob:waive CYCLE001 there does nothing
+    (see T-draft-f5281af2) so the declaration is a plain doc comment instead
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: gates
