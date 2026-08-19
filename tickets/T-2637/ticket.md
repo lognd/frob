@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6bff6501e87d28cc78ede7da2c8f9bf5c4b46a19
 ---
 Filed from T-2623's tests/unit/ red-test sweep (measured at main sha
 5a15dbd92, 18 red of 5237 collected).
