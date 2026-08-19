@@ -2,7 +2,7 @@
 id: T-2670
 title: 'docs/modules/gates.md: 80 gate rule ids in the DOCENUM001 member list have
   zero documentation'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,16 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/gates.md
+evidence_scope:
+- tests/test_docenum_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_claimed_member_with_no_doc_row_fires_warn
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_claimed_member_with_doc_row_does_not_fire
+- tests/test_docenum_gate.py::TestDocenum001UndocumentedMembers::test_documented_via_heading_section_does_not_fire
 designated_repro_test: null
 threat: null
 component: null

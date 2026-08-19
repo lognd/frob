@@ -158,6 +158,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2664: DOCENUM001 passes with member ids listed but never documented
 - T-2668: land records 'gates: unmeasured' and proceeds while a real SELFAUDIT001 error sits in its own findings list
 - T-2669: rapid-profile land fails to commit its own rapid-debt.jsonl, dirtying the shared root and DirtyMain-blocking the fleet (70x today)
+- T-2670: docs/modules/gates.md: 80 gate rule ids in the DOCENUM001 member list have zero documentation
 
 ## [0.530.0] - unreleased
 
