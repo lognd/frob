@@ -15,12 +15,33 @@ runs_last: false
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
-- tickets.md
-- tickets-archive.md
+- tickets/T-*/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: tickets.md
+  reason: tickets.md and tickets-archive.md were deleted in the ledger-v2 cutover
+    (T-1258/T-2356) and are neither on disk nor tracked; the backfill's real target
+    is the per-ticket v2 files
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: tickets-archive.md
+  reason: tickets.md and tickets-archive.md were deleted in the ledger-v2 cutover
+    (T-1258/T-2356) and are neither on disk nor tracked; the backfill's real target
+    is the per-ticket v2 files
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tickets/T-*/ticket.md
+  reason: tickets.md and tickets-archive.md were deleted in the ledger-v2 cutover
+    (T-1258/T-2356) and are neither on disk nor tracked; the backfill's real target
+    is the per-ticket v2 files
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
