@@ -2,7 +2,7 @@
 id: T-2640
 title: 'post-land sweep regression from T-2623: 43 new (rule, file) identit(ies),
   64 finding(s) (ARCH103, COV001, COV003, COV004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -112,3 +112,6 @@ New (rule, file) identit(ies) filed here:
 - WIRE003  docs/modules/cli.md
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-19: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (ARCH103 src/frob/release/_cli.py, ARCH103 src/frob/tickets/_store.py, COV001 src/frob/app/fmt_runner.py, COV001 src/frob/gates/_refs_schema.py, COV001 src/frob/gates/_rule_id_scan.py, COV001 src/frob/strata/_multifile.py, COV003 tickets/T-1397, COV003 tickets/T-1526, COV003 tickets/T-1688, COV003 tickets/T-2344, COV003 tickets/T-2348, COV003 tickets/T-2365, COV004 tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004 tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, DOC001 docs/commands/release.md, DOC002 src/frob/gates/_milestone.py, DOC002 src/frob/gates/_refs_schema.py, DOC005 docs/modules/cli.md, DOC006 tickets/T-2570/ticket.md, DOC008 docs/modules/gates.md, DOCENUM001 docs/modules/gates.md, DRIFT001 src/frob/app/ticket_runner/_verify.py, DRIFT001 src/frob/tickets/__init__.py, F401 src/frob/app/ticket_runner/__init__.py, LANG004 src/frob/lang/_support.py, PERF002 tests/unit/test_main_entry.py, PERF003 src/frob/gates/_debt_deprecated.py, PERF003 src/frob/vet/_capability_core.py, PERF004 src/frob/app/ticket_runner/_new.py, PERF004 src/frob/gates/_milestone.py, PERF004 src/frob/scaffold/_skills_sync.py, PERF004 src/frob/testing/_collect_kotlin.py, PII012 tests/test_capability_registry.py, RENDER001 src/frob/release/_cli.py, SEC110 src/frob/app/ticket_runner/_verify.py, SEC110 src/frob/app/verify_runner.py, SEC110 tests/test_release.py, SELFAUDIT001 design, TEST001 src/frob/strata/_multifile.py, TICK003 tickets.md, TICK004 tickets.md, WIRE002 tests/unit/test_app_runners_batch6.py, WIRE003 docs/modules/cli.md) is absent from a full unscoped `frob check --json` run that completed with no budget deferral and no failed/silent tool stage at T-2626's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
