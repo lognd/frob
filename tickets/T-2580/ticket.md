@@ -1,7 +1,7 @@
 ---
 id: T-2580
 title: 'M5: MILE001/MILE002 milestone-deadlock gates'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -12,13 +12,29 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
+- tests/test_gates_milestone.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_gates_milestone.py
+  reason: MILE001/MILE002 tests + doc anchor for milestone_gate closure
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: MILE001/MILE002 tests + doc anchor for milestone_gate closure
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
