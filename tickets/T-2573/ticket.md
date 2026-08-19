@@ -12,11 +12,22 @@ tier: epic
 sprint: null
 runs_last: false
 scope:
-- docs/**
+- docs/design/milestone-sequencing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/**
+  reason: epic tracking doc only; leaf tickets carry the real code/doc scope
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/design/milestone-sequencing.md
+  reason: epic tracking doc only; leaf tickets carry the real code/doc scope
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
