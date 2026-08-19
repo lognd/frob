@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b18407d40052d115ef6b126d9c3fcc6106f50bfb
 ---
 T-2613 fixed DOCENUM001 by syncing docs/modules/gates.md's `frob:enumerates`
 members= list to the real `_KNOWN_GATE_RULES` set. That closed the gate --
