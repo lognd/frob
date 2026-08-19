@@ -123,7 +123,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d8a8d49c9bb7d4c17d5459c62715336aff47166a
 ---
 Three T-1733 waivers cite T-1739's (and T-1715's) "live lease" on
 docs/modules/tickets.md as the reason evidence_changes/
