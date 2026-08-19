@@ -45,13 +45,12 @@ _log = get_logger(__name__)
 
 
 # frob:doc docs/modules/tickets-lifecycle.md#frob-ticket-reconcile-t-0476
-# frob:waive AFFECT001 reason="T-1934 adds a fourth anomaly class \
-# (unlanded_branch_work) to this already-documented model; docs/modules/tickets.md is \
-# held by T-1720's LIVE cross-worktree lease at land time, so the doc cannot be \
-# re-touched here without fighting that lease -- remove this waiver and add a real doc \
-# section once T-1720 lands (see also T-1949-adjacent residue: the earlier T-1929 \
-# lease on this same file already forced/lifted this waiver once during this ticket's \
-# own work)"
+# frob:waive AFFECT001 reason="T-1934 added a fourth anomaly class \
+# (unlanded_branch_work) to this already-documented model; docs/modules/tickets.md \
+# still has no section describing it (grep confirms zero hits) -- filed \
+# T-2619 to add one and remove this waiver once it lands (T-2612 \
+# lease-premise audit; the original reason cited T-1720's now-terminal lease as the \
+# blocker, but the doc work itself was never done once that lease cleared)"
 class ReconcileReport(BaseModel):
     """The anomalies `reconcile` found (and, if `applied`, healed) --
     (T-0476) `requeued_tickets` (stale holds) and `orphan_worktrees` (live
@@ -304,9 +303,8 @@ def _refuse_apply_if_land_in_progress(
 # frob:ticket T-0601
 # frob:ticket T-1934
 # frob:ticket T-2291
-# frob:waive AFFECT001 reason="same T-1720 live-lease conflict on \
-# docs/modules/tickets.md as ReconcileReport's own waiver above -- see that comment \
-# for the removal condition"
+# frob:waive AFFECT001 reason="same unlanded_branch_work doc gap as ReconcileReport's \
+# own waiver above (T-2619) -- see that comment for the removal condition"
 def reconcile(
     root: Path,
     *,

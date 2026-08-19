@@ -681,11 +681,6 @@ def _hooks_dir(root: Path) -> Result[Path, ScaffoldError]:
 
 
 # frob:doc docs/commands/scaffold.md#public-api
-# frob:waive AFFECT001 reason="T-2071's own scope is src/frob/scaffold/project.py \
-# alone -- docs/commands/scaffold.md is held by T-1382's LIVE cross-worktree lease for \
-# the duration of this ticket; the docstring change is additive (a new guard \
-# described, nothing existing removed/contradicted), so the doc is not WRONG, only \
-# incomplete -- filed a follow-up ticket to update it once T-1382's lease frees"
 # frob:ticket T-0731
 # frob:ticket T-2071
 # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestInstallWorktreeLeaseHook.test_installs_pre_commit_and_pre_merge_commit  # noqa: E501

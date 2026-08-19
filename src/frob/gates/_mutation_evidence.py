@@ -71,12 +71,11 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:waive AFFECT001 reason="T-1733: mutation_evidence_violations's \
 # affects()-closure doc \
 # (docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755) \
-# genuinely needs a TEST018 paragraph -- but docs/modules/tickets.md is leased by \
-# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
-# touching it here would collide with that lease. TEST018 is documented in full in \
-# this ticket's own docs home instead (docs/modules/gates.md's new 'TEST018 (T-1733)' \
-# section); remove this waiver once the tickets.md lease clears and its own paragraph \
-# can be added"
+# genuinely needs a TEST018 paragraph. TEST018 is documented in full in this ticket's \
+# own docs home instead (docs/modules/gates.md's 'TEST018 (T-1733)' section) -- but \
+# the promised tickets-landing.md paragraph was never added even after T-1739's lease \
+# cleared; filed T-2620 to add it and remove this waiver once it lands \
+# (T-2612 lease-premise audit)"
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

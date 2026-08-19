@@ -117,6 +117,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2598: T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
 - T-2599: T-2599: 34 registered worktrees, ~20 idle 9-13 days: audit needs a stranded-vs-stale test that squash-landing does not fool
 - T-2602: T-2602: test_doable_sprint_filter has been red on main since T-1995: the duplicate-title guard fires on its own fixture
+- T-2612: T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
 
 ## [0.530.0] - unreleased
 

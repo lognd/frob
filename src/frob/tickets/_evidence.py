@@ -1352,12 +1352,11 @@ def _current_actor() -> str:
 # frob:tests tests/test_tickets_evidence_cli.py::TestReplaceEvidence.test_old_node_absent_is_a_hard_refusal  # noqa: E501
 # frob:waive AFFECT001 reason="T-1733: replace_evidence's affects()-closure doc \
 # (docs/modules/tickets-landing.md#frob-ticket-evidence---replace-t-1537) genuinely \
-# needs the required-reason/evidence_changes update -- but docs/modules/tickets.md is \
-# leased by another in-progress agent (T-1715/T-1739) for the duration of this \
-# ticket's work, so touching it here would collide with that lease. The full behavior \
-# change is documented in this ticket's own docs home instead (docs/modules/gates.md's \
-# new 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears \
-# and its own paragraph can be updated"
+# needs the required-reason/evidence_changes update. The full behavior change is \
+# documented in this ticket's own docs home instead (docs/modules/gates.md's 'TEST018 \
+# (T-1733)' section) -- but the promised paragraph update at its own doc anchor was \
+# never made even after T-1739's lease cleared; filed T-2620 to add it and \
+# remove this waiver once it lands (T-2612 lease-premise audit)"
 def replace_evidence(
     root: Path,
     ticket_id: str,

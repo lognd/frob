@@ -2,7 +2,7 @@
 id: T-2612
 title: 'every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets
   still hold one'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -23,11 +23,11 @@ scope:
 - src/frob/__main__.py
 - tests/test_lease_premise_waivers.py
 - docs/commands/cli-vocabulary.md
-- tickets/T-draft-3c565d92/**
-- tickets/T-draft-4a3f6770/**
-- tickets/T-draft-b38c1e18/**
-- tickets/T-draft-fbe8aa0c/**
-- tickets/T-draft-df63b46c/**
+- tickets/T-2618/**
+- tickets/T-2619/**
+- tickets/T-2620/**
+- tickets/T-2622/**
+- tickets/T-2621/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -132,31 +132,31 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-3c565d92/**
+  glob: tickets/T-2618/**
   reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
     scope; include their own directories'
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-4a3f6770/**
+  glob: tickets/T-2619/**
   reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
     scope; include their own directories'
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-b38c1e18/**
+  glob: tickets/T-2620/**
   reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
     scope; include their own directories'
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-fbe8aa0c/**
+  glob: tickets/T-2622/**
   reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
     scope; include their own directories'
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-df63b46c/**
+  glob: tickets/T-2621/**
   reason: 'SCOPE001: this ticket''s own dropped-then-absorbed draft file needs to
     stay in scope like the others'
   actor: logan

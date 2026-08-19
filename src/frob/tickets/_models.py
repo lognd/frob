@@ -1487,12 +1487,11 @@ def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
 # frob:ticket T-1733
 # frob:waive AFFECT001 reason="T-1733: Ticket's affects()-closure doc \
 # (docs/modules/tickets-data-storage.md#data-models) genuinely needs the new \
-# evidence_changes field documented -- but docs/modules/tickets.md is leased by \
-# another in-progress agent (T-1715/T-1739) for the duration of this ticket's work, so \
-# touching it here would collide with that lease. EvidenceChangeEntry/evidence_changes \
-# are documented in full in this ticket's own docs home instead \
-# (docs/modules/gates.md's new 'TEST018 (T-1733)' section); remove this waiver once \
-# the tickets.md lease clears and its own data-models entry can be added"
+# evidence_changes field documented. EvidenceChangeEntry/evidence_changes are \
+# documented in full in this ticket's own docs home instead (docs/modules/gates.md's \
+# 'TEST018 (T-1733)' section) -- but the promised data-models entry was never added \
+# even after T-1739's lease cleared; filed T-2620 to add it and remove this \
+# waiver once it lands (T-2612 lease-premise audit)"
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body.
 
@@ -1982,12 +1981,11 @@ class AttachmentSource(BaseModel):
 # frob:ticket T-1733
 # frob:waive AFFECT001 reason="T-1733: TicketError's affects()-closure doc \
 # (docs/modules/tickets-data-storage.md#error-types) genuinely needs the new \
-# EvidenceReplaceReasonMissing variant documented -- but docs/modules/tickets.md is \
-# leased by another in-progress agent (T-1715/T-1739) for the duration of this \
-# ticket's work, so touching it here would collide with that lease. The new variant is \
-# documented in this ticket's own docs home instead (docs/modules/gates.md's new \
-# 'TEST018 (T-1733)' section); remove this waiver once the tickets.md lease clears and \
-# its own error-types entry can be added"
+# EvidenceReplaceReasonMissing variant documented. The new variant is documented in \
+# full in this ticket's own docs home instead (docs/modules/gates.md's 'TEST018 \
+# (T-1733)' section) -- but the promised error-types entry was never added even after \
+# T-1739's lease cleared; filed T-2620 to add it and remove this waiver once \
+# it lands (T-2612 lease-premise audit)"
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 

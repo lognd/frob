@@ -1189,11 +1189,6 @@ def _run_land_parity(root: Path, cfg: AppConfig) -> None:
 # _run_land_parity right above it (run gates, log an error and exit on failure, else \
 # print and exit) -- the log call and the sys.exit ARE the orchestration job; the pure \
 # computation already lives in census_gate_rules/_census_gate_config/_print_census"
-# frob:waive AFFECT001 reason="T-2486 only wraps the existing gate run in \
-# _guard_json_stdout_writes -- docs/modules/app.md#runners's one-line index entry \
-# needs no content change, and docs/modules/app.md itself is held by T-2485's LIVE \
-# cross-worktree scope lease (ScopeLeaseConflict on --add), so it cannot be added to \
-# T-2486's own scope right now; filed T-2491 to sync it once that lease clears"
 def _run_census(root: Path, cfg: AppConfig) -> None:
     """`frob check --census` (T-1764): run every gate, unscoped, over the
     whole tree, then print `frob.gates._waive.census_gate_rules`'s
@@ -1419,11 +1414,6 @@ def _run_all_stages(
 # tests/system/test_cli_check.py::TestCheckCleanProject.test_clean_code_exits_zero
 # frob:tests tests/system/test_cli_check.py::TestCheckStampBaselineAndDelta.test_delta_reports_only_new_violation  # noqa: E501
 # frob:doc docs/modules/app.md#runners
-# frob:waive AFFECT001 reason="T-2486 only wraps existing spans in \
-# _guard_json_stdout_writes -- docs/modules/app.md#runners's one-line index entry \
-# needs no content change, and docs/modules/app.md itself is held by T-2485's LIVE \
-# cross-worktree scope lease (ScopeLeaseConflict on --add), so it cannot be added to \
-# T-2486's own scope right now; filed T-2491 to sync it once that lease clears"
 def run(cfg: AppConfig) -> None:
     """`frob check [--type T] [--json] [--stamp-coverage|--stamp-baseline]`:
     run every applicable stage (ruff/ty/arch/cycle/dup/bind/exports plus the
