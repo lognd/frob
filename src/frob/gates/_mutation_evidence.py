@@ -68,14 +68,6 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:ticket T-1733
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_evidence_weakened_and_confirmatory_refuses_outright  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_evidence_changes_never_produces_test018  # noqa: E501
-# frob:waive AFFECT001 reason="T-1733: mutation_evidence_violations's \
-# affects()-closure doc \
-# (docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755) \
-# genuinely needs a TEST018 paragraph. TEST018 is documented in full in this ticket's \
-# own docs home instead (docs/modules/gates.md's 'TEST018 (T-1733)' section) -- but \
-# the promised tickets-landing.md paragraph is still not added; T-2620 tracks adding \
-# it and removing this waiver once it lands (originally deferred behind T-1739's \
-# now-closed lease; T-2612 lease-premise audit, reviewed again by T-2656)"
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

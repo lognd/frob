@@ -106,6 +106,16 @@ class Ticket(BaseModel):
     body: str                   # markdown after frontmatter, verbatim
     body_changes: tuple[BodyChangeEntry, ...] = ()   # T-2392: audit trail of
         # `frob ticket body --append/--set` mutations, append-only
+    evidence_changes: tuple[EvidenceChangeEntry, ...] = ()   # T-1733: audit trail of
+        # `frob ticket evidence --replace` rebinds, append-only -- the same
+        # `ScopeChangeEntry`/`AcceptanceAmendmentEntry` discipline applied to
+        # evidence, since `--replace` is the only evidence verb that can
+        # SHRINK what proves a ticket (`add_evidence` only appends). Each
+        # entry records old_node/new_node/reason/actor/at; `reason` is
+        # mandatory (`EvidenceReplaceReasonMissing` otherwise) because an
+        # unexplained rebind is indistinguishable from quietly discarding the
+        # strongest evidence to force a close. Full mechanism and the TEST018
+        # gate that consumes this field: docs/modules/gates.md#test018-t-1733-pricing-the-quiet-way-to-weaken-evidence
 
 class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     title: str
@@ -827,6 +837,15 @@ class TicketError(ErrorSet):
         "a sibling ticket's ledger section was independently edited on "
         "both main and the worktree since their common base, in ways "
         "that do not converge"
+    )
+    # T-1733: `frob ticket evidence --replace` refuses a rebind whose
+    # `--reason`/`--reason-file` resolves to a blank string -- the same
+    # required-justification bar `frob ticket scope --reason` has held
+    # since T-0455, closing the asymmetry where narrowing what a ticket
+    # COVERS was recorded and narrowing what PROVES it was silent and
+    # free. Full mechanism: docs/modules/gates.md#test018-t-1733-pricing-the-quiet-way-to-weaken-evidence
+    EvidenceReplaceReasonMissing = (
+        "--replace requires a non-empty --reason or --reason-file (T-1733)"
     )
 
 class ClipboardError(ErrorSet):

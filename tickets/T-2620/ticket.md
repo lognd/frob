@@ -2,7 +2,7 @@
 id: T-2620
 title: evidence_changes/EvidenceReplaceReasonMissing never got their promised tickets-data-storage.md
   entries (T-2612 audit)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -20,6 +20,8 @@ scope:
 - src/frob/gates/_mutation_evidence.py
 - src/frob/tickets/_evidence.py
 - src/frob/tickets/_models.py
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -114,6 +116,8 @@ scope_changes:
   reason: removing the four AFFECT001 waivers this ticket's doc work discharges
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

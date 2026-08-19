@@ -2529,6 +2529,33 @@ failure.
 in one `frob ticket evidence` invocation (all three modes can fire in the
 same call; the command only refuses when NONE of the three is given).
 
+### Required reason and the `evidence_changes` audit trail (T-1733)
+
+`--replace` takes a REQUIRED keyword-only `--reason TEXT` (or
+`--reason-file PATH` for multi-sentence prose -- see the shell-quoting
+hazard in `docs/guides/agent-playbook.md`) -- `Err(EvidenceReplaceReason
+Missing)` on a blank value. This mirrors `frob ticket scope --reason`
+(T-0455): narrowing what a ticket COVERS has required and recorded a
+reason since T-0455, but `--replace` -- the only evidence verb that can
+SHRINK what proves a ticket, since a pure positional/`--evidence-cmd`
+append is unaffected -- required nothing until T-1733. Every successful
+`--replace` appends an `EvidenceChangeEntry` (`old_node`, `new_node`,
+`reason`, `actor`, `at`) to `ticket.evidence_changes`, append-only, never
+edited or removed -- `frob ticket show` renders the trail the same way it
+already renders `scope_changes`/`acceptance_amendments`, so a reviewer
+sees what was rebound and why rather than a final evidence list that
+merely looks fine.
+
+A non-empty `evidence_changes` also feeds **TEST018**
+(`frob.gates._mutation_evidence.mutation_evidence_violations`): if the
+ticket's SURVIVING evidence still produces a confirmatory-only TEST016
+finding after a rebind, TEST018 refuses the close outright (always
+ERROR, regardless of ticket kind) rather than allowing the ordinary
+TEST016 WARN a non-bug/security ticket would otherwise get -- the
+mechanical fingerprint of "the tests that proved it were removed so it
+would close." Full TEST018 mechanism and the confirmatory-only detection
+it consumes: docs/modules/gates.md#test018-t-1733-pricing-the-quiet-way-to-weaken-evidence
+
 <!-- frob:waive DOC006 reason="the prose itself discloses 'frob refactor rename' as a separate, not-yet-built ticket -- it names a future command, not a live one" -->
 Disclosed follow-up (this ticket's own body): `frob refactor rename`
 detecting a bound-evidence reference and offering the `--replace` rebind

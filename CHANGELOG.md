@@ -129,6 +129,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
 - T-2615: changelog emits an entry for a DROPPED ticket and duplicates the ticket id on 101 lines
 - T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
+- T-2620: evidence_changes/EvidenceReplaceReasonMissing never got their promised tickets-data-storage.md entries (T-2612 audit)
 - T-2622: unify lease-premise and follow-up-ticket-promise waiver checks (coordinate with T-2606)
 - T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
 - T-2624: CLI wiring for runs_last_parallel_safe

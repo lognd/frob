@@ -1532,14 +1532,6 @@ def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
 
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:ticket T-1733
-# frob:waive AFFECT001 reason="T-1733: Ticket's affects()-closure doc \
-# (docs/modules/tickets-data-storage.md#data-models) genuinely needs the new \
-# evidence_changes field documented. EvidenceChangeEntry/evidence_changes are \
-# documented in full in this ticket's own docs home instead (docs/modules/gates.md's \
-# 'TEST018 (T-1733)' section) -- but the promised data-models entry is still not \
-# added; T-2620 tracks adding it and removing this waiver once it lands (originally \
-# deferred behind T-1739's now-closed lease; T-2612 lease-premise audit, reviewed \
-# again by T-2656)"
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body.
 
@@ -2089,13 +2081,6 @@ class AttachmentSource(BaseModel):
 # frob:ticket T-0579
 # frob:ticket T-0889
 # frob:ticket T-1733
-# frob:waive AFFECT001 reason="T-1733: TicketError's affects()-closure doc \
-# (docs/modules/tickets-data-storage.md#error-types) genuinely needs the new \
-# EvidenceReplaceReasonMissing variant documented. The new variant is documented in \
-# full in this ticket's own docs home instead (docs/modules/gates.md's 'TEST018 \
-# (T-1733)' section) -- but the promised error-types entry is still not added; T-2620 \
-# tracks adding it and removing this waiver once it lands (originally deferred behind \
-# T-1739's now-closed lease; T-2612 lease-premise audit, reviewed again by T-2656)"
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
