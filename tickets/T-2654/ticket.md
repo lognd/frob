@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
@@ -26,6 +27,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_coordinator_scripts.py
   reason: test file for the fleet_status.py fix must be in scope (COV002/SCOPE002)
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: the fix's frob:doc anchors live here
   actor: logan
   at: '2026-08-19'
 evidence:
