@@ -2,7 +2,7 @@
 id: T-2671
 title: 'rapid-debt DirtyMain recurs after T-2669 under concurrent root writes: a second,
   intermittent cause'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
