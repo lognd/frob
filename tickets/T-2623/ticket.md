@@ -14,8 +14,9 @@ runs_last: false
 milestone: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: measurement and triage only; any fixes land as separately-scoped
+  follow-up tickets
 scope_changes:
 - op: remove
   glob: tests/unit/
