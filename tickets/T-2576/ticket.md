@@ -16,6 +16,10 @@ milestone: null
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
+- src/frob/tickets/_doable.py
+- src/frob/app/ticket_runner/_query.py
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +50,34 @@ scope_changes:
   glob: tickets/T-*/ticket.md
   reason: 'repo-wide ledger lease removed: read-time default replaces the bulk backfill
     (coordinator review, T-2593 class)'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: 'T-2576 redesign: extend M3''s effective_milestone() with configured default
+    as terminal fallback (single home for resolution), and doable render needs a third
+    DEFAULTED case distinct from declared/inherited'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_query.py
+  reason: 'T-2576 redesign: extend M3''s effective_milestone() with configured default
+    as terminal fallback (single home for resolution), and doable render needs a third
+    DEFAULTED case distinct from declared/inherited'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'T-2576 redesign: extend M3''s effective_milestone() with configured default
+    as terminal fallback (single home for resolution), and doable render needs a third
+    DEFAULTED case distinct from declared/inherited'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'T-2576 redesign: extend M3''s effective_milestone() with configured default
+    as terminal fallback (single home for resolution), and doable render needs a third
+    DEFAULTED case distinct from declared/inherited'
   actor: logan
   at: '2026-08-19'
 body_changes:
