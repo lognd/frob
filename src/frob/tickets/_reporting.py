@@ -828,32 +828,90 @@ _DISCLOSURE_PHRASES: tuple[str, ...] = (
 
 # frob:ticket T-1648
 _FILED_LINE_RE = re.compile(r"(?im)^\s*filed:\s*(.+)$")
-_TICKET_ID_RE = re.compile(r"T-\d+")
+# T-2638: a draft id (`T-draft-<hex>`, e.g. `T-draft-295a2473`) is the
+# MANDATED shape for a follow-up filed before its own worktree lands
+# (`docs/guides/agent-playbook.md` section 0 item 8 -- drafts renumber to
+# a real `T-####` id only at land time). The old `T-\d+`-only pattern
+# could never match one, so a ticket whose every follow-up was a draft
+# could never satisfy this guard's `Filed:` requirement even though
+# filing drafts is the workflow the playbook itself prescribes -- measured
+# live on T-2623, which filed 8 real drafts and was refused anyway.
+_TICKET_ID_RE = re.compile(r"T-(?:\d+|draft-[0-9a-fA-F]+)")
+
+
+# T-2638: the actual anchor `disclosure_shaped_language` decides on --
+# markdown heading SYNTAX under the "## Done report" section, never the
+# heading's own wording. `_DISCLOSURE_PHRASES` above stays live as a
+# widening hint (it still catches plain-prose disclosures with no
+# heading at all, which the structural check below cannot see), but it
+# is no longer the thing that DECIDES the reword-proof case: a Done
+# report's own subheading (`### <anything>`) is, by construction, prose
+# the author added beyond what the plain Changed/Evidence/Filed/Gates
+# template requires -- exactly the shape a genuine disclosure takes,
+# independent of whatever words end up in the heading's own title. This
+# is the direct fix for the confirmed incident: an agent renamed "###
+# What was NOT done, and why" (phrase-matched on "not done") to "###
+# Scope boundary: measurement only, zero repairs (by design)" with the
+# SAME disclosed content one line below -- the phrase scan alone went
+# silent, but the heading itself never stopped existing, so this check
+# still fires on it.
+_DONE_REPORT_HEADING = "## Done report"
+_SUBHEADING_RE = re.compile(r"(?m)^#{2,6}[ \t]+(\S.*)$")
+
+
+def _done_report_section(text: str) -> str:
+    """The slice of `text` from the LAST `## Done report` heading to the
+    end, or `""` if that heading is absent -- scopes the T-2638
+    structural subheading check to content the Done-report write path
+    itself appended (`_append_to_section`'s own target heading), never
+    to the ticket's own DESCRIPTION, which routinely carries its own
+    rich `##`-headed structure (a "## Root cause"/"## Do NOT" section is
+    normal ticket-body prose, not a disclosure) that would otherwise
+    false-positive on essentially every ticket."""
+    idx = text.rfind(_DONE_REPORT_HEADING)
+    if idx == -1:
+        return ""
+    return text[idx + len(_DONE_REPORT_HEADING) :]
 
 
 # frob:ticket T-1648
+# frob:ticket T-2638
 # frob:doc \
 # docs/modules/tickets-data-storage.md#disclosed-remainder-requires-follow-up-guard-at-\
 # close-t-1648
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
-    """The first `_DISCLOSURE_PHRASES` member found (case-insensitive) in
-    `text`, or `None` if none match -- a deliberately generous heuristic
-    over a Done report's own narrative, not a parser of English. T-1648:
-    the closing incident this exists to catch (a ticket closed while its
-    own Done report disclosed substantial unfinished work, with no
-    follow-up filed) was caught only by a coordinator re-reading long
-    prose by hand; this trades precision for a mechanical, always-run
-    first pass. False positives (a narrative that happens to use one of
-    these phrases while discussing something already resolved) are the
-    acceptable failure mode -- they cost an author one extra `Filed:`
-    line or a `--remainder-none` override, never a silently dropped
-    cut, which is the harm this guards against."""
+    """Non-`None` if `text` looks like it discloses unfinished/cut work,
+    or `None` otherwise. Two independent signals, either one sufficient
+    (T-1648 original + T-2638 hardening):
+
+    1. A `_DISCLOSURE_PHRASES` member found (case-insensitive) anywhere
+       in `text` -- a deliberately generous heuristic, not a parser of
+       English; still catches a plain-prose disclosure with no heading
+       at all. Kept as a widening hint, not the sole decision (T-2638:
+       a phrase-only decision is exactly what a heading rename defeats).
+    2. A markdown subheading (`### ...` or deeper, `_SUBHEADING_RE`)
+       anywhere under the LAST `## Done report` heading
+       (`_done_report_section`) -- structural, and therefore immune to
+       rewording: the author added a titled subsection beyond the plain
+       Changed/Evidence/Filed/Gates template, whatever words end up in
+       its title.
+
+    T-1648's own docstring establishes the accepted tradeoff and it still
+    holds for signal 2: a narrative that happens to use one of the
+    phrases, or a Done report that happens to carry an unrelated
+    subheading, while discussing something already resolved, is a false
+    positive -- it costs an author one extra `Filed:` line, never a
+    silently dropped cut, which is the harm this guards against."""
     lowered = text.lower()
     for phrase in _DISCLOSURE_PHRASES:
         if phrase in lowered:
             return phrase
+    section = _done_report_section(text)
+    match = _SUBHEADING_RE.search(section)
+    if match:
+        return f"non-standard Done-report subsection ({match.group(1).strip()!r})"
     return None
 
 

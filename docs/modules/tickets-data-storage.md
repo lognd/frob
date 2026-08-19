@@ -1442,16 +1442,36 @@ more still over the LARGE001 threshold, closed clean, and the 54 warnings
 had no owner until a coordinator noticed by hand and filed T-1646; T-1204
 did the same for 5 undone PERF rule families (T-1647).
 
-- `frob.tickets._reporting.disclosure_shaped_language(text)` is a
-  deliberately generous phrase match over a Done report's own narrative
-  (`"not attempted"`, `"still outstanding"`, `"out of scope for this
-  pass"`, and similar) -- not an English parser. A false positive costs
-  one extra `Filed:` line; a false negative is the incident this exists
-  to prevent, so the heuristic errs toward firing.
+- `frob.tickets._reporting.disclosure_shaped_language(text)` returns
+  non-`None` on either of two independent signals (T-2638 hardening):
+  a deliberately generous phrase match over the Done report's own
+  narrative (`"not attempted"`, `"still outstanding"`, `"out of scope
+  for this pass"`, and similar -- not an English parser), OR a markdown
+  subheading (`### ...` or deeper) found anywhere under the LAST `##
+  Done report` heading in the body. The phrase match alone used to be
+  the sole decision, and a real incident (T-2623/T-2638) showed it is
+  trivially defeated by rewording: renaming a disclosure heading from
+  "What was NOT done, and why" to a phrase-free "Scope boundary:
+  measurement only, zero repairs (by design)" silenced the phrase scan
+  completely while the disclosed content underneath was unchanged. The
+  subheading check is structural instead of lexical -- it fires on the
+  heading's SYNTAX existing, not on any particular wording, so it
+  cannot be defeated by paraphrase the way the phrase-only design was.
+  It is scoped strictly to content under `## Done report` (never the
+  ticket's own description, which routinely carries its own rich `##`
+  structure that would otherwise false-positive on nearly every
+  ticket). A false positive from either signal costs one extra `Filed:`
+  line; a false negative is the incident this exists to prevent, so
+  both heuristics err toward firing.
 - `frob.tickets._reporting.filed_followup_tickets(body)` parses every
-  `T-####` id named on a `Filed:` line -- the existing playbook Done-report
-  convention (`docs/guides/agent-playbook.md` section 8), now made
-  checkable rather than free text.
+  `T-####` or `T-draft-<hex>` id named on a `Filed:` line -- the existing
+  playbook Done-report convention (`docs/guides/agent-playbook.md`
+  section 8), now made checkable rather than free text. T-2638: draft
+  ids are recognized alongside numbered ones -- filing a follow-up as a
+  draft (the mandated shape before its own worktree lands) used to be
+  unable to satisfy this guard at all, since the id pattern was
+  numbers-only; a ticket whose every follow-up was a draft (T-2623: 8 of
+  them) was refused regardless.
 - `frob.app.ticket_runner._close_cmd._undisclosed_remainder_reason(root,
   ticket)` combines the two: if disclosure-shaped language is found and
   NONE of the `Filed:` ids resolve to a real, still-open ticket (reusing

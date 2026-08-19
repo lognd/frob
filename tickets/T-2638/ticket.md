@@ -2,7 +2,7 @@
 id: T-2638
 title: 'disclosure-remainder guard is lexical and blind to draft ids: rewording a
   heading defeats it, drafts can never satisfy it'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
