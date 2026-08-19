@@ -2,7 +2,7 @@
 id: T-2666
 title: testsuite node's ambient exec grant (T-2503) collides with SYS107 fail-closed
   policy (T-2224)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet gate ties directly to the exec via-list this ticket restores
+    on testsuite; the count changed from 188 (T-2488, pre-T-2503) to 194 (fresh T-2666
+    scan), so the ratchet ceiling must move in the same diff or SYS111 refuses the
+    land
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet gate ties directly to the exec via-list this ticket restores
+    on testsuite; the count changed from 188 (T-2488, pre-T-2503) to 194 (fresh T-2666
+    scan), so the ratchet ceiling must move in the same diff or SYS111 refuses the
+    land
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
