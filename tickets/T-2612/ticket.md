@@ -23,6 +23,10 @@ scope:
 - src/frob/__main__.py
 - tests/test_lease_premise_waivers.py
 - docs/commands/cli-vocabulary.md
+- tickets/T-draft-3c565d92/**
+- tickets/T-draft-4a3f6770/**
+- tickets/T-draft-b38c1e18/**
+- tickets/T-draft-fbe8aa0c/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -124,6 +128,30 @@ scope_changes:
     parse_known_args waiver-text change); adding the doc anchor now resolves both
     AFFECT001 and the deferred COV001 in one motion instead of leaving it split across
     a follow-up ticket
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-3c565d92/**
+  reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
+    scope; include their own directories'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-4a3f6770/**
+  reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
+    scope; include their own directories'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-b38c1e18/**
+  reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
+    scope; include their own directories'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-fbe8aa0c/**
+  reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
+    scope; include their own directories'
   actor: logan
   at: '2026-08-19'
 evidence:
