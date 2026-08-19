@@ -66,7 +66,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6b0e24abb5803ac52872c5287e2d5447e5c40dbc
 ---
 78 of COV007's 139 live findings sit in files that have no public API
 surface at all, so the rule's stated remedy is unachievable there:
