@@ -1339,6 +1339,76 @@ determined from staged content)" -- a deliberate refusal to report a
 plausible-but-wrong ticket id (the T-1795/T-1799 incident this guards
 against was exactly a confident wrong guess).
 
+### Phantom deleted-path findings and baseline-clobber detection (T-2571)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_filter_phantom_deleted_findings -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_baseline_write_survived -->
+
+A triage of four sweep-filed regression tickets (T-2381, T-2474, T-2525,
+T-2560 -- 142 total identities) measured them at 100% false positive: the
+land actually blamed was, in every case, a single-file `chore(tickets):
+file T-XXXX` commit that structurally could not have touched the flagged
+files. Two concrete defect shapes were confirmed:
+
+**Phantom findings against a file the SAME land deleted.** `TICK003`/
+`TICK004` fired against `tickets.md` in three of the four tickets, after
+`tickets.md` had already been deleted by an earlier ledger-v2 cutover
+land. Whatever produces that identity is reading stale state, not the
+tree this sweep is actually measuring -- and a `(rule, file)` pair
+naming a file git itself confirms is gone can never be a real
+regression, independent of what bug produced the finding.
+
+`run_deferred_post_land_sweep` now calls `_files_deleted_between(root,
+prev_baseline_commit, actual_head)` (a `git diff --name-status
+--diff-filter=D` over the SAME window `_land_ids_between` already
+diffs) right after normalizing `fresh`, and `_filter_phantom_deleted_
+findings` drops any `(rule, file)` pair whose file appears in that
+deleted set -- BEFORE it can enter the baseline write or the
+`new_findings` diff. This is the "not produced at all" branch: a
+phantom identity never becomes a filed ticket and never persists into
+the next baseline either. Excluding one is always logged at WARNING,
+naming every dropped identity, never silent (the silent-zero doctrine,
+T-2391, applies here exactly as much as to a real finding). Both
+helpers degrade to a no-op on any git failure (non-repo checkout, no
+prior baseline commit) -- an unmeasurable deletion set is never
+special-cased into "assume nothing was deleted" becoming its own
+phantom-filtering bug.
+
+**Concurrent sweeps racing on the SAME shared baseline file.**
+`.frob/rapid-sweep-baseline.json` lives at `root`, the shared checkout
+every land's own detached sweep operates against (T-1684) -- and
+concurrent lands, each spawning their own detached sweep, are routine in
+a busy fleet. Two sweeps interleaving can clobber each other's write: if
+sweep B's own read of the baseline happened before sweep A's write, B's
+`new_findings` diff is computed against a baseline that is already
+stale by the time B finishes, and B's own subsequent write can in turn
+discard whatever A just recorded -- a plausible mechanism behind the
+SAME identity set surviving three or more consecutive sweeps as "new"
+across otherwise-unrelated lands.
+
+`_baseline_write_survived(root, written_commit)` re-reads the baseline
+file's `commit` field immediately after `run_deferred_post_land_sweep`'s
+own `_write_baseline` call; a mismatch means another process's write
+landed in between and this sweep's own write may already be gone. This
+cannot be un-raced after the fact -- the point is to STOP trusting a
+write silently: a mismatch is logged at WARNING, naming the sweep and
+the commit, explicitly stating the next sweep may re-report this
+sweep's own findings as new again through no fault of its own, rather
+than the prior behavior of assuming every write durably reaches the
+next reader.
+
+Neither fix touches the T-1690 symbolic attribution engine itself (the
+"sharpest part" of the T-2571 investigation -- that engine's own
+`UNATTRIBUTED (candidate commits: [])` verdict was, and remains,
+computed correctly; these two fixes remove causes that were never
+attribution's job to catch in the first place). `frob.graph.callgraph`
+resolving callees by bare short name repo-wide (a known, separate
+defect -- 17 files define `_run`) is a correctness limit on that
+engine's own reachability answer and is out of this ticket's scope;
+T-2571 addresses two independent sources of false "new" identities that
+sit upstream of whatever the attribution engine is asked to explain.
+
 ### Automatic stale-worktree reclamation (T-2261)
 
 <!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::sweep_stale_worktrees_after_land -->

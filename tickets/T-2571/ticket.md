@@ -2,7 +2,7 @@
 id: T-2571
 title: 'Post-land sweep files identical (rule,file) identities as new regressions
   across unrelated lands: baseline recurrence/phantom-path bug'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -15,24 +15,35 @@ milestone: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
+- tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
+- tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported
+- tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
 acceptance:
 - text: Given the rolling baseline .frob/rapid-sweep-baseline.json is written on sweep
     N with a fresh finding set F, when sweep N+1 runs against an unrelated single-file
     land and measures the same set F again, then no identity in F appears in sweep
     N+1's new_findings diff (or, if it does, the log states explicitly why the prior
     write did not survive).
-  evidence: []
+  evidence:
+  - tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived::test_mismatched_commit_did_not_survive
 - text: Given a (rule, file) identity whose file does not exist in the tree being
     checked (e.g. a deleted monofile, or a ticket id that lives at tickets/archive/<id>
     rather than tickets/<id>), when the sweep computes its fresh finding set, then
     that identity is either not produced at all or is flagged distinctly as referencing
     a non-current path, never silently filed as an ordinary new regression.
-  evidence: []
+  evidence:
+  - tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression::test_phantom_deleted_path_is_not_filed_first
+  - tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween::test_deleted_file_is_reported
+  - tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings::test_live_file_finding_is_kept
 threat: null
 component: null
 anchor: false

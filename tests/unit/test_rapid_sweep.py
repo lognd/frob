@@ -12,9 +12,12 @@ from frob.app.ticket_runner import _rapid_sweep
 from frob.app.ticket_runner._rapid_sweep import (
     RapidSweepError,
     _attribute_new_findings,
+    _baseline_write_survived,
     _build_regression_body,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
+    _files_deleted_between,
+    _filter_phantom_deleted_findings,
     _relativize_regression_scope_file,
     _identities_still_reproducing,
     _identity_scoped_state_key,
@@ -162,6 +165,138 @@ class TestResolveActualHead:
         # "fallback-sha" is deliberately NOT the real head -- proving the
         # real HEAD is what's returned, not the caller's own guess.
         assert _resolve_actual_head(tmp_path, "fallback-sha") == real_head
+
+
+# frob:ticket T-2571
+class TestFilesDeletedBetween:
+    """T-2571's own repro: `TICK003`/`TICK004` fired against
+    `tickets.md` in three separate sweeps AFTER a land had already
+    deleted it -- these test the ground-truth git-diff detection that
+    fix relies on."""
+
+    def test_deleted_file_is_reported(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_deleted_file_is_reported  # noqa: E501
+        _init_git_repo(tmp_path)
+        (tmp_path / "tickets.md").write_text("stuff\n")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "tickets.md"], check=True)
+        since = _git_commit(tmp_path, "chore: add tickets.md")
+        (tmp_path / "tickets.md").unlink()
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        until = _git_commit(tmp_path, "chore(tickets): ledger-v2 cutover, delete it")
+        assert _files_deleted_between(tmp_path, since, until) == frozenset(
+            {"tickets.md"}
+        )
+
+    def test_modified_only_file_is_not_reported(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_modified_only_file_is_not_reported  # noqa: E501
+        _init_git_repo(tmp_path)
+        (tmp_path / "a.py").write_text("x = 1\n")
+        import subprocess
+
+        subprocess.run(["git", "-C", str(tmp_path), "add", "a.py"], check=True)
+        since = _git_commit(tmp_path, "chore: add a.py")
+        (tmp_path / "a.py").write_text("x = 2\n")
+        subprocess.run(["git", "-C", str(tmp_path), "add", "a.py"], check=True)
+        until = _git_commit(tmp_path, "chore: modify a.py")
+        assert _files_deleted_between(tmp_path, since, until) == frozenset()
+
+    def test_non_repo_or_missing_since_returns_empty(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_non_repo_or_missing_since_returns_empty  # noqa: E501
+        assert _files_deleted_between(tmp_path, None, "abc123") == frozenset()
+        assert _files_deleted_between(tmp_path, "abc", "abc") == frozenset()
+        assert _files_deleted_between(tmp_path, "abc", "def") == frozenset()
+
+
+class TestFilterPhantomDeletedFindings:
+    def test_deleted_file_finding_is_excluded(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_deleted_file_finding_is_excluded  # noqa: E501
+        fresh = frozenset({("TICK003", "tickets.md"), ("COV003", "a.py")})
+        result = _filter_phantom_deleted_findings(
+            "T-2571", fresh, frozenset({"tickets.md"})
+        )
+        assert result == frozenset({("COV003", "a.py")})
+
+    def test_live_file_finding_is_kept(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_live_file_finding_is_kept  # noqa: E501
+        fresh = frozenset({("COV003", "a.py")})
+        result = _filter_phantom_deleted_findings("T-2571", fresh, frozenset())
+        assert result == fresh
+
+    def test_no_deletions_is_a_noop(self) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_no_deletions_is_a_noop  # noqa: E501
+        fresh = frozenset({("COV003", "a.py"), ("DOC011", "b.md")})
+        assert _filter_phantom_deleted_findings("T-2571", fresh, frozenset()) is fresh
+
+
+class TestBaselineWriteSurvived:
+    def test_matching_commit_survived(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived.test_matching_commit_survived  # noqa: E501
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
+        assert _baseline_write_survived(tmp_path, "abc123") is True
+
+    def test_mismatched_commit_did_not_survive(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived.test_mismatched_commit_did_not_survive  # noqa: E501
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "abc123")
+        # A concurrent sweep clobbers the file with a DIFFERENT commit
+        # right after this sweep's own write, before this check runs.
+        _write_baseline(tmp_path, frozenset({("OTHER", "z.py")}), "clobbered-by-x")
+        assert _baseline_write_survived(tmp_path, "abc123") is False
+
+
+# frob:ticket T-2571
+class TestPhantomDeletedPathNotFiledAsRegression:
+    """T-2571 acceptance criterion 1, end-to-end: watch
+    `test_phantom_deleted_path_is_not_filed_first` FAIL first against the
+    unfixed code -- before this ticket, a (rule, file) identity naming a
+    file the SAME land deleted was filed as an ordinary new regression,
+    exactly the measured T-2381/T-2474/T-2525 shape (TICK003/TICK004
+    against a deleted tickets.md)."""
+
+    def test_phantom_deleted_path_is_not_filed_first(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPhantomDeletedPathNotFiledAsRegression.test_phantom_deleted_path_is_not_filed_first  # noqa: E501
+        _init_git_repo(tmp_path)
+        import subprocess
+
+        (tmp_path / "tickets.md").write_text("old ledger\n")
+        subprocess.run(["git", "-C", str(tmp_path), "add", "tickets.md"], check=True)
+        c0 = _git_commit(tmp_path, "chore: init with tickets.md")
+        _write_baseline(tmp_path, frozenset(), c0)
+
+        # This land DELETES tickets.md (the T-2356 ledger-v2 cutover
+        # shape) AND, independently, introduces one genuine new error.
+        (tmp_path / "tickets.md").unlink()
+        (tmp_path / "real.py").write_text("bad = 1\n")
+        subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
+        _git_commit(tmp_path, "fix(tickets): land T-2356 ledger-v2 cutover")
+
+        # A STALE check produces a phantom finding against the file this
+        # SAME land just deleted, plus one genuine new finding.
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: frozenset(
+                {("TICK003", "tickets.md"), ("ARCH103", "real.py")}
+            ),
+        )
+        seen: list[frozenset[tuple[str, str]]] = []
+
+        def _fake_file(root, final_id, commit, new_findings, **kw):  # noqa: ANN001, ANN202
+            seen.append(new_findings)
+            return "T-9999"
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", _fake_file)
+        result = run_deferred_post_land_sweep(tmp_path, "T-2356", "abc123")
+        assert result.is_ok
+        # THE FIX: the phantom tickets.md identity never reaches filing
+        # -- only the genuine ARCH103/real.py identity does.
+        assert seen == [frozenset({("ARCH103", "real.py")})]
+        # It also never persists into the next baseline.
+        rebaselined = _read_baseline(tmp_path)
+        assert rebaselined is not None
+        assert ("TICK003", "tickets.md") not in rebaselined
 
 
 # frob:ticket T-2089

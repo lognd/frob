@@ -390,6 +390,119 @@ def _resolve_actual_head(root: Path, fallback: str) -> str:
     return head or fallback
 
 
+# frob:ticket T-2571
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_deleted_file_is_reported  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_modified_only_file_is_not_reported  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilesDeletedBetween.test_non_repo_or_missing_since_returns_empty  # noqa: E501
+def _files_deleted_between(root: Path, since: str | None, until: str) -> frozenset[str]:
+    """T-2571: repo-relative POSIX paths git considers PURELY DELETED
+    (never a rename target, `--diff-filter=D`) between `since` and
+    `until` -- the ground-truth half of the T-2571 phantom-path fix.
+
+    MEASURED root cause (T-2571's own triage, four sweep-filed tickets
+    T-2381/T-2474/T-2525/T-2560): `TICK003`/`TICK004` fired against
+    `tickets.md` in three separate sweeps AFTER the same ledger-v2 land
+    had already DELETED `tickets.md` from the tree -- whatever check
+    produces that identity is reading stale state, not the tree this
+    sweep is actually measuring. A `(rule, file)` pair naming a file git
+    itself confirms is gone can never be a real regression this land
+    introduced, independent of whatever bug lives in the check that
+    produced it.
+
+    Returns the empty set (never raises, matches this module's git-
+    degrades-gracefully posture -- `_land_ids_between`/`_resolve_actual_
+    head`) when `since` is `None`/equal to `until` (no window to diff) or
+    the `git diff` itself fails (non-repo `tmp_path`, detached edge
+    case) -- an unmeasurable deletion set must never be treated as "no
+    deletions happened" being SPECIAL-CASED into a phantom-filtering
+    bug of its own; it degrades to the pre-T-2571 behavior (nothing
+    filtered) exactly like every other git-backed helper here."""
+    if not since or since == until:
+        return frozenset()
+    from frob.gitio import run_argv
+
+    result = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "diff",
+            "--name-status",
+            "--diff-filter=D",
+            f"{since}..{until}",
+        ]
+    )
+    if result.is_err or result.danger_ok.returncode != 0:
+        return frozenset()
+    deleted: set[str] = set()
+    for line in result.danger_ok.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 2 and parts[0].startswith("D"):
+            deleted.add(parts[1])
+    return frozenset(deleted)
+
+
+# frob:ticket T-2571
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_deleted_file_finding_is_excluded  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_live_file_finding_is_kept  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFilterPhantomDeletedFindings.test_no_deletions_is_a_noop  # noqa: E501
+def _filter_phantom_deleted_findings(
+    final_id: str,
+    fresh: frozenset[tuple[str, str]],
+    deleted_files: frozenset[str],
+) -> frozenset[tuple[str, str]]:
+    """T-2571: drop every `(rule, file)` pair in `fresh` whose `file` is
+    in `deleted_files` -- acceptance criterion 1's "not produced at all"
+    branch, applied BEFORE `fresh` can enter a baseline write or a
+    `new_findings` diff. A no-op (returns `fresh` unchanged, by identity)
+    when `deleted_files` is empty, so this never allocates a new
+    frozenset on the overwhelmingly common clean-window case.
+
+    Logged at WARNING, never silent, naming every excluded identity --
+    the silent-zero doctrine (T-2391) applies here just as much as to a
+    real finding: a phantom finding excluded without a trace is exactly
+    as undiagnosable later as a real one dropped without a trace."""
+    if not deleted_files:
+        return fresh
+    phantom = frozenset((rule, file) for rule, file in fresh if file in deleted_files)
+    if not phantom:
+        return fresh
+    _log.warning(
+        "rapid sweep: %s: excluding %d phantom-path (rule, file) "
+        "identit(ies) whose file was DELETED in the measured window -- "
+        "never a real regression this land introduced, regardless of "
+        "what produced the finding: %s",
+        final_id,
+        len(phantom),
+        sorted(phantom),
+    )
+    return fresh - phantom
+
+
+# frob:ticket T-2571
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived.test_matching_commit_survived  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineWriteSurvived.test_mismatched_commit_did_not_survive  # noqa: E501
+def _baseline_write_survived(root: Path, written_commit: str) -> bool:
+    """T-2571: `True` iff the baseline file on disk RIGHT NOW still
+    records `written_commit` as its `commit` -- i.e. no OTHER process
+    (a concurrent land's own detached sweep, writing to the SAME shared
+    `root` this module always operates on, T-1684's own design) clobbered
+    this sweep's write with a different one in the tiny window between
+    this sweep's own `_write_baseline` call and this check.
+
+    Acceptance criterion 0's decisive check: a rolling baseline that does
+    NOT survive to the next sweep's read is the concrete, measurable
+    shape "an identity recurs across 3+ unrelated sweeps" would produce
+    -- the next sweep reads back whatever the LAST writer left, which may
+    already have discarded identities THIS sweep just recorded. `False`
+    here does not undo anything (the write already happened and this
+    function cannot un-race it) -- it exists so the caller can log the
+    race explicitly instead of silently trusting a write that may already
+    be gone, per acceptance criterion 0's own "or the log states
+    explicitly why" clause."""
+    return _read_baseline_commit(root) == written_commit
+
+
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestRollingBaseline.test_write_then_read_round_trips
 def _write_baseline(
@@ -2513,8 +2626,31 @@ def run_deferred_post_land_sweep(
     prev_baseline_commit = _read_baseline_commit(root)
     actual_head = _resolve_actual_head(root, commit_sha)
 
+    # T-2571 acceptance criterion 1: a (rule, file) identity naming a
+    # file git itself confirms was DELETED in the measured window can
+    # never be a real regression -- filtered before it can enter the
+    # baseline write or the new_findings diff below.
+    deleted_files = _files_deleted_between(root, prev_baseline_commit, actual_head)
+    fresh = _filter_phantom_deleted_findings(final_id, fresh, deleted_files)
+
     baseline = _read_baseline(root)
     _write_baseline(root, fresh, actual_head)
+    # T-2571 acceptance criterion 0: detect (never silently trust) a
+    # concurrent sweep clobbering this write before the next sweep ever
+    # reads it -- root is the SHARED checkout every land's own detached
+    # sweep writes to (T-1684), and concurrent lands are routine.
+    if not _baseline_write_survived(root, actual_head):
+        _log.warning(
+            "rapid sweep: %s: the rolling baseline this sweep just wrote "
+            "at %s did NOT survive -- another process (almost certainly "
+            "a concurrent land's own detached sweep racing on the same "
+            "shared root) overwrote it before this check could even "
+            "finish; the NEXT sweep may re-report identities from THIS "
+            "sweep's fresh set as new again through no fault of its own "
+            "(T-2571)",
+            final_id,
+            actual_head[:12],
+        )
     if baseline is None:
         _log.warning(
             "rapid sweep: %s had no rolling baseline -- recorded %d "

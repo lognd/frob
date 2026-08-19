@@ -99,6 +99,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2563: T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
 - T-2565: T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
 - T-2569: T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
+- T-2571: T-2571: Post-land sweep files identical (rule,file) identities as new regressions across unrelated lands: baseline recurrence/phantom-path bug
 - T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
 - T-2582: T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
 - T-2588: T-2588: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
