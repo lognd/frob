@@ -14,8 +14,19 @@ runs_last: false
 scope:
 - src/frob/tickets/_promote.py
 - docs/guides/agent-playbook.md
+- src/frob/tickets/_draft_finalize.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_draft_finalize.py
+  reason: real producer of the commit gap is finalize_draft in frob.tickets, not the
+    aspirational _promote.py the ticket named; adding it to scope, keeping _promote.py
+    too since it stays a valid home for a new shared helper
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 attachments:
 - path: T-2197/attachments/01-self-referential-confirmation-two-folded-in-incidents-silent-downstream-success-t-2196-measured-then-discarded-verdict-cross-referenced.md
