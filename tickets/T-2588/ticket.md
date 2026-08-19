@@ -1,7 +1,7 @@
 ---
 id: T-2588
 title: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -10,6 +10,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/app/cycle_runner.py
 - src/frob/cycle/graph.py
