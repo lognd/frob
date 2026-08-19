@@ -24,6 +24,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/__init__.py
 - src/frob/tickets/_new_renumber.py
 - src/frob/app/ticket_runner/_new.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +73,13 @@ scope_changes:
     _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
     app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
     shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: set_runs_last_parallel_safe (like set_scope_breadth_ack) must be re-exported
+    from frob.tickets's package __init__ for _mutate.py/_new_renumber.py to import
+    it
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
