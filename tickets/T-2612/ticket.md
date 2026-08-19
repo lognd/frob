@@ -21,6 +21,7 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_evidence.py
 - src/frob/__main__.py
+- tests/test_lease_premise_waivers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -108,6 +109,12 @@ scope_changes:
   glob: src/frob/__main__.py
   reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
     these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_lease_premise_waivers.py
+  reason: regression-lock test proving the stale lease-premise waiver reasons are
+    gone from the audited files
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
