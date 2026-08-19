@@ -1,7 +1,7 @@
 ---
 id: T-2366
 title: 'COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -18,10 +18,34 @@ scope:
 - tickets/T-1397
 - tickets/T-1526
 - tests/unit/test_makefile_coverage.py
+evidence_scope:
+- tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): This ticket investigates and repairs stale
+    COV003 evidence bindings on FOUR OTHER already-done tickets (T-1205/T-1235/T-1397/T-1526)
+    -- it is a ledger-repair investigation, not a defect in this ticket''s own scoped
+    code with a reproducible before/after. T-2527 (landed) re-added the underlying
+    subprocess-coverage measurement; this ticket repointed 8 of 10 orphaned evidence
+    citations to new tests proving the same claims (test suite unchanged in behavior,
+    only citations moved), and explicitly documented the remaining 2 as permanently
+    unresolvable (genuine Makefile-mechanics claims with no native equivalent) rather
+    than fabricating a repoint. No production code changed by this ticket itself.'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 1763
+  new_length: 2493
+evidence:
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_uses_absolute_source_and_data_file
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_declares_multiprocessing_and_sigterm
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_remaps_paths_back_to_source
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_never_points_at_pyproject_toml
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
+- tests/test_coverage.py::TestPyprojectDeclaresCoverageConcurrency::test_pyproject_declares_concurrency_and_sigterm
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +84,6 @@ tests/unit/test_makefile_coverage.py, compare its real class/method names
 against each ticket's bound evidence id, and determine per-ticket whether
 this is a rename (fix the binding) or a genuine missing/deleted test (needs
 new evidence or the ticket's own claim re-examined).
+
+
+frob:no-behavior-change reason="This ticket investigates and repairs stale COV003 evidence bindings on FOUR OTHER already-done tickets (T-1205/T-1235/T-1397/T-1526) -- it is a ledger-repair investigation, not a defect in this ticket's own scoped code with a reproducible before/after. T-2527 (landed) re-added the underlying subprocess-coverage measurement; this ticket repointed 8 of 10 orphaned evidence citations to new tests proving the same claims (test suite unchanged in behavior, only citations moved), and explicitly documented the remaining 2 as permanently unresolvable (genuine Makefile-mechanics claims with no native equivalent) rather than fabricating a repoint. No production code changed by this ticket itself."

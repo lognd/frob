@@ -10,6 +10,7 @@ priority: high
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - src/frob/testing/**
 - Makefile
@@ -21,6 +22,8 @@ scope:
 - tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/**
@@ -110,7 +113,7 @@ evidence:
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
-- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
 - tests/test_coverage.py::TestRunCoverageWaitNativeDefault::test_default_command_none_calls_native_refresh
 - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
 designated_repro_test: null
@@ -125,7 +128,7 @@ acceptance:
     step for its own xdist-crash-recovery resilience, disclosed not silently dropped
   evidence:
   - tests/unit/test_coverage_runner.py::TestCoverageRunner::test_default_delegates_to_run_coverage_wait
-  - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+  - tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
 - text: GIVEN coverage data that cannot be refreshed (tests failing, run interrupted)
     THEN TEST005-family findings against stale regions are marked stale-and-disclosed
     rather than reported as current fact, and TEST011 escalates from advisory to a
@@ -155,7 +158,7 @@ acceptance:
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_incremental_run_uses_touched_set_targets
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_nothing_touched_only_restamps
   - tests/test_coverage.py::TestNativeCoverageRefresh::test_refused_spawn_is_err
-  - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+  - tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
 - text: GIVEN a frob command that actually RUNS tests to obtain coverage data (frob
     test --wait-coverage, via run_coverage_wait) THEN the frob-native coverage refresh
     runs automatically inside it (touched-set only, in-process, no spawned command)
@@ -301,8 +304,20 @@ acceptance_amendments:
     '
   actor: logan
   at: '2026-08-05'
+evidence_changes:
+- old_node: tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+  new_node: tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
+  reason: T-2240 deleted the Makefile test class this cited; T-2527 re-added the underlying
+    behavior (rc-generation shared via one helper, not duplicated between full/incremental
+    branches) natively and this new test proves the exact same shared-not-duplicated
+    claim against the real native_coverage_refresh entry point.
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 ESCALATED TO CRITICAL 2026-07-31. This ticket's absence caused the largest single failure of the 2026-07-31 drive; acceptance [1] describes the exact incident. Evidence, all from one day:
 - The repo-wide stamp sat 23 hours stale (2026-07-30 15:05) while ~8 tickets landed, and every TEST005 finding was computed from it and reported as current fact -- precisely what [1] forbids.

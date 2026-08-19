@@ -10,11 +10,14 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
 scope:
 - Makefile
 - tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tests/unit/test_makefile_coverage.py
@@ -34,12 +37,30 @@ scope_changes:
   actor: logan
   at: '2026-08-02'
 evidence:
-- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml
-- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_never_points_at_pyproject_toml
+- tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
 - tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml
+  new_node: tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_never_points_at_pyproject_toml
+  reason: T-2240 deleted the Makefile test class this cited; T-2527's native path
+    never points COVERAGE_PROCESS_START at pyproject.toml directly (always the generated
+    absolute-path rc) and this new test proves the same claim.
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_uses_the_shared_absolute_rc
+  new_node: tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
+  reason: T-2240 deleted the Makefile test class this cited; T-2527 re-added the underlying
+    shared-rc-generation behavior natively and this new test proves the same shared-not-duplicated
+    claim.
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 Found while investigating T-1395 (coverage attribution for daemon/CLI processes).
 
@@ -68,3 +89,22 @@ Fix: generate the same kind of absolute-path subprocess rc `coverage:`
 already does (or reuse `.frob/coverage-subprocess.rc` if `coverage:` has
 already run once) instead of pointing COVERAGE_PROCESS_START at
 pyproject.toml directly.
+
+T-2366/T-2527 note (2026-08-18): this ticket's third evidence citation,
+tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated,
+is DELIBERATELY LEFT UNREPOINTED and will continue to fail COV003. Its
+claim was about a Makefile-specific mechanism -- .frob/coverage-subprocess.rc
+generated as a `make` FILE TARGET (deterministic content, generated once,
+cached across `coverage:`/`coverage-fast:` invocations via make's own
+dependency tracking) so a second target invocation does not regenerate it.
+T-2527 (which re-added the underlying subprocess-coverage measurement
+natively, since T-2240 dropped it entirely without porting it) writes the
+rc fresh on every native_coverage_refresh call instead -- there is no
+"file target" concept in the native path, and no second invocation to
+duplicate against within one process. This specific claim (about make's
+own caching mechanism) has no honest native equivalent; the underlying
+coverage-measurement behavior itself is now proven by
+tests/test_coverage.py::TestSubprocessCoverageRc (T-2527). Repointing
+this citation to an unrelated passing test would misrepresent what this
+ticket actually proved, so it is recorded here as permanently
+unresolvable instead.

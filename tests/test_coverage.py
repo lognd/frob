@@ -887,6 +887,91 @@ class TestSubprocessCoverageRc:
             tmp_path / ".frob" / "coverage-subprocess.rc"
         )
 
+    # frob:ticket T-1397
+    # frob:ticket T-2527
+    def test_rc_never_points_at_pyproject_toml(self, tmp_path: Path) -> None:
+        """T-1397's own claim, carried forward: `COVERAGE_PROCESS_START`
+        never resolves to `pyproject.toml` directly -- that RELATIVE
+        config is exactly what stranded subprocess coverage data in the
+        first place (T-1235's original diagnosis). Every pytest pass
+        (full or incremental) always gets the generated absolute-path rc
+        instead."""
+        env = _refresh_mod._pytest_subprocess_env(tmp_path, cov_target="src/frob")
+        assert env["COVERAGE_PROCESS_START"] != str(tmp_path / "pyproject.toml")
+        assert env["COVERAGE_PROCESS_START"].endswith("coverage-subprocess.rc")
+
+    # frob:ticket T-1205
+    # frob:ticket T-1397
+    # frob:ticket T-1526
+    # frob:ticket T-2527
+    def test_incremental_run_shares_the_same_rc_as_full_run(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-1205/T-1397/T-1526's own "shared, not duplicated" claim,
+        carried forward: the full-run branch (`_run_full_suite`) and the
+        incremental/touched-set branch (`_run_incremental_or_restamp`)
+        both resolve `COVERAGE_PROCESS_START` to the SAME rc path via the
+        one shared `_pytest_subprocess_env` helper -- there is no second,
+        divergent rc-generation path for the incremental branch the way
+        `coverage-fast:` once risked before T-1397's own Makefile fix."""
+        captured_env: list[dict | None] = []
+
+        def _fake_spawn(argv, *, cwd, env=None, **_kw):  # noqa: ANN001, ARG001
+            captured_env.append(env)
+            return Ok(subprocess.CompletedProcess(argv, 0))
+
+        monkeypatch.setattr(_refresh_mod, "_spawn", _fake_spawn)
+        monkeypatch.setattr(
+            _refresh_mod,
+            "python_coverage_targets",
+            lambda *a, **k: ("tests/test_foo.py::test_widget",),  # noqa: ARG005
+        )
+        import frob.gates._coverage as coverage_mod
+
+        monkeypatch.setattr(
+            coverage_mod,
+            "load_stamp",
+            lambda _root: {"source_sha": "x", "file_hashes": {}},
+        )
+        monkeypatch.setattr(
+            coverage_mod,
+            "stamp_coverage",
+            lambda root, snapshot: Ok(Unit()),  # noqa: ARG005
+        )
+
+        result = native_coverage_refresh(tmp_path, _FAKE_SNAPSHOT)
+        assert result.is_ok
+        pytest_envs = [e for e in captured_env if e is not None]
+        assert pytest_envs, "no pytest pass carried a non-None env"
+        expected_rc = str(tmp_path / ".frob" / "coverage-subprocess.rc")
+        assert pytest_envs[0]["COVERAGE_PROCESS_START"] == expected_rc
+
+
+# frob:ticket T-1235
+class TestPyprojectDeclaresCoverageConcurrency:
+    """T-1235's `test_pyproject_declares_concurrency_and_sigterm` claim,
+    carried forward (T-2527): unlike the rc-generation mechanism (T-2240
+    deleted and this ticket re-added), `pyproject.toml`'s own
+    `[tool.coverage.run]` `concurrency`/`sigterm` settings were NEVER
+    lost -- this proves it directly against the real repo config instead
+    of trusting that by inspection."""
+
+    # frob:ticket T-1235
+    # frob:ticket T-2527
+    def test_pyproject_declares_concurrency_and_sigterm(self) -> None:
+        """`[tool.coverage.run]` declares `concurrency = ["multiprocessing",
+        "thread"]` and `sigterm = true` so a `ProcessPoolExecutor` gate
+        worker's execution is recorded (T-1235's "Loss B" fix)."""
+        import tomllib
+
+        repo_root = Path(__file__).resolve().parent.parent
+        pyproject = tomllib.loads(
+            (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        coverage_run = pyproject["tool"]["coverage"]["run"]
+        assert set(coverage_run["concurrency"]) == {"multiprocessing", "thread"}
+        assert coverage_run["sigterm"] is True
+
 
 # frob:ticket T-1677
 class TestSpawnWithWatchdog:

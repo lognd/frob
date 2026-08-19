@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.531.0] - unreleased
 
+- T-2366: T-2366: COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py
 - T-2374: T-2374: Burn DOC004/DOC006 WARN gates to zero, then promote to error
 - T-2389: T-2389: retarget hardcoded src/frob/ literal in _env_var_docs.py and _root_asset_dirs.py to the T-2195 source-root resolver
 - T-2405: T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
