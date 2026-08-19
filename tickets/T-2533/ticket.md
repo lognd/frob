@@ -49,7 +49,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 22ef87499e2136817b63f8175b6813c457522a8b
 ---
 Found while working T-2374 (DOC004/DOC006 burn-down to zero + promote to ERROR).
 
