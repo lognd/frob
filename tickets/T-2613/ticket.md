@@ -2,7 +2,7 @@
 id: T-2613
 title: Sync docs/modules/gates.md frob:enumerates member list (DOCENUM001, includes
   MILE003)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

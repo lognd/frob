@@ -51,7 +51,7 @@ disclosing this as a genuine cut rather than forcing a fragile ad-hoc
 snapshot construction I could not fully verify was faithful to the real
 pipeline.
 
-Filed T-draft-f4d4bb9e (id renumbers at land): the seven newly-found
+Filed T-2662 (id renumbers at land): the seven newly-found
 ids have no documentation ANYWHERE in gates.md, not just missing from the
 enumerate anchor -- a follow-up to add real table rows for
 MILE001/MILE002/MILE003/MILE004/CYCLE001/TICK012/WAIVE009, out of this
@@ -60,7 +60,7 @@ ticket's own scope (docs/modules/gates.md's enumerate anchor only).
 ### Changed
 ```
  tickets/T-2613/ticket.md           |  8 ++++++-
- tickets/T-draft-f4d4bb9e/ticket.md | 45 ++++++++++++++++++++++++++++++++++++++
+ tickets/T-2662/ticket.md | 45 ++++++++++++++++++++++++++++++++++++++
  2 files changed, 52 insertions(+), 1 deletion(-)
 ```
 

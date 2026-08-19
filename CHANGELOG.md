@@ -125,6 +125,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2606: waiver reasons promising a follow-up ticket should be enforced
 - T-2611: core.autocrlf=true puts CRLF in every source file, silently breaking any length or byte-level measurement
 - T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
+- T-2613: Sync docs/modules/gates.md frob:enumerates member list (DOCENUM001, includes MILE003)
 - T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
 - T-2615: changelog emits an entry for a DROPPED ticket and duplicates the ticket id on 101 lines
 - T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
