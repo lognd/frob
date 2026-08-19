@@ -118,6 +118,18 @@ body_changes:
   at: '2026-08-19'
   old_length: 1171
   new_length: 4763
+evidence:
+- tests/test_gates_milestone.py::TestMile003::test_fires_on_open_ticket_with_no_resolvable_milestone
+- tests/test_gates_milestone.py::TestMile003::test_silent_once_stamped
+- tests/test_gates_milestone.py::TestMile003::test_silent_on_configured_default
+- tests/test_gates_milestone.py::TestMile003::test_silent_on_inherited_value
+- tests/test_gates_milestone.py::TestMile003::test_terminal_ticket_never_fires
+- tests/test_gates_milestone.py::TestMile003::test_no_default_configured_still_fires
+- tests/test_gates_milestone.py::TestEffectiveMilestoneDefault::test_no_declared_or_inherited_falls_back_to_configured_default
+- tests/test_gates_milestone.py::TestEffectiveMilestoneDefault::test_declared_value_is_not_overridden_by_default
+- tests/test_gates_milestone.py::TestEffectiveMilestoneDefault::test_inherited_value_is_not_overridden_by_default
+- tests/test_gates_milestone.py::TestEffectiveMilestoneDefault::test_no_default_configured_stays_unresolved
+- tests/test_gates_milestone.py::TestEffectiveMilestoneDefault::test_no_root_skips_default_lookup
 designated_repro_test: null
 threat: null
 component: null
