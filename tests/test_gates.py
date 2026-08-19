@@ -526,6 +526,7 @@ class TestBaselineDelta:
 
 # frob:ticket T-0553
 # frob:ticket T-0783
+# frob:ticket T-2549
 class TestCoverageGate:
     def test_cov001_broken_doc_edge_does_not_suppress_finding(
         self, tmp_path: Path
@@ -1986,6 +1987,58 @@ class TestCoverageGate:
         tests = CollectedTests(node_ids=frozenset())
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV007" for v in violations)
+
+    # frob:ticket T-2549
+    def test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2549: `.strata` symbols carry a SECURITY CLEARANCE in
+        `RawSymbol.public` (`_walk_strata._build_symbol`), not python
+        underscore privacy -- a `trusted` component node is not a private
+        helper and COV007's "move it onto the public caller" remedy has no
+        meaning for one."""
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(
+            tmp_path,
+            "design/x.strata",
+            "module demo\n"
+            "\n"
+            "// frob:doc docs/x.md#arch\n"
+            "node widgets : trusted {\n"
+            "    clearance Internal;\n"
+            "}\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Arch\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert not any(v.rule == "COV007" for v in violations)
+
+    # frob:ticket T-2549
+    def test_cov007_still_fires_for_a_python_private_helper_after_t2549(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2549 must-still-pass control: the narrowing above is keyed on
+        the src FILE being non-python, so the python case it exists to
+        catch is untouched."""
+        # frob:tests src/frob/gates/__init__.py::_cov007
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper(x):\n"
+            '    """helper"""\n'
+            "    # frob:doc docs/x.md#helper\n"
+            "    return x\n",
+        )
+        _write(tmp_path, "docs/x.md", "# Helper\n")
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={})
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        assert _first_rule(violations, "COV007") is not None
 
     def test_todo002_unbound_directive(self, tmp_path: Path) -> None:
         """A `frob:todo` edge bound to a missing ticket is TODO002 (dangling

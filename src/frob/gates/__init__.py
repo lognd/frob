@@ -3154,6 +3154,7 @@ def _cov006_edge_violation(
 
 # frob:ticket T-0483
 # frob:enforces CHK-GATE-COV007
+# frob:ticket T-2549
 def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
 
@@ -3173,6 +3174,21 @@ def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         if record is None or record.public:
             continue
         file = edge.src.split("::", 1)[0]
+        if not file.endswith(".py"):
+            # T-2549: `RawSymbol.public` is NOT a uniform "public API"
+            # flag across languages. For a `.strata` file it is derived
+            # from the node's declared SECURITY CLEARANCE (`frob.lang.
+            # _walk_strata._build_symbol`, T-2410: `public = clearance ==
+            # "Public"`), so every `trusted`/`internal` component reads as
+            # "private" and COV007 demanded a fix -- "move it onto the
+            # public caller" -- that has no meaning for a component node.
+            # Same blindness class `_cov006_edge_violation` already skips
+            # for non-python TARGETS, and for the same stated reason:
+            # underscore privacy is a PYTHON naming convention, not a
+            # cross-language one. Measured: 25 false findings on
+            # design/frob.strata, zero real ones.
+            _log.debug("COV007: skipping non-python src %s (T-2549)", edge.src)
+            continue
         _log.debug("COV007: frob:doc on private symbol %s", edge.src)
         violations.append(
             Violation(

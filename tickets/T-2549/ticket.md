@@ -2,7 +2,7 @@
 id: T-2549
 title: 'COV007 reads a strata security clearance as API privacy: 25 false findings
   on design/frob.strata'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -18,7 +18,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
+- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
+- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+designated_repro_test: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
 threat: null
 component: null
 anchor: false
