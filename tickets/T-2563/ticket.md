@@ -2,7 +2,7 @@
 id: T-2563
 title: ledger-only ticket edits from a worktree strand on the branch and never reach
   main
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,17 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/app/ticket_runner/
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: the positive controls for the mirror live here
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
