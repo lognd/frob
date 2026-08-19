@@ -2,7 +2,7 @@
 id: T-2669
 title: rapid-profile land fails to commit its own rapid-debt.jsonl, dirtying the shared
   root and DirtyMain-blocking the fleet (70x today)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: repro test for the DirtyMain-causing pre-commit hook refusal; existing _seed_repo
+    fixture has no scaffolded hook/worktree so it cannot catch this
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
