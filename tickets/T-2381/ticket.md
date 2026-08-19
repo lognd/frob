@@ -2,7 +2,7 @@
 id: T-2381
 title: 'post-land sweep regression from T-2356: 27 new (rule, file) identit(ies),
   62 finding(s) (ARCH103, COV001, COV003, DOC001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -36,6 +36,8 @@ scope:
 - tickets/T-1688
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
@@ -108,3 +110,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: measured false positive: land commit e2ed6048 (T-2356, ledger-v2 cutover) touched .gitattributes, docs/design/ledger-v2.md, rapid-debt.jsonl, src/frob/gates/_tickets_gate.py, tests/test_tickets_migration.py, tickets.md, tickets-archive.md, tickets/T-2356; NONE of the 27 flagged (rule,file) identities name any of those files/dirs. All 27 UNATTRIBUTED, empty candidate_commits. tickets.md (TICK003/TICK004) was DELETED by this same land and does not exist on main at all -- a phantom finding against a nonexistent path. COV003 tickets/T-1205 etc reference tickets that live at tickets/archive/T-1205 (archived, not tickets/T-1205) -- a known, previously-addressed identity (T-2366) that keeps recurring. The identical overlapping identity superset (COV003 T-1205/T-1235/T-1397/T-1526/T-1688, TICK003/TICK004 tickets.md, SEC110/PERF003/PERF004/DOC011/RENDER001/ARCH103 on unrelated release/gates/verify files) also appears in sibling sweep tickets T-2474/T-2525/T-2560, each filed against three DIFFERENT unrelated single-file lands that could not possibly cause them either -- decisive evidence of a stale/non-persisting rolling baseline re-filing the same phantom backlog every sweep, not a regression caused by T-2356.
