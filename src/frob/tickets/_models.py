@@ -285,6 +285,53 @@ def _split_scope_entries(raw: Sequence[str]) -> tuple[str, ...]:
     return tuple(entries)
 
 
+#: A path that structurally cannot exist -- used only as the traversal
+#: ROOT for `_first_invalid_scope_glob`'s syntax probe below, never as a
+#: real filesystem location. `pathlib.Path.glob`'s pattern-syntax
+#: validation runs BEFORE any directory is scanned (confirmed empirically:
+#: it raises identically whether the root exists or not), so probing
+#: against a root that is guaranteed absent costs nothing and touches
+#: nothing real.
+_SCOPE_GLOB_PROBE_ROOT = Path("/__frob_scope_glob_syntax_probe__")
+
+
+# frob:ticket T-2626
+# frob:tests tests/test_tickets.py::TestScopeGlobValidation.test_semicolon_joined_entry_is_invalid  # noqa: E501
+# frob:tests tests/test_tickets.py::TestScopeGlobValidation.test_every_existing_valid_form_still_passes  # noqa: E501
+def _first_invalid_scope_glob(globs: Sequence[str]) -> str | None:
+    """The first entry of `globs` that is not a syntactically valid glob
+    pattern, or `None` if every entry is valid (T-2626).
+
+    Probes each entry through `pathlib.Path.glob` -- the SAME matcher
+    whose `ValueError`/`NotImplementedError` T-2450's real incident hit:
+    a scope entry recorded as one semicolon-joined string
+    (`'src/frob/verify/**;src/frob/app/ticket_runner/**'`, never split --
+    `_split_scope_entries` only splits on commas, T-0241's precedent)
+    raised `ValueError: '**' can only be an entire path component` the
+    moment anything downstream actually globbed it, silently voiding the
+    ticket's write lease and evidence coverage until then. `fnmatch.
+    fnmatch` (what `scope_matches` itself uses for day-to-day matching)
+    does NOT raise on this shape -- it just quietly matches nothing --
+    so validating through `fnmatch` would not have caught the incident;
+    `Path.glob`'s stricter pattern compiler is deliberately used here as
+    the validity oracle instead, even though runtime matching stays on
+    `fnmatch` throughout this module.
+
+    Catches `NotImplementedError` too (an absolute pattern, e.g.
+    `'/abs/path/**'`, raises that instead of `ValueError` -- also not a
+    legitimate scope entry, since scope is always repo-relative). Every
+    entry this repo's existing tickets actually use (bare literals,
+    trailing-slash directories, single/double-star globs, bracket
+    classes) probes clean -- see the round-trip positive control in
+    `tests/test_tickets.py`."""
+    for glob in globs:
+        try:
+            next(_SCOPE_GLOB_PROBE_ROOT.glob(glob), None)
+        except (ValueError, NotImplementedError):
+            return glob
+    return None
+
+
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_dir_prefix_globs_recursively
 # frob:tests tests/test_tickets.py::TestScopeMatching.test_bare_dir_entry_no_trailing_slash_globs_recursively  # noqa: E501
 def _scope_globs(scope: Sequence[str]) -> tuple[str, ...]:
@@ -1783,7 +1830,20 @@ class Ticket(BaseModel):
     @classmethod
     def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
         """Split any comma-joined entry into separate globs on load or
-        construction (T-0241) -- see `_split_scope_entries`."""
+        construction (T-0241) -- see `_split_scope_entries`.
+
+        T-2626: deliberately NOT validating individual glob SYNTAX here,
+        mirroring T-1132's `blocked_by`/`parent` precedent immediately
+        above this class (see that comment for the full reasoning).
+        `Ticket.model_validate` is also the LEDGER LOAD path -- a strict
+        check here would hard-fail loading the entire shared ledger the
+        moment a single historical malformed scope entry exists anywhere
+        in it. New-entry validation lives at the write sites instead:
+        `TicketSpec.scope` (used only by `frob ticket new`, never by the
+        loader) and `frob.tickets._scope.mutate_scope`'s explicit
+        `_first_invalid_scope_glob` check (`model_copy` bypasses field
+        validators entirely regardless, so putting one here would not
+        even close that path)."""
         return _split_scope_entries(value)
 
     @field_validator("labels", mode="before")
@@ -1940,8 +2000,23 @@ class TicketSpec(BaseModel):
     @classmethod
     def _normalize_scope(cls, value: Sequence[str]) -> tuple[str, ...]:
         """Split any comma-joined entry into separate globs before the spec
-        is turned into a `Ticket` (T-0241) -- see `_split_scope_entries`."""
-        return _split_scope_entries(value)
+        is turned into a `Ticket` (T-0241) -- see `_split_scope_entries` --
+        then reject (T-2626) the FIRST entry that is not a syntactically
+        valid glob pattern, naming it in the error. Safe to be strict here
+        (unlike `Ticket.scope` below, T-1132's `blocked_by`/`parent`
+        precedent) because `TicketSpec` is `frob ticket new`'s write-only
+        construction path, never the ledger LOAD path -- a strict check
+        here can never hard-fail loading an already-malformed historical
+        ticket the way validating `Ticket` itself would."""
+        entries = _split_scope_entries(value)
+        bad = _first_invalid_scope_glob(entries)
+        if bad is not None:
+            raise ValueError(
+                f"scope entry {bad!r} is not a syntactically valid glob pattern "
+                "(T-2626) -- if you meant multiple globs, pass them as separate "
+                "--scope flags or comma-joined, not joined by any other character"
+            )
+        return entries
 
     @field_validator("labels", mode="before")
     @classmethod
@@ -2093,6 +2168,11 @@ class TicketError(ErrorSet):
         "requested --add glob overlaps a path leased by another in-progress ticket"
     )
     ScopeRemoveNotDeclared = "requested --remove glob is not in the ticket's scope"
+    # frob:ticket T-2626
+    ScopeGlobInvalid = (
+        "requested --add glob is not a syntactically valid pattern (see the log "
+        "for which entry and why)"
+    )
     # frob:ticket T-1670
     DesignatedReproNotInEvidence = (
         "--designate-repro id is not one of this ticket's bound evidence ids"

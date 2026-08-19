@@ -2390,6 +2390,123 @@ class TestScopeMatching:
         assert t.scope == ("src/a/**", "src/b/**")
 
 
+# frob:ticket T-2626
+class TestScopeGlobValidation:
+    """T-2626: scope entries are not validated at write time.
+
+    T-2450's real scope was recorded as one semicolon-joined string
+    (`'src/frob/verify/**;src/frob/app/ticket_runner/**'`) -- never split
+    (`_split_scope_entries` only splits on commas), never rejected, and
+    silently voided the ticket's write lease and evidence coverage until
+    it crashed the first `Path.glob` caller with `ValueError: '**' can
+    only be an entire path component`."""
+
+    def test_semicolon_joined_entry_is_invalid(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::_first_invalid_scope_glob
+        from frob.tickets._models import _first_invalid_scope_glob
+
+        bad = "src/frob/verify/**;src/frob/app/ticket_runner/**"
+        assert _first_invalid_scope_glob((bad,)) == bad
+
+    def test_absolute_pattern_is_invalid(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::_first_invalid_scope_glob
+        from frob.tickets._models import _first_invalid_scope_glob
+
+        assert _first_invalid_scope_glob(("/abs/path/**",)) == "/abs/path/**"
+
+    def test_every_existing_valid_form_still_passes(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::_first_invalid_scope_glob
+        # The comma-joined form (T-0241) reaches this check ALREADY split
+        # by `_split_scope_entries`, so it is represented here as its two
+        # post-split entries, not the raw comma string.
+        from frob.tickets._models import _first_invalid_scope_glob
+
+        valid_forms = (
+            "src/frob/foo.py",
+            "design/",
+            "docs/modules",
+            "src/frob/**",
+            "src/frob/**/*.py",
+            "*.py",
+            "src/frob/foo[abc].py",
+            "src/a/**",
+            "src/b/**",
+        )
+        assert _first_invalid_scope_glob(valid_forms) is None
+
+    def test_new_ticket_refuses_a_semicolon_joined_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::TicketSpec
+        with pytest.raises(ValueError, match="T-2626"):
+            TicketSpec(
+                title="t",
+                kind=TicketKind.BUG,
+                origin=Origin.AGENT,
+                scope=("src/frob/verify/**;src/frob/app/ticket_runner/**",),
+            )
+
+    def test_ticket_itself_still_loads_a_legacy_malformed_scope(self) -> None:
+        # frob:tests src/frob/tickets/_models.py::Ticket
+        # T-1132 precedent: `Ticket` (the LEDGER LOAD path) must never
+        # hard-fail on an already-malformed historical entry, only
+        # `TicketSpec` (the write-only `frob ticket new` path) refuses a
+        # NEW one. Construction must not raise here.
+        ticket = Ticket(
+            id="T-0001",
+            title="Sample",
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+            scope=("src/frob/verify/**;src/frob/app/ticket_runner/**",),
+        )
+        assert ticket.scope == ("src/frob/verify/**;src/frob/app/ticket_runner/**",)
+
+    def test_mutate_scope_refuses_a_semicolon_joined_add(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_scope.py::mutate_scope
+        from frob.tickets import mutate_scope
+
+        spec = TicketSpec(
+            title="t", kind=TicketKind.BUG, origin=Origin.AGENT, scope=("a/**",)
+        )
+        new_ticket(tmp_path, spec)
+        result = mutate_scope(
+            tmp_path,
+            "T-0001",
+            add=["src/frob/verify/**;src/frob/app/ticket_runner/**"],
+            reason="testing",
+        )
+        assert result.is_err
+        assert result.danger_err == TicketError.ScopeGlobInvalid
+
+    def test_mutate_scope_still_accepts_every_valid_form(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/tickets/_scope.py::mutate_scope
+        # The positive control that matters most: a validator that
+        # rejects legitimate existing scope shapes -- including the
+        # comma-joined form `_split_scope_entries` already supports --
+        # would block the whole fleet's normal `scope --add` usage.
+        from frob.tickets import mutate_scope
+
+        spec = TicketSpec(
+            title="t", kind=TicketKind.BUG, origin=Origin.AGENT, scope=("a/**",)
+        )
+        new_ticket(tmp_path, spec)
+        result = mutate_scope(
+            tmp_path,
+            "T-0001",
+            add=["src/b/**,src/c/**", "design/", "docs/modules", "*.py"],
+            reason="testing",
+        )
+        assert result.is_ok
+        assert set(result.danger_ok.scope) == {
+            "a/**",
+            "src/b/**",
+            "src/c/**",
+            "design/",
+            "docs/modules",
+            "*.py",
+        }
+
+
 # frob:ticket T-0838
 # frob:ticket T-1103
 class TestEmptyCollectionOmission:

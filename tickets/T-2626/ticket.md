@@ -2,7 +2,7 @@
 id: T-2626
 title: scope write path never validates individual glob syntax (semicolon-joined entries
   silently stored)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -12,14 +12,38 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_scope.py
 - src/frob/tickets/_models.py
+- tests/test_tickets.py
+evidence_scope:
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'SCOPE001: T-2626''s repro/positive-control tests live here'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_tickets.py
+  reason: 'SCOPE001: T-2626''s repro/positive-control tests live here'
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_tickets.py::TestScopeGlobValidation::test_semicolon_joined_entry_is_invalid
+- tests/test_tickets.py::TestScopeGlobValidation::test_absolute_pattern_is_invalid
+- tests/test_tickets.py::TestScopeGlobValidation::test_every_existing_valid_form_still_passes
+- tests/test_tickets.py::TestScopeGlobValidation::test_new_ticket_refuses_a_semicolon_joined_scope
+- tests/test_tickets.py::TestScopeGlobValidation::test_ticket_itself_still_loads_a_legacy_malformed_scope
+- tests/test_tickets.py::TestScopeGlobValidation::test_mutate_scope_refuses_a_semicolon_joined_add
+- tests/test_tickets.py::TestScopeGlobValidation::test_mutate_scope_still_accepts_every_valid_form
+designated_repro_test: tests/test_tickets.py::TestScopeGlobValidation::test_mutate_scope_refuses_a_semicolon_joined_add
 threat: null
 component: null
 anchor: false

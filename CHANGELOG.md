@@ -129,6 +129,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
 - T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
 - T-2624: CLI wiring for runs_last_parallel_safe
+- T-2626: scope write path never validates individual glob syntax (semicolon-joined entries silently stored)
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
 
 ## [0.530.0] - unreleased

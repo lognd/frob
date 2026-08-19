@@ -43,6 +43,7 @@ from frob.tickets._models import (
     Ticket,
     TicketError,
     TicketState,
+    _first_invalid_scope_glob,
     _glob_is_subset,
     scope_overlap_globs,
 )
@@ -492,15 +493,40 @@ def _scope_remove_orphans_evidence(
 def _validate_scope_request(
     add_globs: tuple[str, ...], remove_globs: tuple[str, ...], reason: str
 ) -> Result[None, TicketError]:
-    """The two request-shape checks `mutate_scope` rejects before ever
-    touching the ledger: at least one op, and a non-blank `reason`
-    (T-0455)."""
+    """The request-shape checks `mutate_scope` rejects before ever
+    touching the ledger: at least one op, a non-blank `reason` (T-0455),
+    and -- T-2626 -- every `add` glob is syntactically valid.
+
+    The T-2626 incident: a scope entry recorded as one semicolon-joined
+    string (`'src/frob/verify/**;src/frob/app/ticket_runner/**'`, from
+    T-2450) was never rejected anywhere on the write path -- only
+    `_split_scope_entries`'s comma-splitting ran, which does not touch a
+    semicolon at all, so the malformed entry was stored verbatim. It then
+    matched NOTHING via `fnmatch.fnmatch` (silently voiding the ticket's
+    write lease and evidence coverage) and crashed the first caller that
+    globbed it with `Path.glob` instead (`ValueError: '**' can only be an
+    entire path component`) -- a malformed scope entry failing in the
+    dangerous, silent direction. `remove_globs` is deliberately NOT
+    checked here: a glob already sitting in `ticket.scope` was, by
+    definition, valid when it was added (or predates this check and is a
+    read-path concern, not a write-path one) -- refusing to REMOVE an
+    already-malformed legacy entry would trap a ticket that is trying to
+    clean one up."""
     if not add_globs and not remove_globs:
         _log.error("tickets: scope change requires --add or --remove")
         return Err(TicketError.ScopeChangeEmpty)
     if not reason.strip():
         _log.error("tickets: scope change requires --reason")
         return Err(TicketError.ScopeChangeReasonMissing)
+    bad_glob = _first_invalid_scope_glob(add_globs)
+    if bad_glob is not None:
+        _log.error(
+            "tickets: scope --add %r is not a syntactically valid glob pattern "
+            "(T-2626) -- if you meant multiple globs, pass them as separate "
+            "--add flags or comma-joined, not joined by any other character",
+            bad_glob,
+        )
+        return Err(TicketError.ScopeGlobInvalid)
     return Ok(None)
 
 
