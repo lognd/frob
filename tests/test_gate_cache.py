@@ -22,6 +22,7 @@ from frob.gates._gate_cache import (
 from frob.graph import build_graph
 from frob.graph._models import GraphSnapshot, LockEntry, LockFile
 from frob.graph.lock import write_lock
+from frob.process.parsers.common import ToolResult
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -682,3 +683,151 @@ class TestCacheTransparencyProcessGates:
             )
 
         run_cold_warm_sweep(rng, 6, mutate, cold_fingerprint, warm_fingerprint)
+
+
+# frob:ticket T-2585
+class TestRunReplay:
+    """`load_gate_run_replay`/`store_gate_run_replay` (T-2585): the
+    whole-run replay above both the T-0602/T-1445 caches -- `frob check`
+    reprints a prior COMPLETE verdict automatically when the tree has not
+    moved, and never as a shortcut for a scoped/partial one."""
+
+    def _fake_result(self, tool: str = "gate-summary") -> list[ToolResult]:
+        """One minimal `ToolResult` list, standing in for `_run_gates`'s
+        real return shape."""
+        return [ToolResult(tool=tool, exit_code=0, summary="0 errors, 0 warnings")]
+
+    # frob:ticket T-2585
+    def test_unchanged_tree_replays(self, tmp_path: Path) -> None:
+        """frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::GateRunReplay.age_s"""
+        import time
+
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        results = self._fake_result()
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is None
+        )
+        before = time.time()
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=results,
+        )
+        replay = load_gate_run_replay(
+            tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+        )
+        assert replay is not None
+        assert not replay.partial
+        assert [r.summary for r in replay.results] == [r.summary for r in results]
+        # `age_s` (T-2585): the disclosure `_label_replay` surfaces to the
+        # caller -- must be a small non-negative number of seconds since
+        # the `store_gate_run_replay` call just above, not a raw timestamp.
+        assert 0.0 <= replay.age_s <= (time.time() - before) + 1.0
+
+    # frob:ticket T-2585
+    def test_tracked_edit_forces_real_run(self, tmp_path: Path) -> None:
+        """A tracked-file edit changes `root_content_key`, so a stored
+        replay for the pre-edit tree must MISS post-edit -- the caller
+        falls through to a real `run_gates` call, never a stale reprint.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay"""
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is None
+        )
+
+    # frob:ticket T-2585
+    def test_budget_clipped_prior_run_never_replays_as_complete(
+        self, tmp_path: Path
+    ) -> None:
+        """A `--only <group>` / budget-chunk call always requests a real,
+        non-empty `gates` subset (never `frozenset()`) -- its stored entry
+        is keyed under that narrower signature and marked `partial=True`,
+        so it can NEVER satisfy a later full/unscoped invocation's lookup,
+        which asks for `gates=frozenset()` -- a different signature
+        entirely. This is the ticket's own must-have control: a
+        budget-clipped prior run must not read as a complete verdict.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay"""
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset({"tickets"}),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        chunked = load_gate_run_replay(
+            tmp_path, gates=frozenset({"tickets"}), ticket=None, base=None, delta=False
+        )
+        assert chunked is not None
+        assert chunked.partial is True
+
+        full = load_gate_run_replay(
+            tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+        )
+        assert full is None
+
+    # frob:ticket T-2585
+    def test_ticket_scoped_prior_does_not_serve_unscoped(self, tmp_path: Path) -> None:
+        """A `--ticket T-XXXX`-scoped stored result must never be reprinted
+        for a later UNSCOPED invocation, and vice versa -- `ticket` is part
+        of the request signature itself.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay"""
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket="TICKET-SCOPE-PROBE",
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is None
+        )
+        scoped = load_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket="TICKET-SCOPE-PROBE",
+            base=None,
+            delta=False,
+        )
+        assert scoped is not None

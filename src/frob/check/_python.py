@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from frob.excludes import iter_files
+from frob.logging import get_logger
 from frob.process._guard import EXEC_KILL_SWITCH_ENV, guarded_subprocess_run
 from frob.process.parsers.common import (
     Diagnostic,
@@ -26,6 +27,9 @@ from frob.process.parsers.common import (
 
 if TYPE_CHECKING:
     from frob.gates import Violation
+
+# frob:ticket T-2585
+_log = get_logger(__name__)
 
 
 # frob:ticket T-0142
@@ -931,9 +935,31 @@ def _run_gates(
     there is no report to group by family).
     """
     from frob.gates import GateConfig, GateError, run_gates
+    from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
 
+    cache_on = _gate_cache_enabled(no_cache)
+    # T-2585: whole-run replay, ABOVE both the T-0602/T-1445 per-gate
+    # caches `run_gates` itself consults below. Gated on the exact same
+    # `cache_on` flag those caches use -- `no_cache=True`/
+    # `FROB_NO_GATE_CACHE` disables replay too, since both express the
+    # same "force a real recompute" intent. No flag of its own: the
+    # caller (a bare `frob check`) never decides anything -- see
+    # `load_gate_run_replay`'s docstring for the signature+fingerprint
+    # match that makes this safe to do automatically.
+    if cache_on:
+        replay = load_gate_run_replay(
+            root, gates=gates, ticket=ticket, base=base, delta=delta
+        )
+        if replay is not None:
+            _log.info(
+                "gate-replay: HIT signature-and-tree match (age=%.1fs, partial=%s) "
+                "-- reprinting stored verdict instead of recomputing",
+                replay.age_s,
+                replay.partial,
+            )
+            return _label_replay(list(replay.results), age_s=replay.age_s)
     cfg = GateConfig(root=str(root), base=base or "main", ticket=ticket, gates=gates)
-    result = run_gates(cfg, use_cache=_gate_cache_enabled(no_cache))
+    result = run_gates(cfg, use_cache=cache_on)
     if result.is_err:
         return _gates_error_result(result.danger_err, GateError)
     # T-1939: one cheap rule-level firing-counts telemetry event per real
@@ -943,9 +969,30 @@ def _run_gates(
     from frob.telemetry import record_rule_firing_counts
 
     record_rule_firing_counts(root, result.danger_ok)
-    return _gates_success_result(
+    results = _gates_success_result(
         result.danger_ok, root=root, delta=delta, ticket=ticket, gates=gates
     )
+    if cache_on:
+        store_gate_run_replay(
+            root, gates=gates, ticket=ticket, base=base, delta=delta, results=results
+        )
+    return results
+
+
+# frob:ticket T-2585
+def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
+    """Prepend a `[REPLAY age=Ns]` note to the trailing `gate-summary`
+    line so a reprinted verdict is never visually indistinguishable from a
+    freshly computed one -- every other `ToolResult` (the per-family
+    `gate:<FAMILY>` diagnostics) is returned byte-for-byte unchanged, which
+    is what makes "unchanged tree replays with identical findings" true:
+    only the summary line's TEXT gains the disclosure, no diagnostic is
+    added, removed, or altered."""
+    for r in results:
+        if r.tool == "gate-summary":
+            r.summary = f"[REPLAY age={age_s:.1f}s, unchanged tree]  {r.summary}"
+            break
+    return results
 
 
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001

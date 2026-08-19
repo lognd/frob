@@ -771,13 +771,228 @@ def store_root_gate_cache(
     )
 
 
+# --- T-2585: whole-run replay (above both caches above) -------------------
+
+
+# frob:ticket T-2585
+_REPLAY_SCHEMA = """
+CREATE TABLE IF NOT EXISTS run_replay (
+    signature TEXT PRIMARY KEY,
+    fingerprint TEXT NOT NULL,
+    partial INTEGER NOT NULL,
+    gates_json TEXT NOT NULL,
+    ticket TEXT,
+    results_json TEXT NOT NULL,
+    stored_at REAL NOT NULL
+);
+"""
+
+
+# frob:ticket T-2585
+def _replay_signature(
+    *, gates: frozenset[str], ticket: str | None, base: str | None, delta: bool
+) -> str:
+    """Deterministic key identifying one `_run_gates` request SHAPE (T-2585):
+    same requested gate subset, ticket scope, base ref, and delta mode.
+    Two invocations with the same signature are asking the tree the exact
+    same question; different signatures are never conflated -- this is
+    what guarantees a `--ticket`-scoped prior result can never serve an
+    unscoped invocation (or a `--only`-narrowed one serve a wider one):
+    the requested `gates`/`ticket` are part of the key itself, not
+    inspected after the fact."""
+    payload = json.dumps(
+        {"gates": sorted(gates), "ticket": ticket, "base": base, "delta": delta},
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+# frob:ticket T-2585
+def _replay_fingerprint(root: Path) -> str | None:
+    """The tree state a stored replay is valid against (T-2585):
+    `root_content_key` (T-1445, tracked-file content digest) folded with a
+    digest of `.frob/baseline`'s own bytes. `.frob/baseline` is gitignored
+    -- outside `root_content_key`'s `git ls-files` walk entirely -- but
+    `--delta` mode reads it directly (`_apply_delta`), so a re-stamped
+    baseline against an otherwise-unchanged tracked tree must still
+    invalidate a stored delta-mode replay; folding its digest in here
+    closes that gap without a second, independently-maintained key.
+    Returns `None` (never replayable) whenever `root_content_key` itself
+    is unavailable -- an unverifiable tree state must never serve, or
+    accept, a replay."""
+    tree_key = root_content_key(root)
+    if tree_key is None:
+        return None
+    try:
+        baseline_bytes = (root / ".frob" / "baseline").read_bytes()
+    except OSError:
+        baseline_bytes = b""
+    return f"{tree_key}:{hashlib.sha256(baseline_bytes).hexdigest()}"
+
+
+@dataclass(frozen=True)
+# frob:doc docs/modules/serve.md#whole-run-replay-t-2585
+# frob:ticket T-2585
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
+class GateRunReplay:
+    """One persisted whole-gates-run verdict (T-2585): the exact
+    `ToolResult` list a prior `_run_gates` call produced for a matching
+    request signature and tree fingerprint, plus enough metadata for the
+    caller to disclose staleness/scope honestly when reprinting it."""
+
+    results: tuple[Any, ...]
+    stored_at: float
+    partial: bool
+    gates: tuple[str, ...]
+    ticket: str | None
+
+    # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
+    # frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
+    # frob:waive WIRE001 follow_up="T-2610" reason="read via plain attribute \
+    # access (replay.age_s) in frob.check._python._label_replay, a real production \
+    # caller -- the resolver's call-graph only follows call-expression syntax, not \
+    # property attribute reads, so a genuinely wired property reads as unwired; \
+    # follow-up tracks extending WIRE001's resolver to cover this"
+    @property
+    def age_s(self) -> float:
+        """Seconds since this verdict was computed -- callers surface this
+        alongside a replay so "reprinted, not recomputed" is never silent."""
+        return max(0.0, time.time() - self.stored_at)
+
+
+# frob:doc docs/modules/serve.md#whole-run-replay-t-2585
+# frob:ticket T-2585
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_tracked_edit_forces_real_run
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_budget_clipped_prior_run_never_replays_as_complete  # noqa: E501
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_ticket_scoped_prior_does_not_serve_unscoped  # noqa: E501
+def load_gate_run_replay(
+    root: Path,
+    *,
+    gates: frozenset[str],
+    ticket: str | None,
+    base: str | None,
+    delta: bool,
+) -> GateRunReplay | None:
+    """Return a stored whole-gates-run verdict for this EXACT request
+    shape, or `None` on any miss (T-2585 -- the automatic, no-flag
+    replacement for the rejected `frob check --last`: the caller asks
+    nothing, decides nothing, and compares no tree hash by hand).
+
+    A hit requires BOTH: (1) `_replay_signature` matches exactly -- so a
+    `--only`-narrowed or `--ticket`-scoped prior run can only ever serve
+    an invocation asking for that identical subset, never a wider one
+    (this is the whole safety property the ticket calls out: a
+    budget-chunked call always requests a real, non-empty `gates` subset,
+    so its stored entry can never match a later unscoped signature); and
+    (2) `_replay_fingerprint` matches the CURRENT tree -- any tracked file
+    edit, or a re-stamped `.frob/baseline` under `--delta`, changes the
+    fingerprint and forces a real run."""
+    fingerprint = _replay_fingerprint(root)
+    if fingerprint is None:
+        return None
+    sig = _replay_signature(gates=gates, ticket=ticket, base=base, delta=delta)
+    conn = _connect(root)
+    try:
+        conn.executescript(_REPLAY_SCHEMA)
+        row = conn.execute(
+            "SELECT fingerprint, partial, gates_json, ticket, results_json, "
+            "stored_at FROM run_replay WHERE signature = ?",
+            (sig,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        return None
+    row_fingerprint, partial, gates_json, row_ticket, results_json, stored_at = row
+    if row_fingerprint != fingerprint:
+        return None
+    from frob.process.parsers.common import ToolResult
+
+    try:
+        results = tuple(ToolResult.model_validate(r) for r in json.loads(results_json))
+    except Exception:  # noqa: BLE001 - a malformed row must never crash a check run
+        _log.warning("gate-replay: stored row for signature=%s failed to parse", sig)
+        return None
+    return GateRunReplay(
+        results=results,
+        stored_at=stored_at,
+        partial=bool(partial),
+        gates=tuple(json.loads(gates_json)),
+        ticket=row_ticket,
+    )
+
+
+# frob:doc docs/modules/serve.md#whole-run-replay-t-2585
+# frob:ticket T-2585
+# frob:tests tests/test_gate_cache.py::TestRunReplay.test_budget_clipped_prior_run_never_replays_as_complete  # noqa: E501
+def store_gate_run_replay(
+    root: Path,
+    *,
+    gates: frozenset[str],
+    ticket: str | None,
+    base: str | None,
+    delta: bool,
+    results: list[Any],
+) -> None:
+    """Persist `results` (a fresh, real `_run_gates` outcome) as the replay
+    entry for this exact request shape (T-2585). `partial` is recorded
+    TRUE whenever `gates` is non-empty (an `--only`-narrowed run, which
+    includes every `--budget`/`--stamp-baseline --only <group>` chunk) or
+    `ticket` is set (a `--ticket`-scoped run) -- this is what makes a
+    budget-clipped or ticket-scoped prior run structurally unable to
+    replay as a complete verdict: it is stored under a signature that only
+    an identically-scoped future invocation can ever match, and is
+    labelled partial for any caller that inspects it directly. A no-op
+    when the tree fingerprint is unavailable -- an unverifiable tree state
+    must never be cached."""
+    fingerprint = _replay_fingerprint(root)
+    if fingerprint is None:
+        _log.debug("gate-replay: not storing (fingerprint unavailable)")
+        return
+    sig = _replay_signature(gates=gates, ticket=ticket, base=base, delta=delta)
+    partial = bool(gates) or ticket is not None
+    results_payload = json.dumps([r.model_dump(mode="json") for r in results])
+    gates_payload = json.dumps(sorted(gates))
+    with derived_state_write_lock(root):
+        conn = _connect(root)
+        try:
+            conn.executescript(_REPLAY_SCHEMA)
+            conn.execute(
+                "INSERT OR REPLACE INTO run_replay (signature, fingerprint, "
+                "partial, gates_json, ticket, results_json, stored_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    sig,
+                    fingerprint,
+                    1 if partial else 0,
+                    gates_payload,
+                    ticket,
+                    results_payload,
+                    time.time(),
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    _log.info(
+        "gate-replay: stored signature=%s partial=%s (%d gate(s) requested)",
+        sig,
+        partial,
+        len(gates),
+    )
+
+
 __all__ = [
+    "GateRunReplay",
     "TrackedSnapshot",
     "evaluate_cacheable_gate",
     "extra_key",
     "invalidate",
+    "load_gate_run_replay",
     "load_root_gate_cache",
     "model_side_channel_key",
     "root_content_key",
+    "store_gate_run_replay",
     "store_root_gate_cache",
 ]

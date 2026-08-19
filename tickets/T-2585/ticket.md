@@ -2,7 +2,7 @@
 id: T-2585
 title: 'frob check has no durable result: replay an unchanged-tree verdict automatically,
   never as a flag'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -32,7 +32,12 @@ scope_changes:
   reason: T-2585 adds TestRunReplay coverage to this file
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/test_gate_cache.py::TestRunReplay::test_unchanged_tree_replays
+- tests/test_gate_cache.py::TestRunReplay::test_tracked_edit_forces_real_run
+- tests/test_gate_cache.py::TestRunReplay::test_budget_clipped_prior_run_never_replays_as_complete
+- tests/test_gate_cache.py::TestRunReplay::test_ticket_scoped_prior_does_not_serve_unscoped
+designated_repro_test: tests/test_gate_cache.py::TestRunReplay::test_budget_clipped_prior_run_never_replays_as_complete
 threat: null
 component: null
 anchor: false

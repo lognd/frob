@@ -170,6 +170,58 @@ either the cached or uncached gates) filtered through
 `frob check --delta` uses on the CLI side, so the two stay consistent by
 construction.
 
+### Whole-run replay (T-2585)
+
+<!-- frob:describes src/frob/gates/_gate_cache.py::GateRunReplay -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::load_gate_run_replay -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::store_gate_run_replay -->
+
+Above both caches this section and the next describe sits one more layer,
+added for a different problem than either solves: `frob check` wrote no
+durable result artifact at all -- its verdict existed only as stdout, so a
+bounded pipe (`> log; tail log`) that scrolled the interesting part away
+left recomputation (up to ~274s on this repo) as the only recovery.
+
+The rejected fix was a `--last` flag reprinting a saved result: that would
+force the CALLER to decide whether the saved result is still valid --
+hand-comparing tree hashes, an obligation distributed across every call
+site that would eventually be gotten wrong, and a hand-compared stale
+green is worse than no cache at all. It also runs against this project's
+standing preference for automatic behavior over commands (a flag requires
+knowing the flag exists).
+
+`_run_gates` (`frob.check._python`) instead decides for itself, with no
+flag and no caller obligation: on every call it computes a fingerprint of
+the CURRENT tree (`root_content_key`, T-1445's whole-tree content digest,
+folded with a digest of `.frob/baseline`'s own bytes so a re-stamped
+baseline under `--delta` invalidates a stored delta-mode replay even
+though `.frob/baseline` itself is gitignored and outside
+`root_content_key`'s `git ls-files` walk) and looks up `load_gate_run_
+replay` under a signature identifying the exact request shape (`gates`
+subset, `ticket`, `base`, `delta`). A hit requires BOTH the signature and
+the fingerprint to match; on a hit, the prior `ToolResult` list is
+reprinted verbatim (findings byte-for-byte identical to the run that
+produced them) with its `gate-summary` line's TEXT -- and only its text --
+prefixed with a `[REPLAY age=Ns]` disclosure, so a reprint is never
+visually indistinguishable from a fresh run. On a miss, `run_gates` runs
+for real and `store_gate_run_replay` persists the fresh result under the
+same signature+fingerprint pair for the next call to find.
+
+**The correctness guard, load-bearing**: a request signature carries the
+requested `gates` subset and `ticket` scope AS PART OF THE KEY, not as
+metadata inspected after a hit. This is what makes a `--only <group>` /
+`--budget`-chunked call (which always requests a real, non-empty `gates`
+subset) or a `--ticket`-scoped call structurally unable to ever satisfy a
+later full/unscoped lookup (`gates=frozenset()`, `ticket=None`) -- that
+invocation asks a DIFFERENT question, at a different key, and a stored
+partial entry (recorded with `partial=True` whenever `gates` is
+non-empty or `ticket` is set) simply is not there to be found. Nothing
+here inspects "was this run complete" after the fact and decides whether
+to trust it; the signature makes an incomplete run's stored entry
+unreachable from a complete request by construction -- the same
+"structurally cannot serve the wrong shape" posture `_replay_fingerprint`
+already applies to the tree-state half of the key.
+
 ### Per-gate dependency-tracked partial re-evaluation (T-0602)
 
 <!-- frob:describes src/frob/gates/_gate_cache.py::TrackedSnapshot -->
