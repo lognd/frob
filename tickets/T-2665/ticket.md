@@ -18,6 +18,7 @@ scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
 - frob.lock
+- docs/guides/coordinator-scripts.md
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
@@ -42,6 +43,21 @@ scope_changes:
   glob: frob.lock
   reason: 'frob.lock was updated by `frob ack scripts/fleet_status.py::worktrees_touching_ticket`,
     required to clear DRIFT001 on the symbol this ticket''s fix changed.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'DOC002 required real anchors for the two new ARCH001-split helper
+
+    functions (_worktree_matches_ticket_by_scope_only,
+
+    _worktree_matches_ticket_by_dual_correlation) added to
+
+    scripts/fleet_status.py; this is the doc file those frob:doc directives
+
+    point to.
 
     '
   actor: logan
