@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: low
+  new_value: low
+  reason: owner decided to hold the ratchet; not actionable until a fresh measurement
+    on a green suite
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: append
   reason: 'owner decision: hold floors at 75/70, do not ratchet; held not dropped'
