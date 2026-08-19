@@ -2,7 +2,7 @@
 id: T-2483
 title: 'post-land sweep regression from T-2467: 2 new (rule, file) identit(ies), 3
   finding(s) (DRIFT002, E501)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -43,3 +43,6 @@ Under the rapid profile the sweep runs detached and files this ticket rather tha
 
 ## Failure log
 - 2026-08-18 attempt 1: 1 of 2 identities resolved by measurement (DRIFT002 src/frob/process/_reap.py confirmed pre-existing at T-2467's parent 58893878498f3761a1d8679d17269e39cae85fcc: 5 dangling frob:tests edges to tests/unit/test_process_reap.py already present, file untouched by T-2467's land). The other, E501 src/frob/app/ticket_runner/_waive_audit.py, is genuinely new (T-2467's land created this file; measured 10 lines over 88 chars at land commit 7f8193fc958ef608da902730128c6278347b3355) but that path is currently OFF LIMITS (leased by live agents per dispatch instructions) so the fix cannot be made in this pass. Requeue for a dispatch once the ticket_runner/ lease clears; the DRIFT002 half needs no further action.
+
+## Drop reason
+- 2026-08-18: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (DRIFT002 src/frob/process/_reap.py, E501 src/frob/app/ticket_runner/_waive_audit.py) is absent from a direct re-check of exactly the 366 named (rule, file) identit(ies) (not a full sweep) that completed with no failed/silent tool stage at doable's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
