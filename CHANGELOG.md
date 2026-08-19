@@ -81,6 +81,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2547: T-2547: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed file
 - T-2549: T-2549: COV007 reads a strata security clearance as API privacy: 25 false findings on design/frob.strata
 - T-2552: T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
+- T-2556: T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
 
 ## [0.530.0] - unreleased
 

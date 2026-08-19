@@ -388,11 +388,62 @@ _WORKTREE_LEASE_HOOK_SCRIPT = """#!/bin/sh
 # dispatched worktree agent's shell accidentally ran `git merge main` /
 # `git commit` straight against the MAIN checkout instead of its own
 # worktree. A coordinator process (FROB_AGENT unset) is never affected.
-if [ -n "$FROB_AGENT" ]; then
-    echo "frob: refusing commit -- FROB_AGENT=$FROB_AGENT is set in this shell" >&2
-    echo "frob: an agent-context shell must not commit directly in $(pwd)" >&2
-    echo "frob: unset FROB_AGENT if deliberate, or run from the leased worktree" >&2
-    exit 1
+#
+# T-2556: the refusal is CONDITIONAL ON WHERE THE COMMIT LANDS, not on
+# FROB_AGENT alone. The original guard tested only `[ -n "$FROB_AGENT" ]`,
+# so a commit made INSIDE the correctly-leased worktree was refused
+# exactly as hard as one against the shared root -- which is not the
+# incident it was built for, and which `frob ticket land`'s own pre-land
+# wip commit trips whenever the worktree is dirty enough to need one
+# (measured: a land refused with "FROB_AGENT=1 is set in this shell", and
+# succeeded only once the agent UNSET the variable the playbook tells
+# every dispatched agent to set). The message also advised "run from the
+# leased worktree", a remedy that could never work, because the guard
+# never looked at the path -- wrong advice, not merely unhelpful advice.
+# Location is now established the same way the T-2071 guard below
+# establishes it (this commit's own toplevel versus the primary checkout
+# from the worktree registry), so T-0431's shared-root refusal is
+# unchanged while the in-worktree case is allowed.
+if [ -n "$FROB_AGENT" ] && [ -z "$FROB_LAND_INTERNAL" ]; then
+    _t2556_toplevel=$(git rev-parse --show-toplevel 2>/dev/null)
+    _t2556_primary=$(git worktree list --porcelain 2>/dev/null \\
+        | awk '/^worktree /{print $2; exit}')
+    _t2556_refuse=
+    _t2556_where=
+    if [ -z "$_t2556_toplevel" ] || [ -z "$_t2556_primary" ]; then
+        # Undeterminable location REFUSES rather than failing open: this
+        # hook only ever runs under `git commit`, so both queries coming
+        # back empty means the checkout is broken, and a guard that
+        # silently permits when it could not measure is exactly the
+        # silent-zero class this repo keeps paying for.
+        _t2556_refuse=1
+        _t2556_where="an UNDETERMINABLE location (could not read this"
+        _t2556_where="$_t2556_where checkout's toplevel or worktree list)"
+    elif [ "$_t2556_toplevel" = "$_t2556_primary" ]; then
+        _t2556_refuse=1
+        _t2556_where="the SHARED ROOT checkout $_t2556_toplevel"
+    elif [ -n "$FROB_WORKTREE" ]; then
+        _t2556_lease=$(CDPATH= cd -- "$FROB_WORKTREE" 2>/dev/null && pwd -P)
+        _t2556_here=$(CDPATH= cd -- "$_t2556_toplevel" 2>/dev/null && pwd -P)
+        if [ -n "$_t2556_lease" ] && [ -n "$_t2556_here" ] \\
+            && [ "$_t2556_lease" != "$_t2556_here" ]; then
+            _t2556_refuse=1
+            _t2556_where="worktree $_t2556_here, which is NOT the leased"
+            _t2556_where="$_t2556_where worktree $_t2556_lease"
+        fi
+    fi
+    if [ -n "$_t2556_refuse" ]; then
+        echo "frob: refusing commit -- an agent-context shell" \\
+            "(FROB_AGENT=$FROB_AGENT) is committing into" >&2
+        echo "frob:   $_t2556_where" >&2
+        echo "frob: commit from your own leased worktree instead -- that" \\
+            "is allowed, and is the normal path" >&2
+        echo "frob:   (frob ticket work <id> creates and leases one)." >&2
+        echo "frob: (unset FROB_AGENT if this really is a coordinator" \\
+            "shell; set FROB_LAND_INTERNAL=1" >&2
+        echo "frob:   if this is land/tooling machinery.)" >&2
+        exit 1
+    fi
 fi
 
 # T-2071: the guard above is INERT for its own target population -- the
@@ -653,9 +704,9 @@ def install_worktree_lease_hook(
 ) -> Result[tuple[Path, ...], ScaffoldError]:
     """Install the T-0431 worktree-lease `pre-commit`/`pre-merge-commit`
     git hooks into `root`'s real hooks directory (`_hooks_dir`): each
-    hook aborts loudly if `FROB_AGENT` is set, catching a stray raw
-    `git commit`/`git merge` from an agent-context shell in the wrong
-    checkout. T-2071: both hooks ALSO carry a second, FACT-based guard
+    hook aborts loudly if `FROB_AGENT` is set and the commit lands
+    outside the agent's own leased worktree (T-2556 -- the T-2556 comment
+    in `_WORKTREE_LEASE_HOOK_SCRIPT` gives the exact conditions). T-2071: both hooks ALSO carry a second, FACT-based guard
     that does NOT depend on `FROB_AGENT` (measured UNSET in every
     Agent-tool shell) -- see the T-2071 comment in
     `_WORKTREE_LEASE_HOOK_SCRIPT`. `pre-merge-commit` ALSO carries the

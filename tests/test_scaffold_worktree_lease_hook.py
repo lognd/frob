@@ -27,6 +27,28 @@ def _init_repo(root: Path) -> None:
     _git("add", "-A", cwd=root)
 
 
+# frob:ticket T-2556
+def _setup_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
+    """Init a repo with the lease hook installed and one linked worktree.
+
+    Returns `(worktree_dir, root)`. T-2556's controls all need the same
+    shape: a primary checkout plus at least one linked worktree, so that
+    "is this the shared root?" is a question with a real answer.
+    """
+    root = tmp_path / "repo"
+    _init_repo(root)
+    _git("commit", "-q", "-m", "init", cwd=root)
+    installed = install_worktree_lease_hook(root)
+    assert installed.is_ok
+
+    worktree_dir = tmp_path / "leased-worktree"
+    added = _git(
+        "worktree", "add", "-b", "agent-branch", str(worktree_dir), "main", cwd=root
+    )
+    assert added.returncode == 0, added.stdout + added.stderr
+    return worktree_dir, root
+
+
 # frob:ticket T-0731
 class TestInstallWorktreeLeaseHook:
     def test_installs_pre_commit_and_pre_merge_commit(self, tmp_path: Path) -> None:
@@ -548,3 +570,182 @@ class TestInstallWorktreeLeaseHook:
         )
         assert commit.returncode != 0, commit.stdout + commit.stderr
         assert "root" in (commit.stdout + commit.stderr).lower()
+
+
+# frob:ticket T-2556
+class TestFrobAgentGuardIsLocationAware:
+    """T-2556: the FROB_AGENT guard refuses based on WHERE the commit
+    lands, not on the variable alone.
+
+    Before this ticket the guard was `if [ -n "$FROB_AGENT" ]` with no
+    location test at all, so a commit inside the correctly-leased
+    worktree -- including `frob ticket land`'s own pre-land wip commit --
+    was refused exactly as hard as one against the shared root, and the
+    printed remedy ("run from the leased worktree") could not work
+    because the guard never looked at the path.
+
+    The must-fire direction had a test
+    (`test_installed_hook_aborts_commit_under_frob_agent`); the must-NOT-
+    fire direction had none, in EITHER location, which is precisely how
+    an unconditional guard passed review. Both directions are pinned
+    here.
+    """
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_commit_inside_leased_worktree_is_allowed(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_commit_inside_leased_worktree_is_allowed  # noqa: E501
+        """The must-NOT-fire control, and the one that would have caught
+        the original defect: an agent-context commit in its OWN leased
+        worktree is the sanctioned workflow and must be permitted."""
+        worktree_dir, _ = _setup_repo_with_worktree(tmp_path)
+
+        (worktree_dir / "agent_work.py").write_text("y = 2\n")
+        _git("add", "-A", cwd=worktree_dir)
+        env = dict(os.environ, FROB_AGENT="1", FROB_WORKTREE=str(worktree_dir))
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "agent commits in its own worktree"],
+            cwd=worktree_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_commit_against_shared_root_is_still_refused(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_commit_against_shared_root_is_still_refused  # noqa: E501
+        """The must-fire control: T-0431's whole purpose. Narrowing the
+        guard to a location test must not hand the shared root back."""
+        _worktree_dir, root = _setup_repo_with_worktree(tmp_path)
+
+        (root / "stray.py").write_text("z = 3\n")
+        _git("add", "-A", cwd=root)
+        env = dict(os.environ, FROB_AGENT="1")
+        env.pop("FROB_WORKTREE", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "agent commits straight to the root"],
+            cwd=root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        output = commit.stdout + commit.stderr
+        assert commit.returncode != 0, output
+        assert "SHARED ROOT" in output
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_refusal_names_a_remedy_that_actually_works(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_refusal_names_a_remedy_that_actually_works  # noqa: E501
+        """Defect 2 was the message, not just the condition: it advised
+        "run from the leased worktree" while the guard ignored the path,
+        so anyone following it failed again identically. This pins the
+        advice to the behaviour -- the root refusal points at the
+        worktree, and `test_commit_inside_leased_worktree_is_allowed`
+        proves that pointer resolves to a working commit."""
+        _worktree_dir, root = _setup_repo_with_worktree(tmp_path)
+
+        (root / "stray2.py").write_text("z = 4\n")
+        _git("add", "-A", cwd=root)
+        env = dict(os.environ, FROB_AGENT="1")
+        env.pop("FROB_WORKTREE", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "stray root commit"],
+            cwd=root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        output = commit.stdout + commit.stderr
+        assert commit.returncode != 0, output
+        assert "leased worktree" in output
+        assert "frob ticket work" in output
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_commit_in_a_worktree_other_than_the_leased_one_is_refused(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_commit_in_a_worktree_other_than_the_leased_one_is_refused  # noqa: E501
+        """Being in SOME worktree is not enough: an agent leasing one
+        worktree must not commit into a sibling agent's checkout."""
+        leased, root = _setup_repo_with_worktree(tmp_path)
+        other = tmp_path / "other-worktree"
+        added = _git("worktree", "add", "-b", "other-branch", str(other), "main", cwd=root)
+        assert added.returncode == 0, added.stdout + added.stderr
+
+        (other / "trespass.py").write_text("w = 5\n")
+        _git("add", "-A", cwd=other)
+        env = dict(os.environ, FROB_AGENT="1", FROB_WORKTREE=str(leased))
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "commit into a sibling's worktree"],
+            cwd=other,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        output = commit.stdout + commit.stderr
+        assert commit.returncode != 0, output
+        assert "NOT the leased" in output
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_coordinator_commit_unaffected_in_both_locations(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_coordinator_commit_unaffected_in_both_locations  # noqa: E501
+        """A coordinator shell (FROB_AGENT unset) is untouched by this
+        guard in the worktree. Its root behaviour is owned by the
+        separate T-2071 check, which
+        `test_agent_context_root_write_refused_without_frob_agent`
+        already pins."""
+        worktree_dir, _root = _setup_repo_with_worktree(tmp_path)
+
+        (worktree_dir / "coord.py").write_text("c = 6\n")
+        _git("add", "-A", cwd=worktree_dir)
+        env = dict(os.environ)
+        env.pop("FROB_AGENT", None)
+        env.pop("FROB_WORKTREE", None)
+        env.pop("FROB_LAND_INTERNAL", None)
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "coordinator commit in worktree"],
+            cwd=worktree_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr
+
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    # frob:ticket T-2556
+    def test_land_internal_commit_in_root_is_exempt(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware.test_land_internal_commit_in_root_is_exempt  # noqa: E501
+        """`frob ticket land` commits in the primary checkout as part of
+        its normal operation and marks those commits with
+        FROB_LAND_INTERNAL, the same escape hatch the T-2071 guard
+        already honours."""
+        _worktree_dir, root = _setup_repo_with_worktree(tmp_path)
+
+        (root / "landed.py").write_text("v = 7\n")
+        _git("add", "-A", cwd=root)
+        env = dict(os.environ, FROB_AGENT="1", FROB_LAND_INTERNAL="1")
+        commit = subprocess.run(
+            ["git", "commit", "-q", "-m", "land machinery commit"],
+            cwd=root,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert commit.returncode == 0, commit.stdout + commit.stderr

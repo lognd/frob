@@ -2,7 +2,7 @@
 id: T-2556
 title: worktree-lease pre-commit hook refuses agent commits inside the leased worktree,
   and its error message advises a remedy that does not work
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,20 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/scaffold/project.py
+evidence_scope:
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_commit_inside_leased_worktree_is_allowed
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_commit_against_shared_root_is_still_refused
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_refusal_names_a_remedy_that_actually_works
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_commit_in_a_worktree_other_than_the_leased_one_is_refused
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_coordinator_commit_unaffected_in_both_locations
+- tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_land_internal_commit_in_root_is_exempt
+designated_repro_test: tests/test_scaffold_worktree_lease_hook.py::TestFrobAgentGuardIsLocationAware::test_commit_inside_leased_worktree_is_allowed
 threat: null
 component: null
 anchor: false
@@ -26,7 +35,7 @@ land_commit: null
 ---
 MEASURED 2026-08-18. The worktree-lease pre-commit hook (template in
 `src/frob/scaffold/project.py:387-394`, installed by
-`frob scaffold install-worktree-lease-hook`, T-0431) refuses on
+`frob scaffold apply`, T-0431) refuses on
 FROB_AGENT UNCONDITIONALLY:
 
     if [ -n "$FROB_AGENT" ]; then
