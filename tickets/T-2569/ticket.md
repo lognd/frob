@@ -1,7 +1,7 @@
 ---
 id: T-2569
 title: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
