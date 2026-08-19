@@ -96,7 +96,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e70e5961d228fc955e123993cd25af17b71b1ca6
 ---
 ## Measured against real data, immediately after T-2599 landed
 
