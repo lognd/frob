@@ -2,7 +2,7 @@
 id: T-2571
 title: 'Post-land sweep files identical (rule,file) identities as new regressions
   across unrelated lands: baseline recurrence/phantom-path bug'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
