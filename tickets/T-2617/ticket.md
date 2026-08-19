@@ -2,7 +2,7 @@
 id: T-2617
 title: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main,
   reproducing the exact test T-2599 specified against
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
