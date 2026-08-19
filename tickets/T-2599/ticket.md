@@ -2,7 +2,7 @@
 id: T-2599
 title: '34 registered worktrees, ~20 idle 9-13 days: audit needs a stranded-vs-stale
   test that squash-landing does not fool'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
