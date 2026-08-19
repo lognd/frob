@@ -1,7 +1,7 @@
 ---
 id: T-2619
 title: unlanded_branch_work anomaly class undocumented (T-2612 lease-premise audit)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -11,13 +11,23 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets.md
 - docs/modules/tickets-lifecycle.md
+- src/frob/tickets/_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: T-2619 removes both AFFECT001 waivers here once the doc gap they cite is
+    closed, per the ticket's own instruction
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
