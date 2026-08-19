@@ -1,3 +1,26 @@
+# T-2611: core.autocrlf=true (a Windows-checkout setting) is present on
+# this Linux/WSL clone with no repo-wide normalization declared, so git
+# silently writes CRLF into the working-tree copy of every tracked text
+# file with no explicit `text`/`eol` attribute of its own -- confirmed on
+# 60 of 60 sampled tracked src/frob/*.py files. Any measurement that reads
+# the working tree byte-for-byte instead of going through a tool that
+# already strips line endings (ruff, python's own line iteration, git
+# itself) silently counts the trailing CR as content: this exact defect
+# turned zero real E501 violations into four apparent ones in one session
+# (T-2596). T-2586 already pinned `text eol=lf` for rapid-debt.jsonl and
+# force-overrides.jsonl below -- this generalizes that fix to the whole
+# tree rather than replacing those two lines, which stay as explicit,
+# self-documenting pins even though this default now also covers them.
+# `text=auto` normalizes CRLF to LF in the index for any file git detects
+# as text (binary files are left alone); `eol=lf` pins the WORKING TREE
+# to LF on checkout regardless of `core.autocrlf`, closing the actual
+# hazard this ticket exists to fix. Declared here, in the tracked repo,
+# rather than left to a per-clone `git config core.autocrlf=false`,
+# because a config change does not travel with the repo and a fresh
+# clone that skips it silently reproduces the same defect -- the same
+# argument every other attribute in this file already makes for itself.
+* text=auto eol=lf
+
 # T-1258/T-2356: this repo cut over to ledger v2 (disjoint tickets/T-####/
 # directories, ordinary git objects git's native per-file 3-way merge
 # already resolves correctly). tickets.md/tickets-archive.md and the

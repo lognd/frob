@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - .gitattributes
 - tests/unit/test_gitattributes_crlf_normalization.py
@@ -26,7 +28,11 @@ scope_changes:
     effective
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_sampled_source_files_are_pinned_to_lf
+- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_attachment_binary_pin_still_holds
+- tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_rapid_debt_lease_pin_still_holds
+designated_repro_test: tests/unit/test_gitattributes_crlf_normalization.py::TestGitattributesEolNormalization::test_sampled_source_files_are_pinned_to_lf
 threat: null
 component: null
 anchor: false
