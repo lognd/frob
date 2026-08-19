@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9f0c8562e924b4f168410f3eaa3fc0b013015562
 ---
 T-2598 found a waiver (AFFECT001 on src/frob/app/cycle_runner.py:32) whose reason promised
 a follow-up ticket that was never filed -- the only record of owed work lived inside the
