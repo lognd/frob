@@ -16,7 +16,6 @@ milestone: null
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
-- tickets/T-*/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +42,12 @@ scope_changes:
     is the per-ticket v2 files
   actor: logan
   at: '2026-08-18'
+- op: remove
+  glob: tickets/T-*/ticket.md
+  reason: 'repo-wide ledger lease removed: read-time default replaces the bulk backfill
+    (coordinator review, T-2593 class)'
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: append
   reason: 'remove the repo-wide ledger lease: read-time default replaces the bulk
