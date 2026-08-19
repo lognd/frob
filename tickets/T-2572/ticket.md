@@ -2,7 +2,7 @@
 id: T-2572
 title: 'post-land sweep regression from T-2534: 27 new (rule, file) identit(ies),
   36 finding(s) (COV001, COV003, COV004, DOC001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -111,3 +111,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: T-1983: auto-dropped by the deferred post-land sweep -- every (rule, file) identity this ticket named (COV001 src/frob/app/fmt_runner.py, COV001 src/frob/gates/_refs_schema.py, COV001 src/frob/strata/_multifile.py, COV003 tickets/T-1397, COV003 tickets/T-1526, COV003 tickets/T-1688, COV003 tickets/T-2344, COV003 tickets/T-2348, COV003 tickets/T-2365, COV004 tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004 tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, DOC001 docs/commands/release.md, DOC002 src/frob/gates/_refs_schema.py, DOC005 docs/modules/cli.md, DOC006 tickets/T-2561/ticket.md, DOC006 tickets/T-2570/ticket.md, DOC008 docs/modules/gates.md, DOC011 docs/design/gate-semantics-classification.md, DOCENUM001 docs/modules/gates.md, E501 src/frob/app/ticket_runner/_ledger_mirror.py, E501 src/frob/app/ticket_runner/_verify.py, E501 src/frob/scaffold/project.py, LANG004 src/frob/lang/_support.py, RENDER001 src/frob/release/_cli.py, TEST001 src/frob/strata/_multifile.py, TICK003 tickets.md, TICK004 tickets.md) is absent from a full unscoped `frob check --json` run that completed with no budget deferral and no failed/silent tool stage at T-2100's deferred sweep (T-2521: this drop only fires when that measurement itself completed -- no budget deferral, no failed/silent tool stage -- never on an unmeasured or partial run), i.e. no longer reproduces. If this is wrong (a flaky/incomplete measurement), re-file with `frob check --only <gate>` evidence attached.
