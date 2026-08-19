@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/agent-playbook.md
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,6 +43,16 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_ledger_mirror.py
   reason: narrow the mirror pathspec to stop clobbering done-report.md (second-writer
     fix, option c)
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: doc edge + test coverage for mirror pathspec narrowing
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: doc edge + test coverage for mirror pathspec narrowing
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
