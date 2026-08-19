@@ -166,9 +166,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 188,
-      "reason": "T-2488: ratchet had fallen behind 2 already-landed via-list additions (before=186/committed-ceiling=186 -> after=188): tests/unit/gates/test_rel001_deferred_bump.py, tests/unit/test_waive_audit_runner.py (both T-2482, \"Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests\"). Genuine, already-reviewed sites in an already-landed ticket, not new scope; bumping the stale ceiling to match. Traced via git log -S<file> -- design/frob.strata, not assumed.",
-      "ticket": "T-2488"
+      "accepted_count": 194,
+      "reason": "T-2666: restores exec's per-file via-list on testsuite after T-2503 collapsed it to an ambient (via-less) grant, which collided with T-2224's SYS107 fail-closed policy for exec on a large node (ERROR, unconditional). Count is a FRESH scan (extract_effects over the real testsuite code binding at this ticket's investigation time), not the pre-T-2503 188-site list carried forward stale -- new exec-using test files were added between T-2488 and T-2503/T-2666.",
+      "ticket": "T-2666"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

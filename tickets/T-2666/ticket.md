@@ -2,7 +2,7 @@
 id: T-2666
 title: testsuite node's ambient exec grant (T-2503) collides with SYS107 fail-closed
   policy (T-2224)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -18,7 +18,7 @@ scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
 - tests/unit/strata/test_sys107_via_scope_advisory.py
-- tickets/T-draft-31ef4880/**
+- tickets/T-2676/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,8 +50,8 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-31ef4880/**
-  reason: the new-ticket auto-commit for T-draft-31ef4880 (filed from this ticket
+  glob: tickets/T-2676/**
+  reason: the new-ticket auto-commit for T-2676 (filed from this ticket
     for the fs.read/fs.write follow-up) lands its own ticket dir on this branch; SCOPE001
     flags it otherwise
   actor: logan

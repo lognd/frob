@@ -170,3 +170,43 @@ class TestViaLessLargeNodeAdvisory:
         ]
         capabilities = {v.capability for v in hit if v.node == "widget"}
         assert capabilities == {"exec", "net"}
+
+
+class TestTestsuiteExecViaListRestored:
+    """T-2666: `testsuite`'s `exec` grant collided with T-2224's SYS107
+    fail-closed policy after T-2503 made it ambient (via-less) -- exec is in
+    `SYS107_FAIL_CLOSED_ATOMS`, testsuite binds well over the 20-file
+    threshold, so a via-less `exec` grant there is unconditionally an ERROR.
+    Scans the REAL `design/frob.strata` against the REAL repo tree (same
+    shape as `test_selfconform.py::TestRealGateGreen`, but scoped to just
+    this one node/atom pair so it stays green independent of the separate,
+    already-filed fs.read/fs.write SYS107 severity-filtering gap on the
+    same node -- see this ticket's Done report)."""
+
+    # frob:ticket T-2666
+    # frob:tests src/frob/strata/_selfconform.py::check_self_conformance kind="unit"
+    def test_testsuite_exec_has_no_via_less_sys107_finding(self):
+        """`design/frob.strata`'s real `testsuite` node no longer declares
+        a via-less `exec` grant -- the SYS107 finding for (testsuite, exec)
+        is gone after T-2666 restored the enumerated `via` list."""
+        import pytest
+
+        pytest.importorskip("strata_core")
+        from frob.strata._design_load import load_design_ids
+        from frob.strata._sysdoc import merge_models
+
+        root = Path(__file__).resolve().parents[3]
+        ids = load_design_ids(root, "design")
+        assert not ids.errors, f"design load failed: {ids.errors}"
+        model = merge_models(ids.models)
+
+        result = check_self_conformance(model, root)
+        assert result.is_ok, result.err
+        hit = [
+            v
+            for v in result.danger_ok.violations
+            if v.rule == SYS_VIA_LESS_LARGE_NODE
+            and v.node == "testsuite"
+            and v.capability == "exec"
+        ]
+        assert hit == [], hit
