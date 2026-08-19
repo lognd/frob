@@ -18,6 +18,8 @@ scope:
 - src/frob/testing/_coverage_wait.py
 - src/frob/app/_daemon_proxy.py
 - src/frob/__init__.py
+evidence_scope:
+- tests/unit/test_capability_and_deploy_cycle_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,17 @@ scope_changes:
     (see T-draft-f5281af2) so the declaration is a plain doc comment instead
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 fired because this bug-kind ticket is a documentation-only declaration
+    with no behavior change; recording the frob:no-behavior-change directive per the
+    land error''s own remedy #2'
+  actor: logan
+  at: '2026-08-18'
+  old_length: 3306
+  new_length: 4123
+evidence:
+- tests/unit/test_capability_and_deploy_cycle_regression.py::TestPlantedCycleStillDetected::test_planted_two_node_cycle_is_detected
 designated_repro_test: null
 threat: null
 component: gates
@@ -98,3 +111,5 @@ Positive controls once scoped:
    acceptance criterion this ticket finally satisfies).
 2. The planted-cycle test above still passes.
 3. Full test suites for every touched package pass.
+
+frob:no-behavior-change reason="this ticket declares a live 160-node CYCLE001 import cycle (T-2358 measurement, re-verified and expanded here) rather than structurally fixing it -- the repo owner explicit standing instruction is not to guess which of several package-boundary edges to invert. The only change is a documentation comment at src/frob/__init__.py explaining the decision and pointing at the two follow-up tickets (owner-decision T-draft-4a262fb2, and a separately-scoped CYCLE001-waiver-wiring gap T-draft-f5281af2 found while attempting the normal frob:waive suppression and confirmed inert). No runtime behavior changes; the bound evidence (the T-2358 planted-cycle regression test) is a positive control on the detector itself, not a fix-behavior test, since there is no fix in this change to test."
