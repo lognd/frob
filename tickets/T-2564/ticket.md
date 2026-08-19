@@ -2,7 +2,7 @@
 id: T-2564
 title: a land killed between stage and commit leaves content in the shared index where
   another land can absorb it
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -16,11 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: placeholder; already narrow-scoped to src/frob/tickets/_land.py
   per ticket body, confirming with real narrowing
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'add T-2564 positive-control test: an unrelated land must not absorb a killed
+    lands abandoned staged content'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
