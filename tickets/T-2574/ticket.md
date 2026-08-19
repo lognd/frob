@@ -162,7 +162,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e4b469d05937aa96ecf2fec98b8a2e4e642ba449
 ---
 Add `milestone: str | None = None` to `Ticket` (src/frob/tickets/_models.py)
 and the filing spec, plus a total order over milestone values via semver
