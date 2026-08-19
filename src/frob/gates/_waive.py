@@ -751,6 +751,15 @@ _KNOWN_GATE_RULES = frozenset(
         # all -- WAIVE002 would otherwise flag any waiver naming it as
         # targeting a rule that can never match).
         "EXHAUST003",
+        # frob:ticket T-2543
+        # T-2543: EXHAUST004 (frob.gates._exhaustive_handling's
+        # exhaustive_handling_gate) -- the lower-confidence half of
+        # EXHAUST002, for a named leak whose ONLY source is the resolver's
+        # unresolved-shape subscript rule. Same split, same reason, and the
+        # same one-line allowlist addition T-1402 needed for EXHAUST003:
+        # without it WAIVE002 flags any waiver naming this id as targeting
+        # a rule that can never match.
+        "EXHAUST004",
         # frob:ticket T-0690
         # T-0690: FFI001/FFI002 (frob.gates._ffi_boundary's
         # ffi_boundary_gate) -- the FFI-boundary exception-declaration
@@ -2000,9 +2009,7 @@ def _match_waiver_by_symref(
     T-2438 docstring section for why a miss must be loud, not silent."""
     v_canon = _canonical_symref(violation.symref or "")
     for waiver in candidates:
-        if _canonical_symref(waiver.src) == v_canon and _ceiling_ok(
-            waiver, violation
-        ):
+        if _canonical_symref(waiver.src) == v_canon and _ceiling_ok(waiver, violation):
             return waiver
     for waiver in candidates:
         waiver_file = waiver.src.split("::", 1)[0]

@@ -1800,6 +1800,33 @@ Measured on this repo's own source: EXHAUST002 56 -> 47, and every
 `TypeError`/`AttributeError`/`StopIteration` mention removed from the
 family's messages.
 
+**T-2543 -- the subscript rule names its true type, and carries its own
+provenance.** Two coupled changes, both driven by measurement rather than
+taste (the option table and its costs live on T-2543's attachment):
+
+- An unresolved-shape subscript now contributes `LookupError`, not
+  `KeyError`. Measured on this repo's own source, 30 of the 41 findings
+  the old default produced reach an integer-literal index -- sequence
+  indexing, where the true risk is `IndexError` -- so picking `KeyError`
+  was wrong in both directions at once: it named a type those sites
+  cannot raise, AND it never reported the one they can. `LookupError` is
+  their common parent and is exactly what a model with no type
+  information knows. Measured cost of the rename: zero findings (47
+  before, 47 after) -- the predicted noise from `except KeyError:` no
+  longer discharging a raised `LookupError` never materialises, because
+  the flagged sites are flagged precisely BECAUSE they catch neither.
+- `FunctionMayRaise.subscript_derived` reports which leaked types exist
+  ONLY because of that rule. It is computed by running the whole
+  resolution a second time with the subscript rule suppressed and taking
+  the difference, rather than tagging provenance through the fixpoint --
+  the two passes are literally the same code path, so they cannot drift
+  apart as the resolver grows, and transitivity comes free (a caller that
+  never indexes anything but calls something that does is correctly
+  subscript-derived). A type reachable by both a subscript and some other
+  route is deliberately NOT included: it has a confirmed source.
+  `frob.gates._exhaustive_handling` consumes this to separate EXHAUST002
+  from EXHAUST004 -- see docs/modules/gates.md#exhaust001exhaust002-t-0688.
+
 `LanguageAdapter` is a `typing.Protocol` (`runtime_checkable`): one
 `language` label (a `frob.lang` grammar name) and one method,
 `adapt(tree, source, rel) -> NormalizedModule`, that maps a parsed

@@ -6554,7 +6554,9 @@ class TestSliceSubscriptRaisesNothing:
 
         result = compute_may_raise(module)
         assert result["pkg/mod.py::sliced"].raises == frozenset()
-        assert result["pkg/mod.py::indexed"].raises == frozenset({"KeyError"})
+        # T-2543 (A2): an index contributes `LookupError`, the parent of
+        # both KeyError and IndexError -- see TestSubscriptProvenance.
+        assert result["pkg/mod.py::indexed"].raises == frozenset({"LookupError"})
 
 
 # frob:ticket T-2552
@@ -6668,6 +6670,123 @@ class TestBuiltinRaiserPrecision:
         assert compute_may_raise(module)["pkg/mod.py::f"].raises == frozenset()
 
 
+# frob:ticket T-2543
+class TestSubscriptProvenance:
+    """`FunctionMayRaise.subscript_derived` (T-2543, A2+A4): the resolver
+    names an unresolved-shape subscript's raise `LookupError` -- the type
+    it actually knows -- and reports, exactly, which leaked types exist
+    ONLY because of that rule, so the gate can split by confidence rather
+    than by matching a type name."""
+
+    # frob:ticket T-2543
+    def test_subscript_raises_lookup_error_not_key_error(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # A2: the model cannot tell a mapping index (KeyError) from a
+        # sequence index (IndexError); LookupError is their common parent
+        # and is what it genuinely knows.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedSubscript,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=2,
+            subscripts=[NormalizedSubscript(line=2)],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        result = compute_may_raise(module)["pkg/mod.py::f"]
+        assert result.raises == frozenset({"LookupError"})
+        assert result.subscript_derived == frozenset({"LookupError"})
+
+    # frob:ticket T-2543
+    def test_subscript_provenance_propagates_through_callees(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # A caller that never indexes anything itself, but calls something
+        # that does, is still subscript-derived -- the suppressed pass runs
+        # the same callee fixpoint, so provenance is transitive.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedCall,
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedSubscript,
+        )
+
+        helper = NormalizedFunction(
+            name="helper",
+            line=1,
+            body_line_count=2,
+            subscripts=[NormalizedSubscript(line=2)],
+        )
+        caller = NormalizedFunction(
+            name="caller",
+            line=5,
+            body_line_count=2,
+            calls=[NormalizedCall(callee="helper", line=6)],
+        )
+        module = NormalizedModule(
+            path="pkg/mod.py", language="python", functions=[helper, caller]
+        )
+
+        result = compute_may_raise(module)["pkg/mod.py::caller"]
+        assert result.raises == frozenset({"LookupError"})
+        assert result.subscript_derived == frozenset({"LookupError"})
+
+    # frob:ticket T-2543
+    def test_type_with_a_confirmed_source_is_not_subscript_derived(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        # Reachable by BOTH a subscript and an own raise -> it has a
+        # confirmed non-subscript source, so it stays the higher-confidence
+        # signal and must NOT be demoted.
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedRaise,
+            NormalizedSubscript,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=3,
+            raises=[NormalizedRaise(line=2, exception_type="LookupError")],
+            subscripts=[NormalizedSubscript(line=3)],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        result = compute_may_raise(module)["pkg/mod.py::f"]
+        assert "LookupError" in result.raises
+        assert result.subscript_derived == frozenset()
+
+    # frob:ticket T-2543
+    def test_slice_only_function_has_no_subscript_provenance(self) -> None:
+        # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
+        from frob.arch._mayraise import compute_may_raise
+        from frob.arch._normalized import (
+            NormalizedFunction,
+            NormalizedModule,
+            NormalizedSubscript,
+        )
+
+        f = NormalizedFunction(
+            name="f",
+            line=1,
+            body_line_count=2,
+            subscripts=[NormalizedSubscript(line=2, is_slice=True)],
+        )
+        module = NormalizedModule(path="pkg/mod.py", language="python", functions=[f])
+
+        result = compute_may_raise(module)["pkg/mod.py::f"]
+        assert result.raises == frozenset()
+        assert result.subscript_derived == frozenset()
+
+
 # frob:ticket T-0686
 class TestMayRaiseResolver:
     """`frob.arch._mayraise.compute_may_raise` (T-0686, child 1 of T-0685):
@@ -6683,9 +6802,15 @@ class TestMayRaiseResolver:
         # frob:tests src/frob/arch/_mayraise.py::compute_may_raise kind="unit"
         # Ticket acceptance fixture: f -> g -> h where h raises ValueError,
         # g catches it (so g's own visible raises is empty), and f itself
-        # subscripts a dict (KeyError, the curated builtin-raiser default)
-        # and separately calls g (whose raise is fully discharged) -- f's
-        # own may-raise set must be exactly {KeyError}.
+        # indexes a subscript and separately calls g (whose raise is fully
+        # discharged) -- f's own may-raise set must be exactly the
+        # subscript rule's contribution.
+        # T-2543 (A2): that contribution is now `LookupError`, not
+        # `KeyError`. The model cannot tell a mapping index from a sequence
+        # index without a resolved type, so it names their common parent --
+        # what it genuinely knows -- instead of picking one child and being
+        # wrong in both directions (KeyError claimed at list-indexing
+        # sites, IndexError never reported at all).
         from frob.arch._mayraise import compute_may_raise
         from frob.arch._normalized import (
             NormalizedCall,
@@ -6724,7 +6849,7 @@ class TestMayRaiseResolver:
 
         assert result["pkg/mod.py::h"].raises == frozenset({"ValueError"})
         assert result["pkg/mod.py::g"].raises == frozenset()
-        assert result["pkg/mod.py::f"].raises == frozenset({"KeyError"})
+        assert result["pkg/mod.py::f"].raises == frozenset({"LookupError"})
 
     # frob:ticket T-1636
     def test_qualified_except_clause_discharges_bare_named_leak(self) -> None:

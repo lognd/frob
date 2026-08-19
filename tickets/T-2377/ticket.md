@@ -12,9 +12,6 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
-scope:
-- src/frob/gates/_exhaustive_handling.py
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -116,6 +113,26 @@ scope_changes:
     those need a real change is exactly what T-2543''s Class A decision determines.
     Widen this scope only after that decision lands, so this ticket stays disjoint
     from sibling children of T-0969 in the meantime.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'A4 (the coordinator-authorized rule split) edits the gate module''s violation
+    emission and the gate catalog that documents the new rule id, so both globs move
+    here for the duration of this ticket. They return to T-2377 -- which is blocked_by
+    T-2543 and therefore not being worked in the meantime -- once this lands.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'A4 (the coordinator-authorized rule split) edits the gate module''s violation
+    emission and the gate catalog that documents the new rule id, so both globs move
+    here for the duration of this ticket. They return to T-2377 -- which is blocked_by
+    T-2543 and therefore not being worked in the meantime -- once this lands.
 
     '
   actor: logan

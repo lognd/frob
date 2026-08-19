@@ -2,7 +2,7 @@
 id: T-2543
 title: 'may-raise resolver still mis-types two EXHAUST002 classes: subscript KeyError
   default and int()/float() TypeError'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -15,6 +15,10 @@ scope:
 - src/frob/arch/_mayraise.py
 - tests/unit/test_arch.py
 - docs/modules/arch.md
+- src/frob/gates/_exhaustive_handling.py
+- docs/modules/gates.md
+- src/frob/gates/_waive.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,11 +39,57 @@ scope_changes:
   reason: the may-raise resolver builtin-raiser tables, their tests and docs
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: A2 renames the subscript raise to LookupError; A4 splits subscript-derived
+    findings into their own rule id, which lives in the gate module and must be documented
+    in the gate catalog
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: A2 renames the subscript raise to LookupError; A4 splits subscript-derived
+    findings into their own rule id, which lives in the gate module and must be documented
+    in the gate catalog
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: the known-gate-rule allowlist must learn EXHAUST004 or WAIVE002 flags every
+    waiver naming it -- the same one-line widening T-1402 needed for EXHAUST003
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_gates.py
+  reason: EXHAUST004 emission is a gate-level behaviour and its test belongs beside
+    the other TestExhaustiveHandlingGate cases
+  actor: logan
+  at: '2026-08-18'
 evidence:
 - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
 - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
-designated_repro_test: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+- tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+- tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_provenance_propagates_through_callees
+- tests/unit/test_arch.py::TestSubscriptProvenance::test_type_with_a_confirmed_source_is_not_subscript_derived
+- tests/unit/test_arch.py::TestSubscriptProvenance::test_slice_only_function_has_no_subscript_provenance
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
+- tests/test_gates.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
+designated_repro_test: tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+designated_repro_changes:
+- old_value: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+  new_value: tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
+  reason: 'The previous designation (test_int_does_not_contribute_type_error) belonged
+    to the Class B half, which split out to T-2552 and landed there; it can no longer
+    fail at this ticket''s parent because its fix is already on main. This ticket''s
+    own defect is the subscript rule''s wrong type name and missing provenance, and
+    test_subscript_raises_lookup_error_not_key_error is its genuine repro -- verified
+    FAILED_AT_PARENT against 1ca3884a0, the test-only commit deliberately placed ahead
+    of the fix so a real test-without-fix ref exists.
+
+    '
+  actor: logan
+  at: '2026-08-18'
 attachments:
 - path: T-2543/attachments/01-class-a-options-and-measured-costs-t-2377-survey.md
   caption: Class A options and measured costs (T-2377 survey)
@@ -47,14 +97,17 @@ attachments:
 acceptance:
 - text: given a python function whose only subscript indexes a statically list-shaped
     value, when compute_may_raise resolves it, then the leaked set does not name KeyError
-  evidence: []
+  evidence:
+  - tests/unit/test_arch.py::TestSubscriptProvenance::test_subscript_raises_lookup_error_not_key_error
 - text: given a python function that calls int() on a statically str-typed value,
     when compute_may_raise resolves it, then the leaked set does not name TypeError
   evidence:
   - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
 - text: given this repo's own source, when the exhaustive_handling gate runs unbudgeted
     with the gate cache bypassed, then the EXHAUST002 count is below 25
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestExhaustiveHandlingGate::test_subscript_only_leak_fires_exhaust004_not_exhaust002
+  - tests/test_gates.py::TestExhaustiveHandlingGate::test_confirmed_and_subscript_leaks_split_across_both_rules
 threat: null
 component: null
 anchor: false

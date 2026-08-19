@@ -18440,6 +18440,7 @@ class TestComplianceGate:
 
 
 # frob:ticket T-0688
+# frob:ticket T-2543
 class TestExhaustiveHandlingGate:
     """T-0688 (EXHAUST001/EXHAUST002), narrowed T-1402 (EXHAUST003):
     frob.gates._exhaustive_handling.exhaustive_handling_gate over
@@ -18480,6 +18481,84 @@ class TestExhaustiveHandlingGate:
         assert found
         assert any(v.symref == "mod.py::boundary" for v in found)
         assert any("TypeError" in v.message for v in found)
+
+    # frob:ticket T-2543
+    def test_subscript_only_leak_fires_exhaust004_not_exhaust002(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2543 (A4): a named leak whose ONLY source is the resolver's
+        unresolved-shape subscript rule is the quieter EXHAUST004, not
+        EXHAUST002 -- the same confidence split T-1402 made between
+        EXHAUST001 and EXHAUST003."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def lookup(d, k):\n"
+                "    return d[k]\n"
+                "\n"
+                "def boundary(d, k):\n"
+                "    try:\n"
+                "        return lookup(d, k)\n"
+                "    except OSError:\n"
+                "        return None\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        assert not [
+            v
+            for v in _by_rule(violations, "EXHAUST002")
+            if v.symref.endswith("boundary")
+        ]
+        found = _by_rule(violations, "EXHAUST004")
+        assert any(v.symref == "mod.py::boundary" for v in found)
+        # A2: the resolver names the type it actually knows -- a lookup may
+        # fail -- instead of picking the dict-shaped child.
+        assert any("LookupError" in v.message for v in found)
+
+    # frob:ticket T-2543
+    def test_confirmed_and_subscript_leaks_split_across_both_rules(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2543 (A4): a function leaking BOTH a confirmed type and a
+        subscript-only one gets one finding of each rule, rather than the
+        whole function being demoted because one type is low-confidence."""
+        from frob.gates._exhaustive_handling import exhaustive_handling_gate
+
+        _write(
+            tmp_path,
+            "mod.py",
+            (
+                "def risky():\n"
+                "    raise TypeError('bad')\n"
+                "\n"
+                "def lookup(d, k):\n"
+                "    return d[k]\n"
+                "\n"
+                "def boundary(d, k):\n"
+                "    try:\n"
+                "        risky()\n"
+                "        return lookup(d, k)\n"
+                "    except OSError:\n"
+                "        return None\n"
+            ),
+        )
+        violations = exhaustive_handling_gate(tmp_path)
+        confirmed = [
+            v
+            for v in _by_rule(violations, "EXHAUST002")
+            if v.symref == "mod.py::boundary"
+        ]
+        subscript = [
+            v
+            for v in _by_rule(violations, "EXHAUST004")
+            if v.symref == "mod.py::boundary"
+        ]
+        assert confirmed and "TypeError" in confirmed[0].message
+        assert "LookupError" not in confirmed[0].message
+        assert subscript and "LookupError" in subscript[0].message
 
     # frob:tests \
     # tests/test_gates.py::TestExhaustiveHandlingGate.test_unknown_without_catch_all_fi\

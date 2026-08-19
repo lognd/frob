@@ -228,7 +228,7 @@ _STDLIB_QUALIFIED_RAISERS: dict[str, frozenset[str]] = {
 #: Raised-type name a bare (dict-shaped default, see this module's
 #: docstring) `NormalizedSubscript` event contributes.
 # frob:ticket T-0686
-_SUBSCRIPT_RAISE = "KeyError"
+_SUBSCRIPT_RAISE = "LookupError"
 
 
 # frob:doc docs/modules/arch.md#may-raise-resolver
@@ -239,12 +239,23 @@ class FunctionMayRaise(BaseModel):
     the `frozenset` of exception type names it may raise, `UNKNOWN`
     included when any contributing raise/call could not be statically
     resolved. Never includes `UBIQUITOUS_TIER` members (tracked
-    separately, see this module's docstring)."""
+    separately, see this module's docstring).
+
+    `subscript_derived` (T-2543) is the SUBSET of `raises` that exists
+    ONLY because of the subscript rule (`_SUBSCRIPT_RAISE`), whether from
+    this function's own indexing or inherited transitively from a callee's
+    -- computed by a second, identical fixpoint with that one rule
+    suppressed, so it is exact rather than a guess from the type name.
+    A type reachable by BOTH a subscript and some other route is NOT in
+    here: it has a confirmed non-subscript source and belongs to the
+    higher-confidence signal. Consumed by `frob.gates._exhaustive_
+    handling` to separate EXHAUST002 from EXHAUST004."""
 
     model_config = {}
 
     qualname: str
     raises: frozenset[str]
+    subscript_derived: frozenset[str] = frozenset()
 
 
 # frob:ticket T-0686
@@ -339,7 +350,10 @@ def _nearest_preceding_catch(
 # frob:ticket T-0686
 # frob:ticket T-0689
 def _own_base_raises(
-    func: NormalizedFunction, name_to_func: dict[str, NormalizedFunction]
+    func: NormalizedFunction,
+    name_to_func: dict[str, NormalizedFunction],
+    *,
+    include_subscripts: bool = True,
 ) -> tuple[set[str], set[str], set[str]]:
     """`func`'s own contribution (T-0686, extended T-0689) before
     callee-graph fixpoint, split into two pools whose treatment under
@@ -372,7 +386,9 @@ def _own_base_raises(
     directly, so cycles are handled by the iterative fixpoint, not
     unbounded recursion."""
     direct = _resolve_direct_raises(func)
-    catchable, resolved_callees = _resolve_call_contributions(func, name_to_func)
+    catchable, resolved_callees = _resolve_call_contributions(
+        func, name_to_func, include_subscripts=include_subscripts
+    )
     return direct, catchable, resolved_callees
 
 
@@ -436,7 +452,10 @@ def _default_arg_discharges(bare: str, call: NormalizedCall) -> bool:
 
 # frob:ticket T-0976
 def _resolve_call_contributions(
-    func: NormalizedFunction, name_to_func: dict[str, NormalizedFunction]
+    func: NormalizedFunction,
+    name_to_func: dict[str, NormalizedFunction],
+    *,
+    include_subscripts: bool = True,
 ) -> tuple[set[str], set[str]]:
     """`func`'s subscript and call-site contributions to `catchable`
     (T-0689's priority order: declared_raises, then the qualified-stdlib
@@ -450,7 +469,10 @@ def _resolve_call_contributions(
 
     # T-2539: a SLICE (`xs[a:b]`) clamps out-of-range bounds instead of
     # raising, so it contributes nothing -- only a real index does.
-    if any(not sub.is_slice for sub in func.subscripts):
+    # T-2543: `include_subscripts=False` runs the identical walk with ONLY
+    # this rule suppressed, which is how `compute_may_raise` isolates
+    # subscript-derived leakage exactly (see its own docstring).
+    if include_subscripts and any(not sub.is_slice for sub in func.subscripts):
         catchable.add(_SUBSCRIPT_RAISE)
 
     for call in func.calls:
@@ -525,10 +547,25 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
     exposed = _fixpoint_exposed(
         id_to_func, direct_by_id, catchable_by_id, resolved_calls, name_to_func
     )
+    # T-2543: the identical computation with ONLY the subscript rule
+    # suppressed. Whatever the full pass exposes that this one does not is,
+    # by construction, reachable solely through a subscript -- transitively
+    # included, since the suppressed pass propagates through the same
+    # callee fixpoint. Running the whole thing twice (rather than tagging
+    # provenance through the fixpoint) keeps the two passes literally the
+    # same code path, so they cannot drift apart as the resolver grows.
+    _, _, direct_ns, catchable_ns, resolved_ns = _register_module_functions(
+        module, name_to_func, include_subscripts=False
+    )
+    exposed_ns = _fixpoint_exposed(
+        id_to_func, direct_ns, catchable_ns, resolved_ns, name_to_func
+    )
 
     return {
         qualname_by_id[fid]: FunctionMayRaise(
-            qualname=qualname_by_id[fid], raises=frozenset(exposed[fid])
+            qualname=qualname_by_id[fid],
+            raises=frozenset(exposed[fid]),
+            subscript_derived=frozenset(exposed[fid] - exposed_ns[fid]),
         )
         for fid in id_to_func
     }
@@ -536,7 +573,10 @@ def compute_may_raise(module: NormalizedModule) -> dict[str, FunctionMayRaise]:
 
 # frob:ticket T-0976
 def _register_module_functions(
-    module: NormalizedModule, name_to_func: dict[str, NormalizedFunction]
+    module: NormalizedModule,
+    name_to_func: dict[str, NormalizedFunction],
+    *,
+    include_subscripts: bool = True,
 ) -> tuple[
     dict[int, NormalizedFunction],
     dict[int, str],
@@ -561,7 +601,9 @@ def _register_module_functions(
         fid = id(func)
         id_to_func[fid] = func
         qualname_by_id[fid] = qualname
-        direct, catchable, resolved = _own_base_raises(func, name_to_func)
+        direct, catchable, resolved = _own_base_raises(
+            func, name_to_func, include_subscripts=include_subscripts
+        )
         direct_by_id[fid] = direct
         catchable_by_id[fid] = catchable
         resolved_calls[fid] = resolved

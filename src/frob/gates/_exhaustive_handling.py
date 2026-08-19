@@ -234,13 +234,23 @@ def _function_violations(
     qualname: str,
     leaked: frozenset[str],
     source_lines: list[str],
+    subscript_derived: frozenset[str] = frozenset(),
 ) -> list[Violation]:
     """EXHAUST001/EXHAUST002 for one function (T-0688): `func` with no
     `catches` of its own is not a boundary and is never flagged (this
     gate's module docstring). Otherwise `leaked` (`compute_may_raise`'s
     already-except-subtracted exposed set) is checked for an undischarged
     `UNKNOWN` (EXHAUST001) and any named type absent from `func`'s own
-    `# frob:raises` directives (EXHAUST002)."""
+    `# frob:raises` directives (EXHAUST002).
+
+    T-2543: a named leak whose ONLY source is the resolver's subscript
+    rule (`subscript_derived`, `FunctionMayRaise.subscript_derived`) is
+    reported as EXHAUST004 instead -- same finding, lower confidence tier,
+    exactly the split T-1402 made between EXHAUST001 and EXHAUST003 for
+    the unresolved-callee case. A function can produce BOTH: its
+    confirmed-source leaks stay EXHAUST002 and its subscript-only leaks
+    go to EXHAUST004, rather than the whole function being demoted
+    because one of its types happens to be subscript-derived."""
     violations: list[Violation] = []
     if not func.catches:
         return violations
@@ -286,7 +296,13 @@ def _function_violations(
 
     declared = _declared_propagations(source_lines, func)
     named_leak = {t for t in leaked if t != UNKNOWN} - declared
-    if named_leak:
+    # T-2543: split by CONFIDENCE, not by type name. `subscript_derived`
+    # is computed by the resolver itself (a second identical pass with the
+    # subscript rule suppressed), so this is a provenance test, never a
+    # match on the type text.
+    confirmed_leak = named_leak - subscript_derived
+    subscript_leak = named_leak & subscript_derived
+    if confirmed_leak:
         violations.append(
             Violation(
                 rule="EXHAUST002",
@@ -295,10 +311,32 @@ def _function_violations(
                 line=func.line,
                 message=(
                     f"EXHAUST002: `{qualname}` guards some exceptions but "
-                    f"{sorted(named_leak)} still escape uncaught and "
+                    f"{sorted(confirmed_leak)} still escape uncaught and "
                     "undeclared -- catch them, or declare `# frob:raises "
                     "<Type>` directly above the function to mark intentional "
                     "propagation"
+                ),
+                symref=qualname,
+            )
+        )
+    if subscript_leak:
+        violations.append(
+            Violation(
+                rule="EXHAUST004",
+                severity=Severity.WARN,
+                file=module.path,
+                line=func.line,
+                message=(
+                    f"EXHAUST004: `{qualname}` guards some exceptions but "
+                    f"{sorted(subscript_leak)} may still escape from a "
+                    "subscript this gate's resolver could not shape-resolve "
+                    "-- it cannot tell a mapping index (`KeyError`) from a "
+                    "sequence index (`IndexError`), nor a bounds-checked "
+                    "index from an unchecked one, so this is a lower-"
+                    "confidence signal than EXHAUST002 and never a "
+                    "confirmed unhandled path. Handle the lookup, or "
+                    "declare `# frob:raises LookupError` directly above the "
+                    "function -- do NOT add a catch-all"
                 ),
                 symref=qualname,
             )
@@ -364,7 +402,14 @@ def exhaustive_handling_gate(root: Path) -> tuple[Violation, ...]:
             if fmr is None:
                 continue
             violations.extend(
-                _function_violations(module, func, qualname, fmr.raises, source_lines)
+                _function_violations(
+                    module,
+                    func,
+                    qualname,
+                    fmr.raises,
+                    source_lines,
+                    fmr.subscript_derived,
+                )
             )
 
     _log.info("exhaustive_handling_gate: %d violation(s)", len(violations))

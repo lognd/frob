@@ -863,6 +863,24 @@
       "old_digest": "f8508e0b6a3e1655ccb7d0c7b443639f2171f042bd8e5d11b76755e9a9f16534",
       "reason": "T-1614 waive-audit: T-1883 (the lease this re-ack was blocked on) landed; re-acking the body digest now that nothing blocks it, no behavior change since T-1894's original dict()-wrap fix",
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "ed369ba260514ea8965340dbe677a082146c7eef9a776858c34b015ac2c73766",
+      "old_digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
+      "reason": "Re-read docs/modules/arch.md#may-raise-resolver against compute_may_raise's new body. The documented contract is unchanged -- same fail-closed UNKNOWN default, same per-function exposed-set semantics, same except-subtraction rule. What moved is internal: a second identical fixpoint runs with the subscript rule suppressed so the difference can be reported as FunctionMayRaise.subscript_derived, and the subscript rule's own type is now LookupError rather than KeyError. Both are documented in the same change, in that anchor's new T-2543 block and in docs/modules/gates.md's EXHAUST004 section.\n",
+      "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
+      "old_digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
+      "reason": "Re-read docs/modules/arch.md#may-raise-resolver against compute_may_raise's new body. The documented contract is unchanged -- same fail-closed UNKNOWN default, same per-function exposed-set semantics, same except-subtraction rule. What moved is internal: a second identical fixpoint runs with the subscript rule suppressed so the difference can be reported as FunctionMayRaise.subscript_derived, and the subscript rule's own type is now LookupError rather than KeyError. Both are documented in the same change, in that anchor's new T-2543 block and in docs/modules/gates.md's EXHAUST004 section.\n",
+      "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
     }
   ],
   "entries": [
@@ -1027,7 +1045,7 @@
       "ref": "src/frob/arch/_cpp_mayraise.py::check_cpp_noexcept_violations"
     },
     {
-      "digest": "aa9b26c1c76d9b2ca95b0357908f32434c59d71b07f26412c39b08511c58af04",
+      "digest": "ed369ba260514ea8965340dbe677a082146c7eef9a776858c34b015ac2c73766",
       "facet": "body",
       "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
     },
