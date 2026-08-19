@@ -16,12 +16,12 @@ stats->tickets) would not have collapsed the cycle, which would have been
 a silently-incomplete "fix" had I picked it without measuring first.
 
 Five candidate edges to invert/extract were catalogued (full detail in
-T-draft-4a262fb2's ticket body and the src/frob/__init__.py comment), each
+T-2583's ticket body and the src/frob/__init__.py comment), each
 touching a different package's public surface with no obviously-correct
 choice from the measurement alone. Per the repo owner's standing
 instruction on T-2358 ("if that decision is not obvious, stop and tell me
 rather than guessing"), the direction pick is left to the owner via
-T-draft-4a262fb2 rather than made unilaterally here.
+T-2583 rather than made unilaterally here.
 
 Declaration mechanism: attempted `# frob:waive CYCLE001` at the
 representative file first, per this repo's own documented convention
@@ -32,7 +32,7 @@ finding -- `frob check --only cycle`'s frob-cycle tool never calls into
 the waiver pipeline at all (grepped both src/frob/check/__init__.py and
 _python.py for "waive": zero hits; _apply_waivers only consumes Violation
 objects from the separate frob.gates rule pipeline). Filed this gap
-separately (T-draft-f5281af2, scope src/frob/check/**, src/frob/gates/**
+separately (T-2584, scope src/frob/check/**, src/frob/gates/**
 -- outside T-2363's own scope) rather than fixing it under this ticket.
 Replaced the inert frob:waive with a plain (non-DSL) documentation comment
 so the declaration doesn't misrepresent itself as a working suppression;
@@ -48,9 +48,9 @@ fix-behavior test exists to bind since this ticket declares rather than
 changes cycle-detection outcomes.
 
 Filed:
-- T-draft-4a262fb2 -- owner decision on which of the 5 edges to
+- T-2583 -- owner decision on which of the 5 edges to
   invert/extract to actually break the 160-node cycle.
-- T-draft-f5281af2 -- CYCLE001 findings never pass through the waiver
+- T-2584 -- CYCLE001 findings never pass through the waiver
   pipeline (frob:waive CYCLE001 is silently inert); found while
   attempting the declaration mechanism for this ticket.
 
@@ -69,8 +69,8 @@ ticket's declared scope).
 ### Changed
 ```
  tickets/T-2363/ticket.md           | 17 +++++++++++++-
- tickets/T-draft-4a262fb2/ticket.md | 45 ++++++++++++++++++++++++++++++++++++++
- tickets/T-draft-f5281af2/ticket.md | 38 ++++++++++++++++++++++++++++++++
+ tickets/T-2583/ticket.md | 45 ++++++++++++++++++++++++++++++++++++++
+ tickets/T-2584/ticket.md | 38 ++++++++++++++++++++++++++++++++
  3 files changed, 99 insertions(+), 1 deletion(-)
 ```
 

@@ -2,7 +2,7 @@
 id: T-2363
 title: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision
   on which dependency to invert
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -29,7 +29,7 @@ scope_changes:
   glob: src/frob/__init__.py
   reason: the CYCLE001 declaration comment for the 160-node SCC lives at its representative
     (lowest-sorted) file, src/frob/__init__.py; frob:waive CYCLE001 there does nothing
-    (see T-draft-f5281af2) so the declaration is a plain doc comment instead
+    (see T-2584) so the declaration is a plain doc comment instead
   actor: logan
   at: '2026-08-18'
 body_changes:
@@ -112,4 +112,4 @@ Positive controls once scoped:
 2. The planted-cycle test above still passes.
 3. Full test suites for every touched package pass.
 
-frob:no-behavior-change reason="this ticket declares a live 160-node CYCLE001 import cycle (T-2358 measurement, re-verified and expanded here) rather than structurally fixing it -- the repo owner explicit standing instruction is not to guess which of several package-boundary edges to invert. The only change is a documentation comment at src/frob/__init__.py explaining the decision and pointing at the two follow-up tickets (owner-decision T-draft-4a262fb2, and a separately-scoped CYCLE001-waiver-wiring gap T-draft-f5281af2 found while attempting the normal frob:waive suppression and confirmed inert). No runtime behavior changes; the bound evidence (the T-2358 planted-cycle regression test) is a positive control on the detector itself, not a fix-behavior test, since there is no fix in this change to test."
+frob:no-behavior-change reason="this ticket declares a live 160-node CYCLE001 import cycle (T-2358 measurement, re-verified and expanded here) rather than structurally fixing it -- the repo owner explicit standing instruction is not to guess which of several package-boundary edges to invert. The only change is a documentation comment at src/frob/__init__.py explaining the decision and pointing at the two follow-up tickets (owner-decision T-2583, and a separately-scoped CYCLE001-waiver-wiring gap T-2584 found while attempting the normal frob:waive suppression and confirmed inert). No runtime behavior changes; the bound evidence (the T-2358 planted-cycle regression test) is a positive control on the detector itself, not a fix-behavior test, since there is no fix in this change to test."

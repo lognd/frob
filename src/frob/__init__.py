@@ -13,6 +13,28 @@ dispatch table at import time.
 
 from __future__ import annotations
 
+# T-2363: this file is the representative (lowest-sorted) node of a live,
+# 160-node CYCLE001 import cycle spanning frob.serve/frob.stats/frob.tickets/
+# frob.testing/frob.app. Measured directly (frob.check._python._build_import_
+# graph + frob.cycle.graph.find_cycles against the real src/ tree, not
+# guessed): the cycle is bigger than T-2358's original 5-edge description --
+# serve/_tools.py has a SECOND, independent module-level edge into
+# frob.tickets (`from frob.tickets import doable, load_queue`) that bypasses
+# frob.stats entirely, so cutting only the smallest-looking edge (stats ->
+# tickets) would not collapse it. Untangling this for real means choosing ONE
+# of at least five candidate edges to invert or extract, each a different
+# package's public-surface change (full edge-by-edge breakdown in T-draft-
+# 4a262fb2's ticket body). Per the repo owner's explicit standing instruction
+# ("if that decision is not obvious, stop and tell me rather than guessing; I
+# would rather own that call than have it made implicitly"), that pick is
+# left to T-2583 rather than made unilaterally here.
+#
+# This is a DECLARATION, not a suppression: `# frob:waive CYCLE001` was
+# tried here and does nothing -- `frob check --only cycle`'s frob-cycle tool
+# never consults the waiver pipeline at all (T-2584, filed
+# separately since fixing it means editing frob.check/frob.gates, outside
+# this file's owning ticket's scope). CYCLE001 stays a live, unwaived error
+# on `frob check` until either the wiring gap or the real cycle is fixed.
 from frob.doctor import (
     DerivedArtifactStatus,
     DoctorReport,
