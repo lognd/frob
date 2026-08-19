@@ -23,6 +23,7 @@ scope:
 - src/frob/app/_config_external.py
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_new.py
+- tests/test_tickets.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -123,6 +124,13 @@ scope_changes:
   reason: TicketSpec construction for 'frob ticket new' lives here (_resolve_new_ticket_spec);
     needed to wire cfg.ticket_milestone into TicketSpec(milestone=...), the --milestone
     flag's actual effect
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_tickets.py
+  reason: unit tests for validate_milestone/set_milestone/TicketSpec.milestone need
+    to live where existing sibling Ticket-model tests already live (T-0838's TestUnknownFieldForwardCompat
+    precedent), so evidence and the file write are both accounted for
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
