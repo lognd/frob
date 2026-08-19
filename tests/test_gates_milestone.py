@@ -37,11 +37,17 @@ def _ticket(
     tier: TicketTier = TicketTier.TICKET,
     parent: str | None = None,
     milestone: str | None = None,
+    runs_last: bool = False,
+    blocked_by: tuple[str, ...] = (),
+    runs_last_parallel_safe: bool = False,
 ) -> Ticket:
     """Minimal fixture, same shape `test_tickets_milestone_sort.py::_ticket`
     uses -- kept as its own local copy rather than a shared import, same
     "two unrelated test modules should not couple on a tiny constructor"
-    reasoning that file's own docstring gives."""
+    reasoning that file's own docstring gives. Extended (T-2579) with
+    `runs_last`/`blocked_by`/`runs_last_parallel_safe` for MILE004's own
+    fixtures; every pre-T-2579 call site is unaffected by the new
+    defaults."""
     return Ticket(
         id=ticket_id,
         title=f"ticket {ticket_id}",
@@ -50,7 +56,7 @@ def _ticket(
         origin=Origin.HUMAN,
         created=date(2026, 1, 1),
         priority=Priority.MEDIUM,
-        blocked_by=(),
+        blocked_by=blocked_by,
         parent=parent,
         tier=tier,
         scope=(),
@@ -60,6 +66,8 @@ def _ticket(
         threat=None,
         body="",
         milestone=milestone,
+        runs_last=runs_last,
+        runs_last_parallel_safe=runs_last_parallel_safe,
     )
 
 
@@ -206,3 +214,99 @@ class TestMile003:
         queue = TicketQueue(tickets={t.id: t})
         violations = milestone_gate(tmp_path, queue)
         assert [v.rule for v in violations] == ["MILE003"]
+
+
+class TestMile004:
+    """MILE004 (T-2579 M4b): multiple `runs_last` tickets sharing one
+    milestone must be either ordered (`blocked_by`) or explicitly
+    declared parallel-safe on BOTH sides -- ambiguity is an ERROR.
+    Every fixture declares its own `milestone` directly (DECLARED
+    source) so MILE003 never also fires and confuses these assertions."""
+
+    def test_two_unordered_runs_last_in_one_milestone_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """The base case: two runs_last tickets, same milestone, no
+        ordering and no parallel-safe declaration -- MILE004 must fire."""
+        a = _ticket(ticket_id="T-1", runs_last=True, milestone="1.0.0")
+        b = _ticket(ticket_id="T-2", runs_last=True, milestone="1.0.0")
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert len(violations) == 1
+        assert "T-1" in violations[0].message
+        assert "T-2" in violations[0].message
+
+    def test_blocked_by_edge_resolves_the_pair(self, tmp_path: Path) -> None:
+        """The identical pair, but T-2 now `blocked_by` T-1 -- a real
+        ordering edge must silence MILE004 for this pair."""
+        a = _ticket(ticket_id="T-1", runs_last=True, milestone="1.0.0")
+        b = _ticket(
+            ticket_id="T-2", runs_last=True, milestone="1.0.0", blocked_by=("T-1",)
+        )
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert violations == []
+
+    def test_declared_parallel_safe_resolves_the_pair(self, tmp_path: Path) -> None:
+        """The identical pair, both declared `runs_last_parallel_safe` --
+        an explicit two-sided decision must silence MILE004."""
+        a = _ticket(
+            ticket_id="T-1",
+            runs_last=True,
+            milestone="1.0.0",
+            runs_last_parallel_safe=True,
+        )
+        b = _ticket(
+            ticket_id="T-2",
+            runs_last=True,
+            milestone="1.0.0",
+            runs_last_parallel_safe=True,
+        )
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert violations == []
+
+    def test_one_sided_parallel_safe_still_fires(self, tmp_path: Path) -> None:
+        """A ONE-sided declaration is not a decision -- must still fire.
+        Not one of the ticket's four named controls, but the natural
+        must-fail complement to the two-sided control above."""
+        a = _ticket(
+            ticket_id="T-1",
+            runs_last=True,
+            milestone="1.0.0",
+            runs_last_parallel_safe=True,
+        )
+        b = _ticket(ticket_id="T-2", runs_last=True, milestone="1.0.0")
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert len(violations) == 1
+
+    def test_single_runs_last_ticket_never_fires(self, tmp_path: Path) -> None:
+        """A lone runs_last ticket in a milestone has no sibling to pair
+        with -- MILE004 must never fire."""
+        a = _ticket(ticket_id="T-1", runs_last=True, milestone="1.0.0")
+        other = _ticket(ticket_id="T-2", milestone="1.0.0")
+        queue = TicketQueue(tickets={a.id: a, other.id: other})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert violations == []
+
+    def test_different_milestones_never_pair(self, tmp_path: Path) -> None:
+        """Two runs_last tickets in DIFFERENT milestones never pair --
+        MILE004 is scoped per-milestone, same as `_other_open_tickets`
+        (T-2578)."""
+        a = _ticket(ticket_id="T-1", runs_last=True, milestone="1.0.0")
+        b = _ticket(ticket_id="T-2", runs_last=True, milestone="2.0.0")
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert violations == []
+
+    def test_terminal_sibling_excluded(self, tmp_path: Path) -> None:
+        """A DONE runs_last sibling is excluded from pairing -- it no
+        longer needs ordering against anything."""
+        a = _ticket(ticket_id="T-1", runs_last=True, milestone="1.0.0")
+        b = _ticket(
+            ticket_id="T-2", runs_last=True, milestone="1.0.0", state=TicketState.DONE
+        )
+        queue = TicketQueue(tickets={a.id: a, b.id: b})
+        violations = [v for v in milestone_gate(tmp_path, queue) if v.rule == "MILE004"]
+        assert violations == []

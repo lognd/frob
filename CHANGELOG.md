@@ -105,6 +105,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2576: T-2576: M2: backfill open tickets to 1.0.0, add MILE003 gate
 - T-2577: T-2577: M3: milestone as primary doable sort axis, inheritance, --milestone filter
 - T-2578: T-2578: M4: rescope runs_last to the ticket's own milestone
+- T-2579: T-2579: M4b: MILE004 gate for multiple runs-last tickets in one milestone
 - T-2582: T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
 - T-2584: T-2584: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001 is silently inert
 - T-2585: T-2585: frob check has no durable result: replay an unchanged-tree verdict automatically, never as a flag

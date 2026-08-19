@@ -5823,7 +5823,8 @@ _ALL_GATES = frozenset(
         "sys",
         "secrets",
         "tickets",
-        # T-2576 M2: MILE003 (frob.gates._milestone.milestone_gate).
+        # T-2576 M2: MILE003. T-2579 M4b: MILE004, added to the same
+        # module/stage (frob.gates._milestone.milestone_gate).
         "milestone",
         "archgate",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
@@ -6261,7 +6262,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "tickets",
     # T-2576 M2: MILE003, immediately after "tickets" -- same queue-wide
     # ledger-hygiene concern, split into its own gate module rather than
-    # a fourth stage crowded onto "tickets".
+    # a fourth stage crowded onto "tickets". T-2579 M4b: MILE004 joined
+    # the same module/stage.
     "milestone",
     "archgate",
     "pii_structural",
@@ -6709,6 +6711,8 @@ def _build_thread_jobs(
         # `[tickets].default_milestone` config lookup resolves against
         # whatever root the queue itself was loaded from, matching
         # `_dispatch_stale_thresholds`'s own `frob.toml` lookup shape.
+        # T-2579 M4b: MILE004 (multiple unordered `runs_last` tickets in
+        # one milestone) shares this same module/stage/call site.
         "milestone": lambda: milestone_gate(st.root, st.queue),
         # T-0788: COMPLIANCE005, always against repo_root (never the
         # possibly-scoped st.root) -- docs/design/registry/compliance.yaml

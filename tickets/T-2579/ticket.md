@@ -1,7 +1,7 @@
 ---
 id: T-2579
 title: 'M4b: MILE004 gate for multiple runs-last tickets in one milestone'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -37,6 +37,14 @@ scope_changes:
   reason: MILE004 gate tests live in this pre-existing test module
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_gates_milestone.py::TestMile004::test_two_unordered_runs_last_in_one_milestone_fires
+- tests/test_gates_milestone.py::TestMile004::test_blocked_by_edge_resolves_the_pair
+- tests/test_gates_milestone.py::TestMile004::test_declared_parallel_safe_resolves_the_pair
+- tests/test_gates_milestone.py::TestMile004::test_one_sided_parallel_safe_still_fires
+- tests/test_gates_milestone.py::TestMile004::test_single_runs_last_ticket_never_fires
+- tests/test_gates_milestone.py::TestMile004::test_different_milestones_never_pair
+- tests/test_gates_milestone.py::TestMile004::test_terminal_sibling_excluded
 designated_repro_test: null
 threat: null
 component: null

@@ -1490,8 +1490,8 @@ def _omit_empty_collections(data: Mapping[str, object]) -> dict[str, object]:
 # evidence_changes field documented. EvidenceChangeEntry/evidence_changes are \
 # documented in full in this ticket's own docs home instead (docs/modules/gates.md's \
 # 'TEST018 (T-1733)' section) -- but the promised data-models entry was never added \
-# even after T-1739's lease cleared; filed T-2620 to add it and remove this \
-# waiver once it lands (T-2612 lease-premise audit)"
+# even after T-1739's lease cleared; filed T-2620 to add it and remove this waiver \
+# once it lands (T-2612 lease-premise audit)"
 class Ticket(BaseModel):
     """One ticket: frontmatter fields plus the verbatim markdown body.
 
@@ -1565,6 +1565,28 @@ class Ticket(BaseModel):
     # starts to matter. Settable via `frob ticket new --milestone` or
     # `frob ticket milestone <id> <value>` (`set_milestone`).
     milestone: str | None = None
+    # frob:ticket T-2579
+    # T-2579 (M4b, MILE004): when TWO OR MORE `runs_last` tickets share one
+    # effective milestone, ordering between them must be either a real
+    # `blocked_by` edge or an EXPLICIT parallel-safe declaration -- ambiguity
+    # is an ERROR (MILE004), never a silent race. This is that declaration:
+    # `True` means "this ticket is safe to run in parallel with its
+    # runs-last siblings in the same milestone" (a per-ticket claim, both
+    # sides of an unordered pair must declare it for MILE004 to treat the
+    # pair as resolved -- `_milestone.py`'s own pairwise check). Rejected
+    # alternative (recorded in T-2579's own body, do not re-propose): an
+    # integer RANK on `runs_last` instead of a bool -- two tickets at equal
+    # rank recreate the identical ambiguity while looking decided. This
+    # follows the SAME bool+reason declaration shape `scope_breadth_ack`/
+    # `scope_breadth_ack_reason` already established for TICK009, not a new
+    # invented shape.
+    runs_last_parallel_safe: bool = False
+    # frob:ticket T-2579
+    # required human-readable justification for `runs_last_parallel_safe=
+    # True`, `None` when it is False -- same non-blank requirement
+    # `scope_breadth_ack_reason`/`ScopeBreadthAckReasonMissing` already
+    # enforce for their own bool+reason pair.
+    runs_last_parallel_safe_reason: str | None = None
     scope: tuple[str, ...] = ()
     # frob:ticket T-1944
     # paths that cover only PRE-EXISTING evidence this ticket cites --
@@ -1864,6 +1886,18 @@ class TicketSpec(BaseModel):
     # reasoning as `scope_breadth_ack_reason`'s own plain function-level
     # guard).
     milestone: str | None = None
+    # frob:ticket T-2579
+    # see `Ticket.runs_last_parallel_safe` -- settable at filing time via
+    # `frob ticket new --runs-last-parallel-safe --runs-last-parallel-
+    # safe-reason TEXT`; validated (non-blank reason iff True) by
+    # `_validate_new_ticket_spec`, same function-level-guard pattern
+    # `scope_breadth_ack_reason` already uses, not a field_validator.
+    runs_last_parallel_safe: bool = False
+    # frob:ticket T-2579
+    # required justification for `runs_last_parallel_safe=True`, `None`
+    # when it is False -- same non-blank requirement `scope_breadth_ack_
+    # reason` already enforces for its own bool+reason pair.
+    runs_last_parallel_safe_reason: str | None = None
     # given/when/then acceptance criteria, each bound to evidence id(s)
     # (T-0572); see `Ticket.acceptance`
     acceptance: tuple[AcceptanceCriterion, ...] = ()
@@ -1984,8 +2018,8 @@ class AttachmentSource(BaseModel):
 # EvidenceReplaceReasonMissing variant documented. The new variant is documented in \
 # full in this ticket's own docs home instead (docs/modules/gates.md's 'TEST018 \
 # (T-1733)' section) -- but the promised error-types entry was never added even after \
-# T-1739's lease cleared; filed T-2620 to add it and remove this waiver once \
-# it lands (T-2612 lease-premise audit)"
+# T-1739's lease cleared; filed T-2620 to add it and remove this waiver once it lands \
+# (T-2612 lease-premise audit)"
 class TicketError(ErrorSet):
     """Fallible outcomes of frob.tickets queue/mutation operations."""
 
@@ -2024,6 +2058,10 @@ class TicketError(ErrorSet):
     ScopeChangeReasonMissing = "scope change requires a non-empty --reason"
     # frob:ticket T-1484
     ScopeBreadthAckReasonMissing = "scope-ack requires a non-empty --reason"
+    # frob:ticket T-2579
+    RunsLastParallelSafeReasonMissing = (
+        "runs_last_parallel_safe=True requires a non-empty reason"
+    )
     # frob:ticket T-2394
     NoScopeDeclaredReasonMissing = "--declare-no-scope requires a non-empty --reason"
     # frob:ticket T-2394

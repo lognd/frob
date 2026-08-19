@@ -507,6 +507,11 @@ _KNOWN_GATE_RULES = frozenset(
         # the repo's configured `[tickets].default_milestone`) cannot be
         # resolved.
         "MILE003",
+        # T-2579: MILE004 (frob.gates._milestone.milestone_gate, same
+        # module) -- two or more `runs_last` tickets share one effective
+        # milestone with no ordering between them (neither a `blocked_by`
+        # edge nor a two-sided `runs_last_parallel_safe` declaration).
+        "MILE004",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left
