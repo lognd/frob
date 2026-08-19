@@ -2,7 +2,7 @@
 id: T-2611
 title: core.autocrlf=true puts CRLF in every source file, silently breaking any length
   or byte-level measurement
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
