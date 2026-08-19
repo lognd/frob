@@ -32,6 +32,13 @@ body_changes:
   at: '2026-08-19'
   old_length: 2673
   new_length: 5191
+- mode: append
+  reason: 're-scope: candidate 2 alone cannot clear the SCC; corrected measurement
+    shows candidates 1+3+4(+5) form an independent cycle plus a sixth unlisted edge'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 5191
+  new_length: 7925
 designated_repro_test: null
 threat: null
 component: null
@@ -105,3 +112,59 @@ take the queue from its caller rather than loading it itself.
   `stats/__init__.py` makes CYCLE001 fire again, proving the detector is
   still watching this edge rather than the waiver having been what
   silenced it
+
+
+## COORDINATOR RE-SCOPE (2026-08-19): acceptance narrowed to what candidate 2 can deliver
+
+The implementing agent broke candidate 2 as the owner directed, then
+re-measured and found the ticket's own contingency text was wrong.
+
+**Measured after the candidate-2 fix:** `frob.stats` is confirmed GONE from
+the SCC, verified on all three path shapes (`frob cycle src/frob`,
+`frob cycle src`, `frob cycle .` agree -- T-2588 parity holds). But the
+160-node SCC IS STILL PRESENT, closed by edges that never routed through
+`frob.stats` at all:
+
+- candidate 1: `serve/_tools.py:24` top-level `from frob.tickets import
+  doable, load_queue` -- still live
+- candidate 3: `tickets/_land.py` function-local `from frob.testing._models
+  import CollectedTests` -- still live
+- candidate 4: `testing/_coverage_wait.py:163` function-local `from
+  frob.app._daemon_proxy import ...` -- still live
+- candidate 5: `app/_daemon_proxy.py` function-local `from frob.serve
+  import ...` -- still live, explicitly out of scope
+- **a sixth edge the original analysis missed entirely**:
+  `serve/_tools.py:606` function-local `from frob.testing import ...`
+
+So the ticket's assumption that candidate 5 alone might be the holdout is
+FALSE. Candidates 1+3+4(+5) form a cycle independent of `frob.stats`.
+Breaking any single edge does not collapse this SCC.
+
+### Acceptance criteria, revised
+
+This ticket now closes on the candidate-2 work alone:
+
+- `frob.stats` no longer appears in the SCC's node list (verified)
+- `collect()` takes a caller-injected queue; `TicketQueue`/`TicketState`
+  retargeted to `frob.tickets._models`
+- every `collect()` caller updated in the same change
+- both-directions controls: injected-queue result identical to the previous
+  direct-load result, and a deliberately re-added `from frob.tickets import
+  load_queue` in `stats/__init__.py` makes CYCLE001 fire on that edge
+
+The original criteria "frob check --only cycle CLEAN on this SCC" and
+"remove the frob:waive CYCLE001 at src/frob/__init__.py" are REMOVED from
+this ticket. Candidate 2 provably cannot deliver them, and the waiver is
+still TRUE while the cycle is live -- removing it would leave a real
+finding unaccounted for.
+
+### Why the remaining edges were not taken
+
+The owner named candidate 2 and only candidate 2. Candidates 1, 3 and 4
+are each a different package's public surface and each is a separate
+architectural decision -- that is precisely why this was a decision ticket.
+Being inside the declared scope globs permits editing those files for the
+CHOSEN fix; it is not authorisation to make three further design calls.
+The implementing agent asked rather than proceeding, which was correct.
+
+A follow-up owner-decision ticket carries the corrected picture.
