@@ -15,6 +15,7 @@ milestone: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - docs/modules/tickets-lifecycle.md
+- tests/unit/test_ticket_runner_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: T-2603 public symbols moved into _ledger_mirror.py doc into this file per
     COV/SCOPE002
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_mirror.py
+  reason: T-2603 adds new positive-control tests for the unified strategy table
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
