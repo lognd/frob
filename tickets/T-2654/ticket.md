@@ -1,7 +1,7 @@
 ---
 id: T-2654
 title: 'fleet_status: flag an in-progress ticket that is also blocked_by an open blocker'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

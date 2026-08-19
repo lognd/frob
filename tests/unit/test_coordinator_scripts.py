@@ -335,6 +335,73 @@ class TestInProgressTicketScopeLeases:
         assert fleet_status.in_progress_ticket_scope_leases() == []
 
 
+# frob:ticket T-2654
+class TestBlockedInProgressLeases:
+    """`fleet_status.blocked_in_progress_leases` (T-2654): an in-progress
+    ticket that is also `blocked_by` an open blocker cannot proceed, so
+    any lease it holds is pure waste -- the T-2377 shape, detectable
+    without waiting for its worktree to vanish."""
+
+    # frob:ticket T-2654
+    def test_in_progress_with_open_blocker_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The positive control: in-progress + blocked_by a still-open
+        (queued) blocker is flagged, naming the open blocker id."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-2568", state="queued")
+        _write_ticket(
+            tickets_dir, "T-2377", state="in-progress", blocked_by=("T-2568",)
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        entries = fleet_status.blocked_in_progress_leases()
+        assert entries == [
+            {"ticket_id": "T-2377", "open_blockers": ["T-2568"]}
+        ]
+
+    # frob:ticket T-2654
+    def test_in_progress_with_no_blockers_not_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Negative control: an in-progress ticket with NO `blocked_by`
+        at all is not flagged -- without this, every in-progress ticket
+        would read as flagged."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-0010", state="in-progress")
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        assert fleet_status.blocked_in_progress_leases() == []
+
+    # frob:ticket T-2654
+    def test_in_progress_with_only_terminal_blockers_not_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Negative control: an in-progress ticket whose only blocker is
+        `done` is not flagged -- a resolved blocker must not read as
+        still holding the lease hostage."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-0011", state="done")
+        _write_ticket(
+            tickets_dir, "T-0012", state="in-progress", blocked_by=("T-0011",)
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        assert fleet_status.blocked_in_progress_leases() == []
+
+    # frob:ticket T-2654
+    def test_queued_ticket_with_open_blocker_not_flagged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Negative control: a QUEUED ticket blocked by an open blocker
+        is never flagged -- a lease binds only at in-progress (T-0453),
+        so a queued-and-blocked ticket holds no lease to waste."""
+        tickets_dir = tmp_path / "tickets"
+        _write_ticket(tickets_dir, "T-0013", state="queued")
+        _write_ticket(
+            tickets_dir, "T-0014", state="queued", blocked_by=("T-0013",)
+        )
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        assert fleet_status.blocked_in_progress_leases() == []
+
+
 class TestWorktrees:
     """`fleet_status.worktrees`."""
 
@@ -2737,6 +2804,7 @@ class TestPrintTicketReadiness:
 
 
 # frob:ticket T-2172
+# frob:ticket T-2654
 class TestPrintFleetReport:
     """`fleet_status._print_fleet_report` (ARCH001/ARCH103 split,
     T-2172)."""
@@ -2767,6 +2835,7 @@ class TestPrintFleetReport:
         assert "DIRTY" in out and " M x.py" in out
 
     # frob:ticket T-2222
+    # frob:ticket T-2654
     def test_leases_section_shows_classification_per_lease(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -2785,12 +2854,14 @@ class TestPrintFleetReport:
         monkeypatch.setattr(
             fleet_status, "in_progress_ticket_scope_leases", lambda: []
         )
+        monkeypatch.setattr(fleet_status, "blocked_in_progress_leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         fleet_status._print_fleet_report([], idle_seconds=1200)
         out = capsys.readouterr().out
-        assert "LEASES 1 (0 live, 0 leaked)" in out
+        assert "LEASES 1 (0 live, 0 leaked, 0 blocked-open)" in out
         assert "T-2114 -> exist  [reclaimable]" in out
 
+    # frob:ticket T-2654
     def test_leases_section_reports_ledger_leak_missing_from_held(
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -2814,11 +2885,44 @@ class TestPrintFleetReport:
                 }
             ],
         )
+        monkeypatch.setattr(fleet_status, "blocked_in_progress_leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         fleet_status._print_fleet_report([], idle_seconds=1200)
         out = capsys.readouterr().out
-        assert "LEASES 1 (0 live, 1 leaked)" in out
+        assert "LEASES 1 (0 live, 1 leaked, 0 blocked-open)" in out
         assert "T-2377 -> <no worktree>  [LEAK]" in out
+
+    # frob:ticket T-2654
+    def test_leases_section_flags_blocked_open_lease(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2654: a held lease for an in-progress ticket whose
+        `blocked_by` still names an open blocker gets a distinct
+        `[BLOCKED-OPEN: ...]` suffix, and the header's `blocked-open`
+        count reflects it -- the T-2377 shape, this time WITH a live
+        lease held so it is not also a LEAK."""
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(
+            fleet_status,
+            "leases",
+            lambda: [{"ticket_id": "T-2377", "worktree": "/w/t-2377"}],
+        )
+        monkeypatch.setattr(
+            fleet_status, "in_progress_ticket_scope_leases", lambda: []
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "blocked_in_progress_leases",
+            lambda: [{"ticket_id": "T-2377", "open_blockers": ["T-2568"]}],
+        )
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        fleet_status._print_fleet_report([], idle_seconds=1200)
+        out = capsys.readouterr().out
+        assert "LEASES 1 (0 live, 0 leaked, 1 blocked-open)" in out
+        assert "T-2377 -> t-2377" in out
+        assert "[BLOCKED-OPEN: T-2568]" in out
 
 
 def _write_ticket(

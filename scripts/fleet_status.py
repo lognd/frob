@@ -188,8 +188,40 @@ def leases() -> list[dict]:
     return records
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_iter_in_progress_ticket_frontmatter
+# frob:ticket T-2654
+def _iter_in_progress_ticket_frontmatter():
+    """Yield `(ticket_dir, parsed_frontmatter)` for every `state:
+    in-progress` ticket under `TICKETS_DIR` (skipping `archive/`) -- the
+    shared directory-walk-plus-parse loop `in_progress_ticket_scope_
+    leases` and `blocked_in_progress_leases` (T-2654) both need, split
+    out (DUP001: the two used to duplicate this loop at 95% similarity)
+    so a future third consumer of 'every in-progress ticket's own
+    frontmatter' does not have to duplicate it a second time. An
+    unreadable `ticket.md` is silently skipped (matches both callers'
+    prior behavior) rather than raising -- a single corrupt ledger file
+    must not take down the whole fleet-status report."""
+    if not TICKETS_DIR.is_dir():
+        return
+    for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
+        if ticket_dir.name == "archive":
+            continue
+        ledger_path = ticket_dir / "ticket.md"
+        if not ledger_path.is_file():
+            continue
+        try:
+            text = ledger_path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        parsed = _parse_ticket_frontmatter_text(text)
+        if parsed.get("state") != "in-progress":
+            continue
+        yield ticket_dir, parsed
+
+
 # frob:doc docs/guides/coordinator-scripts.md#in_progress_ticket_scope_leases
 # frob:ticket T-2651
+# frob:ticket T-2654
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_no_workt\
 # ree_flagged_as_leak
@@ -236,22 +268,8 @@ def in_progress_ticket_scope_leases() -> list[dict]:
     same underlying fact (in-progress ticket + declared scope) the
     collision check already reads, once per ticket, linear in the number
     of in-progress tickets."""
-    if not TICKETS_DIR.is_dir():
-        return []
     entries: list[dict] = []
-    for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
-        if ticket_dir.name == "archive":
-            continue
-        ledger_path = ticket_dir / "ticket.md"
-        if not ledger_path.is_file():
-            continue
-        try:
-            text = ledger_path.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        parsed = _parse_ticket_frontmatter_text(text)
-        if parsed.get("state") != "in-progress":
-            continue
+    for ticket_dir, parsed in _iter_in_progress_ticket_frontmatter():
         ticket_id = ticket_dir.name
         scope = parsed.get("scope", [])
         worktree = _resolve_worktree_for_in_progress_ticket(ticket_id, scope)
@@ -261,6 +279,67 @@ def in_progress_ticket_scope_leases() -> list[dict]:
                 "scope": scope,
                 "worktree": worktree,
                 "leaked": worktree is None,
+            }
+        )
+    return entries
+
+
+# frob:doc docs/guides/coordinator-scripts.md#blocked_in_progress_leases
+# frob:ticket T-2654
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases.test_in_progress_\
+# with_open_blocker_flagged
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases.test_in_progress_\
+# with_no_blockers_not_flagged
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases.test_in_progress_\
+# with_only_terminal_blockers_not_flagged
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestBlockedInProgressLeases.test_queued_ticke\
+# t_with_open_blocker_not_flagged
+def blocked_in_progress_leases() -> list[dict]:
+    """T-2654: every `state: in-progress` ticket under `TICKETS_DIR` whose
+    `blocked_by` still names an OPEN blocker -- distinct from (and cheaper
+    to detect than) the no-worktree leak `in_progress_ticket_scope_leases`
+    (T-2651) already reports, since this does not depend on worktree
+    liveness at all. A ticket that is both `in-progress` and blocked by an
+    open blocker cannot proceed by definition (a blocker gate refuses its
+    own close/land until the blocker resolves) -- any lease it holds is
+    pure waste for as long as that holds. This is exactly the T-2377
+    shape T-2651's own body flagged as a related-but-distinct check: that
+    ticket sat `in-progress`, `blocked_by=[T-2568]` (still `queued`), for
+    nine hours, holding a live write lease on `docs/modules/gates.md` the
+    entire time -- discoverable here without ever needing its worktree to
+    be removed first.
+
+    Shares `in_progress_ticket_scope_leases`'s own ledger-read loop via
+    `_iter_in_progress_ticket_frontmatter` (DUP001, T-2654: the two used
+    to duplicate this walk directly at 95% similarity) plus
+    `_classify_blockers_local` (T-2449, the local-disk blocker classifier
+    already used by `_rotting_entry`) so 'still open' here means the same
+    thing it means everywhere else in this script: a blocker whose own
+    local ledger state exists and is not `done`/`dropped`. An UNRESOLVED
+    blocker (id does not resolve on local disk at all) is deliberately
+    NOT flagged here -- that is a different failure mode (a typo or a
+    blocker filed but never a real ticket) with its own detector
+    (`TICK004`-adjacent rot checks); conflating it here would blur two
+    distinct fix actions into one line. `state: queued`/`planned`
+    tickets are never flagged regardless of their own `blocked_by` -- a
+    lease binds only at `in-progress` (T-0453), so a queued ticket
+    blocked by something open holds no lease yet and has nothing to
+    flag."""
+    entries: list[dict] = []
+    for ticket_dir, parsed in _iter_in_progress_ticket_frontmatter():
+        open_blockers, _unresolved = _classify_blockers_local(
+            parsed.get("blocked_by", []), TICKETS_DIR
+        )
+        if not open_blockers:
+            continue
+        entries.append(
+            {
+                "ticket_id": ticket_dir.name,
+                "open_blockers": open_blockers,
             }
         )
     return entries
@@ -3164,6 +3243,7 @@ def _print_verify_queue_line() -> None:
 
 # frob:ticket T-2182
 # frob:ticket T-2222
+# frob:ticket T-2654
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_prints_all_four_sec\
 # tions
@@ -3199,7 +3279,19 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     T-2126 added the VERIFY QUEUE line right after QUARANTINE, same
     reasoning: queue depth/age silently changes land cost the same way
     a raised quarantine does, and belongs where a coordinator already
-    looks before dispatch."""
+    looks before dispatch.
+
+    T-2654: the LEASES section itself is now printed by
+    `_print_leases_section` (pulled out the same way
+    `_print_worktrees_section` already was, to keep this function's own
+    line count from growing every time LEASES gains a new signal) -- its
+    header also reports a `blocked-open` count
+    (`blocked_in_progress_leases`), and any row for an in-progress
+    ticket whose own `blocked_by` still names an open blocker gets a
+    `[BLOCKED-OPEN: ...]` suffix -- distinct from the `LEAK` tag, since
+    this does not depend on worktree liveness at all: a lease held by a
+    ticket that cannot proceed (blocked, in-progress) is pure waste
+    whether or not its worktree is still findable."""
     print(f"ROOT {'DIRTY -- do not dispatch' if dirt else 'CLEAN'}")
     for line in dirt:
         print(f"  {line}")
@@ -3224,6 +3316,29 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
 
     _print_verify_queue_line()
 
+    _print_leases_section()
+
+    _print_worktrees_section(idle_seconds)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_leases_report
+# frob:ticket T-2654
+def _leases_report() -> tuple[str, list[str]]:
+    """Compute the `LEASES` section's header line and row strings --
+    the gather half of the ARCH001/ARCH103 `_print_fleet_report` split
+    (T-2654), kept separate from `_print_leases_section`'s own I/O so
+    the decision-point-heavy combination logic and the printing loop
+    are each a single, simple concern rather than one function mixing
+    I/O, string-formatting, AND every decision point (ARCH103's own
+    complaint when this lived in one function). Combines three sources
+    into one row set: `leases()` (`held`, file-based),
+    `in_progress_ticket_scope_leases()` (T-2651's ledger-read fallback
+    for a lease whose file was pruned -- `missing`, `LEAK`-tagged when
+    `leaked`), and `blocked_in_progress_leases()` (T-2654: an
+    in-progress ticket whose `blocked_by` still names an open blocker --
+    `BLOCKED-OPEN`-tagged, independent of whether a worktree/lease-file
+    can be found at all, since a blocked ticket's lease is pure waste
+    regardless)."""
     held = leases()
     live_count = live_lease_count(held)
     held_ids = {record.get("ticket_id") for record in held}
@@ -3235,20 +3350,69 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     ledger_leases = in_progress_ticket_scope_leases()
     missing = [e for e in ledger_leases if e["ticket_id"] not in held_ids]
     leaked = [e for e in missing if e["leaked"]]
-    print(
+    # T-2654: separate from the no-worktree LEAK signature above -- an
+    # in-progress ticket whose own blockers are still open cannot proceed
+    # regardless of whether its worktree is still findable, so any lease
+    # it holds is pure waste too.
+    blocked_by_id = {
+        entry["ticket_id"]: entry["open_blockers"]
+        for entry in blocked_in_progress_leases()
+    }
+    header = (
         f"LEASES {len(held) + len(missing)} ({live_count} live, "
-        f"{len(leaked)} leaked)"
+        f"{len(leaked)} leaked, {len(blocked_by_id)} blocked-open)"
     )
-    for record in held:
-        name = Path(record.get("worktree", "?")).name
-        classification = lease_classification(record)
-        print(f"  {record.get('ticket_id')} -> {name}  [{classification}]")
-    for entry in missing:
-        name = entry["worktree"] or "<no worktree>"
-        classification = "LEAK" if entry["leaked"] else "live"
-        print(f"  {entry['ticket_id']} -> {name}  [{classification}]")
+    rows = [
+        _lease_row(
+            str(record.get("ticket_id")),
+            Path(record.get("worktree", "?")).name,
+            lease_classification(record),
+            blocked_by_id,
+        )
+        for record in held
+    ] + [
+        _lease_row(
+            entry["ticket_id"],
+            entry["worktree"] or "<no worktree>",
+            "LEAK" if entry["leaked"] else "live",
+            blocked_by_id,
+        )
+        for entry in missing
+    ]
+    return header, rows
 
-    _print_worktrees_section(idle_seconds)
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_leases_section
+# frob:ticket T-2654
+def _print_leases_section() -> None:
+    """Print the `LEASES` section: `_print_fleet_report`'s own LEASES
+    block, pulled out (ARCH001/ARCH103, T-2654) alongside the existing
+    `_print_worktrees_section` split so the parent function's line count
+    does not grow every time this section gains a new signal -- T-2654's
+    own `blocked_in_progress_leases` addition is exactly that kind of
+    growth. All the gathering/combination logic lives in `_leases_report`
+    above; this is pure I/O over its result."""
+    header, rows = _leases_report()
+    print(header)
+    for row in rows:
+        print(row)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_lease_row
+# frob:ticket T-2654
+def _lease_row(
+    ticket_id: str, worktree_name: str, classification: str, blocked_by_id: dict
+) -> str:
+    """One `LEASES` section row: `"  T-#### -> name  [classification]"`,
+    plus a trailing `[BLOCKED-OPEN: ...]` suffix (T-2654) when
+    `ticket_id` is a key in `blocked_by_id` (`blocked_in_progress_
+    leases()`'s own `{ticket_id: open_blockers}` map) -- shared by both
+    the held-lease and ledger-missing loops in `_print_leases_section` so
+    the two loops do not each duplicate the same suffix logic."""
+    line = f"  {ticket_id} -> {worktree_name}  [{classification}]"
+    if ticket_id in blocked_by_id:
+        line += f"  [BLOCKED-OPEN: {', '.join(blocked_by_id[ticket_id])}]"
+    return line
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_worktrees_section

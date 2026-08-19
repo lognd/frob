@@ -154,6 +154,16 @@ Returns every held cross-worktree lease record under `.git/frob-leases/`,
 parsed from its JSON file (an unreadable/malformed lease file is reported
 with `worktree: "<unreadable>"` rather than raising).
 
+### `_iter_in_progress_ticket_frontmatter`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_iter_in_progress_ticket_frontmatter -->
+
+T-2654 (DUP001 fix). Yields `(ticket_dir, parsed_frontmatter)` for every
+`state: in-progress` ticket under `TICKETS_DIR` -- the directory-walk-
+plus-parse loop `in_progress_ticket_scope_leases` and
+`blocked_in_progress_leases` both need, extracted after DUP001 flagged
+the two duplicating it at 95% similarity.
+
 ### `in_progress_ticket_scope_leases`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#in_progress_ticket_scope_leases -->
@@ -180,6 +190,25 @@ the recorded lease file nor a scope-correlated worktree scan can name
 one -- the exact "in-progress with no worktree anywhere" shape that was
 previously invisible to a fleet-status glance. A `queued` ticket never
 appears here; a lease binds only at `in-progress`.
+
+### `blocked_in_progress_leases`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#blocked_in_progress_leases -->
+
+T-2654. Every `state: in-progress` ticket whose `blocked_by` still names
+an OPEN blocker (not `done`/`dropped` on local disk), as
+`{"ticket_id", "open_blockers"}`. Distinct from (and cheaper to detect
+than) `in_progress_ticket_scope_leases`'s no-worktree leak above -- this
+does not depend on worktree liveness at all. An in-progress ticket
+blocked by an open blocker cannot proceed by definition, so any lease it
+holds is pure waste: this is the exact T-2377 shape (`in-progress`,
+`blocked_by=[T-2568]` still queued, nine hours, a live write lease on
+`docs/modules/gates.md` the whole time), detectable here without ever
+waiting for its worktree to be removed. An UNRESOLVED blocker (id
+resolves nowhere on local disk) is deliberately not flagged here -- a
+different failure mode with its own rot-detector. A `queued`/`planned`
+ticket is never flagged regardless of its own `blocked_by`; a lease
+binds only at `in-progress` (T-0453).
 
 ### `_resolve_worktree_for_in_progress_ticket`
 
@@ -1197,7 +1226,42 @@ QUARANTINE; T-2182 added TICKET ROT (`_print_ticket_rot`) right after
 LANDS. T-2222: the LEASES section header now shows the live count
 alongside the raw total, and each row prints its own `lease_
 classification` verdict (`live`/`reclaimable`/`root-resident`) next to
-the ticket id and worktree name.
+the ticket id and worktree name. T-2654: the LEASES section is now
+printed by `_print_leases_section` (see below); its header also shows a
+`blocked-open` count (`blocked_in_progress_leases`), and any row whose
+ticket id is in-progress with an open blocker gets a distinct
+`[BLOCKED-OPEN: ...]` suffix naming the still-open blocker id(s) --
+separate from the `LEAK` tag, since a ticket can be blocked-open with or
+without a findable worktree.
+
+### `_leases_report`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_leases_report -->
+
+T-2654. The gather half of the LEASES section: combines `leases()`
+(`held`, file-based), `in_progress_ticket_scope_leases()` (T-2651's
+ledger-read fallback, `LEAK`-tagged), and `blocked_in_progress_leases()`
+(T-2654, `BLOCKED-OPEN`-tagged) into one `(header, rows)` result via the
+shared `_lease_row` formatter below -- kept separate from
+`_print_leases_section`'s own I/O so neither function mixes I/O,
+string-formatting, AND every decision point in one body (ARCH103).
+
+### `_print_leases_section`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_leases_section -->
+
+T-2654 (ARCH001/ARCH103 split off `_print_fleet_report`, same shape as
+the pre-existing `_print_worktrees_section` split). Prints `_leases_
+report`'s `(header, rows)` result -- pure I/O, no combination logic of
+its own.
+
+### `_lease_row`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_lease_row -->
+
+T-2654. One `LEASES` row string, shared by `_print_leases_section`'s
+held-lease and ledger-missing loops so neither duplicates the
+`[BLOCKED-OPEN: ...]` suffix logic.
 
 ### `_print_all_ticket_readiness`
 
