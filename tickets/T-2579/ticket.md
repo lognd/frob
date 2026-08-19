@@ -20,6 +20,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/tickets/_models.py
 - src/frob/gates/_waive.py
+- tests/test_gates_milestone.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,11 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: register MILE004 in _KNOWN_GATE_RULES so frob:waive MILE004 binds, per coordinator
     instruction
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates_milestone.py
+  reason: MILE004 gate tests live in this pre-existing test module
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
