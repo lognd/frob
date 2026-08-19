@@ -14,13 +14,22 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: T-2377 still holds live lease on docs/modules/gates.md; narrowing to code
+    files only, will disclose doc-catalog gap in Done report rather than force the
+    add
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
