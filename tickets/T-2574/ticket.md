@@ -14,12 +14,41 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_setters.py
 - src/frob/tickets/_filing.py
-- src/frob/semver.py
-- src/frob/cli/tickets.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/app/ticket_runner/_mutate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/semver.py
+  reason: 'corrected scope: semver.py and cli/tickets.py do not exist; new_ticket
+    lives in _new_renumber.py, CLI wiring for set_runs_last-style setters lives in
+    app/ticket_runner/_mutate.py'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/cli/tickets.py
+  reason: 'corrected scope: semver.py and cli/tickets.py do not exist; new_ticket
+    lives in _new_renumber.py, CLI wiring for set_runs_last-style setters lives in
+    app/ticket_runner/_mutate.py'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: 'corrected scope: semver.py and cli/tickets.py do not exist; new_ticket
+    lives in _new_renumber.py, CLI wiring for set_runs_last-style setters lives in
+    app/ticket_runner/_mutate.py'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'corrected scope: semver.py and cli/tickets.py do not exist; new_ticket
+    lives in _new_renumber.py, CLI wiring for set_runs_last-style setters lives in
+    app/ticket_runner/_mutate.py'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
