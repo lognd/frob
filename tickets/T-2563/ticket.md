@@ -2,7 +2,7 @@
 id: T-2563
 title: ledger-only ticket edits from a worktree strand on the branch and never reach
   main
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'

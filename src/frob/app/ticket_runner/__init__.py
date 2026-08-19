@@ -570,6 +570,19 @@ def _auto_commit_ledger_after_dispatch(
         )
         sys.exit(1)
 
+    # T-2563: the commit above landed on whatever root the verb ran in --
+    # a WORKTREE BRANCH for a dispatched agent, where the rest of the
+    # fleet can never see it. Ledger-only metadata (scope, which IS the
+    # write lease here; blocker edges; attachments) has to reach main to
+    # mean anything, so mirror it there now rather than hoping some later
+    # land carries it.
+    if command is not None:
+        from frob.app.ticket_runner._ledger_mirror import (
+            mirror_ledger_change_to_primary,
+        )
+
+        mirror_ledger_change_to_primary(root, cfg.ticket_id, command)
+
 
 # frob:ticket T-1674
 def _explicit_ticket_path(cfg: AppConfig) -> Path | None:

@@ -697,6 +697,55 @@ never hand-listed -- a verb the table omits fails
 
 There is no `unblock` verb in the dispatch table to audit.
 
+## Worktree ledger mirror (T-2563)
+
+`frob ticket scope`/`block`/`attach` (and the other pure-metadata verbs)
+auto-commit through the T-1615 choke point, which commits in whatever
+root the verb ran in. From a dispatched agent's worktree that root is the
+WORKTREE BRANCH, so the edit reached `main` only if some later `frob
+ticket land` happened to carry it -- and never at all for a ticket whose
+work is not landing yet (a re-scope, a blocker edge, an attached
+analysis).
+
+This was the silent-zero family in its most deceptive form: the verb's
+success message was TRUE (the commit really was made) and the effect was
+simply unreachable from where anyone looks. Three T-2377 bookkeeping
+fixes were lost this way and recovered only by hand cherry-pick, and
+T-2374's `blocked_by` edge left `main` with no indication the work
+existed or why it had stopped.
+
+It matters well past bookkeeping because **scope IS the write lease** in
+this repo. A `scope --add` visible only on a branch means the fleet's
+view of who holds which files is wrong, since the coordinator and every
+sibling agent read `main`. A lease change nobody else can see is worse
+than no lease change at all.
+
+`frob.app.ticket_runner._ledger_mirror.mirror_ledger_change_to_primary`
+therefore copies the ticket's own ledger paths onto the primary checkout
+and commits them there, immediately after the local auto-commit.
+
+- `MIRRORED_LEDGER_VERBS` is the allowlist. The state-machine verbs
+  (`start`/`close`/`drop`/`fail`/`requeue`/`done-report`/`evidence`/
+  `archive`/`reverify`) are deliberately excluded: their ledger write
+  describes work that is still worktree-local, and `land` already carries
+  them atomically with the code they describe. Mirroring one would
+  advance `main`'s state machine ahead of the work it claims to have
+  finished -- a worse failure than the one this closes.
+- Only the ticket's own `_ledger_pathspecs` are read, so a worktree's
+  unlanded source edits cannot ride along however dirty the tree is.
+- The write is skipped, loudly, when a land is in progress, and both
+  `git add` and `git commit` are pathspec-limited so a concurrent land
+  staging content in the shared root cannot be swept in as a passenger.
+- Running in the primary checkout is a no-op that returns before any lock
+  or land probe, so a coordinator's own invocation costs nothing extra.
+
+Because `main` is now a second writer of the same ticket file, a later
+`git merge main` in the worktree can conflict on it. Register the
+`frob ticket merge-driver` (docs/modules/tickets-merge-driver.md) so that
+splices automatically instead of conflicting; without it, resolve by
+keeping the newest state per ticket, as the agent playbook's ledger rule
+already describes.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched
