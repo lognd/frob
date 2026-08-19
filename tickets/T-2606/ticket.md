@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: T-2377 holds live in-progress lease on docs/modules/gates.md; narrowing
     to src file only, will coordinate/re-add doc scope once free
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates.py
+  reason: test coverage for new waiver-ticket-check lives here
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
