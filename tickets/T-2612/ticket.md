@@ -22,6 +22,7 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/__main__.py
 - tests/test_lease_premise_waivers.py
+- docs/commands/cli-vocabulary.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -117,7 +118,17 @@ scope_changes:
     gone from the audited files
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: add
+  glob: docs/commands/cli-vocabulary.md
+  reason: AFFECT001 fires on _SuggestingArgumentParser (edited within this ticket's
+    parse_known_args waiver-text change); adding the doc anchor now resolves both
+    AFFECT001 and the deferred COV001 in one motion instead of leaving it split across
+    a follow-up ticket
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_lease_premise_waivers.py::TestNoStaleLeasePremiseWaivers::test_stale_lease_citations_are_gone
+designated_repro_test: tests/test_lease_premise_waivers.py::TestNoStaleLeasePremiseWaivers::test_stale_lease_citations_are_gone
 threat: null
 component: null
 anchor: false
