@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d2f5831f466bb8b74e36a8f4989aaa89e99625d1
 ---
 `worktree_content_classification`'s ACTIVE short-circuit (T-2599, refined
 T-2617) treats ANY non-terminal ticket state (queued/planned/in-progress)
