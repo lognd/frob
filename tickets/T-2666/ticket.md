@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+- tests/unit/strata/test_sys107_via_scope_advisory.py
+- tickets/T-draft-31ef4880/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,7 +40,25 @@ scope_changes:
     land
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: add
+  glob: tests/unit/strata/test_sys107_via_scope_advisory.py
+  reason: the three tests named in this ticket's own evidence list cannot serve as
+    passing evidence -- they also fail on testsuite's fs.read/fs.write ambient grants,
+    an adjacent pre-existing defect this ticket was explicitly told NOT to fix (filed
+    as a follow-up). A narrower regression test isolating just the exec/SYS107 collision
+    this ticket actually fixes is needed as real evidence
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-31ef4880/**
+  reason: the new-ticket auto-commit for T-draft-31ef4880 (filed from this ticket
+    for the fs.read/fs.write follow-up) lands its own ticket dir on this branch; SCOPE001
+    flags it otherwise
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/strata/test_sys107_via_scope_advisory.py::TestTestsuiteExecViaListRestored::test_testsuite_exec_has_no_via_less_sys107_finding
+designated_repro_test: tests/unit/strata/test_sys107_via_scope_advisory.py::TestTestsuiteExecViaListRestored::test_testsuite_exec_has_no_via_less_sys107_finding
 threat: null
 component: null
 anchor: false
