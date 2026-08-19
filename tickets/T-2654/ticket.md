@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c4f0a2d5af1ba60dfc8542a4beda53c31dd2e4ae
 ---
 T-2651 fixed fleet_status's LEASES section being blind to an in-progress
 ticket whose lease FILE was pruned after its worktree was removed. T-2651's
