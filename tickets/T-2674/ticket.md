@@ -1,8 +1,8 @@
 ---
-id: T-draft-64ebeb12
+id: T-2674
 title: 'Persistent unfixed repo-debt tracking (continuation of T-2653): 37 identit(ies)
   remaining'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -48,6 +48,8 @@ scope:
 - tickets/T-2365
 - tickets/T-2570/ticket.md
 - docs/index.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +62,8 @@ scope_changes:
     doc already uses'
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

@@ -204,6 +204,7 @@ that sunset and regrouped all three, plus `frob docs --search`, under
 | `docs/commands/check.md` | `frob check` |
 | `docs/commands/sys.md` | `frob sys` (plan T-0084, export T-0086) |
 | `docs/commands/deploy.md` | `frob deploy` (generate T-0257) |
+| `docs/commands/release.md` | `frob release` |
 
 `frob graph`, `frob ack`, `frob ticket`, and `frob test` are documented in
 their owning module design docs above (`docs/modules/graph.md`, `docs/modules/tickets.md`,
