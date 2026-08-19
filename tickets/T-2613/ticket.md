@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 167511c8613ca59dd18f4bcee0cc9edf00ee22b9
 ---
 DOCENUM001 already fires red on main (pre-existing, confirmed before T-2576 touched anything): docs/modules/gates.md's frob:enumerates anchor for _KNOWN_GATE_RULES omits CYCLE001 and TICK012. T-2576 (MILE003 registration) adds MILE003 to _KNOWN_GATE_RULES, which needs the same doc sync, but docs/modules/gates.md is leased by T-2377 (Burn EXHAUST002/EXHAUST003 to zero) so T-2576 could not add it to its own scope. Once T-2377 releases the lease (or coordinate a shared land), run frob fix (fix_docenum001_enumerates_sync) or hand-edit the members= list to include CYCLE001, MILE003, TICK012 (and re-verify no further names have drifted in the meantime).
 
