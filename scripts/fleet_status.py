@@ -268,6 +268,13 @@ def in_progress_ticket_scope_leases() -> list[dict]:
 
 # frob:doc docs/guides/coordinator-scripts.md#_resolve_worktree_for_in_progress_ticket
 # frob:ticket T-2651
+# frob:ticket T-2655
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_no_workt\
+# ree_flagged_as_leak
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_live_wor\
+# ktree_named_not_leaked
 def _resolve_worktree_for_in_progress_ticket(
     ticket_id: str, scope: Sequence[str]
 ) -> str | None:

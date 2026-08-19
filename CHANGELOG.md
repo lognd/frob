@@ -138,6 +138,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide
 - T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
+- T-2655: T-2651 landed new fleet_status symbols without test/doc edges (COV001+DOC002), raising quarantine
 
 ## [0.530.0] - unreleased
 

@@ -154,6 +154,45 @@ Returns every held cross-worktree lease record under `.git/frob-leases/`,
 parsed from its JSON file (an unreadable/malformed lease file is reported
 with `worktree: "<unreadable>"` rather than raising).
 
+### `in_progress_ticket_scope_leases`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#in_progress_ticket_scope_leases -->
+
+T-2651. Every `state: in-progress` ticket, read directly from its own
+`tickets/<id>/ticket.md`, as `{"ticket_id", "scope", "worktree",
+"leaked"}`. This exists because `leases()` above is NOT the authoritative
+source for "is this ticket's lock still held": frob's own
+`read_all_leases` opportunistically unlinks a lease file the moment any
+other ticket's scan confirms its recorded worktree path no longer exists
+on disk -- correct for the ordinary case (an agent finished and its
+worktree was removed), but silently wrong for a ticket that is still
+`in-progress` with nobody working it (blocked-and-abandoned, or a
+worktree removed by hand without releasing the lease first). T-2377 sat
+`in-progress` holding `docs/modules/gates.md` for nine hours after its
+own worktree was removed, invisible to `leases()` because the lease file
+was already gone.
+
+A lease is a property of an in-progress ticket's declared scope (T-0453),
+so this reads state/scope from the ledger first and treats a worktree as
+an annotation resolved by `_resolve_worktree_for_in_progress_ticket`, not
+the trigger. `worktree` is `None` (and `leaked=True`) only when neither
+the recorded lease file nor a scope-correlated worktree scan can name
+one -- the exact "in-progress with no worktree anywhere" shape that was
+previously invisible to a fleet-status glance. A `queued` ticket never
+appears here; a lease binds only at `in-progress`.
+
+### `_resolve_worktree_for_in_progress_ticket`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_resolve_worktree_for_in_progress_ticket -->
+
+T-2651. Best-effort worktree NAME for one `in_progress_ticket_scope_
+leases` entry: prefer `ticket_lease`'s own recorded `worktree` field when
+it still resolves to a directory that is still on disk, else fall back to
+`worktrees_touching_ticket`, which finds a live worktree with an unlanded
+commit actually implementing the ticket's declared scope. Returns `None`
+when neither source can name one -- the leak signature `in_progress_
+ticket_scope_leases` reports as `leaked=True`.
+
 ### `worktrees`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#worktrees -->

@@ -2,7 +2,7 @@
 id: T-2655
 title: T-2651 landed new fleet_status symbols without test/doc edges (COV001+DOC002),
   raising quarantine
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,26 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'record honest BUG002 waiver: fix is a missing frob:tests edge + missing
+    frob:doc anchor sections, no runtime behavior change, so evidence is confirmatory-only
+    by construction
+
+    '
+  actor: logan
+  at: '2026-08-19'
+  old_length: 2298
+  new_length: 2621
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
 designated_repro_test: null
 threat: null
 component: null
@@ -73,3 +89,5 @@ precisely the cop-out class T-1614's audit exists to catch.
   Without this control the fix could satisfy the gate while breaking the
   feature it documents
 - `frob verify status` shows quarantine clear
+
+frob:waive BUG002 reason="docs/edge-only fix (missing frob:tests edge + missing frob:doc anchor sections) -- no behavior changed, so the bound evidence tests already PASS at the parent commit (--check-repro confirmed PASSED_AT_PARENT); no repro is possible for a defect with no runtime symptom, per the T-2613 precedent"
