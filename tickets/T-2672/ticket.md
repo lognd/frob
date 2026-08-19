@@ -16,10 +16,58 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_attribution.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'Investigation traced the false-causation naming to _file_regression_ticket
+
+    in src/frob/app/ticket_runner/_rapid_sweep.py: attribution_label falls
+
+    back to final_id (the land that spawned the detached sweep) whenever
+
+    attributed_ids is empty, regardless of whether the per-finding symbolic
+
+    attribution (_attribution.py, already correct) actually attributed
+
+    anything to that land. _attribution.py itself needs no change -- it
+
+    already reports UNATTRIBUTED correctly; the false "regression from X"
+
+    title/body wording is produced downstream in _rapid_sweep.py, which the
+
+    original scope did not include.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'Investigation traced the false-causation naming to _file_regression_ticket
+
+    in src/frob/app/ticket_runner/_rapid_sweep.py: attribution_label falls
+
+    back to final_id (the land that spawned the detached sweep) whenever
+
+    attributed_ids is empty, regardless of whether the per-finding symbolic
+
+    attribution (_attribution.py, already correct) actually attributed
+
+    anything to that land. _attribution.py itself needs no change -- it
+
+    already reports UNATTRIBUTED correctly; the false "regression from X"
+
+    title/body wording is produced downstream in _rapid_sweep.py, which the
+
+    original scope did not include.
+
+    '
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
