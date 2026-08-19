@@ -68,7 +68,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: bdf725325bbfc02640d0b24b9dcc02982c40272a
 ---
 The `frob-cycle` gate producer emits its finding with NO identity:
 `code=None, file=None`, the entire description packed into free-text
