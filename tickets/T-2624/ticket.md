@@ -28,6 +28,7 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/_config_external.py
 - tests/test_tickets_organization.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -102,6 +103,13 @@ scope_changes:
   glob: tests/test_tickets_organization.py
   reason: T-2624's own frob:tests evidence lives here (TestSetRunsLastParallelSafe,
     TestRunsLastParallelSafeCli, TestMile004ParallelSafeCliEndToEnd)
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'AFFECT001 fires on _ledger_mirror.py::LEDGER_VERB_STRATEGY: the new runs-last-parallel-safe
+    verb entry needs its affects()-closure doc (docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603)
+    touched in the same diff'
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
