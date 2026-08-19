@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5b1cbab1ac9d1c58571dc69dc6a163e3f2613ad8
 ---
 MEASURED 2026-08-18. The worktree-lease pre-commit hook (template in
 `src/frob/scaffold/project.py:387-394`, installed by
