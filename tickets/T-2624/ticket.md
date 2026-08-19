@@ -124,7 +124,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3e3c127342d0cba99eeaaec2f69b5b233beb1cdc
 ---
 T-2579 (M4b) added Ticket.runs_last_parallel_safe / _reason (bool+reason
 pair, same shape scope_breadth_ack/scope_breadth_ack_reason already
