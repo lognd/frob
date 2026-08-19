@@ -1065,6 +1065,149 @@ class TestCommitRapidDebt:
         )
         assert "rapid-debt.jsonl" in _git(repo, "ls-files")
 
+    # frob:ticket T-2671
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX shell hook, not run on Windows")
+    def test_commit_failure_persists_a_diagnostic_log(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_commit_failure_persists_a_diagnostic_log  # noqa: E501
+        """T-2671: reproduces the T-2669-shaped commit-failure directly
+        (the scaffolded pre-commit hook refuses the commit spawn because
+        neither lease-env var is set) and proves a retained diagnostic
+        log survives it -- the exact artifact that did not exist for the
+        real recurrence this ticket investigates. Before this fix,
+        `_commit_rapid_debt`'s failure branch logged a one-line summary
+        via the module logger and nothing else; this test would have
+        found zero files under `.frob/rapid-sweep/` naming the failure."""
+        from frob.scaffold import install_worktree_lease_hook
+        from frob.tickets._evidence import record_rapid_debt
+
+        repo = _seed_repo(tmp_path)
+        installed = install_worktree_lease_hook(repo)
+        assert installed.is_ok
+
+        worktree_dir = tmp_path.parent / "linked-worktree-t2671"
+        current_branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+        _git(
+            repo,
+            "worktree",
+            "add",
+            "-b",
+            "agent-branch-t2671",
+            str(worktree_dir),
+            current_branch,
+        )
+
+        record_rapid_debt(repo, "T-2671", "post-land-unscoped-sweep-deferred")
+        assert _git(repo, "status", "--porcelain").strip() != ""
+
+        # Force the commit step itself to be refused: bypass T-2669's own
+        # `_land_internal_git_env` fix by monkeypatching it to a no-op
+        # context manager, so the underlying hook refusal this test wants
+        # to reproduce actually fires (T-2669 would otherwise mask it).
+        import contextlib
+
+        monkeypatch.setattr(
+            "frob.tickets._land_git_ops._land_internal_git_env",
+            contextlib.nullcontext,
+        )
+        monkeypatch.delenv("FROB_LAND_INTERNAL", raising=False)
+        monkeypatch.delenv("FROB_AGENT", raising=False)
+
+        _rapid_sweep._commit_rapid_debt(repo, "T-2671")
+
+        # The commit was refused, so the root is still dirty ...
+        assert _git(repo, "status", "--porcelain").strip() != ""
+        # ... but a diagnostic log naming the failure now survives it.
+        log_dir = repo / _rapid_sweep._LOG_DIR_REL
+        logs = sorted(
+            log_dir.glob(
+                f"{_rapid_sweep._RAPID_DEBT_FAILURE_LOG_PREFIX}-T-2671-*.log"
+            )
+        )
+        assert len(logs) == 1, f"expected exactly one diagnostic log, found {logs}"
+        payload = json.loads(logs[0].read_text(encoding="utf-8"))
+        assert payload["ticket_id"] == "T-2671"
+        assert payload["step"] == "commit"
+        assert payload["outcome"] == "nonzero_returncode"
+        assert payload["returncode"] != 0
+        assert payload["stderr"]  # the hook's refusal text, not empty
+
+
+class TestPersistCommitStepFailure:
+    """T-2671: `_persist_commit_step_failure` is the retained-diagnostic
+    primitive `_commit_rapid_debt` calls on every git-step failure -- the
+    thing missing when the ticket's own DirtyMain recurrence could not be
+    diagnosed because no land-invocation output survived it."""
+
+    def test_writes_proc_result_diagnostics(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
+        from frob.gitio import ProcResult
+        from typani.result import Ok
+
+        outcome = Ok(
+            ProcResult(
+                argv=("git", "commit", "-m", "x"),
+                returncode=1,
+                stdout="",
+                stderr="hook refused: DirtyMain guard",
+            )
+        )
+        path = _rapid_sweep._persist_commit_step_failure(
+            tmp_path, "T-9001", "commit", outcome
+        )
+        assert path is not None
+        assert path.exists()
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert payload == {
+            "ticket_id": "T-9001",
+            "step": "commit",
+            "timestamp_utc": payload["timestamp_utc"],
+            "outcome": "nonzero_returncode",
+            "argv": ["git", "commit", "-m", "x"],
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "hook refused: DirtyMain guard",
+        }
+
+    def test_writes_spawn_error_diagnostics(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
+        from frob.gitio import GitError
+        from typani.result import Err
+
+        outcome = Err(GitError.GitFailed)
+        path = _rapid_sweep._persist_commit_step_failure(
+            tmp_path, "T-9002", "status", outcome
+        )
+        assert path is not None
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        assert payload["outcome"] == "spawn_failed"
+        assert payload["step"] == "status"
+        assert "GitFailed" in payload["git_error"]
+        # No ProcResult fields (no process ever ran) -- these key names
+        # must not silently appear with a placeholder value.
+        assert "argv" not in payload
+        assert "returncode" not in payload
+
+    def test_swallows_its_own_write_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_swallows_its_own_write_failure  # noqa: E501
+        from frob.gitio import GitError
+        from typani.result import Err
+
+        # A root whose log dir cannot be created (a FILE sits where the
+        # directory would go) -- this must return None, not raise, since
+        # `_commit_rapid_debt` calls this from inside its own failure
+        # path and a second exception there would be strictly worse.
+        blocker = tmp_path / ".frob"
+        blocker.write_text("not a directory\n", encoding="utf-8")
+        outcome = Err(GitError.GitFailed)
+        path = _rapid_sweep._persist_commit_step_failure(
+            tmp_path, "T-9003", "add", outcome
+        )
+        assert path is None
+
 
 class TestDescribeRootDirt:
     """T-1698: a DirtyMain refusal must name what made it refuse."""
