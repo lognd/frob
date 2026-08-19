@@ -2,7 +2,7 @@
 id: T-2638
 title: 'disclosure-remainder guard is lexical and blind to draft ids: rewording a
   heading defeats it, drafts can never satisfy it'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,34 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting.py
+- tests/unit/test_reporting_t1648_remainder.py
+- docs/modules/tickets-data-storage.md
+evidence_scope:
+- tests/unit/test_reporting_t1648_remainder.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_reporting_t1648_remainder.py
+  reason: test file for the touched functions, and the doc anchor disclosure_shaped_language's
+    own frob:doc target that must move with this behavior change
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: test file for the touched functions, and the doc anchor disclosure_shaped_language's
+    own frob:doc target that must move with this behavior change
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_reworded_heading_still_flagged_structurally
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_description_headings_before_done_report_are_not_flagged
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_no_done_report_heading_is_not_flagged_by_structure
+- tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets::test_parses_draft_ids
+- tests/unit/test_reporting_t1648_remainder.py::TestFiledFollowupTickets::test_parses_mixed_real_and_draft_ids
+designated_repro_test: tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_reworded_heading_still_flagged_structurally
 threat: null
 component: null
 anchor: false
