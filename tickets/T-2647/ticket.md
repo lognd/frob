@@ -2,7 +2,7 @@
 id: T-2647
 title: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous
   lands fleet-wide
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/__init__.py
+- tests/unit/test_ticket_runner_ledger_verbs_export_t2647.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_verbs_export_t2647.py
+  reason: 'T-2647: new F401 repro test binding the __all__ fix to a genuine before/after
+    failure'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_ticket_runner_ledger_verbs_export_t2647.py
+  reason: 'T-2647: new F401 repro test binding the __all__ fix to a genuine before/after
+    failure'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
