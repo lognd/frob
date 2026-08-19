@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
 - tests/test_gates.py
+- tests/test_waive_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ scope_changes:
 - op: add
   glob: tests/test_gates.py
   reason: test coverage for new waiver-ticket-check lives here
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: dedicated WAIVE-family gate test file
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
