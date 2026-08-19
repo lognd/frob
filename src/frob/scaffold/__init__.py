@@ -22,6 +22,7 @@ from frob.scaffold._managed import (
     apply_managed_blocks,
     scaffold_conformance_status,
 )
+from frob.scaffold._skills_sync import SkillsSyncReport, sync_skills
 from frob.scaffold._pool import (
     PoolEntry,
     PoolError,
@@ -45,6 +46,7 @@ __all__ = [
     "PoolEntry",
     "PoolError",
     "ScaffoldError",
+    "SkillsSyncReport",
     "apply_managed_blocks",
     "default_pool_dir",
     "install_worktree_lease_hook",
@@ -55,6 +57,7 @@ __all__ = [
     "refill_pool_async",
     "render_project",
     "scaffold_conformance_status",
+    "sync_skills",
     "warm_pool",
     "warm_worktree",
 ]

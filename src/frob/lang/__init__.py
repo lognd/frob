@@ -74,10 +74,15 @@ from frob.lang._nodes import (
 )
 from frob.lang._support import (
     FACETS,
+    AdapterCapabilitySupport,
+    CapabilityRequirement,
+    CapabilityStatus,
     FacetState,
     FacetStatus,
     LanguageSupport,
+    capability_conformance_violations,
     conformance_violations,
+    derive_capability_registry,
     derive_language_registry,
 )
 from frob.lang._walk_strata import NATIVE_UNAVAILABLE_MESSAGE as _NATIVE_UNAVAIL_MSG
@@ -1138,6 +1143,9 @@ def symbol_tree(path: Path, span: tuple[int, int]) -> Result[TreeNode, LangError
 
 __all__ = [
     "COMMENT_TYPES",
+    "AdapterCapabilitySupport",
+    "CapabilityRequirement",
+    "CapabilityStatus",
     "FACETS",
     "FacetState",
     "FacetStatus",
@@ -1149,10 +1157,12 @@ __all__ = [
     "RawSymbol",
     "SymbolKind",
     "child_by_field",
+    "capability_conformance_violations",
     "conformance_violations",
     "cpp_function_nodes",
     "declared_project_package_name",
     "declared_source_prefixes",
+    "derive_capability_registry",
     "derive_language_registry",
     "extract_imports",
     "flatten_tree",

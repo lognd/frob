@@ -67,6 +67,7 @@ from frob.arch._models import (
 )
 from frob.arch._normalized import (
     LanguageAdapter,
+    caught_type_names,
     NormalizedBranch,
     NormalizedCall,
     NormalizedCallArg,
@@ -161,6 +162,7 @@ __all__ = [
     "NormalizedCall",
     "NormalizedCallArg",
     "NormalizedCatch",
+    "caught_type_names",
     "NormalizedClass",
     "NormalizedField",
     "NormalizedFieldAccess",

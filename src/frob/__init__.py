@@ -77,6 +77,12 @@ from frob.gitio import (
     spawn_recorder,
     working_diff,
 )
+from frob.repo_meta import (
+    declared_min_frob_version,
+    load_arch_config,
+    stale_binary_warning,
+    stale_install_warning,
+)
 from frob.tomlio import read_toml_lenient
 from frob.yaml_io import fast_yaml_loader
 
@@ -96,6 +102,7 @@ __all__ = [
     "commit_diff",
     "common_dir_and_branch",
     "current_branch",
+    "declared_min_frob_version",
     "excerpt",
     "git_common_dir",
     "global_binary_skew",
@@ -103,6 +110,7 @@ __all__ = [
     "is_skipped_dir",
     "is_test_file",
     "iter_files",
+    "load_arch_config",
     "load_exclude_globs",
     "read_toml_lenient",
     "recent_commits",
@@ -111,6 +119,8 @@ __all__ = [
     "run_argv",
     "run_diagnosis",
     "fast_yaml_loader",
+    "stale_binary_warning",
+    "stale_install_warning",
     "scan_live_land_processes",
     "scan_malformed_ticket_edges",
     "scan_stale_ticket_leases",

@@ -2,7 +2,7 @@
 id: T-2635
 title: 'test_exports.py: frob-exports reports missing symbols in src/frob, red on
   main'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -111,7 +111,9 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
+designated_repro_test: tests/unit/test_exports.py::TestFrobExportsPolicyResidue::test_all_nine_packages_report_zero_missing_symbols
 threat: null
 component: null
 anchor: false

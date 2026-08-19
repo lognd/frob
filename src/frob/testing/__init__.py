@@ -28,6 +28,7 @@ from frob.testing._coverage_cache import (
 from frob.testing._coverage_refresh import (
     CoverageRefreshError,
     native_coverage_refresh,
+    pytest_load_initial_conftests,
 )
 from frob.testing._coverage_wait import (
     CoverageWaitError,
@@ -122,6 +123,7 @@ __all__ = [
     "python_collection_failure_detail",
     "python_collection_missing_natives",
     "python_coverage_targets",
+    "pytest_load_initial_conftests",
     "quarantine",
     "quarantine_alarms",
     "quarantined_node_ids",
