@@ -2,7 +2,7 @@
 id: T-2603
 title: 'three ledger-write patterns across two disjoint verb sets plus a special case:
   one table with a declared per-verb strategy'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'

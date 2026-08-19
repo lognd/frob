@@ -2,7 +2,7 @@
 id: T-2602
 title: 'test_doable_sprint_filter has been red on main since T-1995: the duplicate-title
   guard fires on its own fixture'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -18,7 +18,9 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent::test_doable_sprint_filter
+designated_repro_test: tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent::test_doable_sprint_filter
 threat: null
 component: null
 anchor: false

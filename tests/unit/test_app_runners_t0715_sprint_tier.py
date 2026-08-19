@@ -41,11 +41,19 @@ class TestTicketDoableSprintByParent:
 
     def test_doable_sprint_filter(self, tmp_path: Path, caplog) -> None:
         # frob:tests tests/unit/test_app_runners_t0715_sprint_tier.py::TestTicketDoableSprintByParent.test_doable_sprint_filter  # noqa: E501
+        # Titles below are deliberately NOT near-duplicates of each other
+        # (T-2602): the T-1995 duplicate-title guard refuses `ticket new`
+        # for a second title that closely matches an existing one unless
+        # `--ack-related` is passed, and these fixture titles used to read
+        # as an 82%-match pair ("in sprint" / "not in sprint"), which made
+        # this test fail on unmodified main. The sprint-membership signal
+        # this test asserts on is carried by `ticket_sprint`, not by the
+        # title text, so distinct titles do not change what is covered.
         ticket_run(
             AppConfig(
                 ticket_command="new",
                 ticket_path=tmp_path,
-                ticket_title="in sprint",
+                ticket_title="sprint alpha rollout",
                 ticket_kind="feature",
                 ticket_sprint="sprint-1",
             )
@@ -54,7 +62,7 @@ class TestTicketDoableSprintByParent:
             AppConfig(
                 ticket_command="new",
                 ticket_path=tmp_path,
-                ticket_title="not in sprint",
+                ticket_title="backlog cleanup task",
                 ticket_kind="feature",
             )
         )
@@ -66,7 +74,7 @@ class TestTicketDoableSprintByParent:
         )
         with caplog.at_level("INFO"):
             ticket_run(cfg)
-        assert "T-0001  in sprint" in caplog.text
+        assert "T-0001  sprint alpha rollout" in caplog.text
         assert "T-0002" not in caplog.text
 
     def test_doable_by_parent_groups_leaves(self, tmp_path: Path, caplog) -> None:

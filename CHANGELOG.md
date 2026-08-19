@@ -114,6 +114,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2595: T-2595: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep writers
 - T-2596: T-2596: four real E501 lines in src/ raised quarantine and forced the whole fleet into synchronous lands
 - T-2598: T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
+- T-2602: T-2602: test_doable_sprint_filter has been red on main since T-1995: the duplicate-title guard fires on its own fixture
 
 ## [0.530.0] - unreleased
 
