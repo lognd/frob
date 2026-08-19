@@ -21,6 +21,7 @@ scope:
 - src/frob/app/_config_external.py
 - docs/modules/tickets.md
 - docs/modules/tickets-data-storage.md
+- tests/test_tickets_milestone_sort.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,15 @@ scope_changes:
   reason: '_doable_sort_key doc-closure target; documenting the milestone-primary
 
     ordering change in the same module doc T-2574 already anchored.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_tickets_milestone_sort.py
+  reason: 'New test file bound as evidence for T-2577''s own acceptance
+
+    (effective_milestone/_doable_sort_key milestone-primary ordering).
 
     '
   actor: logan
