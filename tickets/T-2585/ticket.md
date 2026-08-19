@@ -2,7 +2,7 @@
 id: T-2585
 title: 'frob check has no durable result: replay an unchanged-tree verdict automatically,
   never as a flag'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/check/_python.py
 - src/frob/gates/_gate_cache.py
