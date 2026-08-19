@@ -68,7 +68,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3893d433a784bc2b2b91eef0766ad9cfeb6fb6a9
 ---
 T-2612's audit measured 0 of the (originally cited) lease-holding tickets
 named in `frob:waive` reasons still holding a live lease -- every one had
