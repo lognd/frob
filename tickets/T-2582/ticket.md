@@ -2,7 +2,7 @@
 id: T-2582
 title: 'human-mode query commands drown their answer in DEBUG chatter: xref emits
   5958 lines for a 13-line result'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,11 +11,225 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/logging/quiet.py
+- src/frob/app/debt_runner.py
+- src/frob/app/deprecated_runner.py
+- src/frob/app/exports_runner.py
+- src/frob/app/fleet_runner.py
+- src/frob/app/gitlog_runner.py
+- src/frob/app/mutate_runner.py
+- src/frob/app/outline_runner.py
+- src/frob/app/xref_runner.py
+- docs/modules/logging.md
+- docs/modules/app.md
+evidence_scope:
+- tests/unit/test_logging_quiet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/logging/quiet.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/debt_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/deprecated_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/exports_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/fleet_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/gitlog_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/mutate_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/outline_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/xref_runner.py
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/logging.md
+  reason: 'Stream-split fix: quiet stdout by default for the 8 human-mode query
+
+    runners drowned in DEBUG chatter, sharing one new helper in quiet.py
+
+    (FROB_VERBOSE=1 env-var opt-out) instead of 8 per-site edits. Avoids
+
+    config.py/_config_external.py/CLI-parser fields (T-2574 holds a live
+
+    lease on _config_external.py) by using an env var rather than a new
+
+    per-command --verbose flag, matching the ticket''s own "or an env var"
+
+    allowance. docs/modules/logging.md documents the new public symbol.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'AFFECT001: the 6 touched runners affects()-close to docs/modules/app.md#runners'
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_logging_quiet.py::TestQuietQueryStdout::test_quiets_by_default
+- tests/unit/test_logging_quiet.py::TestQuietQueryStdout::test_frob_verbose_env_var_restores_full_chatter
+- tests/unit/test_logging_quiet.py::TestQuietQueryStdout::test_restores_on_exception
+designated_repro_test: tests/unit/test_logging_quiet.py::TestQuietQueryStdout::test_quiets_by_default
 threat: null
 component: null
 anchor: false
