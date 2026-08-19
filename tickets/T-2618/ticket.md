@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2099293855ae626052bb72a28b74c4affc23bb1b
 ---
 src/frob/lang/_nodes.py::declared_project_package_name and
 ::declared_source_prefixes both carry COV001 waivers whose reason cited
