@@ -11,10 +11,22 @@ parent: T-1273
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'owner decision: hold floors at 75/70, do not ratchet; held not dropped'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 2149
+  new_length: 3813
 designated_repro_test: null
 threat: null
 component: null
@@ -62,3 +74,40 @@ own done-report but never landed (the agent that filed it died before
 `frob ticket land`). Recreated verbatim from that branch's content during
 T-1934's investigation into unlanded branch work; the original draft on
 runner-wiring was never landed and is superseded by this ticket.
+
+
+
+## OWNER DECISION (2026-08-19): do NOT ratchet -- hold floors where they are
+
+The repo owner has decided: **keep the coverage floors at their current
+values (75/70). Do not bump to 80/75.**
+
+This ticket is therefore NOT ready to work, and should not be picked up as
+if the bump were still the plan.
+
+Rationale recorded so this is not silently reversed later: at the time of
+the decision, 18 tests were red on unmodified main (now tracked as
+T-2630..T-2637, several already fixed) and the ticket queue was running at
+break-even. Raising a coverage floor in that state adds failures to a suite
+people are already learning to discount, which is how a red signal stops
+being read at all. The ticket's own premise required "a fresh measurement"
+that was never taken.
+
+### What would change this
+
+A fresh, unscoped TEST005 measurement stated against its denominator, taken
+when `tests/unit/` is green on unmodified main. If that measurement shows
+the packages are already comfortably above 80/75, the bump is cheap and the
+owner may revisit. If it shows a large gap, the bump is a burndown campaign
+and needs to be sized as one -- see T-1273 (per-package campaign to the
+CURRENT 75/70 floors) and T-1661 (55 remaining findings), both of which
+target the existing floors and remain valid work.
+
+### Explicitly NOT dropped
+
+This ticket is being HELD, not cancelled. Dropping is terminal in this repo
+and the owner may want the ratchet later once the suite is green. Leave it
+queued at low priority with this decision recorded.
+
+Do not treat the existing 75/70 floors as provisional in the meantime --
+they are the current contract and T-1273/T-1661 exist to reach them.
