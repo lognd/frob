@@ -12,6 +12,9 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_exhaustive_handling.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -87,6 +90,34 @@ scope_changes:
   glob: tests/unit/test_arch.py
   reason: 'moved to T-2539: the resolver false-positive fixes found during this burn-down
     are their own bug ticket; T-2377 re-scopes once the remaining findings are triaged'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'T-2377 is now the PROMOTION ticket only: its detector-precision half moved
+    to T-2539 (landed) and T-2552 (landed), and its remaining false-positive half
+    is T-2543, which now blocks it. Scoped to the two files that carry the WARN->ERROR
+    flip -- the gate module''s Severity constants and the gate catalog''s own text
+    -- deliberately NOT to the ~30 finding-bearing source files, because which of
+    those need a real change is exactly what T-2543''s Class A decision determines.
+    Widen this scope only after that decision lands, so this ticket stays disjoint
+    from sibling children of T-0969 in the meantime.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-2377 is now the PROMOTION ticket only: its detector-precision half moved
+    to T-2539 (landed) and T-2552 (landed), and its remaining false-positive half
+    is T-2543, which now blocks it. Scoped to the two files that carry the WARN->ERROR
+    flip -- the gate module''s Severity constants and the gate catalog''s own text
+    -- deliberately NOT to the ~30 finding-bearing source files, because which of
+    those need a real change is exactly what T-2543''s Class A decision determines.
+    Widen this scope only after that decision lands, so this ticket stays disjoint
+    from sibling children of T-0969 in the meantime.
+
+    '
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
