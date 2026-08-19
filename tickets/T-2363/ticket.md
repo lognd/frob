@@ -48,7 +48,7 @@ threat: null
 component: gates
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f68fd921ca4b105e6807729899045a708d9a2eca
 ---
 T-2358 measurement (2026-08-18): the ERROR-severity import cycle
 originally described as "serve <-> stats" is actually a 5-package
