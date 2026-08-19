@@ -17,6 +17,10 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-landing.md
+- src/frob/gates/_mutation_evidence.py::mutation_evidence_violations
+- src/frob/tickets/_evidence.py::replace_evidence
+- src/frob/tickets/_models.py::Ticket
+- src/frob/tickets/_models.py::TicketError
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +54,26 @@ scope_changes:
 - op: remove
   glob: src/frob/tickets/_models.py
   reason: narrowing to symrefs instead of whole files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py::mutation_evidence_violations
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py::replace_evidence
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py::Ticket
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py::TicketError
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
