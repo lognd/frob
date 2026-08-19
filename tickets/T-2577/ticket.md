@@ -1,7 +1,7 @@
 ---
 id: T-2577
 title: 'M3: milestone as primary doable sort axis, inheritance, --milestone filter'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -12,6 +12,7 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/tickets/_doable.py
 - src/frob/tickets/__init__.py
