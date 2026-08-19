@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-19'
-priority: medium
+priority: critical
 parent: null
 tier: ticket
 sprint: null
@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: critical
+  reason: corrupts main directly for the whole fleet via the body-mutation mirror
+    step; coordinator-elevated
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: append
   reason: 'coordinator review: elevate to critical, confirm correct repair direction
