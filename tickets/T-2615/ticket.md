@@ -18,6 +18,8 @@ scope:
 - src/frob/release/_fragments.py
 - tests/test_release.py
 - docs/modules/release.md
+- tickets/T-draft-b8d1b183/ticket.md
+- tickets/T-draft-5d1d5de0/ticket.md
 evidence_scope:
 - tests/test_release.py
 scope_breadth_ack: false
@@ -35,6 +37,18 @@ scope_changes:
   glob: docs/modules/release.md
   reason: 'SCOPE002: existing frob:doc/frob:tests edges on symbols touched by the
     T-2615 fix point at these two files'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-b8d1b183/ticket.md
+  reason: 'SCOPE001: this ticket''s own Done report files these two drafts as owed
+    follow-up work'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-5d1d5de0/ticket.md
+  reason: 'SCOPE001: this ticket''s own Done report files these two drafts as owed
+    follow-up work'
   actor: logan
   at: '2026-08-19'
 evidence:
