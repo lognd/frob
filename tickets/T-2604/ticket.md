@@ -2,7 +2,7 @@
 id: T-2604
 title: quarantine re-raises on findings already owned by an open ticket, forcing synchronous
   lands fleet-wide every sweep
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -27,7 +27,13 @@ scope_changes:
     tests
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_closed_ticket_attribution_still_raises
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_unattributed_still_raises_alongside_open_ticket_finding
+- tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_warm_tree_recheck_never_drops_an_attributed_finding
+- tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings::test_leaves_quarantine_raised_when_other_findings_remain_undisposed
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch::test_open_ticket_attribution_clears_the_quarantine_raise
 threat: null
 component: null
 anchor: false

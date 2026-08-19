@@ -2693,11 +2693,16 @@ class TestRaiseQuarantineForRedBatch:
         assert filed is not None
         assert is_quarantined(tmp_path).danger_ok is False
 
-    # frob:ticket T-1791
-    def test_raised_even_when_every_pair_already_has_an_open_ticket(
+    # frob:ticket T-2604
+    def test_open_ticket_attribution_clears_the_quarantine_raise(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raised_even_when_every_pair_already_has_an_open_ticket  # noqa: E501
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_open_ticket_attribution_clears_the_quarantine_raise  # noqa: E501
+        """T-2604: every pair attributes to an already-open ticket -- no
+        NEW regression ticket is filed (that half was already correct,
+        T-1690), and the batch must NOT trip the quarantine circuit
+        breaker either, since a still-open owner means the finding
+        already has a home and someone is on it."""
         from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
         from frob.verify import record_intent
@@ -2731,14 +2736,134 @@ class TestRaiseQuarantineForRedBatch:
             "_load_snapshot_and_call_graph",
             lambda root: (snapshot, CallGraph(calls={})),
         )
-        # Every pair attributes to an already-open ticket -- no NEW
-        # regression ticket is filed, but the batch was still red, so
-        # quarantine must still be raised.
         filed = _file_regression_ticket(
             tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
         )
         assert filed is None
-        assert is_quarantined(tmp_path).danger_ok is True
+        assert is_quarantined(tmp_path).danger_ok is False
+
+    # frob:ticket T-2604
+    def test_closed_ticket_attribution_still_raises(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises  # noqa: E501
+        """T-2604: a pair attributed to a CLOSED/DROPPED ticket is a real
+        regression against work believed finished -- it must still trip
+        quarantine, exactly as before this ticket. Without this case the
+        fix would be indistinguishable from disabling quarantine
+        outright."""
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.tickets._models import TicketState
+        from frob.verify import record_intent
+        from frob.verify._quarantine import load_quarantine
+
+        owner = _seed_ticket(tmp_path, state=TicketState.DONE)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, CallGraph(calls={})),
+        )
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None  # closed owner -- refiled as a new ticket
+        # T-2208: the freshly filed ticket covers this pair, so
+        # auto-dispose clears the quarantine flag in the same operation
+        # -- the raise itself (this test's own T-2604 subject: a
+        # closed-ticket attribution must still trip quarantine) is
+        # verified via the record's own content, same pattern as
+        # test_raises_with_attributed_and_unattributed_findings above.
+        record = load_quarantine(tmp_path)
+        assert record.danger_ok is not None
+        assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
+            ("RULE1", "a.py"),
+        }
+
+    # frob:ticket T-2604
+    def test_unattributed_still_raises_alongside_open_ticket_finding(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_unattributed_still_raises_alongside_open_ticket_finding  # noqa: E501
+        """T-2604: a batch mixing one open-ticket finding with one
+        unattributed finding must still raise, naming only the
+        unattributed one -- an unowned finding is exactly what
+        quarantine exists to catch, and the open-ticket finding's
+        presence in the same batch must not mask it."""
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.verify import record_intent
+        from frob.verify._quarantine import load_quarantine
+
+        owner = _seed_ticket(tmp_path)
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        import frob.verify._attribution as attribution_mod
+
+        monkeypatch.setattr(
+            attribution_mod,
+            "_load_snapshot_and_call_graph",
+            lambda root: (snapshot, CallGraph(calls={})),
+        )
+        # RULE1/a.py attributes to the open ticket via a.py::fn;
+        # RULE2/b.py has no symbol in the snapshot, so it stays
+        # UNATTRIBUTED.
+        filed = _file_regression_ticket(
+            tmp_path,
+            "T-9000",
+            "deadbeef",
+            frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
+        )
+        assert filed is not None  # the unattributed pair gets a new ticket
+        # T-2208: the filed ticket covers exactly the unattributed pair,
+        # so auto-dispose clears the flag in the same operation -- the
+        # raise itself (named only the unattributed pair, per this
+        # test's own subject) is verified via the record's own content.
+        record = load_quarantine(tmp_path)
+        assert record.danger_ok is not None
+        assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
+            ("RULE2", "b.py"),
+        }
 
     # frob:ticket T-1791
     def test_raise_failure_is_logged_not_raised(
@@ -2845,13 +2970,19 @@ class TestRaiseQuarantineForRedBatch:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_warm_tree_recheck_never_drops_an_attributed_finding  # noqa: E501
+        """T-2604: the owning ticket here is CLOSED (not open) so this
+        stays an isolated test of the T-1847 warm-tree filter alone --
+        an open owner would ALSO be cleared by the new T-2604 open-ticket
+        filter, which would make a pass here ambiguous about which filter
+        is actually responsible."""
         from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
         from frob.lang import SymbolKind
         from frob.strata import _native_staleness
+        from frob.tickets._models import TicketState
         from frob.verify import record_intent
-        from frob.verify._quarantine import is_quarantined, load_quarantine
+        from frob.verify._quarantine import load_quarantine
 
-        owner = _seed_ticket(tmp_path)
+        owner = _seed_ticket(tmp_path, state=TicketState.DONE)
         record_intent(
             tmp_path,
             commit_sha="commitA",
@@ -2881,19 +3012,21 @@ class TestRaiseQuarantineForRedBatch:
         )
         # unimportable_natives says everything is warm -- if the finding
         # were unattributed this would clear it, but this pair reaches
-        # a.py::fn and must attribute to a STILL-OPEN ticket (owner), a
+        # a.py::fn and must attribute to a CLOSED ticket (owner), a
         # wholly different case than "unattributed". The finding must NOT
         # be treated as cold-worktree noise just because the rule id
         # matches.
         monkeypatch.setattr(_native_staleness, "unimportable_natives", lambda root: ())
         filed = _file_regression_ticket(
             tmp_path,
-            owner,
+            "T-9000",
             "deadbeef",
             frozenset({("unresolved-import", "a.py")}),
         )
-        assert filed is None  # already attributed to an open ticket
-        assert is_quarantined(tmp_path).danger_ok is True
+        assert filed is not None  # closed owner -- refiled as a new ticket
+        # T-2208: the filed ticket covers this pair, so auto-dispose
+        # clears the flag -- verify the raise itself via the record's
+        # own content, same pattern as the other T-2604/T-1847 tests.
         record = load_quarantine(tmp_path)
         assert record.danger_ok is not None
         assert {(f.rule_id, f.file) for f in record.danger_ok.findings} == {
@@ -2942,64 +3075,54 @@ class TestAutoDisposeFiledFindings:
         assert finding.disposition_ref == filed
 
     # frob:ticket T-2208
+    # frob:ticket T-2604
     def test_leaves_quarantine_raised_when_other_findings_remain_undisposed(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path
     ) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestAutoDisposeFiledFindings.test_leaves_quarantine_raised_when_other_findings_remain_undisposed  # noqa: E501
-        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
-        from frob.lang import SymbolKind
-        from frob.verify import record_intent
-        from frob.verify._quarantine import is_quarantined, load_quarantine
+        """T-2604 rewrote this test's original setup: it used to lean on
+        a finding attributed to an already-open ticket to construct "one
+        finding in the raised record this call never touches". Exactly
+        the bug T-2604 fixes means such a finding is now dropped from
+        the quarantine raise entirely, before this scenario can even
+        arise through `_file_regression_ticket`'s own attribution path.
+        Exercising `_auto_dispose_filed_findings` directly against a
+        record raised independently (simulating one left over from an
+        earlier, unrelated red batch this call's `unfiled_pairs` never
+        names) keeps this test's real subject -- `clear_quarantine`'s
+        atomic all-or-nothing contract -- intact and independent of how
+        the record came to have two findings in it."""
+        from frob.app.ticket_runner._rapid_sweep import _auto_dispose_filed_findings
+        from frob.verify._quarantine import (
+            QuarantinedFinding,
+            is_quarantined,
+            load_quarantine,
+            raise_quarantine,
+        )
 
-        owner = _seed_ticket(tmp_path)
-        record_intent(
+        raised = raise_quarantine(
             tmp_path,
-            commit_sha="commitA",
-            ticket_id=owner,
-            touched_symbols=("a.py::fn",),
-            profile="rapid",
+            batch_commit_shas=("commitA",),
+            findings=(
+                QuarantinedFinding(rule_id="RULE1", file="a.py", line=None),
+                QuarantinedFinding(rule_id="RULE2", file="b.py", line=None),
+            ),
         )
-        snapshot = GraphSnapshot(
-            root=str(tmp_path),
-            symbols={
-                "a.py::fn": SymbolRecord(
-                    id=SymbolId(path="a.py", qualname="fn"),
-                    kind=SymbolKind.FUNCTION,
-                    public=True,
-                    digests=Digests(sig="s", body="b", doc="d"),
-                    span=(1, 5),
-                )
-            },
-            edges=(),
-        )
-        import frob.verify._attribution as attribution_mod
+        assert raised.is_ok
 
-        monkeypatch.setattr(
-            attribution_mod,
-            "_load_snapshot_and_call_graph",
-            lambda root: (snapshot, CallGraph(calls={})),
-        )
-        # RULE1/a.py attributes to the already-open `owner` ticket
-        # (never filed by this call); RULE2/b.py is genuinely new and
-        # gets filed. `clear_quarantine`'s own contract is atomic --
-        # it writes NOTHING unless every currently-raised finding is
-        # disposed -- so quarantine stays raised with EVERY finding
-        # still undisposed, not just RULE1/a.py: auto-disposing RULE2
-        # in isolation here (leaving RULE1/a.py behind) would still be
-        # a partial-clear side effect this ticket's own acceptance
-        # criteria rule out, and the atomic all-or-nothing shape means
-        # that partial state can never even be persisted.
-        filed = _file_regression_ticket(
-            tmp_path,
-            "T-9000",
-            "deadbeef",
-            frozenset({("RULE1", "a.py"), ("RULE2", "b.py")}),
-        )
-        assert filed is not None
+        # Only RULE2/b.py is covered by this filing -- RULE1/a.py is
+        # left alone, exactly `_auto_dispose_filed_findings`'s own
+        # documented contract for "a different, already-open ticket
+        # this call never touched".
+        _auto_dispose_filed_findings(tmp_path, [("RULE2", "b.py")], "T-9001")
+
         assert is_quarantined(tmp_path).danger_ok is True
         record = load_quarantine(tmp_path)
         assert record.danger_ok is not None
-        assert {f.disposition for f in record.danger_ok.findings} == {""}
+        dispositions = {
+            (f.rule_id, f.file): f.disposition for f in record.danger_ok.findings
+        }
+        assert dispositions == {("RULE1", "a.py"): "", ("RULE2", "b.py"): ""}
 
     # frob:ticket T-2208
     # frob:waive DUP001 reason="100% similar to \
