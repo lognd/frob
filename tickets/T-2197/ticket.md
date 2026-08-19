@@ -15,6 +15,7 @@ scope:
 - src/frob/tickets/_promote.py
 - docs/guides/agent-playbook.md
 - src/frob/tickets/_draft_finalize.py
+- tests/test_tickets_collision.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   reason: real producer of the commit gap is finalize_draft in frob.tickets, not the
     aspirational _promote.py the ticket named; adding it to scope, keeping _promote.py
     too since it stays a valid home for a new shared helper
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_tickets_collision.py
+  reason: existing test file for finalize_draft regression coverage
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
