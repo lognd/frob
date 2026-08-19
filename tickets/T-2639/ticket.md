@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,16 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: must remove the T-2639-premised COV001 waiver on waive009_violations once
     wiring+docs land
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2613 released the lease; adding the doc half of the plan
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2613 released the lease; adding the doc half of the plan
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
