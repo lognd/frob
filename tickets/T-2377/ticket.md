@@ -1,7 +1,7 @@
 ---
 id: T-2377
 title: Burn EXHAUST002/EXHAUST003 WARN gates to zero, then promote to error
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -13,6 +13,9 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_exhaustive_handling.py
 - docs/modules/gates.md
