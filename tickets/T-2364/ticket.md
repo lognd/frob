@@ -2,7 +2,7 @@
 id: T-2364
 title: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable
   finding masked three real cycles
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -12,11 +12,50 @@ tier: ticket
 sprint: null
 runs_last: false
 scope:
-- src/frob/gates/__init__.py
-- src/frob/cycle/graph.py
+- src/frob/check/_python.py
+- tests/unit/test_check.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-designated_repro_test: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: 'narrow to actual producer: frob-cycle findings are built in check/_python.py,
+    not gates/__init__.py or cycle/graph.py; gates/__init__.py is leased by T-2551'
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/cycle/graph.py
+  reason: 'narrow to actual producer: frob-cycle findings are built in check/_python.py,
+    not gates/__init__.py or cycle/graph.py; gates/__init__.py is leased by T-2551'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'narrow to actual producer: frob-cycle findings are built in check/_python.py,
+    not gates/__init__.py or cycle/graph.py; gates/__init__.py is leased by T-2551'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'narrow to actual producer: frob-cycle findings are built in check/_python.py,
+    not gates/__init__.py or cycle/graph.py; gates/__init__.py is leased by T-2551'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: T-2364 introduces a new gate rule id CYCLE001 (frob-cycle finding identity);
+    frob ticket land refuses close until it is registered in _KNOWN_GATE_RULES per
+    the T-0756 new-gate-rule acceptance policy
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_has_identity_not_none
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_identity_deterministic_across_runs
+- tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_cycle_produces_no_diagnostics
+designated_repro_test: tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_has_identity_not_none
 threat: null
 component: gates
 anchor: false
