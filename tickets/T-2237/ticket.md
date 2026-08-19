@@ -2,7 +2,7 @@
 id: T-2237
 title: 'T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved
   via git archaeology, blocked by live leases on the target docs'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'

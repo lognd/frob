@@ -120,7 +120,7 @@ did not (and structurally could not) catch:
   own docstring admits it is "a lightweight textual heuristic, not a
   parse." This module's DEBT/DEPR rule ids were classified (a) above --
   wrong for this one function. Filed as T-2178.
-- **The callgraph substrate itself** (T-draft-385de2c7, filed by this
+- **The callgraph substrate itself** (T-2188, filed by this
   epic's decomposition pass): `build_call_graph`, `build_reference_
   graph`, and `build_ordered_call_graph` resolve a cross-file candidate
   for a private-symbol token by matching its BARE SHORT NAME against a
