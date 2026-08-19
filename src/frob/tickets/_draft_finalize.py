@@ -31,7 +31,7 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 from frob.tickets._archive import _load_merged
-from frob.tickets._models import Attachment, TicketError
+from frob.tickets._models import Attachment, RenumberReport, TicketError
 from frob.tickets._new_renumber import _next_ticket_id_shared
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import allocator_lock, ledger_lock, tickets_dir, write_ticket
@@ -390,8 +390,170 @@ def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
         relocated = _relocate_attachment_records(root, draft_id, final_id)
         if relocated.is_err:
             return Err(relocated.danger_err)
+        _commit_and_warn_promote(root, draft_id, final_id, result.danger_ok)
         _log.info("tickets: finalized draft %s -> %s", draft_id, final_id)
         return Ok(final_id)
+
+
+# frob:ticket T-2197
+def _promote_commit_pathspecs(root: Path, report: RenumberReport) -> list[str]:
+    """The full set of pathspecs one `frob ticket promote` rename touches
+    (split out of `_commit_and_warn_promote` for ARCH001, T-2197): ledger
+    (`tickets.md`/`tickets-archive.md` in v1, the whole `tickets/`
+    subtree in v2 -- covering both the vacated draft-id location and the
+    new final-id one) plus every `report.files_changed` code-reference
+    file `renumber_one` rewrote."""
+    from frob.tickets._store import _store_mode
+
+    pathspecs: list[str] = list(report.files_changed)
+    if _store_mode(root) == "v2":
+        pathspecs.append("tickets")
+    else:
+        pathspecs.extend(["tickets.md", "tickets-archive.md"])
+    return pathspecs
+
+
+# frob:ticket T-2197
+def _commit_promote_rename(
+    root: Path, draft_id: str, final_id: str, pathspecs: list[str]
+) -> bool:
+    """T-2197: `finalize_draft`'s (`frob ticket promote`'s) OWN commit
+    step -- previously MISSING entirely, not merely worktree-scoped as
+    T-2197 originally described. `renumber_one` writes the ledger rename
+    plus every `frob:ticket`/`frob:tests`/... code reference across the
+    tracked tree deliberately UNCOMMITTED (see `frob.tickets._leases.
+    commit_full_ledger_change`'s docstring: a ledger-only commit here
+    would split one atomic rename into two, "worse than leaving all of
+    it uncommitted together for the caller to commit as one change") --
+    but no caller ever performed that promised commit: the CLI verb
+    (`frob.app.ticket_runner._query._promote`) is one of `_LEDGER_
+    TRANSACTIONAL_VERBS`, deliberately excluded from the generic
+    per-verb auto-commit sweep for the identical reason. The result,
+    measured directly (T-2197): `frob ticket promote` from a worktree
+    left the rename sitting uncommitted in the working tree -- not
+    merely invisible on `main` until a later land, but liable to be
+    silently swept into whatever UNRELATED ticket's `frob ticket land`
+    ran next in that same worktree (`land` absorbs any dirty state into
+    its own pre-merge wip-commit), misattributing the rename to a ticket
+    that never touched it.
+
+    Commits `pathspecs` as ONE atomic commit, exactly preserving the
+    atomicity `commit_full_ledger_change`'s docstring already argues
+    for. Returns whether the commit actually succeeded (`False` leaves
+    the rename UNCOMMITTED and logs the exact recovery command,
+    matching `frob.app.ticket_runner._ledger_mirror._log_mirror_
+    unavailable`'s precedent: never fail the whole `promote` call over a
+    git hiccup after the rename itself already succeeded on disk)."""
+    from frob.gitio import run_argv
+
+    added = run_argv(["git", "-C", str(root), "add", "-A", "--", *pathspecs])
+    if added.is_err or added.danger_ok.returncode != 0:
+        _log.error(
+            "tickets: promote %s -> %s: git add failed -- the rename is "
+            "left UNCOMMITTED in %s; commit it by hand: git -C %s add -A "
+            "-- %s && git -C %s commit -m "
+            '"chore(tickets): promote %s -> %s"',
+            draft_id,
+            final_id,
+            root,
+            root,
+            " ".join(pathspecs),
+            root,
+            draft_id,
+            final_id,
+        )
+        return False
+    committed = run_argv(
+        [
+            "git",
+            "-C",
+            str(root),
+            "commit",
+            "-m",
+            f"chore(tickets): promote {draft_id} -> {final_id}",
+            "--",
+            *pathspecs,
+        ]
+    )
+    if committed.is_err or committed.danger_ok.returncode != 0:
+        status = run_argv(
+            ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
+        )
+        clean = (
+            status.is_ok
+            and status.danger_ok.returncode == 0
+            and not status.danger_ok.stdout.strip()
+        )
+        if not clean:
+            _log.error(
+                "tickets: promote %s -> %s: git commit failed -- the "
+                "rename is left UNCOMMITTED in %s; commit it by hand",
+                draft_id,
+                final_id,
+                root,
+            )
+        return False
+    _log.info(
+        "tickets: promote %s -> %s committed in %s", draft_id, final_id, root
+    )
+    return True
+
+
+# frob:ticket T-2197
+def _warn_if_promote_not_visible_on_primary(
+    root: Path, draft_id: str, final_id: str
+) -> None:
+    """T-2197's WANTED bullet 1 (a loud warning when the promoted id is
+    not yet visible on `main`): committing durably to the WORKTREE
+    branch (`_commit_promote_rename`) does not by itself make `final_id`
+    visible to the rest of the fleet -- `frob.app.ticket_runner._ledger_
+    mirror` (T-2563) is the established mechanism for that, but it lives
+    in the app layer and `promote` is one of the verbs it deliberately
+    does NOT cover (`_LEDGER_TRANSACTIONAL_VERBS` again -- mirroring a
+    multi-file rename the same pathspec-limited way the ledger mirror
+    mirrors scope/block/attach would risk carrying a dirty worktree's
+    unrelated SOURCE edits onto `main`, the exact hazard that mirror's
+    own docstring documents as the reason it stays pathspec-limited to
+    ledger-only verbs). Wiring `promote` into that mirror is real, larger
+    work belonging with that module, not this one -- filed as a
+    follow-up (T-2587) rather than attempted here with a second,
+    less-safe mechanism. In the meantime, this logs a loud, greppable
+    ERROR whenever `root` is NOT the repo's resolved primary checkout,
+    naming exactly what T-2197 asked for."""
+    from frob.tickets._land import _resolve_primary_checkout
+
+    primary = _resolve_primary_checkout(root)
+    if primary is not None and primary.resolve() != root.resolve():
+        _log.error(
+            "tickets: promote %s -> %s: %s exists ONLY on this worktree's "
+            "own branch (%s) -- NOT yet visible on %s and not dispatchable "
+            "there until this worktree's ticket lands. A coordinator or "
+            "fleet-status check reading %s's ledger will see nothing, not "
+            "merely stale data.",
+            draft_id,
+            final_id,
+            final_id,
+            root,
+            primary,
+            primary,
+        )
+
+
+# frob:ticket T-2197
+def _commit_and_warn_promote(
+    root: Path, draft_id: str, final_id: str, report: RenumberReport
+) -> None:
+    """`finalize_draft`'s post-rename step: commits the full rename
+    (`_commit_promote_rename`) and, once committed, warns if it is not
+    yet visible on the primary checkout (`_warn_if_promote_not_visible_
+    on_primary`). A no-op for a dry-run report -- nothing was actually
+    written to commit or warn about."""
+    if report.dry_run:
+        return
+    pathspecs = _promote_commit_pathspecs(root, report)
+    if not _commit_promote_rename(root, draft_id, final_id, pathspecs):
+        return
+    _warn_if_promote_not_visible_on_primary(root, draft_id, final_id)
 
 
 # frob:ticket T-1179

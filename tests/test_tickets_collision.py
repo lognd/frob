@@ -904,3 +904,128 @@ class TestRenumberOneV2:
 
         surfaced = [rec.message for rec in caplog.records if "NOT rewritten" in rec.message]
         assert surfaced == []
+
+
+# frob:ticket T-2197
+class TestPromoteFromWorktreeCommitsAndWarns:
+    """T-2197: `frob ticket promote` (`finalize_draft`) run inside a real
+    git worktree used to leave its whole rename UNCOMMITTED -- not merely
+    invisible on `main` until a later land, but genuinely dirty working-
+    tree state liable to be swept into an unrelated ticket's next `frob
+    ticket land`. Reproduces the exact real-world shape (a `git worktree
+    add` off a primary checkout, a draft filed and finalized inside it)
+    and proves both halves of the fix: the rename is committed, and a
+    loud warning names the not-yet-visible-on-main gap."""
+
+    # frob:tests \
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
+    # lize_draft_commits_the_full_rename_in_a_worktree
+    def test_finalize_draft_commits_the_full_rename_in_a_worktree(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_draft_finalize.py::_commit_and_warn_promote \
+        # kind="unit"
+        primary = tmp_path / "primary"
+        _git_init(primary)
+        atomic_write(primary / "README.md", "seed\n")
+        _commit_all(primary, "seed")
+
+        worktree = tmp_path / "worktree"
+        _run(
+            ["git", "worktree", "add", "-b", "feature", str(worktree)],
+            primary,
+        )
+
+        created = new_ticket(worktree, _spec("Filed off-branch"))
+        assert created.is_ok, created.err
+        draft = created.danger_ok
+        assert is_draft_id(draft.id)
+
+        assert finalize_draft(worktree, draft.id).is_ok
+
+        status = subprocess.run(
+            ["git", "-C", str(worktree), "status", "--porcelain", "--", "tickets"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert status.stdout.strip() == "", (
+            "finalize_draft must commit its own rename -- a dirty "
+            f"worktree after promote is exactly T-2197's bug: {status.stdout!r}"
+        )
+
+        loaded = load_all(worktree)
+        assert loaded.is_ok
+        assert draft.id not in loaded.danger_ok
+
+    # frob:tests \
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
+    # lize_draft_warns_when_root_is_not_the_primary_checkout
+    def test_finalize_draft_warns_when_root_is_not_the_primary_checkout(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/tickets/_draft_finalize.py::_commit_and_warn_promote \
+        # kind="unit"
+        import logging
+
+        primary = tmp_path / "primary"
+        _git_init(primary)
+        atomic_write(primary / "README.md", "seed\n")
+        _commit_all(primary, "seed")
+
+        worktree = tmp_path / "worktree"
+        _run(
+            ["git", "worktree", "add", "-b", "feature2", str(worktree)],
+            primary,
+        )
+
+        created = new_ticket(worktree, _spec("Filed off-branch, second"))
+        assert created.is_ok, created.err
+        draft = created.danger_ok
+
+        with caplog.at_level(logging.ERROR, logger="frob.tickets"):
+            result = finalize_draft(worktree, draft.id)
+        assert result.is_ok, result.err
+
+        warned = [
+            rec.message
+            for rec in caplog.records
+            if "exists ONLY on this worktree's own branch" in rec.message
+        ]
+        assert warned, (
+            "promoting from a worktree must warn that the new id is not "
+            "yet visible on the primary checkout -- T-2197's WANTED bullet 1"
+        )
+
+    # frob:tests \
+    # tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns.test_fina\
+    # lize_draft_in_the_primary_checkout_itself_does_not_warn
+    def test_finalize_draft_in_the_primary_checkout_itself_does_not_warn(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        # frob:tests src/frob/tickets/_draft_finalize.py::_commit_and_warn_promote \
+        # kind="unit"
+        import logging
+
+        primary = tmp_path / "primary"
+        _git_init(primary)
+        atomic_write(primary / "README.md", "seed\n")
+        _commit_all(primary, "seed")
+
+        created = new_ticket(primary, _spec("Filed on the primary checkout"))
+        assert created.is_ok, created.err
+        draft = created.danger_ok
+
+        with caplog.at_level(logging.ERROR, logger="frob.tickets"):
+            result = finalize_draft(primary, draft.id)
+        assert result.is_ok, result.err
+
+        warned = [
+            rec.message
+            for rec in caplog.records
+            if "exists ONLY on this worktree's own branch" in rec.message
+        ]
+        assert warned == [], (
+            "promoting directly in the primary checkout must NOT claim "
+            "worktree-only visibility -- MUST-STILL-PASS control"
+        )

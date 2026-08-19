@@ -1042,6 +1042,40 @@ hand-edit of `tickets.md`, no `git stash`):
    re-run `uv run frob ticket start T-XXXX` if it regressed -- this is
    self-repair, not corruption.
 
+## 10c. `frob ticket promote` from a worktree: committed, but not visible on main until land (T-2197)
+
+`frob ticket promote <draft-id>` (`finalize_draft`) now commits its own
+full rename -- the ledger block plus every `frob:ticket`/`frob:tests`/...
+code reference the rename touches -- as one atomic commit before
+returning (T-2197). Before this, the rename was left UNCOMMITTED in the
+working tree with no caller that ever committed it, which was worse than
+merely worktree-scoped: it was liable to be silently swept into whatever
+UNRELATED ticket's `frob ticket land` ran next in that same worktree,
+misattributing the rename to a ticket that never touched it. That part is
+fixed unconditionally, in every worktree.
+
+What is still true, and what `promote` now WARNS about loudly when it
+happens: a promoted id committed inside a per-ticket worktree exists ONLY
+on that worktree's own branch until the worktree's ticket actually lands.
+`frob ticket work <promoted-id>` / `doable` / a dispatch run against the
+PRIMARY checkout will see nothing for it -- not stale data, an absent
+file -- until the branch lands. If you promote a draft and hand its new
+id off for dispatch (blocking another ticket on it, briefing a fresh
+agent), the id is not real anywhere else yet. Land first, or expect the
+dispatch to correctly refuse.
+
+Unlike `scope`/`block`/`attach`/`tier`/... (T-2563's `_ledger_mirror`,
+which copies a ticket's own ledger pathspec onto the primary checkout
+immediately, no land required), `promote` is NOT wired into that mirror
+yet (T-2587) -- `promote`'s write spans potentially many files across the
+tracked tree (every code reference `renumber_one` rewrites), not just the
+ticket's own ledger pathspec the mirror is scoped to, and mirroring the
+full rename the same pathspec-limited way risks carrying a dirty
+worktree's unrelated uncommitted source edits onto main. Until T-2587
+lands, treat a freshly promoted id as worktree-local dispatch capacity,
+not fleet-wide capacity, the same posture section 10's ledger-conflict
+guidance already asks for with any other worktree-local ledger state.
+
 ## 11. Ticket workflow
 
 1. `frob ticket start T-XXXX` -- runs the pre-work sweep (dup+xref) over

@@ -2,7 +2,7 @@
 id: T-2197
 title: frob ticket promote inside a worktree produces an id invisible to the whole
   fleet until that worktree's branch lands
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-16'
@@ -11,11 +11,14 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/tickets/_promote.py
 - docs/guides/agent-playbook.md
 - src/frob/tickets/_draft_finalize.py
 - tests/test_tickets_collision.py
+evidence_scope:
+- tests/test_tickets_ledger_concurrency.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,7 +36,12 @@ scope_changes:
   reason: existing test file for finalize_draft regression coverage
   actor: logan
   at: '2026-08-18'
-designated_repro_test: null
+evidence:
+- tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns::test_finalize_draft_commits_the_full_rename_in_a_worktree
+- tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns::test_finalize_draft_warns_when_root_is_not_the_primary_checkout
+- tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns::test_finalize_draft_in_the_primary_checkout_itself_does_not_warn
+- tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace::test_promote_and_land_finalize_never_allocate_the_same_id
+designated_repro_test: tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns::test_finalize_draft_commits_the_full_rename_in_a_worktree
 attachments:
 - path: T-2197/attachments/01-self-referential-confirmation-two-folded-in-incidents-silent-downstream-success-t-2196-measured-then-discarded-verdict-cross-referenced.md
   caption: self-referential confirmation + two folded-in incidents (silent downstream
