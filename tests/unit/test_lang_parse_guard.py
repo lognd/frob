@@ -45,8 +45,21 @@ class TestParseGuardIsWired:
         helpers by name -- a refactor that inlines the read/parse steps
         and drops the helper calls would otherwise pass every behavioral
         test in this suite (every fixture is small and fast) while
-        silently reintroducing the T-0893 DoS gap."""
-        source = inspect.getsource(lang_mod._parse)
+        silently reintroducing the T-0893 DoS gap.
+
+        T-2631: `_parse` was split (T-2575, to stay under ARCH001's line
+        threshold) into `_parse` plus a `_parse_uncached_and_store` tail
+        that `_parse` calls for its cache-miss path -- `_run_parse_with_
+        timeout` now lives in the tail, not `_parse`'s own source text.
+        The guard is still reachable on every call (see
+        `TestParseGuardIsInvoked` below, which locks that behaviorally),
+        so this checks the combined source of `_parse` plus the helper it
+        delegates its uncached path to, rather than `_parse` alone --
+        preserving the original intent (both guards present somewhere on
+        `_parse`'s call path) without pinning the internal split shape."""
+        source = inspect.getsource(lang_mod._parse) + inspect.getsource(
+            lang_mod._parse_uncached_and_store
+        )
         assert "_read_source_under_cap" in source
         assert "_run_parse_with_timeout" in source
 
