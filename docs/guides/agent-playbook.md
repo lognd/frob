@@ -963,26 +963,60 @@ deletion-filter check to catch it (T-0167 in `tickets-archive.md`). If the
 filter shows deletions you did not intend, merge main again before
 proceeding -- do not commit through it.
 
-## 10. Ledger-conflict splice guidance
+## 10. Ledger-conflict splice guidance (v2: per-ticket directories, no driver)
 
-`tickets.md` is a shared, append-mostly ledger; concurrent worktrees can
-produce a merge conflict on it. Register the `frob ticket merge-driver`
-git merge driver once per clone (`docs/modules/tickets-merge-driver.md#git-merge-driver`)
-and any `git merge`/`pull`/`rebase` touching `tickets.md` auto-
-splices via `splice_ledger` instead of conflicting -- do this before
-touching a worktree, not after hitting the first conflict.
+**This repo is on ledger v2** (T-1258/T-2356): the `tickets.md`/`tickets-
+archive.md` monofile is gone, replaced by disjoint `tickets/T-####/`
+directories (`ticket.md`, `done-report.md`, `attachments/`) -- ordinary
+git objects that git's native per-file 3-way merge already resolves
+correctly for the common case (two edits to different lines/keys of the
+same `ticket.md`). The `frob ticket merge-driver` git merge driver this
+section used to tell you to register once per clone is **retired for
+THIS repo, deliberately** -- `.gitattributes` documents why, and both
+`git config --get merge.frob-tickets.driver` and `git check-attr merge`
+against a `tickets/T-####/` file confirm it is unregistered and unrouted
+on a clean clone. Do NOT register it "just in case"; it is source that
+still exists for OTHER repos still on v1/monofile mode, not a missed
+setup step here. If you land on this section from an old habit or an
+older Done report, that habit is stale -- see T-2570.
 
-If the driver is not registered (or a genuinely malformed ledger still
-gets past it, and git falls back to a real conflict), resolve by hand:
-keep the NEWEST state per ticket section (the most recently updated
-`state:`/Done-report block for a given ticket id wins), not by
-mechanically taking "ours" or "theirs" -- a naive resolution can silently
-drop a state transition one side made. After resolving, audit the
-open-ticket count (`frob ticket doable` / `frob ticket show <id>` on
-anything touched by the conflict) to confirm no ticket regressed to an
-earlier state or vanished. `frob ticket land` also resolves any
-`tickets.md` conflict it hits internally via the same `splice_ledger`
-call, no manual step needed there either.
+**main is itself a second writer of `tickets/T-####/` now** (T-2563's
+ledger mirror: `scope`/`block`/`priority`/... commit straight to the
+primary checkout so the fleet sees them immediately, not only after a
+land). A worktree's `git merge main` can therefore conflict on its own
+ticket's files. T-2570 measured this directly (reproduced with two
+branches editing the same `tickets/T-####/ticket.md`/`done-report.md`
+from a common base):
+
+- **Different lines/keys of `ticket.md`** (e.g. main mirrors a `scope`
+  edit, your worktree changed `priority`): native 3-way merges cleanly,
+  no conflict, nothing to do.
+- **The same key**, or **`done-report.md` created fresh on both sides**
+  (an add/add): native 3-way DOES conflict with real `<<<<<<<`/`>>>>>>>`
+  markers, same as any other file. This is expected and not a sign of
+  ledger corruption -- resolve it by reading both sides and keeping
+  whichever facts are real (e.g. a land's `error-findings:` claims AND
+  your own newer narrative), the way any genuine two-writer conflict on
+  a non-append-only file must be resolved. Do NOT `git checkout --ours`/
+  `--theirs` blindly -- neither side of a real ticket-file conflict is
+  reliably a superset of the other.
+- T-2570 also found and fixed the sharper version of the `done-report.md`
+  case: the mirror used to copy the WHOLE `tickets/T-####/` directory
+  (`shutil.copytree(..., dirs_exist_ok=True)`), so an unrelated `scope`/
+  `block` mirror could silently overwrite main's own `done-report.md`
+  with a stale worktree copy -- no conflict markers, just quiet data
+  loss, worse than the conflict case above. Fixed at the source
+  (`_UNMIRRORED_TICKET_FILENAMES` in `_ledger_mirror.py` now excludes
+  `done-report.md` from that mirror's copy and commit); you should not
+  see that shape reproduce going forward, but if `done-report.md`
+  content looks like it reverted to something older with NO conflict
+  markers at all, that is the signature to suspect and report.
+
+After resolving any real conflict by hand, audit the ticket(s) touched
+(`frob ticket show <id>`) to confirm no ticket regressed to an earlier
+state or lost a Done-report claim. `frob ticket land` resolves a
+`tickets/T-####/` conflict it hits internally the same way -- native
+merge first, no driver -- so nothing extra is required there either.
 
 ## 10b. Finalizing the ledger before you report (do NOT `git merge main` to fix it)
 

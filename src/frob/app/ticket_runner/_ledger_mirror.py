@@ -264,32 +264,85 @@ OWN_TRANSACTION_VERBS = frozenset(
 )
 
 
+# frob:ticket T-2570
+# frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
+_UNMIRRORED_TICKET_FILENAMES = frozenset({"done-report.md"})
+"""T-2570: filenames the mirror must never copy or commit even when they
+sit inside an otherwise-mirrored `tickets/T-####/` directory.
+
+`_ledger_pathspecs` returns the whole ticket DIRECTORY as one pathspec
+(needed so `attach`'s new files under `attachments/` reach main), but
+`done-report.md` is explicitly `GENERIC_COMMIT_UNMIRRORED` for its own
+verb (`LEDGER_VERB_STRATEGY["done-report"]`) and is separately owned by
+`land`'s `OWN_TRANSACTION` write. A directory-wide `shutil.copytree(...,
+dirs_exist_ok=True)` does not know that -- it silently overwrote main's
+own `done-report.md` (e.g. a land's freshly written `error-findings:`
+claims) with whatever stale copy happened to sit in the mirroring
+worktree, the moment an unrelated verb like `scope` mirrored. This set is
+subtracted from both the copy and the git add/commit steps so a mirror
+touches only the files its own verb table actually claims."""
+
+
 # frob:ticket T-2563
+# frob:ticket T-2570
 def _copy_ledger_paths(
-    worktree: Path, primary: Path, pathspecs: tuple[str, ...]
+    worktree: Path,
+    primary: Path,
+    pathspecs: tuple[str, ...],
+    *,
+    exclude_filenames: frozenset[str] = frozenset(),
 ) -> bool:
     """Copy `pathspecs` from `worktree` into `primary`, returning whether
     anything was actually copied.
 
-    Only the ticket's own ledger paths move. This is what keeps the
-    positive control "source changes must NOT leak to main" true by
-    construction rather than by care: nothing outside these pathspecs is
-    ever read, so a worktree's in-progress source edits cannot ride along
-    even if the tree is filthy.
+    `exclude_filenames` (T-2570) is skipped even inside an otherwise-
+    mirrored directory -- `mirror_ledger_change_to_primary` passes
+    `_UNMIRRORED_TICKET_FILENAMES` here so a metadata-verb mirror cannot
+    clobber `done-report.md`; `mirror_promote_to_primary` passes nothing,
+    because a promote's whole-ticket rename legitimately DOES carry any
+    existing done report along with the rest of the directory -- it is
+    not a second writer racing anything, it is the one authoritative move
+    of the ticket's own content to its new id. Otherwise: only the
+    ticket's own ledger paths move, which is what keeps the positive
+    control "source changes must NOT leak to main" true by construction
+    rather than by care -- nothing outside these pathspecs is ever read,
+    so a worktree's in-progress source edits cannot ride along even if
+    the tree is filthy.
     """
+    ignore = shutil.ignore_patterns(*exclude_filenames) if exclude_filenames else None
     copied = False
     for spec in pathspecs:
         src = worktree / spec
         dst = primary / spec
         if src.is_dir():
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copytree(src, dst, dirs_exist_ok=True)
+            shutil.copytree(src, dst, dirs_exist_ok=True, ignore=ignore)
             copied = True
         elif src.is_file():
+            if src.name in exclude_filenames:
+                continue
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             copied = True
     return copied
+
+
+# frob:ticket T-2570
+def _mirror_commit_pathspecs(pathspecs: tuple[str, ...]) -> tuple[str, ...]:
+    """`pathspecs` plus a `:(exclude)` magic entry per mirrored directory
+    for each name in `_UNMIRRORED_TICKET_FILENAMES` (T-2570).
+
+    Belt-and-suspenders alongside `_copy_ledger_paths`'s own exclusion:
+    even if `done-report.md` already sits uncommitted on the primary
+    checkout for some other reason, `git add`/`git commit` must never
+    pick it up as a passenger of a mirrored metadata commit."""
+    excludes = tuple(
+        f":(exclude){spec.rstrip('/')}/{name}"
+        for spec in pathspecs
+        for name in _UNMIRRORED_TICKET_FILENAMES
+        if not spec.endswith(name)
+    )
+    return pathspecs + excludes
 
 
 # frob:ticket T-2563
@@ -433,9 +486,13 @@ def mirror_ledger_change_to_primary(root: Path, ticket_id: str, command: str) ->
         return
 
     with ledger_lock(primary):
-        if not _copy_ledger_paths(root, primary, pathspecs):
+        if not _copy_ledger_paths(
+            root, primary, pathspecs, exclude_filenames=_UNMIRRORED_TICKET_FILENAMES
+        ):
             return
-        _commit_mirrored_paths(primary, pathspecs, ticket_id, command)
+        _commit_mirrored_paths(
+            primary, _mirror_commit_pathspecs(pathspecs), ticket_id, command
+        )
 
 
 # frob:ticket T-2587

@@ -154,6 +154,51 @@ class TestLedgerMirrorCarriesNothingElse:
         listed = _git("show", "--stat", "--name-only", "HEAD", cwd=primary)
         assert "src_secret.py" not in listed.stdout
 
+    # frob:ticket T-2570
+    def test_mirror_does_not_clobber_primarys_own_done_report(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2570: `done-report` is `GENERIC_COMMIT_UNMIRRORED` (its OWN
+        write never mirrors) and `land` is `OWN_TRANSACTION` (it owns
+        `done-report.md` too) -- but `_ledger_pathspecs` returns the whole
+        `tickets/T-####` DIRECTORY, so a `scope`/`block`/... mirror's
+        `shutil.copytree(..., dirs_exist_ok=True)` silently drags
+        `done-report.md` along and overwrites whatever main independently
+        wrote there (e.g. a land's `error-findings:` claims), even though
+        no mirrored verb ever intended to touch that file. Reproduces the
+        real incident: a worktree's stale local draft clobbering main's
+        freshly land-written done report the moment an unrelated `scope`
+        edit mirrors."""
+        primary, worktree = _setup(tmp_path)
+        (primary / "tickets" / "T-0001" / "done-report.md").write_text(
+            "## Done report\n\nerror-findings: []\n"
+        )
+        _git("add", "-A", cwd=primary)
+        _git("commit", "-q", "-m", "land: write done-report.md", cwd=primary)
+
+        # The worktree still carries its OWN, older/different draft of the
+        # same file, uncommitted-on-main -- e.g. left over from before the
+        # land above ever happened.
+        (worktree / "tickets" / "T-0001" / "done-report.md").write_text(
+            "## Done report\n\nstale worktree narrative, no error-findings\n"
+        )
+        path = worktree / "tickets" / "T-0001" / "ticket.md"
+        path.write_text(path.read_text() + "scope:\n- src/mine.py\n")
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-am", "scope edit", cwd=worktree)
+
+        mirror_ledger_change_to_primary(worktree, "T-0001", "scope")
+
+        # The unrelated `scope` mirror must still land.
+        assert _visible_on_primary(primary, "src/mine.py")
+        # But it must NOT have clobbered main's own done-report.md.
+        shown = _git(
+            "show", "HEAD:tickets/T-0001/done-report.md", cwd=primary
+        )
+        assert shown.returncode == 0, shown.stdout + shown.stderr
+        assert "error-findings" in shown.stdout
+        assert "stale worktree narrative" not in shown.stdout
+
     # frob:ticket T-2563
     def test_primary_worktree_is_left_clean(self, tmp_path: Path) -> None:
         """A mirror that dirtied the shared root would DirtyMain-block

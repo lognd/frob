@@ -776,12 +776,35 @@ and commits them there, immediately after the local auto-commit.
 - Running in the primary checkout is a no-op that returns before any lock
   or land probe, so a coordinator's own invocation costs nothing extra.
 
-Because `main` is now a second writer of the same ticket file, a later
-`git merge main` in the worktree can conflict on it. Register the
-`frob ticket merge-driver` (docs/modules/tickets-merge-driver.md) so that
-splices automatically instead of conflicting; without it, resolve by
-keeping the newest state per ticket, as the agent playbook's ledger rule
-already describes.
+Because `main` is now a second writer of the same ticket directory, a
+later `git merge main` in the worktree can conflict on it. **T-2570
+measured this rather than guessing**: on this repo's ledger v2
+(disjoint `tickets/T-####/` directories), the `frob ticket merge-driver`
+this paragraph used to point at is deliberately RETIRED (`.gitattributes`
+documents why -- it exists in frob's own source only for other repos
+still on v1/monofile mode) -- do not register it. Native git 3-way merge
+handles the common case (two edits to different keys/lines of the same
+`ticket.md`) cleanly with zero conflict; it genuinely conflicts only on
+same-key edits or an add/add on a file both sides create fresh
+(`done-report.md` is the reproduced case) -- resolve those by reading
+both sides, same as any other two-writer conflict on a non-append-only
+file. See the agent playbook's ledger-conflict section for the full
+write-up and the exact repro shape.
+
+T-2570 also closed a sharper, silent version of the same hazard:
+`_copy_ledger_paths`' directory-wide `shutil.copytree` used to drag
+`done-report.md` along with every mirrored `scope`/`block`/... commit,
+even though `done-report.md` is explicitly `GENERIC_COMMIT_UNMIRRORED`
+for its own verb and separately owned by `land`'s `OWN_TRANSACTION`
+write -- so an unrelated metadata mirror could silently overwrite main's
+own `done-report.md` (e.g. a land's freshly written `error-findings:`
+claims) with a stale worktree copy, with no conflict markers at all.
+`_UNMIRRORED_TICKET_FILENAMES` now excludes `done-report.md` from both
+the copy and the `git add`/`git commit` pathspecs of
+`mirror_ledger_change_to_primary` specifically -- `mirror_promote_to_
+primary` (below) is deliberately left untouched, since a promote's
+whole-ticket rename legitimately carries any existing done report with
+it rather than racing a second writer.
 
 ### `promote` gets its own dedicated mirror, not a `MIRRORED_LEDGER_VERBS` entry (T-2587)
 

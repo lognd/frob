@@ -2,7 +2,7 @@
 id: T-2570
 title: 'ledger mirror makes main a second writer of per-ticket files: decide the v2
   merge strategy'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -55,7 +55,11 @@ scope_changes:
   reason: doc edge + test coverage for mirror pathspec narrowing
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse::test_mirror_does_not_clobber_primarys_own_done_report
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_attachment_file_reaches_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_scope_edit_from_worktree_is_visible_on_primary
+designated_repro_test: tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorCarriesNothingElse::test_mirror_does_not_clobber_primarys_own_done_report
 threat: null
 component: null
 anchor: false
