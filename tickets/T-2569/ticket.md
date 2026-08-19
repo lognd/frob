@@ -14,6 +14,13 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_land.py
+- tests/test_ticket_reverify.py
+- tests/test_tickets_acceptance.py
+- tests/test_tickets_evidence_cli.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_ticket_runner_designate_repro.py
+- tests/unit/test_ticket_runner_land_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +42,48 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_land_cmd.py
   reason: 'T-2569: thread SpawnFailed/timeout as UNMEASURED instead of FAILED through
     _verify_ids_passing and its close/land consumers'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_ticket_reverify.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_tickets_acceptance.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/test_tickets_evidence_cli.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_designate_repro.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_runner_land_release.py
+  reason: 'T-2569: update mocks of _verify_ids_passing (frozenset->dict[str,VerifyOutcome])
+    and add UNMEASURED/FAILED positive-control tests'
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
