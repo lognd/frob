@@ -675,6 +675,7 @@ class TestParseTsRustCppC:
         assert any("sum them" in c.text for c in pf.comments)
 
 
+# frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:
         path = _write(tmp_path, "x.xyz", "whatever")
@@ -687,6 +688,115 @@ class TestErrors:
         result = parse_file(missing)
         assert result.is_err
         assert result.danger_err == LangError.IoFailed
+
+    # frob:ticket T-2575
+    # frob:tests \
+    # tests/test_lang.py::TestErrors.test_unsupported_extension_warns_by_default
+    def test_unsupported_extension_warns_by_default(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """T-2575 repro: a non-declaring caller hitting a genuinely
+        unexpected unsupported extension must still WARN -- this is the
+        signal the whole fix exists to preserve, not just demote to
+        DEBUG. Failed at the T-2575 parent commit before the dedup
+        mechanism existed only in the sense that the log LEVEL assertion
+        below (WARNING, not blanket DEBUG) is what a naive "demote to
+        DEBUG" fix would have broken."""
+        reset_parse_cache()
+        path = _write(tmp_path, "x.xyz", "whatever")
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = parse_file(path)
+        assert result.is_err
+        assert result.danger_err == LangError.UnsupportedLanguage
+        assert any(
+            "no grammar registered" in record.message.lower()
+            and record.levelno == logging.WARNING
+            for record in caplog.records
+        )
+
+    # frob:ticket T-2575
+    def test_unsupported_extension_declared_heterogeneous_no_warning(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """Positive control (direction 1, T-2575): a caller that declares
+        `expect_heterogeneous=True` and hits an unsupported extension gets
+        NO warning, but behavior is otherwise unchanged -- still
+        `Err(UnsupportedLanguage)`."""
+        reset_parse_cache()
+        path = _write(tmp_path, "x.md", "# whatever")
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = parse_file(path, expect_heterogeneous=True)
+        assert result.is_err
+        assert result.danger_err == LangError.UnsupportedLanguage
+        assert not any(
+            "no grammar registered" in record.message.lower()
+            and record.levelno == logging.WARNING
+            for record in caplog.records
+        )
+
+    # frob:ticket T-2575
+    def test_unsupported_extension_non_declaring_still_warns(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """Positive control (direction 2, T-2575): a caller that did NOT
+        declare `expect_heterogeneous` still warns on a genuinely
+        unexpected unsupported extension -- without this case the fix
+        would be indistinguishable from a blanket demotion to DEBUG."""
+        reset_parse_cache()
+        path = _write(tmp_path, "y.qqq", "whatever")
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            result = parse_file(path)
+        assert result.is_err
+        assert result.danger_err == LangError.UnsupportedLanguage
+        assert any(
+            "no grammar registered" in record.message.lower()
+            and record.levelno == logging.WARNING
+            for record in caplog.records
+        )
+
+    # frob:ticket T-2575
+    def test_unsupported_extension_warning_deduplicates_per_run(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """T-2575: once per (extension, call site) per run is enough --
+        a second, third, fourth `.zzq` file through the same non-declaring
+        call site (`parse_file`) must not re-warn; the first one already
+        said everything a repeat says."""
+        reset_parse_cache()
+        first = _write(tmp_path, "a.zzq", "one")
+        second = _write(tmp_path, "b.zzq", "two")
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            parse_file(first)
+            parse_file(second)
+        warnings = [
+            record
+            for record in caplog.records
+            if "no grammar registered" in record.message.lower()
+            and record.levelno == logging.WARNING
+        ]
+        assert len(warnings) == 1
+
+    # frob:ticket T-2575
+    def test_unsupported_extension_warning_resets_per_run(
+        self, caplog: pytest.LogCaptureFixture, tmp_path: Path
+    ) -> None:
+        """T-2575: `reset_parse_cache` (called once per `frob check`
+        invocation) clears the dedup set too -- a NEW run re-warns for the
+        same (extension, site), it is not silenced forever."""
+        reset_parse_cache()
+        path = _write(tmp_path, "c.zzr", "one")
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            parse_file(path)
+        reset_parse_cache()
+        with caplog.at_level(logging.WARNING, logger="frob.lang"):
+            parse_file(path)
+        warnings = [
+            record
+            for record in caplog.records
+            if "no grammar registered" in record.message.lower()
+            and record.levelno == logging.WARNING
+        ]
+        assert len(warnings) == 2
 
     # invariant spec: [INV-015](invariants/INV-015.md)
     def test_syntax_error_yields_partial_symbols(self) -> None:

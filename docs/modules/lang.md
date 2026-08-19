@@ -8,9 +8,23 @@ tree-sitter grammars (python, typescript/tsx, rust, c, cpp, kotlin) plus
 ## Public API
 
 ```python
-def parse_file(path: Path) -> Result[ParsedFile, LangError]
+def parse_file(path: Path, *, expect_heterogeneous: bool = False) -> Result[ParsedFile, LangError]
 def supported_languages() -> frozenset[str]   # {"python","typescript","rust","c","cpp","kotlin","strata"}
 ```
+
+`extract_imports`, `iter_identifiers`, and `raw_tree` carry the same
+`expect_heterogeneous` keyword-only parameter. T-2575: pass `True` when the
+caller is walking a tree that ROUTINELY mixes source with non-source
+extensions (a directory walker, a diff touching `.md`/`.toml`/lockfiles
+alongside code) -- the unsupported-extension WARNING log line is suppressed
+for that call, but the `Result` is unchanged (`Err(LangError.
+UnsupportedLanguage)`). A caller that leaves it `False` (the default) still
+gets the loud WARNING, deduplicated to once per `(extension, entry-point)`
+per run (`reset_parse_cache` clears the dedup set, same lifecycle as the
+`_parse` memo). This exists so the "no grammar registered" signal stays
+loud for a genuinely unexpected unsupported path, instead of every caller
+independently re-deriving a `tree_sitter_extensions()` membership
+pre-filter to avoid it (the pre-T-2575 shape).
 
 Dispatch is by file extension:
 

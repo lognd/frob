@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/tickets/_leases.py
 - docs/design/registry/check-coverage.yaml

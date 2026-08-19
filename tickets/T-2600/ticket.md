@@ -1,5 +1,5 @@
 ---
-id: T-draft-2371a7de
+id: T-2600
 title: T-2450 scope is a single semicolon-joined glob string, not two scope entries
 state: queued
 kind: bug

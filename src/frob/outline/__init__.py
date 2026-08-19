@@ -156,14 +156,18 @@ def _parse_for_outline(
         return Err(OutlineError.ParseFailed)
     parsed = parsed_result.danger_ok
 
-    # `extract_imports` is a tree-sitter-only escape hatch with no `.strata`
-    # analogue (frob.lang docstring) -- skip the call for it rather than
-    # inviting its "no grammar registered" warning on every strata file
-    # (T-0129); `.strata` outlines simply carry no imports.
-    if path.suffix.lower() in _STRATA_EXTS:
-        return Ok((parsed, ()))
-
-    imports_result = extract_imports(path)
+    # T-2575: `extract_imports` is a tree-sitter-only escape hatch with no
+    # `.strata` analogue (frob.lang docstring); `_OUTLINE_EXTS` accepts
+    # `.strata` as a real outline extension (T-0129) even though
+    # `extract_imports` will always answer `Err(UnsupportedLanguage)` for
+    # it. `expect_heterogeneous=True` declares that as EXPECTED here
+    # rather than special-casing `.strata` before the call -- this used to
+    # skip the call outright to dodge frob.lang's "no grammar registered"
+    # WARNING (a third mechanism duplicating the same rule
+    # `tickets/_land.py` and `frob.arch` also carried); now the ordinary
+    # `Err` path handles it, and every extension `_OUTLINE_EXTS` might grow
+    # to include gets the same treatment automatically.
+    imports_result = extract_imports(path, expect_heterogeneous=True)
     raw_imports = imports_result.danger_ok if imports_result.is_ok else ()
     return Ok((parsed, raw_imports))
 

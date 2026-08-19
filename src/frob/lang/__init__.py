@@ -347,6 +347,14 @@ _parse_cache: dict[str, Result[tuple[Tree, bytes, str], LangError]] = {}
 _parse_cache_hits = 0
 _parse_cache_misses = 0
 
+# frob:ticket T-2575
+#: (extension, call-site) pairs that have already logged the "no grammar
+#: registered" WARNING since the last `reset_parse_cache` -- once per run
+#: is enough signal; a second `.md` file hitting the same non-declaring
+#: call site carries no new information over the first. Guarded by
+#: `_parse_cache_lock` like every other piece of per-run `_parse` state.
+_unsupported_ext_warned: set[tuple[str, str]] = set()
+
 # frob:ticket T-0555
 #: Repo-relative-ish display paths (`_display_path`) of every file whose
 #: tree-sitter parse was salvaged around a syntax error since the last
@@ -401,6 +409,7 @@ def reset_parse_cache() -> None:
         _parse_cache_hits = 0
         _parse_cache_misses = 0
         _partial_parse_files.clear()
+        _unsupported_ext_warned.clear()
 
 
 # frob:doc docs/modules/lang.md#parse-cache
@@ -480,7 +489,66 @@ def _read_source_under_cap(path: Path) -> Result[bytes, LangError]:
         return Err(LangError.IoFailed)
 
 
-def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
+def _warn_unsupported_extension(
+    ext: str, path: Path, *, expect_heterogeneous: bool, site: str
+) -> None:
+    """The `_parse` unsupported-extension signal (T-2575): loud exactly
+    once per (extension, call site) per run for a caller that did NOT
+    declare `expect_heterogeneous=True`, silent (DEBUG only) for one that
+    did.
+
+    This is the primitive half of the T-2575 fix: `_parse` cannot tell a
+    genuinely unexpected unsupported path (a caller that believed it was
+    handed source) from routine heterogeneous-tree traffic (a directory
+    walker that expects `.md`/`.json`/lockfiles alongside real source) --
+    only the CALLER knows which situation it is in. `expect_heterogeneous`
+    makes that knowledge explicit at the call site instead of leaving it
+    implicit in whether the caller remembered to pre-filter by extension
+    (the pre-T-2575 shape: the same `tree_sitter_extensions()` membership
+    check duplicated across six call sites, two of them carrying long
+    comments re-deriving this exact rule). A caller that declares
+    heterogeneous input still gets `Err(UnsupportedLanguage)` back
+    unchanged -- only the log line is suppressed, never the signal a
+    caller that did NOT declare it still needs: an extension nobody
+    expected reaching a parse call is worth a human's attention exactly
+    once per run, not drowned out by every `.md` file after the first.
+    """
+    if expect_heterogeneous:
+        _log.debug(
+            "no grammar registered for extension %r (path=%s, site=%s); "
+            "caller declared expect_heterogeneous=True",
+            ext,
+            path,
+            site,
+        )
+        return
+    key = (ext, site)
+    with _parse_cache_lock:
+        already_warned = key in _unsupported_ext_warned
+        _unsupported_ext_warned.add(key)
+    if already_warned:
+        _log.debug(
+            "no grammar registered for extension %r (path=%s, site=%s); "
+            "already warned once this run for this (extension, site)",
+            ext,
+            path,
+            site,
+        )
+        return
+    _log.warning(
+        "no grammar registered for extension %r (path=%s, site=%s); pass "
+        "expect_heterogeneous=True at the call site if this is routine, "
+        "expected traffic (further hits at this (extension, site) this "
+        "run are logged at DEBUG only)",
+        ext,
+        path,
+        site,
+    )
+
+
+def _parse(
+    path: Path, *, expect_heterogeneous: bool = False, site: str = "_parse"
+) -> Result[tuple[Tree, bytes, str], LangError]:
     """Read and parse `path`, returning (tree, source, language_label).
 
     Shared by every public entry point below (`parse_file`, `extract_imports`,
@@ -489,13 +557,21 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     see `_parse_cache` above): the read+hash always happens (cheap relative
     to a tree-sitter parse), but the actual grammar parse is skipped on a
     cache hit.
+
+    `expect_heterogeneous`/`site` (T-2575): see `_warn_unsupported_extension`
+    -- `site` should name the PUBLIC entry point the caller went through
+    (`parse_file`/`extract_imports`/`iter_identifiers`/`raw_tree`), not this
+    private function, since that is the granularity a caller's
+    `expect_heterogeneous=True` declaration actually varies over.
     """
     global _parse_cache_hits, _parse_cache_misses
 
     ext = path.suffix.lower()
     entry = _EXTENSION_TABLE.get(ext)
     if entry is None:
-        _log.warning("no grammar registered for extension %r (path=%s)", ext, path)
+        _warn_unsupported_extension(
+            ext, path, expect_heterogeneous=expect_heterogeneous, site=site
+        )
         return Err(LangError.UnsupportedLanguage)
     grammar_name, language_label = entry
     _log.debug("dispatching path=%s to grammar=%s", path, grammar_name)
@@ -519,10 +595,28 @@ def _parse(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
         _log.debug("parse cache hit path=%s", path)
         return result
 
+    return _parse_uncached_and_store(
+        source, path, grammar_name, language_label, cache_key
+    )
+
+
+def _parse_uncached_and_store(
+    source: bytes,
+    path: Path,
+    grammar_name: str,
+    language_label: str,
+    cache_key: str,
+) -> Result[tuple[Tree, bytes, str], LangError]:
+    """`_parse`'s cache-MISS tail: run the real tree-sitter parse, then
+    store the outcome under `cache_key` -- split out purely to keep
+    `_parse` itself under ARCH001's line threshold once T-2575's
+    `expect_heterogeneous`/`site` plumbing pushed it over."""
     parser = get_parser(grammar_name)  # type: ignore[arg-type]
     tree_result = _run_parse_with_timeout(lambda: parser.parse(source), path)
     if tree_result.is_err:
-        result = Err(tree_result.danger_err)
+        result: Result[tuple[Tree, bytes, str], LangError] = Err(
+            tree_result.danger_err
+        )
         with _parse_cache_lock:
             _parse_cache[cache_key] = result
         return result
@@ -713,10 +807,17 @@ def _artifact_fingerprint() -> str:
 # frob:ticket T-1464
 # frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_hit_skips_extract  # noqa: E501
 # frob:tests tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache.test_miss_populates_cache  # noqa: E501
-def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]:
+def _parse_file_with_artifact_cache(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[ParsedFile, LangError]:
     """`_parse_file_uncached`, wrapped with a persistent, content-hash-keyed
     artifact lookup (T-1464) -- the actual body `parse_file` wraps in
     `@memoize_per_run`.
+
+    `expect_heterogeneous` (T-2575) only matters on a cache MISS -- a HIT
+    returns a previously-parsed `ParsedFile` straight from the artifact
+    store without ever reaching `_parse`, so there is no warning to
+    suppress or emit either way.
 
     When no persistent cache is configured (`_artifact_cache_connection`
     returns `None`, the common single-process case), this is a transparent
@@ -733,13 +834,13 @@ def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]
     """
     conn = _artifact_cache_connection()
     if conn is None:
-        return _parse_file_uncached(path)
+        return _parse_file_uncached(path, expect_heterogeneous=expect_heterogeneous)
 
     read_result = _read_source_under_cap(path)
     if read_result.is_err:
         # Same failure `_parse_file_uncached` would hit -- let it produce
         # the canonical Err rather than duplicating that error mapping here.
-        return _parse_file_uncached(path)
+        return _parse_file_uncached(path, expect_heterogeneous=expect_heterogeneous)
     content_hash = hashlib.sha256(read_result.danger_ok).hexdigest()
     fingerprint = _artifact_fingerprint()
 
@@ -761,7 +862,13 @@ def _parse_file_with_artifact_cache(path: Path) -> Result[ParsedFile, LangError]
             )
             return Ok(parsed.model_copy(update={"path": _display_path(path)}))
 
-    return _parse_and_populate_artifact_cache(path, conn, content_hash, fingerprint)
+    return _parse_and_populate_artifact_cache(
+        path,
+        conn,
+        content_hash,
+        fingerprint,
+        expect_heterogeneous=expect_heterogeneous,
+    )
 
 
 # frob:ticket T-1464
@@ -813,7 +920,12 @@ def _load_cached_artifact_payload(
 # raises KeyError, or any exception, regardless of string length) that the resolver's \
 # syntactic bracket scan cannot distinguish from a dict lookup"
 def _parse_and_populate_artifact_cache(
-    path: Path, conn: sqlite3.Connection, content_hash: str, fingerprint: str
+    path: Path,
+    conn: sqlite3.Connection,
+    content_hash: str,
+    fingerprint: str,
+    *,
+    expect_heterogeneous: bool = False,
 ) -> Result[ParsedFile, LangError]:
     """Cache-miss tail of `_parse_file_with_artifact_cache` (T-1464): run
     the real `_parse_file_uncached`, then persist a successful result
@@ -823,7 +935,7 @@ def _parse_and_populate_artifact_cache(
     file's `ParsedFile` is simply re-derived by the next worker that wants
     it) rather than crashing the whole `frob check` run over a failed
     OPPORTUNISTIC write."""
-    result = _parse_file_uncached(path)
+    result = _parse_file_uncached(path, expect_heterogeneous=expect_heterogeneous)
     if result.is_ok:
         from frob.graph.cache import CacheLocked, store_parsed_artifact
 
@@ -843,7 +955,9 @@ def _parse_and_populate_artifact_cache(
 
 
 # frob:ticket T-0410
-def _parse_file_uncached(path: Path) -> Result[ParsedFile, LangError]:
+def _parse_file_uncached(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[ParsedFile, LangError]:
     """`parse_file`'s real body, unwrapped -- see `parse_file` (below) for
     the public contract and the T-0410 memoization rationale. Split out
     purely so `parse_file` can wrap it in `@memoize_per_run` lazily (the
@@ -852,12 +966,14 @@ def _parse_file_uncached(path: Path) -> Result[ParsedFile, LangError]:
 
     `.strata` files route through `_parse_strata_file` (strata-core's own
     parser, no tree-sitter grammar exists for the language); every other
-    extension routes through the tree-sitter `_parse`/`extract` pair below.
-    """
+    extension routes through the tree-sitter `_parse`/`extract` pair below,
+    `expect_heterogeneous` forwarded through to it (T-2575)."""
     if path.suffix.lower() == _STRATA_EXTENSION:
         return _parse_strata_file(path)
 
-    parsed_result = _parse(path)
+    parsed_result = _parse(
+        path, expect_heterogeneous=expect_heterogeneous, site="parse_file"
+    )
     if parsed_result.is_err:
         return Err(parsed_result.danger_err)
     tree, source, language_label = parsed_result.danger_ok
@@ -866,7 +982,9 @@ def _parse_file_uncached(path: Path) -> Result[ParsedFile, LangError]:
     return Ok(_build_parsed_file(path, language_label, symbols, comments, source))
 
 
-_parse_file_memoized: Callable[[Path], Result[ParsedFile, LangError]] | None = None
+_parse_file_memoized: (
+    Callable[..., Result[ParsedFile, LangError]] | None
+) = None
 
 
 # frob:doc docs/modules/graph.md#public-api
@@ -875,8 +993,21 @@ _parse_file_memoized: Callable[[Path], Result[ParsedFile, LangError]] | None = N
 # frob:tests tests/unit/test_memo.py::test_parse_file_second_call_is_memo_hit
 # invariant spec: [INV-015](invariants/INV-015.md)
 # frob:tests tests/test_lang.py::TestErrors.test_syntax_error_yields_partial_symbols
-def parse_file(path: Path) -> Result[ParsedFile, LangError]:
+def parse_file(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[ParsedFile, LangError]:
     """Read, parse, and extract `path` into a `ParsedFile` (dispatch by extension).
+
+    `expect_heterogeneous` (T-2575): pass `True` when `path` comes from a
+    walk over a tree that ROUTINELY mixes source with non-source
+    extensions (a directory walker visiting every file, a diff touching
+    `.md`/`.json`/lockfiles alongside code) -- this suppresses the
+    unsupported-extension WARNING log line for that call (still returns
+    `Err(LangError.UnsupportedLanguage)` unchanged) without weakening the
+    signal for a caller that expected a real source path and got a
+    surprise instead. Leave it `False` (the default) for any caller that
+    believes `path` names actual source; that is the case the WARNING
+    exists to catch.
 
     `_parse_file_uncached`, wrapped in `@memoize_per_run` on first call
     (T-0410) -- the wrap itself is deferred past import time (see
@@ -904,19 +1035,26 @@ def parse_file(path: Path) -> Result[ParsedFile, LangError]:
         from frob.check._memo import memoize_per_run
 
         _parse_file_memoized = memoize_per_run(_parse_file_with_artifact_cache)
-    return _parse_file_memoized(path)
+    return _parse_file_memoized(path, expect_heterogeneous=expect_heterogeneous)
 
 
 # frob:doc docs/modules/graph.md#public-api
-def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
+def extract_imports(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[tuple[str, ...], LangError]:
     """Raw, unresolved import/include specifiers declared in `path`.
 
     `frob.cycle` uses this to build its dependency graph -- specifiers come
     back exactly as written in source (a dotted python module name, a quoted
     C/C++ include path); resolving one to a real file under a scan root is
     the caller's job (see `resolve_local_import`), not this parser's.
+
+    `expect_heterogeneous` (T-2575): see `parse_file`'s docstring -- same
+    contract, scoped to calls through this entry point.
     """
-    parsed_result = _parse(path)
+    parsed_result = _parse(
+        path, expect_heterogeneous=expect_heterogeneous, site="extract_imports"
+    )
     if parsed_result.is_err:
         return Err(parsed_result.danger_err)
     tree, _source, language_label = parsed_result.danger_ok
@@ -926,14 +1064,21 @@ def extract_imports(path: Path) -> Result[tuple[str, ...], LangError]:
 
 
 # frob:doc docs/modules/graph.md#public-api
-def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangError]:
+def iter_identifiers(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[tuple[tuple[str, int], ...], LangError]:
     """(name, 1-based line) for every identifier-like leaf token in `path`.
 
     `frob.xref` uses this to find usages of a symbol -- a broader, flatter
     shape than `RawSymbol` (which only covers declarations), so it is kept
     as its own extraction rather than folded into `parse_file`.
+
+    `expect_heterogeneous` (T-2575): see `parse_file`'s docstring -- same
+    contract, scoped to calls through this entry point.
     """
-    parsed_result = _parse(path)
+    parsed_result = _parse(
+        path, expect_heterogeneous=expect_heterogeneous, site="iter_identifiers"
+    )
     if parsed_result.is_err:
         return Err(parsed_result.danger_err)
     tree, _source, language_label = parsed_result.danger_ok
@@ -941,7 +1086,9 @@ def iter_identifiers(path: Path) -> Result[tuple[tuple[str, int], ...], LangErro
 
 
 # frob:doc docs/modules/graph.md#public-api
-def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
+def raw_tree(
+    path: Path, *, expect_heterogeneous: bool = False
+) -> Result[tuple[Tree, bytes, str], LangError]:
     """The raw tree-sitter `(Tree, source_bytes, language_label)` for `path`.
 
     An escape hatch for callers that need node-level tree-sitter access
@@ -952,8 +1099,11 @@ def raw_tree(path: Path) -> Result[tuple[Tree, bytes, str], LangError]:
     `parse_file`/`extract_imports`/`iter_identifiers` when the normalized
     shape is enough; reach for `raw_tree` only when a caller genuinely needs
     tree-sitter's `Node` API (field lookups, byte spans) directly.
+
+    `expect_heterogeneous` (T-2575): see `parse_file`'s docstring -- same
+    contract, scoped to calls through this entry point.
     """
-    return _parse(path)
+    return _parse(path, expect_heterogeneous=expect_heterogeneous, site="raw_tree")
 
 
 # frob:doc docs/modules/dup.md#public-api

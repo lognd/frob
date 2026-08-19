@@ -101,6 +101,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2569: T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
 - T-2571: T-2571: Post-land sweep files identical (rule,file) identities as new regressions across unrelated lands: baseline recurrence/phantom-path bug
 - T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
+- T-2575: T-2575: no grammar registered warning is 57 percent of command output: the pre-filter obligation is on callers and mostly unmet
 - T-2582: T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
 - T-2584: T-2584: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001 is silently inert
 - T-2586: T-2586: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch

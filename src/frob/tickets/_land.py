@@ -3846,6 +3846,7 @@ def _strip_ab_prefix(path: str) -> str:
 
 
 # frob:ticket T-2183
+# frob:ticket T-2575
 def _raw_tree_for_worktree_file(worktree: Path, rel_path: str):  # noqa: ANN202
     """`frob.lang.raw_tree`'s `Result` for `rel_path` as it currently
     sits on disk in `worktree` (HEAD content), or `None` if the path is
@@ -3857,10 +3858,16 @@ def _raw_tree_for_worktree_file(worktree: Path, rel_path: str):  # noqa: ANN202
     source_path = worktree / rel_path
     if not source_path.is_file():
         return None
-    return raw_tree(source_path)
+    # T-2575: a land's PASSENGER check routinely scans `.md`/`.toml`/other
+    # non-source extensions alongside real source (the overwhelmingly
+    # common case: `tickets.md`, touched by nearly every land) -- declare
+    # that instead of pre-filtering by `tree_sitter_extensions()` before
+    # ever reaching `raw_tree`.
+    return raw_tree(source_path, expect_heterogeneous=True)
 
 
 # frob:ticket T-2183
+# frob:ticket T-2575
 def _raw_tree_for_temp_source(content: str, suffix: str):  # noqa: ANN202
     """`frob.lang.raw_tree`'s `Result` for `content`, materialized into a
     throwaway temp file (named with `suffix` so `frob.lang`'s extension
@@ -3879,7 +3886,9 @@ def _raw_tree_for_temp_source(content: str, suffix: str):  # noqa: ANN202
         ) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        return raw_tree(Path(tmp_path))
+        # T-2575: same declaration as `_raw_tree_for_worktree_file` -- see
+        # its comment.
+        return raw_tree(Path(tmp_path), expect_heterogeneous=True)
     finally:
         if tmp_path is not None:
             try:
@@ -3936,6 +3945,7 @@ def _comment_lines_in_tree(tree, language_label: str) -> frozenset[int]:  # noqa
 
 
 # frob:ticket T-2183
+# frob:ticket T-2575
 def _genuine_comment_lines(
     worktree: Path, ref: str | None, rel_path: str
 ) -> frozenset[int]:
@@ -3956,22 +3966,17 @@ def _genuine_comment_lines(
     context is the documentation practice this repo actively encourages,
     not a sign the diff carries that ticket's code. A path whose
     extension has no registered grammar (`.md`, `.toml`, ...) yields an
-    empty set here -- `frob.lang.raw_tree` would return
-    `Err(UnsupportedLanguage)` for it anyway, so prose in
-    `tickets/**/*.md` (or any other unsupported-extension file) can
-    never register as a comment-positioned line, regardless of what it
-    says. Checked via `tree_sitter_extensions()` BEFORE calling
-    `raw_tree` (rather than just letting that `Err` happen) so the
-    overwhelmingly common per-land case -- `tickets.md`, touched by
-    nearly every land -- never trips `frob.lang`'s own loud
-    "no grammar registered" WARNING log line; that warning is meant to
-    flag a genuinely unexpected unsupported path reaching a parse
-    call, not to fire on every single land's routine ledger diff."""
-    from frob.lang import tree_sitter_extensions
-
-    if Path(rel_path).suffix.lower() not in tree_sitter_extensions():
-        return frozenset()
-
+    empty set here -- `frob.lang.raw_tree` returns
+    `Err(UnsupportedLanguage)` for it, so prose in `tickets/**/*.md` (or
+    any other unsupported-extension file) can never register as a
+    comment-positioned line, regardless of what it says. T-2575: this
+    used to pre-filter via `tree_sitter_extensions()` BEFORE calling
+    `raw_tree` purely to dodge `frob.lang`'s own "no grammar registered"
+    WARNING on the overwhelmingly common per-land case (`tickets.md`,
+    touched by nearly every land) -- that duplicated the same rule
+    `frob.lang` itself now enforces; `_raw_tree_for_ref`'s own
+    `expect_heterogeneous=True` declaration (see its docstring) makes the
+    membership check unnecessary here, so `Err` is simply let happen."""
     tree_result = _raw_tree_for_ref(worktree, ref, rel_path)
     if tree_result is None or tree_result.is_err:
         return frozenset()

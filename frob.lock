@@ -899,6 +899,24 @@
       "old_digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
       "reason": "re-acked after merging main: T-2551 changed one call site inside coverage_gate (_cov007 now takes root to read [[refs.entrypoint]]); docs/modules/gates.md's coverage section describes which checks run, not their signatures",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "body",
+      "new_digest": "c60cb622fbc4e91b7cf4180dedfc6c5923df04d2ef720e74d907aa17496abb6c",
+      "old_digest": null,
+      "reason": "T-2575: parse_file gained an expect_heterogeneous keyword-only param declaring the caller expects heterogeneous, non-source extensions; docs/modules/graph.md#public-api's description of the Result contract is still accurate, re-verified against the new signature",
+      "ref": "src/frob/lang/__init__.py::parse_file"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "sig",
+      "new_digest": "c7ca45f4f0441ad01baa81415cf20f97144b4a208db009c9e934082f46b49237",
+      "old_digest": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
+      "reason": "T-2575: parse_file gained an expect_heterogeneous keyword-only param declaring the caller expects heterogeneous, non-source extensions; docs/modules/graph.md#public-api's description of the Result contract is still accurate, re-verified against the new signature",
+      "ref": "src/frob/lang/__init__.py::parse_file"
     }
   ],
   "entries": [
@@ -1458,7 +1476,12 @@
       "ref": "src/frob/graph/summary.py::compute_protocol_summaries"
     },
     {
-      "digest": "22a8b73d0a1aba089b664caa7675ed7ee9e0097df331516e24247e04ea0e6099",
+      "digest": "c60cb622fbc4e91b7cf4180dedfc6c5923df04d2ef720e74d907aa17496abb6c",
+      "facet": "body",
+      "ref": "src/frob/lang/__init__.py::parse_file"
+    },
+    {
+      "digest": "c7ca45f4f0441ad01baa81415cf20f97144b4a208db009c9e934082f46b49237",
       "facet": "sig",
       "ref": "src/frob/lang/__init__.py::parse_file"
     },

@@ -139,6 +139,7 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # target)=(waive, 'WIRE001') key is shared by every WIRE001 waiver in this file, so \
 # adding a fourth, independent WIRE001 waiver on a genuinely new private symbol looks \
 # identical to a rebind even though nothing moved"
+# frob:ticket T-2575
 def _perf_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's PERF-family
     reporter -- the repo-relative file paths this call's own
@@ -168,7 +169,7 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
         if path.suffix.lower() not in scannable:
             continue
         rel = path.relative_to(root).as_posix()
-        result = parse_file(path)
+        result = parse_file(path, expect_heterogeneous=True)
         if result.is_err:
             _log.debug("_perf_examined_sites: skipping unparsed %s", rel)
             continue

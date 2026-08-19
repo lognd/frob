@@ -5770,14 +5770,24 @@ def _relativize_perf_violation_file(root: Path, violation: Violation) -> Violati
     return violation.model_copy(update={"file": rel_str})
 
 
+# frob:ticket T-2575
 def _perf_gate_parse_files(root: Path, candidate_paths: list[str]) -> list[ParsedFile]:
     """Parse every scannable candidate path, skipping (with a logged
-    warning) any that fails to parse."""
+    warning) any that fails to parse.
+
+    `expect_heterogeneous=True` (T-2575): `candidate_paths` is already
+    filtered to `tree_sitter_extensions()` by `_perf_gate_candidate_paths`
+    (kept as a real perf filter, not just warning avoidance -- it saves a
+    wasted `parse_file` attempt per unscannable file, which the
+    `UnsupportedLanguage` declaration alone would not), so this should
+    never actually hit the unsupported-extension branch; the declaration
+    is defense-in-depth against `_perf_gate_candidate_paths`'s own filter
+    logic drifting out of sync with `frob.lang`'s extension table."""
     from frob.lang import parse_file
 
     parsed: list[ParsedFile] = []
     for rel_path in candidate_paths:
-        result = parse_file(root / rel_path)
+        result = parse_file(root / rel_path, expect_heterogeneous=True)
         if result.is_err:
             _log.warning(
                 "perf_gate: skipping unparsed %s: %s", rel_path, result.danger_err

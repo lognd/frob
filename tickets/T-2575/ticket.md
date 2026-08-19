@@ -2,7 +2,7 @@
 id: T-2575
 title: 'no grammar registered warning is 57 percent of command output: the pre-filter
   obligation is on callers and mostly unmet'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -128,7 +128,13 @@ scope_changes:
     signature'
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/test_lang.py::TestErrors::test_unsupported_extension_warns_by_default
+- tests/test_lang.py::TestErrors::test_unsupported_extension_declared_heterogeneous_no_warning
+- tests/test_lang.py::TestErrors::test_unsupported_extension_non_declaring_still_warns
+- tests/test_lang.py::TestErrors::test_unsupported_extension_warning_deduplicates_per_run
+- tests/test_lang.py::TestErrors::test_unsupported_extension_warning_resets_per_run
+designated_repro_test: tests/test_lang.py::TestErrors::test_unsupported_extension_warning_deduplicates_per_run
 threat: null
 component: null
 anchor: false

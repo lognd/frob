@@ -44,8 +44,10 @@ POSIX separators. A bare `path` refers to the whole file.
 
 ```python
 # frob/lang/__init__.py
-def parse_file(path: Path) -> Result[ParsedFile, LangError]
+def parse_file(path: Path, *, expect_heterogeneous: bool = False) -> Result[ParsedFile, LangError]
     # WHY: single entry point; language dispatch is internal (by extension).
+    # `expect_heterogeneous=True` (T-2575) declares that unsupported
+    # extensions are routine at this call site -- see docs/modules/lang.md.
 def supported_languages() -> frozenset[str]
 
 # frob/lang/_nodes.py (T-0989; re-exported unchanged from frob/lang/__init__.py

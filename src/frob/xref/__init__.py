@@ -204,8 +204,15 @@ def _search_parsed(
 
 
 def _parsed_definition(path: Path, symbol: str, rel: str) -> Definition | None:
-    """The first parsed definition of `symbol` in `path`, if any."""
-    parsed_result = parse_file(path)
+    """The first parsed definition of `symbol` in `path`, if any.
+
+    `expect_heterogeneous=True` (T-2575): `path` is already restricted to
+    `_SOURCE_EXTS` (a tree-sitter-backed member of `_LANG_EXTS`) by every
+    caller before `_search_parsed` is ever reached, so this should never
+    actually hit the unsupported-extension branch -- defense-in-depth
+    against that restriction drifting, same posture as `frob.gates.
+    _perf_gate_parse_files`."""
+    parsed_result = parse_file(path, expect_heterogeneous=True)
     if parsed_result.is_err:
         return None
     for sym in _definition_symbols(parsed_result.danger_ok.symbols):

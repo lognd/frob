@@ -336,23 +336,6 @@ class _Limits:
     mixed_concern_min_decision_points: int = MIXED_CONCERN_MIN_DECISION_POINTS
 
 
-def _has_tree_sitter_grammar(path: Path, rel: str) -> bool:
-    """Whether `path` has a tree-sitter grammar `raw_tree` can parse (T-0129).
-
-    `raw_tree` is a tree-sitter-only escape hatch (frob.lang docstring) --
-    languages like `.strata` with no tree-sitter grammar have nothing for
-    arch's structural walks to inspect, so callers should skip them silently
-    rather than calling `raw_tree` and logging a spurious "no grammar
-    registered" warning per file.
-    """
-    from frob.lang import tree_sitter_extensions
-
-    if path.suffix.lower() in tree_sitter_extensions():
-        return True
-    _log.debug("arch: %s has no tree-sitter grammar, skipping", rel)
-    return False
-
-
 def _is_init_file(rel: str) -> bool:
     """Whether `rel` is a package `__init__.py` (T-0360, reviewer-required
     exclusion): an `__init__.py` typically just re-exports names (imports
@@ -391,7 +374,7 @@ def _analyze_one_file(
     examined that this function actually skipped would be the same
     unsound shape the T-1579 WAIVE004 escape incident already proved
     dangerous, one layer down."""
-    from frob.lang import raw_tree
+    from frob.lang import LangError, raw_tree
 
     try:
         rel = str(path.relative_to(root))
@@ -404,21 +387,32 @@ def _analyze_one_file(
         return False
 
     is_test = is_test_file(rel)
-    if not _has_tree_sitter_grammar(path, rel):
-        # T-0372: large-file is a code-module-cohesion check; a file with no
-        # tree-sitter grammar (generated JSON, ledger markdown, lockfiles,
-        # etc.) is not source arch can even parse, so it is not "an
-        # over-large module" -- skip the size check along with everything
-        # else that requires a parse tree.
+    # T-2575: arch's own file walk routinely visits non-source extensions
+    # (generated JSON, ledger markdown, lockfiles, ...) alongside real
+    # source -- `expect_heterogeneous=True` declares that to `frob.lang`
+    # so an unsupported extension here is silent by design, not a "no
+    # grammar registered" WARNING. The outcome (`Err(UnsupportedLanguage)`)
+    # replaces the old membership pre-check against
+    # `frob.lang.tree_sitter_extensions()` -- one call now answers both
+    # "does this file have a grammar" and "does it actually parse".
+    parsed = raw_tree(path, expect_heterogeneous=True)
+    if parsed.is_err:
+        if parsed.err == LangError.UnsupportedLanguage:
+            _log.debug("arch: %s has no tree-sitter grammar, skipping", rel)
+            return False
+        # T-0372: large-file is a code-module-cohesion check that only
+        # needs the raw bytes, not a tree -- run it even when the deeper
+        # tree-sitter parse itself failed (timeout, malformed source),
+        # matching the pre-T-2575 behavior of gating this on "has a
+        # grammar", not on "parsed cleanly".
+        _check_large_file(
+            rel, raw.splitlines(), limits.max_file_lines, suggestions, is_test=is_test
+        )
+        _log.debug("arch: %s not parsed (%s)", rel, parsed.err)
         return False
     _check_large_file(
         rel, raw.splitlines(), limits.max_file_lines, suggestions, is_test=is_test
     )
-
-    parsed = raw_tree(path)
-    if parsed.is_err:
-        _log.debug("arch: %s not parsed (%s)", rel, parsed.err)
-        return False
     tree, _source, language = parsed.danger_ok
 
     if language == "python":
