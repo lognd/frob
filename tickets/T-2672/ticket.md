@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_attribution.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,19 @@ scope_changes:
     title/body wording is produced downstream in _rapid_sweep.py, which the
 
     original scope did not include.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'Fix will add a code comment / doc note explaining the causal-label
+
+    guard added to _file_regression_ticket; docs/modules/tickets-verify-sweep.md
+
+    is the scope-closure-mandated doc target for the rapid_sweep symbols
+
+    already added to scope.
 
     '
   actor: logan
