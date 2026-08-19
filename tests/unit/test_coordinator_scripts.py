@@ -263,6 +263,138 @@ class TestWorktrees:
         assert fleet_status.worktrees(idle_seconds=100) == []
 
 
+# frob:ticket T-2599
+class TestWorktreeContentClassification:
+    """`fleet_status.worktree_content_classification` (T-2599): the
+    content-presence test that replaces the three measured-wrong tests
+    (`git log main..HEAD` commit count, `git diff --stat` size, and a
+    raw insertion count with no direction check)."""
+
+    def _fake_git(self, diff_by_args: dict, show_by_path: dict):  # noqa: ANN001, ANN201
+        """A `_git` stand-in keyed on the exact argv this module calls
+        with -- `("diff", "main", "HEAD", "--", ...)` and
+        `("show", "main:<path>")` are the only two shapes
+        `worktree_content_classification` issues."""
+
+        def fake(args: list[str], cwd: Path) -> str:  # noqa: ARG001
+            if args[0] == "diff":
+                return diff_by_args.get(tuple(args), "")
+            if args[0] == "show":
+                return show_by_path.get(args[1], "")
+            return ""
+
+        return fake
+
+    def test_stranded_new_content_not_on_main(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        monkeypatch.setattr(
+            fleet_status,
+            "_git",
+            self._fake_git({diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}),
+        )
+        verdict, samples = fleet_status.worktree_content_classification(tmp_path)
+        assert verdict == "STRANDED"
+        assert any("brand_new" in s for s in samples)
+
+    def test_stale_when_content_fully_landed_despite_many_commits(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The failure mode `git log main..HEAD` fell into: land SQUASHES,
+        so a worktree whose content fully landed can still show a big
+        `main..HEAD` diff in raw form, but every `+` line's text is
+        already present on main -- not stranded.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def landed():\n"
+        monkeypatch.setattr(
+            fleet_status,
+            "_git",
+            self._fake_git(
+                {diff_args: diff_text}, {"main:src/x.py": "def landed():\n    pass\n"}
+            ),
+        )
+        verdict, samples = fleet_status.worktree_content_classification(tmp_path)
+        assert verdict == "STALE"
+        assert samples == []
+
+    def test_stale_when_only_behind_main(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An empty restricted diff (the worktree is purely behind, or the
+        diff is entirely outside src/tests/docs/scripts) is STALE, never
+        STRANDED. frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        monkeypatch.setattr(fleet_status, "_git", self._fake_git({}, {}))
+        verdict, samples = fleet_status.worktree_content_classification(tmp_path)
+        assert verdict == "STALE"
+        assert samples == []
+
+    def test_active_ticket_never_stranded_or_stale(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A worktree whose branch resolves to a NON-terminal ticket is
+        ACTIVE regardless of its diff -- the content test is never even
+        run (a stranded-content-shaped diff here would otherwise read
+        STRANDED). frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        monkeypatch.setattr(
+            fleet_status, "_git", self._fake_git({diff_args: diff_text}, {})
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda ticket_id: {"state": "in-progress"},
+        )
+        verdict, samples = fleet_status.worktree_content_classification(
+            tmp_path, ticket_id="T-2599"
+        )
+        assert verdict == "ACTIVE"
+        assert samples == []
+
+
+class TestWorktreeTicketId:
+    """`fleet_status._worktree_ticket_id` (T-2599)."""
+
+    def test_ticket_named_worktree_resolves(self) -> None:
+        """frob:tests scripts/fleet_status.py::_worktree_ticket_id"""
+        assert fleet_status._worktree_ticket_id("t-2599") == "T-2599"
+
+    def test_ad_hoc_named_worktree_resolves_to_none(self) -> None:
+        """frob:tests scripts/fleet_status.py::_worktree_ticket_id"""
+        assert fleet_status._worktree_ticket_id("dev-friction") is None
+
+
 class TestTicketLease:
     """`fleet_status.ticket_lease` (T-2133)."""
 

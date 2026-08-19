@@ -205,6 +205,157 @@ def worktrees(idle_seconds: int) -> list[tuple[str, int, bool]]:
     return rows
 
 
+#: T-2599: source-bearing paths the stranded/stale content test restricts
+#: itself to -- everything else (tickets/**, CHANGELOG.md, .frob/, ...) is
+#: ledger/derived state that legitimately differs per-worktree and is not
+#: "content" in the sense this test cares about.
+_STRANDED_CONTENT_PATHS: tuple[str, ...] = ("src", "tests", "docs", "scripts")
+
+#: T-2599: a worktree directory name that is exactly a lowercased ticket
+#: id (`t-2599`, this repo's `frob ticket work`/`EnterWorktree` naming
+#: convention) resolves to that ticket for the ACTIVE short-circuit; any
+#: other name (`dev-friction`, `gate-internals`, a hand-named series
+#: worktree) has no resolvable ticket and always falls through to the
+#: content test.
+_TICKET_NAMED_WORKTREE_RE = re.compile(r"^t-(\d+)$")
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_worktree_ticket_id
+# frob:ticket T-2599
+# frob:tests tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId.test_ticket_named_worktree_resolves  # noqa: E501
+# frob:tests tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId.test_ad_hoc_named_worktree_resolves_to_none  # noqa: E501
+def _worktree_ticket_id(name: str) -> str | None:
+    """`"T-2599"` for a worktree directory literally named `t-2599`, else
+    `None` -- see `_TICKET_NAMED_WORKTREE_RE`."""
+    m = _TICKET_NAMED_WORKTREE_RE.match(name)
+    return f"T-{m.group(1)}" if m else None
+
+
+#: `frob ticket` states that mean nobody is expected to still be working a
+#: ticket -- anything ELSE (queued/planned/in-progress) marks the owning
+#: worktree ACTIVE regardless of what its diff looks like (T-2599's
+#: positive control: an ACTIVE worktree is never proposed for removal).
+_TERMINAL_TICKET_STATES = frozenset({"done", "dropped", "failed"})
+
+
+# frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification
+# frob:ticket T-2599
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_stranded_new_content_not_on_main  # noqa: E501
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_stale_when_content_fully_landed_despite_many_commits  # noqa: E501
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_stale_when_only_behind_main  # noqa: E501
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_active_ticket_never_stranded_or_stale  # noqa: E501
+def worktree_content_classification(
+    path: Path, *, ticket_id: str | None = None
+) -> tuple[str, list[str]]:
+    """Classify one worktree at `path` as `"STRANDED"`, `"STALE"`, or
+    `"ACTIVE"` against `main` (T-2599), returning `(verdict, samples)`
+    where `samples` is up to 5 example added lines backing a `STRANDED`
+    verdict (empty otherwise).
+
+    T-2599 measured three obvious tests and found all three wrong:
+    `git log main..HEAD` overcounts (land SQUASHES, so fully-landed
+    content still shows every pre-squash commit as "unlanded"); `git diff
+    --stat main..HEAD` conflates ahead with behind (a merely-stale
+    worktree shows a huge diff because MAIN moved, not because the
+    worktree holds anything of its own); and reading the insertion count
+    alone without checking direction still misreads a line main
+    deliberately REPLACED as stranded work.
+
+    The test that actually works, per the ticket: diff `main..HEAD`
+    restricted to `_STRANDED_CONTENT_PATHS`, and for every `+` line ask
+    whether `main`'s CURRENT version of that same file already contains
+    that exact line anywhere (not necessarily at the same location) --
+    content genuinely absent from main's current file (or a whole file
+    that is absent from main entirely) is stranded; content merely
+    reformatted, moved, or already superseded is not. This is a
+    same-file line-presence check, not a formal diff/patience algorithm,
+    matching the manual technique the ticket's own investigation used
+    (`git -C <wt> diff main HEAD -- src tests docs scripts`, "read the +
+    side WITH its context, confirming whether main has an equivalent").
+
+    Deliberately conservative in the safe direction: a line rewrapped to
+    a different column width, or a comment whose surrounding context
+    shifted, reads as "not present" by this exact-line-text test even
+    when the underlying content is genuinely unchanged, which can over-
+    report `STRANDED`. That is the SAFE failure mode for a report-only
+    classifier feeding a human decision (never an auto-delete) -- the
+    dangerous direction this test exists to avoid is the opposite one,
+    under-reporting STRANDED and calling real stranded work STALE.
+
+    `ticket_id` (when the worktree's branch name resolves to one, e.g.
+    `t-2599` -> `T-2599`) short-circuits to `"ACTIVE"` whenever that
+    ticket's state on main is NOT terminal (`_TERMINAL_TICKET_STATES`) --
+    someone may still be actively working it regardless of what its diff
+    looks like right now; this is checked BEFORE the content diff so an
+    active ticket never needs its content inspected at all. A worktree
+    with no resolvable ticket (an ad-hoc named worktree like
+    `dev-friction`) always falls through to the content test."""
+    if ticket_id is not None:
+        frontmatter = ticket_frontmatter_on_main(ticket_id)
+        if (
+            frontmatter is not None
+            and frontmatter.get("state") not in _TERMINAL_TICKET_STATES
+        ):
+            return "ACTIVE", []
+    diff = _git(["diff", "main", "HEAD", "--", *_STRANDED_CONTENT_PATHS], path)
+    if not diff.strip():
+        return "STALE", []
+    added_by_file = _added_lines_by_file(diff)
+    if not added_by_file:
+        return "STALE", []
+    stranded = _lines_absent_from_main(path, added_by_file)
+    if stranded:
+        return "STRANDED", stranded[:5]
+    return "STALE", []
+
+
+# frob:ticket T-2599
+def _added_lines_by_file(diff: str) -> dict[str, list[str]]:
+    """`{path: [added-line-text, ...]}` for every `+` (non-`+++`-header)
+    line in `diff`, grouped by the `+++ b/<path>` header it fell under --
+    `worktree_content_classification`'s own diff-parsing half (ARCH001
+    split, zero behavior change). A `+++ /dev/null` header (a worktree-
+    side deletion) never produces new content, so lines under it are
+    dropped by construction, not filtered separately."""
+    added_by_file: dict[str, list[str]] = {}
+    current_file: str | None = None
+    for line in diff.splitlines():
+        if line.startswith("+++ "):
+            rest = line[4:]
+            current_file = rest[2:] if rest.startswith("b/") else None
+        elif (
+            current_file is not None
+            and line.startswith("+")
+            and not line.startswith("+++")
+        ):
+            text = line[1:].strip()
+            if text:
+                added_by_file.setdefault(current_file, []).append(text)
+    return added_by_file
+
+
+# frob:ticket T-2599
+def _lines_absent_from_main(
+    path: Path, added_by_file: dict[str, list[str]]
+) -> list[str]:
+    """`"<file>: <text>"` for every added line whose exact text is not
+    present anywhere in `main`'s CURRENT version of that same file --
+    `worktree_content_classification`'s own presence-check half (ARCH001
+    split, zero behavior change)."""
+    stranded: list[str] = []
+    for fname, added_lines in added_by_file.items():
+        main_content = _git(["show", f"main:{fname}"], path)
+        main_lines = {ln.strip() for ln in main_content.splitlines()}
+        for text in added_lines:
+            if text not in main_lines:
+                stranded.append(f"{fname}: {text}")
+    return stranded
+
+
 # frob:doc docs/guides/coordinator-scripts.md#ticket_lease
 # frob:ticket T-2133
 # frob:tests \
@@ -2900,15 +3051,41 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
         classification = lease_classification(record)
         print(f"  {record.get('ticket_id')} -> {name}  [{classification}]")
 
-    print("WORKTREES")
-    for name, age, idle in worktrees(idle_seconds):
+    _print_worktrees_section(idle_seconds)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_print_worktrees_section
+# frob:ticket T-2599
+def _print_worktrees_section(idle_seconds: int) -> None:
+    """Print the `WORKTREES (STRANDED: N)` section and one line per
+    worktree, each idle-looking one tagged with its
+    `worktree_content_classification` verdict -- `_print_fleet_report`'s
+    own WORKTREES block, pulled out (ARCH001 split, zero behavior
+    change) so classifying every idle worktree's content happens ONCE
+    per worktree (a `stranded_count` pre-pass followed by a separate
+    print loop used to call `worktree_content_classification` twice per
+    idle worktree; this computes each verdict once and reuses it for
+    both the header count and its own row)."""
+    wt_rows = worktrees(idle_seconds)
+    verdicts: dict[str, str] = {}
+    for name, _age, idle in wt_rows:
+        if idle:
+            verdicts[name] = worktree_content_classification(
+                WORKTREES / name, ticket_id=_worktree_ticket_id(name)
+            )[0]
+    stranded_count = sum(1 for v in verdicts.values() if v == "STRANDED")
+    print(f"WORKTREES (STRANDED: {stranded_count})")
+    for name, age, idle in wt_rows:
         mins = "unknown" if age < 0 else f"{age // 60}m"
+        tail = "  IDLE?" if idle else ""
+        if idle:
+            tail += f"  [{verdicts[name]}]"
         # frob:waive RENDER001 reason="pre-existing bare print, unchanged text -- \
         # T-2126's own new _print_verify_queue_line() insertion above shifted this \
         # line's number relative to merge-base, which the does-not-worsen gate reads \
         # as a new site; same established bare-stdout style as every other print in \
         # this deliberately frob.*-import-free script"
-        print(f"  {name:28} last-commit {mins:>9}{'  IDLE?' if idle else ''}")
+        print(f"  {name:28} last-commit {mins:>9}{tail}")
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_all_ticket_readiness

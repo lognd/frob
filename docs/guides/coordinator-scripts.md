@@ -166,6 +166,71 @@ measure alone. `frob worktree sweep` (section 12b of the agent playbook)
 is the authoritative, lease-aware check; this script's idle flag is for a
 human/coordinator glance, not a removal decision.
 
+### `_worktree_ticket_id`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_ticket_id -->
+
+`"T-2599"` for a worktree directory literally named `t-2599` (this repo's
+`frob ticket work`/`EnterWorktree` naming convention), else `None`. An
+ad-hoc named worktree (`dev-friction`, `gate-internals`, a hand-cut series
+worktree) has no resolvable ticket and always returns `None`.
+
+### `worktree_content_classification`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification -->
+
+T-2599: classifies one worktree as `"STRANDED"`, `"STALE"`, or `"ACTIVE"`
+against `main`, returning `(verdict, samples)` where `samples` is up to 5
+example added lines backing a `STRANDED` verdict.
+
+The obvious tests for "does this worktree hold unlanded work" are all
+measured wrong:
+
+- `git log main..HEAD` (commit count) overcounts -- `frob ticket land`
+  SQUASHES, so a worktree whose content fully landed still shows every
+  pre-squash commit as "unlanded".
+- `git diff --stat main..HEAD` conflates ahead with behind -- a worktree
+  that is merely stale (main moved on) shows an enormous diff because of
+  main's own progress, not anything the worktree holds.
+- Reading the insertion count alone, without checking direction, still
+  misreads a line main deliberately replaced/rewrote as stranded.
+
+The test that works: diff `main..HEAD` restricted to `src`/`tests`/
+`docs`/`scripts`, and for every `+` line ask whether main's CURRENT
+version of that same file already contains that exact line text anywhere
+(not necessarily the same location) -- content genuinely absent from
+main's current file (or a whole file absent from main entirely)
+is stranded; content merely reformatted, moved, or already superseded is
+not. This is a same-file line-presence check, not a formal diff/patience
+algorithm, and is deliberately conservative toward over-reporting
+`STRANDED` (a rewrapped comment or reflowed doc paragraph can register as
+"not present" even though nothing genuinely changed) rather than under-
+reporting it -- safe for a report-only classifier that never deletes
+anything itself, since the dangerous direction is missing real stranded
+work, not flagging a false positive a human then double-checks.
+
+`ticket_id` (resolved via `_worktree_ticket_id` for a `t-XXXX`-named
+worktree) short-circuits to `"ACTIVE"` whenever that ticket's state on
+`main` is not terminal (`done`/`dropped`/`failed`) -- an active ticket is
+never proposed for removal regardless of what its diff looks like, and
+its content is never even inspected. `fleet_status.py`'s own `WORKTREES`
+section prints each idle-looking worktree's verdict next to it, and a
+`STRANDED: N` count in the section header -- surfaced where the operator
+already looks, per this ticket's own preference over a separate command.
+Nothing here deletes a worktree; `frob worktree sweep` (playbook section
+12b) remains the only removal path, lease-aware and separately gated.
+
+### `_print_worktrees_section`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_print_worktrees_section -->
+
+`_print_fleet_report`'s own `WORKTREES (STRANDED: N)` section (ARCH001
+split, pulled out to keep `_print_fleet_report` itself under the
+long-function threshold): classifies every idle-looking worktree's
+content ONCE via `worktree_content_classification` and reuses that same
+verdict for both the header's `STRANDED` count and its own printed row,
+rather than classifying twice per worktree.
+
 ### quarantine
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#quarantine -->

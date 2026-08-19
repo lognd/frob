@@ -2,7 +2,7 @@
 id: T-2599
 title: '34 registered worktrees, ~20 idle 9-13 days: audit needs a stranded-vs-stale
   test that squash-landing does not fool'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -15,6 +15,7 @@ milestone: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,18 @@ scope_changes:
     to this file
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: T-2599 documents worktree_content_classification/_worktree_ticket_id here
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stranded_new_content_not_on_main
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_content_fully_landed_despite_many_commits
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_only_behind_main
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_active_ticket_never_stranded_or_stale
+- tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId::test_ticket_named_worktree_resolves
+- tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId::test_ad_hoc_named_worktree_resolves_to_none
 designated_repro_test: null
 threat: null
 component: null
