@@ -2,7 +2,7 @@
 id: T-2561
 title: Stale live lease scope drifts from an in-progress ticket's declared scope,
   undetected
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -63,11 +63,42 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
-- tests/test_gates.py::TestTick012LeaseScopeDrift::test_lease_matching_current_scope_is_silent
-- tests/test_gates.py::TestTick012LeaseScopeDrift::test_queued_ticket_with_no_lease_is_silent
-- tests/test_gates.py::TestTick012LeaseScopeDrift::test_dir_scope_still_covers_its_own_lease_paths
-designated_repro_test: tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+- tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+- tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_lease_matching_current_scope_is_silent
+- tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_queued_ticket_with_no_lease_is_silent
+- tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_dir_scope_still_covers_its_own_lease_paths
+designated_repro_test: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+designated_repro_changes:
+- old_value: tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+  new_value: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+  reason: TICK012's tests moved to a new standalone file to avoid a scope collision
+    with T-2550; re-verified FAILED_AT_PARENT against the new file's own pre-implementation
+    commit
+  actor: logan
+  at: '2026-08-18'
+evidence_changes:
+- old_node: tests/test_gates.py::TestTick012LeaseScopeDrift::test_dir_scope_still_covers_its_own_lease_paths
+  new_node: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_dir_scope_still_covers_its_own_lease_paths
+  reason: moved TICK012's coverage to a standalone file to avoid a CrossTicketLeakage
+    collision with T-2550's declared scope; re-pointing evidence/repro node ids at
+    the new location
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+  new_node: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+  reason: moved to standalone file
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/test_gates.py::TestTick012LeaseScopeDrift::test_lease_matching_current_scope_is_silent
+  new_node: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_lease_matching_current_scope_is_silent
+  reason: moved to standalone file
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/test_gates.py::TestTick012LeaseScopeDrift::test_queued_ticket_with_no_lease_is_silent
+  new_node: tests/test_tick012_gate.py::TestTick012LeaseScopeDrift::test_queued_ticket_with_no_lease_is_silent
+  reason: moved to standalone file
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false

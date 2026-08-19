@@ -49,7 +49,7 @@ Disclosed, filed, not silently dropped: `docs/modules/gates.md`'s
 TICK012 -- that file was held by another in-progress ticket's live lease
 (T-2377) throughout this session, so widening T-2561's scope onto it
 would have been a lease collision, not a legitimate expansion. Filed
-T-draft-5e5a0e2b (`docs/modules/gates.md` scope) to add TICK012 (and the
+T-2589 (`docs/modules/gates.md` scope) to add TICK012 (and the
 pre-existing CYCLE001 gap found alongside it) once that lease frees up.
 DOCENUM001 is therefore still red on `frob check` for this one rule,
 disclosed here rather than waived or hidden.
@@ -70,7 +70,7 @@ confirmed), `test_lease_matching_current_scope_is_silent`,
 `test_queued_ticket_with_no_lease_is_silent`,
 `test_dir_scope_still_covers_its_own_lease_paths`.
 
-Filed: T-draft-5e5a0e2b (docs/modules/gates.md TICK012/CYCLE001
+Filed: T-2589 (docs/modules/gates.md TICK012/CYCLE001
 enumerates gap, blocked on T-2377's lease).
 
 Gates: `frob check --ticket T-2561` clean of everything this ticket's

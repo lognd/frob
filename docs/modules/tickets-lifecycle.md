@@ -1534,6 +1534,17 @@ disclosed-cut-without-ticket scan, unrelated to the id-collision
 invariant this section documents) alongside TICK001-TICK010 -- see
 `docs/modules/gates.md#tick011-t-1129-active-window-narrowed-t-1402` for
 TICK011's own design.
+
+**T-2561 (`tickets_gate` grew another sibling check, no change to this
+decision).** `tickets_gate` now also runs TICK012 (`frob.gates.
+_tickets_gate._tick012_lease_scope_drift`): one WARN per IN_PROGRESS
+ticket whose live cross-worktree lease records a scope that no longer
+`scope_matches` its current declared scope -- unrelated to the
+id-collision invariant this section documents, closing the general
+write-time lease-drift gap T-2547's `_effective_leakage_scope`
+empty-scope short-circuit only ever covered for the CrossTicketLeakage
+read site specifically. See `docs/modules/gates.md#rule-catalog` for
+TICK012's own entry.
 TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
 that actually matters: it means the finalize step was skipped, failed, or
 forgotten, which is precisely the "collision-proofing silently did not

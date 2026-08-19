@@ -94,6 +94,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2551: T-2551: COV007 is mis-scoped for files with no public surface: 78 findings in scripts/ and .claude/hooks/
 - T-2552: T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
 - T-2556: T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
+- T-2561: T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
 - T-2563: T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
 - T-2565: T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
 - T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface

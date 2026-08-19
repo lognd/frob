@@ -1194,6 +1194,86 @@ def _tick010_stale_lease_report(root: Path) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:ticket T-2561
+# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_stale_superset_path_fires  # noqa: E501
+# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_lease_matching_current_scope_is_silent  # noqa: E501
+# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_queued_ticket_with_no_lease_is_silent  # noqa: E501
+# frob:tests tests/test_tick012_gate.py::TestTick012LeaseScopeDrift.test_dir_scope_still_covers_its_own_lease_paths  # noqa: E501
+# frob:enforces CHK-GATE-TICK012
+def _tick012_lease_scope_drift(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
+    """TICK012 (T-2561): WARN per IN_PROGRESS ticket whose live cross-
+    worktree lease (`.git/frob-leases/<id>.json`, T-0473) records a scope
+    that no longer matches its CURRENT declared scope. T-2547's
+    `_effective_leakage_scope` (`frob.tickets._land`) voids a ticket's
+    CrossTicketLeakage attribution once its declared scope has gone
+    empty, but that fix treats one read site's symptom -- the underlying
+    write-time drift (a lease recorded once at start/scope-mutation time,
+    `_LeaseRecord.scope`, never re-synced when the ticket's declared
+    scope narrows by any path other than a fully lease-syncing
+    `mutate_scope` call) stays silently live for every OTHER `read_all_
+    leases` consumer: a `doable` collision check, a `--add` conflict
+    refusal naming paths the ticket no longer actually wants, and so on.
+    This rule makes that drift a visible, mechanical `frob check` finding
+    instead of requiring another empty-declared-scope incident to notice
+    it -- mirroring TICK010's "surface it here, do not silently fix it"
+    posture for the sibling lease-hygiene family; the general case (a
+    non-empty but still-stale lease) had no protection anywhere before
+    this rule, T-2547's carve-out only ever covered the empty-scope
+    special case.
+
+    Uses `scope_matches` (T-0241's one shared scope-matching
+    implementation -- directory/glob expansion, the implicit-ledger and
+    implicit-own-shard rules) rather than a literal string/set
+    comparison, so a lease path still genuinely covered by a directory or
+    glob entry in the ticket's CURRENT scope (e.g. lease path `src/frob/
+    gates/_foo.py` under a still-declared `src/frob/gates` directory
+    scope) is correctly NOT flagged -- only a lease path `scope_matches`
+    actually rejects against the live declared scope counts as drift.
+    Silent for a ticket with no live lease at all (nothing to compare),
+    and for any non-IN_PROGRESS ticket (a queued/blocked/terminal ticket
+    holds no meaningful write lease to drift)."""
+    from frob.tickets import TicketState, read_all_leases, scope_matches
+
+    leases_by_id: dict[str, tuple[str, ...]] = {}
+    for record in read_all_leases(root):
+        leases_by_id[record.ticket_id] = record.scope
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state is not TicketState.IN_PROGRESS:
+            continue
+        lease_scope = leases_by_id.get(t.id)
+        if not lease_scope:
+            continue
+        stale = tuple(
+            p
+            for p in lease_scope
+            if not scope_matches(p, t.scope, kind=t.kind, ticket_id=t.id)
+        )
+        if not stale:
+            continue
+        preview = ", ".join(stale[:5])
+        more = f" (+{len(stale) - 5} more)" if len(stale) > 5 else ""
+        violations.append(
+            Violation(
+                rule="TICK012",
+                severity=Severity.WARN,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK012: {t.id} is in-progress with a live lease "
+                    f"recording {len(lease_scope)} path(s), but "
+                    f"{len(stale)} of them ({preview}{more}) no longer "
+                    f"match its current declared scope -- the lease has "
+                    f"drifted stale; re-record it via a scope-mutating "
+                    f"`frob ticket scope` call, or investigate why the "
+                    f"scope-narrowing path that produced this did not "
+                    f"sync the lease"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:ticket T-1259
 # T-1259: the sunset date this repo has recorded for ledger v1 (monofile
 # tickets.md/tickets-archive.md) in docs/modules/tickets.md's ledger-v2
@@ -1306,14 +1386,15 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
 # frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010/TICK011: the T-0162 ticket-id collision invariant
-    gate, plus the T-0409 ledger-hygiene check, the T-0411 priority-rot
-    check, the T-0537 post-merge terminal-state-regression lint, the
-    T-0726 phantom-filing-claim check, the T-0820/T-0752 undispatched-
-    stale-CRITICAL/HIGH alarm, the T-0842 unknown-ledger-field check, the
-    T-0714 scope-breadth-nudge/stale-lease reports (relocated out of
-    `frob ticket doable`'s own per-invocation diagnostics), and the
-    T-1129 disclosed-cut-without-ticket check.
+    TICK009/TICK010/TICK011/TICK012: the T-0162 ticket-id collision
+    invariant gate, plus the T-0409 ledger-hygiene check, the T-0411
+    priority-rot check, the T-0537 post-merge terminal-state-regression
+    lint, the T-0726 phantom-filing-claim check, the T-0820/T-0752
+    undispatched-stale-CRITICAL/HIGH alarm, the T-0842 unknown-ledger-
+    field check, the T-0714 scope-breadth-nudge/stale-lease reports
+    (relocated out of `frob ticket doable`'s own per-invocation
+    diagnostics), the T-1129 disclosed-cut-without-ticket check, and the
+    T-2561 in-progress-lease-vs-declared-scope drift check.
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -1344,6 +1425,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick007_undispatched_stale(root, queue)
         + _tick008_unknown_ledger_fields(queue)
         + _tick009_scope_breadth_nudges(root, queue)
+        + _tick012_lease_scope_drift(root, queue)
         + stale_leases
         + _ledgerv1001_violations(root)
     )

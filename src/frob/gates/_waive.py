@@ -493,6 +493,15 @@ _KNOWN_GATE_RULES = frozenset(
         # past-expiry shape at the whole-backend granularity. `frob
         # ticket migrate --to v2` is the recorded remedy.
         "LEDGERV1001",
+        # T-2561: TICK012 (frob.gates._tickets_gate's
+        # _tick012_lease_scope_drift) -- one WARN per IN_PROGRESS ticket
+        # whose live cross-worktree lease (`.git/frob-leases/<id>.json`,
+        # T-0473) records a scope that no longer `scope_matches` its
+        # current declared scope. T-2547's `_effective_leakage_scope`
+        # empty-scope short-circuit only covers the CrossTicketLeakage
+        # read site; this rule closes the write-time drift generally, for
+        # every `read_all_leases` consumer.
+        "TICK012",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left
