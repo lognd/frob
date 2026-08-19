@@ -31,6 +31,7 @@ from frob.process._guard import guarded_subprocess_run
 
 from ._archive import _archive
 from ._attach_backfill import _attach_dispatch
+# frob:ticket T-2647
 from ._ledger_mirror import OWN_TRANSACTION_VERBS as _LEDGER_TRANSACTIONAL_VERBS
 from ._close_cmd import (
     _apply_close_time_evidence,
@@ -225,6 +226,7 @@ __all__ = [
     "_land_passed_fn",
     "_land_rebuild_natives_fn",
     "_land_sync_gate_rules_fn",
+    "_LEDGER_TRANSACTIONAL_VERBS",
     "_list",
     "_load_ticket_or_exit",
     "_log_evidence_result",
@@ -439,7 +441,10 @@ def _ticket_dispatch_table() -> dict:
 # top-of-file import) for `_ledger_mirror.OWN_TRANSACTION_VERBS`, the
 # real (and now single) source of truth -- kept under this name here
 # because `tests/test_ticket_leases.py` and several docstrings elsewhere
-# still import/reference it from this module by this name.
+# still import/reference it from this module by this name. T-2647: listed
+# in `__all__` above to make that a declared re-export rather than a
+# bare, seemingly-dead import (ruff F401 flagged it as unused before this
+# fix -- nothing in THIS module reads the name, only external callers do).
 
 
 # frob:ticket T-1779
