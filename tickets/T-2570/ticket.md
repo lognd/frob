@@ -2,7 +2,7 @@
 id: T-2570
 title: 'ledger mirror makes main a second writer of per-ticket files: decide the v2
   merge strategy'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/agent-playbook.md
+- src/frob/app/ticket_runner/_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,12 @@ scope_changes:
 - op: add
   glob: docs/guides/agent-playbook.md
   reason: fix stale merge-driver instruction now contradicting .gitattributes
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: narrow the mirror pathspec to stop clobbering done-report.md (second-writer
+    fix, option c)
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
