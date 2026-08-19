@@ -2,7 +2,7 @@
 id: T-2629
 title: 'frob ticket doable does not complete: rendering scans all 938 branches with
   a temp-file parse per directive'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_query.py
+evidence_scope:
+- tests/unit/test_app_runners_doable_stale_lease.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_render_never_scans_branches_inline
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_no_unlanded_work_prints_nothing
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_unlanded_branch_is_summarized
+- tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan
+designated_repro_test: tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWorkSummary::test_render_never_scans_branches_inline
 threat: null
 component: null
 anchor: false

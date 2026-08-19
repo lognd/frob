@@ -875,33 +875,43 @@ def _render_unlanded_branch_work_summary(root: Path | None) -> None:
     is something to say. `root=None` is a no-op, matching every other
     lease/reconcile helper's `root=None` convention in this module.
 
-    T-2127: the underlying `_unlanded_branch_work` scan is a `git`
-    spawn per local branch (diff + grep + ls-tree, `_finished_signals_
-    on_branch`'s own cost) -- correct, already wired here since T-1934,
-    but measured at ~95s wall against this repo's ~150 local branches
-    (2026-08-16), which is enough on its own to push a bare `frob ticket
-    doable` past the foreground `timeout` budget every dispatched agent
-    is required to use (`docs/guides/agent-playbook.md` section 3b) --
-    the summary line this function exists to print was structurally
-    unreachable in practice, not because the detector was wrong, but
-    because the caller timed out before this function ever returned.
-    `_load_unlanded_summary_cache`/`_save_unlanded_summary_cache` memoize
-    the branch list for `_UNLANDED_SUMMARY_CACHE_TTL_S` so repeated
-    `doable` calls inside that window reuse the prior scan instead of
-    repeating it -- the detection logic in `frob.tickets._unlanded`
-    itself is untouched (out of this ticket's declared scope); this is
-    a caching layer around it, not a rewrite of it."""
+    T-2127 measured the underlying `_unlanded_branch_work` scan (a `git`
+    spawn per local branch, `_finished_signals_on_branch`'s own cost) at
+    ~95s wall against ~150 local branches (2026-08-16) and added the TTL
+    cache below it to absorb repeated calls -- but a cache MISS still fell
+    through to running the scan inline, synchronously, inside `doable`'s
+    own render path. T-2629: at this repo's current scale (938 branches,
+    35 worktrees) that inline fallback no longer merely exceeds the
+    foreground `timeout` budget, it does not return at all --
+    `_directive_ids_via_real_parser`'s per-directive-candidate temp-file
+    parse turns "slow" into "does not complete", taking the PRIMARY queue
+    command down with it. `doable` is a queue query; it must not depend on
+    scanning every branch in the repository to answer "what is doable".
+
+    So a cache MISS here is no longer a trigger to compute -- it is a
+    trigger to say so and move on: the underlying scan (unchanged, out of
+    this ticket's declared scope) still runs and populates this cache the
+    same way it always has, via `frob ticket reconcile` (`docs/guides/
+    agent-playbook.md`-adjacent workflow, `_lifecycle.py`'s own unlanded-
+    work surfacing) or a direct `_unlanded_branch_work` call -- `doable`
+    itself just stops being the thing that pays for it inline. This keeps
+    the "say so, never omit silently" rule the ticket calls for: a stale/
+    missing cache prints an explicit one-line disclosure naming the
+    fallback command, rather than the row vanishing with no trace (a
+    truncated-looking `doable` output is this repo's dominant silent-zero
+    bug class -- T-2629's own `## Do NOT` section)."""
     if root is None:
         return
     cached = _load_unlanded_summary_cache(root)
-    if cached is not None:
-        branches = list(cached.branches)
-    else:
-        from frob.tickets._unlanded import _unlanded_branch_work
-
-        findings = _unlanded_branch_work(root)
-        branches = sorted({finding.branch for finding in findings})
-        _save_unlanded_summary_cache(root, tuple(branches))
+    if cached is None:
+        _log.info(
+            "unlanded-branch-work summary not computed (no fresh cache "
+            "under %s) -- run `frob ticket reconcile` for the current "
+            "answer; `doable` no longer scans branches inline (T-2629)",
+            _UNLANDED_SUMMARY_CACHE_REL,
+        )
+        return
+    branches = list(cached.branches)
     if not branches:
         return
     _log.info(
@@ -1282,9 +1292,7 @@ def _render_contention_plain(outcome: _ContentionOutcome) -> None:
     contention" line -- never silence, which would be indistinguishable
     from a caller that forgot to run this at all."""
     if not outcome.entries:
-        _log.info(
-            "zero contention: no file is declared by 2+ currently-open tickets"
-        )
+        _log.info("zero contention: no file is declared by 2+ currently-open tickets")
         return
     _log.info("Contended files (declared by 2+ open tickets), most-contended first:")
     for e in outcome.entries:

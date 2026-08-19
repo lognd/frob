@@ -171,6 +171,10 @@ class TestRenderUnlandedBranchWorkSummary:
         # frob:tests \
         # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
         # rkSummary.test_no_unlanded_work_prints_nothing
+        # T-2629: a cache populated with zero branches renders silently,
+        # same posture as before -- this is the "cache says nothing to
+        # report" case, distinct from "no cache at all" below.
+        _save_unlanded_summary_cache(repo, ())
         _render_unlanded_branch_work_summary(repo)
         assert "unlanded ticket work" not in caplog.text
 
@@ -178,28 +182,50 @@ class TestRenderUnlandedBranchWorkSummary:
         # frob:tests \
         # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
         # rkSummary.test_unlanded_branch_is_summarized
+        # T-2629: render is now a pure cache reader -- populate the cache
+        # directly rather than relying on render itself to scan (it no
+        # longer does).
         import logging
 
         caplog.set_level(logging.INFO)
-        _run(["git", "checkout", "-q", "-b", "runner-wiring"], repo)
-        ticket_dir = repo / "tickets" / "T-9101"
-        ticket_dir.mkdir(parents=True)
-        (ticket_dir / "ticket.md").write_text(
-            "---\nid: T-9101\ntitle: 'x'\nstate: in-progress\nkind: bug\n"
-            "origin: human\ncreated: '2026-08-09'\n---\nbody\n",
-            encoding="utf-8",
-        )
-        (ticket_dir / "done-report.md").write_text(
-            "## Done report\n\nDone.\n", encoding="utf-8"
-        )
-        _commit_all(repo, "finish T-9101 on runner-wiring")
-        _run(["git", "checkout", "-q", "main"], repo)
-        _run(["git", "clean", "-fdq", "--", "tickets"], repo)
+        _save_unlanded_summary_cache(repo, ("runner-wiring",))
 
         _render_unlanded_branch_work_summary(repo)
 
         assert "1 branch(es) carry unlanded ticket work" in caplog.text
         assert "runner-wiring" in caplog.text
+
+    # frob:ticket T-2629
+    def test_render_never_scans_branches_inline(
+        self, repo: Path, caplog, monkeypatch
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
+        # rkSummary.test_render_never_scans_branches_inline
+        # T-2629: `frob ticket doable` did not complete -- a cache miss
+        # fell through to a synchronous `_unlanded_branch_work` scan of
+        # every branch in the repo (938 branches, 35 worktrees on the
+        # real repo; a temp-file tree-sitter parse per directive
+        # candidate), which does not finish inside any sane foreground
+        # budget and took the primary queue command down with it. This
+        # is the repro: before the fix, a cache miss triggers the scan
+        # and this test fails on the planted `_boom`; after the fix, a
+        # cache miss only discloses that the summary was not computed.
+        import logging
+
+        caplog.set_level(logging.INFO)
+
+        def _boom(*_args, **_kwargs):  # noqa: ANN001, ANN401
+            raise AssertionError(
+                "a cache miss must not trigger an inline branch scan (T-2629)"
+            )
+
+        monkeypatch.setattr("frob.tickets._unlanded._unlanded_branch_work", _boom)
+
+        _render_unlanded_branch_work_summary(repo)  # no cache present
+
+        assert "not computed" in caplog.text
+        assert "frob ticket reconcile" in caplog.text
 
     # frob:ticket T-2127
     def test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan(
@@ -208,42 +234,22 @@ class TestRenderUnlandedBranchWorkSummary:
         # frob:tests \
         # tests/unit/test_app_runners_doable_stale_lease.py::TestRenderUnlandedBranchWo\
         # rkSummary.test_second_call_within_ttl_reuses_the_cache_not_a_fresh_scan
-        # T-2127: the underlying scan is a git spawn per local branch,
-        # measured ~95s against this repo's own ~150 branches -- slow
-        # enough to push `frob ticket doable` past its foreground budget
-        # on every call. A second call within the TTL must reuse the
-        # cached branch list rather than re-running `_unlanded_branch_
-        # work`, confirmed here by making a second real scan explode.
+        # T-2127/T-2629: a cache hit is served twice without ever calling
+        # the underlying scan, confirmed here by making a real scan
+        # explode both times.
         import logging
 
         caplog.set_level(logging.INFO)
-        _run(["git", "checkout", "-q", "-b", "runner-wiring"], repo)
-        ticket_dir = repo / "tickets" / "T-9101"
-        ticket_dir.mkdir(parents=True)
-        (ticket_dir / "ticket.md").write_text(
-            "---\nid: T-9101\ntitle: 'x'\nstate: in-progress\nkind: bug\n"
-            "origin: human\ncreated: '2026-08-09'\n---\nbody\n",
-            encoding="utf-8",
-        )
-        (ticket_dir / "done-report.md").write_text(
-            "## Done report\n\nDone.\n", encoding="utf-8"
-        )
-        _commit_all(repo, "finish T-9101 on runner-wiring")
-        _run(["git", "checkout", "-q", "main"], repo)
-        _run(["git", "clean", "-fdq", "--", "tickets"], repo)
+        _save_unlanded_summary_cache(repo, ("runner-wiring",))
 
+        def _boom(*_args, **_kwargs):  # noqa: ANN001, ANN401
+            raise AssertionError("a cache hit must not re-run the scan")
+
+        monkeypatch.setattr("frob.tickets._unlanded._unlanded_branch_work", _boom)
         _render_unlanded_branch_work_summary(repo)
         assert "runner-wiring" in caplog.text
         caplog.clear()
 
-        def _boom(*_args, **_kwargs):  # noqa: ANN001, ANN401
-            raise AssertionError(
-                "a second call within the TTL must not re-run the scan"
-            )
-
-        monkeypatch.setattr(
-            "frob.tickets._unlanded._unlanded_branch_work", _boom
-        )
         _render_unlanded_branch_work_summary(repo)
         assert "runner-wiring" in caplog.text
 
