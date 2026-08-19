@@ -230,6 +230,7 @@ from frob.gates._waive import (
     _waive004_violations,
     _waive005_violations,
     _waive008_violations,
+    waive009_violations,
     known_gate_rule_ids,
 )
 from frob.gates._waive_comments import (
@@ -7994,6 +7995,10 @@ def _assemble_gate_report(
         # above `_wire001_symbol_now_rescued`), so it runs alongside the
         # other WAIVE00* self-checks rather than after job_violations.
         *_waive008_violations(st.snapshot),
+        # T-2639: same dependency shape as WAIVE006/007 (snapshot waive
+        # edges + merged ticket queue only, no assembled violation set),
+        # so it runs alongside them rather than after job_violations.
+        *waive009_violations(st.snapshot, st.queue),
         # T-0779: stale-waiver detection needs only the snapshot's own
         # waive edges plus the merged ticket queue -- no assembled
         # violation set dependency, so it runs alongside the other WAIVE00*

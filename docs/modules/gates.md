@@ -250,6 +250,7 @@ declaration).
 | VET011 | vet | (error/warn by cooldown window) a dependency was newly published within the configured quarantine cooldown window (error) or is otherwise unverified against the NVD feed (warn) -- publish-cooldown quarantine (`frob.vet._scan_violations`, `frob.vet._nvd`) |
 | WAIVE006 | (always on) | (error) a `frob:waive`/`waive` site binds to a CLOSED ticket (DONE/DROPPED) -- a waiver justified by a pending ticket must not outlive it; re-justify with a new ticket or fix the underlying issue (`frob.gates._waive_comments`) |
 | WAIVE007 | (always on) | (warn) a `frob:waive`/`waive` site's bound ticket ref does not resolve to any ticket (active or archived) -- dangling waiver justification (`frob.gates._waive_comments`) |
+| WAIVE009 | (always on) | (error) a `frob:waive` `reason=` promises deferred/future work (a follow-up ticket, "once X clears", "will file", ...) but cites no ticket id that resolves in the queue (active, archived, or `T-draft-*`) -- an unfiled promise hiding behind the very comment that suppresses the finding it defers (`frob.gates._waive.waive009_violations`) |
 
 **T-0398 (evidence integrity) note on COV003**: COV003 only ever answers
 "does this evidence id resolve to a currently-collected test" -- it does

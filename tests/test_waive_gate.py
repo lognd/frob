@@ -987,3 +987,58 @@ class TestWaive009Violations:
 
     def test_known_gate_rule_ids_includes_waive009(self) -> None:
         assert "WAIVE009" in known_gate_rule_ids()
+
+
+class TestWaive009Wiring:
+    """T-2639: `waive009_violations` was implemented and unit-tested
+    directly (T-2606) but never called from `_assemble_gate_report`, so
+    it enforced nothing through a real `frob check` run -- proven
+    end-to-end through `run_gates`, mirroring
+    `TestWaive006Gate.test_waivable_via_frob_waive_comment`'s own
+    end-to-end proof rather than a direct unit-level call, so a wiring
+    regression (the function existing but never being invoked) actually
+    fails this test."""
+
+    def test_unresolvable_promise_fires_through_run_gates(
+        self, tmp_path: Path
+    ) -> None:
+        """A `frob:waive` reason promising follow-up work with no
+        resolvable ticket id must surface as a WAIVE009 ERROR through a
+        real `frob check` (`run_gates`) pass, not just via a direct call
+        to `waive009_violations`."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket '
+            'updates this once that lease clears"\n'
+            "    return x\n",
+        )
+        _git_init(tmp_path)
+        report = run_gates(GateConfig(root=str(tmp_path))).danger_ok
+        assert any(v.rule == "WAIVE009" for v in report.violations), (
+            "WAIVE009 did not fire through run_gates -- wiring regression"
+        )
+
+    def test_resolvable_promise_does_not_fire_through_run_gates(
+        self, tmp_path: Path
+    ) -> None:
+        """The same promise phrasing backed by a real, resolvable ticket
+        id must stay silent through `run_gates` -- otherwise WAIVE009 is
+        indistinguishable from a rule that rejects every waiver."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket '
+            'T-0001 updates this once T-0001 lands"\n'
+            "    return x\n",
+        )
+        _git_init(tmp_path)
+        queue_ticket = _ticket(state=TicketState.QUEUED)
+        from frob.tickets._store import write_ticket
+
+        write_ticket(tmp_path, queue_ticket).danger_ok
+
+        report = run_gates(GateConfig(root=str(tmp_path))).danger_ok
+        assert not any(v.rule == "WAIVE009" for v in report.violations)

@@ -1766,18 +1766,7 @@ def _waive009_violation(
 
 # frob:enforces CHK-GATE-WAIVE009
 # frob:ticket T-2606
-# frob:waive COV001 reason="a docs/modules/gates.md WAIVE009 subsection (matching \
-# WAIVE006/007/008's own catalog entries) is the real doc home for this symbol, but at \
-# the time this waiver was written, T-2377 and T-2580 each held an in-progress lease \
-# covering a file this symbol's own doc+wiring work needed to touch -- \
-# docs/modules/gates.md and src/frob/gates/__init__.py respectively -- so neither \
-# could be added to this ticket's scope. Follow-up ticket T-2639 adds the doc \
-# subsection and the frob-check wiring. Reviewed 2026-08-19 while extending WAIVE006 \
-# to recognize lease-premise phrasing: T-2377 and T-2580 have since both gone \
-# terminal, so this is now historical narration, not a live binding claim about either \
-# one; left in place because T-2639's own doc+wiring work has not actually landed yet, \
-# so the underlying COV001 gap this waiver covers is still real -- remove it once \
-# T-2639 lands, not before"
+# frob:doc docs/modules/gates.md#rule-catalog
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
 # frob:tests \
@@ -1786,6 +1775,10 @@ def _waive009_violation(
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_unresolvable_ticket_id_errors  # noqa: E501
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_no_promise_phrase_untouched
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Wiring.test_unresolvable_promise_fires_through_run_gates  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Wiring.test_resolvable_promise_does_not_fire_through_run_gates  # noqa: E501
 def waive009_violations(
     snapshot: GraphSnapshot, queue: TicketQueue
 ) -> tuple[Violation, ...]:

@@ -1,7 +1,7 @@
 ---
 id: T-2639
 title: Wire WAIVE009 into frob check + document in gates.md
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
+- tests/test_waive_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,7 +45,22 @@ scope_changes:
   reason: T-2613 released the lease; adding the doc half of the plan
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: add end-to-end wiring repro test proving WAIVE009 fires through run_gates,
+    not just the direct unit-level call
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: add end-to-end wiring repro test proving WAIVE009 fires through run_gates,
+    not just the direct unit-level call
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_waive_gate.py::TestWaive009Wiring::test_unresolvable_promise_fires_through_run_gates
+- tests/test_waive_gate.py::TestWaive009Wiring::test_resolvable_promise_does_not_fire_through_run_gates
+designated_repro_test: tests/test_waive_gate.py::TestWaive009Wiring::test_unresolvable_promise_fires_through_run_gates
 threat: null
 component: null
 anchor: false
