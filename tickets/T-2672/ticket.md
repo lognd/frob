@@ -18,6 +18,9 @@ scope:
 - src/frob/verify/_attribution.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+- tests/unit/test_rapid_sweep.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -82,7 +85,21 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'Repro test and positive-control test both live in
+
+    tests/unit/test_rapid_sweep.py, covering _file_regression_ticket which
+
+    scope closure already ties to _rapid_sweep.py''s coverage obligations.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_causally_implicated_land_still_names_itself_as_the_cause
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_unattributed_finding_does_not_name_the_spawning_land_as_cause
 threat: null
 component: null
 anchor: false
