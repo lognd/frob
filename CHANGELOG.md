@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.531.0] - unreleased
 
+- T-1660: T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
 - T-2100: T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
 - T-2363: T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
 - T-2364: T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles

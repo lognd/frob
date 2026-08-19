@@ -54,6 +54,7 @@ that behavior."""
 
 from __future__ import annotations
 
+import bisect
 import re
 
 from pydantic import BaseModel
@@ -387,22 +388,30 @@ def scan_ctypes_boundary_calls(source: str) -> tuple[CtypesBoundaryCall, ...]:
     if not handles:
         return tuple(out)
 
+    # PERF014 (T-1660): one finditer() over the WHOLE source per handle,
+    # not per physical line -- was handle x line x finditer (3 nested
+    # levels). Line numbers are recovered by bisecting precomputed
+    # newline offsets, the same technique `frob.gates._docptr._prose_
+    # tokens` already uses; `declared` still reads the exact physical
+    # line the match landed on (`lines[line_no - 1]`), preserving the
+    # original per-line `# frob:callee-raises` semantics exactly.
+    newline_offsets = [i for i, ch in enumerate(source) if ch == "\n"]
     for handle in sorted(handles):
         call_re = re.compile(_CTYPES_CALL_TEMPLATE.format(handle=re.escape(handle)))
-        for idx, line in enumerate(lines):
-            for m in call_re.finditer(line):
-                callee = m.group(1)
-                if callee in {"LoadLibrary"}:
-                    continue
-                declared = bool(_CALLEE_RAISES_PRESENT_RE.search(line))
-                out.append(
-                    CtypesBoundaryCall(
-                        handle=handle,
-                        callee=callee,
-                        line=idx + 1,
-                        declared=declared,
-                    )
+        for m in call_re.finditer(source):
+            callee = m.group(1)
+            if callee in {"LoadLibrary"}:
+                continue
+            line_no = bisect.bisect_right(newline_offsets, m.start()) + 1
+            declared = bool(_CALLEE_RAISES_PRESENT_RE.search(lines[line_no - 1]))
+            out.append(
+                CtypesBoundaryCall(
+                    handle=handle,
+                    callee=callee,
+                    line=line_no,
+                    declared=declared,
                 )
+            )
     return tuple(out)
 
 

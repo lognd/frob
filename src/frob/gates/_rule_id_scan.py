@@ -142,6 +142,7 @@ pattern's exclusions preemptively for a case that has not occurred.
 
 from __future__ import annotations
 
+import bisect
 import re
 from pathlib import Path
 
@@ -221,6 +222,49 @@ RETIRED_RULE_IDS: frozenset[str] = frozenset(
 # frob:tests \
 # tests/test_gates.py::TestKnownGateRuleIds.test_scan_finds_a_synthetic_rule_id
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_commented_out_rule_literal_is_skipped  # noqa: E501
+# frob:ticket T-1660
+def _scan_file_for_rule_literals(
+    path: Path,
+    rel_path: str,
+    found: dict[str, str],
+    const_values: dict[str, str],
+    const_refs: dict[str, str],
+) -> None:
+    """One file's contribution to `scan_emitted_rule_ids`'s three
+    accumulators (split out of that function for ARCH001 -- T-1660).
+
+    PERF014 (T-1660): the `_LITERAL_PATTERN` scan below is one
+    `finditer()` call over the WHOLE file text instead of one per
+    physical line (was SCANNED_BASES-dir x file x line, 3 nested
+    levels) -- line numbers are recovered by bisecting precomputed
+    newline offsets, the same technique `frob.gates._docptr._prose_
+    tokens` already uses. A match landing on a whole-line comment is
+    still excluded (`lines[line_no - 1].strip().startswith("#")`),
+    matching the original per-line `stripped.startswith("#")` skip
+    exactly. The `_CONST_ASSIGN_PATTERN`/`_CONST_REF_PATTERN` scans are
+    NOT `finditer()` calls (`.match()`/`.search()`, single result per
+    line) and were never PERF014-flagged, so they stay a plain per-line
+    loop unchanged."""
+    text = path.read_text()
+    lines = text.splitlines()
+    newline_offsets = [i for i, ch in enumerate(text) if ch == "\n"]
+    for m in _LITERAL_PATTERN.finditer(text):
+        line_no = bisect.bisect_right(newline_offsets, m.start()) + 1
+        if lines[line_no - 1].strip().startswith("#"):
+            continue
+        found.setdefault(m.group(1), f"{rel_path}:{line_no}")
+    for lineno, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        assign_m = _CONST_ASSIGN_PATTERN.match(stripped)
+        if assign_m:
+            const_values.setdefault(assign_m.group(1), assign_m.group(2))
+        ref_m = _CONST_REF_PATTERN.search(line)
+        if ref_m:
+            const_refs.setdefault(ref_m.group(1), f"{rel_path}:{lineno}")
+
+
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_const_ref_resolves_against_assignment_in_another_file  # noqa: E501
@@ -255,22 +299,9 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
                 # `"RULE_ID"` in the module docstring) -- it emits no
                 # `Violation`s itself and is excluded from its own scan.
                 continue
-            for lineno, line in enumerate(path.read_text().splitlines(), start=1):
-                stripped = line.strip()
-                if stripped.startswith("#"):
-                    continue
-                for m in _LITERAL_PATTERN.finditer(line):
-                    found.setdefault(
-                        m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
-                    )
-                assign_m = _CONST_ASSIGN_PATTERN.match(stripped)
-                if assign_m:
-                    const_values.setdefault(assign_m.group(1), assign_m.group(2))
-                ref_m = _CONST_REF_PATTERN.search(line)
-                if ref_m:
-                    const_refs.setdefault(
-                        ref_m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
-                    )
+            _scan_file_for_rule_literals(
+                path, str(path.relative_to(repo_root)), found, const_values, const_refs
+            )
 
     # Resolve every `rule=CONST_NAME` reference to the constant's assigned
     # string value and fold it into `found` -- a constant referenced but

@@ -362,12 +362,17 @@ def _scan_each_function(
         start, end = _function_body_span(lines, idx)
         body = lines[start:end]
         raises, has_catch = _scan_body_raises(body, name_to_line)
-        called: set[str] = set()
-        for line in body:
-            for cm in _CALL_RE.finditer(line):
-                callee = cm.group(1)
-                if callee in name_to_line and callee != name:
-                    called.add(callee)
+        # PERF014 (T-1660): single finditer() over the whole joined body
+        # instead of once per physical line -- only the callee NAME is
+        # needed here (no line-number recovery, unlike
+        # `frob.gates._docptr._prose_tokens`'s bisect technique), so
+        # joining with "\n" and scanning once is a strict simplification,
+        # not just a perf fix.
+        called: set[str] = {
+            cm.group(1)
+            for cm in _CALL_RE.finditer("\n".join(body))
+            if cm.group(1) in name_to_line and cm.group(1) != name
+        }
         out[name] = _PerFunctionScan(
             line=idx + 1,
             is_noexcept=_is_noexcept(qualifiers),

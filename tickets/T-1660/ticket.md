@@ -2,7 +2,7 @@
 id: T-1660
 title: 'PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise,
   ffi, rule_id_scan)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
