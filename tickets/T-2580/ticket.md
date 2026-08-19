@@ -41,6 +41,18 @@ scope_changes:
   reason: REG010 sync-gate-rules entries for MILE001/MILE002
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_gates_milestone.py::TestMile001::test_blocked_by_later_milestone_fires
+- tests/test_gates_milestone.py::TestMile001::test_blocked_by_earlier_milestone_does_not_fire
+- tests/test_gates_milestone.py::TestMile001::test_blocked_by_same_milestone_does_not_fire
+- tests/test_gates_milestone.py::TestMile001::test_terminal_blocker_does_not_fire
+- tests/test_gates_milestone.py::TestMile001::test_terminal_ticket_never_fires
+- tests/test_gates_milestone.py::TestMile001::test_unresolved_milestone_does_not_fire
+- tests/test_gates_milestone.py::TestMile002::test_descendant_in_later_milestone_fires
+- tests/test_gates_milestone.py::TestMile002::test_descendant_in_earlier_or_same_milestone_does_not_fire
+- tests/test_gates_milestone.py::TestMile002::test_terminal_descendant_does_not_fire
+- tests/test_gates_milestone.py::TestMile002::test_terminal_ancestor_never_fires
+- tests/test_gates_milestone.py::TestMile002::test_grandchild_descendant_fires
 designated_repro_test: null
 threat: null
 component: null
