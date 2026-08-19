@@ -584,13 +584,6 @@ def _unjoined_python_modules(
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive AFFECT001 reason="T-1401 added the unjoined-module enumeration log below \
-# the 0.95 join-fraction threshold; docs/modules/gates.md#public-api needs a matching \
-# update but docs/** was held by T-1235's concurrent in-progress lease for this \
-# ticket's whole duration -- tracked as T-1405, land the doc update there. T-1371 also \
-# widened this function's own internal exception handling to fulfill its existing \
-# Result-returning contract more completely; that part changes no documented public \
-# behavior on its own."
 def load_coverage(
     root: Path, snapshot: GraphSnapshot | None = None
 ) -> Result[CoverageData, CoverageError]:
@@ -1150,10 +1143,6 @@ def _apply_lock_ratchet(root: Path, rounded: dict[str, float]) -> None:
 
 
 # frob:doc docs/modules/gates.md#public-api
-# frob:waive AFFECT001 reason="T-1401 added a zero-hit carve-out to the ratchet clamp \
-# below; docs/modules/gates.md#public-api needs a matching update but docs/** was held \
-# by T-1235's concurrent in-progress lease for this ticket's whole duration -- tracked \
-# as T-1405, land the doc update there"
 # frob:tests \
 # tests/test_gates.py::TestCoverageLoad.test_stamp_coverage_refreshes_committed_lock
 # frob:tests tests/test_gates.py::TestCoverageLoad.test_write_coverage_lock_refuses_downward_ratchet  # noqa: E501

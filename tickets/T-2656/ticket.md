@@ -1,7 +1,7 @@
 ---
 id: T-2656
 title: Fix 13 stale lease/binding-premise waivers surfaced by WAIVE006's T-2622 extension
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -25,11 +25,16 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/tickets/_models.py
 - src/frob/tickets/_draft_finalize.py
+evidence_scope:
+- tests/test_waive_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+- tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+designated_repro_test: tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
 threat: null
 component: null
 anchor: false

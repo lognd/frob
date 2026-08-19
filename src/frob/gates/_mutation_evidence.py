@@ -73,9 +73,9 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # (docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755) \
 # genuinely needs a TEST018 paragraph. TEST018 is documented in full in this ticket's \
 # own docs home instead (docs/modules/gates.md's 'TEST018 (T-1733)' section) -- but \
-# the promised tickets-landing.md paragraph was never added even after T-1739's lease \
-# cleared; filed T-2620 to add it and remove this waiver once it lands \
-# (T-2612 lease-premise audit)"
+# the promised tickets-landing.md paragraph is still not added; T-2620 tracks adding \
+# it and removing this waiver once it lands (originally deferred behind T-1739's \
+# now-closed lease; T-2612 lease-premise audit, reviewed again by T-2656)"
 def mutation_evidence_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

@@ -290,10 +290,10 @@ def _backfill_one_ticket(
 # this function's existing critical section -- the public contract \
 # docs/modules/tickets-lifecycle.md#provisional-ids and #public-api describe (assign a \
 # draft its final id, atomically, no manual handling) is unchanged; \
-# docs/modules/tickets.md is a large repo-wide hub file, out of this ticket's narrowed \
-# scope (T-2076 holds a live lease on src/frob/tickets/_land.py, the other file this \
-# ticket originally scoped, so scope was narrowed rather than widened into an \
-# unrelated hub doc)"
+# docs/modules/tickets.md is a large repo-wide hub file this ticket never scoped -- an \
+# internal locking detail with no observable public-contract change does not warrant \
+# widening into it (originally phrased around T-1669's own narrowed scope re: T-2076's \
+# then-live lease on src/frob/tickets/_land.py, since closed; reviewed again by T-2656)"
 def finalize_draft(root: Path, draft_id: str) -> Result[str, TicketError]:
     """Assign `draft_id` its final sequential `T-####` id against the CURRENT
     merged (active+archive) view and rewrite the ledger plus every code

@@ -1354,9 +1354,10 @@ def _current_actor() -> str:
 # (docs/modules/tickets-landing.md#frob-ticket-evidence---replace-t-1537) genuinely \
 # needs the required-reason/evidence_changes update. The full behavior change is \
 # documented in this ticket's own docs home instead (docs/modules/gates.md's 'TEST018 \
-# (T-1733)' section) -- but the promised paragraph update at its own doc anchor was \
-# never made even after T-1739's lease cleared; filed T-2620 to add it and \
-# remove this waiver once it lands (T-2612 lease-premise audit)"
+# (T-1733)' section) -- but the promised paragraph update at its own doc anchor is \
+# still not made; T-2620 tracks adding it and removing this waiver once it lands \
+# (originally deferred behind T-1739's now-closed lease; T-2612 lease-premise audit, \
+# reviewed again by T-2656)"
 def replace_evidence(
     root: Path,
     ticket_id: str,

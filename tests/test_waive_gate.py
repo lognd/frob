@@ -14,7 +14,6 @@ not fire on that mention).
 from __future__ import annotations
 
 import logging
-import re
 from datetime import date
 from pathlib import Path
 
@@ -622,64 +621,28 @@ class TestWaive007Registration:
 # regressions) is preserved, it just no longer pretends this repo's real,
 # already-existing debt doesn't exist. Shrink this set as the follow-up
 # ticket's sites get fixed; remove it entirely once that ticket closes.
-_WAIVE006_KNOWN_DEBT_T2622 = frozenset(
-    {
-        ("src/frob/gates/__init__.py", "T-1279"),
-        ("src/frob/gates/_decisions_compliance.py", "T-1279"),
-        ("src/frob/gates/_doclink_docanchor.py", "T-1279"),
-        ("src/frob/gates/_sys.py", "T-1279"),
-        ("src/frob/gates/_tickets_gate.py", "T-1279"),
-        ("src/frob/gates/_todo_fmt.py", "T-1279"),
-        ("src/frob/gates/_coverage.py", "T-1235"),
-        ("src/frob/gates/_mutation_evidence.py", "T-1739"),
-        ("src/frob/tickets/_evidence.py", "T-1739"),
-        ("src/frob/tickets/_models.py", "T-1739"),
-        ("src/frob/tickets/_draft_finalize.py", "T-2076"),
-    }
-)
-
-
-def _waive006_unexpected(
-    violations: tuple[Violation, ...], known_debt: frozenset[tuple[str, str]]
-) -> list[str]:
-    """`violations` whose `(file, stale-ticket-id)` is NOT in `known_debt`
-    -- shared by the WAIVE006 real-repo calibration test so an allowlisted
-    site's own known ticket id still has to match (a violation citing a
-    DIFFERENT stale ticket at an allowlisted file is a genuinely new
-    finding, not a duplicate of the tracked one)."""
-    unexpected = []
-    for v in violations:
-        match = re.search(r"bound to ticket (T-\d+)", v.message)
-        stale = match.group(1) if match else ""
-        if (v.file, stale) not in known_debt:
-            unexpected.append(v.message)
-    return unexpected
-
-
 class TestWaive006RealRepo:
     """The calibration proof the ticket demanded: WAIVE006 must find ZERO
-    UNEXPECTED errors against this repo's OWN real `design/frob.strata`
-    and real `frob:waive` comments -- run against the live ledger, not a
-    fixture. Known, already-ticketed debt (`_WAIVE006_KNOWN_DEBT_T2622`)
-    is tolerated by exact `(file, stale-ticket)` match only -- anything
-    else still fails the test."""
+    errors against this repo's OWN real `design/frob.strata` and real
+    `frob:waive` comments -- run against the live ledger, not a fixture.
+    T-2656 fixed the last of the T-2622 known-debt allowlist's 11 sites
+    (6 SCOPE001/T-1279, 2 AFFECT001/T-1235, 3 AFFECT001/T-1739/T-2076),
+    so the allowlist and its tolerance plumbing are gone -- a bare zero
+    protects again, same as before T-2622 found real debt."""
 
     def test_zero_errors_on_real_repo(self) -> None:
         """Kept as the original T-0779/T-1072 evidence node id (T-2622:
         renaming it would orphan those tickets' only proof of done, per
-        T-1946's OrphanedEvidenceDeletion guard) -- the assertion inside
-        now tolerates the T-2622 known-debt allowlist rather than a bare
-        zero; see the module comment above `_WAIVE006_KNOWN_DEBT_T2622`."""
+        T-1946's OrphanedEvidenceDeletion guard)."""
         from frob.gates import _load_inputs
 
         cfg = GateConfig(root=str(_REPO_ROOT))
         st = _load_inputs(cfg).danger_ok
         violations = waive006_gate(st.repo_root, st.snapshot, st.queue)
-        unexpected = _waive006_unexpected(violations, _WAIVE006_KNOWN_DEBT_T2622)
-        assert unexpected == [], (
-            "WAIVE006 fired on the real repo outside the T-2622 known-debt "
-            f"allowlist -- either a genuinely stale waiver needs fixing, or "
-            f"the heuristic over-fired: {unexpected}"
+        offending = [v.message for v in violations]
+        assert violations == (), (
+            "WAIVE006 fired on the real repo -- either a genuinely stale "
+            f"waiver needs fixing, or the heuristic over-fired: {offending}"
         )
 
 
@@ -999,9 +962,7 @@ class TestWaive009Wiring:
     regression (the function existing but never being invoked) actually
     fails this test."""
 
-    def test_unresolvable_promise_fires_through_run_gates(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unresolvable_promise_fires_through_run_gates(self, tmp_path: Path) -> None:
         """A `frob:waive` reason promising follow-up work with no
         resolvable ticket id must surface as a WAIVE009 ERROR through a
         real `frob check` (`run_gates`) pass, not just via a direct call

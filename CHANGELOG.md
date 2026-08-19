@@ -144,6 +144,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide
 - T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
 - T-2655: T-2651 landed new fleet_status symbols without test/doc edges (COV001+DOC002), raising quarantine
+- T-2656: Fix 13 stale lease/binding-premise waivers surfaced by WAIVE006's T-2622 extension
 - T-2662: docs/modules/gates.md: add table rows for CYCLE001/MILE001-004/TICK012/WAIVE009
 
 ## [0.530.0] - unreleased
