@@ -1,7 +1,7 @@
 ---
 id: T-2532
 title: WIRE001 reach scan misses dotted classmethod/staticmethod calls
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -12,11 +12,37 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/_wire.py
+- src/frob/strata/_multifile.py
+evidence_scope:
+- tests/unit/test_wire001_dotted_method_call.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_multifile.py
+  reason: WIRE001's fix in this same ticket makes this file's now-stale waiver for
+    the exact incident (SealedGrantSet.from_root_node) obsolete; the registry's live-tracker
+    citation blocks close unless it is re-pointed here
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_classmethod_called_dotted_qualified_is_not_flagged
+- tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_genuinely_unwired_method_still_flagged
+- tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_similarly_named_dotted_call_does_not_false_positive_reach
+designated_repro_test: tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_classmethod_called_dotted_qualified_is_not_flagged
+acceptance:
+- text: given a genuine classmethod/staticmethod called only dotted-qualified (ClassName.method(...)
+    or instance.method(...)), when WIRE001's reach scan runs, then it is not flagged
+    as unreached
+  evidence:
+  - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_classmethod_called_dotted_qualified_is_not_flagged
+- text: given a method with no caller anywhere, bare or dotted-qualified, when WIRE001's
+    reach scan runs, then it still fires
+  evidence:
+  - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_genuinely_unwired_method_still_flagged
+  - tests/unit/test_wire001_dotted_method_call.py::TestWireGateDottedMethodReach::test_similarly_named_dotted_call_does_not_false_positive_reach
 threat: null
 component: null
 anchor: false

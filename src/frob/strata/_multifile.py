@@ -203,13 +203,6 @@ class SealedGrantSet:
         self._grants: dict[str, MayGrantDecl] = grants
 
     @classmethod
-    # frob:waive WIRE001 reason="genuinely called, once, as \
-    # SealedGrantSet.from_root_node(node) from _seed_grants_by_root_node below in this \
-    # same file -- WIRE001's call_pattern regex excludes any match preceded by a dot \
-    # (a deliberate anti-false-positive guard for unrelated same-named methods), which \
-    # blinds it to every dotted-qualified classmethod/staticmethod call, not just this \
-    # one; filed as the gate defect T-2532 rather than worked around here" \
-    # follow_up="T-2532"
     def from_root_node(cls, node: NodeDecl) -> "SealedGrantSet":
         """The ONLY construction path -- one entry per grant the ROOT
         node itself already declared. `_seed_grants_by_root_node` is the

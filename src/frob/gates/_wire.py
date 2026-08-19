@@ -201,6 +201,29 @@ def _wire_reach_patterns(
     shape -- split out purely to keep the scanning function itself under
     ARCH001's line threshold, no behavior change from inlining."""
     call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
+    if kind == SymbolKind.METHOD:
+        # T-2532: a classmethod/staticmethod's ONLY legal call shape in
+        # Python is dotted-qualified (`ClassName.method_name(...)` or
+        # `instance.method_name(...)`) -- the plain `call_pattern` above
+        # explicitly EXCLUDES any match preceded by a dot
+        # (`(?<![A-Za-z0-9_.])`), which is right for a bare module-level
+        # function/const/type (a dot-preceded `short(` there is someone
+        # ELSE's attribute of the same name, not a real call) but wrong
+        # for a method record: it makes every genuine, working qualified
+        # call site invisible to the reach scan. `SealedGrantSet.from_
+        # root_node(node)` (T-2530's own incident) is exactly this shape.
+        # Widened only for `kind == METHOD` (this module has no separate
+        # staticmethod/classmethod `SymbolKind` -- both collapse into
+        # METHOD, see `frob.lang._models.SymbolKind`), so a bare function/
+        # class/const/type record's call_pattern is unaffected; the
+        # existing "no preceding dot" lookbehind still applies to the
+        # bare-name alternative, only the second alternative below drops
+        # it for a dotted-qualified prefix specifically.
+        call_pattern = re.compile(
+            rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\("
+            rf"|(?<![A-Za-z0-9_.])[A-Za-z_][A-Za-z0-9_]*"
+            rf"(?:\.[A-Za-z_][A-Za-z0-9_]*)*\.{re.escape(short)}\s*\("
+        )
     marker_names = "|".join(
         re.escape(name) for name in (*_WRAPPER_MARKER_NAMES, *_JOB_TABLE_MARKER_NAMES)
     )
