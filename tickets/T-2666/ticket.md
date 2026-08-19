@@ -51,9 +51,8 @@ scope_changes:
   at: '2026-08-19'
 - op: add
   glob: tickets/T-2676/**
-  reason: the new-ticket auto-commit for T-2676 (filed from this ticket
-    for the fs.read/fs.write follow-up) lands its own ticket dir on this branch; SCOPE001
-    flags it otherwise
+  reason: the new-ticket auto-commit for T-2676 (filed from this ticket for the fs.read/fs.write
+    follow-up) lands its own ticket dir on this branch; SCOPE001 flags it otherwise
   actor: logan
   at: '2026-08-19'
 evidence:
@@ -63,7 +62,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b7b421297fcd2ee762b5b530964bb4587ba3dca8
 ---
 T-2634 fixed 3 of the 6 originally-listed red tests (test_threat.py's
 DEFAULT_BENIGN_CAPABILITIES count, test_mutation_audit.py's
