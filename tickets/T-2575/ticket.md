@@ -21,6 +21,10 @@ scope:
 - src/frob/xref/__init__.py
 - src/frob/outline/__init__.py
 - tests/unit/lang/**
+- docs/modules/lang.md
+- docs/modules/graph.md
+- tests/test_lang.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +84,48 @@ scope_changes:
   reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
     an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
     onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'T-2575: parse_file/extract_imports/iter_identifiers/raw_tree signatures
+    gained expect_heterogeneous; update the illustrative snippets + note the new declaration
+    mechanism'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-2575: parse_file/extract_imports/iter_identifiers/raw_tree signatures
+    gained expect_heterogeneous; update the illustrative snippets + note the new declaration
+    mechanism'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'T-2575: parse_file/extract_imports/iter_identifiers/raw_tree signatures
+    gained expect_heterogeneous; update the illustrative snippets + note the new declaration
+    mechanism'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/graph.md
+  reason: 'T-2575: parse_file/extract_imports/iter_identifiers/raw_tree signatures
+    gained expect_heterogeneous; update the illustrative snippets + note the new declaration
+    mechanism'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_lang.py
+  reason: 'T-2575: repro/positive-control tests live in tests/test_lang.py (wrong
+    initial glob), and frob.lock is touched by the frob ack for parse_file''s changed
+    signature'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: frob.lock
+  reason: 'T-2575: repro/positive-control tests live in tests/test_lang.py (wrong
+    initial glob), and frob.lock is touched by the frob ack for parse_file''s changed
+    signature'
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
