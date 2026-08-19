@@ -2537,12 +2537,62 @@ def _cov006_module_path_to_file(root: Path, module_path: str) -> str | None:
     file, trying both a direct module file and a package `__init__.py`
     (T-0528). Returns `None` when neither exists under this repo's `src/`
     layout (pyproject's `packages = { find = { where = ["src"] } }`).
+    `module_path` must already be absolute-dotted (no leading dots) --
+    callers resolve a relative `from .foo import x` via
+    `_cov006_resolve_relative_module` against the importing file BEFORE
+    calling this (T-2550: a leading-dot path handed here directly used to
+    silently mis-resolve, see that helper's docstring).
     """
     rel = module_path.replace(".", "/")
     for candidate in (f"src/{rel}.py", f"src/{rel}/__init__.py"):
         if (root / candidate).is_file():
             return candidate
     return None
+
+
+def _cov006_resolve_relative_module(anchor_file: str, module_path: str) -> str:
+    """Absolute dotted module path for `module_path` as imported FROM
+    `anchor_file` (a repo-root-relative source path such as
+    `src/frob/vet/_capability.py`) -- a no-op if `module_path` has no
+    leading dot (T-2550, trace 1).
+
+    Fixes a real re-export-chase blind spot: `_cov006_module_path_to_file`
+    used to receive a relative path (e.g. `._capability_scan` from `from
+    ._capability_scan import scan_file_capabilities`) UNRESOLVED and do
+    `module_path.replace(".", "/")` on it directly, which turns a leading
+    dot into a leading slash (`/_capability_scan`) instead of the
+    importing package's own directory -- that path never exists under
+    `src/`, so the re-export hop silently fails and
+    `_cov006_chase_reexport_hops` returns the FACADE file (still holding
+    only an import, not a real `def`) instead of the file that actually
+    defines the name. `_cov006_third_file_entrypoints` then finds no
+    matching public `def` there and the whole COV006 rescue misses a
+    target that genuinely is one hop away through a real re-export.
+
+    Follows ordinary Python relative-import semantics: one leading dot
+    means "this file's own package" (for an `__init__.py`, that IS the
+    file's module path; for any other module, it is the parent
+    directory), each additional dot walks one package level further up.
+    """
+    if not module_path.startswith("."):
+        return module_path
+    stem = anchor_file[:-3] if anchor_file.endswith(".py") else anchor_file
+    stem = stem[4:] if stem.startswith("src/") else stem
+    parts = [p for p in stem.split("/") if p]
+    if parts and parts[-1] == "__init__":
+        parts = parts[:-1]
+    else:
+        parts = parts[:-1]
+    dots = len(module_path) - len(module_path.lstrip("."))
+    remainder = module_path[dots:]
+    up_levels = dots - 1
+    package_parts = parts[:-up_levels] if up_levels else parts
+    if up_levels and up_levels > len(parts):
+        package_parts = []
+    package = ".".join(package_parts)
+    if remainder:
+        return f"{package}.{remainder}" if package else remainder
+    return package
 
 
 def _cov006_imported_names(source: str) -> list[tuple[str, list[str]]]:
@@ -2563,7 +2613,7 @@ def _cov006_imported_names(source: str) -> list[tuple[str, list[str]]]:
 
 
 def _cov006_resolve_import_files(
-    root: Path, source: str, names_of_interest: frozenset[str]
+    root: Path, source: str, names_of_interest: frozenset[str], anchor_file: str
 ) -> set[str]:
     """Repo-root-relative source files that `source`'s own `from ... import
     ...` statements plausibly resolve to, for whichever imported names are
@@ -2575,14 +2625,20 @@ def _cov006_resolve_import_files(
     file to reach the real defining module. Two hops deep, matching every
     shape measured in T-0528's Class 2 audit (a public entrypoint
     re-exported exactly once through a package `__init__.py`); best-effort
-    and python-only, feeds `_cov006_third_file_reachable`.
+    and python-only, feeds `_cov006_third_file_reachable`. `anchor_file` is
+    `source`'s own repo-root-relative path, needed to resolve a relative
+    `from . import name` / `from .foo import name` module path (T-2550)
+    into the absolute-dotted form `_cov006_module_path_to_file` requires.
     """
     files: set[str] = set()
     for module_path, names in _cov006_imported_names(source):
+        absolute_module_path = _cov006_resolve_relative_module(
+            anchor_file, module_path
+        )
         for name in names:
             if name not in names_of_interest:
                 continue
-            candidate = _cov006_module_path_to_file(root, module_path)
+            candidate = _cov006_module_path_to_file(root, absolute_module_path)
             if candidate is None:
                 continue
             resolved = _cov006_chase_reexport_hops(root, candidate, name)
@@ -2602,7 +2658,10 @@ def _cov006_chase_reexport_hops(root: Path, candidate: str, name: str) -> str | 
     DIFFERENT submodules in separate lines, so grouping would let one
     name's resolved hop silently steal the search for another (T-0528 fix
     during calibration -- the first version of this helper had exactly
-    that bug)."""
+    that bug). T-2550: each hop's own re-export line is resolved through
+    `_cov006_resolve_relative_module` against the CURRENT `candidate`
+    (relative imports are always package-relative to the file they
+    appear in, not to the original `source`)."""
     from frob.lang import parse_file
 
     for _hop in range(2):
@@ -2616,7 +2675,8 @@ def _cov006_chase_reexport_hops(root: Path, candidate: str, name: str) -> str | 
         next_candidate = None
         for mod2, names2 in _cov006_imported_names(reexport_source):
             if name in names2:
-                next_candidate = _cov006_module_path_to_file(root, mod2)
+                absolute_mod2 = _cov006_resolve_relative_module(candidate, mod2)
+                next_candidate = _cov006_module_path_to_file(root, absolute_mod2)
                 break
         if next_candidate is None:
             return candidate
@@ -2766,7 +2826,9 @@ def _cov006_third_file_reachable(root: Path, edge: Edge) -> bool:
     test_source = (root / test_file).read_text(encoding="utf-8")
     aliases = _py_import_aliases(test_source)
     resolved_called = frozenset({aliases.get(name, name) for name in called})
-    import_files = _cov006_resolve_import_files(root, test_source, resolved_called)
+    import_files = _cov006_resolve_import_files(
+        root, test_source, resolved_called, test_file
+    )
     if not import_files:
         return False
     expanded_files = _cov006_expand_project_imports(

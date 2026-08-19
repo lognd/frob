@@ -986,6 +986,7 @@ class TestResolveLocalImportConsumers:
 
 
 # frob:ticket T-2211
+# frob:ticket T-2550
 class TestFromImportSubmoduleResolution:
     """T-2211: `from X import Y` is ambiguous in real python -- `Y` may be a
     submodule FILE (`X/Y.py`) or a name defined inside `X` itself. Filed
@@ -1013,10 +1014,17 @@ class TestFromImportSubmoduleResolution:
         }
         return {r for r in resolved if r is not None}
 
+    # frob:ticket T-2550
     def test_from_package_import_submodule_resolves_to_the_file(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # T-2211 headline symptom: `from frob.arch import _python` must
         # resolve to `arch/_python.py`, not just `arch/__init__.py` --
         # before the fix, the imported name `_python` was dropped entirely
@@ -1031,10 +1039,17 @@ class TestFromImportSubmoduleResolution:
             "pkg/_python.py",
         }
 
+    # frob:ticket T-2550
     def test_from_package_import_multiple_submodules_resolves_each(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # The `from frob.arch import (_python, _cpp, ...)` idiom the ticket
         # names directly -- every parenthesized name must resolve.
         _write(tmp_path, "pkg/__init__.py", "")
@@ -1049,10 +1064,17 @@ class TestFromImportSubmoduleResolution:
             "pkg/_cpp.py",
         }
 
+    # frob:ticket T-2550
     def test_from_package_import_submodule_as_alias_resolves_by_real_name(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # `from frob.app import ticket_runner as _ticket_runner` -- the
         # ticket's other confirmed-concrete case. The alias is a local
         # binding, not part of the module path; resolution must use the
@@ -1073,10 +1095,17 @@ class TestFromImportSubmoduleResolution:
             "pkg/ticket_runner.py",
         }
 
+    # frob:ticket T-2550
     def test_from_package_import_member_control_does_not_fabricate_a_file(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # MUST-STILL-PASS control: `from X import name_defined_in_X` where
         # `name_defined_in_X` is a real member of X (not a submodule) must
         # still resolve to X itself, never a nonexistent `X/name.py` -- an
@@ -1093,10 +1122,17 @@ class TestFromImportSubmoduleResolution:
         )
         assert self._resolve_all(tmp_path, importer) == {"pkg/__init__.py"}
 
+    # frob:ticket T-2550
     def test_from_third_party_import_resolves_to_nothing_local(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # MUST-STILL-PASS control: a third-party `from pytest import
         # fixture` has no local file to resolve to under either reading.
         importer = _write(
@@ -1104,10 +1140,17 @@ class TestFromImportSubmoduleResolution:
         )
         assert self._resolve_all(tmp_path, importer) == set()
 
+    # frob:ticket T-2550
     def test_from_package_import_wildcard_still_resolves_the_package(
         self, tmp_path: Path
     ) -> None:
         # frob:tests src/frob/lang/_extract.py::_python_import_specifiers kind="unit"
+        # frob:waive COV006 reason="genuinely reachable via self._resolve_all -> \
+        # frob.lang.extract_imports -> frob.lang._extract.extract_imports (aliased at \
+        # the import site as _extract_imports) -> _python_import_specifiers, but \
+        # frob.graph.callgraph resolves callees by bare short name and the alias \
+        # breaks that name match -- same best-effort-BFS blind spot as this repo's \
+        # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # `from X import *` has no name to pair with X; the bare module
         # specifier must still resolve (unaffected, not regressed).
         _write(tmp_path, "pkg/__init__.py", "")

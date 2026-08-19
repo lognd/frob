@@ -90,6 +90,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2544: T-2544: document tool_parse_failure_result in docs/modules/process.md and drop T-2537's AFFECT001 waivers
 - T-2547: T-2547: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed file
 - T-2549: T-2549: COV007 reads a strata security clearance as API privacy: 25 false findings on design/frob.strata
+- T-2550: T-2550: COV006: all 18 live findings are call-graph blindness (cross-file public entry, test-helper indirection), not unexercised bindings
 - T-2551: T-2551: COV007 is mis-scoped for files with no public surface: 78 findings in scripts/ and .claude/hooks/
 - T-2552: T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
 - T-2556: T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work

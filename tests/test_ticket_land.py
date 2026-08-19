@@ -2849,6 +2849,7 @@ class TestArchiveResurrection:
 # frob:ticket T-1194
 # frob:ticket T-1636
 # frob:ticket T-1750
+# frob:ticket T-2550
 class TestArchiveSpliceDiscipline:
     """T-0959: `tickets-archive.md` used to ride along on whatever git's raw
     merge/checkout produced at land time, with no per-id splice discipline
@@ -3013,16 +3014,21 @@ class TestArchiveSpliceDiscipline:
 
     # frob:ticket T-1194
     # frob:ticket T-1636
+    # frob:ticket T-2550
     def test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch(
         self, repo: Path
     ) -> None:
         # frob:tests src/frob/tickets/_land_ledger_merge.py::_merge_ledger_tickets \
-        # kind="unit"
+        # kind="integration"
         # frob:tests src/frob/tickets/_land_ledger_merge.py::_resolve_divergence \
         # kind="integration"
-        # T-1636: exercised only through the full `land(..., dry_run=True)`
-        # pipeline several call-hops deep, not a direct call a static call-graph can
-        # see -- COV006's own kind="integration" trust-at-face-value convention.
+        # T-1636/T-2550: both bindings above are exercised only through the
+        # full `land(..., dry_run=True)` pipeline several call-hops deep,
+        # not a direct call a static call-graph can see -- COV006's own
+        # kind="integration" trust-at-face-value convention. `_merge_ledger_
+        # tickets` was previously kind="unit" here despite the same shape as
+        # its own sibling directive one line below -- a misclassification
+        # (T-2550 trace 3), corrected to match.
         # T-1154 (3rd occurrence of the wrong-side-merge class, see this
         # ticket's own Done report): a ticket archived on BOTH main and the
         # worktree, same state (done) and same richness (both carry a Done
@@ -3145,6 +3151,7 @@ class TestWipCommit:
 
 
 # frob:ticket T-1184
+# frob:ticket T-2550
 class TestWipAddIgnoredPathFallback:
     """T-1184: `_wip_add_excluding_frob`'s `:!.frob` pathspec trips git
     2.34.1's "explicitly named ignored path" refusal the moment `.frob` IS
@@ -3152,9 +3159,16 @@ class TestWipAddIgnoredPathFallback:
     (add-everything, then unstage `.frob` separately) must reach the same
     end state without ever naming an ignored path in a pathspec."""
 
+    # frob:ticket T-2550
     def test_gitignored_frob_falls_back_and_still_lands(self, repo: Path) -> None:
         # frob:tests src/frob/tickets/_land_git_ops.py::_wip_add_excluding_frob \
-        # kind="unit"
+        # kind="integration"
+        # T-2550: exercised only through the full `land(..., dry_run=False)`
+        # pipeline several call-hops deep, not a direct call a static
+        # call-graph can see -- same COV006 kind="integration"
+        # trust-at-face-value convention this file's own
+        # test_land_takes_mains_content_edit_over_a_worktree_copy_unchanged_since_branch
+        # already documents for `_merge_ledger_tickets`/`_resolve_divergence`.
         wt = repo.parent / "wt"
         _run(
             ["git", "worktree", "add", "-b", "feature-wip-ignored-frob", str(wt)], repo
@@ -3371,6 +3385,7 @@ class TestOutOfScopeConflictAutoResolved:
 
 
 # frob:ticket T-1434
+# frob:ticket T-2550
 class TestCoverageLockConflictMerges:
     """T-1434: `frob-coverage.lock.json` is a coverage-ratchet artifact,
     not an ordinary source file -- a genuine conflict on it (both the
@@ -3382,10 +3397,17 @@ class TestCoverageLockConflictMerges:
     instead of picking one side wholesale."""
 
     # frob:tests tests/test_ticket_land.py::TestCoverageLockConflictMerges.test_conflicting_lock_merges_to_the_higher_of_both_sides  # noqa: E501
+    # frob:ticket T-2550
     def test_conflicting_lock_merges_to_the_higher_of_both_sides(
         self, repo: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict
+        # frob:tests src/frob/tickets/_land_git_ops.py::_merge_coverage_lock_conflict \
+        # kind="integration"
+        # T-2550: exercised only through the full `land(..., dry_run=False)`
+        # pipeline several call-hops deep -- same COV006 kind="integration"
+        # trust-at-face-value convention as this file's other land-pipeline
+        # findings; see TestWipAddIgnoredPathFallback above for the fuller
+        # precedent citation.
         wt = repo.parent / "wt-covlock"
         base_lock = {
             "source_sha": "base",
@@ -4481,6 +4503,7 @@ class TestPreworkSweepRefresh:
         assert result.is_ok, result.err
 
 
+# frob:ticket T-2550
 class TestLandCompleteness:
     """T-0463: `land` must bring the worktree's COMPLETE changeset (tracked
     edits + untracked new files + deletions), not just what a `git diff
@@ -4489,12 +4512,18 @@ class TestLandCompleteness:
     git-diff/patch land that silently dropped an untracked file with no
     error."""
 
+    # frob:ticket T-2550
     def test_land_brings_tracked_edit_untracked_new_file_and_deletion(
         self, repo: Path
     ) -> None:
         # frob:tests src/frob/tickets/_land_squash.py::_assert_land_complete kind="unit"
         # frob:tests src/frob/tickets/_land_squash.py::_worktree_full_changeset \
-        # kind="unit"
+        # kind="integration"
+        # T-2550: this binding is exercised only through the full `land()`
+        # pipeline here (TestLandSquashHelpersMutationCoverage below calls
+        # `_worktree_full_changeset` directly and keeps kind="unit" for its
+        # own binding) -- same COV006 kind="integration" trust-at-face-value
+        # convention as this file's other land-pipeline findings.
         # `doomed.py` must exist BEFORE the worktree branches, so its
         # deletion has a real net effect relative to main (a file created
         # and deleted within the same branch history nets to "no change"
@@ -4590,12 +4619,17 @@ class TestLandCompleteness:
         )
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
 
+    # frob:ticket T-2550
     def test_worktree_pointed_at_same_branch_as_main_is_refused_not_silently_empty(
         self, repo: Path
     ) -> None:
         # frob:tests src/frob/tickets/_land_squash.py::_worktree_full_changeset \
-        # kind="unit"
+        # kind="integration"
         # frob:tests src/frob/tickets/_land_git_ops.py::_true_merge_base kind="unit"
+        # T-2550: `_worktree_full_changeset` binding above is exercised only
+        # through the full `land()` pipeline here -- same COV006
+        # kind="integration" trust-at-face-value convention as this file's
+        # other land-pipeline findings.
         """T-0761 regression: the real T-0640 incident. `land()` was invoked
         with `--worktree` pointing at the SAME checkout/branch `root` had
         checked out -- no distinct feature branch was ever created. A NEW
@@ -6116,6 +6150,7 @@ class TestLandDroppedTicket:
 
 # frob:ticket T-1818
 # frob:ticket T-1736
+# frob:ticket T-2550
 class TestLandFailedTicket:
     """T-1818: `frob ticket land` must be able to publish a QUEUED ticket's
     `frob ticket fail` record to main -- before this fix, a ticket `fail`
@@ -6126,12 +6161,18 @@ class TestLandFailedTicket:
     agent (the incident this ticket was filed from: T-1478)."""
 
     # frob:ticket T-1736
+    # frob:ticket T-2550
     def test_failed_ticket_with_a_failure_log_lands_cleanly(self, repo: Path) -> None:
         # frob:tests tests/test_ticket_land.py::TestLandFailedTicket.test_failed_ticket_with_a_failure_log_lands_cleanly  # noqa: E501
         # frob:tests src/frob/tickets/_land_merge.py::_validate_closeable kind="unit"
-        # frob:tests src/frob/tickets/_land_merge.py::_has_failure_log kind="unit"
+        # frob:tests src/frob/tickets/_land_merge.py::_has_failure_log \
+        # kind="integration"
         # frob:tests src/frob/tickets/_land_finalize.py::_close_finalized_ticket \
         # kind="unit"
+        # T-2550: `_has_failure_log` binding above is exercised only through
+        # the full `land()` pipeline here -- same COV006 kind="integration"
+        # trust-at-face-value convention as this file's other land-pipeline
+        # findings.
         from frob.tickets import FailureEntry, record_failure
 
         wt = repo.parent / "wt"

@@ -1953,6 +1953,89 @@ class TestCoverageGate:
         # this rescue finds nothing further to widen the search with.
         assert _cov006_third_file_reachable(tmp_path, edge) is False
 
+    # frob:ticket T-2550
+    def test_cov006_third_file_reachable_chases_relative_import_reexport(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2550 trace 1: a test reaches its bound private target through
+        a public entrypoint re-exported via a RELATIVE `from .real import
+        name` line (the common package-facade shape, e.g. `frob.vet.
+        _capability`'s `from ._capability_scan import scan_file_
+        capabilities`) -- `_cov006_module_path_to_file` needs an
+        ABSOLUTE-dotted module path, and the facade's own `from ._real
+        import real_entry` line names `._real` (leading dot). Before the
+        `_cov006_resolve_relative_module` fix, `module_path.replace(".",
+        "/")` turned that leading dot into a leading slash instead of the
+        facade's own package, so the re-export hop silently failed to
+        resolve to `_real.py` and the rescue never found the real `def`."""
+        # frob:tests src/frob/gates/__init__.py::_cov006_resolve_relative_module
+        from frob.gates import _cov006_third_file_reachable
+        from frob.graph import Edge, EdgeKind
+
+        _write(tmp_path, "src/pkg/_target_mod.py", "def _target(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "src/pkg/_real.py",
+            "from ._target_mod import _target\n\n\n"
+            "def real_entry(x):\n    return _target(x)\n",
+        )
+        _write(tmp_path, "src/pkg/facade.py", "from ._real import real_entry\n")
+        _write(
+            tmp_path,
+            "tests/test_x.py",
+            "from pkg.facade import real_entry\n\n"
+            "# frob:tests src/pkg/_target_mod.py::_target\n"
+            "def test_via_relative_facade():\n"
+            "    assert real_entry(1) == 1\n",
+        )
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_x.py::test_via_relative_facade",
+            target="src/pkg/_target_mod.py::_target",
+            origin="tests/test_x.py:1",
+        )
+        assert _cov006_third_file_reachable(tmp_path, edge) is True
+
+    # frob:ticket T-2550
+    def test_cov006_third_file_reachable_still_fires_through_relative_facade(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2550 must-still-fire control for the fix above: a test that
+        imports the SAME relative-import facade shape but whose entrypoint
+        genuinely never reaches the bound private target must still be
+        flagged -- the relative-import resolution fix must not turn into a
+        blanket rescue for every facade import regardless of real
+        reachability."""
+        from frob.gates import _cov006_third_file_reachable
+        from frob.graph import Edge, EdgeKind
+
+        _write(tmp_path, "src/pkg/_target_mod.py", "def _target(x):\n    return x\n")
+        _write(
+            tmp_path,
+            "src/pkg/_real.py",
+            "from ._target_mod import _target\n\n\n"
+            # real_entry deliberately never calls `_target` -- the bound
+            # symbol is genuinely unreached, not just hidden by relative
+            # import resolution.
+            "def real_entry(x):\n    return x\n",
+        )
+        _write(tmp_path, "src/pkg/facade.py", "from ._real import real_entry\n")
+        _write(
+            tmp_path,
+            "tests/test_x.py",
+            "from pkg.facade import real_entry\n\n"
+            "# frob:tests src/pkg/_target_mod.py::_target\n"
+            "def test_via_relative_facade_no_reach():\n"
+            "    assert real_entry(1) == 1\n",
+        )
+        edge = Edge(
+            kind=EdgeKind.TESTS,
+            src="tests/test_x.py::test_via_relative_facade_no_reach",
+            target="src/pkg/_target_mod.py::_target",
+            origin="tests/test_x.py:1",
+        )
+        assert _cov006_third_file_reachable(tmp_path, edge) is False
+
     def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
         """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
         COV007 -- doc anchors are for the public API surface."""
