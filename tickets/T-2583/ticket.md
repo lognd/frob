@@ -82,7 +82,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d1d5d7e9ab1c9b28628f89a6611fc1f820829e82
 ---
 T-2363 measured and DECLARED (frob:waive CYCLE001 at src/frob/__init__.py) a 160-node cross-package SCC rather than guessing which edge to break, per the repo owner's explicit standing instruction to not guess on this kind of call.
 
