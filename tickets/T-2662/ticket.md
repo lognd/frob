@@ -1,7 +1,7 @@
 ---
 id: T-2662
 title: 'docs/modules/gates.md: add table rows for CYCLE001/MILE001-004/TICK012/WAIVE009'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -15,10 +15,14 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/gates.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
