@@ -26,6 +26,7 @@ scope:
 - src/frob/app/ticket_runner/_new.py
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -87,6 +88,13 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_ledger_mirror.py
   reason: the runs-last-parallel-safe CLI verb needs a LedgerWriteStrategy entry (GENERIC_COMMIT_MIRRORED,
     same as scope-ack/runs-last) or the fleet mirror silently mishandles it
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: AppConfig.from_external's field-name tuples (_STRING_FIELDS/_BOOL_FIELDS)
+    must list ticket_runs_last_parallel_safe/_reason or the new frob ticket new flags
+    parse but never populate cfg
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
