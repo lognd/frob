@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c1328b82a138b3684d6efdb408172f126a7909e9
 ---
 Split out of T-2543 so that ticket's remaining criteria (Class A, the
 subscript `KeyError` default, and the EXHAUST002 count target) stay
