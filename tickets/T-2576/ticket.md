@@ -1,7 +1,7 @@
 ---
 id: T-2576
 title: 'M2: backfill open tickets to 1.0.0, add MILE003 gate'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
