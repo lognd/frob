@@ -2,7 +2,7 @@
 id: T-2633
 title: 'CLI test drift: renumber/land SystemExit + stamp-baseline output string (4
   tests red)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_app_runners_batch6.py
 - tests/unit/test_app_runners_batch7.py
@@ -19,7 +21,12 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_dry_run_without_old_new_exits_1
+- tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_whole_ledger_already_contiguous
+- tests/unit/test_app_runners_batch7.py::TestTicketLand::test_land_success_prints_files
+- tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_completes_and_stamps
+designated_repro_test: tests/unit/test_app_runners_batch7.py::TestTicketRenumber::test_dry_run_without_old_new_exits_1
 threat: null
 component: null
 anchor: false

@@ -1016,12 +1016,26 @@ class TestCheckRunner:
     ) -> None:
         """The last missing `--only` chunk merges every recorded chunk's
         violations, writes the real baseline, and deletes the scratch
-        accumulator (T-0751)."""
+        accumulator (T-0751).
+
+        T-2633: seeding "already covered" as only `gates-native` +
+        `gates-security` used to equal `_ALL_GATES - gates-fast` exactly,
+        so running the `gates-fast` chunk always completed the set. Since
+        this test was written, new gates were added to `_ALL_GATES` that
+        `_STAGE_GROUPS` does not slot into any of its three groups (each
+        becomes its own trailing chunk in `_stamp_baseline_gate_chunks`,
+        per that function's own docstring) -- `gates-native` +
+        `gates-security` no longer covers everything outside `gates-fast`,
+        so the old seed left real, ungrouped gates uncovered and the run
+        legitimately took the "chunk recorded, not yet complete" branch
+        instead of stamping. Derive the seed as the complement of
+        `gates-fast` directly, so it stays correct regardless of how many
+        ungrouped trailing chunks exist."""
         import json
 
         import frob.gates as gates_mod
         from frob.check import _STAGE_GROUPS
-        from frob.gates import GateReport, Severity, Violation
+        from frob.gates import GateReport, Severity, Violation, _ALL_GATES
         from frob.gates._models import GateStats
 
         prior = Violation(
@@ -1033,9 +1047,7 @@ class TestCheckRunner:
         )
         chunks_path = tmp_path / ".frob" / "baseline-chunks.json"
         chunks_path.parent.mkdir(parents=True)
-        already_covered = frozenset().union(
-            _STAGE_GROUPS["gates-native"], _STAGE_GROUPS["gates-security"]
-        )
+        already_covered = _ALL_GATES - _STAGE_GROUPS["gates-fast"]
         chunks_path.write_text(
             json.dumps({",".join(sorted(already_covered)): [prior.model_dump_json()]})
         )

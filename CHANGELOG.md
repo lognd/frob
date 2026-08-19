@@ -135,6 +135,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
 - T-2631: test_lang_parse_guard.py: guard-helper wiring assertion red on main
 - T-2632: test_mutation_sweep_queue.py: test_counts_only_pending_entries red on main
+- T-2633: CLI test drift: renumber/land SystemExit + stamp-baseline output string (4 tests red)
 - T-2637: test_conftest_stackdump.py: _FakeItem stub missing get_closest_marker, red on main
 - T-2638: disclosure-remainder guard is lexical and blind to draft ids: rewording a heading defeats it, drafts can never satisfy it
 - T-2639: Wire WAIVE009 into frob check + document in gates.md

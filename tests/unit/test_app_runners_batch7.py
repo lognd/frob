@@ -357,18 +357,40 @@ class TestTicketMigrate:
 
 
 class TestTicketRenumber:
-    def test_dry_run_without_old_new_exits_1(self, tmp_path: Path) -> None:
+    # frob:ticket T-2633
+    def test_dry_run_without_old_new_exits_1(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """T-1882 (real incident: bare `frob ticket renumber` used to
+        perform the whole-ledger bulk rewrite and renumbered all 273
+        tickets in one shot) made `--dry-run` with no `<old> <new>` the
+        ONLY surviving no-argument form, deliberately read-only and
+        deliberately non-fatal (`_renumber`'s own docstring: 'harmless').
+        This replaces a stale pre-T-1882 expectation that this exact
+        invocation raised `SystemExit` -- it logs a contiguity report and
+        returns normally instead."""
         cfg = AppConfig(
             ticket_command="renumber", ticket_path=tmp_path, ticket_dry_run=True
         )
-        with pytest.raises(SystemExit):
-            ticket_run(cfg)
-
-    def test_whole_ledger_already_contiguous(self, tmp_path: Path, caplog) -> None:
-        cfg = AppConfig(ticket_command="renumber", ticket_path=tmp_path)
         with caplog.at_level("INFO"):
             ticket_run(cfg)
         assert "already contiguous" in caplog.text
+
+    # frob:ticket T-2633
+    def test_whole_ledger_already_contiguous(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        """T-1882 removed the CLI's ability to reach the whole-ledger bulk
+        renumber for real (it had no legitimate caller and one real
+        incident): `frob ticket renumber` with neither `<old> <new>` nor
+        `--dry-run` now refuses outright with `SystemExit(1)` and points
+        at the two remaining forms, instead of performing the old bulk
+        rewrite and logging 'already contiguous'. This replaces the
+        pre-T-1882 test of the now-deleted behavior."""
+        cfg = AppConfig(ticket_command="renumber", ticket_path=tmp_path)
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit):
+            ticket_run(cfg)
+        assert "not supported" in caplog.text
 
     def test_one_missing_new_id_exits_1(self, tmp_path: Path) -> None:
         cfg = AppConfig(
@@ -488,6 +510,20 @@ class TestTicketLand:
     def test_land_success_prints_files(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
+        """T-2633: `_land` (src/frob/app/ticket_runner/_land_cmd.py) now
+        runs T-1175's `LAND-PROOF:` verification after every real
+        (non-dry-run) `land()` call and `sys.exit(1)`s when it does not
+        verify (T-1910) -- this was added after this test was first
+        written, and `tmp_path` here is not a real git repo, so the
+        real `_land_proof_checks` (which shells out to `git merge-base
+        --is-ancestor`) genuinely reports `ancestor_ok=False` and the
+        test's mocked `land()` success used to read as an overall
+        failure. `land()` itself is still exactly what this test cares
+        about (does it print the landed-as/files-changed lines), so
+        `_land_proof_checks` is mocked out here to report a clean verify,
+        matching the sibling `test_land_dry_run_success` case above,
+        which never reaches this check at all (it returns before it, on
+        `report.dry_run`)."""
         from frob.tickets._models import LandReport
 
         report = LandReport(
@@ -501,8 +537,14 @@ class TestTicketLand:
             files_changed=("a.py",),
         )
         import frob.tickets as tickets_mod
+        from frob.app.ticket_runner import _land_cmd as land_cmd_mod
 
         monkeypatch.setattr(tickets_mod, "land", lambda *a, **k: Ok(report))
+        monkeypatch.setattr(
+            land_cmd_mod,
+            "_land_proof_checks",
+            lambda *a, **k: (True, "done", True),
+        )
         cfg = AppConfig(
             ticket_command="land",
             ticket_path=tmp_path,
