@@ -34,7 +34,13 @@ from frob.gates import (
     waive006_gate,
     waive007_gate,
 )
-from frob.gates._waive import _waive004_dead_count_by_rule, census_gate_rules
+from frob.gates._waive import (
+    _reason_promises_followup,
+    _reason_ticket_ids,
+    _waive004_dead_count_by_rule,
+    census_gate_rules,
+    waive009_violations,
+)
 from frob.graph import build_graph
 from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
 
@@ -729,3 +735,123 @@ class TestWaive004DeadCount:
     def test_empty_input_yields_empty_dict(self) -> None:
         # frob:tests src/frob/gates/_waive.py::_waive004_dead_count_by_rule
         assert _waive004_dead_count_by_rule(()) == {}
+
+
+class TestWaive009PromisePhraseDetection:
+    """`_reason_promises_followup` -- the promise-phrase trigger in
+    isolation, no gate plumbing involved."""
+
+    def test_follow_up_ticket_phrasing_promises(self) -> None:
+        assert _reason_promises_followup(
+            "a doc-update follow-up ticket updates this once that lease clears"
+        )
+
+    def test_once_x_clears_phrasing_promises(self) -> None:
+        assert _reason_promises_followup("fixed once the T-1279 lease clears")
+
+    def test_will_file_phrasing_promises(self) -> None:
+        assert _reason_promises_followup("will file a ticket for this next")
+
+    def test_ordinary_reason_does_not_promise(self) -> None:
+        assert not _reason_promises_followup(
+            "legacy code, dead by construction, no follow-up needed"
+        )
+
+    def test_historical_ticket_mention_does_not_promise(self) -> None:
+        assert not _reason_promises_followup(
+            "kill-switch mechanism exists (T-0200/T-0778) but not wired here"
+        )
+
+
+class TestWaive009TicketIdExtraction:
+    """`_reason_ticket_ids` -- bare `T-\\d+` capture, wider net than
+    WAIVE006's binding-phrase-only extraction."""
+
+    def test_extracts_bare_mention(self) -> None:
+        assert _reason_ticket_ids("tracked in T-2620, will finish soon") == {
+            "T-2620"
+        }
+
+    def test_extracts_multiple(self) -> None:
+        assert _reason_ticket_ids("see T-0001 and T-0002") == {"T-0001", "T-0002"}
+
+    def test_no_mention_yields_empty(self) -> None:
+        assert _reason_ticket_ids("no ticket here") == set()
+
+
+class TestWaive009Violations:
+    """`waive009_violations` -- the assembled gate: a promise phrase with
+    no ticket id that resolves in the queue is an ERROR; a promise phrase
+    backed by a real (or in-flight draft) ticket id is silent; and a
+    reason with no promise phrase at all is untouched regardless of what
+    it says about tickets (WAIVE006/007's territory, not WAIVE009's)."""
+
+    def test_promise_with_no_ticket_id_errors(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            "    # frob:waive AFFECT001 reason=\"a doc-update follow-up "
+            'ticket updates this once that lease clears"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE009"
+        assert violations[0].severity == Severity.ERROR
+
+    def test_promise_with_resolvable_ticket_id_passes(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket T-0010 '
+            'updates this once T-0010 lands"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        queue = TicketQueue(tickets={"T-0010": _ticket(state=TicketState.QUEUED)})
+        violations = waive009_violations(snap, queue)
+        assert violations == ()
+
+    def test_promise_with_unresolvable_ticket_id_errors(self, tmp_path: Path) -> None:
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket T-9999 '
+            'updates this once it lands"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        assert len(violations) == 1
+        assert violations[0].rule == "WAIVE009"
+
+    def test_draft_ticket_id_resolves(self, tmp_path: Path) -> None:
+        """A `T-draft-*` id is worktree-local work-in-flight, not an
+        unfiled promise -- mirrors WAIVE007's own exemption."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="a follow-up ticket '
+            'T-draft-abc123 updates this once it lands"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        assert violations == ()
+
+    def test_no_promise_phrase_untouched(self, tmp_path: Path) -> None:
+        """A reason naming zero tickets and promising no future work is
+        WAIVE006/007's territory (or nobody's), never WAIVE009's."""
+        source = (
+            "def helper(x):\n"
+            '    # frob:waive AFFECT001 reason="legacy, dead by construction"\n'
+            "    return x\n"
+        )
+        _write(tmp_path, "src/a.py", source)
+        snap = _snapshot(tmp_path)
+        violations = waive009_violations(snap, TicketQueue(tickets={}))
+        assert violations == ()
+
+    def test_known_gate_rule_ids_includes_waive009(self) -> None:
+        assert "WAIVE009" in known_gate_rule_ids()

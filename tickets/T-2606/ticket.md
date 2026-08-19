@@ -1,7 +1,7 @@
 ---
 id: T-2606
 title: waiver reasons promising a follow-up ticket should be enforced
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -38,7 +38,22 @@ scope_changes:
   reason: dedicated WAIVE-family gate test file
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_no_ticket_id_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_resolvable_ticket_id_passes
+- tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_unresolvable_ticket_id_errors
+- tests/test_waive_gate.py::TestWaive009Violations::test_draft_ticket_id_resolves
+- tests/test_waive_gate.py::TestWaive009Violations::test_no_promise_phrase_untouched
+- tests/test_waive_gate.py::TestWaive009Violations::test_known_gate_rule_ids_includes_waive009
+- tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_follow_up_ticket_phrasing_promises
+- tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_once_x_clears_phrasing_promises
+- tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_will_file_phrasing_promises
+- tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_ordinary_reason_does_not_promise
+- tests/test_waive_gate.py::TestWaive009PromisePhraseDetection::test_historical_ticket_mention_does_not_promise
+- tests/test_waive_gate.py::TestWaive009TicketIdExtraction::test_extracts_bare_mention
+- tests/test_waive_gate.py::TestWaive009TicketIdExtraction::test_extracts_multiple
+- tests/test_waive_gate.py::TestWaive009TicketIdExtraction::test_no_mention_yields_empty
+designated_repro_test: tests/test_waive_gate.py::TestWaive009Violations::test_promise_with_no_ticket_id_errors
 threat: null
 component: null
 anchor: false

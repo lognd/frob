@@ -46,6 +46,7 @@ call site keeps working.
 # an arbitrary line-count cut, not a real seam."
 from __future__ import annotations
 
+import re
 import tomllib
 from collections.abc import Sequence
 from pathlib import Path
@@ -55,6 +56,7 @@ from pydantic import BaseModel
 from frob.gates._models import Severity, Violation, WaiverRef
 from frob.graph import Edge, EdgeKind, GraphSnapshot
 from frob.logging import get_logger
+from frob.tickets import TicketQueue
 
 _log = get_logger(__name__)
 
@@ -343,6 +345,13 @@ _KNOWN_GATE_RULES = frozenset(
         # run happens to see, unlike WAIVE004's diff-scoped blind spot for
         # this same rule.
         "WAIVE008",
+        # T-2606: a waiver reason that PROMISES deferred/future work (a
+        # follow-up ticket, "once X clears/lands", "will file", ...) but
+        # cites no ticket id that actually resolves in the queue -- the
+        # only record of owed work would otherwise live inside the
+        # comment suppressing the finding that should have surfaced it
+        # (the T-2588 AFFECT001 incident this rule exists to catch).
+        "WAIVE009",
         "DEC001",
         "DEC002",
         "REL001",
@@ -1651,6 +1660,152 @@ def _waive008_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                     f"nothing since that rescue landed and can never suppress "
                     f"anything again at any diff; remove it"
                 ),
+            )
+        )
+    return tuple(out)
+
+
+# T-2606: WAIVE006/007 (`frob.gates._waive_comments`) already catch a
+# waiver's `ticket=`/binding-phrase reference going stale (DONE/DROPPED)
+# or dangling (resolves to nothing) -- but BOTH require a ticket id to
+# already be present in the reason text before they have anything to
+# check. The T-2598/T-2588 incident this rule closes had no id at all:
+# `frob:waive AFFECT001 reason="... a doc-update follow-up ticket updates
+# this once that lease clears"` promised deferred work in plain English
+# and never named which ticket would do it -- the only record of the
+# debt lived inside the very comment suppressing the finding that would
+# have surfaced it, and nothing could ever flag that, because WAIVE006/
+# 007's ticket-ref extraction had nothing to extract.
+#
+# `_WAIVE009_PROMISE_PHRASE_RES` recognizes prose that promises future/
+# deferred work WITHOUT requiring a ticket id nearby (unlike WAIVE006's
+# `_WAIVE006_BINDING_PHRASE_RES` in `_waive_comments.py`, whose patterns
+# all capture a `T-\d+` group by construction) -- calibrated narrowly
+# against phrasing this repo's own waivers have actually used ("a
+# follow-up ticket ...", "will file", "once X clears/lands/closes", "a
+# ... ticket will/updates/handles/fixes/tracks ..."), not a general
+# future-tense scan (which would fire on ordinary "this will not affect
+# X" reasoning that promises nothing to file). `_waive009_violations`
+# below reuses `_waive006_binding_ticket_refs`-style plain-token
+# extraction (any `T-\d+` mentioned anywhere in the reason, not just
+# inside a binding phrase -- a promise phrase's own presence is already
+# the binding signal here) to look for a ticket id that actually backs
+# the promise.
+_WAIVE009_PROMISE_PHRASE_RES = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"\bfollow-?up\s+ticket\b",
+        r"\bfollow-on\s+ticket\b",
+        r"\bwill\s+file\b",
+        r"\bonce\s+.{0,80}?\bclears\b",
+        r"\bonce\s+.{0,80}?\blands\b",
+        r"\bonce\s+.{0,80}?\bcloses\b",
+        r"\ba\s+.{0,40}?\bticket\s+(?:will|updates|handles|fixes|tracks)\b",
+    )
+)
+
+_WAIVE009_TICKET_ID_RE = re.compile(r"T-(?:draft-[0-9a-fA-F]+|\d+)")
+
+
+def _reason_promises_followup(reason: str) -> bool:
+    """Whether `reason` reads as promising deferred/future work (a
+    follow-up ticket, "once X clears", ...) per
+    `_WAIVE009_PROMISE_PHRASE_RES` -- the WAIVE009 trigger condition,
+    independent of whether any ticket id actually backs the promise."""
+    return any(pattern.search(reason) for pattern in _WAIVE009_PROMISE_PHRASE_RES)
+
+
+def _reason_ticket_ids(reason: str) -> set[str]:
+    """Every bare `T-\\d+` token mentioned anywhere in `reason` -- a wider
+    net than WAIVE006's binding-phrase capture groups, since a WAIVE009
+    promise phrase's own presence is already the binding signal (there is
+    no separate "is this id actually the promised one" phrasing to
+    require, unlike WAIVE006/007's stale/dangling checks over arbitrary
+    reason prose)."""
+    return set(_WAIVE009_TICKET_ID_RE.findall(reason))
+
+
+def _waive009_violation(
+    *, file: str, line: int, site: str, rule_and_target: str
+) -> Violation:
+    """The single WAIVE009 `Violation` for one waiver whose reason promises
+    future work but cites no ticket id that resolves in the queue."""
+    _log.error(
+        "WAIVE009: %s (%s) promises follow-up work with no resolvable ticket id",
+        site,
+        rule_and_target,
+    )
+    return Violation(
+        rule="WAIVE009",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"WAIVE009: {site} waives {rule_and_target}, and its reason "
+            f"promises deferred/future work (a follow-up ticket, 'once X "
+            f"clears', ...) but cites no ticket id that resolves in the "
+            f"queue -- file the ticket first (`frob ticket new`) and cite "
+            f"its real id in the reason, so the promised work is tracked "
+            f"somewhere other than inside the comment that suppresses the "
+            f"finding it defers"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-WAIVE009
+# frob:ticket T-2606
+# frob:waive COV001 reason="a docs/modules/gates.md WAIVE009 subsection (matching \
+# WAIVE006/007/008's own catalog entries) is the real doc home for this symbol, but \
+# docs/modules/gates.md was under T-2377's live lease for this ticket's whole working \
+# window -- follow-up ticket T-2639 adds the doc subsection AND the frob \
+# check wiring this symbol also needs (src/frob/gates/__init__.py was under T-2580's \
+# live lease at the same time) once both leases clear; remove this waiver when that \
+# doc anchor lands"
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_resolvable_ticket_id_passes  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_unresolvable_ticket_id_errors  # noqa: E501
+# frob:tests \
+# tests/test_waive_gate.py::TestWaive009Violations.test_no_promise_phrase_untouched
+def waive009_violations(
+    snapshot: GraphSnapshot, queue: TicketQueue
+) -> tuple[Violation, ...]:
+    """WAIVE009: a `frob:waive` reason that promises deferred/future work
+    (`_reason_promises_followup`) but names no ticket id that currently
+    resolves in `queue` (active or archive) -- either no id at all (the
+    T-2588 incident this closes) or an id that is a typo/unresolvable (the
+    same "verify it resolves" bar WAIVE007 applies to binding-phrase
+    refs, applied here to promise-phrase refs instead). A `T-draft-*` id
+    is treated as resolving (mirrors WAIVE007's own exemption -- a draft
+    minted inside the current worktree is real work-in-flight, not an
+    unfiled promise, even though it is not yet a real id in `queue`)."""
+    out: list[Violation] = []
+    for edge in _waive_edges(snapshot):
+        reason = edge.attrs.get("reason", "")
+        if not _reason_promises_followup(reason):
+            continue
+        ticket_ids = _reason_ticket_ids(reason)
+        attr_ticket = edge.attrs.get("ticket", "")
+        if attr_ticket:
+            ticket_ids.add(attr_ticket)
+        resolvable = {
+            t
+            for t in ticket_ids
+            if t in queue.tickets or t.startswith("T-draft-")
+        }
+        if resolvable:
+            continue
+        from frob.gates import _site_from_edge_origin  # local: avoids circularity
+
+        file, line = _site_from_edge_origin(edge.origin)
+        out.append(
+            _waive009_violation(
+                file=file,
+                line=line,
+                site=edge.src,
+                rule_and_target=f"frob:waive {edge.target}",
             )
         )
     return tuple(out)
