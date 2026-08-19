@@ -1,7 +1,7 @@
 ---
 id: T-2569
 title: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -10,6 +10,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/app/ticket_runner/_close_cmd.py
