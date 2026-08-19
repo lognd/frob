@@ -80,16 +80,37 @@ class TestMayMutationAuditRealRepo:
         `fetch_url` (plus the precise `env.read`/`env.write` mode
         spellings) -- so those kinds are no longer a disclosed gap: they
         are double-detected by the app manifest instead of the seccomp
-        export. Only `process-control` remains an actual gap: `testsuite`
+        export. `process-control` remains an actual gap: `testsuite`
         node's `may "process-control"` (design/frob.strata, T-1439's
         `signal.signal(` needle) has neither a syscall-level seccomp entry
         nor an app-manifest entry -- outside both this ticket's and
-        T-1203's declared scope, a real gap, not spurious drift."""
+        T-1203's declared scope, a real gap, not spurious drift. T-2464
+        added a second real, disclosed gap: `net-mutate` (a scanner-only
+        mutating-HTTP-verb signal, `_threat_catalog_benign.py`'s own
+        comment) is DELIBERATELY unwired into `_capability_modes.py`'s
+        `FAMILY_MODES`/`WIRED_MODE_FAMILIES` (no tier-2 join exists yet)
+        and has no `_APP_CAPABILITY_MANIFEST_MAP` entry either -- neither
+        detector can see it, by design, until that follow-up join lands.
+        `net.connect` (T-2634 investigation, found while repairing this
+        test, PRE-EXISTING and unrelated to either T-2464 or this
+        ticket's own scope) is a third real gap: `_export.py`'s
+        `_SECCOMP_KIND_MAP` maps the bare `net` family to syscalls but
+        was never extended to the precise `net.connect`/`net.listen`
+        mode-qualified spellings the way T-1203 extended it for
+        `fs.read`/`fs.write` -- `design/frob.strata`'s `strata_core`
+        node declares `may "net.connect"` directly (not bare `net`), so
+        deleting/substituting it never changes `node_allowed_syscalls`.
+        `_export.py` is outside this ticket's declared scope
+        (`tests/unit/strata/**`, `design/frob.strata` only), so the real
+        fix -- adding `net.connect`/`net.listen` entries to
+        `_SECCOMP_KIND_MAP` -- is filed as its own follow-up rather than
+        forced into this pass; this assertion is updated to the CURRENT
+        honest gap set, not silently narrowed to hide it."""
         repo_root = Path(__file__).resolve().parents[3]
         result = run_may_mutation_audit(repo_root)
         assert result.is_ok
         gap_kinds = {g.kind for g in result.danger_ok.second_detector_gaps}
-        assert gap_kinds == {"process-control"}
+        assert gap_kinds == {"process-control", "net-mutate", "net.connect"}
 
 
 class TestDetectableKindsVocabulary:

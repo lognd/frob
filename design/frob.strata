@@ -142,12 +142,23 @@ node cli : trusted {
     // (os.environ.get) to opt out of/into the non-gated agentic telemetry
     // stream and its `--agentic` report trigger. T-1535: _land_cmd.py's
     // land_parity_findings reads os.environ to build the spawned check's
-    // env (FROB_NO_GATE_CACHE injection) -- folded into this bare `env`
-    // declaration rather than a separate `env.read` atom (T-1589: the
-    // narrower kind expands to a strict subset of what this bare
-    // declaration already covers, so a standalone atom for it is never
-    // mutation-audit load-bearing).
-    may "env" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/__init__.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py";
+    // env (FROB_NO_GATE_CACHE injection). T-2634: this used to be a
+    // separate bare `env` atom (T-1589's reasoning: a standalone
+    // `env.read` atom would be a strict subset of what a bare `env`
+    // declaration already covers, so it would never be mutation-audit
+    // load-bearing on its own) -- but cli also carries its OWN precise
+    // `env.read` atom below for a different file set, and SYS100's join
+    // is per-node kind-set, not per-via-file: with both atoms present,
+    // the bare `env` atom's coverage was invisible to SYS100 regardless
+    // of its own via-list (`env.read` already discharged the kind at
+    // node granularity), so mutation-audit correctly found it not
+    // load-bearing (T-2634 investigation: `test_every_may_is_load_
+    // bearing`). None of these files write an environment variable
+    // (no `os.environ[...] =` / `os.putenv(` site among them, confirmed
+    // by scan) so the bare atom's only real effect was granting
+    // `app.env.write` (T-1328's app-capability manifest) that cli never
+    // uses -- folded into the `env.read` atom below instead, a genuine
+    // narrowing, not a mechanical merge.
     // T-0474: `frob ticket start` detaches its pre-work sweep as a
     // background `frob ticket sweep` child (subprocess.Popen of
     // sys.executable in app/ticket_runner.py::_spawn_background_sweep).
@@ -164,7 +175,7 @@ node cli : trusted {
     // endpoint; degrades to the in-process/file-lock fallback when no
     // daemon is up.
     may "net" via "src/frob/app/_daemon_proxy.py";
-    may "env.read" via "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/verify_runner.py";
+    may "env.read" via "src/frob/app/_daemon_proxy.py", "src/frob/app/check_runner.py", "src/frob/app/stats_runner.py", "src/frob/app/telemetry.py", "src/frob/app/ticket_runner/__init__.py", "src/frob/app/ticket_runner/_land_cmd.py", "src/frob/app/ticket_runner/_verify.py", "src/frob/app/ticket_runner/_new.py", "src/frob/app/ticket_runner/_rapid_sweep.py", "src/frob/app/verify_runner.py";
     attr flag=frob_check_exec_kill_switch;
     // T-0724: SYS203 (shared store write) fires because cli/core/fleet/
     // gates/serve all have a Flow into tickets_ledger -- correctly, per

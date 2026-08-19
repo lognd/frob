@@ -2,7 +2,7 @@
 id: T-2634
 title: 'Self-conform/mutation-audit/threat cluster: 6 tests red on main, design vs
   live-repo drift'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/strata/test_selfconform.py
 - tests/unit/strata/test_conform_eval_needle.py
@@ -22,7 +24,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_every_may_is_load_bearing
+- tests/unit/strata/test_mutation_audit.py::TestMayMutationAuditRealRepo::test_second_detector_gaps_are_exactly_the_disclosed_app_level_kinds
+designated_repro_test: tests/unit/strata/test_threat.py::TestCaughtByAuditExhaustive::test_every_shipped_entry_has_a_substantive_caught_by
 threat: null
 component: null
 anchor: false
