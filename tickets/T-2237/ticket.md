@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 22a33cdfe29080e475cf994f343b6bdb900173d0
 ---
 T-2226 residue. Two DOC011 findings cite a `T-draft-*` id that no longer
 resolves:
