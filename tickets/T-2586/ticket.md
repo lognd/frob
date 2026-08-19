@@ -12,10 +12,17 @@ sprint: null
 runs_last: false
 scope:
 - scripts/fleet_status.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'scope closure: fleet_status frob:doc targets live here'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
