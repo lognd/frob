@@ -13,9 +13,13 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/tickets/_leases.py
-- src/frob/gates
 - docs/design/registry/check-coverage.yaml
 - docs/modules/tickets-lifecycle.md
+- tests/test_tick012_gate.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_waive.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,7 +37,37 @@ scope_changes:
     -- needs its registry entry and affects-doc anchor touched
   actor: logan
   at: '2026-08-18'
-designated_repro_test: null
+- op: add
+  glob: tests/test_tick012_gate.py
+  reason: TICK012's own test coverage lives in a new standalone test file, split out
+    of tests/test_gates.py to avoid a CrossTicketLeakage collision with T-2550's current
+    declared scope
+  actor: logan
+  at: '2026-08-18'
+- op: remove
+  glob: src/frob/gates
+  reason: narrowing the broad gates/ dir scope to just the two files actually touched,
+    to resolve a lease collision with T-2377's own narrower scope on _exhaustive_handling.py
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: narrowing the broad gates/ dir scope to just the two files actually touched,
+    to resolve a lease collision with T-2377's own narrower scope on _exhaustive_handling.py
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: narrowing the broad gates/ dir scope to just the two files actually touched,
+    to resolve a lease collision with T-2377's own narrower scope on _exhaustive_handling.py
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
+- tests/test_gates.py::TestTick012LeaseScopeDrift::test_lease_matching_current_scope_is_silent
+- tests/test_gates.py::TestTick012LeaseScopeDrift::test_queued_ticket_with_no_lease_is_silent
+- tests/test_gates.py::TestTick012LeaseScopeDrift::test_dir_scope_still_covers_its_own_lease_paths
+designated_repro_test: tests/test_gates.py::TestTick012LeaseScopeDrift::test_stale_superset_path_fires
 threat: null
 component: null
 anchor: false
