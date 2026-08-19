@@ -14,10 +14,25 @@ runs_last: false
 scope:
 - src/frob/tickets/_leases.py
 - src/frob/gates
+- docs/design/registry/check-coverage.yaml
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: T-2561 adds TICK012, a new gate rule, and touches tickets_gate()'s docstring
+    -- needs its registry entry and affects-doc anchor touched
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: T-2561 adds TICK012, a new gate rule, and touches tickets_gate()'s docstring
+    -- needs its registry entry and affects-doc anchor touched
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
