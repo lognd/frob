@@ -967,6 +967,76 @@ class TestDoc006TicketHistoricalExclusion:
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "tickets/T-9004/done-report.md")
 
+    # frob:ticket T-2534
+    def test_done_ticket_evidence_file_not_flagged(self, tmp_path: Path) -> None:
+        """T-2534: a DONE ticket's `evidence/*.md` is the SAME historical-
+        record class as its `ticket.md` -- written once, describing what
+        was true at the time, never edited again, just one directory
+        level deeper. Must NOT fire (must-not-fire half of the positive
+        control, mirroring test_done_ticket_body_not_flagged above)."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(tmp_path, "T-9005", "done", "ticket.md", "placeholder\n")
+        _write(
+            tmp_path,
+            "tickets/T-9005/evidence/fix-measurement.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9005/evidence/fix-measurement.md")
+
+    # frob:ticket T-2534
+    def test_done_ticket_attachment_not_flagged(self, tmp_path: Path) -> None:
+        """T-2534: same class as the evidence-file case above, for the
+        sibling `attachments/` subdirectory (T-2195/T-2328's own shape)."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(tmp_path, "T-9006", "dropped", "ticket.md", "placeholder\n")
+        _write(
+            tmp_path,
+            "tickets/T-9006/attachments/01-survey.md",
+            "Removed `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "tickets/T-9006/attachments/01-survey.md")
+
+    # frob:ticket T-2534
+    def test_open_ticket_evidence_file_still_flagged(self, tmp_path: Path) -> None:
+        """T-2534: the SAME terminal-state gate applies to evidence/
+        attachments as to `ticket.md` itself -- an OPEN ticket's evidence
+        file is NOT exempt (must-FIRE half of the positive control,
+        mirroring test_open_ticket_body_still_flagged above). This is the
+        exact case a blanket subdirectory-prefix exemption (ungated on
+        state) would silently stop checking."""
+        _init_repo(tmp_path)
+        _write(
+            tmp_path,
+            "src/pkg/mod.py",
+            "# frob:doc docs/guide.md#anchor\ndef real_thing(): pass\n",
+        )
+        _write(tmp_path, "docs/guide.md", "# Anchor\n\nSee `real_thing`.\n")
+        _write_ticket(tmp_path, "T-9007", "in-progress", "ticket.md", "placeholder\n")
+        _write(
+            tmp_path,
+            "tickets/T-9007/evidence/fix-measurement.md",
+            "Plan: touch `src/pkg/mod.py::long_gone_symbol`.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert _by_rule(violations, "tickets/T-9007/evidence/fix-measurement.md")
+
 
 class TestDoc006LedgerExclusion:
     """T-1228 round-2: ticket-ledger prose (`tickets.md`/`tickets-archive.

@@ -79,6 +79,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2531: T-2531: post-land sweep regression from T-2503: E501/F401 residue (3 files, unrelated to T-2526's F811)
 - T-2532: T-2532: WIRE001 reach scan misses dotted classmethod/staticmethod calls
 - T-2533: T-2533: DOC006 CLI-invocation walker misses several _dispatch_*-bypassed verbs' real subcommands
+- T-2534: T-2534: T-2505's historical-ticket-doc exemption should cover evidence/attachments dirs too
 - T-2537: T-2537: tool parsers report a crashed run as zero findings: attach an error diagnostic on unparsable output
 - T-2539: T-2539: may-raise resolver reports false EXHAUST002 leaks for multi-type except clauses and slice subscripts
 - T-2543: T-2543: may-raise resolver still mis-types two EXHAUST002 classes: subscript KeyError default and int()/float() TypeError

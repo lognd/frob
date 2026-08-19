@@ -1340,6 +1340,24 @@ def _is_archival_doc(doc_path: str) -> bool:
 # frob:ticket T-2505
 _TICKET_DOC_RE = re.compile(r"^tickets/(T-\d+)/(ticket\.md|done-report\.md)$")
 
+# frob:ticket T-2534
+#: A ticket's `evidence/`/`attachments/` subdirectory holds the SAME
+#: historical-record class T-2505 already exempted for `ticket.md` --
+#: written once (evidence captured at close time, an attachment uploaded
+#: while the ticket was open), describing what was true at the time, never
+#: edited again -- just one directory level deeper. T-2374 measured 3 live
+#: DOC006 false positives of exactly this shape under DONE tickets
+#: (T-1881/evidence/, T-2195/attachments/, T-2328/attachments/) and waived
+#: them individually rather than widen that ticket's own scope into this
+#: file. `<file>` is deliberately unanchored past the subdir name (not
+#: `.md`-only) -- an evidence/attachment file can be any extension, and
+#: DOC006 only ever scans `.md` files in the first place (the caller's own
+#: git-tracked-`.md`-file loop), so a non-`.md` match here is unreachable
+#: dead weight, not a hole.
+_TICKET_SUBDIR_DOC_RE = re.compile(
+    r"^tickets/(T-\d+)/(?:evidence|attachments)/[^/]+$"
+)
+
 
 # frob:ticket T-2505
 def _terminal_ticket_ids(root: Path) -> frozenset[str]:
@@ -1373,21 +1391,32 @@ def _terminal_ticket_ids(root: Path) -> frozenset[str]:
 
 
 # frob:ticket T-2505
+# frob:ticket T-2534
 def _is_historical_ticket_doc(doc_path: str, terminal_ids: frozenset[str]) -> bool:
     """Whether `doc_path` is a historical ticket record DOC006 must never
     check against the current tree: a `done-report.md` (always historical
     -- it is written once, at close, and never edited again) under any
-    `tickets/<id>/`, or that id's `ticket.md` specifically when `<id>` is
-    in `terminal_ids` (T-2505). An OPEN ticket's `ticket.md` is NOT
-    exempt -- it describes work still to be done, so a dangling pointer
-    there is real and must still fire (the mandatory positive control)."""
+    `tickets/<id>/`, that id's `ticket.md` specifically when `<id>` is in
+    `terminal_ids` (T-2505), or (T-2534) a file under that id's
+    `evidence/`/`attachments/` subdirectory -- SAME terminal-state gate as
+    `ticket.md`, not the unconditional exemption `done-report.md` gets: an
+    attachment can genuinely be uploaded to a still-open ticket, so this
+    stays conservative rather than assuming every subdirectory file is
+    automatically historical the moment it exists. An OPEN ticket's
+    `ticket.md` (and, per T-2534, an open ticket's evidence/attachments
+    file) is NOT exempt -- it describes work still to be done, so a
+    dangling pointer there is real and must still fire (the mandatory
+    positive control both T-2505 and T-2534 share)."""
     match = _TICKET_DOC_RE.match(doc_path)
-    if match is None:
-        return False
-    ticket_id, filename = match.group(1), match.group(2)
-    if filename == "done-report.md":
-        return True
-    return ticket_id in terminal_ids
+    if match is not None:
+        ticket_id, filename = match.group(1), match.group(2)
+        if filename == "done-report.md":
+            return True
+        return ticket_id in terminal_ids
+    subdir_match = _TICKET_SUBDIR_DOC_RE.match(doc_path)
+    if subdir_match is not None:
+        return subdir_match.group(1) in terminal_ids
+    return False
 
 
 def _tracked_all_files(root: Path) -> frozenset[str]:
