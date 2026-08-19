@@ -16,6 +16,7 @@ scope:
 - src/frob/check/_python.py
 - src/frob/gates/_gate_cache.py
 - docs/modules/serve.md
+- tests/test_gate_cache.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,11 @@ scope_changes:
   reason: 'scope closure: gate_cache frob:doc targets live here'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: tests/test_gate_cache.py
+  reason: T-2585 adds TestRunReplay coverage to this file
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
