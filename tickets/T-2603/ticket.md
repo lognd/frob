@@ -16,6 +16,7 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - docs/modules/tickets-lifecycle.md
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- src/frob/app/ticket_runner/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_runner_ledger_mirror.py
   reason: T-2603 adds new positive-control tests for the unified strategy table
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: T-2603 replaces _LEDGER_TRANSACTIONAL_VERBS declaration + _auto_commit_ledger_after_dispatch
+    dispatch logic here with the unified table lookup
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
