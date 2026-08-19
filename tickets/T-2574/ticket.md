@@ -22,6 +22,7 @@ scope:
 - src/frob/_cli_parsers/_ticket/__init__.py
 - src/frob/app/_config_external.py
 - src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_new.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -115,6 +116,13 @@ scope_changes:
   reason: set_runs_last is re-exported from frob.tickets.__init__ for _mutate.py's
     import; set_milestone needs the same re-export or the CLI wiring cannot import
     it
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: TicketSpec construction for 'frob ticket new' lives here (_resolve_new_ticket_spec);
+    needed to wire cfg.ticket_milestone into TicketSpec(milestone=...), the --milestone
+    flag's actual effect
   actor: logan
   at: '2026-08-18'
 designated_repro_test: null
