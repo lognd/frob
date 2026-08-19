@@ -51,6 +51,29 @@ _log = get_logger(__name__)
 #      `T-0200 built a real kill switch` narration is neither shape, so it
 #      is never extracted -- only a ticket reference the reason text itself
 #      claims is the live justification counts.
+# T-2622 (T-2612 audit): a waiver justified by "T-XXXX holds a live lease
+# on this file, so I cannot touch it" is the SAME shape of stale premise
+# WAIVE006 already catches for "pending"/"blocked on"/"waiting on"
+# phrasing -- it just uses different words. T-2612 measured this directly:
+# 12 waiver sites cited a "holding a live lease" style premise, and 0 of
+# the 12 still held one (every cited ticket had gone terminal). Nothing
+# caught that, because none of `_WAIVE006_BINDING_PHRASE_RES`'s existing
+# patterns matched "holds ... lease" phrasing at all -- the ticket
+# reference was there, but the extractor never saw it as binding.
+#
+# Rather than build a second, parallel "lease-premise" checker (the
+# duplication NO DUPLICATION forbids, and the exact anti-pattern T-2622
+# was filed to avoid), these five patterns extend THIS SAME tuple: any
+# ticket id a reason cites as the reason a file/site is currently off
+# limits is a live-state claim just as much as "pending T-####" is, and
+# WAIVE006/007 already do the right thing with it (ERROR if the cited
+# ticket has gone DONE/DROPPED, WARN if it never resolves at all) with no
+# further code change needed once the phrase is recognized. Calibrated
+# against this repo's own real waiver text (this file's own top-of-module
+# waiver: "T-1279 (TEST005 burn-down) holds a concurrent in-progress
+# lease on src/frob/gates/** for the whole package" -- T-1279 is DONE as
+# of T-2622, making that specific waiver a live positive-control case for
+# this exact extension, not a hypothetical).
 _WAIVE006_TICKET_ID_RE = r"T-\d+"
 _WAIVE006_BINDING_PHRASE_RES = tuple(
     re.compile(pattern, re.IGNORECASE)
@@ -61,6 +84,14 @@ _WAIVE006_BINDING_PHRASE_RES = tuple(
         rf"\bfollow-on\s+ticket\s*(?:is|:)?\s*({_WAIVE006_TICKET_ID_RE})\b",
         rf"\bblocked\s+on\s+({_WAIVE006_TICKET_ID_RE})\b",
         rf"\bwaiting\s+on\s+({_WAIVE006_TICKET_ID_RE})\b",
+        # T-2622: lease-premise phrasing, same binding-vs-mention bar.
+        rf"\b({_WAIVE006_TICKET_ID_RE})(?:\s*\([^)]*\))?\s+holds?\s+"
+        rf".{{0,40}}?\blease\b",
+        rf"\bholding\s+.{{0,40}}?\blease\b.{{0,60}}?\(?({_WAIVE006_TICKET_ID_RE})\)?",
+        rf"\b({_WAIVE006_TICKET_ID_RE})'?s\s+"
+        rf"(?:live|current|concurrent\s+in-progress)?\s*lease\b",
+        rf"\blease\s+(?:is\s+)?held\s+by\s+({_WAIVE006_TICKET_ID_RE})\b",
+        rf"\bunder\s+({_WAIVE006_TICKET_ID_RE})'?s?\s+.{{0,20}}?lease\b",
     )
 )
 

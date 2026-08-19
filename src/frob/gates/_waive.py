@@ -1,12 +1,16 @@
 # frob:waive SCOPE001 reason="T-1402: this file needed only a mechanical, necessary \
 # rename of a stale frob:waive EXHAUST001 comment to EXHAUST003 (the EXHAUST001 \
 # precision fix, declared scope src/frob/gates/_exhaustive_handling.py) or (this file, \
-# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- frob ticket scope \
-# --add refuses it: T-1279 (TEST005 burn-down) holds a concurrent in-progress lease on \
-# src/frob/gates/** for the whole package, so this ticket cannot formally register the \
-# file in its own declared scope until T-1279 closes or narrows; see this ticket's \
-# Done report for the full disclosure (reviewed 2026-08-03, drain-to-zero WAIVE004 \
-# sweep: left in place -- SCOPE001 is a scope/lease-dependent rule \
+# _tickets_gate.py, _waive.py) is the actual TICK011 fix itself -- at the time this \
+# waiver was written, frob ticket scope --add refused it: T-1279 (TEST005 burn-down) \
+# was holding a concurrent in-progress lease on src/frob/gates/** for the whole \
+# package, so the ticket could not formally register the file in its own declared \
+# scope until T-1279 closed or narrowed; see that ticket's Done report for the full \
+# disclosure (reviewed 2026-08-03, drain-to-zero WAIVE004 sweep, and again 2026-08-19 \
+# while extending WAIVE006 to recognize lease-premise phrasing: T-1279 is DONE now, so \
+# this historical narration is no longer a live binding claim -- left in place because \
+# the underlying reason SCOPE001 still needs waiving here is unrelated to T-1279's own \
+# state: SCOPE001 is a scope/lease-dependent rule \
 # (frob.gates._waive.SCOPED_RUN_FLAKY_RULE_IDS), not a stale finding a full unscoped \
 # run can prove dead the way WIRE001/REF002/etc can"
 """frob.gates._waive -- WAIVE001-005/DSL001 directive validation plus the
@@ -1763,11 +1767,17 @@ def _waive009_violation(
 # frob:enforces CHK-GATE-WAIVE009
 # frob:ticket T-2606
 # frob:waive COV001 reason="a docs/modules/gates.md WAIVE009 subsection (matching \
-# WAIVE006/007/008's own catalog entries) is the real doc home for this symbol, but \
-# docs/modules/gates.md was under T-2377's live lease for this ticket's whole working \
-# window -- follow-up ticket T-2639 adds the doc subsection AND the frob check wiring \
-# this symbol also needs (src/frob/gates/__init__.py was under T-2580's live lease at \
-# the same time) once both leases clear; remove this waiver when that doc anchor lands"
+# WAIVE006/007/008's own catalog entries) is the real doc home for this symbol, but at \
+# the time this waiver was written, T-2377 and T-2580 each held an in-progress lease \
+# covering a file this symbol's own doc+wiring work needed to touch -- \
+# docs/modules/gates.md and src/frob/gates/__init__.py respectively -- so neither \
+# could be added to this ticket's scope. Follow-up ticket T-2639 adds the doc \
+# subsection and the frob-check wiring. Reviewed 2026-08-19 while extending WAIVE006 \
+# to recognize lease-premise phrasing: T-2377 and T-2580 have since both gone \
+# terminal, so this is now historical narration, not a live binding claim about either \
+# one; left in place because T-2639's own doc+wiring work has not actually landed yet, \
+# so the underlying COV001 gap this waiver covers is still real -- remove it once \
+# T-2639 lands, not before"
 # frob:tests \
 # tests/test_waive_gate.py::TestWaive009Violations.test_promise_with_no_ticket_id_errors
 # frob:tests \

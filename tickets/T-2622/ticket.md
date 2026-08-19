@@ -2,7 +2,7 @@
 id: T-2622
 title: unify lease-premise and follow-up-ticket-promise waiver checks (coordinate
   with T-2606)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -46,7 +46,24 @@ scope_changes:
     WAIVE006/007/WAIVE009 tests
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/test_waive_gate.py::TestWaive006CommentChannel::test_lease_premise_bound_to_done_ticket_fires
+- tests/test_waive_gate.py::TestWaive006CommentChannel::test_lease_premise_bound_to_open_ticket_is_silent
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_holds_a_lease_phrasing_is_binding
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_holding_a_lease_on_phrasing_is_binding
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_possessive_lease_phrasing_is_binding
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_lease_held_by_phrasing_is_binding
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_under_x_lease_phrasing_is_binding
+- tests/test_waive_gate.py::TestWaive006BindingPhraseExtraction::test_past_tense_was_holding_is_not_binding
+- tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+- tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+designated_repro_test: tests/test_waive_gate.py::TestWaive006CommentChannel::test_lease_premise_bound_to_done_ticket_fires
+evidence_changes:
+- old_node: tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_unexpected_errors_on_real_repo
+  new_node: tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+  reason: test renamed back to keep the T-0779/T-1072 evidence node id stable
+  actor: logan
+  at: '2026-08-19'
 threat: null
 component: null
 anchor: false
