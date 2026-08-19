@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- design
 - docs/commands/release.md
 - docs/modules/cli.md
 - docs/modules/gates.md
@@ -56,6 +55,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: design
+  reason: design/frob.strata is under T-2666's active lease (the SYS107 testsuite/exec
+    collision this SELFAUDIT001 finding is largely about); working it here would collide.
+    Narrowing to the non-design identities first; SELFAUDIT001/design stays queued
+    in this ticket's tracked list for a later pass once T-2666 lands.
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: set
   reason: 'T-2669 dispatch triage: consolidate T-2592+T-2594 into this ticket per
