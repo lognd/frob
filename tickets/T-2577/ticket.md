@@ -17,10 +17,37 @@ scope:
 - src/frob/tickets/_doable.py
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_query.py
+- src/frob/_cli_parsers/_ticket/_query.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_query.py
+  reason: '--milestone doable filter is part of T-2577''s own acceptance (constraint
+    1);
+
+    CLI wiring for it lives in the argparse registration and the external-config
+
+    allowlist, mirroring the existing --sprint flag pattern (ticket_doable_sprint).
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: '--milestone doable filter is part of T-2577''s own acceptance (constraint
+    1);
+
+    CLI wiring for it lives in the argparse registration and the external-config
+
+    allowlist, mirroring the existing --sprint flag pattern (ticket_doable_sprint).
+
+    '
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
