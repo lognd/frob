@@ -14,10 +14,17 @@ runs_last: false
 scope:
 - src/frob/check/_python.py
 - src/frob/gates/_gate_cache.py
+- docs/modules/serve.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'scope closure: gate_cache frob:doc targets live here'
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
