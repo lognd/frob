@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: daf301da110e830393b78564e35761d249e48adf
 ---
 _wire.py::_wire_reach_patterns's call_pattern regex is
 (?<![A-Za-z0-9_.]){short}\s*\( -- the negative lookbehind explicitly
