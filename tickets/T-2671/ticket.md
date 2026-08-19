@@ -2,7 +2,7 @@
 id: T-2671
 title: 'rapid-debt DirtyMain recurs after T-2669 under concurrent root writes: a second,
   intermittent cause'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,32 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
+evidence_scope:
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-2671's own repro/instrumentation tests for _commit_rapid_debt live here,
+    the standard unit-test home for this module
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-2671's own repro/instrumentation tests for _commit_rapid_debt live here,
+    the standard unit-test home for this module
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_proc_result_diagnostics
+- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_writes_spawn_error_diagnostics
+- tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure::test_swallows_its_own_write_failure
+- tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestCommitRapidDebt::test_commit_failure_persists_a_diagnostic_log
 threat: null
 component: null
 anchor: false
