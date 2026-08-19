@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9d89369d14716fb953cb3a17d1a23a05614e0bde
 ---
 T-2664 extended DOCENUM001 (src/frob/gates/_docenum.py) to also check,
 per claimed member id in the frob:enumerates members="..." list at the
