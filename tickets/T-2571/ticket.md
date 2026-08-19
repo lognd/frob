@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0d2748c5195935ef942eac2ad9da3263a9daf97c
 ---
 The deferred post-land unscoped sweep (T-1684, `frob.app.ticket_runner._rapid_sweep`)
 is producing sweep-regression tickets at a very high false-positive rate. Four
