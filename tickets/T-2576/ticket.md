@@ -20,6 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_query.py
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +79,12 @@ scope_changes:
   reason: 'T-2576 redesign: extend M3''s effective_milestone() with configured default
     as terminal fallback (single home for resolution), and doable render needs a third
     DEFAULTED case distinct from declared/inherited'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: MILE003 registration requires editing the _KNOWN_GATE_RULES merge zone (frob-zone-managed,
+    safe for concurrent edits)
   actor: logan
   at: '2026-08-19'
 body_changes:
