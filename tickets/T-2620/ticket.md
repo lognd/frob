@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-landing.md
+- src/frob/gates/_mutation_evidence.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +97,21 @@ scope_changes:
   glob: src/frob/tickets/_models.py::TicketError
   reason: symref scoping did not satisfy SCOPE002's doc-anchor-to-file check; using
     file-level scope instead
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
