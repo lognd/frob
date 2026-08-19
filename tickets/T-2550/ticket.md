@@ -2,7 +2,7 @@
 id: T-2550
 title: 'COV006: all 18 live findings are call-graph blindness (cross-file public entry,
   test-helper indirection), not unexercised bindings'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,10 +13,35 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/__init__.py
+- tests/unit/test_vet.py
+- tests/unit/test_lang.py
+- tests/unit/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_vet.py
+  reason: trace 1 fix lives in gates/__init__.py (already scoped); trace 2/3 findings
+    require touching the three test files that pin/waive the COV006 misclassifications
+    the traces identified
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_lang.py
+  reason: trace 1 fix lives in gates/__init__.py (already scoped); trace 2/3 findings
+    require touching the three test files that pin/waive the COV006 misclassifications
+    the traces identified
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/test_ticket_land.py
+  reason: trace 1 fix lives in gates/__init__.py (already scoped); trace 2/3 findings
+    require touching the three test files that pin/waive the COV006 misclassifications
+    the traces identified
+  actor: logan
+  at: '2026-08-18'
 designated_repro_test: null
 threat: null
 component: null
