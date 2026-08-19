@@ -132,6 +132,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2626: scope write path never validates individual glob syntax (semicolon-joined entries silently stored)
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
 - T-2638: disclosure-remainder guard is lexical and blind to draft ids: rewording a heading defeats it, drafts can never satisfy it
+- T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
 
 ## [0.530.0] - unreleased
 

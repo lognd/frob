@@ -188,6 +188,108 @@ def leases() -> list[dict]:
     return records
 
 
+# frob:doc docs/guides/coordinator-scripts.md#in_progress_ticket_scope_leases
+# frob:ticket T-2651
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_no_workt\
+# ree_flagged_as_leak
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_live_wor\
+# ktree_named_not_leaked
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases.test_queued_t\
+# icket_excluded
+def in_progress_ticket_scope_leases() -> list[dict]:
+    """T-2651: every `state: in-progress` ticket under `TICKETS_DIR`, read
+    directly from its own local ledger file, as `{"ticket_id", "scope",
+    "worktree", "leaked"}`.
+
+    THE authoritative source: `leases()` above enumerates `.git/frob-
+    leases/*.json` files, which frob's own `read_all_leases` opportunis-
+    tically UNLINKS the moment ANY OTHER ticket's lease scan confirms the
+    file's recorded `worktree` path no longer exists on disk
+    (`frob.tickets._leases._live_leases_pruning_stale`) -- correct for the
+    ordinary case (an agent finished and its worktree was removed), but
+    silently wrong for a ticket that is still `in-progress` with nobody
+    working it (blocked-and-abandoned, or a worktree removed by hand
+    without releasing the lease first). That is precisely the leak this
+    exists to surface: T-2377 sat `in-progress` holding
+    `docs/modules/gates.md` for nine hours after its own worktree was
+    removed, and `leases()` never listed it at all because the file was
+    already gone -- while `frob ticket start`'s own collision check (which
+    reads ticket state/scope directly off the ledger, never the lease
+    file, `frob.tickets._scope._scope_add_queue_conflict`) refused for
+    real on exactly this ticket.
+
+    A lease is a property of an in-progress ticket's declared scope
+    (T-0453) -- a worktree is merely where the work usually happens, so
+    this reads scope/state from the ledger FIRST and treats a worktree as
+    an annotation, not the trigger. `worktree` is populated best-effort
+    (`ticket_lease`'s own file, if it still exists and resolves to a live
+    path, else a `worktrees_touching_ticket` scope-correlated scan) --
+    `None` (and `leaked=True`) only when NEITHER source can name one, the
+    exact 'in-progress with no worktree anywhere' shape that was
+    previously invisible.
+
+    Deliberately does NOT call the O(n^2) start-time collision check
+    (`scope_lease_conflict`) per ticket pair -- this just enumerates the
+    same underlying fact (in-progress ticket + declared scope) the
+    collision check already reads, once per ticket, linear in the number
+    of in-progress tickets."""
+    if not TICKETS_DIR.is_dir():
+        return []
+    entries: list[dict] = []
+    for ticket_dir in sorted(p for p in TICKETS_DIR.iterdir() if p.is_dir()):
+        if ticket_dir.name == "archive":
+            continue
+        ledger_path = ticket_dir / "ticket.md"
+        if not ledger_path.is_file():
+            continue
+        try:
+            text = ledger_path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        parsed = _parse_ticket_frontmatter_text(text)
+        if parsed.get("state") != "in-progress":
+            continue
+        ticket_id = ticket_dir.name
+        scope = parsed.get("scope", [])
+        worktree = _resolve_worktree_for_in_progress_ticket(ticket_id, scope)
+        entries.append(
+            {
+                "ticket_id": ticket_id,
+                "scope": scope,
+                "worktree": worktree,
+                "leaked": worktree is None,
+            }
+        )
+    return entries
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_resolve_worktree_for_in_progress_ticket
+# frob:ticket T-2651
+def _resolve_worktree_for_in_progress_ticket(
+    ticket_id: str, scope: Sequence[str]
+) -> str | None:
+    """Best-effort worktree NAME for `ticket_id` (`in_progress_ticket_
+    scope_leases`'s own annotation half): prefer the recorded lease
+    file's own `worktree` field (`ticket_lease`) when it still exists AND
+    resolves to a directory that is still on disk, else fall back to a
+    scope-correlated scan (`worktrees_touching_ticket`) that finds a live
+    worktree with an unlanded commit actually implementing this ticket's
+    scope. `None` when neither source can name one -- the leak signature
+    `in_progress_ticket_scope_leases` reports."""
+    lease = ticket_lease(ticket_id)
+    if lease is not None:
+        recorded = lease.get("worktree")
+        if recorded and recorded not in ("<unreadable>",):
+            recorded_path = Path(recorded)
+            if recorded_path.is_dir():
+                return recorded_path.name
+    hits = worktrees_touching_ticket(ticket_id, scope)
+    return hits[0] if hits else None
+
+
 # frob:doc docs/guides/coordinator-scripts.md#worktrees
 # frob:ticket T-1863
 # frob:tests tests/unit/test_coordinator_scripts.py::TestWorktrees.test_reports_idle_age
@@ -3061,6 +3163,9 @@ def _print_verify_queue_line() -> None:
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_leases_section_show\
 # s_classification_per_lease
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestPrintFleetReport.test_leases_section_repo\
+# rts_ledger_leak_missing_from_held
 def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
     """Print the ROOT/LANDS/QUARANTINE/LEASES/WORKTREES sections `main`
     used to print inline -- split out (ARCH001/ARCH103, T-2172) as the
@@ -3114,11 +3219,27 @@ def _print_fleet_report(dirt: list[str], idle_seconds: int) -> None:
 
     held = leases()
     live_count = live_lease_count(held)
-    print(f"LEASES {len(held)} ({live_count} live)")
+    held_ids = {record.get("ticket_id") for record in held}
+    # T-2651: `held` is file-based (`.git/frob-leases/*.json`) and can be
+    # BLIND to a lease whose file has already been pruned while its
+    # ticket is still in-progress -- the leak signature. Enumerate
+    # in-progress tickets directly off the ledger and report any that
+    # `held` missed, distinctly.
+    ledger_leases = in_progress_ticket_scope_leases()
+    missing = [e for e in ledger_leases if e["ticket_id"] not in held_ids]
+    leaked = [e for e in missing if e["leaked"]]
+    print(
+        f"LEASES {len(held) + len(missing)} ({live_count} live, "
+        f"{len(leaked)} leaked)"
+    )
     for record in held:
         name = Path(record.get("worktree", "?")).name
         classification = lease_classification(record)
         print(f"  {record.get('ticket_id')} -> {name}  [{classification}]")
+    for entry in missing:
+        name = entry["worktree"] or "<no worktree>"
+        classification = "LEAK" if entry["leaked"] else "live"
+        print(f"  {entry['ticket_id']} -> {name}  [{classification}]")
 
     _print_worktrees_section(idle_seconds)
 

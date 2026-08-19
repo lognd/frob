@@ -2,7 +2,7 @@
 id: T-2651
 title: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree
   is invisible -- the exact case that matters
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_live_worktree_named_not_leaked
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_queued_ticket_excluded
+- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_shows_classification_per_lease
+- tests/unit/test_coordinator_scripts.py::TestPrintFleetReport::test_leases_section_reports_ledger_leak_missing_from_held
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeases::test_no_worktree_flagged_as_leak
 threat: null
 component: null
 anchor: false

@@ -242,6 +242,99 @@ class TestLeases:
         assert records == [{"ticket_id": "T-0002", "worktree": "<unreadable>"}]
 
 
+class TestInProgressTicketScopeLeases:
+    """`fleet_status.in_progress_ticket_scope_leases` (T-2651)."""
+
+    @staticmethod
+    def _write_ticket(
+        tickets_dir: Path, ticket_id: str, state: str, scope: list[str]
+    ) -> None:
+        scope_block = "\n".join(f"- {item}" for item in scope)
+        text = (
+            "---\n"
+            f"id: {ticket_id}\n"
+            "title: fixture\n"
+            f"state: {state}\n"
+            "kind: bug\n"
+            "scope:\n"
+            f"{scope_block}\n"
+            "---\n"
+        )
+        ticket_dir = tickets_dir / ticket_id
+        ticket_dir.mkdir(parents=True)
+        (ticket_dir / "ticket.md").write_text(text, encoding="utf-8")
+
+    def test_no_worktree_flagged_as_leak(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An in-progress ticket with declared scope and NO resolvable
+        worktree (no lease file, no scope-correlated worktree) appears,
+        flagged `leaked=True` -- the missing case T-2651 exists to catch:
+        T-2377 sat in-progress for nine hours after its worktree was
+        removed and was invisible to the old, file-based reporter."""
+        tickets_dir = tmp_path / "tickets"
+        self._write_ticket(tickets_dir, "T-0001", "in-progress", ["src/a.py"])
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+        monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path / "no-worktrees")
+        entries = fleet_status.in_progress_ticket_scope_leases()
+        assert entries == [
+            {
+                "ticket_id": "T-0001",
+                "scope": ["src/a.py"],
+                "worktree": None,
+                "leaked": True,
+            }
+        ]
+
+    def test_live_worktree_named_not_leaked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An in-progress ticket whose lease file still resolves to a
+        live worktree directory is named, not leaked -- the unchanged
+        case: today's behavior for a healthy lease stays exactly as it
+        was."""
+        tickets_dir = tmp_path / "tickets"
+        self._write_ticket(tickets_dir, "T-0002", "in-progress", ["src/b.py"])
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+
+        worktrees_dir = tmp_path / "worktrees"
+        live_wt = worktrees_dir / "t-0002"
+        live_wt.mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        leases_dir = tmp_path / "leases"
+        leases_dir.mkdir()
+        (leases_dir / "T-0002.json").write_text(
+            json.dumps({"ticket_id": "T-0002", "worktree": str(live_wt)}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
+
+        entries = fleet_status.in_progress_ticket_scope_leases()
+        assert entries == [
+            {
+                "ticket_id": "T-0002",
+                "scope": ["src/b.py"],
+                "worktree": "t-0002",
+                "leaked": False,
+            }
+        ]
+
+    def test_queued_ticket_excluded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A QUEUED ticket's declared scope never appears -- a lease binds
+        only at in-progress (T-0453); reporting queued scopes as leases
+        would make the list useless in the opposite direction."""
+        tickets_dir = tmp_path / "tickets"
+        self._write_ticket(tickets_dir, "T-0003", "queued", ["src/c.py"])
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+        monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path / "no-worktrees")
+        assert fleet_status.in_progress_ticket_scope_leases() == []
+
+
 class TestWorktrees:
     """`fleet_status.worktrees`."""
 
@@ -2689,11 +2782,43 @@ class TestPrintFleetReport:
             "leases",
             lambda: [{"ticket_id": "T-2114", "worktree": "/does/not/exist"}],
         )
+        monkeypatch.setattr(
+            fleet_status, "in_progress_ticket_scope_leases", lambda: []
+        )
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         fleet_status._print_fleet_report([], idle_seconds=1200)
         out = capsys.readouterr().out
-        assert "LEASES 1 (0 live)" in out
+        assert "LEASES 1 (0 live, 0 leaked)" in out
         assert "T-2114 -> exist  [reclaimable]" in out
+
+    def test_leases_section_reports_ledger_leak_missing_from_held(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """T-2651: an in-progress ticket `in_progress_ticket_scope_leases`
+        finds with no resolvable worktree, and that `leases()` (file-
+        based) never held at all, still prints in the LEASES section,
+        flagged LEAK -- the missing case this ticket fixes."""
+        monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
+        monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
+        monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
+        monkeypatch.setattr(fleet_status, "leases", lambda: [])
+        monkeypatch.setattr(
+            fleet_status,
+            "in_progress_ticket_scope_leases",
+            lambda: [
+                {
+                    "ticket_id": "T-2377",
+                    "scope": ["docs/modules/gates.md"],
+                    "worktree": None,
+                    "leaked": True,
+                }
+            ],
+        )
+        monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
+        fleet_status._print_fleet_report([], idle_seconds=1200)
+        out = capsys.readouterr().out
+        assert "LEASES 1 (0 live, 1 leaked)" in out
+        assert "T-2377 -> <no worktree>  [LEAK]" in out
 
 
 def _write_ticket(
