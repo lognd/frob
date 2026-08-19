@@ -2,7 +2,7 @@
 id: T-2620
 title: evidence_changes/EvidenceReplaceReasonMissing never got their promised tickets-data-storage.md
   entries (T-2612 audit)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -12,13 +12,34 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-landing.md
+- src/frob/gates/_mutation_evidence.py
+- src/frob/tickets/_evidence.py
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: removing the four AFFECT001 waivers this ticket's doc work discharges
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
