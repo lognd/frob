@@ -38,6 +38,15 @@ scope_changes:
     file
   actor: logan
   at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: BUG002 unsatisfiable by construction for a brand-new test class against
+    a fresh WARN-severity check; documented per playbook's stated escape hatch rather
+    than fabricating a repro commit split
+  actor: logan
+  at: '2026-08-19'
+  old_length: 1702
+  new_length: 2326
 designated_repro_test: null
 threat: null
 component: null
@@ -74,3 +83,6 @@ This is a gate-contract change (widens what DOCENUM001 requires to pass),
 not a bug fix -- deliberately out of T-2662's own docs-only scope. Filed
 per T-2662's own brief instruction to record this judgment as a ticket
 rather than implement it inline.
+
+
+frob:waive BUG002 reason="new WARN-severity check added under a fresh test class; --check-repro reports TEST_ABSENT_AT_PARENT against merge-base (T-2025 limitation -- the test does not exist at the parent commit at all, so no pre-fix-vs-post-fix comparison is reachable without committing the test alone first purely to satisfy this check). Confirmatory-only evidence: all 4 new tests plus the 11 pre-existing docenum001 tests pass post-change (frob test exit=0); positive/negative controls for both the new WARN check and the pre-existing ERROR mismatch check are exercised directly in TestDocenum001UndocumentedMembers."
