@@ -1,0 +1,79 @@
+---
+id: T-2557
+title: 'no gate catches an in-progress ticket with an EMPTY scope: SCOPE001 is diff-driven,
+  TICK009 only checks breadth'
+state: queued
+kind: bug
+origin: human
+created: '2026-08-18'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+acceptance:
+- text: given a ticket in state in-progress or planned whose scope is empty and which
+    has not declared --declare-no-scope, when the tickets gate runs, then a finding
+    names that ticket id
+  evidence: []
+- text: given a ticket that has declared --declare-no-scope, when the tickets gate
+    runs, then no such finding is produced for it
+  evidence: []
+- text: given a ticket in a terminal state (done, dropped, failed) with an empty scope,
+    when the tickets gate runs, then no such finding is produced for it
+  evidence: []
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Found by walking into the state, not by reading code: T-2377 sat
+`state: in-progress` with `scope: []` for roughly an hour, holding a
+worktree lease, and not one gate fired on it.
+
+WHY NOTHING CATCHES IT. There are two candidate detectors and each one
+misses for a different structural reason:
+
+- SCOPE001 (`frob.gates.scope_gate`) is DIFF-driven. Its docstring is
+  explicit that an empty scope is deliberately not a free pass -- and
+  that is true, per touched FILE. But the finding is produced by
+  iterating the diff's touched files, so a ticket whose worktree is
+  clean (everything already landed, or work not started) touches
+  nothing, the loop body never runs, and the riskiest ticket state in
+  the ledger reads as clean. The guard is correct about the file it
+  sees and blind to the state itself.
+- TICK009 (`frob.gates._tickets_gate`) IS the ledger-scan detector for
+  this exact state -- it already iterates every `IN_PROGRESS`/`PLANNED`
+  ticket, which is the loop this needs -- but it only ever asks whether
+  a scope is too BROAD (`large_glob_warnings`). The symmetric and
+  strictly more dangerous case, a scope that is EMPTY, is not asked
+  about at all.
+
+WHY IT MATTERS MORE THAN THE BROAD CASE TICK009 ALREADY WARNS ON. A
+broad scope over-locks files and slows the fleet down loudly. An empty
+scope holds a real worktree lease while declaring NO stated intent, so
+nothing can be checked against it: SCOPE001 has no globs to enforce,
+`frob ticket land` has no scope to test cross-ticket leakage against,
+and a reader of `frob ticket doable` sees an in-progress ticket that
+looks live. `frob ticket start` already refuses an empty scope at write
+time (T-2394), which is exactly why this state looks impossible and is
+not monitored -- but `frob ticket scope --remove` can empty it AFTER
+the start, and that is how it was reached here.
+
+PROPOSED FIX (cheap -- the loop already exists): a new TICK rule in the
+same `IN_PROGRESS`/`PLANNED` scan TICK009 uses, firing when a non-
+terminal ticket's `scope` is empty AND it has not declared
+`--declare-no-scope`. That declaration is the existing, first-class
+opt-out for a legitimately scope-free ticket (a tier=epic rollup, a
+pure decision record), so the rule has a correct exemption from day
+one and does not need a new waiver channel.
+
+Severity: ERROR is defensible given T-2394 already refuses the state at
+`start`, but WARN-first matches this repo's own promotion convention
+(T-0688/T-0728) -- decide when implementing, and count the ledger first.
