@@ -2213,6 +2213,50 @@ class TestBuildImportGraphAndCycleRealPaths:
         # a 2-node cycle is info-severity (never a hard failure on its own)
         assert result.exit_code in (0, 1)
 
+    def test_cycle_finding_has_identity_not_none(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        # T-2364: a cycle finding must carry a real rule code and file --
+        # code=None/file=None makes it unownable (unfileable, unwaivable,
+        # unattributable, undiffable against a baseline). Must-fire case.
+        from frob.check._python import _run_cycle
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("import a\n")
+        result = _run_cycle(tmp_path)
+        assert result.diagnostics, "expected at least one cycle diagnostic"
+        for diag in result.diagnostics:
+            assert diag.code == "CYCLE001"
+            assert diag.file is not None
+
+    def test_cycle_finding_identity_deterministic_across_runs(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        # T-2364: the same unchanged cycle must produce the same (rule,
+        # file) identity on repeated runs -- required for baseline diffing
+        # and de-duplication. Must-fire case, run twice.
+        from frob.check._python import _run_cycle
+
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("import a\n")
+        first = _run_cycle(tmp_path)
+        second = _run_cycle(tmp_path)
+        first_ids = sorted((d.code, d.file) for d in first.diagnostics)
+        second_ids = sorted((d.code, d.file) for d in second.diagnostics)
+        assert first_ids == second_ids
+        assert first_ids  # non-empty: this fixture genuinely has a cycle
+
+    def test_no_cycle_produces_no_diagnostics(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/check/_python.py::_run_cycle kind="unit"
+        # T-2364 negative control: a clean tree must not manufacture a
+        # phantom identity-bearing finding. Must-NOT-fire case.
+        from frob.check._python import _run_cycle
+
+        (tmp_path / "a.py").write_text("x = 1\n")
+        (tmp_path / "b.py").write_text("y = 2\n")
+        result = _run_cycle(tmp_path)
+        assert result.diagnostics == []
+
 
 # frob:ticket T-1507
 # frob:ticket T-1512

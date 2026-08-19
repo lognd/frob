@@ -335,15 +335,47 @@ def _cycle_severity(n_nodes: int) -> Severity:
     return "error"
 
 
+# frob:ticket T-2364
+_CYCLE_RULE_ID = "CYCLE001"
+
+
+# frob:ticket T-2364
+def _cycle_representative_file(cycle: list[str]) -> str:
+    """Deterministic identity anchor for one cycle: its lowest-sorted node.
+
+    T-2364: baseline diffing, ticket auto-filing, and quarantine disposal
+    all key findings by `(rule, file)`. Any stable choice of node within
+    the cycle would do; the lowest-sorted one is picked so the SAME cycle
+    (same node set) always yields the SAME representative file across
+    repeated runs, regardless of the order `find_cycles`' DFS happened to
+    walk the SCC in.
+    """
+    return min(cycle)
+
+
 def _cycle_diags(cycles) -> list[Diagnostic]:  # noqa: ANN001
-    """One diagnostic per detected import cycle, severity scaled by size."""
+    """One diagnostic per detected import cycle, severity scaled by size.
+
+    T-2364: each diagnostic now carries a real `code` (`CYCLE001`) and a
+    deterministic representative `file` -- previously both were `None`,
+    making a cycle finding unownable (no commit attribution, no sweep
+    auto-filing, no waiving, no baseline-diff identity). The full node
+    chain stays in `message`, unchanged.
+    """
     diags: list[Diagnostic] = []
     for cycle in cycles:
         sev = _cycle_severity(len(cycle))
         lines = (
             ["import cycle:"] + [f"  {node}" for node in cycle] + [f"  -> {cycle[0]}"]
         )
-        diags.append(Diagnostic(severity=sev, message="\n".join(lines)))
+        diags.append(
+            Diagnostic(
+                severity=sev,
+                code=_CYCLE_RULE_ID,
+                file=_cycle_representative_file(cycle),
+                message="\n".join(lines),
+            )
+        )
     return diags
 
 

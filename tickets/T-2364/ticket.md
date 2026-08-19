@@ -2,7 +2,7 @@
 id: T-2364
 title: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable
   finding masked three real cycles
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -62,7 +62,8 @@ acceptance:
     Diagnostic.file=None) and PASSES to produce one with code=CYCLE001 and a non-null
     file after this change, through the production _run_cycle invocation, not a pure-function
     unit test alone.'
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_has_identity_not_none
 threat: null
 component: gates
 anchor: false

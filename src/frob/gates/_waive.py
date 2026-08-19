@@ -363,6 +363,11 @@ _KNOWN_GATE_RULES = frozenset(
         "DUP001",
         "DUP002",
         "DUP003",
+        # T-2364: import-cycle finding identity (frob-cycle stage,
+        # `frob.check._python._cycle_diags`) -- was previously emitted
+        # with code=None/file=None, making a real cycle unownable
+        # (unfileable, unwaivable, unattributable to a commit).
+        "CYCLE001",
         "FUZZ001",
         "FUZZ002",
         "FUZZ003",
