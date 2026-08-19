@@ -19,8 +19,14 @@ from frob.tickets._mutation_sweep_queue import (
 # test methods below -- there is no production caller to wire it to by design, \
 # mirroring tests/unit/test_ticket_file_flags.py's identical _make_ticket precedent" \
 # permanent="true"
-def _make_ticket(tmp_path: Path, *, kind: TicketKind) -> str:
-    spec = TicketSpec(title="seed", kind=kind, origin=Origin.HUMAN)
+def _make_ticket(tmp_path: Path, *, kind: TicketKind, title: str = "seed") -> str:
+    """Seed a single ticket for the mutation-sweep-queue tests below.
+
+    T-2632: `title` defaults to "seed" but is overridable -- the
+    duplicate-title guard (T-1995) correctly refuses a second `new_ticket`
+    call with the exact same title+scope, so any test that seeds more than
+    one ticket in the same `tmp_path` must pass distinct titles."""
+    spec = TicketSpec(title=title, kind=kind, origin=Origin.HUMAN)
     result = new_ticket(tmp_path, spec)
     assert result.is_ok
     return result.danger_ok.id
@@ -49,8 +55,8 @@ class TestPendingSweepCount:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_mutation_sweep_queue.py::TestPendingSweepCount.test_counts_only_pending_entries  # noqa: E501
-        ticket_a = _make_ticket(tmp_path, kind=TicketKind.FEATURE)
-        ticket_b = _make_ticket(tmp_path, kind=TicketKind.FEATURE)
+        ticket_a = _make_ticket(tmp_path, kind=TicketKind.FEATURE, title="seed-a")
+        ticket_b = _make_ticket(tmp_path, kind=TicketKind.FEATURE, title="seed-b")
         enqueue_pending_sweep(tmp_path, ticket_a, "main", TicketKind.FEATURE)
         enqueue_pending_sweep(tmp_path, ticket_b, "main", TicketKind.FEATURE)
         assert pending_sweep_count(tmp_path).danger_ok == 2
