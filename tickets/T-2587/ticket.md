@@ -2,7 +2,7 @@
 id: T-2587
 title: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is
   visible on main immediately, not only after land
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/ticket_runner/__init__.py
