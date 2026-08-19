@@ -56,6 +56,31 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'T-2669 dispatch triage: consolidate T-2592+T-2594 into this ticket per
+    coordinator decision; correct the false T-2638-blame the stored title carries;
+    document the identity-union computation and confirm no identity resisted consolidation'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 9164
+  new_length: 6542
+- mode: set
+  reason: 'T-2669 dispatch triage: consolidate T-2592+T-2594 into this ticket per
+    coordinator decision; correct the false T-2638-blame the stored title carries;
+    document the identity-union computation and confirm no identity resisted consolidation'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 6542
+  new_length: 6542
+- mode: set
+  reason: 'T-2669 dispatch triage: consolidate T-2592+T-2594 into this ticket per
+    coordinator decision; correct the false T-2638-blame the stored title carries;
+    document the identity-union computation and confirm no identity resisted consolidation'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 6542
+  new_length: 6542
 designated_repro_test: null
 threat: null
 component: null
@@ -63,104 +88,129 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-The deferred post-land unscoped sweep (T-1684) for T-2638 at commit ce3f40932b9af175bfb6c2a6964a0bab14a86e19 found 45 new (rule, file) identit(ies) that were not present in the previous sweep's baseline.
+TRACKING TICKET for a persistent, unfixed repo-debt set -- NOT a
+regression caused by one land. The stored title ("post-land sweep
+regression from T-2638") is INHERITED and WRONG: T-2638's land
+(ce3f40932b9af175bfb6c2a6964a0bab14a86e19) touches only CHANGELOG.md,
+changelog.d/T-2638.md, docs/modules/tickets-data-storage.md,
+rapid-debt.jsonl, src/frob/tickets/_reporting.py,
+tests/unit/test_reporting_t1648_remainder.py, and its own ticket/
+done-report files -- NONE of the identities below. This ticket is kept
+open under its original id (no `frob ticket` retitle verb exists in
+this repo; retitling would require a hand-edit of the ledger front
+matter, which the playbook and T-0574 both forbid) but this body is
+now the source of truth for what it tracks. Retained rather than
+retitled: whoever reads the stored title next should read THIS
+paragraph first.
 
-T-1935: this is a count of DISTINCT (rule, file) IDENTITIES (45), not a raw finding count -- every finding sharing a (rule, file) pair collapses into ONE identity here (deliberately, so attribution and quarantine reason about "which files went red", not individual diagnostics). An independent re-measurement found 71 actual finding(s) across those 45 identit(ies).
+## Origin (T-2669 dispatch triage, 2026-08-19)
 
-New (rule, file) identit(ies) filed here:
+T-2592, T-2594, and T-2653 were filed independently by three separate
+post-land sweeps against three unrelated, single-purpose lands
+(T-2197, T-2582, T-2638 respectively) -- none of which touched any of
+the flagged files (confirmed via `git show --stat` on all three
+blamed commits). The false ATTRIBUTION mechanism itself is filed
+separately as T-2672. What the three tickets share is not a common
+cause but a common EFFECT: the same underlying, never-fixed debt kept
+getting rediscovered by successive sweeps and re-filed against
+whichever land happened to run next, because nobody had fixed the
+debt itself since T-2592 first surfaced it (2026-08-19 00:39).
 
-- ARCH103  src/frob/release/_cli.py
-- ARCH103  src/frob/tickets/_store.py
-- COV001  src/frob/app/fmt_runner.py
-- COV001  src/frob/gates/_refs_schema.py
-- COV001  src/frob/gates/_rule_id_scan.py
-- COV001  src/frob/strata/_multifile.py
-- COV003  tickets/T-1397
-- COV003  tickets/T-1526
-- COV003  tickets/T-1688
-- COV003  tickets/T-2344
-- COV003  tickets/T-2348
-- COV003  tickets/T-2365
-- COV004  tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
-- COV004  tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md
-- DOC001  docs/commands/release.md
-- DOC002  src/frob/gates/_milestone.py
-- DOC002  src/frob/gates/_refs_schema.py
-- DOC005  docs/modules/cli.md
-- DOC006  tickets/T-2570/ticket.md
-- DOC008  docs/modules/gates.md
-- DOCENUM001  docs/modules/gates.md
-- DRIFT001  src/frob/_cli_parsers/_ticket/_new.py
-- DRIFT001  src/frob/app/ticket_runner/_verify.py
-- DRIFT001  src/frob/tickets/__init__.py
-- F401  /home/logan/projects/frob/src/frob/app/ticket_runner/__init__.py
-- LANG004  src/frob/lang/_support.py
-- PERF002  tests/unit/test_main_entry.py
-- PERF003  src/frob/gates/_debt_deprecated.py
-- PERF003  src/frob/vet/_capability_core.py
-- PERF004  src/frob/app/ticket_runner/_new.py
-- PERF004  src/frob/gates/_milestone.py
-- PERF004  src/frob/scaffold/_skills_sync.py
-- PERF004  src/frob/testing/_collect_kotlin.py
-- PII012  tests/test_capability_registry.py
-- RENDER001  src/frob/release/_cli.py
-- SEC004  tests/test_tickets_organization.py
-- SEC110  src/frob/app/ticket_runner/_verify.py
-- SEC110  src/frob/app/verify_runner.py
-- SEC110  tests/test_release.py
-- SELFAUDIT001  design
-- TEST001  src/frob/strata/_multifile.py
-- TICK003  tickets.md
-- TICK004  tickets.md
-- WIRE002  tests/unit/test_app_runners_batch6.py
-- WIRE003  docs/modules/cli.md
+Per coordinator decision: T-2653 (most complete, most recent) is the
+CONSOLIDATION SURVIVOR. T-2592 and T-2594 are dropped as duplicates-
+with-a-named-survivor (NOT false positives -- their findings are real,
+see LIVE below; only their standalone existence is redundant with this
+ticket).
 
-Attribution (T-1690, symbolic reachability over the verify queue's touched-symbol sets):
+## Union computed across all three source tickets
 
-- ARCH103  src/frob/release/_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- ARCH103  src/frob/tickets/_store.py  -> attributed to T-2638 (commit ce3f40932b9a, already closed/dropped -- filed below) via src/frob/tickets/_reporting.py::_TICKET_ID_RE -> src/frob/tickets/_store.py::_TICKET_ID_RE
-- COV001  src/frob/app/fmt_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV001  src/frob/gates/_refs_schema.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV001  src/frob/gates/_rule_id_scan.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV001  src/frob/strata/_multifile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-1397  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-1526  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-1688  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-2344  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-2348  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV003  tickets/T-2365  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV004  tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- COV004  tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC001  docs/commands/release.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC002  src/frob/gates/_milestone.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC002  src/frob/gates/_refs_schema.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC005  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC006  tickets/T-2570/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOC008  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DOCENUM001  docs/modules/gates.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DRIFT001  src/frob/_cli_parsers/_ticket/_new.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DRIFT001  src/frob/app/ticket_runner/_verify.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- DRIFT001  src/frob/tickets/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- F401  /home/logan/projects/frob/src/frob/app/ticket_runner/__init__.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- LANG004  src/frob/lang/_support.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF002  tests/unit/test_main_entry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF003  src/frob/gates/_debt_deprecated.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF003  src/frob/vet/_capability_core.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF004  src/frob/app/ticket_runner/_new.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF004  src/frob/gates/_milestone.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF004  src/frob/scaffold/_skills_sync.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PERF004  src/frob/testing/_collect_kotlin.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- PII012  tests/test_capability_registry.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- RENDER001  src/frob/release/_cli.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- SEC004  tests/test_tickets_organization.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- SEC110  src/frob/app/ticket_runner/_verify.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- SEC110  src/frob/app/verify_runner.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- SEC110  tests/test_release.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- SELFAUDIT001  design  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- TEST001  src/frob/strata/_multifile.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- TICK003  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- WIRE002  tests/unit/test_app_runners_batch6.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
-- WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
+T-2592 (43 identities) union T-2594 (34) union T-2653 (45) = every
+identity in T-2653's own list below PLUS two identities that appeared
+ONLY in T-2592/T-2594 and were confirmed NOT LIVE on current main
+(2026-08-19, full unscoped `frob check --json`, zero BUDGET001
+deferrals):
 
-Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+- DOC006  tickets/T-2585/ticket.md  (in T-2592 and T-2594, absent
+  from T-2653) -- re-measured: NOT reproducing, `gate:DOC`'s only
+  current DOC006 finding is tickets/T-2570/ticket.md (already listed
+  below). Deliberately NOT carried into this ticket's tracked set --
+  carrying a confirmed-dead identity into a live-debt tracker would
+  misrepresent it as still owed.
+- E501  src/frob/app/ticket_runner/_ledger_mirror.py,
+  src/frob/app/ticket_runner/_verify.py, src/frob/scaffold/project.py
+  (in T-2592 and/or T-2594, absent from T-2653) -- re-measured: E501
+  is absent REPO-WIDE right now (`ruff check` reports zero E501
+  findings anywhere, only I001 import-sort warnings exist). Same
+  reasoning: not carried into the tracked set below.
+
+Nothing else was missing from T-2653's own list -- it already covers
+every OTHER identity either source ticket carried. No identity
+"resisted consolidation"; the two exclusions above are confirmed dead,
+not ambiguous.
+
+## Tracked identities (42), with live-reproduction status as of this
+## triage (full unscoped `frob check --json`, current main)
+
+- ARCH103  src/frob/release/_cli.py  -- LIVE
+- ARCH103  src/frob/tickets/_store.py  -- LIVE
+- COV001  src/frob/app/fmt_runner.py  -- LIVE
+- COV001  src/frob/gates/_refs_schema.py  -- LIVE
+- COV001  src/frob/gates/_rule_id_scan.py  -- LIVE
+- COV001  src/frob/strata/_multifile.py  -- LIVE
+- COV003  tickets/T-1397  -- LIVE
+- COV003  tickets/T-1526  -- LIVE
+- COV003  tickets/T-1688  -- LIVE
+- COV003  tickets/T-2344  -- LIVE
+- COV003  tickets/T-2348  -- LIVE
+- COV003  tickets/T-2365  -- LIVE
+- COV004  tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md  -- LIVE
+- COV004  tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md  -- LIVE
+- DOC001  docs/commands/release.md  -- LIVE
+- DOC002  src/frob/gates/_milestone.py  -- LIVE
+- DOC002  src/frob/gates/_refs_schema.py  -- LIVE
+- DOC005  docs/modules/cli.md  -- LIVE
+- DOC006  tickets/T-2570/ticket.md  -- LIVE
+- DOC008  docs/modules/gates.md  -- LIVE
+- DOCENUM001  docs/modules/gates.md  -- LIVE
+- DRIFT001  src/frob/_cli_parsers/_ticket/_new.py  -- LIVE
+- DRIFT001  src/frob/app/ticket_runner/_verify.py  -- LIVE
+- DRIFT001  src/frob/tickets/__init__.py  -- LIVE
+- F401  src/frob/app/ticket_runner/__init__.py  -- NOT LIVE (re-measured
+  clean; verify once more before closing this one identity out)
+- LANG004  src/frob/lang/_support.py  -- NOT LIVE (re-measured clean;
+  verify once more before closing this one identity out)
+- PERF002  tests/unit/test_main_entry.py  -- LIVE
+- PERF003  src/frob/gates/_debt_deprecated.py  -- LIVE
+- PERF003  src/frob/vet/_capability_core.py  -- LIVE
+- PERF004  src/frob/app/ticket_runner/_new.py  -- LIVE
+- PERF004  src/frob/gates/_milestone.py  -- LIVE
+- PERF004  src/frob/scaffold/_skills_sync.py  -- LIVE
+- PERF004  src/frob/testing/_collect_kotlin.py  -- LIVE
+- PII012  tests/test_capability_registry.py  -- LIVE
+- RENDER001  src/frob/release/_cli.py  -- LIVE
+- SEC004  tests/test_tickets_organization.py  -- LIVE
+- SEC110  src/frob/app/ticket_runner/_verify.py  -- LIVE
+- SEC110  src/frob/app/verify_runner.py  -- LIVE
+- SEC110  tests/test_release.py  -- LIVE
+- SELFAUDIT001  design  -- LIVE
+- TEST001  src/frob/strata/_multifile.py  -- LIVE
+- TICK003  tickets.md  -- LIVE
+- TICK004  tickets.md  -- LIVE
+- WIRE002  tests/unit/test_app_runners_batch6.py  -- LIVE
+- WIRE003  docs/modules/cli.md  -- LIVE
+
+40 of 42 are confirmed LIVE right now; 2 (F401, LANG004) were NOT LIVE
+at this triage pass and may already be resolved -- confirm with a
+fresh targeted check before dropping them from this ticket's tracked
+set, do not just trust this one measurement.
+
+## Working this ticket
+
+Group by rule and land in coherent batches, not one giant change:
+COV001 (4 files, missing frob:doc edges), ARCH103 (2 files), COV003
+(6 old ticket dirs, evidence-node drift), DOC001/002/005/008 +
+DOCENUM001 (doc-anchor drift), PERF002-004 (perf-lint findings, 6
+files), DRIFT001 (3 files, digest-moved-since-ack), TICK003/004
+(tickets.md), SEC004/SEC110/PII012/SELFAUDIT001/TEST001/RENDER001/
+WIRE002/WIRE003 (one file each, likely independent). File a follow-up
+for anything that needs a design decision rather than forcing it.
