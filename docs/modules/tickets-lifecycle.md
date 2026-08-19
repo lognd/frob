@@ -139,6 +139,43 @@ ticket done-report` already supplies) rewrites the Changed/Evidence/
 Captured-claims sections against the CURRENT tree. `reverify` never calls
 `transition` -- the ticket's `state:` field is untouched either way.
 
+### Evidence re-run verdict: PASSED/FAILED/UNMEASURED (T-2569)
+
+N-02's close-time evidence re-run (`_reverify_evidence_for_close`, above)
+and its `frob ticket land` counterpart both call `_verify_ids_passing`
+(`frob.app.ticket_runner._verify`) to actually re-execute a ticket's own
+non-cmd evidence node ids against the CURRENT tree. That function, and
+the batch/individual-rerun helpers underneath it, return a per-id
+`VerifyOutcome` (`status: VerifyStatus`, `reason: str | None`) rather than
+a bare passing set:
+
+```python
+class VerifyStatus(Enum):
+    PASSED = "passed"        # ran to completion, genuinely green
+    FAILED = "failed"        # ran to completion, genuinely red
+    UNMEASURED = "unmeasured"  # never ran at all -- spawn failure,
+                                # timeout, or other infra error
+```
+
+Before T-2569, every non-`PASSED` cause -- a genuine test failure AND a
+`run_selected` `Err` (`TestingError.SpawnFailed`/`BadRunnerSpec`/
+`CollectFailed`/etc., none of which mean "the test ran and failed") --
+collapsed into the same bare "not in the passing set" bit, and `close`
+reported both as `"evidence no longer passes when re-run"`. The measured
+incident: a runner spawn timeout under machine contention (load 48.5 on
+12 cores) reported all 7 of a ticket's evidence nodes as failing when
+ZERO of them had actually executed -- worse than a silent zero, since the
+natural "fix" for a reported failure is to weaken the test until the
+imaginary failure goes away.
+
+`_reverify_evidence_for_close` now branches three ways: any genuinely
+`FAILED` id still refuses with the original wording (failure detection is
+unaffected); any `UNMEASURED` id (and none `FAILED`) refuses with a
+DISTINCT message naming "could not be measured" and the per-id reason,
+never the "no longer passes" wording. Refusing on `UNMEASURED` is still
+correct -- closing on an unmeasurable batch would be the opposite error
+-- only the wording and the false failure attribution changed.
+
 ### `ReviewEntry` evidence shape
 
 ```python

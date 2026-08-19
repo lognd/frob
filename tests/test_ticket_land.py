@@ -7510,6 +7510,7 @@ class TestReverifyEvidenceForClose:
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_still_passing_returns_true  # noqa: E501
         from frob.app import ticket_runner
+        from frob.app.ticket_runner._verify import VerifyOutcome, VerifyStatus
 
         monkeypatch.setattr(
             ticket_runner,
@@ -7519,16 +7520,24 @@ class TestReverifyEvidenceForClose:
         monkeypatch.setattr(
             ticket_runner,
             "_verify_ids_passing",
-            lambda root, ids, py, rs, runners: frozenset(ids),
+            lambda root, ids, py, rs, runners: {
+                i: VerifyOutcome(status=VerifyStatus.PASSED) for i in ids
+            },
         )
         result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
         assert result is True
 
+    # frob:ticket T-2569
     def test_no_longer_passing_returns_false(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
     ) -> None:
         # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_no_longer_passing_returns_false  # noqa: E501
+        """Positive control (a), T-2569: a GENUINELY failing evidence node
+        must still report as failing -- this is the guard against the fix
+        for T-2569 accidentally disabling failure detection altogether
+        while chasing down the false-positive (spawn failure) case below."""
         from frob.app import ticket_runner
+        from frob.app.ticket_runner._verify import VerifyOutcome, VerifyStatus
 
         monkeypatch.setattr(
             ticket_runner,
@@ -7538,10 +7547,52 @@ class TestReverifyEvidenceForClose:
         monkeypatch.setattr(
             ticket_runner,
             "_verify_ids_passing",
-            lambda root, ids, py, rs, runners: frozenset(),
+            lambda root, ids, py, rs, runners: {
+                i: VerifyOutcome(status=VerifyStatus.FAILED, reason="run FAILED")
+                for i in ids
+            },
         )
-        result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+        with caplog.at_level("WARNING"):
+            result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
         assert result is False
+        assert "evidence no longer passes when re-run" in caplog.text
+        assert "could not be measured" not in caplog.text
+
+    # frob:ticket T-2569
+    def test_unmeasured_returns_false_with_distinct_message(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
+        """Positive control (b), T-2569: a spawn failure (the real
+        incident: `TestingError.SpawnFailed` under machine contention, load
+        48.5 on 12 cores) must report as UNMEASURED and refuse the close --
+        but with a message that says "could not measure", NEVER the
+        "evidence no longer passes when re-run" wording that (before this
+        fix) misreported the exact same shape as a genuine test failure."""
+        from frob.app import ticket_runner
+        from frob.app.ticket_runner._verify import VerifyOutcome, VerifyStatus
+
+        monkeypatch.setattr(
+            ticket_runner,
+            "_collect_python_and_rust_ids",
+            lambda root: Ok((frozenset({"test_m.py::test_add"}), frozenset(), {})),
+        )
+        monkeypatch.setattr(
+            ticket_runner,
+            "_verify_ids_passing",
+            lambda root, ids, py, rs, runners: {
+                i: VerifyOutcome(
+                    status=VerifyStatus.UNMEASURED,
+                    reason="could not execute (SpawnFailed)",
+                )
+                for i in ids
+            },
+        )
+        with caplog.at_level("WARNING"):
+            result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+        assert result is False
+        assert "could not be measured" in caplog.text
+        assert "evidence no longer passes when re-run" not in caplog.text
 
 
 # frob:ticket T-0844

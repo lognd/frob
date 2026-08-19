@@ -87,7 +87,15 @@ scope_changes:
     and add UNMEASURED/FAILED positive-control tests'
   actor: logan
   at: '2026-08-18'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_still_passing_returns_true
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_no_longer_passing_returns_false
+- tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_unmeasured_returns_false_with_distinct_message
+- tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured::test_spawn_failed_is_unmeasured_not_failed
+- tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured::test_individual_reverify_spawn_failure_is_unmeasured
+- tests/unit/test_ticket_runner_land_release.py::TestReverifyFailingBucketIndividually::test_only_the_genuinely_failing_id_is_excluded
+- tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingRoutesToIndividualReverify::test_batch_not_ok_falls_back_to_per_id_attribution
+designated_repro_test: tests/test_ticket_land.py::TestReverifyEvidenceForClose::test_unmeasured_returns_false_with_distinct_message
 threat: null
 component: null
 anchor: false

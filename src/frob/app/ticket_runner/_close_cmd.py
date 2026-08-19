@@ -483,9 +483,12 @@ def _own_obligations_rel_bump_dirty(root: Path, ticket) -> bool:  # noqa: ANN001
     # T-1696: rel001_preflight_enabled is the settings-record read;
     # unreadable resolves to "not rapid" (keeps the stricter behaviour),
     # matching the prior is-ProfileName.RAPID short-circuit on Err.
-    if resolved_profile.is_ok and not settings_for_profile(
-        resolved_profile.danger_ok
-    ).rel001_preflight_enabled:
+    if (
+        resolved_profile.is_ok
+        and not settings_for_profile(
+            resolved_profile.danger_ok
+        ).rel001_preflight_enabled
+    ):
         record_rapid_debt(root, ticket.id, "close-rel001-preflight-skipped")
         _log.info(
             "ticket close: %s REL001 preflight skipped under rapid profile "
@@ -837,7 +840,29 @@ def _reverify_evidence_for_close(root: Path, ticket) -> bool | None:  # noqa: AN
     (fail-closed, blocking the close) if collection itself fails --
     "cannot verify" must never silently become "verified", the same
     posture `_covers_scope_for_ticket` already takes for an unloadable
-    graph."""
+    graph.
+
+    T-2569: the real incident this closes -- `frob check`'s `SpawnFailed`
+    (runner process could not be started or timed out, under machine
+    contention: load 48.5 on 12 cores) was reported to the operator as
+    "evidence no longer passes when re-run" for all 7 of a ticket's
+    evidence nodes. ZERO nodes actually executed; the WARNING and refusal
+    both claimed a genuine test failure that never happened -- worse than
+    a silent zero, since the natural "fix" for a reported failure is to
+    weaken the test until the imaginary failure goes away.
+    `_verify_ids_passing` already returns a per-id `VerifyOutcome`
+    (`PASSED`/`FAILED`/`UNMEASURED`) rather than a bare passing set; this
+    function now branches three ways instead of collapsing that
+    distinction back down to "in the passing set or not": genuine
+    failures still refuse with the original wording (so a real defect is
+    reported as a real defect, never silently waved through), while any
+    UNMEASURED id refuses with a NEW, distinctly-worded message so an
+    operator (or an agent) sees "could not measure" and investigates
+    infra/contention, not "the test broke" and starts editing the test.
+    Refusing to close on an UNMEASURED batch is still correct -- closing
+    on an unmeasurable result would be the opposite error -- only the
+    WORDING and the false failure attribution are being fixed here."""
+    from frob.app.ticket_runner._verify import VerifyStatus
     from frob.tickets._models import is_cmd_evidence
 
     non_cmd = [e for e in ticket.evidence if not is_cmd_evidence(e)]
@@ -859,15 +884,38 @@ def _reverify_evidence_for_close(root: Path, ticket) -> bool | None:  # noqa: AN
     python_ids, rust_ids, runners = collected.danger_ok
     from frob.app import ticket_runner as _ticket_runner
 
-    passing = _ticket_runner._verify_ids_passing(
+    outcomes = _ticket_runner._verify_ids_passing(
         root, non_cmd, python_ids, rust_ids, runners
     )
-    failing = [e for e in non_cmd if e not in passing]
-    if failing:
+    failed = [
+        e
+        for e in non_cmd
+        if e in outcomes and outcomes[e].status is VerifyStatus.FAILED
+    ]
+    unmeasured = [
+        e
+        for e in non_cmd
+        if e not in outcomes or outcomes[e].status is VerifyStatus.UNMEASURED
+    ]
+    # An id absent from `outcomes` entirely (resolved against neither
+    # collected set) is folded into `unmeasured` by the `e not in outcomes`
+    # clause above -- never silently dropped from both lists.
+
+    if failed:
         _log.warning(
             "ticket close: %s evidence no longer passes when re-run: %s",
             ticket.id,
-            failing,
+            failed,
+        )
+        return False
+    if unmeasured:
+        _log.warning(
+            "ticket close: %s evidence could not be measured on re-run "
+            "(runner spawn failure/timeout or other infra error, NOT a "
+            "test failure -- T-2569): %s -- reasons: %s",
+            ticket.id,
+            unmeasured,
+            {e: outcomes[e].reason for e in unmeasured if e in outcomes},
         )
         return False
     return True

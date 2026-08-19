@@ -98,6 +98,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2561: T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
 - T-2563: T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
 - T-2565: T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
+- T-2569: T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
 - T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
 
 ## [0.530.0] - unreleased

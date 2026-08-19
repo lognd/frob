@@ -13,13 +13,60 @@ import re
 import subprocess
 import sys
 from collections.abc import Sequence
+from enum import Enum
 from pathlib import Path
+
+from pydantic import BaseModel
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
 from frob.process._guard import ProcessGuardError
 
 _log = get_logger("frob.app.ticket_runner")
+
+
+# frob:ticket T-2569
+# frob:doc docs/modules/tickets-lifecycle.md#evidence-re-run-verdict-passedfailedunmeasured-t-2569  # noqa: E501
+# frob:tests tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured.test_spawn_failed_is_unmeasured_not_failed  # noqa: E501
+class VerifyStatus(Enum):
+    """One evidence id's re-run verdict (T-2569): `PASSED` (genuinely
+    green on rerun), `FAILED` (genuinely red on rerun -- the test ran to
+    completion and did not pass), or `UNMEASURED` (the run itself could
+    not be completed at all -- e.g. `TestingError.SpawnFailed` under
+    machine contention -- so no verdict about the id's correctness
+    exists). `UNMEASURED` must never be reported or treated as `FAILED`:
+    the incident this exists to close was exactly that collapse -- a
+    runner spawn timeout under load 48.5 on 12 cores was reported to a
+    human as "evidence no longer passes when re-run", inviting the
+    genuinely dangerous "fix" of weakening a correct test to make an
+    imaginary failure go away."""
+
+    PASSED = "passed"
+    FAILED = "failed"
+    UNMEASURED = "unmeasured"
+
+
+# frob:ticket T-2569
+# frob:doc docs/modules/tickets-lifecycle.md#evidence-re-run-verdict-passedfailedunmeasured-t-2569  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestReverifyEvidenceForClose.test_unmeasured_returns_false_with_distinct_message  # noqa: E501
+class VerifyOutcome(BaseModel):
+    """`VerifyStatus` plus, for `FAILED`/`UNMEASURED`, a short human-
+    readable reason -- threaded through by `_verify_ids_passing` and its
+    helpers so a caller (`_reverify_evidence_for_close`) can report WHY an
+    id did not verify as passing, not collapse every non-pass cause into
+    one bare "not passing" bit the way the pre-T-2569 `frozenset[str]`
+    return shape did."""
+
+    model_config = {}
+
+    status: VerifyStatus
+    reason: str | None = None
+
+
+#: Sentinel `VerifyOutcome` for the common "ran clean, genuinely passed"
+#: case -- avoids re-constructing an identical model instance per id at
+#: every batch-passed call site (T-2569).
+_PASSED = VerifyOutcome(status=VerifyStatus.PASSED)
 
 
 def _evidence(root: Path, cfg: AppConfig) -> None:
@@ -1136,7 +1183,7 @@ def _parse_error_findings_from_json(
             "(%s) that exited nonzero with NO error-severity diagnostic "
             "explaining why -- error-finding identities are unmeasured, "
             "not a partial set (T-2521: a crashed/malformed tool stage's "
-            "silence is structurally indistinguishable from \"ran clean\" "
+            'silence is structurally indistinguishable from "ran clean" '
             "to anything that only reads `diagnostics`, so this is "
             "checked via `exit_code` directly instead)",
             ticket_id,
@@ -1208,7 +1255,9 @@ def _incomplete_tool_results(results: list) -> list[str]:  # noqa: ANN401
     for r in results:
         if not isinstance(r, dict):
             continue
-        tool_name = r.get("tool") if isinstance(r.get("tool"), str) else "<unknown tool>"
+        tool_name = (
+            r.get("tool") if isinstance(r.get("tool"), str) else "<unknown tool>"
+        )
         if tool_name in _AGGREGATE_ROLLUP_TOOL_NAMES:
             # T-2521 false-positive fix (found live, against this repo's
             # own real `frob check --json` output): "gate-summary" is a
@@ -1466,10 +1515,10 @@ def _run_tests_count_fn(root: Path):  # noqa: ANN201
         python_ids, rust_ids, runners = collected.danger_ok
         from frob.app import ticket_runner as _ticket_runner
 
-        passing = _ticket_runner._verify_ids_passing(
+        outcomes = _ticket_runner._verify_ids_passing(
             root, node_ids, python_ids, rust_ids, runners
         )
-        return len(passing)
+        return sum(1 for o in outcomes.values() if o.status is VerifyStatus.PASSED)
 
     return fn
 
@@ -1588,12 +1637,21 @@ def _verify_ids_passing(
     python_collected: frozenset[str],
     rust_collected: frozenset[str],
     runners,  # noqa: ANN001
-) -> frozenset[str]:
+) -> dict[str, VerifyOutcome]:
     """D-01 CLI wiring: actually RUN `node_ids` (bucketed by which
-    collected set each id resolves against, python vs rust) and return the
-    subset that passed -- the piece that makes `frob ticket evidence`/
+    collected set each id resolves against, python vs rust) and return a
+    per-id `VerifyOutcome` -- the piece that makes `frob ticket evidence`/
     `close`/`land` mean "the work was actually tested," not just "a test
     with this name exists."
+
+    T-2569: returns a `dict[str, VerifyOutcome]`, not a bare
+    `frozenset[str]` of passing ids -- a caller that only ever asked "did
+    it pass" could not tell a genuine failure from a run that never
+    executed at all (spawn timeout under load, infra error). Extract the
+    passing subset with `{k for k, v in result.items() if v.status is
+    VerifyStatus.PASSED}` where the pre-T-2569 frozenset is still what is
+    needed (e.g. `add_evidence`'s own `passed` contract, unaffected by
+    this ticket).
 
     Each language bucket is run as its OWN `run_selected` call, not one
     combined invocation, for two reasons: (1) a combined run's single exit
@@ -1620,15 +1678,40 @@ def _verify_ids_passing(
     (T-0575) does not veto either."""
     from frob.tickets._models import matches_collected
 
-    passing: set[str] = set()
+    outcomes: dict[str, VerifyOutcome] = {}
     buckets = {
         "python": tuple(n for n in node_ids if matches_collected(n, python_collected)),
         "rust": tuple(n for n in node_ids if matches_collected(n, rust_collected)),
     }
     for language, items in buckets.items():
         if items:
-            passing.update(_verify_one_bucket_passing(root, language, items, runners))
-    return frozenset(passing)
+            outcomes.update(_verify_one_bucket_passing(root, language, items, runners))
+    return outcomes
+
+
+# frob:ticket T-2569
+def _verify_via_direct_pytest_fallback(
+    root: Path, items: tuple[str, ...]
+) -> dict[str, VerifyOutcome]:
+    """`_verify_one_bucket_passing`'s no-`[[test.runner]]`-declared python
+    fallback (ARCH001 split of that function, T-2569): a batched direct
+    `uv run pytest` invocation first, then `_reverify_direct_pytest_
+    individually`'s per-id attribution on a multi-id batch failure, same
+    as before this split -- only extracted to its own function so
+    `_verify_one_bucket_passing` itself stays under the 60-line ARCH001
+    threshold."""
+    if _run_pytest_directly(root, items):
+        return {item: _PASSED for item in items}
+    if len(items) > 1:
+        return _reverify_direct_pytest_individually(root, items)
+    _log.warning(
+        "ticket evidence: direct pytest verification FAILED for %s", list(items)
+    )
+    return {
+        items[0]: VerifyOutcome(
+            status=VerifyStatus.FAILED, reason="direct pytest run FAILED"
+        )
+    }
 
 
 # frob:ticket T-0398
@@ -1638,7 +1721,7 @@ def _verify_one_bucket_passing(
     language: str,
     items: tuple[str, ...],
     runners,  # noqa: ANN001
-) -> frozenset[str]:
+) -> dict[str, VerifyOutcome]:
     """One language bucket of `_verify_ids_passing`'s work: run `items`
     via ONE batched `run_selected` call first (the cheap common case, all
     green); on any failure, `_reverify_failing_bucket_individually` (T-0856)
@@ -1649,7 +1732,17 @@ def _verify_one_bucket_passing(
     invocation for python when no `[[test.runner]]` is declared at all --
     `frob.toml` is optional, so a repo that never configured one must not
     fall straight to "not passing" (a false-positive trap this fix was
-    explicitly warned against)."""
+    explicitly warned against).
+
+    T-2569: `run_selected` returning `Err` means the run never executed at
+    all (`TestingError`'s members -- `SpawnFailed`, `BadRunnerSpec`,
+    `CollectFailed`, etc. -- are ALL infra/spawn failures, never "the test
+    ran and failed"), so every id in `items` is `UNMEASURED`, not
+    `FAILED`, in that case (the `NoRunner`-with-a-successful-direct-pytest-
+    fallback path below is the sole exception, since that path DOES
+    actually execute the tests). Only a batch that itself came back `Ok`
+    with `ok=False` -- the test process ran to completion and reported
+    failure -- ever produces a `FAILED` verdict here."""
     from frob.testing import SelectionReport, TestingError, run_selected
 
     selection = SelectionReport(
@@ -1661,28 +1754,54 @@ def _verify_one_bucket_passing(
     )
     run = run_selected(selection, runners, root)
     if run.is_ok and run.danger_ok.ok:
-        return frozenset(items)
+        return {item: _PASSED for item in items}
     if run.is_err and language == "python" and run.danger_err == TestingError.NoRunner:
-        if _run_pytest_directly(root, items):
-            return frozenset(items)
-        if len(items) > 1:
-            return _reverify_direct_pytest_individually(root, items)
-        _log.warning(
-            "ticket evidence: direct pytest verification FAILED for %s", list(items)
-        )
-        return frozenset()
+        return _verify_via_direct_pytest_fallback(root, items)
     if run.is_ok and len(items) > 1:
         # T-0856: the batch itself executed (no infra error) but at least
         # one id failed -- do NOT blame the whole bucket; find out which
         # id(s) genuinely fail on their own.
         return _reverify_failing_bucket_individually(root, language, items, runners)
+    if run.is_ok:
+        return _verify_single_item_batch_failed(language, items)
+    return _verify_bucket_unmeasured(language, items, run.danger_err)
+
+
+# frob:ticket T-2569
+def _verify_single_item_batch_failed(
+    language: str, items: tuple[str, ...]
+) -> dict[str, VerifyOutcome]:
+    """`_verify_one_bucket_passing`'s single-id, genuinely-ran-and-failed
+    branch (ARCH001 split): `run.is_ok` but `len(items) == 1`, so there is
+    no multi-id batch to disambiguate via `_reverify_failing_bucket_
+    individually` -- the lone id IS the failure."""
     _log.warning(
-        "ticket evidence: %s verification %s for %s",
+        "ticket evidence: %s verification run FAILED for %s", language, list(items)
+    )
+    return {items[0]: VerifyOutcome(status=VerifyStatus.FAILED, reason="run FAILED")}
+
+
+# frob:ticket T-2569
+def _verify_bucket_unmeasured(
+    language: str, items: tuple[str, ...], err: object
+) -> dict[str, VerifyOutcome]:
+    """`_verify_one_bucket_passing`'s `run.is_err` branch (ARCH001 split):
+    the run never executed at all (spawn failure/timeout under load, a bad
+    runner spec, ...), so every id in `items` is `UNMEASURED`, never
+    `FAILED` (T-2569 -- see `VerifyStatus`'s own docstring for why this
+    distinction matters)."""
+    _log.warning(
+        "ticket evidence: %s verification run failed to execute (%s) for %s -- "
+        "UNMEASURED, not failing (T-2569)",
         language,
-        f"run failed to execute ({run.danger_err})" if run.is_err else "run FAILED",
+        err,
         list(items),
     )
-    return frozenset()
+    reason = f"could not execute ({err})"
+    return {
+        item: VerifyOutcome(status=VerifyStatus.UNMEASURED, reason=reason)
+        for item in items
+    }
 
 
 # frob:ticket T-0856
@@ -1691,7 +1810,7 @@ def _reverify_failing_bucket_individually(
     language: str,
     items: tuple[str, ...],
     runners,  # noqa: ANN001
-) -> frozenset[str]:
+) -> dict[str, VerifyOutcome]:
     """T-0856: a batched `run_selected` call over `items` came back not-ok
     -- rerun EACH id on its own (bounded to this one bucket, only paid on
     the already-uncommon failing-batch path) so a single order-dependent
@@ -1708,12 +1827,18 @@ def _reverify_failing_bucket_individually(
     `.frob/stability.json` yet, or any other load error) degrades to an
     empty quarantine set -- fail-closed on the underlying pass/fail check,
     never silently permissive just because quarantine state is
-    unavailable."""
+    unavailable.
+
+    T-2569: an individual rerun's `run.is_err` (the id's own run never
+    executed -- spawn failure/timeout, infra error) is UNMEASURED, checked
+    BEFORE the quarantine lookup: quarantine only ever excuses a genuine
+    (executed, failed) flake, never stands in for a run that could not be
+    measured at all."""
     from frob.testing import SelectionReport, run_selected
     from frob.testing._stability import load_stability, quarantined_node_ids
 
     quarantined = quarantined_node_ids(load_stability(root))
-    passing: set[str] = set()
+    outcomes: dict[str, VerifyOutcome] = {}
     for item in items:
         selection = SelectionReport(
             touched=(),
@@ -1724,7 +1849,19 @@ def _reverify_failing_bucket_individually(
         )
         run = run_selected(selection, runners, root)
         if run.is_ok and run.danger_ok.ok:
-            passing.add(item)
+            outcomes[item] = _PASSED
+        elif run.is_err:
+            _log.warning(
+                "ticket evidence: %s %s could not be individually verified "
+                "(%s) -- UNMEASURED, not failing (T-2569)",
+                language,
+                item,
+                run.danger_err,
+            )
+            outcomes[item] = VerifyOutcome(
+                status=VerifyStatus.UNMEASURED,
+                reason=f"could not execute ({run.danger_err})",
+            )
         elif item in quarantined:
             _log.warning(
                 "ticket evidence: %s %s failed individually but is "
@@ -1732,14 +1869,20 @@ def _reverify_failing_bucket_individually(
                 language,
                 item,
             )
-            passing.add(item)
+            outcomes[item] = VerifyOutcome(
+                status=VerifyStatus.PASSED, reason="quarantined (T-0575)"
+            )
         else:
             _log.warning(
                 "ticket evidence: %s %s FAILED individually (not quarantined)",
                 language,
                 item,
             )
-    return frozenset(passing)
+            outcomes[item] = VerifyOutcome(
+                status=VerifyStatus.FAILED,
+                reason="failed individually (not quarantined)",
+            )
+    return outcomes
 
 
 # frob:ticket T-0398
@@ -1802,7 +1945,7 @@ def _run_pytest_directly(root: Path, node_ids) -> bool:  # noqa: ANN001
 # frob:ticket T-0856
 def _reverify_direct_pytest_individually(
     root: Path, items: tuple[str, ...]
-) -> frozenset[str]:
+) -> dict[str, VerifyOutcome]:
     """T-0856's per-id attribution fix, for the no-`[[test.runner]]`-
     declared direct-pytest fallback path (`_run_pytest_directly`'s own
     batch call already failed): rerun each id on its own via the same
@@ -1811,28 +1954,44 @@ def _reverify_direct_pytest_individually(
     same way `_reverify_failing_bucket_individually` does for the runner-
     based path, so this fallback does not regress to the pre-T-0856 all-
     or-nothing misattribution just because no `[[test.runner]]` happens to
-    be configured."""
+    be configured.
+
+    T-2569: `_run_pytest_directly` returns a bare `bool` (spawn failure and
+    a genuine nonzero exit both read as `False`), so unlike the
+    `run_selected`/`TestingError` path this fallback cannot distinguish
+    "ran and failed" from "could not spawn" -- a per-id verdict here is
+    `FAILED`, not `UNMEASURED`, and that ambiguity is a known, separate
+    gap `_run_pytest_directly` itself would need to close (out of this
+    ticket's scope: the `frob ticket evidence`/`close` main path this
+    incident hit runs through `run_selected`, not this no-`frob.toml`
+    fallback)."""
     from frob.testing._stability import load_stability, quarantined_node_ids
 
     quarantined = quarantined_node_ids(load_stability(root))
-    passing: set[str] = set()
+    outcomes: dict[str, VerifyOutcome] = {}
     for item in items:
         if _run_pytest_directly(root, [item]):
-            passing.add(item)
+            outcomes[item] = _PASSED
         elif item in quarantined:
             _log.warning(
                 "ticket evidence: direct pytest %s failed individually but "
                 "is quarantined (T-0575) -- not counted as a veto",
                 item,
             )
-            passing.add(item)
+            outcomes[item] = VerifyOutcome(
+                status=VerifyStatus.PASSED, reason="quarantined (T-0575)"
+            )
         else:
             _log.warning(
                 "ticket evidence: direct pytest %s FAILED individually "
                 "(not quarantined)",
                 item,
             )
-    return frozenset(passing)
+            outcomes[item] = VerifyOutcome(
+                status=VerifyStatus.FAILED,
+                reason="failed individually (not quarantined)",
+            )
+    return outcomes
 
 
 # frob:ticket T-0106
@@ -1923,8 +2082,15 @@ def _apply_evidence(
     normalized_ids = [normalize_evidence_separator(n) for n in node_ids]
     from frob.app import ticket_runner as _ticket_runner
 
-    passing = _ticket_runner._verify_ids_passing(
+    outcomes = _ticket_runner._verify_ids_passing(
         root, normalized_ids, python_ids, rust_ids, runners
+    )
+    # T-2569: `add_evidence`'s own `passed` contract is unchanged (still a
+    # bare `frozenset[str]`) -- collapse the richer per-id outcome down to
+    # its passing subset here, at the boundary, rather than widening that
+    # library's own contract as a side effect of this fix.
+    passing = frozenset(
+        node_id for node_id, o in outcomes.items() if o.status is VerifyStatus.PASSED
     )
 
     result = add_evidence(
@@ -2007,8 +2173,13 @@ def _apply_replace_evidence(
     collected_ids = python_ids | rust_ids
 
     normalized_new = normalize_evidence_separator(new_node)
-    passing = _ticket_runner._verify_ids_passing(
+    outcomes = _ticket_runner._verify_ids_passing(
         root, [normalized_new], python_ids, rust_ids, runners
+    )
+    # T-2569: `replace_evidence`'s own `passed` contract is unchanged --
+    # see `_apply_evidence`'s matching comment for why this collapses here.
+    passing = frozenset(
+        node_id for node_id, o in outcomes.items() if o.status is VerifyStatus.PASSED
     )
 
     result = replace_evidence(

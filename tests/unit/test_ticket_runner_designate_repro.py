@@ -47,13 +47,15 @@ def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Same hermetic stand-in `tests/test_tickets_evidence_cli.py` uses:
     every id asked about is reported passing, no real subprocess."""
     import frob.app.ticket_runner as runner_mod
+    from frob.app.ticket_runner._verify import VerifyOutcome as _VerifyOutcome
+    from frob.app.ticket_runner._verify import VerifyStatus as _VerifyStatus
 
     monkeypatch.setattr(
         runner_mod,
         "_verify_ids_passing",
-        lambda root, node_ids, python_collected, rust_collected, runners: frozenset(
-            node_ids
-        ),
+        lambda root, node_ids, python_collected, rust_collected, runners: {
+            n: _VerifyOutcome(status=_VerifyStatus.PASSED) for n in node_ids
+        },
     )
 
 

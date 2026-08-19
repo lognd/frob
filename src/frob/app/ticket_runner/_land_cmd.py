@@ -2497,9 +2497,20 @@ def _land_passed_fn(worktree: Path):  # noqa: ANN201
             return frozenset()
         python_ids, rust_ids, runners = collected.danger_ok
         from frob.app import ticket_runner as _ticket_runner
+        from frob.app.ticket_runner._verify import VerifyStatus
 
-        return _ticket_runner._verify_ids_passing(
+        # T-2569: `_verify_ids_passing` now returns a per-id
+        # `VerifyOutcome` (PASSED/FAILED/UNMEASURED), not a bare passing
+        # frozenset -- this closure's own contract (`frozenset[str]` of
+        # passing ids) is unchanged, so collapse to the passing subset
+        # here at the boundary.
+        outcomes = _ticket_runner._verify_ids_passing(
             worktree, node_ids, python_ids, rust_ids, runners
+        )
+        return frozenset(
+            node_id
+            for node_id, o in outcomes.items()
+            if o.status is VerifyStatus.PASSED
         )
 
     return fn
@@ -2853,9 +2864,7 @@ def _write_release_bump(  # noqa: ANN201
         )
         return Err(LandError.ReleaseBumpFailed)
 
-    staged = run_argv(
-        ["git", "-C", str(root), "add", "CHANGELOG.md", "changelog.d"]
-    )
+    staged = run_argv(["git", "-C", str(root), "add", "CHANGELOG.md", "changelog.d"])
     if staged.is_err or staged.danger_ok.returncode != 0:
         _log.error(
             "land: %s failed to stage the T-2445 fragment/CHANGELOG.md files",

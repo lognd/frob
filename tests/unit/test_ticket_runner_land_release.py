@@ -14,9 +14,18 @@ import pytest
 from typani.result import Err, Ok
 
 from frob.app import ticket_runner
+from frob.app.ticket_runner._verify import VerifyStatus
 from frob.process import _guard
 from frob.release import BumpClass, ReleaseError, ReleaseManifest
 from frob.tickets._models import LandError
+
+
+def _passed(outcomes: dict) -> frozenset[str]:  # noqa: ANN001
+    """T-2569: `_verify_ids_passing` and friends now return a per-id
+    `VerifyOutcome`, not a bare passing `frozenset[str]` -- this test
+    module's assertions still want the passing subset, extracted here
+    once rather than repeated inline at every call site."""
+    return frozenset(k for k, v in outcomes.items() if v.status is VerifyStatus.PASSED)
 
 
 class _FakeTicket:
@@ -386,7 +395,7 @@ class TestReverifyFailingBucketIndividually:
         result = ticket_runner._reverify_failing_bucket_individually(
             tmp_path, "python", items, ()
         )
-        assert result == frozenset({"tests/x.py::a", "tests/x.py::c"})
+        assert _passed(result) == frozenset({"tests/x.py::a", "tests/x.py::c"})
 
     def test_quarantined_failing_id_still_counts_as_passing(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -412,7 +421,7 @@ class TestReverifyFailingBucketIndividually:
         result = ticket_runner._reverify_failing_bucket_individually(
             tmp_path, "python", items, ()
         )
-        assert result == frozenset({"tests/x.py::a", "tests/x.py::b"})
+        assert _passed(result) == frozenset({"tests/x.py::a", "tests/x.py::b"})
 
     def test_non_quarantined_failing_id_excluded(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -428,7 +437,7 @@ class TestReverifyFailingBucketIndividually:
         result = ticket_runner._reverify_failing_bucket_individually(
             tmp_path, "python", items, ()
         )
-        assert result == frozenset({"tests/x.py::a"})
+        assert _passed(result) == frozenset({"tests/x.py::a"})
 
 
 class TestVerifyOneBucketPassingRoutesToIndividualReverify:
@@ -449,4 +458,69 @@ class TestVerifyOneBucketPassingRoutesToIndividualReverify:
         result = ticket_runner._verify_one_bucket_passing(
             tmp_path, "python", ("tests/x.py::a", "tests/x.py::b"), ()
         )
-        assert result == frozenset({"tests/x.py::a"})
+        assert _passed(result) == frozenset({"tests/x.py::a"})
+
+
+# frob:ticket T-2569
+class TestVerifyOneBucketPassingSpawnFailureIsUnmeasured:
+    """T-2569: the real incident -- `run_selected` returning
+    `Err(TestingError.SpawnFailed)` (a runner process that could not be
+    started or timed out, e.g. under machine contention) must report every
+    id in the bucket as `VerifyStatus.UNMEASURED`, never `FAILED`. Before
+    this fix, `_verify_one_bucket_passing` collapsed EVERY non-passing
+    cause (genuine failure AND infra/spawn error alike) into a single bare
+    "not passing" bit, which is exactly the false-positive T-2569's own
+    incident measured: a spawn timeout reported as "evidence no longer
+    passes when re-run" for all 7 of a ticket's evidence nodes, zero of
+    which actually ran."""
+
+    def test_spawn_failed_is_unmeasured_not_failed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured.test_spawn_failed_is_unmeasured_not_failed  # noqa: E501
+        import frob.testing as _testing_mod
+
+        monkeypatch.setattr(
+            _testing_mod,
+            "run_selected",
+            lambda selection, runners, root: Err(_testing_mod.TestingError.SpawnFailed),
+        )
+        items = ("tests/x.py::a", "tests/x.py::b")
+        result = ticket_runner._verify_one_bucket_passing(tmp_path, "python", items, ())
+        assert set(result) == set(items)
+        for outcome in result.values():
+            assert outcome.status is VerifyStatus.UNMEASURED
+            assert outcome.reason is not None
+        # Positive control (a), same test: a batch that genuinely runs and
+        # fails must still come back FAILED, not UNMEASURED, so this fix
+        # has not disabled failure detection along the way.
+        monkeypatch.setattr(
+            _testing_mod,
+            "run_selected",
+            _fake_run_selected({"tests/x.py::a"}),
+        )
+        genuinely_failed = ticket_runner._verify_one_bucket_passing(
+            tmp_path, "python", ("tests/x.py::a",), ()
+        )
+        assert genuinely_failed["tests/x.py::a"].status is VerifyStatus.FAILED
+
+    def test_individual_reverify_spawn_failure_is_unmeasured(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_land_release.py::TestVerifyOneBucketPassingSpawnFailureIsUnmeasured.test_individual_reverify_spawn_failure_is_unmeasured  # noqa: E501
+        """Same UNMEASURED-not-FAILED contract, one level down:
+        `_reverify_failing_bucket_individually`'s own per-id rerun must
+        also not launder a spawn failure into a quarantine-eligible
+        "failed individually" verdict."""
+        import frob.testing as _testing_mod
+
+        monkeypatch.setattr(
+            _testing_mod,
+            "run_selected",
+            lambda selection, runners, root: Err(_testing_mod.TestingError.SpawnFailed),
+        )
+        monkeypatch.setattr("frob.testing._stability.load_stability", lambda root: {})
+        result = ticket_runner._reverify_failing_bucket_individually(
+            tmp_path, "python", ("tests/x.py::a",), ()
+        )
+        assert result["tests/x.py::a"].status is VerifyStatus.UNMEASURED

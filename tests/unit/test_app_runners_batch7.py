@@ -39,13 +39,15 @@ def _patch_passing(monkeypatch: pytest.MonkeyPatch) -> None:
     id it is asked about as passing, without spawning pytest/cargo (same
     helper as `tests/test_tickets_evidence_cli.py`)."""
     import frob.app.ticket_runner as runner_mod
+    from frob.app.ticket_runner._verify import VerifyOutcome as _VerifyOutcome
+    from frob.app.ticket_runner._verify import VerifyStatus as _VerifyStatus
 
     monkeypatch.setattr(
         runner_mod,
         "_verify_ids_passing",
-        lambda root, node_ids, python_collected, rust_collected, runners: frozenset(
-            node_ids
-        ),
+        lambda root, node_ids, python_collected, rust_collected, runners: {
+            n: _VerifyOutcome(status=_VerifyStatus.PASSED) for n in node_ids
+        },
     )
 
 
