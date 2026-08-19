@@ -27,6 +27,7 @@ scope:
 - tickets/T-draft-4a3f6770/**
 - tickets/T-draft-b38c1e18/**
 - tickets/T-draft-fbe8aa0c/**
+- tickets/T-draft-df63b46c/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -152,6 +153,12 @@ scope_changes:
   glob: tickets/T-draft-fbe8aa0c/**
   reason: 'SCOPE001: draft tickets filed by T-2612 itself live outside implicit tickets.md
     scope; include their own directories'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-df63b46c/**
+  reason: 'SCOPE001: this ticket''s own dropped-then-absorbed draft file needs to
+    stay in scope like the others'
   actor: logan
   at: '2026-08-19'
 evidence:
