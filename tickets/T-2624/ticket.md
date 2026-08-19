@@ -27,6 +27,7 @@ scope:
 - src/frob/tickets/__init__.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/_config_external.py
+- tests/test_tickets_organization.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -95,6 +96,12 @@ scope_changes:
   reason: AppConfig.from_external's field-name tuples (_STRING_FIELDS/_BOOL_FIELDS)
     must list ticket_runs_last_parallel_safe/_reason or the new frob ticket new flags
     parse but never populate cfg
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_tickets_organization.py
+  reason: T-2624's own frob:tests evidence lives here (TestSetRunsLastParallelSafe,
+    TestRunsLastParallelSafeCli, TestMile004ParallelSafeCliEndToEnd)
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
