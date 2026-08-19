@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d7b390a789e977435b3329a28c52f9d35fe8942f
 ---
 Discovered while working T-2363 (declare-vs-fix decision on the 160-node serve/stats/tickets/testing/app import cycle): CYCLE001 is listed among the known/waivable gate rules in src/frob/gates/_waive.py (T-2364's own comment there: 'import-cycle finding identity... was previously emitted with code=None/file=None, making a real cycle unownable (unfileable, unwaivable, unattributable to a commit)'), implying a frob:waive CYCLE001 comment should suppress a matching finding.
 
