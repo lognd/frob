@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6d174a21dc53f246c41e6175735f9bb1e73ec4d4
 ---
 Landing T-2524 (scope docs/guides/agent-playbook.md only) was refused by
 CrossTicketLeakage:
