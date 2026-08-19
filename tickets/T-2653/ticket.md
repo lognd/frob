@@ -2,7 +2,7 @@
 id: T-2653
 title: 'post-land sweep regression from T-2638: 45 new (rule, file) identit(ies),
   71 finding(s) (ARCH103, COV001, COV003, COV004)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -50,6 +50,7 @@ scope:
 - tickets/T-2348
 - tickets/T-2365
 - tickets/T-2570/ticket.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -67,6 +68,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: docs/modules/gates.md is under T-2670's active lease (DOC008/DOCENUM001
     collide); deferring that pair until T-2670 lands.
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'COV001 fix: fmt_runner.py::run''s existing frob:describes anchor already
+    lives in docs/modules/app.md#runners; adding the reciprocal frob:doc directive'
   actor: logan
   at: '2026-08-19'
 body_changes:
