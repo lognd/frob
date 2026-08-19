@@ -2,7 +2,7 @@
 id: T-2575
 title: 'no grammar registered warning is 57 percent of command output: the pre-filter
   obligation is on callers and mostly unmet'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,6 +11,7 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/lang/__init__.py
 - src/frob/arch/__init__.py
