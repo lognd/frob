@@ -2,7 +2,7 @@
 id: T-2615
 title: changelog emits an entry for a DROPPED ticket and duplicates the ticket id
   on 101 lines
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -12,13 +12,37 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/release/_fragments.py
+- tests/test_release.py
+- docs/modules/release.md
+evidence_scope:
+- tests/test_release.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/test_release.py
+  reason: 'SCOPE002: existing frob:doc/frob:tests edges on symbols touched by the
+    T-2615 fix point at these two files'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/release.md
+  reason: 'SCOPE002: existing frob:doc/frob:tests edges on symbols touched by the
+    T-2615 fix point at these two files'
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_release.py::TestChangelogFragments::test_write_refuses_for_a_dropped_ticket
+- tests/test_release.py::TestChangelogFragments::test_write_still_succeeds_for_a_done_ticket
+- tests/test_release.py::TestChangelogFragments::test_assemble_excludes_a_dropped_tickets_fragment
+- tests/test_release.py::TestChangelogFragments::test_assemble_renders_the_ticket_id_exactly_once
+designated_repro_test: tests/test_release.py::TestChangelogFragments::test_write_refuses_for_a_dropped_ticket
 threat: null
 component: null
 anchor: false
