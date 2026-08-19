@@ -25,6 +25,7 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - src/frob/app/ticket_runner/_new.py
 - src/frob/tickets/__init__.py
+- src/frob/app/ticket_runner/_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +81,12 @@ scope_changes:
   reason: set_runs_last_parallel_safe (like set_scope_breadth_ack) must be re-exported
     from frob.tickets's package __init__ for _mutate.py/_new_renumber.py to import
     it
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: the runs-last-parallel-safe CLI verb needs a LedgerWriteStrategy entry (GENERIC_COMMIT_MIRRORED,
+    same as scope-ack/runs-last) or the fleet mirror silently mishandles it
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
