@@ -30,7 +30,7 @@ _DIRTY_COV_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
   [gate:COV] src/frob/app/whatever.py:1  COV001  COV001: missing frob:doc edge
 
 ## Tool summary
-  FAIL  gate-summary            1 errors, 0 warnings, 0 waived  [gates=1.00s]
+  FAIL  gate-summary            1 errors, 0 warnings, 0 unresolved, 0 waived  [gates=1.00s]
 """
 
 _DIRTY_SELFAUDIT_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
@@ -39,13 +39,13 @@ _DIRTY_SELFAUDIT_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
   [gate:SELFAUDIT] src/frob/app/whatever.py:1  SELFAUDIT001  SELFAUDIT001: public test class not declared on testsuite
 
 ## Tool summary
-  FAIL  gate-summary            1 errors, 0 warnings, 0 waived  [gates=1.00s]
+  FAIL  gate-summary            1 errors, 0 warnings, 0 unresolved, 0 waived  [gates=1.00s]
 """
 
 _CLEAN_STDOUT = """frob check .  [PASS]  0 errors  0 warnings
 
 ## Tool summary
-  pass  gate-summary            0 errors, 0 warnings, 0 waived  [gates=1.00s]
+  pass  gate-summary            0 errors, 0 warnings, 0 unresolved, 0 waived  [gates=1.00s]
 """
 
 _TOUCHED_FILE = "src/frob/app/whatever.py"

@@ -335,7 +335,7 @@ def _capture_done_report_claims(
     ticket_id: str,
     ticket: Ticket,
     run_tests: Callable[[Sequence[str]], int] | None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None,
 ) -> "DoneReportClaims | None":
     """`set_done_report`'s T-0754/T-0832/T-0846 Captured-claims computation,
@@ -431,7 +431,7 @@ def set_done_report(
     why: str,
     base_ref: str = "main",
     run_tests: Callable[[Sequence[str]], int] | None = None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
 ) -> Result[Ticket, TicketError]:
     """THE single write path for a ticket's Done report (T-0458): compose
@@ -475,6 +475,19 @@ def set_done_report(
     measured nothing on either side (the T-0830 incident). The test-count
     half of the claim is unaffected -- `run_tests` always returns a real
     measured count whenever it runs at all.
+
+    T-2668: `check_gates()`'s own return type widened from `tuple[int, int,
+    int] | None` to `tuple[int, int | None, int | None] | None` -- a THIRD
+    outcome, between "fully measured" and "fully unmeasured": the real
+    `## Errors` identity set parsed (so `gate_errors` is a real, comparable
+    int, derived the same way as always) but the aggregate gate-summary
+    totals line itself failed to parse, so `gate_warnings`/`gate_waived`
+    specifically have no source and stay `None`. This closes the exact gap
+    T-2503 exposed on main: a fresh check finding a real error must never
+    be discarded wholesale as "unmeasured" just because a separate
+    formatter/parser pair (the totals LINE, not the findings) drifted out
+    of sync -- see `frob.app.ticket_runner._verify._check_gates_summary_fn`
+    for where this triple is actually assembled.
 
     T-0846: `check_gate_findings()` (opt-in, additional to `check_gates`)
     returns a `frozenset[(rule_id, file)]` of the SAME fresh check's error

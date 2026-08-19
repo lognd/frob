@@ -101,7 +101,7 @@ _TWO_FINDINGS_STDOUT = _check_result_json(
         ("gate:PII", "PII010", "tests/other.py"),
     ],
     warnings=[("gate:PERF", "PERF001", "src/x.py")],
-    gate_summary="2 errors, 1 warnings, 0 waived  [archgate=1.00s]",
+    gate_summary="2 errors, 1 warnings, 0 unresolved, 0 waived  [archgate=1.00s]",
 )
 
 # frob:ticket T-0850
@@ -117,11 +117,24 @@ _MIXED_FLAKY_AND_REAL_FINDINGS_STDOUT = _check_result_json(
         ("gate:COV", "COV002", "tests/other.py"),
         ("gate:SEC", "SEC110", "src/frob/x.py"),
     ],
-    gate_summary="3 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+    gate_summary="3 errors, 0 warnings, 0 unresolved, 0 waived  [archgate=1.00s]",
 )
 
 _NO_ERRORS_HEADING_MEASURED_STDOUT = _check_result_json(
-    gate_summary="0 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+    gate_summary="0 errors, 0 warnings, 0 unresolved, 0 waived  [archgate=1.00s]",
+)
+
+# frob:ticket T-2668
+# T-2668's own root-cause fixture: `frob.check._python._gates_summary`
+# (T-1664) renders FOUR terms -- "N errors, M warnings, K unresolved, W
+# waived" -- but every fixture above (and, until this ticket, the real
+# `_GATE_SUMMARY_COUNTS_ONLY_RE`) was still written against the pre-T-1664
+# THREE-term shape ("N errors, M warnings, W waived", no "unresolved" term
+# at all). This fixture uses the REAL, current renderer shape verbatim so
+# a fixed regex is proven against production text, not a stale stand-in.
+_REAL_SHAPE_WITH_FINDING_STDOUT = _check_result_json(
+    errors=[("gate:SELFAUDIT", "SELFAUDIT001", "design")],
+    gate_summary="1 errors, 0 warnings, 0 unresolved, 0 waived  [selfaudit=1.00s]",
 )
 
 _UNPARSABLE_STDOUT = "some garbage output with no gate-summary line at all\n"
@@ -139,7 +152,7 @@ _TY_AND_GATE_ERROR_STDOUT = _check_result_json(
         ("ty", "unresolved-attribute", "src/frob/x.py"),
         ("gate:SEC", "SEC110", "src/frob/y.py"),
     ],
-    gate_summary="2 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+    gate_summary="2 errors, 0 warnings, 0 unresolved, 0 waived  [archgate=1.00s]",
 )
 
 # frob:ticket T-1703
@@ -163,7 +176,7 @@ _BUDGET_TRUNCATED_STDOUT = json.dumps(
                 "exit_code": 0,
                 "diagnostics": [],
                 "tests": [],
-                "summary": "0 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+                "summary": "0 errors, 0 warnings, 0 unresolved, 0 waived  [archgate=1.00s]",
             },
             {
                 "tool": "budget",
@@ -478,6 +491,40 @@ class TestCheckGatesSummaryFn:
         fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
         errors, warnings, waived = fn()
         assert (errors, warnings, waived) == (0, 0, 0)
+
+    # frob:ticket T-2668
+    def test_real_gates_summary_shape_with_unresolved_term_is_measured(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn.test_real_gates_summary_shape_with_unresolved_term_is_measured  # noqa: E501
+        """T-2668's own repro: `_gates_summary` (T-1664) has rendered a
+        FOUR-term line ("N errors, M warnings, K unresolved, W waived")
+        for a long time, but `_GATE_SUMMARY_COUNTS_ONLY_RE` was still
+        written for the pre-T-1664 THREE-term shape and requires the
+        literal word "waived" to appear immediately after the warnings
+        count -- it never does once "K unresolved," sits in between, so
+        this closure returns `None` (unmeasured) on EVERY real run,
+        despite a real SELFAUDIT001 error being present and fully
+        captured in `error_findings` the whole time (T-2503's live
+        incident on main: gate-state recorded 'unmeasured' while
+        error-findings already listed SELFAUDIT001@design). A fresh check
+        that actually ran and found one real error must be reported as
+        measured, not discarded as unmeasured just because a formatter
+        drifted out of sync with its own parser."""
+
+        def _fake_run(argv, **kwargs):  # noqa: ANN001, ANN202
+            return _FakeProc(1, stdout=_REAL_SHAPE_WITH_FINDING_STDOUT)
+
+        monkeypatch.setattr(_guard.subprocess, "run", _fake_run)
+        fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
+        result = fn()
+        assert result is not None, (
+            "gate-state claim came back unmeasured against a REAL, "
+            "current-shape gate-summary line carrying a real finding -- "
+            "this is T-2668's exact bug"
+        )
+        errors, warnings, waived = result
+        assert (errors, warnings, waived) == (1, 0, 0)
 
 
 class TestParseErrorFindingsFromJson:

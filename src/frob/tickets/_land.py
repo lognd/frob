@@ -869,7 +869,7 @@ def land(
     rebuild_natives: Callable[[Path], bool] | None = None,
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None = None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,
@@ -1733,7 +1733,7 @@ def _land_locked(
     rebuild_natives: Callable[[Path], bool] | None,
     sync_gate_rules: Callable[[Path, str], Result[tuple[str, ...] | None, LandError]]
     | None = None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None = None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None = None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
     check_gate_claims: Callable[[Ticket], bool | None] | None = None,
     skip_mutation_evidence: bool = False,

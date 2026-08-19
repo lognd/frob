@@ -124,7 +124,7 @@ def _reverify_evidence_post_merge(
 def _skipped_unmeasured_top_level(
     ticket_id: str,
     passing_ids: frozenset[str] | None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None,
 ) -> Result[_ClaimsReverifyOutcome, LandError]:
     """T-2083: `_reverify_done_report_claims_post_merge`'s own top-level
     early-out (`passing_ids is None or check_gates is None`) -- split out
@@ -153,7 +153,7 @@ def _reverify_done_report_claims_post_merge(
     worktree: Path,
     ticket_id: str,
     passing_ids: frozenset[str] | None,
-    check_gates: Callable[[], tuple[int, int, int] | None] | None,
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None] | None,
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None = None,
 ) -> Result[_ClaimsReverifyOutcome, LandError]:
     """T-0754's land-side half: re-load `ticket_id` from the POST-MERGE
@@ -426,7 +426,7 @@ def _reverify_gate_state_claim(
     ticket: Ticket,
     claims,  # noqa: ANN001
     ticket_id: str,
-    check_gates: Callable[[], tuple[int, int, int] | None],
+    check_gates: Callable[[], tuple[int, int | None, int | None] | None],
     check_gate_findings: Callable[[], frozenset[tuple[str, str]] | None] | None,
 ) -> Result[None, LandError]:
     """`_reverify_done_report_claims_post_merge`'s gate-state-half check
@@ -435,13 +435,41 @@ def _reverify_gate_state_claim(
     filtered comparison first (T-0846 review), and falls back to the
     count-only "refuse only on an increase" comparison otherwise. See
     `_reverify_done_report_claims_post_merge`'s own docstring for the
-    full incident history behind each branch here."""
-    # T-0832: the gate-state claim can only be re-verified when BOTH sides
-    # are actually measured. Never compare sentinels -- skip explicitly.
+    full incident history behind each branch here.
+
+    T-2668: `claims.gate_errors is None` (the plain count claim, checked
+    below) is no longer the ONLY way to attempt a re-verification. Before
+    this ticket, that None short-circuited the WHOLE function -- including
+    the identity-based comparison a few lines down -- even when `claims.
+    error_findings` was measured and non-`None` (T-2668's exact repro
+    shape: a real error captured in `error_findings` while `gate_errors`
+    stayed unmeasured because a separate summary-line parser drifted).
+    Discarding a real, already-captured identity set here because the
+    UNRELATED count half of the same claim happened to fail to parse is
+    the same "unmeasured is not nothing found" gap this ticket exists to
+    close, on the land side rather than the done-report-capture side. The
+    identity path is tried FIRST now, using `claims.error_findings`
+    whenever it is available, regardless of `claims.gate_errors`; the
+    count-only skip below is reached only when the identity path itself
+    could not run (either side never captured identities) AND the count
+    claim is unmeasured."""
+    if claims.error_findings is not None and check_gate_findings is not None:
+        identity_result = _reverify_gate_findings_by_identity(
+            ticket, claims, ticket_id, check_gate_findings
+        )
+        if identity_result is not None:
+            return identity_result
+
+    # T-0832: the count-only fallback below can only compare when BOTH
+    # sides are actually measured. Never compare sentinels -- skip
+    # explicitly. (T-2668: reached only when the identity path above
+    # either had nothing to compare with or itself fell back to `None` --
+    # see its own docstring.)
     if claims.gate_errors is None:
         _log.warning(
             "land: %s recorded Done report has no measured gate-state "
-            "claim (it was unmeasured at done-report time) -- skipping "
+            "claim (it was unmeasured at done-report time), and no "
+            "identity-based comparison was available either -- skipping "
             "gate-state re-verification; only the test-count claim was "
             "checked",
             ticket_id,
@@ -465,21 +493,12 @@ def _reverify_gate_state_claim(
 
     real_errors, real_warnings, real_waived = fresh
 
-    # T-0846 review (reject #1): try the IDENTITY-based, scope-filtered
-    # comparison first -- it is strictly more precise than the count-only
-    # fallback below and closes the masking gap a raw count can never
-    # close (an unrelated fix elsewhere on the branch removing more errors
-    # than this land's own diff introduced would otherwise net out to a
-    # LOWER total and sail through). Only attempted when both sides
-    # actually captured an identity set; either side missing one (an old
-    # claim, or `check_gate_findings` not wired) falls through to the
-    # count-only comparison unchanged.
-    if claims.error_findings is not None and check_gate_findings is not None:
-        identity_result = _reverify_gate_findings_by_identity(
-            ticket, claims, ticket_id, check_gate_findings
-        )
-        if identity_result is not None:
-            return identity_result
+    # T-2668: the identity-based comparison is now tried once, up front
+    # (this function's own opening block, before the `claims.gate_errors
+    # is None` skip) -- reaching this point already means either that
+    # attempt had nothing to compare with (one side never captured
+    # identities) or it fell back to `None` itself, so it is NOT retried
+    # here. This count-only path is the fallback for that same case.
 
     # T-0846: count-only fallback, refusing only on an INCREASE over the
     # captured claim, never on exact-count equality. The prior strict `!=`
@@ -506,10 +525,15 @@ def _reverify_gate_state_claim(
     # silent gap -- `check_gate_findings` closes it going forward for every
     # ticket whose Done report is written (or refreshed) after this fix.
     if real_errors > claims.gate_errors:
+        # T-2668: %s, not %d, for the warnings/waived pairs -- either side
+        # of either pair can legitimately be `None` (unmeasured) now that
+        # a real error count can be captured/reverified without its
+        # sibling totals (this ticket's own partial-fallback state); a
+        # `None` against `%d` would raise inside the logging call itself.
         _log.error(
             "land: %s captured gate-state claim no longer holds post-merge "
             "-- recorded %d error(s), a fresh `frob check --ticket %s` now "
-            "shows %d error(s) (warnings %d->%d, waived %d->%d, informational "
+            "shows %d error(s) (warnings %s->%s, waived %s->%s, informational "
             "only); refresh with `frob ticket done-report %s` and retry",
             ticket_id,
             claims.gate_errors,

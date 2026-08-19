@@ -38,13 +38,13 @@ _DIRTY_GATES_STDOUT = """frob check .  [FAIL]  1 errors  0 warnings
   [gate:TEST] src/frob/app/whatever.py:1  TEST005  TEST005: undercovered
 
 ## Tool summary
-  FAIL  gate-summary            1 errors, 0 warnings, 0 waived  [gates=1.00s]
+  FAIL  gate-summary            1 errors, 0 warnings, 0 unresolved, 0 waived  [gates=1.00s]
 """
 
 _CLEAN_GATES_STDOUT = """frob check .  [PASS]  0 errors  0 warnings
 
 ## Tool summary
-  pass  gate-summary            0 errors, 0 warnings, 0 waived  [gates=1.00s]
+  pass  gate-summary            0 errors, 0 warnings, 0 unresolved, 0 waived  [gates=1.00s]
 """
 
 

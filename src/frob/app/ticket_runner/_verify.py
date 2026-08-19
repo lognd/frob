@@ -642,33 +642,74 @@ def _resolve_done_report_why(cfg: AppConfig) -> str | None:
 
 # frob:ticket T-0754
 # frob:ticket T-0754
+# frob:ticket T-2668
 # The `gate-summary` tool line's leading counts, e.g. "0 errors, 3
-# warnings, 12 waived" -- deliberately does NOT match the trailing
-# `[archgate=7.99s, ...]` per-gate timing blob `_gate_summary_result`
-# appends after it, since that blob is wall-clock and therefore different
-# on every single invocation even against an IDENTICAL tree (T-0754 review
-# round 2's FATAL fix: a strict-equality re-verification against the RAW
-# summary LINE, timing blob included, refused every land, including this
-# ticket's own).
+# warnings, 2 unresolved, 12 waived" -- deliberately does NOT match the
+# trailing `[archgate=7.99s, ...]` per-gate timing blob `_gate_summary_
+# result` appends after it, since that blob is wall-clock and therefore
+# different on every single invocation even against an IDENTICAL tree
+# (T-0754 review round 2's FATAL fix: a strict-equality re-verification
+# against the RAW summary LINE, timing blob included, refused every land,
+# including this ticket's own).
+#
+# T-2668: the `unresolved` term (4th capture group) was added by T-1664's
+# `_gates_summary` change (`frob.check._python`) -- "N errors, M warnings,
+# K unresolved, W waived" -- but this regex still expected the pre-T-1664
+# THREE-term shape and required the literal word "waived" immediately
+# after the warnings count. Once "K unresolved," sits in between, that
+# never matches ANY real gate-summary line again, at any severity,
+# regardless of delta/replay state: this is T-2668's actual root cause,
+# not a rare/contention-only failure -- every single fresh `frob check
+# --json` run since T-1664 landed has silently degraded its gate-state
+# claim to "unmeasured" here, even though the underlying `## Errors`
+# identity capture (a wholly separate code path reading `diagnostics`
+# directly, `_parse_error_findings_from_json`) kept working the entire
+# time. That asymmetry is exactly what T-2503's Done report showed:
+# `error-findings` populated, `gates: unmeasured` recorded right next to
+# it. Fixed by naming the `unresolved` term explicitly instead of
+# skipping straight from warnings to waived.
 _GATE_SUMMARY_COUNTS_RE = re.compile(
-    r"gate-summary\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+waived"
+    r"gate-summary\s+(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+unresolved,"
+    r"\s+(\d+)\s+waived"
 )
 
 # frob:ticket T-1703
+# frob:ticket T-2668
 # The counts-only half of `_GATE_SUMMARY_COUNTS_RE`, without the leading
 # `"gate-summary"` anchor: that anchor matched the RENDERED text line's
 # own tool-name column (`f"  {icon}  {r.tool:<22}  {r.summary}"`,
 # `frob.check._python._gate_summary_result`'s caller), which never
 # appears inside `ToolResult.summary` itself -- the JSON payload's
-# `results[].summary` field is bare `"N errors, M warnings, K waived
-# [timing]"` with no tool-name prefix, since the caller already located
-# the right entry by `tool == "gate-summary"` before ever reading this
-# field. Used only against a `summary` string already known to belong to
-# the `"gate-summary"` `ToolResult` -- unlike `_GATE_SUMMARY_COUNTS_RE`,
-# this pattern alone cannot tell a gate-summary line from some other
-# tool's summary that happens to share the same shape.
+# `results[].summary` field is bare `"N errors, M warnings, K unresolved,
+# W waived [timing]"` with no tool-name prefix, since the caller already
+# located the right entry by `tool == "gate-summary"` before ever reading
+# this field. Used only against a `summary` string already known to
+# belong to the `"gate-summary"` `ToolResult` -- unlike `_GATE_SUMMARY_
+# COUNTS_RE`, this pattern alone cannot tell a gate-summary line from
+# some other tool's summary that happens to share the same shape.
+#
+# T-2668: two independent fixes over the pre-existing pattern, both
+# closing the SAME live bug (T-2503: `gates: unmeasured` recorded next to
+# a real `SELFAUDIT001` finding in the same Done report's own
+# `error-findings` line):
+#
+# 1. Names the `unresolved` term explicitly (see `_GATE_SUMMARY_COUNTS_
+#    RE`'s T-2668 note directly above for the full root-cause writeup --
+#    same drift, same fix shape, applied here too since this is the regex
+#    `_check_gates_summary_fn.fn()` actually calls against `--json`
+#    output).
+# 2. Drops the leading `^\s*` anchor: a summary line legitimately carries
+#    other prefixed disclosure text before the counts in normal,
+#    by-design operation -- `_label_replay` (T-2585, `frob.check._python`)
+#    prepends `"[REPLAY age=Ns, unchanged tree]  "` to this exact string
+#    on every cache-hit gate-summary reprint, and `_gates_summary` itself
+#    prepends `"N/M new  "` under `--delta`. An anchored match silently
+#    unmeasures a perfectly good, freshly-computed (or validly replayed)
+#    verdict any time either prefix is present -- which, given how
+#    frequently a fleet re-checks an unchanged tree, is common, not rare.
+#    `.search()` (never `.match()`) finds the counts wherever they start.
 _GATE_SUMMARY_COUNTS_ONLY_RE = re.compile(
-    r"^\s*(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+waived"
+    r"(\d+)\s+errors?,\s+(\d+)\s+warnings?,\s+(\d+)\s+unresolved,\s+(\d+)\s+waived"
 )
 
 
@@ -967,7 +1008,7 @@ def _check_gates_summary_fn(  # noqa: ANN201
 
     _spawn = spawn if spawn is not None else _shared_check_spawn_fn(root, ticket_id)
 
-    def fn() -> tuple[int, int, int] | None:
+    def fn() -> tuple[int, int | None, int | None] | None:
         result = _spawn()
         if result is None:
             return None
@@ -991,21 +1032,38 @@ def _check_gates_summary_fn(  # noqa: ANN201
             # an identity set, so this claim is unmeasured too, not a
             # smaller number.
             return None
+        errors = len(_exclude_scoped_run_flaky(findings))
         gate_summary = _find_tool_result(data["results"], "gate-summary")
         summary_text = gate_summary.get("summary", "") if gate_summary else ""
         match = _GATE_SUMMARY_COUNTS_ONLY_RE.search(summary_text)
         if match is None:
+            # T-2668: the `## Errors` identity set (`findings`, above) DID
+            # parse -- this run is genuinely measured, it is only the
+            # aggregate `gate-summary` totals line that failed to parse
+            # (missing entirely, or in a shape this regex still does not
+            # recognize). Discarding a real, already-in-hand error count
+            # here because a SEPARATE formatter/parser pair drifted is the
+            # exact "unmeasured is not nothing found" failure T-2668 exists
+            # to close (T-2503's live incident: `error-findings` populated,
+            # `gates: unmeasured` recorded right next to it). `errors` is
+            # still reported, real and comparable at land
+            # (`_reverify_gate_state_claim` only ever compares
+            # `gate_errors`); `warnings`/`waived` genuinely have no other
+            # source in this branch and stay `None` (T-0832: an
+            # unmeasured half must never render as a fabricated zero).
             _log.warning(
                 "ticket %s: `frob check --ticket %s --json` produced no "
-                "gate-summary tool result (exit=%d) -- gate state is "
-                "unmeasured, not zero",
+                "parsable gate-summary totals line (exit=%d), but its "
+                "`## Errors` identities DID parse -- using the %d real "
+                "error finding(s) already captured instead of discarding "
+                "them; warnings/waived counts are unmeasured",
                 ticket_id,
                 ticket_id,
                 result.returncode,
+                errors,
             )
-            return None
-        _raw_errors, warnings, waived = (int(g) for g in match.groups())
-        errors = len(_exclude_scoped_run_flaky(findings))
+            return (errors, None, None)
+        _raw_errors, warnings, _unresolved, waived = (int(g) for g in match.groups())
         return (errors, warnings, waived)
 
     return fn

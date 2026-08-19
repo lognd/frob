@@ -2,7 +2,7 @@
 id: T-2668
 title: 'land records ''gates: unmeasured'' and proceeds while a real SELFAUDIT001
   error sits in its own findings list'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -19,6 +19,8 @@ scope:
 - src/frob/app/ticket_runner/_verify.py
 - src/frob/tickets/_land_verify.py
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,8 @@ scope_changes:
     mismatch across the same call chain this ticket's fix touches
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestCheckGatesSummaryFn::test_real_gates_summary_shape_with_unresolved_term_is_measured
 designated_repro_test: null
 threat: null
 component: null
