@@ -92,7 +92,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ac29c2aec0ecabc8bac92c4f86768db702eebf43
 ---
 All 18 live COV006 findings measured today are the gate being wrong, not
 a test failing to exercise its bound symbol. Verified by reading every
