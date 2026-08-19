@@ -381,7 +381,7 @@ def render_project(
 
 # frob:ticket T-0431
 _WORKTREE_LEASE_HOOK_SCRIPT = """#!/bin/sh
-# Installed by `frob scaffold install-worktree-lease-hook` (T-0431).
+# Installed by `frob scaffold apply` (T-0431).
 #
 # Aborts a raw git commit/merge-commit run under an agent-context marker
 # (FROB_AGENT set, non-empty) -- the incident this guards against: a

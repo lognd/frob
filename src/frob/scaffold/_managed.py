@@ -169,7 +169,35 @@ exit 0
 #: this literal comment line -- used to tell "ours, safe to update" apart
 #: from a repo's own genuinely custom hook of the same name, which must
 #: never be silently overwritten.
-_OURS_MARKER = "# Installed by `frob scaffold install-worktree-lease-hook` (T-0431)."
+#:
+#: T-2565: this text used to name `frob scaffold install-worktree-lease-
+#: hook`, which has never been a real subcommand (`frob scaffold` exposes
+#: list/apply/new/pool; the installer is `frob scaffold apply`, and
+#: `install_worktree_lease_hook` is a function, not a CLI verb). The same
+#: stale string in a ticket body fired DOC006 as a hard error once DOC006
+#: was promoted, so it is retired here too.
+_OURS_MARKER = "# Installed by `frob scaffold apply` (T-0431)."
+
+#: Markers written by EARLIER frob versions, still recognised as ours.
+#:
+#: This is the whole reason T-2565 is a migration rather than a string
+#: edit: the marker is how frob recognises a hook it owns, so changing it
+#: outright would make every ALREADY-INSTALLED hook read as a repo's own
+#: custom file -- never updated again, and never reported as stale.
+#: Retire an entry here only once installed hooks have had a release to
+#: turn over.
+_LEGACY_OURS_MARKERS = (
+    "# Installed by `frob scaffold install-worktree-lease-hook` (T-0431).",
+)
+
+
+# frob:ticket T-2565
+# frob:doc docs/commands/scaffold.md#managed-blocks-t-0736
+# frob:tests tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration.test_legacy_marker_still_recognised_as_ours  # noqa: E501
+def _is_ours(body: str) -> bool:
+    """Whether `body` is a frob-installed hook -- current marker or any
+    still-recognised legacy one (T-2565)."""
+    return _OURS_MARKER in body or any(m in body for m in _LEGACY_OURS_MARKERS)
 
 
 def _marker_begin(block_id: str) -> str:
@@ -459,7 +487,7 @@ def _hook_status(root: Path, hook_name: str) -> ManagedBlockStatus:
             expected_digest=expected_digest,
         )
     body = path.read_text(encoding="utf-8")
-    is_ours = _OURS_MARKER in body
+    is_ours = _is_ours(body)
     actual_digest = _digest(body)
     return ManagedBlockStatus(
         block_id=f"hook-{hook_name}",

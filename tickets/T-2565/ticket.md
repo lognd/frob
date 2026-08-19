@@ -2,7 +2,7 @@
 id: T-2565
 title: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook'
   command
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -14,6 +14,8 @@ runs_last: false
 scope:
 - src/frob/scaffold/project.py
 - src/frob/scaffold/_managed.py
+evidence_scope:
+- tests/test_scaffold_worktree_lease_hook.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,7 +31,12 @@ scope_changes:
   reason: the matched-pair marker strings live in exactly these two files
   actor: logan
   at: '2026-08-18'
-designated_repro_test: null
+evidence:
+- tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration::test_current_marker_names_a_real_command
+- tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration::test_a_foreign_hook_is_not_claimed
+- tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration::test_installed_hook_carries_the_current_marker
+- tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration::test_a_legacy_installed_hook_is_reported_stale_not_foreign
+designated_repro_test: tests/test_scaffold_worktree_lease_hook.py::TestOursMarkerMigration::test_current_marker_names_a_real_command
 threat: null
 component: null
 anchor: false
@@ -40,7 +47,9 @@ Found while fixing T-2556. The installed worktree-lease hook's own header
 comment, and the constant that matches it, both name a command that does not
 exist:
 
+<!-- frob:waive DOC006 reason="quoting the exact stale marker text this ticket RETIRES -- a historical record of the defect, not a live invocation; the real installer is named two lines below" -->
     src/frob/scaffold/project.py:384  # Installed by `frob scaffold install-worktree-lease-hook` (T-0431).
+<!-- frob:waive DOC006 reason="quoting the exact stale marker text this ticket RETIRES -- a historical record of the defect, not a live invocation; the real installer is named two lines below" -->
     src/frob/scaffold/_managed.py:172 _OURS_MARKER = "# Installed by `frob scaffold install-worktree-lease-hook` (T-0431)."
 
 `frob scaffold` exposes only list/apply/new/pool -- verified against

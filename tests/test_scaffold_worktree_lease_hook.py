@@ -749,3 +749,76 @@ class TestFrobAgentGuardIsLocationAware:
             check=False,
         )
         assert commit.returncode == 0, commit.stdout + commit.stderr
+
+
+# frob:ticket T-2565
+class TestOursMarkerMigration:
+    """T-2565: the hook's "this one is mine" marker named a command that
+    never existed (`frob scaffold install-worktree-lease-hook`; the real
+    installer is `frob scaffold apply`).
+
+    Retiring it is a migration, not a string edit: the marker is how frob
+    recognises a hook it owns, so a straight rename would make every
+    ALREADY-INSTALLED hook read as a repo's own custom file -- never
+    updated again and never reported stale. Both directions are pinned.
+    """
+
+    # frob:ticket T-2565
+    def test_current_marker_names_a_real_command(self) -> None:
+        from frob.scaffold._managed import _OURS_MARKER
+
+        assert "install-worktree-lease-hook" not in _OURS_MARKER
+        assert "frob scaffold apply" in _OURS_MARKER
+
+    # frob:ticket T-2565
+    def test_installed_hook_carries_the_current_marker(self, tmp_path: Path) -> None:
+        from frob.scaffold._managed import _OURS_MARKER
+
+        _init_repo(tmp_path)
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+        body = (tmp_path / ".git" / "hooks" / "pre-commit").read_text()
+        assert _OURS_MARKER in body
+
+    # frob:ticket T-2565
+    def test_legacy_marker_still_recognised_as_ours(self) -> None:
+        """The migration control. A hook installed by an older frob must
+        keep being recognised, or it silently stops being maintained."""
+        from frob.scaffold._managed import _LEGACY_OURS_MARKERS, _is_ours
+
+        assert _LEGACY_OURS_MARKERS
+        for legacy in _LEGACY_OURS_MARKERS:
+            assert _is_ours(f"#!/bin/sh\n{legacy}\nexit 0\n")
+
+    # frob:ticket T-2565
+    def test_a_foreign_hook_is_not_claimed(self) -> None:
+        """The must-NOT-fire direction: widening recognition must not
+        start claiming a repo's own custom hook, which would then be
+        overwritten."""
+        from frob.scaffold._managed import _is_ours
+
+        assert not _is_ours("#!/bin/sh\n# our own project hook\nexit 0\n")
+
+    # frob:ticket T-2565
+    def test_a_legacy_installed_hook_is_reported_stale_not_foreign(
+        self, tmp_path: Path
+    ) -> None:
+        """End to end: a hook carrying the OLD marker is still ours, so
+        it is reported as stale (updatable) rather than left alone
+        forever as somebody else's file."""
+        from frob.scaffold._managed import _LEGACY_OURS_MARKERS, scaffold_conformance_status
+
+        _init_repo(tmp_path)
+        # scaffold_conformance_status skips a tree with no frob.toml.
+        (tmp_path / "frob.toml").write_text("[frob]\n")
+        installed = install_worktree_lease_hook(tmp_path)
+        assert installed.is_ok
+        hook = tmp_path / ".git" / "hooks" / "pre-commit"
+        hook.write_text(f"#!/bin/sh\n{_LEGACY_OURS_MARKERS[0]}\nexit 0\n")
+
+        statuses = [
+            s for s in scaffold_conformance_status(tmp_path) if s.block_id == "hook-pre-commit"
+        ]
+        assert statuses, "pre-commit hook status not reported"
+        assert statuses[0].present
+        assert statuses[0].stale
