@@ -15,10 +15,25 @@ scope:
 - src/frob/app/cycle_runner.py
 - src/frob/cycle/graph.py
 - src/frob/cycle/__init__.py
+- tests/unit/test_app_runners_batch5.py
+- tests/unit/test_cycle_runner_root_resolution.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_app_runners_batch5.py
+  reason: 'T-2588: test files touched by the root-resolution fix (new coverage plus
+    collateral repair of pre-existing TestCycleRunner fixtures)'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_cycle_runner_root_resolution.py
+  reason: 'T-2588: test files touched by the root-resolution fix (new coverage plus
+    collateral repair of pre-existing TestCycleRunner fixtures)'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
