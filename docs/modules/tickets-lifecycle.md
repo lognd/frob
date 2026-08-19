@@ -783,6 +783,55 @@ splices automatically instead of conflicting; without it, resolve by
 keeping the newest state per ticket, as the agent playbook's ledger rule
 already describes.
 
+### `promote` gets its own dedicated mirror, not a `MIRRORED_LEDGER_VERBS` entry (T-2587)
+
+`frob ticket promote` (T-2197's `finalize_draft`) commits its own full
+rename in the worktree -- the ledger block plus every `frob:ticket`/
+`frob:tests`/... code reference `renumber_one` rewrites across the
+tracked tree -- but that commit stayed worktree-branch-only until this
+worktree's ticket actually lands, the exact gap this module otherwise
+closes for `scope`/`block`/`attach`/etc.
+
+`promote` deliberately has NO entry in `MIRRORED_LEDGER_VERBS`: its write
+is a multi-file rename, not the single ticket-pathspec shape that set
+assumes, and mirroring the FULL rename the same pathspec-limited way
+would risk carrying a dirty worktree's unrelated uncommitted source edits
+onto `main` -- the exact hazard this mirror otherwise avoids by
+construction. Instead, `_ledger_mirror.mirror_promote_to_primary` is a
+dedicated call (from `_auto_commit_ledger_after_dispatch`'s own
+`"promote"` special case) that mirrors ONLY the ledger half of the
+rename:
+
+- It reads `_commit_promote_rename`'s own deterministic commit subject
+  (`chore(tickets): promote <draft> -> <final>`) off `root`'s HEAD to
+  recover `final_id`, rather than importing `_draft_finalize`'s private
+  call chain -- a narrow, already-tested textual contract instead of a
+  second write surface into that module.
+- It copies `final_id`'s `_ledger_pathspecs` onto `primary` (same
+  primitive `mirror_ledger_change_to_primary` uses) and removes
+  `draft_id`'s vacated v2 ledger directory there if one happens to exist,
+  so the draft id cannot linger duplicated alongside its promoted final
+  id.
+- The cross-file code-reference rewrite (`renumber_one`'s
+  `report.files_changed`) stays worktree-local until the ticket's own
+  work lands, same as any other in-progress ticket's uncommitted-
+  elsewhere code edits already do today -- a deliberately narrower
+  mirrored surface than the other verbs get, not an oversight.
+
+This is also why `_LEDGER_TRANSACTIONAL_VERBS` and `MIRRORED_LEDGER_VERBS`
+stay two separate sets rather than being unified into one verb table with
+a per-verb "how to mirror" attribute: `promote`'s membership in the
+former (it owns its own commit) is orthogonal to needing a mirror at all,
+and its mirror strategy (read-back-and-narrow, not copy-the-declared-
+pathspec) does not fit either set's existing shape. Folding a third,
+structurally different write pattern into one of these tables to avoid
+"two lists" would trade one duplication for a subtler one -- a single
+table whose entries silently mean different things depending on which
+verb key you look up. Unifying the two tables behind a real per-verb
+mirror-strategy abstraction is a legitimate future refactor, but it needs
+its own design pass across every current member, not a promote-shaped
+patch bolted onto the smaller of the two.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

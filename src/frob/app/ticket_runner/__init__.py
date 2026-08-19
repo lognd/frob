@@ -138,7 +138,6 @@ from ._query import (
     _wave,
 )
 from ._rapid_sweep import _sweep_async
-from ._waive_audit import run as _waive_audit
 from ._verify import (
     _apply_cmd_evidence,
     _apply_evidence,
@@ -161,6 +160,7 @@ from ._verify import (
     _verify_ids_passing,
     _verify_one_bucket_passing,
 )
+from ._waive_audit import run as _waive_audit
 
 _log = get_logger(__name__)
 
@@ -549,10 +549,28 @@ def _auto_commit_ledger_after_dispatch(
     sequence and must never have a stray single-file `tickets.md` commit
     spliced into it from outside.
 
+    T-2587: `"promote"` is also in `_LEDGER_TRANSACTIONAL_VERBS` (it owns
+    its own commit sequence too, `_commit_promote_rename`) and is handled
+    as a special case BEFORE the exclusion below returns, rather than
+    added to `MIRRORED_LEDGER_VERBS` -- `promote`'s write is a multi-file
+    rename, not the single-pathspec shape that set assumes (see
+    `mirror_promote_to_primary`'s own docstring for the full reasoning).
+    `cfg.ticket_id` here is the DRAFT id the user passed to `frob ticket
+    promote <draft-id>`, exactly what `mirror_promote_to_primary` needs
+    to find its own already-committed rename commit.
+
     Best-effort against `cfg.ticket_id is None`: every read-only verb
     (`list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/`sprint show`/
     ...) either never sets it or never dirties the ledger either way, so
     there is nothing to resolve a commit pathspec against."""
+    if command == "promote":
+        if cfg.ticket_id is not None:
+            from frob.app.ticket_runner._ledger_mirror import (
+                mirror_promote_to_primary,
+            )
+
+            mirror_promote_to_primary(root, cfg.ticket_id)
+        return
     if command in _LEDGER_TRANSACTIONAL_VERBS:
         return
     if cfg.ticket_id is None:

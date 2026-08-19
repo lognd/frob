@@ -19,6 +19,7 @@ import pytest
 from frob.app.ticket_runner._ledger_mirror import (
     MIRRORED_LEDGER_VERBS,
     mirror_ledger_change_to_primary,
+    mirror_promote_to_primary,
 )
 
 
@@ -55,7 +56,9 @@ def _setup(tmp_path: Path, ticket_id: str = "T-0001") -> tuple[Path, Path]:
     _git("commit", "-q", "-m", "init", cwd=primary)
 
     worktree = tmp_path / "wt"
-    added = _git("worktree", "add", "-q", "-b", "t-branch", str(worktree), "main", cwd=primary)
+    added = _git(
+        "worktree", "add", "-q", "-b", "t-branch", str(worktree), "main", cwd=primary
+    )
     assert added.returncode == 0, added.stdout + added.stderr
     return primary, worktree
 
@@ -74,7 +77,9 @@ def _visible_on_primary(primary: Path, needle: str, ticket_id: str = "T-0001") -
 
 class TestLedgerMirrorReachesMain:
     # frob:ticket T-2563
-    def test_scope_edit_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
+    def test_scope_edit_from_worktree_is_visible_on_primary(
+        self, tmp_path: Path
+    ) -> None:
         """The headline control: the edit must be readable on the primary
         checkout the moment the verb returns."""
         primary, worktree = _setup(tmp_path)
@@ -87,7 +92,9 @@ class TestLedgerMirrorReachesMain:
         assert _visible_on_primary(primary, "src/mine.py")
 
     # frob:ticket T-2563
-    def test_block_edit_from_worktree_is_visible_on_primary(self, tmp_path: Path) -> None:
+    def test_block_edit_from_worktree_is_visible_on_primary(
+        self, tmp_path: Path
+    ) -> None:
         """`block` is the verb whose invisibility left T-2374 looking
         like it had simply stopped for no reason."""
         primary, worktree = _setup(tmp_path)
@@ -112,14 +119,18 @@ class TestLedgerMirrorReachesMain:
 
         mirror_ledger_change_to_primary(worktree, "T-0001", "attach")
 
-        shown = _git("show", "HEAD:tickets/T-0001/attachments/01-analysis.md", cwd=primary)
+        shown = _git(
+            "show", "HEAD:tickets/T-0001/attachments/01-analysis.md", cwd=primary
+        )
         assert shown.returncode == 0, shown.stdout + shown.stderr
         assert "findings" in shown.stdout
 
 
 class TestLedgerMirrorCarriesNothingElse:
     # frob:ticket T-2563
-    def test_worktree_source_changes_do_not_leak_to_primary(self, tmp_path: Path) -> None:
+    def test_worktree_source_changes_do_not_leak_to_primary(
+        self, tmp_path: Path
+    ) -> None:
         """The must-NOT-fire control. An agent's in-progress source edits
         are the reason ledger edits were stranded in the first place;
         fixing that must not start publishing unlanded code as a side
@@ -158,7 +169,9 @@ class TestLedgerMirrorCarriesNothingElse:
 class TestLedgerMirrorScope:
     # frob:ticket T-2563
     @pytest.mark.parametrize("verb", ["start", "close", "done-report", "evidence"])
-    def test_state_machine_verbs_are_not_mirrored(self, tmp_path: Path, verb: str) -> None:
+    def test_state_machine_verbs_are_not_mirrored(
+        self, tmp_path: Path, verb: str
+    ) -> None:
         """State transitions describe work that is still worktree-local
         and land carries them atomically with the code. Mirroring one
         would advance main's state machine ahead of the work itself."""
@@ -184,3 +197,139 @@ class TestLedgerMirrorScope:
 
         assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
         assert _git("status", "--porcelain", cwd=primary).stdout.strip() == ""
+
+
+# frob:ticket T-2587
+def _promote_in_worktree(
+    worktree: Path, draft_id: str, final_id: str, *, body: str = "body\n"
+) -> None:
+    """Simulate `frob ticket promote`'s already-tested outcome in
+    `worktree`: `draft_id`'s ledger directory renamed to `final_id`, one
+    commit, subject line matching `_commit_promote_rename`'s exact
+    deterministic format -- the contract `_last_promote_rename` reads
+    back. Real `finalize_draft` also rewrites code references
+    (`renumber_one`); this fixture only needs the ledger half, since
+    that is all `mirror_promote_to_primary` ever reads or mirrors."""
+    draft_dir = worktree / "tickets" / draft_id
+    final_dir = worktree / "tickets" / final_id
+    draft_dir.mkdir(parents=True, exist_ok=True)
+    (draft_dir / "ticket.md").write_text(_ticket_text(draft_id) + body)
+    _git("add", "-A", cwd=worktree)
+    _git("commit", "-q", "-m", "draft", cwd=worktree)
+
+    _git("mv", f"tickets/{draft_id}", f"tickets/{final_id}", cwd=worktree)
+    content = (final_dir / "ticket.md").read_text().replace(draft_id, final_id)
+    (final_dir / "ticket.md").write_text(content)
+    _git("add", "-A", cwd=worktree)
+    _git(
+        "commit",
+        "-q",
+        "-m",
+        f"chore(tickets): promote {draft_id} -> {final_id}",
+        cwd=worktree,
+    )
+
+
+class TestPromoteMirror:
+    # frob:ticket T-2587
+    """T-2587: `frob ticket promote`'s own commit (T-2197) is durable in
+    the worktree branch, but stays invisible to the fleet until this
+    mirror runs -- the gap T-2197 could only warn about."""
+
+    # frob:ticket T-2587
+    def test_promote_from_worktree_is_visible_on_primary_without_a_land(
+        self, tmp_path: Path
+    ) -> None:
+        """The headline positive control: a promote from a worktree must
+        become visible on the primary checkout without requiring a
+        land."""
+        primary, worktree = _setup(tmp_path)
+        _promote_in_worktree(worktree, "T-draft-abc123", "T-0099")
+
+        mirrored = mirror_promote_to_primary(worktree, "T-draft-abc123")
+
+        assert mirrored is True
+        shown = _git("show", "HEAD:tickets/T-0099/ticket.md", cwd=primary)
+        assert shown.returncode == 0, shown.stdout + shown.stderr
+        assert "T-0099" in shown.stdout
+        assert not (primary / "tickets" / "T-draft-abc123").exists()
+
+    # frob:ticket T-2587
+    def test_promote_mirror_does_not_leak_source_changes_or_duplicate_the_draft(
+        self, tmp_path: Path
+    ) -> None:
+        """The must-NOT-fire control, doubled: an unrelated dirty source
+        edit must not ride along, AND a stale draft directory that
+        happened to already exist on primary must be removed rather than
+        left sitting alongside the promoted final id (no duplicate ledger
+        state)."""
+        primary, worktree = _setup(tmp_path)
+        stale_draft = primary / "tickets" / "T-draft-abc123"
+        stale_draft.mkdir(parents=True)
+        (stale_draft / "ticket.md").write_text(_ticket_text("T-draft-abc123"))
+        _git("add", "-A", cwd=primary)
+        _git("commit", "-q", "-m", "stale draft", cwd=primary)
+
+        (worktree / "src_secret.py").write_text("UNLANDED = True\n")
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "unlanded source", cwd=worktree)
+        _promote_in_worktree(worktree, "T-draft-abc123", "T-0099")
+
+        mirrored = mirror_promote_to_primary(worktree, "T-draft-abc123")
+
+        assert mirrored is True
+        assert not (primary / "tickets" / "T-draft-abc123").exists()
+        shown = _git("show", "HEAD:tickets/T-0099/ticket.md", cwd=primary)
+        assert shown.returncode == 0, shown.stdout + shown.stderr
+        assert not (primary / "src_secret.py").exists()
+        listed = _git("show", "--stat", "--name-only", "HEAD", cwd=primary)
+        assert "src_secret.py" not in listed.stdout
+        status = _git("status", "--porcelain", cwd=primary)
+        assert status.stdout.strip() == "", status.stdout
+
+    # frob:ticket T-2587
+    def test_worktree_merging_main_afterward_does_not_conflict_on_the_ticket_file(
+        self, tmp_path: Path
+    ) -> None:
+        """The mirror must narrow to a region the worktree branch does not
+        itself keep touching: after the mirror runs, the worktree merging
+        `main` (as its own later `frob ticket work` warm-up would) must
+        not conflict on the very ticket file the promote rename just
+        wrote in both places."""
+        primary, worktree = _setup(tmp_path)
+        _promote_in_worktree(worktree, "T-draft-abc123", "T-0099")
+
+        assert mirror_promote_to_primary(worktree, "T-draft-abc123") is True
+
+        merged = _git("merge", "--no-edit", "main", cwd=worktree)
+        assert merged.returncode == 0, merged.stdout + merged.stderr
+        conflicted = _git("diff", "--name-only", "--diff-filter=U", cwd=worktree)
+        assert conflicted.stdout.strip() == ""
+
+    # frob:ticket T-2587
+    def test_head_not_a_promote_commit_is_a_no_op(self, tmp_path: Path) -> None:
+        """A HEAD that is not the exact promote-rename commit must never
+        be guessed at -- this must not fire off of some other worktree
+        commit."""
+        primary, worktree = _setup(tmp_path)
+        (worktree / "unrelated.py").write_text("x = 1\n")
+        _git("add", "-A", cwd=worktree)
+        _git("commit", "-q", "-m", "unrelated", cwd=worktree)
+        before = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
+
+        mirrored = mirror_promote_to_primary(worktree, "T-draft-abc123")
+
+        assert mirrored is False
+        assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
+
+    # frob:ticket T-2587
+    def test_running_in_the_primary_checkout_is_a_no_op(self, tmp_path: Path) -> None:
+        """Same coordinator-cost-nothing contract as the generic mirror."""
+        primary, _worktree = _setup(tmp_path)
+        _promote_in_worktree(primary, "T-draft-abc123", "T-0099")
+        before = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
+
+        mirrored = mirror_promote_to_primary(primary, "T-draft-abc123")
+
+        assert mirrored is False
+        assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before

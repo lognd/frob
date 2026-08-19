@@ -2,7 +2,7 @@
 id: T-2587
 title: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is
   visible on main immediately, not only after land
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -41,7 +41,13 @@ scope_changes:
     site needing declaration on the cli node
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_promote_from_worktree_is_visible_on_primary_without_a_land
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_promote_mirror_does_not_leak_source_changes_or_duplicate_the_draft
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_worktree_merging_main_afterward_does_not_conflict_on_the_ticket_file
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_head_not_a_promote_commit_is_a_no_op
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_running_in_the_primary_checkout_is_a_no_op
+designated_repro_test: tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_promote_from_worktree_is_visible_on_primary_without_a_land
 threat: null
 component: null
 anchor: false
