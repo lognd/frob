@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
+- frob.lock
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
@@ -33,6 +34,14 @@ scope_changes:
     scripts/fleet_status.py -- the same file the ticket''s original scope
 
     already declared.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: frob.lock
+  reason: 'frob.lock was updated by `frob ack scripts/fleet_status.py::worktrees_touching_ticket`,
+    required to clear DRIFT001 on the symbol this ticket''s fix changed.
 
     '
   actor: logan
