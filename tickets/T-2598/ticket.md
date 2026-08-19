@@ -2,7 +2,7 @@
 id: T-2598
 title: 'stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket
   its reason promised was never filed'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
