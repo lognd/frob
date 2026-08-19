@@ -1016,6 +1016,69 @@ worktree can see it), an in-flight `land` only ever mutates the one
 worktree/root pair it was invoked against, so there is nothing
 cross-worktree to reconcile for this anomaly class.
 
+## Unlanded branch work (T-1934/T-1948)
+
+A fourth anomaly class alongside the three above, added by `frob.tickets.
+_unlanded._unlanded_branch_work` and surfaced by `reconcile` as its
+`ReconcileReport.unlanded_branch_work` field: an agent finishes a ticket,
+commits everything cleanly in its worktree, and dies before ever invoking
+`frob ticket land`. The other three classes above cannot see this --
+stale-hold and orphan-worktree are both keyed off the T-0473 lease
+side-channel, and a CLEAN committed tree is exactly what `frob worktree
+sweep`'s dirtiness heuristic treats as safe to remove. Measured directly
+(T-1934, 2026-08-09): the better an agent behaved -- committing instead of
+leaving junk -- the MORE likely its finished work was swept, since sweep
+never compared branch content against `main` at all.
+
+Detection is pure git plumbing against every LOCAL branch except `main`
+(no checkout, no test run): for each branch, scan its `tickets/T-####/`
+tree for a `done-report.md` file or a `ticket.md` whose own `state:`
+field reads `done`/`dropped` (the **"finished"** and **"terminal-state"**
+signals), then resolve that same ticket id's state on `main` --
+INCLUDING the archive (`tickets/archive/T-####/ticket.md`), never by path
+existence alone. A path-existence-only first attempt produced 186 false
+positives, because a done ticket is ARCHIVED on `main`, not left in
+place at its original path (`tests/unit/test_unlanded_branch_work.py`
+carries the regression test for this exact shape). If the id is not
+terminal on `main` (or `main` has no record of it at all -- reported, not
+silently dropped, since an id `main` cannot resolve is exactly as unsafe
+to miss as one it knows about and has not finished), AND the ticket's
+current cross-worktree lease does not judge it still live elsewhere
+(`frob.tickets._leases.lease_staleness_reason`, reused directly rather
+than re-derived, per this repo's "one staleness predicate" precedent), it
+is reported as `"T-####@branch"`.
+
+A THIRD, narrower signal (T-1948, closing a detector gap found against a
+real specimen) catches finished work whose `ticket.md` was simply never
+updated at all -- neither a `done-report.md` nor a `state: done/dropped`
+exists to key off. `"directive-anchored"`: scan the branch's own changed,
+non-`tickets/**` files for a `frob:ticket T-####` directive comment, then
+read that id's OWN `ticket.md` state on the SAME branch -- if it
+disagrees with "real work is genuinely in flight" (anything other than
+`in-progress`, including missing entirely or still `queued`), the
+directive-anchored code is invisible proof of work the ledger itself
+never recorded. Deliberately narrower than the other two signals: it
+only reads COMMITTED branch content, never the working tree -- an
+uncommitted directive-anchored file is `frob worktree sweep`'s existing
+`kept:dirty` gate's job, not this detector's.
+
+**Report-only, by design.** Unlike the stale-hold and orphan-worktree
+classes above, `unlanded_branch_work` is NEVER healed by `reconcile
+--apply` -- landing a dead agent's branch unattended is exactly the
+failure mode this class exists to surface, not silently resolve. A human
+or a freshly dispatched agent decides what to do with each finding
+(usually: inspect the branch, then either land it for real or requeue/
+drop the ticket and discard the branch). `frob.tickets._leases.
+sweep_worktrees` also consults this detector directly -- a `kept:unlanded`
+verdict, ranked ABOVE the ordinary dirty-tree gate, so a clean, unlanded
+worktree is never swept out from under its own finished work just
+because it behaved.
+
+```
+frob ticket reconcile           # dry-run: also reports unlanded_branch_work
+frob ticket reconcile --apply   # still never lands/requeues/removes this class
+```
+
 ## Atomic ledger writes (T-0456 hardening)
 
 `frob.tickets._store.atomic_write` (every `tickets.md`/`.frob-release.json`

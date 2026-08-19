@@ -1,7 +1,7 @@
 ---
 id: T-2619
 title: unlanded_branch_work anomaly class undocumented (T-2612 lease-premise audit)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -17,6 +17,8 @@ scope:
 - docs/modules/tickets.md
 - docs/modules/tickets-lifecycle.md
 - src/frob/tickets/_reconcile.py
+evidence_scope:
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,8 @@ scope_changes:
     closed, per the ticket's own instruction
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_ticket_reconcile.py::TestReconcileUnlandedBranchWork::test_reports_the_confirmed_leak_shape
 designated_repro_test: null
 threat: null
 component: null
