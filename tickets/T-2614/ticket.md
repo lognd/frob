@@ -49,7 +49,9 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c58d09572a5293edb0db3d5cd52774261b5ad482
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 ---
 Found while re-measuring T-2593 (over-broad scope enforcement). T-2450's
 declared scope is a single ticket-frontmatter scope entry containing a
