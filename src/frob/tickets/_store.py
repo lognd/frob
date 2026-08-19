@@ -1241,17 +1241,50 @@ def _index_path(root: Path) -> Path:
 
 
 # frob:ticket T-1257
+# frob:ticket T-2100
+def _stat_key(path: Path) -> list[int] | None:
+    """`[mtime_ns, size]` for `path`, or `None` if it cannot be stat'd.
+
+    T-2100: mtime_ns ALONE is not a sufficient staleness key. Two writes
+    to the same ticket file that land within the same filesystem
+    timestamp tick (observed under real load: `new_ticket` followed
+    microseconds later by `drop_ticket`, both against a freshly-created
+    file) can share an IDENTICAL `st_mtime_ns`, so a cache entry recorded
+    after the first write reads as still-fresh after the second write
+    even though the file's CONTENT changed underneath it -- a real
+    incident (`TestRevalidateDispatchableSweepTickets` flaked exactly
+    this way: `drop_ticket`'s write was silently served as the
+    pre-drop/`queued` cached content). `size` is cheap to stat alongside
+    `mtime_ns` and differs for the overwhelming majority of real ticket
+    edits (a `state:` field changing text length, a new evidence/scope
+    line, etc.), catching this race in practice without the cost of a
+    full content hash. Not a hermetic guarantee against every possible
+    same-tick-same-size edit (disclosed, not claimed complete) -- see
+    module docs for the tradeoff this cache always makes: best-effort
+    speed, never claimed correctness beyond the file-derived facts it
+    actually keys on."""
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    return [st.st_mtime_ns, st.st_size]
+
+
 # frob:tests \
 # tests/test_tickets.py::TestV2IndexCache.test_stale_index_falls_back_to_fresh_parse
 def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] | None:
-    """The cached v2-mode parse keyed by exact `(relative path, mtime-ns)`
-    pairs for every path in `paths`, or `None` meaning "caller must parse
-    fresh" -- a cache hit requires the recorded path SET and every
-    recorded mtime to match `paths` EXACTLY (an added/removed/touched
-    ticket file is a miss, never a silently stale hit, per design section
-    6's staleness contract). Any read/parse/schema failure is treated the
-    same as a miss -- logged and ignored, since this cache is purely a
-    speed optimization derived from the files themselves."""
+    """The cached v2-mode parse keyed by exact `(relative path, [mtime-ns,
+    size])` pairs for every path in `paths`, or `None` meaning "caller
+    must parse fresh" -- a cache hit requires the recorded path SET and
+    every recorded `(mtime_ns, size)` pair to match `paths` EXACTLY (an
+    added/removed/touched ticket file is a miss, never a silently stale
+    hit, per design section 6's staleness contract). Any read/parse/
+    schema failure -- including a pre-T-2100 cache file whose entries are
+    still bare ints, not `[mtime_ns, size]` pairs -- is treated the same
+    as a miss -- logged and ignored, since this cache is purely a speed
+    optimization derived from the files themselves, safe to invalidate at
+    any time (T-2100: size joins mtime_ns in the staleness key -- see
+    `_stat_key`'s docstring for the same-tick race this closes)."""
     if not index_path.exists():
         return None
     try:
@@ -1265,17 +1298,23 @@ def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] 
     tickets_raw = raw.get("tickets")
     if not isinstance(entries, dict) or not isinstance(tickets_raw, dict):
         return None
-    live: dict[str, int] = {}
+    if not all(
+        isinstance(v, list) and len(v) == 2 and all(isinstance(n, int) for n in v)
+        for v in entries.values()
+    ):
+        _log.debug("tickets: v2 index cache stale (pre-T-2100 entry shape)")
+        return None
+    live: dict[str, list[int]] = {}
     for path in paths:
-        try:
-            live[str(path)] = path.stat().st_mtime_ns
-        except OSError:
+        key = _stat_key(path)
+        if key is None:
             return None
+        live[str(path)] = key
     if set(live) != set(entries):
         _log.debug("tickets: v2 index cache stale (path set changed)")
         return None
-    if any(entries[key] != mtime_ns for key, mtime_ns in live.items()):
-        _log.debug("tickets: v2 index cache stale (mtime changed)")
+    if any(entries[key] != stat_key for key, stat_key in live.items()):
+        _log.debug("tickets: v2 index cache stale (mtime/size changed)")
         return None
     try:
         return {
@@ -1303,13 +1342,15 @@ def _write_index_cache(
     `SystemExit` mid-write still propagates (the inner `except
     BaseException: ... raise` is cleanup-then-reraise, never a discharge)
     -- this cache write has no business intercepting a real interrupt/
-    exit, T-1371."""
-    entries: dict[str, int] = {}
+    exit, T-1371. T-2100: each entry is `[mtime_ns, size]`, not a bare
+    mtime_ns -- see `_stat_key`'s docstring for the same-tick race a
+    mtime-only key could miss."""
+    entries: dict[str, list[int]] = {}
     for path in paths:
-        try:
-            entries[str(path)] = path.stat().st_mtime_ns
-        except OSError:
+        key = _stat_key(path)
+        if key is None:
             return  # a path vanished mid-write -- skip caching this round
+        entries[str(path)] = key
     payload = {
         "entries": entries,
         "tickets": {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from datetime import date
 from pathlib import Path
 
@@ -2649,6 +2650,61 @@ class TestV2IndexCache:
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         assert loaded.danger_ok.keys() == {"T-0001"}
+
+    def test_same_mtime_different_size_is_not_a_hit(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestV2IndexCache.test_same_mtime_different_size_is_not\
+        # _a_hit
+        """T-2100 must-fire case: a real incident
+        (`TestRevalidateDispatchableSweepTickets` flaked exactly this
+        way) -- two writes to the same ticket file landing within the
+        SAME `st_mtime_ns` tick must still be detected as a change,
+        because content changed even though mtime alone did not
+        distinguish the two writes. Pins both file mtimes to an
+        identical value by hand (the only reliable way to force the race
+        deterministically instead of depending on real clock
+        granularity) and asserts the SECOND (different-size) content is
+        what a fresh `load_all` actually returns -- never the first
+        write's now-cached content."""
+        from frob.tickets._store import _index_path, load_all
+
+        ticket_path = tmp_path / "tickets" / "T-0001" / "ticket.md"
+        ticket_path.parent.mkdir(parents=True)
+        ticket_path.write_text(_serialize_ticket(_ticket(ticket_id="T-0001")))
+        first = load_all(tmp_path)
+        assert first.is_ok
+        assert first.danger_ok["T-0001"].state.value == "queued"
+
+        pinned_mtime_ns = ticket_path.stat().st_mtime_ns
+        dropped = _ticket(ticket_id="T-0001", state=TicketState.DROPPED)
+        ticket_path.write_text(_serialize_ticket(dropped))
+        # Force the SAME mtime the cache already recorded -- simulating
+        # two writes landing in the same filesystem timestamp tick.
+        os.utime(ticket_path, ns=(pinned_mtime_ns, pinned_mtime_ns))
+        assert ticket_path.stat().st_mtime_ns == pinned_mtime_ns
+
+        second = load_all(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok["T-0001"].state.value == "dropped"
+        assert _index_path(tmp_path).exists()
+
+    def test_identical_mtime_and_size_still_hits_cache(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestV2IndexCache.test_identical_mtime_and_size_still_h\
+        # its_cache
+        """T-2100 must-NOT-fire case: an ordinary unchanged file (same
+        mtime, same size across two loads) must still serve from cache --
+        the size check must not turn every load into a forced miss."""
+        from frob.tickets._store import load_all
+
+        self._v2_ticket(tmp_path)
+        first = load_all(tmp_path)
+        assert first.is_ok
+
+        second = load_all(tmp_path)
+        assert second.is_ok
+        assert second.danger_ok.keys() == {"T-0001"}
+        assert second.danger_ok["T-0001"].id == "T-0001"
 
 
 # frob:ticket T-1257
