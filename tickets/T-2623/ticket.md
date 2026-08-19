@@ -2,7 +2,7 @@
 id: T-2623
 title: roughly 19 tests are red on unmodified main, hiding real regressions in the
   noise
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-19'
@@ -35,6 +35,8 @@ triage_changes:
     so bug-kind evidence was never earned and fabricating it would be false
   actor: logan
   at: '2026-08-19'
+evidence:
+- cmd:/tmp/t2623_evidence.sh exit=0 sha256=9389d2249e93
 designated_repro_test: null
 threat: null
 component: null

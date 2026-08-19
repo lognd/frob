@@ -124,6 +124,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2612: T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
 - T-2614: T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
 - T-2617: T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
+- T-2623: T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
 
 ## [0.530.0] - unreleased
 
