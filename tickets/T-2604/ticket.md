@@ -2,7 +2,7 @@
 id: T-2604
 title: quarantine re-raises on findings already owned by an open ticket, forcing synchronous
   lands fleet-wide every sweep
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
