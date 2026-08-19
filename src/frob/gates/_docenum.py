@@ -241,7 +241,19 @@ def _resolve_edge_tree(
     return tree_cache[code_path]
 
 
-_ID_TOKEN_RE = re.compile(r"^[A-Z][A-Z0-9_-]*[0-9]$|^[A-Z][A-Z-]{3,}$")
+_ID_TOKEN_RE = re.compile(
+    r"^[A-Z][A-Z0-9_-]*[0-9]$"
+    r"|^[A-Z][A-Z-]{3,}$"
+    # T-2673: a hyphenated suffix after a digit-ending rule-id prefix, e.g.
+    # PORT001-IDENT/PORT001-PATH -- neither prior alternative matches these
+    # (the first requires the token itself to END in a digit; the second
+    # requires letters-and-hyphens only, no digits at all), so a real,
+    # correctly-written table row for one of these ids could never be
+    # recognized as documentation. The prefix must still end in a digit
+    # (so plain prose like "SOME-WORD" cannot match) and the suffix must
+    # start with a letter (so a trailing "-1" numeric suffix cannot match).
+    r"|^[A-Z][A-Z0-9_]*[0-9]-[A-Z][A-Z0-9]*$"
+)
 
 
 def _ids_in_cell(cell: str) -> frozenset[str]:

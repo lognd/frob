@@ -254,3 +254,62 @@ class TestDocenum001UndocumentedMembers:
         mismatch = [v for v in violations if "member list" in v.message]
         assert len(mismatch) == 1
         assert "BBB002" in mismatch[0].message
+
+
+class TestDocenum001HyphenatedLetterSuffixIds:
+    """T-2673: `_ID_TOKEN_RE` could not match a hyphenated id ending in
+    letters (e.g. `PORT001-IDENT`, `PORT001-PATH`) -- neither prior
+    alternative matched (the first required the token to END in a digit,
+    the second required letters-and-hyphens only with no digits at all),
+    so a real, correctly-written table row for one of these ids could
+    never be recognized as documentation and DOCENUM001 would report it
+    undocumented forever."""
+
+    def test_hyphenated_letter_suffix_id_with_doc_row_does_not_fire(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        _write(
+            tmp_path, "code.py", '_RULES = {"PORT001-IDENT": 1, "PORT001-PATH": 2}\n'
+        )
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n"
+            "| Rule | Fails when |\n"
+            "|---|---|\n"
+            "| PORT001-IDENT | thing happens |\n"
+            "| PORT001-PATH | other thing happens |\n",
+        )
+        edges = (
+            _enumerates_edge("code.py::_RULES", "PORT001-IDENT,PORT001-PATH"),
+        )
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        assert violations == ()
+
+    def test_hyphenated_letter_suffix_id_with_no_doc_row_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_docenum.py::docenum001_gate
+        # Reverse control: removing the doc row for one of these ids
+        # must still surface it as undocumented -- proving the row is
+        # load-bearing, not just that the pattern got looser overall.
+        _write(
+            tmp_path, "code.py", '_RULES = {"PORT001-IDENT": 1, "PORT001-PATH": 2}\n'
+        )
+        _write(
+            tmp_path,
+            "docs/x.md",
+            "# Rules\n\n"
+            "| Rule | Fails when |\n"
+            "|---|---|\n"
+            "| PORT001-IDENT | thing happens |\n",
+        )
+        edges = (
+            _enumerates_edge("code.py::_RULES", "PORT001-IDENT,PORT001-PATH"),
+        )
+        violations = docenum001_gate(tmp_path, _snapshot(edges))
+        undoc = [v for v in violations if "no resolvable documentation" in v.message]
+        assert len(undoc) == 1
+        assert "PORT001-PATH" in undoc[0].message
+        assert "PORT001-IDENT" not in undoc[0].message

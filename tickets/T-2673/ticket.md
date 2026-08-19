@@ -2,7 +2,7 @@
 id: T-2673
 title: DOCENUM001's ID_TOKEN_RE cannot match hyphenated ids ending in letters (PORT001-IDENT,
   PORT001-PATH)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,16 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docenum.py
+evidence_scope:
+- tests/test_docenum_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/test_docenum_gate.py::TestDocenum001HyphenatedLetterSuffixIds::test_hyphenated_letter_suffix_id_with_doc_row_does_not_fire
+- tests/test_docenum_gate.py::TestDocenum001HyphenatedLetterSuffixIds::test_hyphenated_letter_suffix_id_with_no_doc_row_still_fires
+designated_repro_test: tests/test_docenum_gate.py::TestDocenum001HyphenatedLetterSuffixIds::test_hyphenated_letter_suffix_id_with_doc_row_does_not_fire
 threat: null
 component: null
 anchor: false
