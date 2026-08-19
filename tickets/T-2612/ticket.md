@@ -2,7 +2,7 @@
 id: T-2612
 title: 'every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets
   still hold one'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -14,10 +14,102 @@ runs_last: false
 milestone: null
 scope:
 - src/frob/scaffold/project.py
+- src/frob/tickets/_reconcile.py
+- src/frob/lang/_nodes.py
+- src/frob/app/check_runner.py
+- src/frob/gates/_mutation_evidence.py
+- src/frob/tickets/_models.py
+- src/frob/tickets/_evidence.py
+- src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/lang/_nodes.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/__main__.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_reconcile.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/lang/_nodes.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_mutation_evidence.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_evidence.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/__main__.py
+  reason: T-2612 audit spans every waiver citing a now-terminal lease-holding ticket;
+    these are the files with matching frob:waive reasons found by the audit grep
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
