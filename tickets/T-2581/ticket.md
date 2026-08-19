@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ee71abe9bc3c1f9695ddab78536c55b9bf74e45c
 ---
 Extend REL001 (src/frob/gates/_debt_deprecated.py, `release_gate`/its
 callers -- REL001 currently refuses a release over open `frob:debt` and
