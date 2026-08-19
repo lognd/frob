@@ -2,7 +2,7 @@
 id: T-2363
 title: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision
   on which dependency to invert
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -19,6 +19,8 @@ scope:
 - src/frob/app/_daemon_proxy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: gates
