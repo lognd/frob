@@ -1,5 +1,5 @@
 ---
-id: T-draft-be1e79b5
+id: T-2678
 title: frob ticket body writes an archived ticket's update to a fresh non-archive
   copy, causing DuplicateId
 state: queued

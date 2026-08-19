@@ -594,6 +594,51 @@ directory correlation fixes this: an empty `scope_globs` argument (no
 known scope to check against) now reports empty rather than falling
 back to the old, looser behavior.
 
+**T-2665 (ARCH001 split):** the function now dispatches to one of two
+named helpers per worktree rather than inlining both strategies --
+`_worktree_matches_ticket_by_scope_only` for a `t-<id>`-named worktree
+that already resolves to the ticket being queried, `_worktree_matches_
+ticket_by_dual_correlation` (the original T-2179/T-2181 logic described
+above, unchanged) for everything else.
+
+### `_worktree_matches_ticket_by_scope_only`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_matches_ticket_by_scope_only -->
+
+T-2665. The naming-identity fast path: `True` when a `t-<id>`-named
+worktree's own unlanded history (`main..HEAD`) has ANY commit touching
+`scope_globs`, with no `tickets/<id>/` cross-check at all. Only called
+once the caller has already confirmed the worktree's directory name
+resolves to the SAME ticket id via `_worktree_ticket_id` (T-2599) --
+that naming identity already answers the "is this genuinely the same
+ticket" question the dual-condition check below exists to answer for an
+AMBIGUOUS (ad-hoc-named) worktree.
+
+Real incident this exists to fix: `frob ticket start`'s own ledger
+commit (the only routine commit that ever touches `tickets/<id>/`)
+lands on the shared PRIMARY checkout, never on a worktree's own branch
+-- so a normal in-progress ticket's worktree branch consists purely of
+scope-touching commits and, by design, essentially never contains a
+commit that ALSO touches `tickets/<id>/`. The dual-condition check below
+requires a shape the standard workflow does not produce, so it silently
+reported empty for the overwhelmingly common case (T-2665's own
+measured incident: T-2583, in-progress, its lease FILE already removed,
+a real live worktree with an unlanded commit implementing its own
+scope -- reported `[LEAK]` anyway).
+
+### `_worktree_matches_ticket_by_dual_correlation`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_matches_ticket_by_dual_correlation -->
+
+T-2665 (ARCH001 split of `worktrees_touching_ticket`) / T-2179. The
+original, stricter check: `True` only when a SINGLE commit in a
+worktree's unlanded history touches BOTH `tickets/<id>/` and at least
+one `scope_globs` entry. Applied to every worktree whose directory name
+does NOT already resolve to the ticket id being queried (an ad-hoc name,
+or a name belonging to a different ticket) -- see `worktrees_touching_
+ticket`'s own T-2114/T-2181 incidents above for why this correlation
+must stay this strict for the ambiguous case.
+
 ### `_expand_scope_globs_to_paths`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_expand_scope_globs_to_paths -->

@@ -916,8 +916,64 @@ def _matches_any_scope_glob(path: str, scope_globs: Sequence[str]) -> bool:
 
 
 # frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
+# frob:ticket T-2665
+def _worktree_matches_ticket_by_scope_only(
+    path: Path, scope_globs: Sequence[str]
+) -> bool:
+    """`worktrees_touching_ticket`'s own ARCH001 split: the naming-
+    identity fast path (T-2665) -- `True` when `path`'s own unlanded
+    history (`main..HEAD`) carries any commit touching `scope_globs`, NO
+    `tickets/<id>/` cross-check required. Only ever called once the
+    caller has already confirmed `path`'s directory name resolves to the
+    SAME ticket id being queried (`_worktree_ticket_id`, T-2599) -- that
+    naming identity is itself the correlation `worktrees_touching_
+    ticket`'s stricter dual-condition check exists to establish for an
+    AMBIGUOUS (ad-hoc-named) worktree, so re-demanding a `tickets/<id>/`-
+    touching commit here would require a shape the standard workflow
+    does not produce (see `worktrees_touching_ticket`'s own docstring)."""
+    unlanded = _git(["log", "main..HEAD", "--format=%H"], path)
+    shas = [line.strip() for line in unlanded.splitlines() if line.strip()]
+    for sha in shas:
+        touched_files = _git(
+            ["show", "--name-only", "--format=", sha], path
+        ).splitlines()
+        if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
+            return True
+    return False
+
+
+# frob:doc \
+# docs/guides/coordinator-scripts.md#_worktree_matches_ticket_by_dual_correlation
+# frob:ticket T-2179
+def _worktree_matches_ticket_by_dual_correlation(
+    path: Path, ticket_id: str, scope_globs: Sequence[str]
+) -> bool:
+    """`worktrees_touching_ticket`'s own ARCH001 split: the original,
+    stricter T-2179/T-2181 check -- `True` only when a SINGLE commit in
+    `path`'s unlanded history (`main..HEAD`) touches BOTH `tickets/
+    <id>/` and at least one `scope_globs` entry. Used for every worktree
+    whose directory name does NOT already resolve to `ticket_id` (an
+    ad-hoc name, or a name belonging to a different ticket) -- see
+    `worktrees_touching_ticket`'s own docstring for the T-2114/T-2181
+    incidents this per-commit correlation exists to rule out."""
+    ticket_touch = _git(
+        ["log", "main..HEAD", "--format=%H", "--", f"tickets/{ticket_id}/"],
+        path,
+    )
+    commit_shas = [line.strip() for line in ticket_touch.splitlines() if line.strip()]
+    for sha in commit_shas:
+        touched_files = _git(
+            ["show", "--name-only", "--format=", sha], path
+        ).splitlines()
+        if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
+            return True
+    return False
+
+
+# frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
 # frob:ticket T-2133
 # frob:ticket T-2179
+# frob:ticket T-2665
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_finds_a_bran\
 # ch_with_unlanded_commits
@@ -973,19 +1029,21 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
         return []
     hits = []
     for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
-        ticket_touch = _git(
-            ["log", "main..HEAD", "--format=%H", "--", f"tickets/{ticket_id}/"],
-            path,
-        )
-        commit_shas = [
-            line.strip() for line in ticket_touch.splitlines() if line.strip()
-        ]
-        for sha in commit_shas:
-            commit_diff = _git(["show", "--name-only", "--format=", sha], path)
-            touched_files = commit_diff.splitlines()
-            if any(_matches_any_scope_glob(f, scope_globs) for f in touched_files):
-                hits.append(path.name)
-                break
+        # T-2665: a `t-<id>`-NAMED worktree already identifies which
+        # ticket it belongs to via the same naming convention
+        # `_worktree_ticket_id` (T-2599) reads elsewhere in this module,
+        # so it only needs the (weaker, ARCH001-split-out) scope-only
+        # check; every other worktree still needs the original, stricter
+        # dual-condition correlation -- see the two helpers' own
+        # docstrings for why each applies to its own case.
+        if _worktree_ticket_id(path.name) == ticket_id:
+            matched = _worktree_matches_ticket_by_scope_only(path, scope_globs)
+        else:
+            matched = _worktree_matches_ticket_by_dual_correlation(
+                path, ticket_id, scope_globs
+            )
+        if matched:
+            hits.append(path.name)
     return hits
 
 

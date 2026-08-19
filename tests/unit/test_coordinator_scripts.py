@@ -982,6 +982,118 @@ class TestWorktreeContentClassificationLiveGit:
         assert any("never_landed_anywhere" in s for s in samples)
 
 
+# frob:ticket T-2665
+class TestInProgressTicketScopeLeasesLiveGit:
+    """T-2665: `in_progress_ticket_scope_leases`'s fallback (`_resolve_
+    worktree_for_in_progress_ticket`'s `worktrees_touching_ticket` scan)
+    run against a REAL `git worktree add`, not a string/JSON fixture --
+    the T-2617 precedent this class follows: the measured incident was a
+    ticket whose LEASE FILE had been removed (`.git/frob-leases/*.json`
+    is unlinked opportunistically, per T-2651's own docstring) while a
+    real `git worktree` for it still existed on disk with an unlanded
+    commit. `TestInProgressTicketScopeLeases`'s own mocked tests cover
+    the lease-file-present path faithfully, but never construct a real
+    worktree at all, so they cannot tell a genuine fallback-scan success
+    apart from a fixture that merely looks right."""
+
+    def _init_repo(self, root: Path) -> None:
+        _run_git(["init", "-q", "-b", "main"], root)
+        _run_git(["config", "user.email", "test@example.com"], root)
+        _run_git(["config", "user.name", "Test"], root)
+
+    def test_live_worktree_with_lease_file_removed_is_not_leaked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2665's own measured shape: T-2583 was `in-progress` with a
+        real `git worktree` on branch `t-2583` and an unlanded commit
+        touching its declared scope, but NO `.git/frob-leases/T-2583.json`
+        (removed, whether by the T-2651-documented opportunistic unlink
+        or by hand) -- the detector reported `[LEAK]` anyway. This
+        reproduces that exact combination with real git state: a real
+        worktree, a real commit inside it that touches the ticket's own
+        scope file, and an EMPTY leases directory (no lease file for this
+        ticket at all, not even a stale one)."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "a.py").write_text("def existing():\n    pass\n")
+        tdir = repo / "tickets" / "T-2583"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text(
+            "---\nid: T-2583\nstate: in-progress\nscope:\n- src/a.py\n---\n"
+        )
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() plus in-progress ticket"], repo)
+
+        worktree = tmp_path / "t-2583"
+        _run_git(["worktree", "add", "-q", "-b", "t-2583", str(worktree)], repo)
+        (worktree / "src" / "a.py").write_text(
+            "def existing():\n    pass\n\n\ndef fix_applied():\n    return 1\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: work in progress on T-2583"], worktree)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", repo / "tickets")
+        monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path)
+        # No lease file anywhere for T-2583 -- the exact measured shape.
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+
+        entries = fleet_status.in_progress_ticket_scope_leases()
+        assert entries == [
+            {
+                "ticket_id": "T-2583",
+                "scope": ["src/a.py"],
+                "worktree": "t-2583",
+                "leaked": False,
+            }
+        ], (
+            "a live worktree with an unlanded commit touching the "
+            "ticket's own scope must resolve via the fallback scan and "
+            "must NOT report leaked=True, even with no lease file at all"
+        )
+
+    def test_no_worktree_and_no_lease_is_still_leaked(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control (must-still-pass direction), same real-git
+        harness: an in-progress ticket with NEITHER a lease file NOR any
+        worktree at all is still reported `leaked=True` -- T-2377's own
+        original shape, the reason this detector exists. Without this, a
+        fix for the false-LEAK direction could silently regress into
+        never reporting a real leak again."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "a.py").write_text("def existing():\n    pass\n")
+        tdir = repo / "tickets" / "T-2377"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text(
+            "---\nid: T-2377\nstate: in-progress\nscope:\n- src/a.py\n---\n"
+        )
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() plus in-progress ticket"], repo)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        monkeypatch.setattr(fleet_status, "TICKETS_DIR", repo / "tickets")
+        monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path / "no-worktrees")
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+
+        entries = fleet_status.in_progress_ticket_scope_leases()
+        assert entries == [
+            {
+                "ticket_id": "T-2377",
+                "scope": ["src/a.py"],
+                "worktree": None,
+                "leaked": True,
+            }
+        ]
+
+
 class TestWorktreeTicketId:
     """`fleet_status._worktree_ticket_id` (T-2599)."""
 

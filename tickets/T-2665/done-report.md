@@ -119,7 +119,7 @@ _doable_sort_key) are pre-existing, unrelated to this ticket's scope.
 neither in scripts/fleet_status.py or tests/unit/test_coordinator_
 scripts.py -- pre-existing, not introduced by this change.
 
-Filed: T-draft-915898f2 (renumbers to a real id at land; the `Path(__file__)`-vs-cwd fleet_status.py constant
+Filed: T-2677 (renumbers to a real id at land; the `Path(__file__)`-vs-cwd fleet_status.py constant
 defect described above -- fleet-wide false [LEAK] when run from inside
 a worktree instead of the primary checkout).
 
@@ -134,13 +134,25 @@ a heredoc escaping mistake in my first attempt ~20min; fix + full
 suite run ~10min; scope widening + DRIFT ack + scoped gates + land-
 parity ~15min; filing T-2674 + done report ~10min.
 
+Note: mid-land, main's ledger carried a duplicate T-1688 (present under
+BOTH tickets/T-1688/ and tickets/archive/T-1688/, from another agent's
+`frob ticket body` append mis-routing to the active path), which
+DuplicateId-errored every ledger read fleet-wide and blocked this
+land's ClaimDivergence check twice. The coordinator repaired it
+directly on main (56b838a19, archive kept canonical) rather than each
+blocked land repairing it independently; this worktree merged that fix
+in rather than re-resolving it a second, possibly-conflicting way.
+
 ### Changed
 ```
- scripts/fleet_status.py                |  34 ++++++++++
+ docs/guides/coordinator-scripts.md     |  45 +++++++++++++
+ frob.lock                              |  46 ++++++++++++++
+ rapid-debt.jsonl                       |   6 ++
+ scripts/fleet_status.py                |  84 +++++++++++++++++++++----
  tests/unit/test_coordinator_scripts.py | 112 +++++++++++++++++++++++++++++++++
- tickets/T-2665/ticket.md               |  33 +++++++++-
- tickets/T-draft-915898f2/ticket.md     |  78 +++++++++++++++++++++++
- 4 files changed, 255 insertions(+), 2 deletions(-)
+ tickets/T-2665/done-report.md          |  24 +++++--
+ tickets/T-2677/ticket.md     |  78 +++++++++++++++++++++++
+ 7 files changed, 377 insertions(+), 18 deletions(-)
 ```
 
 ### Evidence
@@ -149,5 +161,5 @@ parity ~15min; filing T-2674 + done report ~10min.
 
 ### Captured claims
 - tests: 2 passed (from 2 evidence id(s))
-- gates: 42 error(s), 819 warning(s), 697 waived
-- error-findings: AFFECT001@scripts/fleet_status.py, ARCH001@scripts/fleet_status.py, ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2344, COV003@tickets/T-2348, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC001@docs/commands/release.md, DOC002@src/frob/gates/_milestone.py, DOC005@docs/modules/cli.md, DOC006@tickets/T-2570/ticket.md, DOC008@docs/modules/gates.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, DUP001@tests/unit/test_coordinator_scripts.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/app/ticket_runner/_new.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
+- gates: 38 error(s), 836 warning(s), 697 waived
+- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2344, COV003@tickets/T-2348, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, COV005@scripts/fleet_status.py, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DOC008@docs/modules/gates.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, DUP001@tests/unit/test_coordinator_scripts.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/app/ticket_runner/_new.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md

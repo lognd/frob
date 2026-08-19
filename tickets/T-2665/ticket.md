@@ -2,7 +2,7 @@
 id: T-2665
 title: lease-leak detector reports [LEAK] for a ticket whose worktree exists, inviting
   a destructive requeue
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

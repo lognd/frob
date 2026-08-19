@@ -953,6 +953,42 @@
       "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
       "reason": "Re-verified docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690\nagainst the T-2672 change: the doc's own description of the T-1690/T-2009\nattribution and multi-land rules is still accurate. The change only adds a\nsingle-land-window causal-label guard (_single_land_attribution_label) --\nit does not alter the reachability rule, the multi-land disclosure, or the\nalready-open-ticket suppression the doc describes; still true as written.\n",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "body",
+      "new_digest": "c9b286f27181a5ff9fffb9d875e35e545ce21432903a73d9d879e2fe82c9e9cc",
+      "old_digest": null,
+      "reason": "Re-verified docs/guides/coordinator-scripts.md#worktrees_touching_ticket\nagainst the T-2665 change: the doc's description of the T-2179/T-2181\nper-commit correlation rule remains accurate for the ad-hoc-named/\ndifferent-ticket branch of the function. The change only adds a naming-\nidentity fast path for a t-<id>-named worktree matching the ticket being\nqueried -- still true as written.\n",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "sig",
+      "new_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "old_digest": null,
+      "reason": "Re-verified docs/guides/coordinator-scripts.md#worktrees_touching_ticket\nagainst the T-2665 change: the doc's description of the T-2179/T-2181\nper-commit correlation rule remains accurate for the ad-hoc-named/\ndifferent-ticket branch of the function. The change only adds a naming-\nidentity fast path for a t-<id>-named worktree matching the ticket being\nqueried -- still true as written.\n",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "body",
+      "new_digest": "a4eeba3bb6ee073b0ad600eab7042f5c9dd265337910115d81ba0080579a3ccf",
+      "old_digest": "c9b286f27181a5ff9fffb9d875e35e545ce21432903a73d9d879e2fe82c9e9cc",
+      "reason": "Re-verified docs/guides/coordinator-scripts.md#worktrees_touching_ticket\nagainst the ARCH001 split: the doc's description of the dual-condition\nT-2179/T-2181 correlation is unchanged and still true; the new naming-\nidentity fast path is separately documented at the two new helper\nfunctions' own anchors, both added in this same change.\n",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "sig",
+      "new_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "old_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "reason": "Re-verified docs/guides/coordinator-scripts.md#worktrees_touching_ticket\nagainst the ARCH001 split: the doc's description of the dual-condition\nT-2179/T-2181 correlation is unchanged and still true; the new naming-\nidentity fast path is separately documented at the two new helper\nfunctions' own anchors, both added in this same change.\n",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     }
   ],
   "entries": [
@@ -965,6 +1001,16 @@
       "digest": "8fbee6718ef9bc758edf072acd16ca686515454c4236bda210ffb6fc9314a49a",
       "facet": "sig",
       "ref": "design/frob.strata::frob.vet"
+    },
+    {
+      "digest": "a4eeba3bb6ee073b0ad600eab7042f5c9dd265337910115d81ba0080579a3ccf",
+      "facet": "body",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "facet": "sig",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     },
     {
       "digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
