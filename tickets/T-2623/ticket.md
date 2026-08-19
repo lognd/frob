@@ -2,7 +2,7 @@
 id: T-2623
 title: roughly 19 tests are red on unmodified main, hiding real regressions in the
   noise
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
