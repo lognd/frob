@@ -2,7 +2,7 @@
 id: T-2474
 title: 'post-land sweep regression from T-2458: 39 new (rule, file) identit(ies),
   50 finding(s) (ARCH103, COV001, COV003, DOC001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-18'
@@ -102,3 +102,6 @@ New (rule, file) identit(ies) filed here:
 - missing-argument  tests/unit/test_ticket_runner_land_release.py
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-18: measured false positive: land commit edf1786a (chore(tickets): file T-2472, single-file ticket-ledger add) touches only tickets/T-2472/ticket.md; NONE of the 39 flagged (rule,file) identities overlap with that file. All 39 identities UNATTRIBUTED with empty candidate_commits. Same overlapping identity set (COV003 T-1205/T-1235/T-1397/T-1526/T-1688, TICK003/TICK004 tickets.md which does not exist post-ledger-v2-cutover, SEC110/PERF003/PERF004/DOC011/RENDER001/ARCH103 on unrelated release/gates/verify files) also appears in sibling sweep tickets T-2381/T-2525/T-2560 filed against three DIFFERENT unrelated single-file lands -- diagnostic of stale/non-persisting rolling baseline, not a regression caused by T-2458.
