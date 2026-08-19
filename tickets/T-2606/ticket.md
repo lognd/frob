@@ -1,7 +1,7 @@
 ---
 id: T-2606
 title: waiver reasons promising a follow-up ticket should be enforced
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
