@@ -40,6 +40,10 @@ evidence:
 - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_getattr_with_default_raises_nothing
 - tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_next_with_default_raises_no_stop_iteration
 designated_repro_test: tests/unit/test_arch.py::TestBuiltinRaiserPrecision::test_int_does_not_contribute_type_error
+attachments:
+- path: T-2543/attachments/01-class-a-options-and-measured-costs-t-2377-survey.md
+  caption: Class A options and measured costs (T-2377 survey)
+  sha256: 5d4cb8185f3b1f412139a81355d1233321ce5055838014acafa1ef6fdb996bc4
 acceptance:
 - text: given a python function whose only subscript indexes a statically list-shaped
     value, when compute_may_raise resolves it, then the leaked set does not name KeyError
