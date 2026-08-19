@@ -265,6 +265,7 @@ def _scan_file_for_rule_literals(
             const_refs.setdefault(ref_m.group(1), f"{rel_path}:{lineno}")
 
 
+# frob:doc docs/modules/gates.md#gaterule001-t-2448
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_const_ref_resolves_against_assignment_in_another_file  # noqa: E501

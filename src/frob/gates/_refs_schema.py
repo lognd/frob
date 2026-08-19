@@ -46,7 +46,7 @@ _log = get_logger(__name__)
 #: This repo's own declared known-key set for `[[refs.entrypoint]]` --
 #: referenced by `[refs] entrypoint_schema` in frob.toml, the same
 #: module:symbol idiom every T-2390 child uses.
-# frob:doc docs/modules/gates.md#refschema001-t-2390-epic-child-t-draft-2654f0be
+# frob:doc docs/modules/gates.md#refschema001-t-2390-epic-child-t-2428
 # frob:ticket T-2428
 REFS_ENTRYPOINT_KNOWN_KEYS: frozenset[str] = frozenset({"path", "reason"})
 
@@ -159,7 +159,7 @@ def _entrypoint_records(root: Path) -> list[dict] | None:
 
 
 # frob:enforces CHK-GATE-REFSCHEMA001
-# frob:doc docs/modules/gates.md#refschema001-t-2390-epic-child-t-draft-2654f0be
+# frob:doc docs/modules/gates.md#refschema001-t-2390-epic-child-t-2428
 # frob:tests \
 # tests/unit/test_refs_schema.py::TestRefsSchemaGate.test_must_now_fire_reports_the_und\
 # eclared_key kind="unit"

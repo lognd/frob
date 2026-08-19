@@ -2,7 +2,7 @@
 id: T-2594
 title: 'post-land sweep regression from T-2582: 34 new (rule, file) identit(ies),
   42 finding(s) (ARCH103, COV001, COV003, COV004)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/commands/release.md
 - docs/modules/cli.md
@@ -132,3 +134,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-19: DUPLICATE-WITH-A-NAMED-SURVIVOR, NOT a false positive. All live identities in this ticket were confirmed already tracked in T-2653 (union computed against T-2653s own normalized identity list). The two identities present here but not in T-2653 (E501 on _ledger_mirror.py/scaffold/project.py, and DOC006 on tickets/T-2585/ticket.md) were independently re-measured and confirmed NOT reproducing on current main (E501 is absent repo-wide, only I001 exists; DOC006s only current finding is tickets/T-2570/ticket.md, already tracked) so were correctly excluded rather than carried forward. This tickets real findings survive in T-2653; do not read this drop as evidence they were bogus. (absorbed by T-2653)

@@ -3279,6 +3279,7 @@ empty (clean-looking) violation list.
 ## GATERULE001 (T-2448)
 
 <!-- frob:describes src/frob/gates/_rule_id_scan.py::gate_rule_registry_violations -->
+<!-- frob:describes src/frob/gates/_rule_id_scan.py::scan_emitted_rule_ids -->
 
 `find_unregistered_rule_ids` (T-1937, `frob.gates._rule_id_scan`) scans
 every `.py` file under `root/src/` for a rule-id-shaped string literal

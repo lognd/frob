@@ -16,6 +16,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-2492
+# frob:doc docs/modules/app.md#runners
 # frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
 # still accurate -- this change only adds an internal --json stdout-corruption guard, \
 # no user-visible contract change; filed T-2491 to sync the doc note once its own \

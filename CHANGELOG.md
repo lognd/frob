@@ -151,6 +151,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide
 - T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
+- T-2653: post-land sweep regression from T-2638: 45 new (rule, file) identit(ies), 71 finding(s) (ARCH103, COV001, COV003, COV004)
 - T-2654: fleet_status: flag an in-progress ticket that is also blocked_by an open blocker
 - T-2655: T-2651 landed new fleet_status symbols without test/doc edges (COV001+DOC002), raising quarantine
 - T-2656: Fix 13 stale lease/binding-premise waivers surfaced by WAIVE006's T-2622 extension

@@ -95,13 +95,17 @@ this ticket for follow-up batches.
 
 ### Changed
 ```
- tickets/T-2591/ticket.md |  9 +++++++--
- tickets/T-2592/ticket.md |  9 +++++++--
- tickets/T-2594/ticket.md |  9 +++++++--
- tickets/T-2597/ticket.md |  9 +++++++--
- tickets/T-2643/ticket.md |  7 +++++--
- tickets/T-2653/ticket.md | 25 ++++++++++++++++++++++++-
- 6 files changed, 57 insertions(+), 11 deletions(-)
+ docs/modules/gates.md           | 1 +
+ src/frob/app/fmt_runner.py      | 1 +
+ src/frob/gates/_refs_schema.py  | 4 ++--
+ src/frob/gates/_rule_id_scan.py | 1 +
+ src/frob/strata/_multifile.py   | 3 +++
+ tickets/T-2591/ticket.md        | 9 +++++++--
+ tickets/T-2592/ticket.md        | 9 +++++++--
+ tickets/T-2594/ticket.md        | 9 +++++++--
+ tickets/T-2597/ticket.md        | 9 +++++++--
+ tickets/T-2643/ticket.md        | 7 +++++--
+ 10 files changed, 41 insertions(+), 12 deletions(-)
 ```
 
 ### Evidence

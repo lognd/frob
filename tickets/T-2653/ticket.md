@@ -2,7 +2,7 @@
 id: T-2653
 title: 'post-land sweep regression from T-2638: 45 new (rule, file) identit(ies),
   71 finding(s) (ARCH103, COV001, COV003, COV004)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-19'

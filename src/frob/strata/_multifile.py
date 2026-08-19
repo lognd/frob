@@ -202,6 +202,7 @@ class SealedGrantSet:
         hold even against code that tries to bypass convention."""
         self._grants: dict[str, MayGrantDecl] = grants
 
+    # frob:doc docs/strata/surface.md#fragments-t-2502
     @classmethod
     def from_root_node(cls, node: NodeDecl) -> "SealedGrantSet":
         """The ONLY construction path -- one entry per grant the ROOT
@@ -211,6 +212,7 @@ class SealedGrantSet:
         `Module` here)."""
         return cls({grant.atom: grant for grant in node.may_grants})
 
+    # frob:doc docs/strata/surface.md#fragments-t-2502
     @property
     def grants(self) -> Mapping[str, MayGrantDecl]:
         """Read-only view of the current atom->grant mapping -- typed and
@@ -218,6 +220,7 @@ class SealedGrantSet:
         change anything, there is no other way from outside this class."""
         return MappingProxyType(self._grants)
 
+    # frob:doc docs/strata/surface.md#fragments-t-2502
     def widen(self, atom: str, via: tuple[str, ...]) -> bool:
         """Union `via` into the EXISTING grant for `atom`, in place;
         returns `False` and changes nothing if `atom` was never granted

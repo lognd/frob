@@ -2,7 +2,7 @@
 id: T-2591
 title: 'post-land sweep regression from T-2197: 3 new (rule, file) identit(ies), 0
   finding(s) (E501)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - src/frob/app/ticket_runner/_verify.py
@@ -44,3 +46,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - E501  /home/logan/projects/frob/src/frob/scaffold/project.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-19: FALSE POSITIVE, confirmed by two independent checks: (1) blamed-land T-2197 commit 696659925a629ff0467720e762f48087237f2050 touches only CHANGELOG.md/changelog.d/docs/guides/agent-playbook.md/rapid-debt.jsonl/_draft_finalize.py/test_tickets_collision.py/tickets ledger files -- NONE of the 3 flagged files (_ledger_mirror.py, _verify.py, scaffold/project.py); (2) frob check --only ruff --json on current main reports ZERO E501 findings repo-wide (only I001 exists), matching the tickets own filed-time disclosure of 0 finding(s). Filed 2026-08-19 00:39, BEFORE both T-2571 (01:31) and T-2595 (03:27) fixes -- consistent with the pre-fix false-positive population.
