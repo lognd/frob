@@ -19,113 +19,114 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.531.0] - unreleased
 
-- T-1660: T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
-- T-2100: T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
-- T-2197: T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
-- T-2237: T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
-- T-2363: T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
-- T-2364: T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles
-- T-2366: T-2366: COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py
-- T-2374: T-2374: Burn DOC004/DOC006 WARN gates to zero, then promote to error
-- T-2389: T-2389: retarget hardcoded src/frob/ literal in _env_var_docs.py and _root_asset_dirs.py to the T-2195 source-root resolver
-- T-2405: T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
-- T-2408: T-2408: frob.lang.extract_imports has no typescript/rust/kotlin walker (import_graph capability gap)
-- T-2409: T-2409: no kotlin test collector (test_discovery capability gap)
-- T-2410: T-2410: walk_strata hardcodes RawSymbol.public=True (no real publicness semantics)
-- T-2411: T-2411: wire LANG004 capability_conformance_gate into the check job table
-- T-2444: T-2444: Fix pre-existing duplicate-title SystemExit failures in test_app_runners_t1738_wave.py
-- T-2445: T-2445: every land writes CHANGELOG.md and the version line, so scope-disjoint lands still conflict
-- T-2452: T-2452: _dispatch exceeds ARCH001 line threshold (found while T-2443 touched it)
-- T-2455: T-2455: related-title duplicate detector false-positives on holder/collider, breaking a pre-existing start test
-- T-2464: T-2464: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
-- T-2466: T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
-- T-2467: T-2467: Reshape T-1614: periodic watermark-based waiver audit, drop runs_last
-- T-2469: T-2469: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
-- T-2470: T-2470: C++ ARCH symref producer spells qualnames with :: instead of frob's canonical . join
-- T-2473: T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
-- T-2475: T-2475: fleet_status NEEDS CLOSE bucket can misclassify a partially-split, still-blocked story as closeable
-- T-2476: T-2476: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001 has a doc entry
-- T-2477: T-2477: post-land sweep regression from T-1135: 5 new (rule, file) identit(ies), 0 finding(s) (E501, F401)
-- T-2479: T-2479: boto3/aiohttp/asyncpg mutating-verb split not covered by T-2464's net-mutate scanner signal
-- T-2480: T-2480: check-repro's fixed 60s budget turns a slow but valid repro test into an indistinguishable NO_VERDICT
-- T-2481: T-2481: the root-write guard does not cover Bash, which is how all three root-dirtying incidents actually happened
-- T-2482: T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)
-- T-2484: T-2484: T-2473's concurrent-check advisory writes to stdout, corrupting frob check --json under fleet load
-- T-2485: T-2485: waive-audit complete has no partial-catchup-progress path, defeating the 100-item bound
-- T-2486: T-2486: nothing structurally prevents a stdout write from corrupting --json output; T-2484 fixed one instance
-- T-2487: T-2487: add a post-Bash root-cleanliness detector for agent context (complementary to T-2481's guard)
-- T-2488: T-2488: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001 SYS111)
-- T-2489: T-2489: post-land sweep regression from T-2411: 1 new (rule, file) identit(ies) (E501)
-- T-2490: T-2490: SYS100: T-2411's wiring test in test_lang_conformance_gate.py declares no exec capability
-- T-2491: T-2491: sync docs/modules/app.md#runners for T-2486's structural --json stdout guard
-- T-2492: T-2492: audit other --json runners for the same unguarded-stdout-write class T-2486 fixed in check
-- T-2493: T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
-- T-2494: T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
-- T-2495: T-2495: declare may exec for gates node covering _mutation_evidence.py's direct guarded_subprocess_run call
-- T-2496: T-2496: wire find_collision_suspects into a waive-audit CLI subcommand
-- T-2498: T-2498: frob ticket body --append silently misroutes into done-report.md when one exists
-- T-2499: T-2499: capability_test_discovery_status hardcodes language set, stale after T-2409
-- T-2500: T-2500: boto3 net-mutate: exhaustive per-service mutating-verb survey (S3/DynamoDB/IAM done, ~347 services remain)
-- T-2502: T-2502: strata fragments: imports that cannot break a system apart
-- T-2503: T-2503: ambient vs enumerated capability grants: kill the via-list churn without losing the guard
-- T-2504: T-2504: confined to: prove path confinement on the existing summary engine, report-only first
-- T-2505: T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
-- T-2507: T-2507: vet resolves identities then compares them by substring; LEXCHECK001 trigger set misses the in operator
-- T-2509: T-2509: frob ticket evidence --check-repro ignores explicit --base-ref, always resolves to a fixed unrelated commit
-- T-2517: T-2517: fleet_status reports ORPHANED FORKSERVERS 0 while 82 stale pools hold 12GB of swap
-- T-2519: T-2519: confinement census: give parameter-position credit to close 727 of 740 UNKNOWN sites
-- T-2520: T-2520: post-land sweep regression from T-2507: 1 new (rule, file) identit(ies), 0 finding(s) (WIRE001)
-- T-2521: T-2521: auto-drop treats an incomplete measurement as proof of absence: 7 tickets dropped with ~66 live findings
-- T-2523: T-2523: wire check_ambient_capability_reasons into a gate and backfill the 27 reasonless ambient grants
-- T-2524: T-2524: agent scratch files in the repo root get committed by the next land
-- T-2526: T-2526: post-land sweep regression from T-2503: 5 new (rule, file) identit(ies) (E501, F401, F811)
-- T-2527: T-2527: re-add subprocess-coverage measurement to native_coverage_refresh (Loss-A regression, T-1235/T-1205/T-1397/T-1526 orphaned)
-- T-2530: T-2530: strata fragment merge is extend-only by implementation, not by type: seal the grant mapping
-- T-2531: T-2531: post-land sweep regression from T-2503: E501/F401 residue (3 files, unrelated to T-2526's F811)
-- T-2532: T-2532: WIRE001 reach scan misses dotted classmethod/staticmethod calls
-- T-2533: T-2533: DOC006 CLI-invocation walker misses several _dispatch_*-bypassed verbs' real subcommands
-- T-2534: T-2534: T-2505's historical-ticket-doc exemption should cover evidence/attachments dirs too
-- T-2537: T-2537: tool parsers report a crashed run as zero findings: attach an error diagnostic on unparsable output
-- T-2539: T-2539: may-raise resolver reports false EXHAUST002 leaks for multi-type except clauses and slice subscripts
-- T-2543: T-2543: may-raise resolver still mis-types two EXHAUST002 classes: subscript KeyError default and int()/float() TypeError
-- T-2544: T-2544: document tool_parse_failure_result in docs/modules/process.md and drop T-2537's AFFECT001 waivers
-- T-2547: T-2547: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed file
-- T-2549: T-2549: COV007 reads a strata security clearance as API privacy: 25 false findings on design/frob.strata
-- T-2550: T-2550: COV006: all 18 live findings are call-graph blindness (cross-file public entry, test-helper indirection), not unexercised bindings
-- T-2551: T-2551: COV007 is mis-scoped for files with no public surface: 78 findings in scripts/ and .claude/hooks/
-- T-2552: T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
-- T-2556: T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
-- T-2561: T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
-- T-2563: T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
-- T-2565: T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
-- T-2569: T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
-- T-2571: T-2571: Post-land sweep files identical (rule,file) identities as new regressions across unrelated lands: baseline recurrence/phantom-path bug
-- T-2574: T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
-- T-2575: T-2575: no grammar registered warning is 57 percent of command output: the pre-filter obligation is on callers and mostly unmet
-- T-2576: T-2576: M2: backfill open tickets to 1.0.0, add MILE003 gate
-- T-2577: T-2577: M3: milestone as primary doable sort axis, inheritance, --milestone filter
-- T-2578: T-2578: M4: rescope runs_last to the ticket's own milestone
-- T-2579: T-2579: M4b: MILE004 gate for multiple runs-last tickets in one milestone
-- T-2582: T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
-- T-2584: T-2584: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001 is silently inert
-- T-2585: T-2585: frob check has no durable result: replay an unchanged-tree verdict automatically, never as a flag
-- T-2586: T-2586: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
-- T-2587: T-2587: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is visible on main immediately, not only after land
-- T-2588: T-2588: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
-- T-2593: T-2593: over-broad scope is disclosed but never enforced: 21 open tickets hold wildcard write leases, 0 acknowledged
-- T-2595: T-2595: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep writers
-- T-2596: T-2596: four real E501 lines in src/ raised quarantine and forced the whole fleet into synchronous lands
-- T-2598: T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
-- T-2599: T-2599: 34 registered worktrees, ~20 idle 9-13 days: audit needs a stranded-vs-stale test that squash-landing does not fool
-- T-2602: T-2602: test_doable_sprint_filter has been red on main since T-1995: the duplicate-title guard fires on its own fixture
-- T-2603: T-2603: three ledger-write patterns across two disjoint verb sets plus a special case: one table with a declared per-verb strategy
-- T-2604: T-2604: quarantine re-raises on findings already owned by an open ticket, forcing synchronous lands fleet-wide every sweep
-- T-2606: T-2606: waiver reasons promising a follow-up ticket should be enforced
-- T-2611: T-2611: core.autocrlf=true puts CRLF in every source file, silently breaking any length or byte-level measurement
-- T-2612: T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
-- T-2614: T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
-- T-2617: T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
-- T-2623: T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
+- T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
+- T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
+- T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
+- T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
+- T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
+- T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles
+- T-2366: COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py
+- T-2374: Burn DOC004/DOC006 WARN gates to zero, then promote to error
+- T-2389: retarget hardcoded src/frob/ literal in _env_var_docs.py and _root_asset_dirs.py to the T-2195 source-root resolver
+- T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
+- T-2408: frob.lang.extract_imports has no typescript/rust/kotlin walker (import_graph capability gap)
+- T-2409: no kotlin test collector (test_discovery capability gap)
+- T-2410: walk_strata hardcodes RawSymbol.public=True (no real publicness semantics)
+- T-2411: wire LANG004 capability_conformance_gate into the check job table
+- T-2444: Fix pre-existing duplicate-title SystemExit failures in test_app_runners_t1738_wave.py
+- T-2445: every land writes CHANGELOG.md and the version line, so scope-disjoint lands still conflict
+- T-2452: _dispatch exceeds ARCH001 line threshold (found while T-2443 touched it)
+- T-2455: related-title duplicate detector false-positives on holder/collider, breaking a pre-existing start test
+- T-2464: Network dangerous-ops needles do not distinguish read vs write HTTP/DB verbs
+- T-2466: LEXCHECK001 scans only gates/ and only re.* calls, so it missed a substring-matching security detector in vet/
+- T-2467: Reshape T-1614: periodic watermark-based waiver audit, drop runs_last
+- T-2469: LEXCHECK001 widening surfaced 5 real symref-less lexical deciders in vet/_supplychain.py
+- T-2470: C++ ARCH symref producer spells qualnames with :: instead of frob's canonical . join
+- T-2473: frob check has no global concurrency limit, so a busy fleet swaps and throughput drops as agents are added
+- T-2475: fleet_status NEEDS CLOSE bucket can misclassify a partially-split, still-blocked story as closeable
+- T-2476: drop the T-2448 COV001 waiver on gate_rule_registry_violations now that GATERULE001 has a doc entry
+- T-2477: post-land sweep regression from T-1135: 5 new (rule, file) identit(ies), 0 finding(s) (E501, F401)
+- T-2479: boto3/aiohttp/asyncpg mutating-verb split not covered by T-2464's net-mutate scanner signal
+- T-2480: check-repro's fixed 60s budget turns a slow but valid repro test into an indistinguishable NO_VERDICT
+- T-2481: the root-write guard does not cover Bash, which is how all three root-dirtying incidents actually happened
+- T-2482: Declare fs.read/fs.write/exec for T-2467's waive-audit module+tests (SELFAUDIT001 SYS100)
+- T-2484: T-2473's concurrent-check advisory writes to stdout, corrupting frob check --json under fleet load
+- T-2485: waive-audit complete has no partial-catchup-progress path, defeating the 100-item bound
+- T-2486: nothing structurally prevents a stdout write from corrupting --json output; T-2484 fixed one instance
+- T-2487: add a post-Bash root-cleanliness detector for agent context (complementary to T-2481's guard)
+- T-2488: Bump capability-via-ratchet.lock.json ceilings for T-2482/T-2464 (SELFAUDIT001 SYS111)
+- T-2489: post-land sweep regression from T-2411: 1 new (rule, file) identit(ies) (E501)
+- T-2490: SYS100: T-2411's wiring test in test_lang_conformance_gate.py declares no exec capability
+- T-2491: sync docs/modules/app.md#runners for T-2486's structural --json stdout guard
+- T-2492: audit other --json runners for the same unguarded-stdout-write class T-2486 fixed in check
+- T-2493: waive-audit has no systematic INERT-waiver check (path/symbol-shape mismatch)
+- T-2494: capability_import_graph_status hardcodes language set, stale after T-2408
+- T-2495: declare may exec for gates node covering _mutation_evidence.py's direct guarded_subprocess_run call
+- T-2496: wire find_collision_suspects into a waive-audit CLI subcommand
+- T-2498: frob ticket body --append silently misroutes into done-report.md when one exists
+- T-2499: capability_test_discovery_status hardcodes language set, stale after T-2409
+- T-2500: boto3 net-mutate: exhaustive per-service mutating-verb survey (S3/DynamoDB/IAM done, ~347 services remain)
+- T-2502: strata fragments: imports that cannot break a system apart
+- T-2503: ambient vs enumerated capability grants: kill the via-list churn without losing the guard
+- T-2504: confined to: prove path confinement on the existing summary engine, report-only first
+- T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
+- T-2507: vet resolves identities then compares them by substring; LEXCHECK001 trigger set misses the in operator
+- T-2509: frob ticket evidence --check-repro ignores explicit --base-ref, always resolves to a fixed unrelated commit
+- T-2517: fleet_status reports ORPHANED FORKSERVERS 0 while 82 stale pools hold 12GB of swap
+- T-2519: confinement census: give parameter-position credit to close 727 of 740 UNKNOWN sites
+- T-2520: post-land sweep regression from T-2507: 1 new (rule, file) identit(ies), 0 finding(s) (WIRE001)
+- T-2521: auto-drop treats an incomplete measurement as proof of absence: 7 tickets dropped with ~66 live findings
+- T-2523: wire check_ambient_capability_reasons into a gate and backfill the 27 reasonless ambient grants
+- T-2524: agent scratch files in the repo root get committed by the next land
+- T-2526: post-land sweep regression from T-2503: 5 new (rule, file) identit(ies) (E501, F401, F811)
+- T-2527: re-add subprocess-coverage measurement to native_coverage_refresh (Loss-A regression, T-1235/T-1205/T-1397/T-1526 orphaned)
+- T-2530: strata fragment merge is extend-only by implementation, not by type: seal the grant mapping
+- T-2531: post-land sweep regression from T-2503: E501/F401 residue (3 files, unrelated to T-2526's F811)
+- T-2532: WIRE001 reach scan misses dotted classmethod/staticmethod calls
+- T-2533: DOC006 CLI-invocation walker misses several _dispatch_*-bypassed verbs' real subcommands
+- T-2534: T-2505's historical-ticket-doc exemption should cover evidence/attachments dirs too
+- T-2537: tool parsers report a crashed run as zero findings: attach an error diagnostic on unparsable output
+- T-2539: may-raise resolver reports false EXHAUST002 leaks for multi-type except clauses and slice subscripts
+- T-2543: may-raise resolver still mis-types two EXHAUST002 classes: subscript KeyError default and int()/float() TypeError
+- T-2544: document tool_parse_failure_result in docs/modules/process.md and drop T-2537's AFFECT001 waivers
+- T-2547: CrossTicketLeakage matches a zero-scope ticket as covering an unrelated unclaimed file
+- T-2549: COV007 reads a strata security clearance as API privacy: 25 false findings on design/frob.strata
+- T-2550: COV006: all 18 live findings are call-graph blindness (cross-file public entry, test-helper indirection), not unexercised bindings
+- T-2551: COV007 is mis-scoped for files with no public surface: 78 findings in scripts/ and .claude/hooks/
+- T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
+- T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
+- T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
+- T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
+- T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
+- T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
+- T-2571: Post-land sweep files identical (rule,file) identities as new regressions across unrelated lands: baseline recurrence/phantom-path bug
+- T-2574: M1: Ticket.milestone field, semver ordering, CLI surface
+- T-2575: no grammar registered warning is 57 percent of command output: the pre-filter obligation is on callers and mostly unmet
+- T-2576: M2: backfill open tickets to 1.0.0, add MILE003 gate
+- T-2577: M3: milestone as primary doable sort axis, inheritance, --milestone filter
+- T-2578: M4: rescope runs_last to the ticket's own milestone
+- T-2579: M4b: MILE004 gate for multiple runs-last tickets in one milestone
+- T-2582: human-mode query commands drown their answer in DEBUG chatter: xref emits 5958 lines for a 13-line result
+- T-2584: CYCLE001 findings never pass through the waiver pipeline -- frob:waive CYCLE001 is silently inert
+- T-2585: frob check has no durable result: replay an unchanged-tree verdict automatically, never as a flag
+- T-2586: fleet_status reports ROOT DIRTY from a stat-dirty index, falsely blocking dispatch
+- T-2587: Wire frob ticket promote into the T-2563 ledger mirror so a promoted id is visible on main immediately, not only after land
+- T-2588: frob cycle reports a false CLEAN on the natural invocation and exits 0 on findings
+- T-2593: over-broad scope is disclosed but never enforced: 21 open tickets hold wildcard write leases, 0 acknowledged
+- T-2595: Lock or CAS-write .frob/rapid-sweep-baseline.json against concurrent detached-sweep writers
+- T-2596: four real E501 lines in src/ raised quarantine and forced the whole fleet into synchronous lands
+- T-2598: stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket its reason promised was never filed
+- T-2599: 34 registered worktrees, ~20 idle 9-13 days: audit needs a stranded-vs-stale test that squash-landing does not fool
+- T-2602: test_doable_sprint_filter has been red on main since T-1995: the duplicate-title guard fires on its own fixture
+- T-2603: three ledger-write patterns across two disjoint verb sets plus a special case: one table with a declared per-verb strategy
+- T-2604: quarantine re-raises on findings already owned by an open ticket, forcing synchronous lands fleet-wide every sweep
+- T-2606: waiver reasons promising a follow-up ticket should be enforced
+- T-2611: core.autocrlf=true puts CRLF in every source file, silently breaking any length or byte-level measurement
+- T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
+- T-2614: T-2450 scope is a single semicolon-joined glob string, not two scope entries
+- T-2615: changelog emits an entry for a DROPPED ticket and duplicates the ticket id on 101 lines
+- T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
+- T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
 
 ## [0.530.0] - unreleased
 

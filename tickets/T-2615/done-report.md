@@ -29,15 +29,15 @@ than mandated fixing -- a problem-stated title is a serviceable
 release-note line for a bug fix, and building a genuine "what changed"
 summary line is a bigger design change (a new authored field at ticket-
 close time, or a title-rewrite heuristic) that deserves its own ticket
-rather than a half-measure bolted onto this one. Filed T-2645 to track
-that as a deliberate follow-up, not a silent drop. Filed as
-T-draft-b8d1b183 (will renumber at land).
+rather than a half-measure bolted onto this one. Filed as
+T-2642 (will renumber at land) to track that as a deliberate
+follow-up, not a silent drop.
 
 Did NOT retroactively rewrite the 101 historical CHANGELOG.md lines
 (explicitly out of scope per the ticket) and did NOT hand-delete the
 stray `changelog.d/T-2593.md` fragment or its CHANGELOG.md line --
 those are data artifacts outside this ticket's declared scope
-(`src/frob/release/_fragments.py` only). Filed T-draft-5d1d5de0 for
+(`src/frob/release/_fragments.py` only). Filed T-2641 for
 that cleanup now that the generator is fixed and won't recreate it.
 
 Positive controls verified by test (all in `tests/test_release.py`,
@@ -78,10 +78,11 @@ keeping this land's diff to exactly the two in-scope files.
 ```
  src/frob/release/_fragments.py     |  40 ++++++++++-
  tests/test_release.py              | 133 +++++++++++++++++++++++++++++++++++++
- tickets/T-2615/ticket.md           |  13 +++-
- tickets/T-draft-5d1d5de0/ticket.md |  54 +++++++++++++++
- tickets/T-draft-b8d1b183/ticket.md |  59 ++++++++++++++++
- 5 files changed, 294 insertions(+), 5 deletions(-)
+ tickets/T-2615/done-report.md      |  96 ++++++++++++++++++++++++++
+ tickets/T-2615/ticket.md           |  44 +++++++++++-
+ tickets/T-2641/ticket.md |  54 +++++++++++++++
+ tickets/T-2642/ticket.md |  59 ++++++++++++++++
+ 6 files changed, 420 insertions(+), 6 deletions(-)
 ```
 
 ### Evidence
@@ -93,4 +94,4 @@ keeping this land's diff to exactly the two in-scope files.
 ### Captured claims
 - tests: 4 passed (from 4 evidence id(s))
 - gates: unmeasured (no parsable gate-summary from a fresh check)
-- error-findings: AFFECT001@src/frob/release/_fragments.py, ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV001@src/frob/app/fmt_runner.py, COV001@src/frob/gates/_refs_schema.py, COV001@src/frob/gates/_rule_id_scan.py, COV001@src/frob/strata/_multifile.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2344, COV003@tickets/T-2348, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC001@docs/commands/release.md, DOC002@src/frob/gates/_milestone.py, DOC002@src/frob/gates/_refs_schema.py, DOC005@docs/modules/cli.md, DOC006@tickets/T-2570/ticket.md, DOC008@docs/modules/gates.md, DOCENUM001@docs/modules/gates.md, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, F401@/home/logan/projects/frob/.claude/worktrees/t2615-t2626/src/frob/app/ticket_runner/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/app/ticket_runner/_new.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, PRE001@tickets/T-2615, RENDER001@src/frob/release/_cli.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
+- error-findings: AFFECT001@src/frob/release/_fragments.py, ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV001@src/frob/app/fmt_runner.py, COV001@src/frob/gates/_refs_schema.py, COV001@src/frob/gates/_rule_id_scan.py, COV001@src/frob/strata/_multifile.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2344, COV003@tickets/T-2348, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC001@docs/commands/release.md, DOC002@src/frob/gates/_milestone.py, DOC002@src/frob/gates/_refs_schema.py, DOC005@docs/modules/cli.md, DOC006@tickets/T-2570/ticket.md, DOC008@docs/modules/gates.md, DOCENUM001@docs/modules/gates.md, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, F401@/home/logan/projects/frob/.claude/worktrees/t2615-t2626/src/frob/app/ticket_runner/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/app/ticket_runner/_new.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, PRE001@tickets/T-2615, RENDER001@src/frob/release/_cli.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, TICK006@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md

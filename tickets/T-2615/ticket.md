@@ -2,7 +2,7 @@
 id: T-2615
 title: changelog emits an entry for a DROPPED ticket and duplicates the ticket id
   on 101 lines
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -18,8 +18,8 @@ scope:
 - src/frob/release/_fragments.py
 - tests/test_release.py
 - docs/modules/release.md
-- tickets/T-draft-b8d1b183/ticket.md
-- tickets/T-draft-5d1d5de0/ticket.md
+- tickets/T-2642/ticket.md
+- tickets/T-2641/ticket.md
 evidence_scope:
 - tests/test_release.py
 scope_breadth_ack: false
@@ -40,13 +40,13 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-b8d1b183/ticket.md
+  glob: tickets/T-2642/ticket.md
   reason: 'SCOPE001: this ticket''s own Done report files these two drafts as owed
     follow-up work'
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-5d1d5de0/ticket.md
+  glob: tickets/T-2641/ticket.md
   reason: 'SCOPE001: this ticket''s own Done report files these two drafts as owed
     follow-up work'
   actor: logan

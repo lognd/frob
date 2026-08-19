@@ -115,7 +115,7 @@ def fragment_path(root: Path, ticket_id: str) -> Path:
 # frob:tests tests/test_release.py::TestChangelogFragments.test_write_then_read_round_trips  # noqa: E501
 def write_changelog_fragment(
     root: Path, ticket_id: str, bump: str, note: str
-) -> Result[Path, ReleaseError]:
+) -> Result[Path | None, ReleaseError]:
     """Write `changelog.d/T-####.md` for `ticket_id` (T-2445): `bump` is
     `frob.release.BumpClass`'s lowercased `.name` (e.g. `"minor"`),
     `note` is the same `"{final_id}: {ticket.title}"` string `frob.
@@ -125,7 +125,35 @@ def write_changelog_fragment(
     writing the same content, never two different tickets colliding).
     `Err(WriteFailed)` on the underlying `atomic_write` I/O failure,
     matching every other release-artifact write in this package's error
-    vocabulary."""
+    vocabulary.
+
+    T-2615: refuses to write -- `Ok(None)`, no file touched, not an error
+    -- when `ticket_id`'s CURRENT on-disk state is a known non-`DONE`
+    terminal/non-terminal state (observed: `DROPPED`). A real incident
+    landed a ticket that had already been dropped on `main` moments
+    earlier (the worktree's pre-land snapshot predated the drop, and the
+    land's own pre-land `main` merge pulled the dropped state in just
+    before this call runs) -- its fragment then announced a fix that was
+    never made and fed a real version bump. Re-reading state here, right
+    before the write, catches exactly that window: whatever `_load_one`
+    reports is the freshest state a still-in-progress land can see. If
+    the ticket cannot be loaded at all (`Err`), this fails OPEN and
+    writes anyway -- an unrelated lookup failure (a transient I/O error,
+    an unusual store layout) must not silently swallow a legitimate
+    land's changelog entry; the check exists to catch a KNOWN non-DONE
+    state, not to gate on an inability to determine one."""
+    from frob.tickets import _load_one
+    from frob.tickets._models import TicketState
+
+    loaded = _load_one(root, ticket_id)
+    if loaded.is_ok and loaded.danger_ok.state != TicketState.DONE:
+        _log.warning(
+            "release: write_changelog_fragment: %s is %s (not done) -- "
+            "refusing to write a changelog fragment for it (T-2615)",
+            ticket_id,
+            loaded.danger_ok.state,
+        )
+        return Ok(None)
     path = fragment_path(root, ticket_id)
     content = f"bump: {bump}\n{note}\n"
     written = _atomic_write(path, content)
@@ -289,7 +317,13 @@ def assemble_changelog_from_fragments(
             len(entries),
         )
         return Err(ReleaseError.WriteFailed)
-    body = "".join(f"- {f.ticket_id}: {f.note}\n" for f in entries) + "\n"
+    # T-2615: `f.note` is written by `write_changelog_fragment` as
+    # `f"{ticket_id}: {ticket.title}"` -- it ALREADY carries the ticket id
+    # as its own prefix. Prepending `f.ticket_id` again here duplicated it
+    # on every rendered bullet (`- T-2593: T-2593: <title>`, 101 released
+    # lines carried it as of T-2615's filing). The id is the bullet's own
+    # leading token by construction; render `f.note` verbatim.
+    body = "".join(f"- {f.note}\n" for f in entries) + "\n"
     new_section = [f"## [{version}] - unreleased\n", "\n", body]
     text = path.read_text(encoding="utf-8")
     lines = text.splitlines(keepends=True)

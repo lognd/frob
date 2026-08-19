@@ -402,6 +402,139 @@ class TestChangelogFragments:
         assert "T-0001: first thing" in text_after_third
         assert "T-0002: second thing" in text_after_third
 
+    def test_assemble_renders_the_ticket_id_exactly_once(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_renders_the_ticke\
+        # t_id_exactly_once
+        # T-2615: the generator used to prefix `f.ticket_id` onto a
+        # `note` that already started with it (`write_changelog_fragment`
+        # always writes `note` as `f"{ticket_id}: {title}"`), duplicating
+        # the id on every assembled bullet. Assert the id appears exactly
+        # once in the rendered line.
+        from frob.release._fragments import (
+            assemble_changelog_from_fragments,
+            write_changelog_fragment,
+        )
+
+        (tmp_path / "CHANGELOG.md").write_text(
+            "# Changelog\n\n## [1.0.0] - unreleased\n"
+        )
+        write_changelog_fragment(tmp_path, "T-0042", "minor", "T-0042: a thing")
+        assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert assembled.is_ok
+        text = (tmp_path / "CHANGELOG.md").read_text()
+        assert text.count("T-0042:") == 1
+        assert "- T-0042: a thing" in text
+
+    def test_write_refuses_for_a_dropped_ticket(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_write_refuses_for_a_droppe\
+        # d_ticket
+        # T-2615, defect 1: a ticket that is DROPPED at write time must
+        # not get a changelog fragment at all -- a real incident landed a
+        # ticket moments after it had been dropped on main and its
+        # fragment announced a fix that was never made.
+        from datetime import date
+
+        from frob.release._fragments import fragment_path, write_changelog_fragment
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import write_ticket
+
+        ticket = Ticket(
+            id="T-9001",
+            title="a dropped ticket",
+            state=TicketState.DROPPED,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+        )
+        assert write_ticket(tmp_path, ticket).is_ok
+
+        written = write_changelog_fragment(
+            tmp_path, "T-9001", "minor", "T-9001: a dropped ticket"
+        )
+        assert written.is_ok
+        assert written.danger_ok is None
+        assert not fragment_path(tmp_path, "T-9001").exists()
+
+    def test_write_still_succeeds_for_a_done_ticket(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_write_still_succeeds_for_a\
+        # _done_ticket
+        # Positive control for the DROPPED refusal above: a DONE ticket
+        # must still produce exactly one fragment -- without this the
+        # fix would be indistinguishable from disabling the changelog
+        # fragment mechanism entirely.
+        from datetime import date
+
+        from frob.release._fragments import fragment_path, write_changelog_fragment
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import write_ticket
+
+        ticket = Ticket(
+            id="T-9002",
+            title="a finished ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+        )
+        assert write_ticket(tmp_path, ticket).is_ok
+
+        written = write_changelog_fragment(
+            tmp_path, "T-9002", "minor", "T-9002: a finished ticket"
+        )
+        assert written.is_ok
+        assert written.danger_ok == fragment_path(tmp_path, "T-9002")
+        assert fragment_path(tmp_path, "T-9002").exists()
+
+    def test_assemble_excludes_a_dropped_tickets_fragment(self, tmp_path):
+        # frob:tests \
+        # tests/test_release.py::TestChangelogFragments.test_assemble_excludes_a_droppe\
+        # d_tickets_fragment
+        # End-to-end: a DROPPED ticket produces NEITHER a fragment nor a
+        # CHANGELOG.md entry, and its bump class never reaches the
+        # assembled section (the version-bump-excludes-dropped-fragments
+        # positive control).
+        from datetime import date
+
+        from frob.release._fragments import (
+            assemble_changelog_from_fragments,
+            write_changelog_fragment,
+        )
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+        from frob.tickets._store import write_ticket
+
+        dropped = Ticket(
+            id="T-9003",
+            title="dropped as obsolete",
+            state=TicketState.DROPPED,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+        )
+        done = Ticket(
+            id="T-9004",
+            title="a real fix",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            created=date(2026, 1, 1),
+        )
+        assert write_ticket(tmp_path, dropped).is_ok
+        assert write_ticket(tmp_path, done).is_ok
+
+        write_changelog_fragment(tmp_path, "T-9003", "minor", "T-9003: dropped as obsolete")
+        write_changelog_fragment(tmp_path, "T-9004", "patch", "T-9004: a real fix")
+
+        (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
+        assembled = assemble_changelog_from_fragments(tmp_path, "2.0.0")
+        assert assembled.is_ok
+        assert assembled.danger_ok == 1
+        text = (tmp_path / "CHANGELOG.md").read_text()
+        assert "T-9004: a real fix" in text
+        assert "T-9003" not in text
+
     def test_assemble_missing_changelog_is_an_error(self, tmp_path):
         # frob:tests \
         # tests/test_release.py::TestChangelogFragments.test_assemble_missing_changelog\
