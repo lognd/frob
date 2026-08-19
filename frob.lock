@@ -881,6 +881,24 @@
       "old_digest": "1f278e21843f62455f569b82cbe764acf79b53bc2d70d199b6664a4b65f8cf50",
       "reason": "Re-read docs/modules/arch.md#may-raise-resolver against compute_may_raise's new body. The documented contract is unchanged -- same fail-closed UNKNOWN default, same per-function exposed-set semantics, same except-subtraction rule. What moved is internal: a second identical fixpoint runs with the subscript rule suppressed so the difference can be reported as FunctionMayRaise.subscript_derived, and the subscript rule's own type is now LookupError rather than KeyError. Both are documented in the same change, in that anchor's new T-2543 block and in docs/modules/gates.md's EXHAUST004 section.\n",
       "ref": "src/frob/arch/_mayraise.py::compute_may_raise"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "body",
+      "new_digest": "93fdb2a5fc44450c637b6e44cf1e83911dd5bed956d8e776d7c10ca46cb25fd6",
+      "old_digest": "175a4f5ba49b06cf10a46d43f8554910cfd406adb02a7ddd289b31bbb542b625",
+      "reason": "re-acked after merging main: T-2551 changed one call site inside coverage_gate (_cov007 now takes root to read [[refs.entrypoint]]); docs/modules/gates.md's coverage section describes which checks run, not their signatures",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-18",
+      "facet": "sig",
+      "new_digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
+      "old_digest": "fbb174c7bb93a7836cf6d6e3b3881f8cabe9ee2cb07604bd57bc204683474300",
+      "reason": "re-acked after merging main: T-2551 changed one call site inside coverage_gate (_cov007 now takes root to read [[refs.entrypoint]]); docs/modules/gates.md's coverage section describes which checks run, not their signatures",
+      "ref": "src/frob/gates/__init__.py::coverage_gate"
     }
   ],
   "entries": [
@@ -1110,7 +1128,7 @@
       "ref": "src/frob/gates/__init__.py::active_ticket"
     },
     {
-      "digest": "175a4f5ba49b06cf10a46d43f8554910cfd406adb02a7ddd289b31bbb542b625",
+      "digest": "93fdb2a5fc44450c637b6e44cf1e83911dd5bed956d8e776d7c10ca46cb25fd6",
       "facet": "body",
       "ref": "src/frob/gates/__init__.py::coverage_gate"
     },

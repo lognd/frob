@@ -217,6 +217,33 @@ reason = "machine-generated lock artifact frob.graph writes and reads by fixed p
 path = "src/frob/__main__.py"
 reason = "the CLI entry point, invoked by the installed console-script shim outside this repo's tracked-file graph"
 
+# T-2551: standalone EXECUTABLES -- run by a coordinator/git/Claude Code,
+# never imported by tracked source. Declared here (not matched by a
+# `.claude/hooks/*` glob) so each one is a stated fact with a reason, and a
+# new file added beside them is NOT silently exempt. Read by two gates:
+# REF001/REF002's anti-orphan check (the original consumer) and COV007's
+# private-doc-anchor check (T-2551) -- an executable's docs are organized
+# per-symbol, because it has no importable public surface for the anchors
+# to live on. NOTE the REF001/REF002 side effect this adds: these four
+# files are non-orphans today, so nothing changes now, but a future
+# orphaning of one of them will no longer be reported. Reverse this entry
+# if that protection is worth more than COV007's noise.
+[[refs.entrypoint]]
+path = "scripts/fleet_status.py"
+reason = "coordinator-run executable (`python3 scripts/fleet_status.py`), never imported by tracked source; contracts to import nothing from frob at all"
+
+[[refs.entrypoint]]
+path = ".claude/hooks/root-write-guard.py"
+reason = "executed by Claude Code's hook system outside this repo's tracked-file graph, never imported"
+
+[[refs.entrypoint]]
+path = ".claude/hooks/root-cleanliness-detector.py"
+reason = "executed by Claude Code's hook system outside this repo's tracked-file graph, never imported"
+
+[[refs.entrypoint]]
+path = ".claude/hooks/_agent_context.py"
+reason = "shared helper imported ONLY by the sibling hook executables, which are themselves run outside this repo's tracked-file graph; it has zero public symbols by design"
+
 [[refs.entrypoint]]
 path = "CLAUDE.md"
 reason = "read by Claude/AI agents as project instructions, not referenced from other tracked files"

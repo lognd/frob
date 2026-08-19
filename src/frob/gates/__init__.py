@@ -1306,6 +1306,7 @@ def _diff_load_failed_violation(rule: str, base: str) -> Violation:
 # frob:doc docs/modules/gates.md#public-api
 # frob:ticket T-0550
 # frob:ticket T-0719
+# frob:ticket T-2551
 def coverage_gate(
     root: Path,
     snapshot: GraphSnapshot,
@@ -1362,7 +1363,7 @@ def coverage_gate(
     violations.extend(_cov004(queue))
     violations.extend(_cov005(root, snapshot, diff))
     violations.extend(_cov006(root, snapshot))
-    violations.extend(_cov007(snapshot))
+    violations.extend(_cov007(root, snapshot))
     violations.extend(_place001(root, snapshot))
     if diff_load_failed and not diff_load_no_repo:
         violations.append(_diff_load_failed_violation("TODO001", diff.base))
@@ -3155,7 +3156,8 @@ def _cov006_edge_violation(
 # frob:ticket T-0483
 # frob:enforces CHK-GATE-COV007
 # frob:ticket T-2549
-def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+# frob:ticket T-2551
+def _cov007(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
 
     `frob:doc` obligations (COV001) exist to keep public-surface docs in
@@ -3166,6 +3168,13 @@ def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     (a complex internal algorithm, say) -- this flags it for a human
     decision, it does not forbid the pattern.
     """
+    from frob.gates._refs import _load_allowlist
+
+    #: Files this project DECLARES as reached from outside its own tracked
+    #: -file graph (`[[refs.entrypoint]]` in frob.toml, each entry carrying
+    #: a mandatory `reason`). Read here, never re-derived: one owner for
+    #: the declaration, one parser for it.
+    declared_entrypoints = frozenset(_load_allowlist(root))
     violations: list[Violation] = []
     for edge in snapshot.edges:
         if edge.kind != EdgeKind.DOC:
@@ -3174,6 +3183,19 @@ def _cov007(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         if record is None or record.public:
             continue
         file = edge.src.split("::", 1)[0]
+        if file in declared_entrypoints:
+            # T-2551: an executable a human/tool RUNS is never imported, so
+            # "the public API surface" is not the organizing principle for
+            # its docs and COV007's remedy ("move it onto the public
+            # caller") has no consumer to serve. Keyed on the project's own
+            # per-file DECLARATION with a mandatory reason -- deliberately
+            # NOT a path glob like `.claude/hooks/*`, which would silently
+            # mute the rule for a whole directory as it grows (this repo's
+            # own "an exemption matching the normal case disables the
+            # guard" lesson). A new file in a declared directory fires
+            # normally until someone declares it and says why.
+            _log.debug("COV007: skipping declared entrypoint %s (T-2551)", edge.src)
+            continue
         if not file.endswith(".py"):
             # T-2549: `RawSymbol.public` is NOT a uniform "public API"
             # flag across languages. For a `.strata` file it is derived

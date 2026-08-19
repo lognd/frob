@@ -2,7 +2,7 @@
 id: T-2551
 title: 'COV007 is mis-scoped for files with no public surface: 78 findings in scripts/
   and .claude/hooks/'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -13,11 +13,55 @@ sprint: null
 runs_last: false
 scope:
 - src/frob/gates/__init__.py
+- frob.toml
+- tests/unit/gates/test_cov007_entrypoint_exemption.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: frob.toml
+  reason: the exemption is keyed on frob.toml's [[refs.entrypoint]] declarations,
+    so the four executable declarations move with the gate change
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: tests/unit/gates/test_cov007_entrypoint_exemption.py
+  reason: both-direction controls live in their own file because tests/test_gates.py
+    is under T-2543's live lease
+  actor: logan
+  at: '2026-08-18'
+evidence:
+- tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
+- tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_same_file_undeclared_still_fires
+- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
+- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_library_module_still_fires_when_another_file_is_declared
+designated_repro_test: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
+designated_repro_changes:
+- old_value: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
+  new_value: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
+  reason: the original designation named a tests/test_gates.py node; that file is
+    under T-2543's live lease, so the controls moved to their own file and the repro
+    id moved with them
+  actor: logan
+  at: '2026-08-18'
+evidence_changes:
+- old_node: tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_declared_entrypoint_executable
+  new_node: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_declared_entrypoint_is_exempt
+  reason: the control moved out of tests/test_gates.py, which is under T-2543's live
+    write lease
+  actor: logan
+  at: '2026-08-18'
+- old_node: tests/test_gates.py::TestCoverageGate::test_cov007_fires_for_the_same_file_when_it_is_not_declared
+  new_node: tests/unit/gates/test_cov007_entrypoint_exemption.py::TestCov007EntrypointExemption::test_same_file_undeclared_still_fires
+  reason: the control moved out of tests/test_gates.py, which is under T-2543's live
+    write lease
+  actor: logan
+  at: '2026-08-18'
 threat: null
 component: null
 anchor: false
