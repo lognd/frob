@@ -1,7 +1,7 @@
 ---
 id: T-2664
 title: DOCENUM001 passes with member ids listed but never documented
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/gates.md
 - src/frob/gates/_docenum.py
+- tests/test_docenum_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,12 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_docenum.py
   reason: correct implementation file; DOCENUM001 lives in _docenum.py not _decisions.py
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_docenum_gate.py
+  reason: T-2664 extends docenum001_gate; new coverage must live in its existing test
+    file
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
