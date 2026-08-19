@@ -11,6 +11,9 @@ parent: T-1599
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_support.py
 - src/frob/gates/_lang_conformance.py
@@ -24,6 +27,8 @@ scope:
 - src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tickets/T-2408/**
@@ -52,6 +57,14 @@ scope_changes:
     not new functionality
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'COV003 disposition: recording obsolete-superseded per T-2408''s own closure,
+    not a rebind -- coordinator-approved (T-2669 triage)'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 3644
+  new_length: 4811
 evidence:
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_covers_every_supported_language
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_every_language_declares_every_capability
@@ -140,3 +153,24 @@ Acceptance:
   used above, and passes clean on the current, honest tree.
 - docs/modules/lang.md documents the new axis alongside the existing
   facet-contract section.
+
+COV003 OBSOLETE-SUPERSEDED (T-2669 triage, 2026-08-19): this ticket's
+evidence citation
+`tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_typescript_import_graph_is_a_reasoned_known_gap`
+no longer resolves. Investigated: this is NOT a rename. The test that
+replaced it, `test_typescript_import_graph_is_implemented`, asserts
+the OPPOSITE of the original claim.
+
+This ticket's own KNOWN_GAP_TRACKING_TICKETS declared T-2408 as the
+tracker for TypeScript's import_graph capability gap. T-2408 (done)
+built the missing `_imports_typescript`/`_imports_rust`/
+`_imports_kotlin` walkers -- the gap this ticket disclosed is closed.
+
+Disposition: the ORIGINAL INVARIANT this test proved ("TypeScript
+import_graph is a reasoned, disclosed gap") was REPLACED by T-2408's
+own work, not merely re-proven under a new name elsewhere. Do NOT
+rebind this citation -- the successor test proves the opposite of what
+this ticket originally claimed, and binding to it would misrepresent
+this ticket as still proving a gap that no longer exists. This COV003
+finding is accepted, permanent, disclosed residue: the capability
+this ticket declared missing has since shipped.
