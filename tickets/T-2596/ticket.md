@@ -2,7 +2,7 @@
 id: T-2596
 title: four real E501 lines in src/ raised quarantine and forced the whole fleet into
   synchronous lands
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
