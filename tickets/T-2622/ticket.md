@@ -18,6 +18,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_waive.py
+- src/frob/gates/_waive_comments.py
+- tests/test_waive_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,20 @@ scope_changes:
   reason: T-2377 still holds live lease on docs/modules/gates.md; narrowing to code
     files only, will disclose doc-catalog gap in Done report rather than force the
     add
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_waive_comments.py
+  reason: the shared parser + lease-premise phrase extension lives in _waive_comments.py
+    (WAIVE006/007's own home); tests/test_waive_gate.py already covers this file's
+    WAIVE006/007/WAIVE009 tests
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_waive_gate.py
+  reason: the shared parser + lease-premise phrase extension lives in _waive_comments.py
+    (WAIVE006/007's own home); tests/test_waive_gate.py already covers this file's
+    WAIVE006/007/WAIVE009 tests
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
