@@ -2,7 +2,7 @@
 id: T-2672
 title: 'sweep attributes findings to lands that never touched the flagged files: 6
   of 6 tickets, including two filed after T-2571 and T-2595'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
