@@ -27,7 +27,7 @@ follow-up rather than widening this ticket's own scope.
  src/frob/app/cycle_runner.py                     |  6 +--
  tests/unit/test_cycle_runner_doc_waiver_t2598.py | 49 ++++++++++++++++++++++++
  tickets/T-2598/ticket.md                         |  7 +++-
- tickets/T-draft-178e56ed/ticket.md               | 36 +++++++++++++++++
+ tickets/T-2606/ticket.md               | 36 +++++++++++++++++
  5 files changed, 102 insertions(+), 7 deletions(-)
 ```
 

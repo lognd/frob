@@ -380,7 +380,16 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
 - `bind_runner.run` -- verifies BIND declarations against source signatures
   (docs/modules/bind.md); parses its own argv rather than taking `AppConfig`.
 - `cycle_runner.run` -- runs `frob.cycle.graph.find_cycles` over
-  `cfg.cycle_path` (docs/commands/cycle.md).
+  `cfg.cycle_path` (docs/commands/cycle.md). T-2588: `cfg.cycle_path` is
+  resolved to its nearest enclosing `pyproject.toml` (falling back to the
+  git repo root) before the import graph is built, rather than trusting
+  whatever directory the caller happened to point at -- resolving edges
+  relative to the wrong root silently dropped every absolute intra-project
+  edge and could report a false "no cycles found". Exit code is now
+  load-bearing: 0 when the graph is clean, 1 when real cycles are found,
+  2 when `cfg.cycle_path` cannot be resolved to a project root at all (an
+  unmeasured tree, never reported as clean) -- previously this always
+  exited 0 regardless of outcome.
 - `map_runner.run` -- runs `frob.map.map_project` over `cfg.map_path`
   (docs/commands/map.md). T-1479: `--json` against the daemon's own root
   (`cfg.map_path` unset or `.`) tries the daemon proxy (`frob_map`,

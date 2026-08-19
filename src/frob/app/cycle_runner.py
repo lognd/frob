@@ -26,14 +26,10 @@ _CPP_EXTS = {".c", ".cc", ".cpp", ".cxx", ".c++", ".h", ".hpp", ".hxx", ".h++"}
 # frob:ticket T-2588
 # frob:tests tests/unit/test_app_runners_batch5.py::TestCycleRunner.test_cycle_found_with_suggest  # noqa: E501
 # frob:tests tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution  # noqa: E501
+# frob:tests tests/unit/test_cycle_runner_doc_waiver_t2598.py::TestCycleRunnerDocWaiver  # noqa: E501
 # frob:waive ARCH103 reason="T-0977: `frob cycle` CLI entrypoint -- builds the graph, \
 # logs per-edge errors, reports cycles found/absent, sets the exit code; this IS the \
 # runner's whole job, matching the existing `frob.app.*_runner` module convention"
-# frob:waive AFFECT001 reason="docs/modules/app.md is under T-2582's LIVE \
-# cross-worktree lease for the duration of T-2588 -- cannot touch its \
-# affects()-closure doc without colliding (ScopeLeaseConflict on frob ticket scope \
-# --add); a doc-update follow-up ticket updates the cycle_runner.run bullet's \
-# root-resolution/exit-code text once that lease clears"
 def run(cfg: AppConfig) -> None:
     """CLI entrypoint for `frob cycle <path>`: measures the import graph
     ROOTED AT `<path>`'s enclosing project (T-2588 -- resolving edges

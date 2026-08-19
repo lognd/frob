@@ -2,7 +2,7 @@
 id: T-2598
 title: 'stale AFFECT001 waiver hides cycle_runner doc drift: the follow-up ticket
   its reason promised was never filed'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,6 +16,7 @@ scope:
 - docs/modules/app.md
 - src/frob/app/cycle_runner.py
 - tests/unit/test_cycle_runner_doc_waiver_t2598.py
+- tickets/T-2606/ticket.md
 evidence_scope:
 - tests/unit/test_cycle_runner_doc_waiver_t2598.py
 scope_breadth_ack: false
@@ -26,6 +27,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_cycle_runner_doc_waiver_t2598.py
   reason: new repro test for this ticket's fix
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-2606/ticket.md
+  reason: residue ticket filed from this ticket's Done report
   actor: logan
   at: '2026-08-19'
 evidence:
