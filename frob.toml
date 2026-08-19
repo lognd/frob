@@ -589,3 +589,14 @@ known_keys = "frob.gates._profile_schema:PROFILE_KNOWN_KEYS"
 [profile]
 profile = "rapid"
 override_ratchet = true
+
+# T-2576 M2: the terminal fallback `frob.tickets._doable.
+# effective_milestone` reads when a ticket has no declared milestone and
+# no milestoned ancestor -- this repo's own current milestone target.
+# MILE003 fires instead of assuming this value when it is unset; it is
+# set here deliberately so the M2 redesign (a read-time default instead
+# of a bulk `milestone: 1.0.0` backfill into all 89 open ticket files --
+# see this ticket's own "SCOPE REDESIGN" section) achieves the identical
+# net effect with zero ticket-file writes.
+[tickets]
+default_milestone = "1.0.0"

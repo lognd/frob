@@ -295,32 +295,105 @@ opt-in post-filter (`frob.app.ticket_runner._query._select_doable_
 tickets`), the same shape `--sprint` already uses -- never the default.
 
 **Effective milestone and inheritance.** `frob.tickets.effective_
-milestone(queue, ticket)` returns `(value, declared)`: `ticket.milestone`
-itself if set (`declared=True`), else the nearest ANCESTOR's (walking
-`parent` -- a story, then that story's own epic, stopping at the first
-one that has a milestone set) (`declared=False`). `(None, False)` when
-neither the ticket nor any ancestor declares one. `frob ticket doable`'s
-row render shows this as `milestone=VALUE` (declared) or
-`milestone=VALUE (inherited)` -- an inherited value must never read as
-indistinguishable from a declared one (this was a hard constraint, not a
-nice-to-have: a coordinator scanning the list needs to know at a glance
-whether THIS ticket was actually assigned to a release or is only
-riding its epic's).
+milestone(queue, ticket, root=None)` returns `(value, source)`:
+`ticket.milestone` itself if set (`source=MilestoneSource.DECLARED`),
+else the nearest ANCESTOR's (walking `parent` -- a story, then that
+story's own epic, stopping at the first one that has a milestone set)
+(`INHERITED`), else -- T-2576 M2's addition, only consulted when `root`
+is given -- the repo's configured `[tickets].default_milestone`
+(`DEFAULTED`, see "The configured default is a third case" below).
+`(None, None)` when none of the three resolve. `frob ticket doable`'s
+row render shows this as `milestone=VALUE` (declared),
+`milestone=VALUE (inherited)`, or `milestone=VALUE (defaulted)` -- each
+of the three must render visibly distinct from the other two (this was
+a hard constraint, not a nice-to-have: a coordinator scanning the list
+needs to know at a glance whether THIS ticket was actually assigned to
+a release, is only riding its epic's, or nobody chose and the repo's
+fallback applied).
 
-**Unmilestoned placement.** `_doable_sort_key` places an unmilestoned
-ticket (`effective_milestone` returns `None`) AFTER every declared-or-
-inherited milestone value, regardless of what that value is -- an unknown
-ship target must not let a ticket jump ahead of work already scheduled
-into a real milestone, but "unmilestoned" is not itself a specific later
-milestone either, so "after everything scheduled" is the only
-deterministic placement that does not require guessing which release it
-belongs to. This matters today because M2's backfill (a separate ticket,
-T-2576) has not yet run -- most open tickets are still unmilestoned, and
-without this rule they would sort arbitrarily (dict/set iteration order)
-rather than deterministically. Once M2's backfill lands this bucket is
-normally empty; it still governs anything filed between M1 landing and
-M2's backfill running, and anything that slips past a not-yet-landed
-MILE003 gate.
+**Unmilestoned placement.** `_doable_sort_key` places an unresolved
+ticket (`effective_milestone` returns `None` -- `queue=None` was passed,
+or no declared/inherited/defaulted value resolves) AFTER every
+declared-or-inherited-or-defaulted milestone value, regardless of what
+that value is -- an unknown ship target must not let a ticket jump ahead
+of work already scheduled into a real milestone, but "unresolved" is not
+itself a specific later milestone either, so "after everything
+scheduled" is the only deterministic placement that does not require
+guessing which release it belongs to. `_doable_sort_key` itself does not
+thread `root` through today (T-2576 M2's own declared scope did not
+extend it), so this bucket still matters in practice for the doable sort
+even in a repo that configures a default -- MILE003 (below) is what
+actually closes the gap for ledger hygiene, independent of sort order.
+
+### The configured default is a third case (T-2576 M2)
+
+M2 was originally scoped as a bulk backfill: stamp `milestone: 1.0.0`
+into every currently-open ticket file so sequencing and a new MILE003
+gate would have something to read. That version declared
+`tickets/T-*/ticket.md` in scope -- a write lease on EVERY ticket file
+simultaneously, which could only run with the whole dispatched fleet
+stopped (scope IS the write lease in this ledger; every working agent
+writes its own ticket file constantly). It also sat blocking M4, the
+milestone that finally makes a `runs_last` ticket reachable (T-2573's
+own motivating alarm, 14+ days old by the time M2 was redesigned).
+
+**The backfill was not actually necessary.** Its only purpose was
+giving every open ticket a resolvable milestone. A read-time default
+achieves the identical net result with zero ticket-file writes:
+`[tickets].default_milestone` in `frob.toml` (a plain string, e.g.
+`"1.0.0"`), consulted by `effective_milestone` as the TERMINAL fallback
+-- only reached when neither the ticket itself nor any ancestor
+declares one, and only when a caller passes `root` (opt-in per call
+site; `root=None`, every pre-T-2576 caller, preserves M3's exact
+two-state resolution verbatim). `_default_milestone` (`frob.tickets.
+_doable`) reads `[tickets].default_milestone` the same fail-open-to-
+"no default" shape `_dispatch_stale_thresholds`'s own `[tickets]` keys
+already use -- a missing/unreadable/malformed `frob.toml`, or a missing
+key, degrades to `None` (no default applied), never a crash and never a
+silently-assumed value.
+
+**Distinguishability is the point, not a nicety.** A `DEFAULTED`
+resolution is a genuinely different fact from `DECLARED` or
+`INHERITED`: "nobody chose, the repo's fallback applied" collapsing
+into "someone chose 1.0.0" is exactly the silent-zero shape (T-2391)
+this whole epic exists to prevent -- a value that merely LOOKS decided.
+`MilestoneSource` (`frob.tickets._doable`) is the three-way enum that
+keeps them apart at every call site; `frob ticket doable`'s row render
+appends `(defaulted)` for this case, distinct from `(inherited)` and
+from the bare (no suffix) declared form.
+
+A declared or inherited value is NEVER overridden by the default --
+`effective_milestone` only reaches the default lookup after the
+declared-then-ancestor walk has already returned nothing. And with no
+`default_milestone` configured at all, resolution stays `(None, None)`
+-- MILE003 (below) still fires; the default is an opt-in per-repo
+setting, not a hardcoded assumption baked into the gate.
+
+### MILE003 (T-2576 M2)
+
+MILE003 (ERROR, `frob.gates._milestone.milestone_gate`): one violation
+per OPEN ticket (any tier, `state` not in `{done, dropped}`) whose
+EFFECTIVE milestone cannot be resolved -- no `milestone` declared on the
+ticket itself, none on any ancestor, and (M2's addition) no
+`[tickets].default_milestone` configured for this repo either. This is
+what stops a ticket silently skipping the field after M1 (T-2574) added
+it, without requiring the abandoned bulk backfill: a repo that sets
+`default_milestone` in `frob.toml` (this repo does, `"1.0.0"`) gets a
+clean gate immediately for every already-open ticket, at the cost of
+every one of them now resolving to `DEFAULTED` rather than `DECLARED`
+until someone deliberately assigns a real one.
+
+MILE003 is registered in `_KNOWN_GATE_RULES` (`frob.gates._waive`) like
+any other rule, so `frob:waive MILE003 reason="..."` binds normally --
+it is not on the `_UNWAIVABLE_RULES` list.
+
+A queue-load failure never reaches `milestone_gate` at all:
+`run_gates`'s own `_load_graph_queue_lock` step hard-Errs the WHOLE
+`frob check` run (`GateError.QueueUnavailable`) before any gate runs,
+the same defense-in-depth posture `_tick001_duplicate_ids`'s own
+docstring documents for TICK001 -- MILE003 finding zero is therefore
+never confusable with "the queue could not be read"; that failure mode
+produces no gate report whatsoever, not a clean one.
 
 ### Sprints (T-0715)
 

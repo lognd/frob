@@ -26,6 +26,7 @@ from frob.tickets import (
     doable,
     effective_milestone,
 )
+from frob.tickets._doable import MilestoneSource
 
 
 def _ticket(
@@ -71,7 +72,7 @@ class TestEffectiveMilestone:
         """A ticket with its own `milestone` set never looks at `parent`."""
         t = _ticket(ticket_id="T-1", milestone="1.0.0")
         queue = TicketQueue(tickets={t.id: t})
-        assert effective_milestone(queue, t) == ("1.0.0", True)
+        assert effective_milestone(queue, t) == ("1.0.0", MilestoneSource.DECLARED)
 
     def test_inherits_from_parent_story(self) -> None:
         """No own milestone, but the immediate parent (a story) has one:
@@ -81,7 +82,7 @@ class TestEffectiveMilestone:
         )
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
-        assert effective_milestone(queue, leaf) == ("1.1.0", False)
+        assert effective_milestone(queue, leaf) == ("1.1.0", MilestoneSource.INHERITED)
 
     def test_inherits_from_grandparent_epic(self) -> None:
         """Story has no milestone of its own, but the epic above IT does --
@@ -94,7 +95,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(
             tickets={epic.id: epic, story.id: story, leaf.id: leaf}
         )
-        assert effective_milestone(queue, leaf) == ("2.0.0", False)
+        assert effective_milestone(queue, leaf) == ("2.0.0", MilestoneSource.INHERITED)
 
     def test_nearest_ancestor_wins_over_farther_one(self) -> None:
         """Both the story AND the epic declare a milestone -- the NEARER
@@ -110,7 +111,7 @@ class TestEffectiveMilestone:
         queue = TicketQueue(
             tickets={epic.id: epic, story.id: story, leaf.id: leaf}
         )
-        assert effective_milestone(queue, leaf) == ("3.1.0", False)
+        assert effective_milestone(queue, leaf) == ("3.1.0", MilestoneSource.INHERITED)
 
     def test_no_milestone_anywhere_in_chain_is_none(self) -> None:
         """No milestone on the ticket or any ancestor: `(None, False)`, not
@@ -118,7 +119,7 @@ class TestEffectiveMilestone:
         story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY)
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
-        assert effective_milestone(queue, leaf) == (None, False)
+        assert effective_milestone(queue, leaf) == (None, None)
 
     def test_cycle_does_not_infinite_loop(self) -> None:
         """A malformed cyclic `parent` chain terminates instead of hanging
@@ -127,7 +128,7 @@ class TestEffectiveMilestone:
         a = _ticket(ticket_id="T-A", parent="T-B")
         b = _ticket(ticket_id="T-B", parent="T-A")
         queue = TicketQueue(tickets={a.id: a, b.id: b})
-        assert effective_milestone(queue, a) == (None, False)
+        assert effective_milestone(queue, a) == (None, None)
 
 
 class TestDoableSortKey:

@@ -26,6 +26,7 @@ import fnmatch
 import tomllib
 from collections.abc import Sequence
 from datetime import date
+from enum import Enum
 from pathlib import Path
 
 from frob.logging import get_logger
@@ -69,32 +70,120 @@ def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
     )
 
 
+# frob:ticket T-2576
+# frob:doc docs/modules/tickets-data-storage.md#the-configured-default-is-a-third-case-t-2576-m2  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_declared_or_inherited_falls_back_to_configured_default  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_declared_value_is_not_overridden_by_default  # noqa: E501
+class MilestoneSource(Enum):
+    """Why `effective_milestone` returned the value it did (T-2576 M2):
+    `DECLARED` (the ticket's own `milestone` field), `INHERITED` (a
+    nearest-ancestor value, M3's own case), or `DEFAULTED` (no declared
+    value anywhere in the chain -- the repo's configured
+    `[tickets].default_milestone` filled in as the TERMINAL fallback).
+    Three genuinely different facts about the SAME resolved value: "I
+    chose this", "my ancestor chose this", and "nobody chose, the repo's
+    fallback applies" must never collapse into one indistinguishable
+    render (constraint 3, T-2577's own body, carried into T-2576's
+    redesign) -- a defaulted value that LOOKS declared is exactly the
+    silent-zero shape this epic exists to prevent."""
+
+    DECLARED = "declared"
+    INHERITED = "inherited"
+    DEFAULTED = "defaulted"
+
+
+#: Fallback when `frob.toml` declares no `[tickets].default_milestone` --
+#: `effective_milestone` resolves to `(None, None)` in that case (no
+#: source, nothing to report) rather than silently assuming any value.
+_NO_DEFAULT_MILESTONE: str | None = None
+
+
+# frob:ticket T-2576
+def _default_milestone(root: Path) -> str | None:
+    """The repo's configured `[tickets].default_milestone` from
+    `frob.toml` (T-2576 M2), or `None` when unset/unreadable/malformed --
+    same fail-open-to-"no default" shape `_dispatch_stale_thresholds`
+    uses for its own `[tickets]` keys, except the "default" here IS
+    `None`: an unconfigured repo must leave MILE003 free to fire, never
+    quietly assume `1.0.0` (this ticket's own explicit positive control).
+    A malformed value (non-string, e.g. a stray TOML table) is treated
+    the same as unset -- logged, not raised, since a bad `frob.toml`
+    value must degrade the SAME way a missing one does, not crash every
+    other gate riding the same load."""
+    toml_path = root / "frob.toml"
+    if not toml_path.exists():
+        return _NO_DEFAULT_MILESTONE
+    try:
+        with toml_path.open("rb") as handle:
+            table = tomllib.load(handle).get("tickets", {})
+        value = table.get("default_milestone", _NO_DEFAULT_MILESTONE)
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.warning(
+            "tickets: default_milestone unreadable in %s (%s), no default applied",
+            toml_path,
+            exc,
+        )
+        return _NO_DEFAULT_MILESTONE
+    if value is not None and not isinstance(value, str):
+        _log.warning(
+            "tickets: [tickets].default_milestone in %s is %r (not a string), "
+            "no default applied",
+            toml_path,
+            value,
+        )
+        return _NO_DEFAULT_MILESTONE
+    return value
+
+
 # frob:ticket T-2577
+# frob:ticket T-2576
 # frob:doc docs/modules/tickets-data-storage.md#milestone-as-the-doable-sort-axis-and-inheritance-t-2577-m3  # noqa: E501
+# frob:doc docs/modules/tickets-data-storage.md#the-configured-default-is-a-third-case-t-2576-m2  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_own_milestone_is_declared  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_parent_story  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_inherits_from_grandparent_epic  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_nearest_ancestor_wins_over_farther_one  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_no_milestone_anywhere_in_chain_is_none  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestEffectiveMilestone.test_cycle_does_not_infinite_loop  # noqa: E501
-def effective_milestone(queue: TicketQueue, ticket: Ticket) -> tuple[str | None, bool]:
-    """`(value, declared)` for `ticket`'s EFFECTIVE milestone (T-2577 M3):
-    `ticket.milestone` itself if set (`declared=True`), else the nearest
-    ancestor's (walking `parent` -- story, then that story's own epic, and
-    so on) that has one set (`declared=False`). `(None, False)` when
-    neither `ticket` nor any ancestor in the chain declares a milestone.
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_declared_or_inherited_falls_back_to_configured_default  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_declared_value_is_not_overridden_by_default  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_inherited_value_is_not_overridden_by_default  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_default_configured_stays_unresolved  # noqa: E501
+# frob:tests tests/test_gates_milestone.py::TestEffectiveMilestoneDefault.test_no_root_skips_default_lookup  # noqa: E501
+def effective_milestone(
+    queue: TicketQueue, ticket: Ticket, root: Path | None = None
+) -> tuple[str | None, MilestoneSource | None]:
+    """`(value, source)` for `ticket`'s EFFECTIVE milestone: `ticket.
+    milestone` itself if set (`DECLARED`), else the nearest ancestor's
+    (walking `parent` -- story, then that story's own epic, and so on)
+    that has one set (`INHERITED`, M3's own case), else -- T-2576 M2's
+    addition, the TERMINAL fallback -- the repo's configured `[tickets].
+    default_milestone` from `frob.toml` when `root` is given (`DEFAULTED`).
+    `(None, None)` when none of those three resolve: neither `ticket` nor
+    any ancestor declares a milestone, AND (no `root` was passed, or
+    `root` was passed but the repo configures no default). This is the
+    single home for milestone resolution (T-2577 M3 built the declared/
+    inherited walk; T-2576 M2 adds only the terminal default on top --
+    every caller reaches BOTH via this one function, never two).
 
-    `declared` exists so a caller (M3's own doable render) can show an
-    inherited value WITHOUT letting it read as indistinguishable from a
-    declared one -- constraint 3 in this ticket's own body. Walks with a
-    `seen` id set so a malformed/cyclic `parent` chain (should not exist,
-    but `parent` is deliberately unvalidated against cycles at the model
-    layer, same reasoning `validate_milestone`'s own docstring gives for
-    `blocked_by`/`parent` staying permissive) terminates instead of
-    looping forever, and a dangling `parent` id (points at a ticket not in
-    `queue`) simply stops the walk rather than raising."""
+    `root=None` (every pre-T-2576 caller, e.g. `_doable_sort_key`'s
+    own-file caller in `frob.tickets.__init__`, unchanged by this ticket)
+    preserves M3's exact prior two-state behavior verbatim -- the default
+    fallback is additive, opt-in per call site, never forced onto a
+    caller that does not pass `root`.
+
+    `source` exists so a caller (the `doable` render, MILE003) can show a
+    defaulted value WITHOUT letting it read as indistinguishable from a
+    declared or inherited one -- see `MilestoneSource`'s own docstring.
+    Walks with a `seen` id set so a malformed/cyclic `parent` chain
+    (should not exist, but `parent` is deliberately unvalidated against
+    cycles at the model layer, same reasoning `validate_milestone`'s own
+    docstring gives for `blocked_by`/`parent` staying permissive)
+    terminates instead of looping forever, and a dangling `parent` id
+    (points at a ticket not in `queue`) simply stops the walk rather than
+    raising."""
     if ticket.milestone is not None:
-        return (ticket.milestone, True)
+        return (ticket.milestone, MilestoneSource.DECLARED)
     seen = {ticket.id}
     current = ticket
     while current.parent is not None and current.parent not in seen:
@@ -103,9 +192,13 @@ def effective_milestone(queue: TicketQueue, ticket: Ticket) -> tuple[str | None,
         if parent is None:
             break
         if parent.milestone is not None:
-            return (parent.milestone, False)
+            return (parent.milestone, MilestoneSource.INHERITED)
         current = parent
-    return (None, False)
+    if root is not None:
+        default = _default_milestone(root)
+        if default is not None:
+            return (default, MilestoneSource.DEFAULTED)
+    return (None, None)
 
 
 # frob:invariant INV-032

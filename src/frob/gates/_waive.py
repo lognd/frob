@@ -502,6 +502,11 @@ _KNOWN_GATE_RULES = frozenset(
         # read site; this rule closes the write-time drift generally, for
         # every `read_all_leases` consumer.
         "TICK012",
+        # T-2576: MILE003 (frob.gates._milestone.milestone_gate) -- an
+        # OPEN ticket whose effective milestone (declared, inherited, or
+        # the repo's configured `[tickets].default_milestone`) cannot be
+        # resolved.
+        "MILE003",
         # T-0788: COMPLIANCE005 (frob.gates.compliance_gate, dispatching
         # frob.strata._compliance.check_cmpl_registry built by T-0607) --
         # a checkable-control CMPL-* compliance-registry unit left

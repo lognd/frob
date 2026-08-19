@@ -153,6 +153,7 @@ from frob.gates._lang_conformance import (
     project_lang_conformance_gate,
 )
 from frob.gates._lexical_selfcheck import lexical_selfcheck_gate
+from frob.gates._milestone import milestone_gate
 from frob.gates._models import (
     CoverageData,
     CoverageError,
@@ -5822,6 +5823,8 @@ _ALL_GATES = frozenset(
         "sys",
         "secrets",
         "tickets",
+        # T-2576 M2: MILE003 (frob.gates._milestone.milestone_gate).
+        "milestone",
         "archgate",
         # T-0665: OPAQUE001, fail-closed runtime-resolved capability-
         # indirection obligation (frob.gates._opaque.opaque_gate).
@@ -6256,6 +6259,10 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     # T-0665: OPAQUE001.
     "opaque",
     "tickets",
+    # T-2576 M2: MILE003, immediately after "tickets" -- same queue-wide
+    # ledger-hygiene concern, split into its own gate module rather than
+    # a fourth stage crowded onto "tickets".
+    "milestone",
     "archgate",
     "pii_structural",
     "refs",
@@ -6697,6 +6704,12 @@ def _build_thread_jobs(
         ),
         "decisions": lambda: decisions_gate(st.root, st.snapshot),
         "tickets": lambda: tickets_gate(st.root, st.queue),
+        # T-2576 M2: MILE003 -- same `st.root` as "tickets" above
+        # (`tickets_gate`'s own root, not necessarily repo_root); the
+        # `[tickets].default_milestone` config lookup resolves against
+        # whatever root the queue itself was loaded from, matching
+        # `_dispatch_stale_thresholds`'s own `frob.toml` lookup shape.
+        "milestone": lambda: milestone_gate(st.root, st.queue),
         # T-0788: COMPLIANCE005, always against repo_root (never the
         # possibly-scoped st.root) -- docs/design/registry/compliance.yaml
         # is a repo-wide manifest, same reasoning as "registry" below.

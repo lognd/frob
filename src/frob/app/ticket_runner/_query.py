@@ -512,10 +512,16 @@ def _select_doable_tickets(
     if cfg.ticket_doable_milestone is not None:
         from frob.tickets import effective_milestone
 
+        # T-2576 M2: `root` threaded through so a DEFAULTED effective
+        # value (no declared/inherited milestone anywhere in the chain,
+        # the repo's configured default filling the terminal fallback)
+        # is filterable by `--milestone` exactly like a declared or
+        # inherited one -- the default is a real resolved value, not a
+        # second-class one only the render sees.
         tickets = tuple(
             t
             for t in tickets
-            if effective_milestone(queue, t)[0] == cfg.ticket_doable_milestone
+            if effective_milestone(queue, t, root)[0] == cfg.ticket_doable_milestone
         )
 
     # PERF001: test membership against a set of ids, not the `in_flight`
@@ -572,6 +578,7 @@ def _render_doable_plain(
         selection.alarm_by_id,
         queue,
         cfg,
+        root=root,
         landed_ids=landed_ids,
         hot_files_by_id=hot_files_by_id,
     )
@@ -601,12 +608,43 @@ def _order_dispatchable_with_alarms(
 # frob:ticket T-1822
 # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_flagged_id_gets_inline_marker  # noqa: E501
 # frob:tests tests/unit/test_app_runners_t1822_already_landed.py::TestDoableRowLandedMarker.test_unflagged_id_gets_no_marker  # noqa: E501
+def _milestone_row_suffix(
+    queue: "TicketQueue | None", t: "Ticket", root: Path | None
+) -> str:
+    """The `  milestone=VALUE...` row suffix for `t` (T-2577 M3 / T-2576
+    M2), or `""` when `queue` is omitted or `t` has no EFFECTIVE
+    milestone (`frob.tickets._doable.effective_milestone`) -- extracted
+    out of `_doable_row` to keep that function under ARCH001's line
+    threshold. `root=None` (no pre-T-2576 caller passes it) means only
+    declared/inherited are ever resolved -- M3's exact prior behavior;
+    passing `root` additionally lets `effective_milestone` see the
+    repo's configured `[tickets].default_milestone` terminal fallback.
+    The suffix is plain (no marker) for `DECLARED`, `(inherited)` for
+    `INHERITED`, `(defaulted)` for `DEFAULTED` -- each of the three must
+    render visibly distinct from the other two (constraint 3, T-2577's
+    own body, carried into T-2576's redesign)."""
+    if queue is None:
+        return ""
+    from frob.tickets._doable import MilestoneSource, effective_milestone
+
+    milestone, source = effective_milestone(queue, t, root)
+    if milestone is None or source is None:
+        return ""
+    suffix = {
+        MilestoneSource.DECLARED: "",
+        MilestoneSource.INHERITED: " (inherited)",
+        MilestoneSource.DEFAULTED: " (defaulted)",
+    }[source]
+    return "  milestone=%s%s" % (milestone, suffix)
+
+
 def _doable_row(
     t: "Ticket",
     alarm_by_id: dict,
     color: bool,
     *,
     queue: "TicketQueue | None" = None,
+    root: Path | None = None,
     landed_ids: frozenset[str] = frozenset(),
     hot_files_by_id: dict[str, tuple[str, int]] | None = None,
 ) -> str:
@@ -622,30 +660,16 @@ def _doable_row(
     its holder count, per the automatic-over-commands directive (a
     coordinator who never runs `frob ticket contention` still sees the
     collision risk on the exact ticket they were about to dispatch).
-
-    T-2577 M3: also appends `milestone=VALUE` (declared) or
-    `milestone=VALUE (inherited)` when `queue` is given and `t` has an
-    EFFECTIVE milestone (`frob.tickets.effective_milestone`) -- an
-    inherited value renders visibly distinct from a declared one
-    (constraint 3, T-2577's own body: "must never be indistinguishable").
-    Nothing is appended for an unmilestoned ticket (pre-M2-backfill, the
-    common case today) or when `queue` is omitted -- no existing caller
-    of this row format loses anything by not passing it."""
+    T-2577 M3 / T-2576 M2: also appends a `milestone=VALUE` suffix via
+    `_milestone_row_suffix` (see its own docstring for the three-way
+    declared/inherited/defaulted distinction)."""
     row = "%s  %s  (%s)  priority=%s" % (
         style_ticket_id(t.id, color),
         t.title,
         t.kind.value,
         t.priority.value,
     )
-    if queue is not None:
-        from frob.tickets import effective_milestone
-
-        milestone, declared = effective_milestone(queue, t)
-        if milestone is not None:
-            row += "  milestone=%s%s" % (
-                milestone,
-                "" if declared else " (inherited)",
-            )
+    row += _milestone_row_suffix(queue, t, root)
     if t.id in alarm_by_id:
         elapsed, threshold = alarm_by_id[t.id]
         row += "  [UNDISPATCHED %.0fh > %.0fh threshold]" % (elapsed, threshold)
@@ -676,17 +700,19 @@ def _render_doable_dispatchable(
     queue: "TicketQueue",
     cfg: AppConfig,
     *,
+    root: Path | None = None,
     landed_ids: frozenset[str] = frozenset(),
     hot_files_by_id: dict[str, tuple[str, int]] | None = None,
 ) -> None:
     """Print the dispatchable section of `frob ticket doable`: a flat
     priority/age/alarm-ordered list, or (`--by-parent`, T-0715) the same
     rows grouped by `parent` so a story's remaining leaves display
-    together instead of scattered across one flat list. T-1822: `landed_ids`
-    (`_render_already_landed_markers`'s return value) is threaded through
-    to `_doable_row` unchanged so a flagged row is marked in EITHER render
-    shape, not just the flat one. T-2395: `hot_files_by_id` is threaded
-    through the same way for the HOT FILE marker."""
+    together instead of scattered across one flat list. `landed_ids`
+    (T-1822) and `hot_files_by_id` (T-2395) thread through to
+    `_doable_row` unchanged in either shape. `root` (T-2576 M2) threads
+    through the same way so `_doable_row` can resolve a DEFAULTED
+    effective milestone via `_milestone_row_suffix`; `root=None`
+    preserves the exact prior render."""
     from frob.app.ticket_runner import _stdout_color
 
     color = _stdout_color()
@@ -699,6 +725,7 @@ def _render_doable_dispatchable(
                     alarm_by_id,
                     color,
                     queue=queue,
+                    root=root,
                     landed_ids=landed_ids,
                     hot_files_by_id=hot_files_by_id,
                 )
@@ -732,6 +759,7 @@ def _render_doable_dispatchable(
                     alarm_by_id,
                     color,
                     queue=queue,
+                    root=root,
                     landed_ids=landed_ids,
                     hot_files_by_id=hot_files_by_id,
                 ),
