@@ -12,6 +12,9 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/gates/_exhaustive_handling.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -133,6 +136,30 @@ scope_changes:
     emission and the gate catalog that documents the new rule id, so both globs move
     here for the duration of this ticket. They return to T-2377 -- which is blocked_by
     T-2543 and therefore not being worked in the meantime -- once this lands.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'Returned from T-2543 now that A2+A4 have landed. These two files are the
+    promotion surface: the gate module carries the Severity constants for the WARN->ERROR
+    flip and the gate catalog carries the text that documents it. EXHAUST002 now stands
+    at 8 findings, all of them the single guard-predicate class filed as T-2568, so
+    that ticket is the last thing between this one and its EXHAUST002 half. EXHAUST003
+    is NOT to be promoted -- held for the user.
+
+    '
+  actor: logan
+  at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'Returned from T-2543 now that A2+A4 have landed. These two files are the
+    promotion surface: the gate module carries the Severity constants for the WARN->ERROR
+    flip and the gate catalog carries the text that documents it. EXHAUST002 now stands
+    at 8 findings, all of them the single guard-predicate class filed as T-2568, so
+    that ticket is the last thing between this one and its EXHAUST002 half. EXHAUST003
+    is NOT to be promoted -- held for the user.
 
     '
   actor: logan
