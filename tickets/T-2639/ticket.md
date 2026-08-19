@@ -15,11 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
-- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md is under T-2613's live lease; narrow to code-only,
+    will re-add once free
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
