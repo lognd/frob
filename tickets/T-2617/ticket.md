@@ -14,7 +14,11 @@ runs_last: false
 milestone: null
 scope:
 - scripts/fleet_status.py
-- docs/guides/coordinator-scripts.md
+- docs/guides/coordinator-scripts.md#worktree_content_classification
+- docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text
+- docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,7 +38,39 @@ scope_changes:
     change per playbook sec 4
   actor: logan
   at: '2026-08-19'
-designated_repro_test: null
+- op: remove
+  glob: docs/guides/coordinator-scripts.md
+  reason: narrow to the exact anchors changed; whole-file scope pulled in 200+ unrelated
+    pre-existing SCOPE002 findings
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md#worktree_content_classification
+  reason: narrow to the exact anchors changed; whole-file scope pulled in 200+ unrelated
+    pre-existing SCOPE002 findings
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text
+  reason: narrow to the exact anchors changed; whole-file scope pulled in 200+ unrelated
+    pre-existing SCOPE002 findings
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
+  reason: narrow to the exact anchors changed; whole-file scope pulled in 200+ unrelated
+    pre-existing SCOPE002 findings
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_superseded_symbol_with_landed_terminal_ticket_is_stale
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_genuinely_new_symbol_absent_from_main_is_stranded
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_far_behind_main_with_no_ticket_is_stale
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_terminal_ticket_land_commit_is_ancestor_of_main
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stranded_survives_terminal_ticket_with_unlanded_land_commit
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stale_when_deletion_dominant
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_stranded_survives_a_small_mostly_additive_diff
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_superseded_symbol_with_landed_terminal_ticket_is_stale
 threat: null
 component: null
 anchor: false
