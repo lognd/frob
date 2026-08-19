@@ -56,6 +56,13 @@ evidence:
 - tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_identity_deterministic_across_runs
 - tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_no_cycle_produces_no_diagnostics
 designated_repro_test: tests/unit/test_check.py::TestBuildImportGraphAndCycleRealPaths::test_cycle_finding_has_identity_not_none
+acceptance:
+- text: 'Fixture proof: frob check --only cycle on a tree with a genuine 2-file mutual
+    import FAILS to produce an ownable finding before this change (Diagnostic.code=None,
+    Diagnostic.file=None) and PASSES to produce one with code=CYCLE001 and a non-null
+    file after this change, through the production _run_cycle invocation, not a pure-function
+    unit test alone.'
+  evidence: []
 threat: null
 component: gates
 anchor: false
