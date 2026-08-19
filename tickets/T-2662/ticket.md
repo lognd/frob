@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4a7c75fefd361f7490a3ec58234d528d22955fd3
 ---
 T-2613 fixed docs/modules/gates.md's `frob:enumerates` anchor (DOCENUM001)
 by adding seven newly-found missing ids to the members= list: CYCLE001,
