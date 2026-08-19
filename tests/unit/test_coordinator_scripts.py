@@ -382,6 +382,337 @@ class TestWorktreeContentClassification:
         assert verdict == "ACTIVE"
         assert samples == []
 
+    def test_stale_when_terminal_ticket_land_commit_is_ancestor_of_main(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2617: a terminal ticket whose recorded `land_commit` IS an
+        ancestor of main is STALE even though its diff LOOKS
+        stranded-shaped (new content with no counterpart line on main by
+        exact text) -- the real failure mode T-2617 measured: `t-2576`/
+        `t-2593` both landed, but the superseding code renamed the
+        symbols their own diffs added, so exact-line-text matching alone
+        misreads them as STRANDED. `land_commit`-ancestry is the precise
+        signal that overrides the diff-shape guess entirely.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n"
+            "+_write_baseline(root, fresh, actual_head)\n"
+        )
+        monkeypatch.setattr(
+            fleet_status, "_git", self._fake_git({diff_args: diff_text}, {})
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda ticket_id: {"state": "done", "land_commit": "deadbeef"},
+        )
+        monkeypatch.setattr(
+            fleet_status, "_is_ancestor_of_main", lambda commit, path: True
+        )
+        verdict, samples = fleet_status.worktree_content_classification(
+            tmp_path, ticket_id="T-2576"
+        )
+        assert verdict == "STALE"
+        assert samples == []
+
+    def test_stranded_survives_terminal_ticket_with_unlanded_land_commit(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A terminal ticket whose `land_commit` is NOT an ancestor of main
+        (dangling/garbage-collected sha, or a ledger edited by hand) falls
+        through to the ordinary content test instead of being trusted
+        blindly. frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        monkeypatch.setattr(
+            fleet_status,
+            "_git",
+            self._fake_git({diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}),
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda ticket_id: {"state": "done", "land_commit": "deadbeef"},
+        )
+        monkeypatch.setattr(
+            fleet_status, "_is_ancestor_of_main", lambda commit, path: False
+        )
+        verdict, samples = fleet_status.worktree_content_classification(
+            tmp_path, ticket_id="T-2576"
+        )
+        assert verdict == "STRANDED"
+        assert any("brand_new" in s for s in samples)
+
+    def test_stale_when_deletion_dominant(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2617: an ad-hoc-named worktree (no resolvable ticket, so no
+        `land_commit` to consult) whose diff is overwhelmingly deletion-
+        side is STALE -- the `gate-internals` shape T-2617 measured
+        (110259 deletions against 12618 insertions, ratio ~8.7), detected
+        by magnitude since there is no ticket to check ancestry against.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        numstat_args = (
+            "diff",
+            "--numstat",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def renamed_form():\n"
+        numstat_text = "10\t100\tsrc/x.py\n"
+
+        def fake(args: list[str], cwd: Path) -> str:  # noqa: ARG001, ANN001
+            if tuple(args) == numstat_args:
+                return numstat_text
+            if tuple(args) == diff_args:
+                return diff_text
+            if args and args[0] == "show":
+                return ""
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake)
+        verdict, samples = fleet_status.worktree_content_classification(tmp_path)
+        assert verdict == "STALE"
+        assert samples == []
+
+    def test_stranded_survives_a_small_mostly_additive_diff(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The deliberately-constructed T-2617 positive control: an
+        ad-hoc-named worktree whose diff is almost entirely additions
+        (no deletion-dominant shape to short-circuit on) with a symbol
+        genuinely absent from main is still STRANDED -- proves the
+        deletion-ratio fallback does not degrade into "everything STALE".
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        numstat_args = (
+            "diff",
+            "--numstat",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def never_landed():\n"
+        numstat_text = "1\t0\tsrc/x.py\n"
+
+        def fake(args: list[str], cwd: Path) -> str:  # noqa: ARG001, ANN001
+            if tuple(args) == numstat_args:
+                return numstat_text
+            if tuple(args) == diff_args:
+                return diff_text
+            if args and args[0] == "show" and args[1] == "main:src/x.py":
+                return "def old():\n    pass\n"
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake)
+        verdict, samples = fleet_status.worktree_content_classification(tmp_path)
+        assert verdict == "STRANDED"
+        assert any("never_landed" in s for s in samples)
+
+
+def _run_git(args: list[str], cwd: Path) -> str:
+    """Run real `git` (no mock) for `TestWorktreeContentClassificationLiveGit`'s
+    fixture setup, raising on any non-zero exit -- fixture-building code
+    should fail loudly, unlike `fleet_status._git`'s own defensive `""`
+    return."""
+    done = subprocess.run(
+        ["git", "-C", str(cwd), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+class TestWorktreeContentClassificationLiveGit:
+    """T-2617: `worktree_content_classification` run UNMOCKED against a
+    real git repository built from real commits -- `_git` itself is not
+    monkeypatched here, only `fleet_status.REPO` (so `ticket_frontmatter_
+    on_main`'s ticket-ledger lookups resolve against the fixture repo
+    instead of this actual project). T-2617's own root cause was that
+    `TestWorktreeContentClassification`'s string-fixture mocks never
+    constructed the SUPERSEDED-symbol case (a function renamed by the
+    code that replaced it has no byte-identical counterpart line, so the
+    old exact-line-text check misread real landed work as stranded) --
+    these tests reproduce that shape with genuine `git diff`/`git show`/
+    `git merge-base` output, not hand-written diff text, closing exactly
+    the gap T-2617 found."""
+
+    def _init_repo(self, root: Path) -> None:
+        _run_git(["init", "-q", "-b", "main"], root)
+        _run_git(["config", "user.email", "test@example.com"], root)
+        _run_git(["config", "user.name", "Test"], root)
+
+    def test_superseded_symbol_with_landed_terminal_ticket_is_stale(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The exact real-data shape T-2617 measured: `t-2576`'s worktree
+        carries `_write_baseline(...)`, main's current file carries
+        `_write_baseline_cas(...)` instead -- no byte-identical line in
+        common, but the ticket is `done` and its `land_commit` IS an
+        ancestor of main, so the correct verdict is STALE.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "x.py").write_text(
+            "def _write_baseline(root, fresh, actual_head):\n    pass\n"
+        )
+        tdir = repo / "tickets" / "T-9001"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text("---\nid: T-9001\nstate: queued\n---\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: original _write_baseline"], repo)
+
+        worktree = tmp_path / "t-9001"
+        _run_git(["worktree", "add", "-q", "-b", "t-9001", str(worktree)], repo)
+
+        (src / "x.py").write_text(
+            "def _write_baseline_cas(root, fresh, actual_head):\n    pass\n"
+        )
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c2: supersede with _write_baseline_cas"], repo)
+        land_sha = _run_git(["rev-parse", "HEAD"], repo)
+
+        (tdir / "ticket.md").write_text(
+            f"---\nid: T-9001\nstate: done\nland_commit: {land_sha}\n---\n"
+        )
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c3: mark T-9001 done"], repo)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        verdict, samples = fleet_status.worktree_content_classification(
+            worktree, ticket_id="T-9001"
+        )
+        assert verdict == "STALE"
+        assert samples == []
+
+    def test_genuinely_new_symbol_absent_from_main_is_stranded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2617's mandatory deliberately-constructed positive control:
+        an ad-hoc-named worktree (no resolvable ticket) holding a symbol
+        that never existed on main at all, with a mostly-additive diff
+        (no deletion-dominant shape to short-circuit on), is STRANDED --
+        proves the T-2617 fix does not degrade into labelling everything
+        STALE. frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "x.py").write_text("def existing():\n    pass\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() only"], repo)
+
+        worktree = tmp_path / "adhoc-experiment"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "adhoc-experiment", str(worktree)], repo
+        )
+        (worktree / "src" / "x.py").write_text(
+            "def existing():\n    pass\n\n\ndef never_landed_anywhere():\n    return 1\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: add never_landed_anywhere"], worktree)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        verdict, samples = fleet_status.worktree_content_classification(worktree)
+        assert verdict == "STRANDED"
+        assert any("never_landed_anywhere" in s for s in samples)
+
+    def test_far_behind_main_with_no_ticket_is_stale(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2617's other real-data shape: `gate-internals` -- an ad-hoc
+        long-idle worktree with no resolvable ticket, whose diff is
+        overwhelmingly deletion-dominated because main simply moved on.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        original = "\n".join(f"def fn_{i}():\n    pass\n" for i in range(40))
+        (src / "x.py").write_text(original)
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: 40 functions"], repo)
+
+        worktree = tmp_path / "gate-internals"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "gate-internals", str(worktree)], repo
+        )
+        # worktree adds one small tweak of its own and never syncs again
+        (worktree / "src" / "x.py").write_text(
+            original + "\ndef fn_extra_local():\n    pass\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: small local addition"], worktree)
+
+        # main meanwhile grows a lot (the original 40 functions are left
+        # untouched -- deletions here come from NEW main-side content the
+        # worktree never picked up, the real "far behind" shape, not a
+        # rename/rewrite of shared content)
+        grown = original + "\n" + "\n".join(
+            f"def fn_new_{i}():\n    pass\n    pass\n    pass\n" for i in range(60)
+        )
+        (src / "x.py").write_text(grown)
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c2: main grows a lot"], repo)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        verdict, samples = fleet_status.worktree_content_classification(worktree)
+        assert verdict == "STALE"
+        assert samples == []
+
 
 class TestWorktreeTicketId:
     """`fleet_status._worktree_ticket_id` (T-2599)."""
@@ -454,6 +785,7 @@ class TestTicketFrontmatterOnMain:
             "state": "in-progress",
             "scope": ["src/a.py", "src/b.py"],
             "blocked_by": [],
+            "land_commit": None,
         }
 
     # frob:ticket T-2196
@@ -478,6 +810,7 @@ class TestTicketFrontmatterOnMain:
             "state": "queued",
             "scope": ["src/a.py"],
             "blocked_by": ["T-0001", "T-0002"],
+            "land_commit": None,
         }
 
     def test_missing_ticket_returns_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -495,7 +828,7 @@ class TestTicketFrontmatterOnMain:
         shape a completed-and-archived blocker has. Confirms the SECOND
         `_git` call (not the first) is what supplies the archived text."""
         archived_text = (
-            "---\nid: T-1692\nstate: done\nscope:\n- src/a.py\n---\n"
+            "---\nid: T-1692\nstate: done\nland_commit: abc123\nscope:\n- src/a.py\n---\n"
         )
         calls: list[list[str]] = []
 
@@ -507,7 +840,12 @@ class TestTicketFrontmatterOnMain:
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
         result = fleet_status.ticket_frontmatter_on_main("T-1692")
-        assert result == {"state": "done", "scope": ["src/a.py"], "blocked_by": []}
+        assert result == {
+            "state": "done",
+            "scope": ["src/a.py"],
+            "blocked_by": [],
+            "land_commit": "abc123",
+        }
         assert any("tickets/T-1692/ticket.md" in c[-1] for c in calls)
         assert any("tickets/archive/T-1692/ticket.md" in c[-1] for c in calls)
 

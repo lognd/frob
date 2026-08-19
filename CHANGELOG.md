@@ -121,6 +121,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2603: T-2603: three ledger-write patterns across two disjoint verb sets plus a special case: one table with a declared per-verb strategy
 - T-2604: T-2604: quarantine re-raises on findings already owned by an open ticket, forcing synchronous lands fleet-wide every sweep
 - T-2612: T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
+- T-2617: T-2617: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main, reproducing the exact test T-2599 specified against
 
 ## [0.530.0] - unreleased
 

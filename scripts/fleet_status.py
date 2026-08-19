@@ -237,6 +237,22 @@ def _worktree_ticket_id(name: str) -> str | None:
 #: positive control: an ACTIVE worktree is never proposed for removal).
 _TERMINAL_TICKET_STATES = frozenset({"done", "dropped", "failed"})
 
+#: T-2617: a worktree's `+`-side diff is deletion-dominated -- overwhelming
+#: evidence it is simply BEHIND main (main moved on and rewrote/removed
+#: most of what the worktree still carries), not that the worktree holds
+#: unlanded work of its own. Measured against the ticket's own real-data
+#: complaint: `t-2576`'s landed diff is 985 deletions against 17
+#: insertions (ratio ~58), `t-2593`'s is 558 against 11 (ratio ~51),
+#: `gate-internals`' is 110259 against 12618 (ratio ~8.7) -- all comfortably
+#: past this threshold. The deliberately-constructed STRANDED positive
+#: control (new content, no matching deletions) sits at a ratio near 0 and
+#: never trips it. Chosen conservatively above the measured ratios' floor
+#: (~8.7) so it does not swallow a smaller, genuinely mixed stranded+stale
+#: diff; a diff that does NOT clear this bar still goes through the
+#: per-line presence check below, so this is a fast STALE short-circuit
+#: for the overwhelming case, not a substitute for that check.
+_DELETION_DOMINANT_RATIO = 3.0
+
 
 # frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification
 # frob:ticket T-2599
@@ -252,65 +268,99 @@ def worktree_content_classification(
     path: Path, *, ticket_id: str | None = None
 ) -> tuple[str, list[str]]:
     """Classify one worktree at `path` as `"STRANDED"`, `"STALE"`, or
-    `"ACTIVE"` against `main` (T-2599), returning `(verdict, samples)`
-    where `samples` is up to 5 example added lines backing a `STRANDED`
-    verdict (empty otherwise).
-
-    T-2599 measured three obvious tests and found all three wrong:
-    `git log main..HEAD` overcounts (land SQUASHES, so fully-landed
-    content still shows every pre-squash commit as "unlanded"); `git diff
-    --stat main..HEAD` conflates ahead with behind (a merely-stale
-    worktree shows a huge diff because MAIN moved, not because the
-    worktree holds anything of its own); and reading the insertion count
-    alone without checking direction still misreads a line main
-    deliberately REPLACED as stranded work.
-
-    The test that actually works, per the ticket: diff `main..HEAD`
-    restricted to `_STRANDED_CONTENT_PATHS`, and for every `+` line ask
-    whether `main`'s CURRENT version of that same file already contains
-    that exact line anywhere (not necessarily at the same location) --
-    content genuinely absent from main's current file (or a whole file
-    that is absent from main entirely) is stranded; content merely
-    reformatted, moved, or already superseded is not. This is a
-    same-file line-presence check, not a formal diff/patience algorithm,
-    matching the manual technique the ticket's own investigation used
-    (`git -C <wt> diff main HEAD -- src tests docs scripts`, "read the +
-    side WITH its context, confirming whether main has an equivalent").
-
-    Deliberately conservative in the safe direction: a line rewrapped to
-    a different column width, or a comment whose surrounding context
-    shifted, reads as "not present" by this exact-line-text test even
-    when the underlying content is genuinely unchanged, which can over-
-    report `STRANDED`. That is the SAFE failure mode for a report-only
-    classifier feeding a human decision (never an auto-delete) -- the
-    dangerous direction this test exists to avoid is the opposite one,
-    under-reporting STRANDED and calling real stranded work STALE.
-
-    `ticket_id` (when the worktree's branch name resolves to one, e.g.
-    `t-2599` -> `T-2599`) short-circuits to `"ACTIVE"` whenever that
-    ticket's state on main is NOT terminal (`_TERMINAL_TICKET_STATES`) --
-    someone may still be actively working it regardless of what its diff
-    looks like right now; this is checked BEFORE the content diff so an
-    active ticket never needs its content inspected at all. A worktree
-    with no resolvable ticket (an ad-hoc named worktree like
-    `dev-friction`) always falls through to the content test."""
+    `"ACTIVE"` against `main` (T-2599, refined T-2617), returning
+    `(verdict, samples)` where `samples` is up to 5 example added lines
+    backing a `STRANDED` verdict (empty otherwise). Full rationale,
+    including the three measured-wrong naive tests and T-2617's own
+    real-data false-positive finding, lives at `docs/guides/
+    coordinator-scripts.md#worktree_content_classification` (`frob:doc`
+    below) rather than duplicated here -- summary: `ticket_id` resolves
+    to `"ACTIVE"` for any non-terminal ticket state, or to `"STALE"` for
+    a terminal ticket whose `land_commit` is an ancestor of `main`
+    (T-2617's exact fix for a renamed/superseded symbol misreading as
+    stranded); failing both, a deletion-dominant diff
+    (`_is_deletion_dominant`, T-2617's magnitude fallback for a
+    ticketless worktree) is also `"STALE"`; only then does the original
+    per-line presence check (`_lines_absent_from_main`) decide
+    `STRANDED` vs `STALE`, deliberately conservative toward
+    over-reporting `STRANDED` since this is a report-only classifier
+    that never deletes anything itself."""
     if ticket_id is not None:
         frontmatter = ticket_frontmatter_on_main(ticket_id)
-        if (
-            frontmatter is not None
-            and frontmatter.get("state") not in _TERMINAL_TICKET_STATES
-        ):
-            return "ACTIVE", []
+        if frontmatter is not None:
+            if frontmatter.get("state") not in _TERMINAL_TICKET_STATES:
+                return "ACTIVE", []
+            land_commit = frontmatter.get("land_commit")
+            if land_commit and _is_ancestor_of_main(land_commit, path):
+                return "STALE", []
     diff = _git(["diff", "main", "HEAD", "--", *_STRANDED_CONTENT_PATHS], path)
     if not diff.strip():
         return "STALE", []
     added_by_file = _added_lines_by_file(diff)
     if not added_by_file:
         return "STALE", []
+    if _is_deletion_dominant(path):
+        return "STALE", []
     stranded = _lines_absent_from_main(path, added_by_file)
     if stranded:
         return "STRANDED", stranded[:5]
     return "STALE", []
+
+
+# frob:ticket T-2617
+def _is_ancestor_of_main(commit: str, path: Path) -> bool:
+    """`True` if `commit` is an ancestor of (or equal to) `main`'s current
+    tip, i.e. its content is genuinely reachable from main right now --
+    `worktree_content_classification`'s `land_commit`-precision short-
+    circuit. `git merge-base --is-ancestor` exits 0 for a true ancestor,
+    non-zero otherwise (including when `commit` does not resolve at all,
+    e.g. a stale/garbage-collected sha); `_git` already collapses any
+    non-zero exit to `""`, so a bare presence check on its own exit is not
+    enough here -- `subprocess.run` is called directly so the return code
+    itself is read, since `--is-ancestor` prints nothing on success."""
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(path), "merge-base", "--is-ancestor", commit, "main"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return done.returncode == 0
+
+
+# frob:ticket T-2617
+def _is_deletion_dominant(path: Path) -> bool:
+    """`True` if `main..HEAD`'s restricted-path diff (`_STRANDED_CONTENT_
+    PATHS`) has at least `_DELETION_DOMINANT_RATIO` times as many deleted
+    lines as added lines -- `worktree_content_classification`'s magnitude
+    fallback for a worktree with no ticket (or an un-stamped one) to
+    resolve a precise `land_commit` ancestry check against. `git diff
+    --numstat` reports `<added>\\t<deleted>\\t<path>` per file (a binary
+    file reports `-` for both columns, skipped here since this classifier
+    only ever restricts to text source paths); zero added lines with any
+    deletions present is trivially dominant (the earlier `not added_by_
+    file` check in the caller already handles the zero-added case, but
+    this function is also directly testable on its own)."""
+    numstat = _git(
+        ["diff", "--numstat", "main", "HEAD", "--", *_STRANDED_CONTENT_PATHS], path
+    )
+    added_total = 0
+    deleted_total = 0
+    for line in numstat.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        added, deleted = parts[0], parts[1]
+        if added.isdigit():
+            added_total += int(added)
+        if deleted.isdigit():
+            deleted_total += int(deleted)
+    if added_total == 0:
+        return deleted_total > 0
+    return (deleted_total / added_total) >= _DELETION_DOMINANT_RATIO
 
 
 # frob:ticket T-2599
@@ -389,26 +439,39 @@ def ticket_lease(ticket_id: str) -> dict | None:
 # frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text
 # frob:ticket T-2449
 def _parse_ticket_frontmatter_text(text: str) -> dict:
-    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from a
-    ticket.md's own YAML frontmatter TEXT -- the pure-parse half of
-    `ticket_frontmatter_on_main`, split out (T-2449) so the SAME parser
-    runs regardless of which `git show` path (active or archived) supplied
-    the text; previously this logic lived inline in `ticket_frontmatter_
-    on_main` and only ever ran against the active-ledger path. Hand-parsed
-    (no `import yaml`, matching this script's own 'no frob import' module-
-    docstring contract) against the narrow shape `frob ticket` actually
-    writes: a flat `key: value` line for `state`, and `scope:`/
-    `blocked_by:` blocks of `- item` list lines directly beneath each key
-    (a ticket with no blockers omits the `blocked_by:` key entirely rather
-    than writing an empty block, so its absence parses to `[]`)."""
+    """`{"state": ..., "scope": [...], "blocked_by": [...], "land_commit":
+    ...}` parsed from a ticket.md's own YAML frontmatter TEXT -- the
+    pure-parse half of `ticket_frontmatter_on_main`, split out (T-2449) so
+    the SAME parser runs regardless of which `git show` path (active or
+    archived) supplied the text; previously this logic lived inline in
+    `ticket_frontmatter_on_main` and only ever ran against the
+    active-ledger path. Hand-parsed (no `import yaml`, matching this
+    script's own 'no frob import' module-docstring contract) against the
+    narrow shape `frob ticket` actually writes: a flat `key: value` line
+    for `state`/`land_commit`, and `scope:`/`blocked_by:` blocks of
+    `- item` list lines directly beneath each key (a ticket with no
+    blockers omits the `blocked_by:` key entirely rather than writing an
+    empty block, so its absence parses to `[]`). T-2617: `land_commit` is
+    the merge commit `frob ticket land` stamps onto a ticket once it is
+    finalized (`Ticket.land_commit`, `_record_land_commit`) -- read here
+    so `worktree_content_classification` can tell a genuinely-landed
+    terminal ticket's worktree apart from a diff-shape guess; absent
+    (`None`) for a ticket that never landed (queued/planned/in-progress,
+    or a terminal state some other way, e.g. a manually-edited ledger)."""
     lines = text.splitlines()
     state = None
+    land_commit: str | None = None
     scope: list[str] = []
     blocked_by: list[str] = []
     block: list[str] | None = None
     for line in lines:
         if line.startswith("state:"):
             state = line.split(":", 1)[1].strip()
+            block = None
+            continue
+        if line.startswith("land_commit:"):
+            value = line.split(":", 1)[1].strip()
+            land_commit = value or None
             block = None
             continue
         if line == "scope:":
@@ -426,7 +489,12 @@ def _parse_ticket_frontmatter_text(text: str) -> dict:
             if len(item) >= 2 and item[0] == item[-1] and item[0] in "'\"":
                 item = item[1:-1]
             block.append(item)
-    return {"state": state, "scope": scope, "blocked_by": blocked_by}
+    return {
+        "state": state,
+        "scope": scope,
+        "blocked_by": blocked_by,
+        "land_commit": land_commit,
+    }
 
 
 # frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
@@ -442,8 +510,9 @@ def _parse_ticket_frontmatter_text(text: str) -> dict:
 # tests/unit/test_coordinator_scripts.py::TestTicketFrontmatterOnMain.test_falls_back_t\
 # o_archive_when_active_ledger_has_no_such_ticket
 def ticket_frontmatter_on_main(ticket_id: str) -> dict | None:
-    """`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
-    `main:tickets/<id>/ticket.md`'s YAML frontmatter, falling back to
+    """`{"state": ..., "scope": [...], "blocked_by": [...], "land_commit":
+    ...}` parsed from `main:tickets/<id>/ticket.md`'s YAML frontmatter,
+    falling back to
     `main:tickets/archive/<id>/ticket.md` (T-2449) when the active path
     resolves to nothing, or `None` if the ticket exists in NEITHER
     location. T-2449's own measured incident: a ticket whose blockers had

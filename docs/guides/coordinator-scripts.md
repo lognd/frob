@@ -195,30 +195,69 @@ measured wrong:
 - Reading the insertion count alone, without checking direction, still
   misreads a line main deliberately replaced/rewrote as stranded.
 
-The test that works: diff `main..HEAD` restricted to `src`/`tests`/
-`docs`/`scripts`, and for every `+` line ask whether main's CURRENT
-version of that same file already contains that exact line text anywhere
-(not necessarily the same location) -- content genuinely absent from
-main's current file (or a whole file absent from main entirely)
-is stranded; content merely reformatted, moved, or already superseded is
-not. This is a same-file line-presence check, not a formal diff/patience
-algorithm, and is deliberately conservative toward over-reporting
-`STRANDED` (a rewrapped comment or reflowed doc paragraph can register as
-"not present" even though nothing genuinely changed) rather than under-
+T-2617: that same per-line presence check, measured against real data an
+hour after T-2599 landed, itself reproduces the third wrong test's shape
+in a subtler form. `t-2576`/`t-2593` both landed cleanly, but the code
+that superseded them RENAMED the symbols their own diffs added (e.g.
+`_write_baseline(...)` -> `_write_baseline_cas(...)`) -- no byte-identical
+line survives the rename, so an exact-line-text check misreads fully
+landed work as `STRANDED` 18 times over on real data. Two additional,
+more precise checks now run BEFORE falling back to the line-presence
+test:
+
+1. **`land_commit` ancestry (exact, ticket-linked worktrees).** If
+   `ticket_id` resolves and the ticket's state on `main` is terminal
+   (`done`/`dropped`/`failed`) AND its recorded `land_commit`
+   (`frob ticket land`'s own stamp) is an ancestor of `main`'s current
+   tip, the verdict is `STALE` unconditionally -- the ticket's content
+   (or, for a drop, its land-adjacent bookkeeping) genuinely reached
+   main, regardless of what a rename does to the diff's line text. A
+   terminal ticket with no recorded `land_commit` (pre-T-2220 ledger, or
+   a hand-edited state) falls through to the checks below.
+2. **Deletion-dominant ratio (magnitude, for worktrees with no ticket to
+   consult).** `git diff --numstat` restricted to the same paths; if
+   deleted lines are at least `_DELETION_DOMINANT_RATIO` (3x) the added
+   lines, the verdict is `STALE` -- the `gate-internals` shape T-2617
+   measured (110259 deletions against 12618 insertions, ratio ~8.7): a
+   worktree so far behind main that its diff is almost entirely main's
+   own subsequent growth, not anything the worktree itself holds.
+
+Only after both of those decline does the original per-line presence
+check run: diff `main..HEAD` restricted to `src`/`tests`/`docs`/
+`scripts`, and for every `+` line ask whether main's CURRENT version of
+that same file already contains that exact line text anywhere (not
+necessarily the same location) -- content genuinely absent from main's
+current file (or a whole file absent from main entirely) is stranded;
+content merely reformatted, moved, or already superseded is not. This is
+a same-file line-presence check, not a formal diff/patience algorithm,
+and is deliberately conservative toward over-reporting `STRANDED` (a
+rewrapped comment or reflowed doc paragraph can register as "not
+present" even though nothing genuinely changed) rather than under-
 reporting it -- safe for a report-only classifier that never deletes
 anything itself, since the dangerous direction is missing real stranded
-work, not flagging a false positive a human then double-checks.
+work, not flagging a false positive a human then double-checks. T-2617's
+own deliberately-constructed positive control (a symbol genuinely absent
+from main, in a mostly-additive diff that never trips the deletion-ratio
+check) proves this fallback still fires -- the two checks above narrow
+false positives without collapsing the whole classifier into "always
+STALE".
 
 `ticket_id` (resolved via `_worktree_ticket_id` for a `t-XXXX`-named
 worktree) short-circuits to `"ACTIVE"` whenever that ticket's state on
 `main` is not terminal (`done`/`dropped`/`failed`) -- an active ticket is
 never proposed for removal regardless of what its diff looks like, and
-its content is never even inspected. `fleet_status.py`'s own `WORKTREES`
-section prints each idle-looking worktree's verdict next to it, and a
-`STRANDED: N` count in the section header -- surfaced where the operator
-already looks, per this ticket's own preference over a separate command.
-Nothing here deletes a worktree; `frob worktree sweep` (playbook section
-12b) remains the only removal path, lease-aware and separately gated.
+its content is never even inspected. This is CHECKED but not yet
+CONSULTED beyond terminal-vs-not (T-2617 residue, filed separately): a
+`queued` ticket with no live lease held anywhere still reads `ACTIVE`
+identically to a genuinely in-progress one, since ACTIVE is the
+safe-direction verdict and distinguishing "queued, nobody working it" from
+real activity needs a lease-based signal this function does not consult.
+`fleet_status.py`'s own `WORKTREES` section prints each idle-looking
+worktree's verdict next to it, and a `STRANDED: N` count in the section
+header -- surfaced where the operator already looks, per this ticket's
+own preference over a separate command. Nothing here deletes a worktree;
+`frob worktree sweep` (playbook section 12b) remains the only removal
+path, lease-aware and separately gated.
 
 ### `_print_worktrees_section`
 
@@ -308,16 +347,20 @@ makes skipping this check unnecessary.
 <!-- frob:doc docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text -->
 
 T-2449. The pure-parse half of `ticket_frontmatter_on_main` -- `{"state":
-..., "scope": [...], "blocked_by": [...]}` parsed from a ticket.md's own
-YAML frontmatter TEXT, regardless of which of the two `git show` paths
-(active or archived) supplied it. Split out so the SAME parser runs both
-times, rather than duplicating the parse per call site.
+..., "scope": [...], "blocked_by": [...], "land_commit": ...}` parsed
+from a ticket.md's own YAML frontmatter TEXT, regardless of which of the
+two `git show` paths (active or archived) supplied it. Split out so the
+SAME parser runs both times, rather than duplicating the parse per call
+site. T-2617 added `land_commit` (the flat `key: value` line `frob
+ticket land` stamps via `_record_land_commit` once a ticket finalizes) --
+`worktree_content_classification`'s exact-ancestry short-circuit reads
+it; absent (`None`) for any ticket that never landed.
 
 ### `ticket_frontmatter_on_main`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main -->
 
-`{"state": ..., "scope": [...], "blocked_by": [...]}` parsed from
+`{"state": ..., "scope": [...], "blocked_by": [...], "land_commit": ...}` parsed from
 `main:tickets/<id>/ticket.md`'s YAML frontmatter via `git show` plus a
 narrow hand-rolled parse (no `import yaml` -- this script stays
 plain-stdlib, matching its module docstring's contract), falling back to

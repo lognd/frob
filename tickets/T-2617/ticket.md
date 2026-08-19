@@ -2,7 +2,7 @@
 id: T-2617
 title: worktree classifier reports 18 STRANDED where the verified answer is stale-behind-main,
   reproducing the exact test T-2599 specified against
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -19,7 +19,7 @@ scope:
 - docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
 - docs/guides/coordinator-scripts.md
 - tests/unit/test_coordinator_scripts.py
-- tickets/T-draft-3134c40e/ticket.md
+- tickets/T-2625/ticket.md
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
@@ -78,7 +78,7 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-3134c40e/ticket.md
+  glob: tickets/T-2625/ticket.md
   reason: 'SCOPE001: docs file edited (algorithm doc for worktree_content_classification),
     test file edited (new coverage), draft ticket file created for the filed follow-up'
   actor: logan
