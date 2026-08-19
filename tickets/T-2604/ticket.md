@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0559e1939587cdcd51466cf3408fe9aebdc0c286
 ---
 ## Measured tonight
 
