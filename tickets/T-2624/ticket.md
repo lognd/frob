@@ -1,7 +1,7 @@
 ---
 id: T-2624
 title: CLI wiring for runs_last_parallel_safe
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,10 +19,61 @@ scope:
 - src/frob/__main__.py
 - src/frob/app/config.py
 - src/frob/app/ticket_runner/__init__.py
+- src/frob/_cli_parsers/_ticket/_metadata.py
+- src/frob/_cli_parsers/_ticket/_new.py
+- src/frob/_cli_parsers/_ticket/__init__.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/app/ticket_runner/_new.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_metadata.py
+  reason: T-2579 left the field model-only; the CLI verb (frob ticket runs-last-parallel-safe)
+    and frob ticket new flags require argparse registration (in _cli_parsers/_ticket/_metadata.py,
+    _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
+    app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
+    shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_new.py
+  reason: T-2579 left the field model-only; the CLI verb (frob ticket runs-last-parallel-safe)
+    and frob ticket new flags require argparse registration (in _cli_parsers/_ticket/_metadata.py,
+    _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
+    app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
+    shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/__init__.py
+  reason: T-2579 left the field model-only; the CLI verb (frob ticket runs-last-parallel-safe)
+    and frob ticket new flags require argparse registration (in _cli_parsers/_ticket/_metadata.py,
+    _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
+    app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
+    shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: T-2579 left the field model-only; the CLI verb (frob ticket runs-last-parallel-safe)
+    and frob ticket new flags require argparse registration (in _cli_parsers/_ticket/_metadata.py,
+    _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
+    app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
+    shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: T-2579 left the field model-only; the CLI verb (frob ticket runs-last-parallel-safe)
+    and frob ticket new flags require argparse registration (in _cli_parsers/_ticket/_metadata.py,
+    _new.py, __init__.py) and TicketSpec construction/validation wiring (tickets/_new_renumber.py,
+    app/ticket_runner/_new.py) that the ticket's original scope list omitted -- same
+    shape as scope_breadth_ack's own wiring, spread across these exact files
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
