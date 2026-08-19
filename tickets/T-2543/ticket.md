@@ -112,7 +112,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 565b950a2281d0d76506c07660fff1e09a0e1b42
 ---
 Filed from T-2377's burn-down after T-2539 removed the two unambiguous
 false-positive classes (tuple `except` clauses, slice subscripts). Those
