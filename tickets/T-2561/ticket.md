@@ -103,7 +103,8 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5d9dcb17a1db1c45520fe154efe920f8733dc4a4
+milestone: null
 ---
 `_effective_leakage_scope` (T-2547) now voids any ticket's attribution
 claim once its DECLARED scope is empty, closing the misattribution T-2547
