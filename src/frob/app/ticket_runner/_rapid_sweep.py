@@ -75,7 +75,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typani.error_set import ErrorSet
 from typani.result import Err, Ok, Result
@@ -726,6 +726,90 @@ def _write_baseline_cas(
         return True
 
 
+#: T-2671: filename prefix for `_persist_commit_step_failure`'s retained
+#: diagnostic log -- lives alongside a detached sweep's own stdout/stderr
+#: files in `_LOG_DIR_REL` so both survive the same way for the same
+#: reason (a foreground `frob ticket land` invocation's own terminal
+#: output is retained NOWHERE by default; `frob.logging` installs no file
+#: handler).
+_RAPID_DEBT_FAILURE_LOG_PREFIX = "rapid-debt-commit-failure"
+
+
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_swallows_its_own_write_failure  # noqa: E501
+# frob:ticket T-2671
+def _persist_commit_step_failure(
+    root: Path,
+    ticket_id: str,
+    step: str,
+    outcome: Result[Any, Any],
+) -> Path | None:
+    """T-2671: persist ONE `_commit_rapid_debt` git step's full outcome
+    (argv/returncode/stdout/stderr, or the spawn-level `GitError` when the
+    process never even ran) to a retained file under `_LOG_DIR_REL`, so a
+    DirtyMain recurrence names its own cause instead of requiring
+    reconstruction from commit timestamps.
+
+    MEASURED gap this closes: T-2669 fixed one confirmed cause of the
+    rapid-debt DirtyMain failure, but a SECOND, intermittent recurrence
+    happened the same day in a tree that already contained T-2669's fix
+    (proven via `git show <land>:_rapid_sweep.py | grep -c
+    _land_internal_git_env` returning 2) -- and it could not be diagnosed
+    further because the land invocation's own stderr was never retained
+    anywhere; only the SILENT detached post-land sweep log survived.
+    `_commit_rapid_debt`'s prior failure handling logged only a one-line
+    module-logger summary ("could not commit ... commit it by hand")
+    with no git output at all -- the exact information a future
+    diagnosis needs is the thing that was being thrown away.
+
+    Best-effort and NEVER raises: a failure writing this diagnostic file
+    must not itself become a second, unrelated commit failure. Returns
+    the written path, or `None` if the write failed (logged separately in
+    that case)."""
+    log_dir = root / _LOG_DIR_REL
+    ts = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+    path = log_dir / f"{_RAPID_DEBT_FAILURE_LOG_PREFIX}-{ticket_id}-{ts}.log"
+    if outcome.is_err:
+        payload: dict[str, object] = {
+            "ticket_id": ticket_id,
+            "step": step,
+            "timestamp_utc": ts,
+            "outcome": "spawn_failed",
+            "git_error": str(outcome.danger_err),
+        }
+    else:
+        proc = outcome.danger_ok
+        payload = {
+            "ticket_id": ticket_id,
+            "step": step,
+            "timestamp_utc": ts,
+            "outcome": "nonzero_returncode",
+            "argv": list(getattr(proc, "argv", ())),
+            "returncode": getattr(proc, "returncode", None),
+            "stdout": getattr(proc, "stdout", ""),
+            "stderr": getattr(proc, "stderr", ""),
+        }
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "rapid sweep: %s could not write rapid-debt commit-failure "
+            "diagnostic log for step %s in %s: %s -- the underlying "
+            "failure is still logged above, just not retained to disk",
+            ticket_id,
+            step,
+            log_dir,
+            exc,
+        )
+        return None
+    return path
+
+
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_leaves_the_repo_clean
 # frob:tests \
@@ -739,8 +823,11 @@ def _write_baseline_cas(
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_guard_still_refuses_a_genuin\
 # ely_foreign_file
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestCommitRapidDebt.test_commit_failure_persists_a_diagnostic_log  # noqa: E501
 # frob:ticket T-1698
 # frob:ticket T-2669
+# frob:ticket T-2671
 def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     """Commit the `rapid-debt.jsonl` line this land just appended, so the
     land leaves `root` CLEAN.
@@ -778,13 +865,15 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
     rel = "rapid-debt.jsonl"
     status = run_argv(["git", "-C", str(root), "status", "--porcelain", "--", rel])
     if status.is_err or status.danger_ok.returncode != 0:
+        log_path = _persist_commit_step_failure(root, ticket_id, "status", status)
         _log.error(
             "rapid sweep: %s could not read %s status in %s -- if it is "
             "dirty, every subsequent land in this repo will refuse with "
-            "DirtyMain",
+            "DirtyMain (diagnostic: %s)",
             ticket_id,
             rel,
             root,
+            log_path,
         )
         return
     if not status.danger_ok.stdout.strip():
@@ -792,7 +881,14 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
 
     staged = run_argv(["git", "-C", str(root), "add", "--", rel])
     if staged.is_err or staged.danger_ok.returncode != 0:
-        _log.error("rapid sweep: %s could not stage %s in %s", ticket_id, rel, root)
+        log_path = _persist_commit_step_failure(root, ticket_id, "add", staged)
+        _log.error(
+            "rapid sweep: %s could not stage %s in %s (diagnostic: %s)",
+            ticket_id,
+            rel,
+            root,
+            log_path,
+        )
         return
     with _land_internal_git_env():
         committed = run_argv(
@@ -808,13 +904,20 @@ def _commit_rapid_debt(root: Path, ticket_id: str) -> None:
             ]
         )
     if committed.is_err or committed.danger_ok.returncode != 0:
+        # T-2671: this is the exact step whose failure the DirtyMain
+        # recurrence traced to -- persist the full git outcome (a hook
+        # refusal, a lock-contention message, or something else entirely)
+        # so the NEXT occurrence names its own cause instead of requiring
+        # commit-timestamp archaeology.
+        log_path = _persist_commit_step_failure(root, ticket_id, "commit", committed)
         _log.error(
             "rapid sweep: %s could not commit %s in %s -- root is now DIRTY "
             "and the next land from any agent will refuse with DirtyMain; "
-            "commit it by hand",
+            "commit it by hand (diagnostic: %s)",
             ticket_id,
             rel,
             root,
+            log_path,
         )
         return
     _log.info("rapid sweep: %s committed the deferred-sweep debt line", ticket_id)
