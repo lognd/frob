@@ -11,6 +11,7 @@ from frob.tickets import (
     TicketKind,
     TicketSpec,
     TicketState,
+    load_queue,
     new_ticket,
     transition,
 )
@@ -31,8 +32,6 @@ def _commit(root: Path, subject: str) -> None:
 
 def test_ticket_stats_counts_states_and_doable(tmp_path):
     # frob:tests src/frob/stats/__init__.py::ticket_stats
-    from frob.tickets import load_queue
-
     a = new_ticket(
         tmp_path, TicketSpec(title="a", kind=TicketKind.FEATURE, origin=Origin.AGENT)
     ).danger_ok
@@ -63,6 +62,7 @@ def test_commit_stats_classifies_conventional_types(tmp_path):
 def test_collect_combines_both(tmp_path):
     # frob:tests src/frob/stats/__init__.py::collect
     # frob:tests src/frob/stats kind="integration"
+    # frob:ticket T-2583
     # collect() drives ticket_stats + commit_stats together against a real
     # git repo and a real ticket queue -- exercises the module's boundary.
     root = _repo(tmp_path)
@@ -70,6 +70,39 @@ def test_collect_combines_both(tmp_path):
     new_ticket(
         root, TicketSpec(title="t", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
     )
-    report = collect(root, window_days=7).danger_ok
+    queue = load_queue(root).danger_ok
+    report = collect(root, queue, window_days=7).danger_ok
     assert report.tickets.total == 1
+    assert report.commits.total == 1
+
+
+def test_collect_injected_queue_matches_direct_ticket_stats(tmp_path):
+    # frob:tests src/frob/stats/__init__.py::collect
+    # frob:ticket T-2583
+    # T-2583 positive control: collect() no longer loads the queue itself
+    # (that would re-close the frob.stats -> frob.tickets import cycle) --
+    # it now takes an injected queue from the caller. This proves injecting
+    # the queue produces IDENTICAL results to what a direct ticket_stats()
+    # call over the same queue produces, i.e. the dependency moved, the
+    # behavior did not change.
+    root = _repo(tmp_path)
+    _commit(root, "chore: init")
+    new_ticket(
+        root, TicketSpec(title="t", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+    )
+    queue = load_queue(root).danger_ok
+    expected_tickets = ticket_stats(queue)
+    report = collect(root, queue, window_days=7).danger_ok
+    assert report.tickets == expected_tickets
+
+
+def test_collect_with_no_queue_reports_empty_ticket_stats(tmp_path):
+    # frob:tests src/frob/stats/__init__.py::collect
+    # frob:ticket T-2583
+    # `queue=None` (caller's own load failed) degrades to an empty
+    # TicketStats -- matching collect()'s pre-T-2583 load-failure behavior.
+    root = _repo(tmp_path)
+    _commit(root, "chore: init")
+    report = collect(root, None, window_days=7).danger_ok
+    assert report.tickets.total == 0
     assert report.commits.total == 1

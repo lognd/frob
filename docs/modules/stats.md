@@ -160,7 +160,7 @@ class CommitStats(BaseModel)      # commit cadence over a window, by conventiona
 class StatsReport(BaseModel)      # combined delivery snapshot rendered by `frob stats`
 def ticket_stats(queue) -> TicketStats
 def commit_stats(root, window_days=30) -> Result[CommitStats, GitError]
-def collect(root, window_days=30) -> Result[StatsReport, GitError]
+def collect(root, queue, window_days=30) -> Result[StatsReport, GitError]  # queue: TicketQueue | None, injected by the caller (T-2583)
 
 class AgenticReport(BaseModel)    # non-gated time/token snapshot over .frob/telemetry.jsonl
 def agentic_report(root, top_n=10) -> AgenticReport

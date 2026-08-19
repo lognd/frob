@@ -40,7 +40,7 @@ from frob.stats._sketch import (
     sketch_size_bytes,
     total_weight,
 )
-from frob.tickets import TicketQueue, TicketState, load_queue
+from frob.tickets._models import TicketQueue, TicketState
 
 _log = get_logger(__name__)
 
@@ -179,12 +179,21 @@ def commit_stats(root: Path, window_days: int = 30) -> Result[CommitStats, GitEr
 
 
 # frob:doc docs/modules/stats.md#public-api
-def collect(root: Path, window_days: int = 30) -> Result[StatsReport, GitError]:
-    """The full `frob stats` report: queue health + commit cadence."""
-    queue_result = load_queue(root)
+def collect(
+    root: Path, queue: TicketQueue | None, window_days: int = 30
+) -> Result[StatsReport, GitError]:
+    """The full `frob stats` report: queue health + commit cadence.
+
+    `queue` is injected by the caller (typically `frob.tickets.load_queue(root)
+    .ok`) rather than loaded here -- `frob.tickets` sits in the same import
+    cycle `frob.stats` used to close (T-2583), so `collect` no longer imports
+    `load_queue` itself. Pass `None` when the caller's own load failed; the
+    ticket-health half of the report degrades to an empty `TicketStats`,
+    matching the prior load-failure behavior exactly.
+    """
     tickets = (
-        ticket_stats(queue_result.danger_ok)
-        if queue_result.is_ok
+        ticket_stats(queue)
+        if queue is not None
         else TicketStats(
             total=0, by_state={}, by_kind={}, doable=0, blocked=0, failure_entries=0
         )

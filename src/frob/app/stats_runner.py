@@ -225,9 +225,12 @@ def _run_body(cfg: AppConfig) -> None:
         return
 
     from frob.stats import collect
+    from frob.tickets import load_queue
 
     days = cfg.stats_days or 30
-    result = collect(root, window_days=days)
+    queue_result = load_queue(root)
+    queue = queue_result.danger_ok if queue_result.is_ok else None
+    result = collect(root, queue, window_days=days)
     if result.is_err:
         _log.error("frob stats: %s", result.danger_err)
         sys.exit(1)

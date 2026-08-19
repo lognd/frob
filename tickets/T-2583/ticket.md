@@ -2,7 +2,7 @@
 id: T-2583
 title: 'Owner decision needed: pick which edge to invert to break the 160-node serve/stats/tickets/testing/app
   import cycle'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -25,7 +25,7 @@ scope:
 - src/frob/app/stats_runner.py
 - tests/test_stats.py
 - docs/modules/serve.md
-- tickets/T-draft-fa6c6a24/ticket.md
+- tickets/T-2667/ticket.md
 evidence_scope:
 - tests/test_stats.py
 scope_breadth_ack: false
@@ -62,7 +62,7 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-fa6c6a24/ticket.md
+  glob: tickets/T-2667/ticket.md
   reason: residue ticket filed from this ticket's own investigation; SCOPE001 flags
     the new file
   actor: logan

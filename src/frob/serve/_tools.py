@@ -175,7 +175,9 @@ def frob_stats(root: Path, *, window_days: int = 30) -> Result[dict, ServeError]
     that mode."""
     from frob.stats import collect
 
-    result = collect(root, window_days=window_days)
+    queue_result = load_queue(root)
+    queue = queue_result.danger_ok if queue_result.is_ok else None
+    result = collect(root, queue, window_days=window_days)
     if result.is_err:
         _log.error("serve: frob_stats: %s", result.danger_err)
         return Err(ServeError.StatsFailed)

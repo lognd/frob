@@ -1003,7 +1003,12 @@ DISPATCH` had no `frob_exports`/`frob_stats` entry). Both now do:
   `FROB_STATS_AGENTIC`) reads a completely different report shape
   (`frob.stats.agentic_report`'s `AgenticReport`) and is out of this RPC's
   scope entirely -- `_try_stats_via_daemon` never calls `frob_stats` for
-  that mode.
+  that mode. T-2583: `frob.stats.collect()` no longer loads the ticket
+  queue itself (that edge sat in the serve/stats/tickets/testing/app
+  CYCLE001 SCC) -- `frob_stats` now loads it via `frob.tickets.load_queue`
+  and injects it into `collect(root, queue, window_days=...)` itself,
+  same as `frob.app.stats_runner`'s CLI path. `frob_stats`'s own return
+  shape and the daemon-parity guarantee above are unchanged.
 - `frob_exports(root, pkg_dir, *, include_private=False, exclude_modules=
   ())` -- the DEFAULT (non-`--consumers`, non-`--write`) `frob exports
   <path> --json` render only; returns `ExportsResult.model_dump(mode=
