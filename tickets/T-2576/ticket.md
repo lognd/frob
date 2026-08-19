@@ -12,6 +12,7 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/gates/_milestone.py
 - src/frob/gates/__init__.py
@@ -42,6 +43,14 @@ scope_changes:
     is the per-ticket v2 files
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'remove the repo-wide ledger lease: read-time default replaces the bulk
+    backfill, unblocking M4'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 1171
+  new_length: 4763
 designated_repro_test: null
 threat: null
 component: null
@@ -71,3 +80,80 @@ rescoping (M4/M4b), MILE001/MILE002 (M5), REL001 (M6).
 
 Positive control: MILE003 must fire on a planted OPEN ticket with no
 milestone, and must NOT fire once that ticket is stamped 1.0.0.
+
+
+## SCOPE REDESIGN -- the bulk backfill is removed from this ticket
+
+Coordinator review, 2026-08-19. As originally written this ticket declared
+`tickets/T-*/ticket.md` in scope: a write lease on EVERY ticket file.
+
+Scope IS the write lease here, and every working agent writes its own
+ticket file constantly (evidence, Done report, state transitions). So this
+ticket as specified could only run with the entire fleet stopped, and it
+sat blocking M4 -- which is what finally makes T-1614 reachable, an alarm
+now 14 days old. It also repeats, in the ledger, exactly the over-broad
+ownership claim filed as T-2593.
+
+**The backfill is not actually necessary.** Its only purpose was to give
+every open ticket a milestone so sequencing and MILE003 have something to
+read. A read-time default achieves the identical result with no writes:
+
+- Add a `default_milestone` setting (`1.0.0` for this repo) to config.
+- Extend effective-milestone resolution with it as the TERMINAL fallback:
+  own declared value, else nearest ancestor's (story, then epic), else the
+  configured default.
+- MILE003 then fires when a ticket's effective milestone cannot be
+  RESOLVED -- e.g. no declared value anywhere in the chain and no
+  configured default -- rather than when a field is literally absent.
+
+Net effect: 89 ticket files stay untouched, no ledger-wide lease, no
+quiet window, and M4 unblocks immediately.
+
+## Revised scope for this ticket
+
+    src/frob/gates/_milestone.py
+    src/frob/gates/__init__.py
+    plus the config surface for `default_milestone`
+
+Explicitly NOT `tickets/T-*/ticket.md`. Do not bulk-edit ticket files.
+
+## Coordination -- read this before you start
+
+M3 (T-2577) is IN FLIGHT and owns effective-milestone resolution for the
+`doable` sort (own value, else nearest ancestor). Do NOT reimplement that
+chain. Your job is to add the configured default as the terminal fallback
+to whatever M3 lands, and to build MILE003 on top of it. If M3 has not
+landed when you start, coordinate rather than racing it -- the resolution
+function must have exactly ONE home.
+
+## The distinguishability requirement carries over unchanged
+
+M3 already requires that an INHERITED milestone render visibly distinct
+from a DECLARED one. The configured default is a third case and must be
+distinguishable from both. "Defaulted because nobody chose" and "explicitly
+set to 1.0.0" are different facts, and collapsing them is the silent-zero
+pattern this epic exists to avoid: a value that merely LOOKS decided.
+
+MILE003 must likewise distinguish "no milestone resolvable" from "could not
+read the queue". A queue-load failure must never render as zero findings.
+
+## Optional cleanup, deliberately NOT in this ticket
+
+Stamping literal `milestone: 1.0.0` into the 89 open tickets is now
+cosmetic rather than load-bearing. If it is ever wanted, it is a separate
+low-priority ticket run in a genuinely quiet window with no agents active.
+File it if you think it is worth doing; do not do it here.
+
+## Positive controls, both directions
+
+- an open ticket with no declared milestone and no milestoned ancestor
+  resolves to the configured default, and `doable` shows it as DEFAULTED,
+  not as declared
+- a ticket with a declared milestone keeps it -- the default must not
+  override a real value
+- a ticket inheriting from an ancestor still shows INHERITED, unchanged
+  from M3
+- with no `default_milestone` configured, MILE003 FIRES rather than
+  silently assuming 1.0.0. Without this case the default is just a way to
+  make the gate never fire
+- a queue that cannot be loaded reports an ERROR, never zero findings
