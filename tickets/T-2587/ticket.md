@@ -17,6 +17,7 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - docs/modules/tickets-lifecycle.md
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,12 @@ scope_changes:
   glob: tests/unit/test_ticket_runner_ledger_mirror.py
   reason: T-2587's new mirror_promote_to_primary/doc anchor and its dedicated unit
     tests need these two paths writable/in-scope
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: design/frob.strata
+  reason: mirror_promote_to_primary's shutil.rmtree call is a new fs.write capability
+    site needing declaration on the cli node
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
