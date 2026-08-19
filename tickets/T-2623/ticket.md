@@ -3,7 +3,7 @@ id: T-2623
 title: roughly 19 tests are red on unmodified main, hiding real regressions in the
   noise
 state: in-progress
-kind: bug
+kind: docs
 origin: human
 created: '2026-08-19'
 priority: high
@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -22,6 +24,15 @@ scope_changes:
   glob: tests/unit/
   reason: 'triage ticket: the deliverable is a published list plus per-group follow-up
     tickets, not edits across 448 test files'
+  actor: logan
+  at: '2026-08-19'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: deliverable is a published measurement (18 red of 5237 collected at sha
+    5a15dbd92) plus 8 narrowly-scoped follow-up tickets; this ticket fixes no code,
+    so bug-kind evidence was never earned and fabricating it would be false
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
