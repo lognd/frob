@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9e188747ee70066efe420fb329db57b90cc92ebb
 ---
 Found while fixing T-2556. The installed worktree-lease hook's own header
 comment, and the constant that matches it, both name a command that does not
