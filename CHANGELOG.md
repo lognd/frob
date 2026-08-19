@@ -133,6 +133,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2624: CLI wiring for runs_last_parallel_safe
 - T-2626: scope write path never validates individual glob syntax (semicolon-joined entries silently stored)
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
+- T-2630: tests/unit/strata/test_export_golden.py red on main: golden export drift
 - T-2631: test_lang_parse_guard.py: guard-helper wiring assertion red on main
 - T-2632: test_mutation_sweep_queue.py: test_counts_only_pending_entries red on main
 - T-2633: CLI test drift: renumber/land SystemExit + stamp-baseline output string (4 tests red)

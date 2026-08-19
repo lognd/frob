@@ -423,6 +423,20 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "refactor",
+      "resource": "core",
+      "sid": "f_refactor_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "refactor",
+      "resource": "core",
+      "sid": "f_refactor_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "registry",
       "resource": "vet",
       "sid": "f_registry_fetch-read"
@@ -433,6 +447,20 @@
       "principal": "registry",
       "resource": "vet",
       "sid": "f_registry_fetch-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "core",
+      "sid": "f_registry_model_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "core",
+      "sid": "f_registry_model_core-write"
     },
     {
       "action": "read",
@@ -535,6 +563,832 @@
     {
       "action": "read",
       "effect": "Allow",
+      "principal": "checker",
+      "resource": "telemetry",
+      "sid": "f_t2403_checker_telemetry-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "checker",
+      "resource": "telemetry",
+      "sid": "f_t2403_checker_telemetry-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "refactor",
+      "sid": "f_t2403_cli_refactor-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "refactor",
+      "sid": "f_t2403_cli_refactor-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "security",
+      "sid": "f_t2403_cli_security-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "security",
+      "sid": "f_t2403_cli_security-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "stratamod",
+      "sid": "f_t2403_cli_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "stratamod",
+      "sid": "f_t2403_cli_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "verify",
+      "sid": "f_t2403_cli_verify-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "cli",
+      "resource": "verify",
+      "sid": "f_t2403_cli_verify-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "checker",
+      "sid": "f_t2403_core_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "checker",
+      "sid": "f_t2403_core_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "stratamod",
+      "sid": "f_t2403_core_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "stratamod",
+      "sid": "f_t2403_core_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "checker",
+      "sid": "f_t2403_gates_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "checker",
+      "sid": "f_t2403_gates_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "cli",
+      "sid": "f_t2403_gates_cli_wire_audit-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "cli",
+      "sid": "f_t2403_gates_cli_wire_audit-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "natives",
+      "sid": "f_t2403_gates_natives-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "natives",
+      "sid": "f_t2403_gates_natives-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "security",
+      "sid": "f_t2403_gates_security-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "security",
+      "sid": "f_t2403_gates_security-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "vet",
+      "sid": "f_t2403_gates_vet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "gates",
+      "resource": "vet",
+      "sid": "f_t2403_gates_vet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "checker",
+      "sid": "f_t2403_graphlang_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "checker",
+      "sid": "f_t2403_graphlang_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "gates",
+      "sid": "f_t2403_graphlang_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "gates",
+      "sid": "f_t2403_graphlang_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_graphlang_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_graphlang_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "vet",
+      "sid": "f_t2403_graphlang_vet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "graphlang",
+      "resource": "vet",
+      "sid": "f_t2403_graphlang_vet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "refactor",
+      "resource": "graphlang",
+      "sid": "f_t2403_refactor_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "refactor",
+      "resource": "graphlang",
+      "sid": "f_t2403_refactor_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "refactor",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_refactor_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "refactor",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_refactor_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "gates",
+      "sid": "f_t2403_registry_model_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "gates",
+      "sid": "f_t2403_registry_model_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_registry_model_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "registry_model",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_registry_model_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "core",
+      "sid": "f_t2403_scripts_ops_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "core",
+      "sid": "f_t2403_scripts_ops_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_scripts_ops_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "scripts_ops",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_scripts_ops_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "security",
+      "resource": "core",
+      "sid": "f_t2403_security_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "security",
+      "resource": "core",
+      "sid": "f_t2403_security_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "checker",
+      "sid": "f_t2403_serve_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "checker",
+      "sid": "f_t2403_serve_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "verify",
+      "sid": "f_t2403_serve_verify-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "verify",
+      "sid": "f_t2403_serve_verify-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "registry_model",
+      "sid": "f_t2403_stratamod_registry_model-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "registry_model",
+      "sid": "f_t2403_stratamod_registry_model-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_stratamod_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "stratamod",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_stratamod_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "core",
+      "sid": "f_t2403_telemetry_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "core",
+      "sid": "f_t2403_telemetry_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "gates",
+      "sid": "f_t2403_telemetry_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "gates",
+      "sid": "f_t2403_telemetry_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "gates",
+      "sid": "f_t2403_tickets_ledger_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "gates",
+      "sid": "f_t2403_tickets_ledger_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "graphlang",
+      "sid": "f_t2403_tickets_ledger_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "graphlang",
+      "sid": "f_t2403_tickets_ledger_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "mutate",
+      "sid": "f_t2403_tickets_ledger_mutate-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "mutate",
+      "sid": "f_t2403_tickets_ledger_mutate-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "stratamod",
+      "sid": "f_t2403_tickets_ledger_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "stratamod",
+      "sid": "f_t2403_tickets_ledger_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "verify",
+      "sid": "f_t2403_tickets_ledger_verify-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "tickets_ledger",
+      "resource": "verify",
+      "sid": "f_t2403_tickets_ledger_verify-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "graphlang",
+      "sid": "f_t2403_verify_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "graphlang",
+      "sid": "f_t2403_verify_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_verify_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "tickets_ledger",
+      "sid": "f_t2403_verify_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "stratamod",
+      "sid": "f_t2403_vet_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "vet",
+      "resource": "stratamod",
+      "sid": "f_t2403_vet_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "cli",
+      "sid": "f_t2407_core_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "core",
+      "resource": "cli",
+      "sid": "f_t2407_core_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "cli",
+      "sid": "f_t2407_serve_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "serve",
+      "resource": "cli",
+      "sid": "f_t2407_serve_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "cli",
+      "sid": "f_t2407_telemetry_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "telemetry",
+      "resource": "cli",
+      "sid": "f_t2407_telemetry_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "cli",
+      "sid": "f_t2407_verify_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "cli",
+      "sid": "f_t2407_verify_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "checker",
+      "sid": "f_testsuite_checker-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "checker",
+      "sid": "f_testsuite_checker-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "cli",
+      "sid": "f_testsuite_cli-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "cli",
+      "sid": "f_testsuite_cli-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "core",
+      "sid": "f_testsuite_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "core",
+      "sid": "f_testsuite_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "deploy",
+      "sid": "f_testsuite_deploy-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "deploy",
+      "sid": "f_testsuite_deploy-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "fleet",
+      "sid": "f_testsuite_fleet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "fleet",
+      "sid": "f_testsuite_fleet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "gates",
+      "sid": "f_testsuite_gates-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "gates",
+      "sid": "f_testsuite_gates-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "graphlang",
+      "sid": "f_testsuite_graphlang-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "graphlang",
+      "sid": "f_testsuite_graphlang-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "mutate",
+      "sid": "f_testsuite_mutate-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "mutate",
+      "sid": "f_testsuite_mutate-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "natives",
+      "sid": "f_testsuite_natives-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "natives",
+      "sid": "f_testsuite_natives-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "refactor",
+      "sid": "f_testsuite_refactor-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "refactor",
+      "sid": "f_testsuite_refactor-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "registry_model",
+      "sid": "f_testsuite_registry_model-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "registry_model",
+      "sid": "f_testsuite_registry_model-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "security",
+      "sid": "f_testsuite_security-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "security",
+      "sid": "f_testsuite_security-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "serve",
+      "sid": "f_testsuite_serve-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "serve",
+      "sid": "f_testsuite_serve-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "stratamod",
+      "sid": "f_testsuite_stratamod-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "stratamod",
+      "sid": "f_testsuite_stratamod-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "telemetry",
+      "sid": "f_testsuite_telemetry-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "telemetry",
+      "sid": "f_testsuite_telemetry-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "tickets_ledger",
+      "sid": "f_testsuite_tickets_ledger-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "tickets_ledger",
+      "sid": "f_testsuite_tickets_ledger-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "verify",
+      "sid": "f_testsuite_verify-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "verify",
+      "sid": "f_testsuite_verify-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "vet",
+      "sid": "f_testsuite_vet-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "testsuite",
+      "resource": "vet",
+      "sid": "f_testsuite_vet-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
       "principal": "tickets_ledger",
       "resource": "core",
       "sid": "f_tickets_core-read"
@@ -545,6 +1399,20 @@
       "principal": "tickets_ledger",
       "resource": "core",
       "sid": "f_tickets_core-write"
+    },
+    {
+      "action": "read",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "core",
+      "sid": "f_verify_core-read"
+    },
+    {
+      "action": "write",
+      "effect": "Allow",
+      "principal": "verify",
+      "resource": "core",
+      "sid": "f_verify_core-write"
     },
     {
       "action": "read",

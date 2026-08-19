@@ -1,7 +1,7 @@
 ---
 id: T-2630
 title: 'tests/unit/strata/test_export_golden.py red on main: golden export drift'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -11,6 +11,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/strata/test_export_golden.py
 - src/frob/strata/export/**
@@ -18,7 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_k8s
+- tests/unit/strata/test_export_golden.py::TestExportGolden::test_seccomp
+designated_repro_test: tests/unit/strata/test_export_golden.py::TestExportGolden::test_iam
 threat: null
 component: null
 anchor: false

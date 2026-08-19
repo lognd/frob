@@ -7,6 +7,37 @@
         "names": [
           "access",
           "brk",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "fstat",
+          "lstat",
+          "mmap",
+          "munmap",
+          "open",
+          "openat",
+          "pread64",
+          "read",
+          "rt_sigreturn",
+          "stat",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
+  "claude_hooks": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "access",
+          "brk",
           "chmod",
           "clone",
           "close",
@@ -125,7 +156,6 @@
         "names": [
           "access",
           "brk",
-          "chmod",
           "clone",
           "close",
           "execve",
@@ -135,19 +165,14 @@
           "fork",
           "fstat",
           "lstat",
-          "mkdir",
           "mmap",
           "munmap",
           "open",
           "openat",
           "pread64",
-          "pwrite64",
           "read",
-          "rename",
           "rt_sigreturn",
           "stat",
-          "truncate",
-          "unlink",
           "vfork",
           "write"
         ]
@@ -161,7 +186,6 @@
         "action": "SCMP_ACT_ALLOW",
         "names": [
           "brk",
-          "chmod",
           "clone",
           "close",
           "execve",
@@ -169,17 +193,10 @@
           "exit",
           "exit_group",
           "fork",
-          "mkdir",
           "mmap",
           "munmap",
-          "open",
-          "openat",
-          "pwrite64",
           "read",
-          "rename",
           "rt_sigreturn",
-          "truncate",
-          "unlink",
           "vfork",
           "write"
         ]
@@ -214,9 +231,13 @@
           "access",
           "brk",
           "chmod",
+          "clone",
           "close",
+          "execve",
+          "execveat",
           "exit",
           "exit_group",
+          "fork",
           "fstat",
           "lstat",
           "mkdir",
@@ -232,6 +253,7 @@
           "stat",
           "truncate",
           "unlink",
+          "vfork",
           "write"
         ]
       }
@@ -441,9 +463,13 @@
           "access",
           "brk",
           "chmod",
+          "clone",
           "close",
+          "execve",
+          "execveat",
           "exit",
           "exit_group",
+          "fork",
           "fstat",
           "lstat",
           "mkdir",
@@ -459,6 +485,7 @@
           "stat",
           "truncate",
           "unlink",
+          "vfork",
           "write"
         ]
       }
@@ -568,6 +595,25 @@
       }
     ]
   },
+  "telemetry": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "brk",
+          "close",
+          "exit",
+          "exit_group",
+          "mmap",
+          "munmap",
+          "read",
+          "rt_sigreturn",
+          "write"
+        ]
+      }
+    ]
+  },
   "testsuite": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
@@ -649,6 +695,43 @@
       }
     ]
   },
+  "verify": {
+    "defaultAction": "SCMP_ACT_ERRNO",
+    "syscalls": [
+      {
+        "action": "SCMP_ACT_ALLOW",
+        "names": [
+          "access",
+          "brk",
+          "chmod",
+          "clone",
+          "close",
+          "execve",
+          "execveat",
+          "exit",
+          "exit_group",
+          "fork",
+          "fstat",
+          "lstat",
+          "mkdir",
+          "mmap",
+          "munmap",
+          "open",
+          "openat",
+          "pread64",
+          "pwrite64",
+          "read",
+          "rename",
+          "rt_sigreturn",
+          "stat",
+          "truncate",
+          "unlink",
+          "vfork",
+          "write"
+        ]
+      }
+    ]
+  },
   "vet": {
     "defaultAction": "SCMP_ACT_ERRNO",
     "syscalls": [
@@ -659,7 +742,6 @@
           "access",
           "bind",
           "brk",
-          "chmod",
           "close",
           "connect",
           "exit",
@@ -667,22 +749,17 @@
           "fstat",
           "listen",
           "lstat",
-          "mkdir",
           "mmap",
           "munmap",
           "open",
           "openat",
           "pread64",
-          "pwrite64",
           "read",
           "recvfrom",
-          "rename",
           "rt_sigreturn",
           "sendto",
           "socket",
           "stat",
-          "truncate",
-          "unlink",
           "write"
         ]
       }
