@@ -17,6 +17,9 @@ scope:
 - docs/guides/coordinator-scripts.md#worktree_content_classification
 - docs/guides/coordinator-scripts.md#_parse_ticket_frontmatter_text
 - docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
+- docs/guides/coordinator-scripts.md
+- tests/unit/test_coordinator_scripts.py
+- tickets/T-draft-3134c40e/ticket.md
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
@@ -60,6 +63,24 @@ scope_changes:
   glob: docs/guides/coordinator-scripts.md#ticket_frontmatter_on_main
   reason: narrow to the exact anchors changed; whole-file scope pulled in 200+ unrelated
     pre-existing SCOPE002 findings
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'SCOPE001: docs file edited (algorithm doc for worktree_content_classification),
+    test file edited (new coverage), draft ticket file created for the filed follow-up'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'SCOPE001: docs file edited (algorithm doc for worktree_content_classification),
+    test file edited (new coverage), draft ticket file created for the filed follow-up'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-3134c40e/ticket.md
+  reason: 'SCOPE001: docs file edited (algorithm doc for worktree_content_classification),
+    test file edited (new coverage), draft ticket file created for the filed follow-up'
   actor: logan
   at: '2026-08-19'
 evidence:
