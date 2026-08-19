@@ -2,7 +2,7 @@
 id: T-2583
 title: 'Owner decision needed: pick which edge to invert to break the 160-node serve/stats/tickets/testing/app
   import cycle'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
