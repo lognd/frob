@@ -47,7 +47,16 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-1613
-def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
+# frob:ticket T-2578
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_unmilestoned_runs_last_keeps_global_semantics  # noqa: E501
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_unmilestoned_runs_last_becomes_doable_once_all_else_terminal  # noqa: E501
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_blocked_by_same_milestone_open_work  # noqa: E501
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_doable_once_same_milestone_work_terminal  # noqa: E501
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_milestoned_runs_last_not_blocked_by_other_milestone_open_work  # noqa: E501
+# frob:tests tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping.test_runs_last_sibling_carve_out_preserved_within_a_milestone  # noqa: E501
+def _other_open_tickets(
+    queue: TicketQueue, ticket: Ticket, root: Path | None = None
+) -> tuple[str, ...]:
     """Ids of every ticket in `queue` OTHER than `ticket` itself, and OTHER
     than any fellow runs-last ticket, whose state is non-terminal (T-1613,
     same `_OPEN_STATES` set `_open_blockers`/`_start_blockers` already use).
@@ -58,14 +67,33 @@ def _other_open_tickets(queue: TicketQueue, ticket: Ticket) -> tuple[str, ...]:
     `blocked_by` edges instead of deadlocking each other (a runs-last
     ticket counting another runs-last ticket as "open" would mean neither
     could ever start while the other existed, unrelated to `blocked_by`
-    entirely)."""
+    entirely).
+
+    T-2578: the count is scoped to `ticket`'s own EFFECTIVE milestone
+    (`effective_milestone` -- declared, else inherited, else the repo's
+    configured default; the SAME resolution `doable`'s own display uses,
+    so "other open" never disagrees with what a ticket's milestone column
+    shows). When that resolves to `None` (no declared/inherited/defaulted
+    milestone anywhere in `ticket`'s chain), this is UNCHANGED from
+    pre-T-2578 behavior: every other non-runs-last open ticket counts,
+    repo-wide -- back-compat for an unmilestoned runs-last ticket is exact,
+    not approximate. When it resolves to a real value, only OTHER tickets
+    whose own effective milestone matches count; a ticket in a different
+    milestone (or with none at all) no longer blocks this one."""
     from frob.tickets import _OPEN_STATES
 
+    milestone, _source = effective_milestone(queue, ticket, root)
+
+    def _is_open(t: Ticket) -> bool:
+        return t.id != ticket.id and not t.runs_last and t.state in _OPEN_STATES
+
+    if milestone is None:
+        return tuple(sorted(t.id for t in queue.tickets.values() if _is_open(t)))
     return tuple(
         sorted(
             t.id
             for t in queue.tickets.values()
-            if t.id != ticket.id and not t.runs_last and t.state in _OPEN_STATES
+            if _is_open(t) and effective_milestone(queue, t, root)[0] == milestone
         )
     )
 
@@ -216,7 +244,11 @@ def _doable_candidates(queue: TicketQueue, root: Path | None = None) -> list[Tic
     T-1613: a `runs_last` ticket additionally never surfaces here while
     `_other_open_tickets` is non-empty -- it stays structurally undoable,
     not merely warned-about, until every OTHER non-runs-last ticket in the
-    ledger has reached a terminal state (done/dropped).
+    ledger has reached a terminal state (done/dropped). T-2578: when the
+    runs-last ticket has an EFFECTIVE milestone (declared/inherited/
+    defaulted), `_other_open_tickets` scopes that count to just its own
+    milestone instead of the whole ledger -- an unmilestoned runs-last
+    ticket keeps the exact pre-T-2578 global behavior.
 
     T-2104: `root` (optional, threaded straight from `doable`/`doable_
     blocked`) is passed to `_open_blockers` so a `blocked_by` entry
@@ -233,7 +265,7 @@ def _doable_candidates(queue: TicketQueue, root: Path | None = None) -> list[Tic
         if t.state in (TicketState.QUEUED, TicketState.PLANNED)
         and t.tier is TicketTier.TICKET
         and not _open_blockers(queue, t, root)
-        and (not t.runs_last or not _other_open_tickets(queue, t))
+        and (not t.runs_last or not _other_open_tickets(queue, t, root))
     ]
 
 

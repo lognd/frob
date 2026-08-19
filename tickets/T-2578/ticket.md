@@ -1,7 +1,7 @@
 ---
 id: T-2578
 title: 'M4: rescope runs_last to the ticket''s own milestone'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -14,12 +14,27 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
 scope:
 - src/frob/tickets/_doable.py
+- tests/test_tickets_milestone_runs_last.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_milestone_runs_last.py
+  reason: new tests covering the M4 milestone rescope
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_unmilestoned_runs_last_keeps_global_semantics
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_unmilestoned_runs_last_becomes_doable_once_all_else_terminal
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_milestoned_runs_last_blocked_by_same_milestone_open_work
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_milestoned_runs_last_doable_once_same_milestone_work_terminal
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_milestoned_runs_last_not_blocked_by_other_milestone_open_work
+- tests/test_tickets_milestone_runs_last.py::TestRunsLastMilestoneScoping::test_runs_last_sibling_carve_out_preserved_within_a_milestone
 designated_repro_test: null
 threat: null
 component: null
