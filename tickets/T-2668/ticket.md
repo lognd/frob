@@ -2,7 +2,7 @@
 id: T-2668
 title: 'land records ''gates: unmeasured'' and proceeds while a real SELFAUDIT001
   error sits in its own findings list'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
