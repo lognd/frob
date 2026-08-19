@@ -22,7 +22,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6ac62fb330471805a17ac14dd353d0afb1e9222b
 ---
 Auto-filed by the TICK006 Tier-A fix (T-1544): T-2561's Done report claimed T-draft-5e5a0e2b was filed, but T-draft-5e5a0e2b resolves to no block in tickets.md or tickets-archive.md -- a phantom filing trail. The original claim's own surrounding text (the only surviving description of the intended work) is quoted verbatim below; review and refine as needed.
 
