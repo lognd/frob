@@ -14,10 +14,24 @@ runs_last: false
 milestone: null
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-2599 adds TestWorktreeContentClassification/TestWorktreeTicketId coverage
+    to this file
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-2599 adds TestWorktreeContentClassification/TestWorktreeTicketId coverage
+    to this file
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
