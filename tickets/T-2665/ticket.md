@@ -2,7 +2,7 @@
 id: T-2665
 title: lease-leak detector reports [LEAK] for a ticket whose worktree exists, inviting
   a destructive requeue
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,11 +16,31 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'Repro and positive-control tests both live in
+
+    tests/unit/test_coordinator_scripts.py, alongside the fix in
+
+    scripts/fleet_status.py -- the same file the ticket''s original scope
+
+    already declared.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
+- tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_no_worktree_and_no_lease_is_still_leaked
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestInProgressTicketScopeLeasesLiveGit::test_live_worktree_with_lease_file_removed_is_not_leaked
 threat: null
 component: null
 anchor: false
