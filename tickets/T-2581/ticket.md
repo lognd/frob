@@ -1,7 +1,7 @@
 ---
 id: T-2581
 title: 'M6: REL001 extension -- refuse release cut with open milestone-X tickets'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-18'
@@ -13,12 +13,33 @@ parent: T-2573
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_debt_deprecated.py
+- src/frob/gates/__init__.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: wire _release_open_milestone_violations into release_gate
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates.py
+  reason: TestReleaseOpenMilestoneViolations evidence for REL001 M6
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates.py
+  reason: TestReleaseOpenMilestoneViolations evidence for REL001 M6
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
