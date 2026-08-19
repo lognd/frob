@@ -16,11 +16,24 @@ unreachable from where anyone will look. It matters well beyond
 bookkeeping because `scope` IS the write lease in this repo -- a lease
 change only the holder can see is worse than no lease change, since the
 coordinator and every sibling agent read `main`.
+
+T-2603: every `frob ticket` verb's ledger-write behaviour is declared
+exactly once, in `LEDGER_VERB_STRATEGY` below, rather than being
+reconstructed from membership across two separate frozensets
+(`_LEDGER_TRANSACTIONAL_VERBS`, T-1615; `MIRRORED_LEDGER_VERBS`, T-2563)
+plus `promote`'s own bespoke special case (T-2587). See
+`LedgerWriteStrategy`'s own docstring for why these five values -- not
+three, not the two-orthogonal-booleans shape T-2587's agent originally
+declined to unify -- are the ones that generalise cleanly, and
+`docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603`
+for the full enumeration this table replaces.
 """
 # frob:ticket T-2563
+# frob:ticket T-2603
 
 from __future__ import annotations
 
+import enum
 import logging
 import re
 import shutil
@@ -31,41 +44,221 @@ from frob import gitio
 _log = logging.getLogger(__name__)
 
 
-# frob:ticket T-2563
-#: Verbs whose ENTIRE effect is ledger metadata that the rest of the fleet
-#: must be able to read immediately -- these mirror to the primary
-#: checkout.
-#:
-#: The state-machine verbs (`start`/`close`/`drop`/`fail`/`requeue`/
-#: `done-report`/`evidence`/`archive`/`reverify`) are deliberately NOT
-#: here. Their ledger write describes the progress of work that is still
-#: worktree-local, and `frob ticket land` already carries them across
-#: atomically with the code they describe; mirroring one would advance
-#: `main`'s state machine ahead of the work it claims to have finished --
-#: a worse failure than the one this module fixes. `land`/`merge-driver`
-#: never reach here at all (`_LEDGER_TRANSACTIONAL_VERBS`).
+# frob:ticket T-2603
+# frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_promote_kind
+class LedgerWriteStrategy(enum.Enum):
+    """The one property every `frob ticket` verb's ledger write needs
+    declared: what `_auto_commit_ledger_after_dispatch` must do with it.
+
+    T-2603 replaces `_LEDGER_TRANSACTIONAL_VERBS` + `MIRRORED_LEDGER_VERBS`
+    + `promote`'s special case with ONE table keyed by this enum, on the
+    strength of an exhaustive per-verb audit (all 48 real
+    `_ticket_dispatch_table()` keys, cross-checked against
+    `tests/test_ticket_leases.py::TestLedgerAutoCommitEnumeratedOverDispatchTable`'s
+    own independent classification) showing every verb's mechanical
+    behaviour reduces to exactly one of these five shapes -- never a case
+    where the same enum value means two different things depending on
+    which verb key you look up, which is the failure mode T-2587's agent
+    was right to refuse to paper over with a premature unification.
+
+    OWN_TRANSACTION: the verb commits a complete, possibly multi-file
+        transaction itself (`land`, `merge-driver`, `renumber`,
+        `sweep-async`) -- `_auto_commit_ledger_after_dispatch`'s generic
+        sweep must never touch it, and no mirror runs through this
+        module either. A stray single-file ledger commit spliced in from
+        outside would corrupt a transaction that has to land as one
+        atomic change.
+    OWN_TRANSACTION_LEDGER_MIRROR: same as `OWN_TRANSACTION` (`promote`
+        is the only member -- it IS `renumber_one` under the hood) but a
+        DEDICATED ledger-only mirror (`mirror_promote_to_primary`) runs
+        afterward, reading back the rename's own commit message rather
+        than copying a fixed pathspec tuple -- `promote`'s write is a
+        multi-file code-reference rename, not the single-pathspec shape
+        `GENERIC_COMMIT_MIRRORED` assumes, so it needs its own mirror
+        shape rather than joining that set.
+    GENERIC_COMMIT_MIRRORED: the dispatch-wrapper commits whatever ledger
+        residue the verb's handler left dirty (T-1615's uniform sweep,
+        idempotent if the handler already committed) AND mirrors the
+        ticket's ledger pathspecs onto the primary checkout (T-2563) --
+        the pure-metadata verbs (`scope`, `block`, `priority`, ...) whose
+        entire effect the rest of the fleet must see immediately, because
+        `scope` IS the write lease in this repo.
+    GENERIC_COMMIT_UNMIRRORED: the dispatch-wrapper may attempt the same
+        generic commit (usually a no-op: these state-machine verbs --
+        `new`/`start`/`close`/`drop`/`fail`/`requeue`/`done-report`/
+        `evidence`/`archive`/`milestone`/... -- already call
+        `commit_ticket_ledger_change` themselves, T-1130/T-1178) but is
+        NEVER mirrored: their ledger write describes progress on work
+        that is still worktree-local, and `land` already carries it
+        across atomically with the code it describes. Mirroring one
+        would advance `main`'s state machine ahead of the work it claims
+        to have finished -- a worse failure than the one this module
+        exists to fix.
+    NOT_TICKET_SCOPED: `_auto_commit_ledger_after_dispatch`'s `cfg.
+        ticket_id is None` early-return always fires for this verb (pure
+        read-only verbs -- `list`/`show`/`doable`/`board`/...; `migrate`,
+        whose whole-store rewrite is deliberately left for the caller to
+        commit as one change, per its own module contract; `waive-audit`,
+        whose `complete` subcommand writes a watermark file, never
+        `tickets.md`) -- there is no per-ticket ledger write for this
+        mechanism to ever act on.
+    """
+
+    OWN_TRANSACTION = "own_transaction"
+    OWN_TRANSACTION_LEDGER_MIRROR = "own_transaction_ledger_mirror"
+    GENERIC_COMMIT_MIRRORED = "generic_commit_mirrored"
+    GENERIC_COMMIT_UNMIRRORED = "generic_commit_unmirrored"
+    NOT_TICKET_SCOPED = "not_ticket_scoped"
+
+
+# frob:ticket T-2603
+# frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_match
+#: The single source of truth for every `frob ticket` verb's ledger-write
+#: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
+#: below are DERIVED from this table, never redeclared, so there is
+#: exactly one place a verb's classification can be edited or forgotten.
+LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
+    # OWN_TRANSACTION -- owns a complete multi-file transaction; the
+    # generic sweep and this module's mirror must never touch it.
+    "land": LedgerWriteStrategy.OWN_TRANSACTION,
+    "merge-driver": LedgerWriteStrategy.OWN_TRANSACTION,
+    "renumber": LedgerWriteStrategy.OWN_TRANSACTION,
+    "sweep-async": LedgerWriteStrategy.OWN_TRANSACTION,
+    # OWN_TRANSACTION_LEDGER_MIRROR -- owns its own transaction like the
+    # verbs above, but also gets a dedicated ledger-only mirror.
+    "promote": LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR,
+    # GENERIC_COMMIT_MIRRORED -- pure ledger metadata the fleet must see
+    # immediately; the T-2563 mirror copies its ledger pathspecs onto the
+    # primary checkout right after the generic commit.
+    "accept": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "anchor": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "attach": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "block": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "body": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "component": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "kind": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "label": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "priority": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "review": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "runs-last": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "scope": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "scope-ack": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "sprint": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    "tier": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # GENERIC_COMMIT_UNMIRRORED -- state-machine progress `land` already
+    # carries atomically; never mirrored ahead of the work it describes.
+    "new": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "plan": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "start": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "work": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "requeue": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "sweep": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "reconcile": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "close": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "reverify": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "fail": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "drop": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "evidence": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "done-report": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    "archive": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    # T-2574: added post-T-1615/T-2563 and never classified into either
+    # legacy set -- see the follow-up bug this audit filed for whether it
+    # belongs in GENERIC_COMMIT_MIRRORED instead (its write primitive,
+    # `_set_ticket_field`, is the same one `priority`/`kind`/`tier` use).
+    # Kept here, unmirrored, to match TODAY's actual behaviour exactly --
+    # this table's job is a faithful unification, not a silent drive-by
+    # fix of a bug outside T-2603's own scope.
+    "milestone": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
+    # NOT_TICKET_SCOPED -- read-only, or a write this mechanism never
+    # engages with (`cfg.ticket_id` is always `None` when these dispatch).
+    "list": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "show": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "doable": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "wave": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "contention": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "board": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "epic": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "brief": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "flow": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "debt": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "deprecated": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "waive-audit": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+    "migrate": LedgerWriteStrategy.NOT_TICKET_SCOPED,
+}
+
+
+# frob:ticket T-2603
+# frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_missing_raises
+# frob:raises KeyError
+# T-2603: deliberate -- an unclassified verb must fail loudly, never
+# silently default; the dispatch-table exhaustiveness test and this
+# function's own docstring are what catches a caller forgetting to
+# handle it, not a broad except.
+def ledger_write_strategy_for(command: str) -> LedgerWriteStrategy:
+    """`command`'s declared `LedgerWriteStrategy`, or a loud `KeyError`
+    naming exactly the gap -- never a silent default.
+
+    This is the mechanical half of T-2603's "fails loudly" requirement: a
+    verb added to `_ticket_dispatch_table()` without a matching
+    `LEDGER_VERB_STRATEGY` entry raises here instead of quietly falling
+    through to whatever the old two-frozenset code happened to do for an
+    unlisted key (commit-but-never-mirror, T-2197's exact bug shape) --
+    the failure surfaces at the first `frob ticket <verb>` invocation
+    that reaches this dispatch wrapper, not just in a test someone has to
+    remember to run."""
+    try:
+        return LEDGER_VERB_STRATEGY[command]
+    except KeyError:
+        raise KeyError(
+            f"ticket runner: {command!r} has no LEDGER_VERB_STRATEGY entry in "
+            "frob.app.ticket_runner._ledger_mirror -- every verb in "
+            "_ticket_dispatch_table() must declare one (T-2603); add it "
+            "before this verb can auto-commit or mirror its ledger write"
+        ) from None
+
+
+# frob:ticket T-2603
+#: Derived from `LEDGER_VERB_STRATEGY` -- the verbs whose generic ledger
+#: write mirrors onto the primary checkout. Replaces the old, separately
+#: hand-maintained `MIRRORED_LEDGER_VERBS` frozenset; kept under this old
+#: name too (module-level alias below) since tests and docs still refer
+#: to it by that name.
+_MIRRORED_LEDGER_VERBS = frozenset(
+    verb
+    for verb, strategy in LEDGER_VERB_STRATEGY.items()
+    if strategy is LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED
+)
+
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
 # frob:tests tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_state_machine_verbs_are_not_mirrored  # noqa: E501
-MIRRORED_LEDGER_VERBS = frozenset(
-    {
-        "accept",
-        "anchor",
-        "attach",
-        "block",
-        "body",
-        "component",
-        "debt",
-        "deprecated",
-        "kind",
-        "label",
-        "priority",
-        "review",
-        "runs-last",
-        "scope",
-        "scope-ack",
-        "sprint",
-        "tier",
-    }
+#: Back-compat alias (T-2563's original name) for `_MIRRORED_LEDGER_VERBS`
+#: -- both names refer to the SAME frozenset, derived from
+#: `LEDGER_VERB_STRATEGY` above rather than declared twice.
+MIRRORED_LEDGER_VERBS = _MIRRORED_LEDGER_VERBS
+
+# frob:ticket T-2603
+# frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
+#: Derived from `LEDGER_VERB_STRATEGY` -- verbs that own a complete
+#: transaction and must never be touched by the generic per-dispatch
+#: sweep. Replaces the old, separately hand-maintained
+#: `_LEDGER_TRANSACTIONAL_VERBS` frozenset in `ticket_runner/__init__.py`
+#: (re-exported there under that name for the same back-compat reason).
+OWN_TRANSACTION_VERBS = frozenset(
+    verb
+    for verb, strategy in LEDGER_VERB_STRATEGY.items()
+    if strategy
+    in (
+        LedgerWriteStrategy.OWN_TRANSACTION,
+        LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR,
+    )
 )
 
 
@@ -327,16 +520,21 @@ def mirror_promote_to_primary(root: Path, draft_id: str) -> bool:
     work actually lands, exactly like any other in-progress ticket's
     uncommitted-elsewhere code edits already do today. This is a
     deliberately narrower mirrored surface than the other verbs get, not
-    an oversight left for a later ticket -- see this repo's T-2587
-    ticket body for why folding `promote` into `MIRRORED_LEDGER_VERBS`
-    outright, or unifying it with `_LEDGER_TRANSACTIONAL_VERBS`, was
-    rejected for now.
+    an oversight left for a later ticket -- see this repo's T-2587 ticket
+    body for the original reasoning against folding `promote` into
+    `MIRRORED_LEDGER_VERBS` outright. T-2603 later gave `promote` its own
+    `LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR` value in
+    `LEDGER_VERB_STRATEGY` precisely so this narrower shape stays a
+    DECLARED strategy rather than an undeclared special case -- the
+    unification T-2587 declined was doing this by hand-folding `promote`
+    into an existing set; T-2603's table adds a distinct value instead,
+    which is what let the two original sets merge safely.
 
     Not reachable via `MIRRORED_LEDGER_VERBS`/`_mirror_target` at all --
     call this directly (from `frob.app.ticket_runner.
-    _auto_commit_ledger_after_dispatch`'s `"promote"` special case, since
+    _auto_commit_ledger_after_dispatch`'s `"promote"` branch, since
     `promote` owns its own commit sequence and is excluded from the
-    generic per-verb sweep like every other `_LEDGER_TRANSACTIONAL_VERBS`
+    generic per-verb sweep like every other `OWN_TRANSACTION_VERBS`
     member).
 
     Returns whether anything was actually mirrored (`False` when `root`'s

@@ -2,7 +2,7 @@
 id: T-2603
 title: 'three ledger-write patterns across two disjoint verb sets plus a special case:
   one table with a declared per-verb strategy'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -39,6 +39,12 @@ scope_changes:
     dispatch logic here with the unified table lookup
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_all_classified
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_match
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_missing_raises
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_promote_kind
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_promote_from_worktree_is_visible_on_primary_without_a_land
 designated_repro_test: null
 threat: null
 component: null

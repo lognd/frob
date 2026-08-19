@@ -17,7 +17,11 @@ from pathlib import Path
 import pytest
 
 from frob.app.ticket_runner._ledger_mirror import (
+    LEDGER_VERB_STRATEGY,
     MIRRORED_LEDGER_VERBS,
+    OWN_TRANSACTION_VERBS,
+    LedgerWriteStrategy,
+    ledger_write_strategy_for,
     mirror_ledger_change_to_primary,
     mirror_promote_to_primary,
 )
@@ -197,6 +201,79 @@ class TestLedgerMirrorScope:
 
         assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
         assert _git("status", "--porcelain", cwd=primary).stdout.strip() == ""
+
+
+# frob:ticket T-2603
+class TestVerbStrategy:
+    """T-2603: one `LEDGER_VERB_STRATEGY` table replaces
+    `_LEDGER_TRANSACTIONAL_VERBS` + `MIRRORED_LEDGER_VERBS` + `promote`'s
+    special case -- these assert the unification changed NOTHING about
+    which verbs land in which bucket, and that the new failure-mode this
+    ticket asked for (an unclassified verb fails loudly, not silently)
+    actually fires."""
+
+    # frob:ticket T-2603
+    def test_all_classified(self) -> None:
+        from frob.app.ticket_runner import _ticket_dispatch_table
+
+        table_verbs = frozenset(_ticket_dispatch_table().keys())
+        assert table_verbs == frozenset(LEDGER_VERB_STRATEGY)
+
+    # frob:ticket T-2603
+    def test_derived_match(self) -> None:
+        """Positive control: every verb that was in the OLD
+        `_LEDGER_TRANSACTIONAL_VERBS` (`land`/`merge-driver`/`promote`/
+        `renumber`/`sweep-async`) is still in `OWN_TRANSACTION_VERBS`, and
+        every verb that was in the OLD `MIRRORED_LEDGER_VERBS` -- MINUS
+        `debt`, whose membership there was dead code (its handler never
+        sets `cfg.ticket_id`, so the mirror path was structurally
+        unreachable for it either way) -- is still in the new
+        `MIRRORED_LEDGER_VERBS` alias."""
+        assert OWN_TRANSACTION_VERBS == frozenset(
+            {"land", "merge-driver", "promote", "renumber", "sweep-async"}
+        )
+        assert MIRRORED_LEDGER_VERBS == frozenset(
+            {
+                "accept",
+                "anchor",
+                "attach",
+                "block",
+                "body",
+                "component",
+                "kind",
+                "label",
+                "priority",
+                "review",
+                "runs-last",
+                "scope",
+                "scope-ack",
+                "sprint",
+                "tier",
+            }
+        )
+
+    # frob:ticket T-2603
+    def test_missing_raises(self) -> None:
+        """The whole point: a verb `_ticket_dispatch_table()` knows about
+        but `LEDGER_VERB_STRATEGY` does not raises `KeyError` naming the
+        gap, rather than silently taking the old code's implicit default
+        (generic-commit-but-never-mirror) -- the exact quiet-default shape
+        that produced the T-2197 bug this ticket cites."""
+        with pytest.raises(KeyError, match="hypothetical-new-verb"):
+            ledger_write_strategy_for("hypothetical-new-verb")
+
+    # frob:ticket T-2603
+    def test_promote_kind(self) -> None:
+        """`promote` is neither a plain `OWN_TRANSACTION` verb nor a
+        `GENERIC_COMMIT_MIRRORED` one -- it gets its own enum value,
+        proving the unification did not have to flatten a genuinely
+        different write shape into one of the other two to succeed."""
+        assert (
+            ledger_write_strategy_for("promote")
+            is LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR
+        )
+        assert "promote" in OWN_TRANSACTION_VERBS
+        assert "promote" not in MIRRORED_LEDGER_VERBS
 
 
 # frob:ticket T-2587

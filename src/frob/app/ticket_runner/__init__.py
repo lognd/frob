@@ -31,6 +31,7 @@ from frob.process._guard import guarded_subprocess_run
 
 from ._archive import _archive
 from ._attach_backfill import _attach_dispatch
+from ._ledger_mirror import OWN_TRANSACTION_VERBS as _LEDGER_TRANSACTIONAL_VERBS
 from ._close_cmd import (
     _apply_close_time_evidence,
     _close,
@@ -429,9 +430,12 @@ def _ticket_dispatch_table() -> dict:
 # `commit_ticket_ledger_change` also means this never fires for a verb
 # that touched nothing (every read-only verb, or a `--worktree`-scoped
 # verb like `work`/`land` that never dirties `root`'s OWN ledger file).
-_LEDGER_TRANSACTIONAL_VERBS = frozenset(
-    {"land", "merge-driver", "promote", "renumber", "sweep-async"}
-)
+#
+# T-2603: `_LEDGER_TRANSACTIONAL_VERBS` is now an IMPORTED alias (see the
+# top-of-file import) for `_ledger_mirror.OWN_TRANSACTION_VERBS`, the
+# real (and now single) source of truth -- kept under this name here
+# because `tests/test_ticket_leases.py` and several docstrings elsewhere
+# still import/reference it from this module by this name.
 
 
 # frob:ticket T-1779
@@ -542,36 +546,42 @@ def _auto_commit_ledger_after_dispatch(
     Deliberately a wrapper around the ONE dispatch call site in `run()`,
     not a commit call added to each individual verb handler: a verb
     added to `_ticket_dispatch_table()` in the future is covered the
-    instant it is added, with nothing new to remember per verb -- the
-    same class of gap this ticket exists to close cannot reopen here.
-    `_LEDGER_TRANSACTIONAL_VERBS` (`land`/`merge-driver`) is the only
-    exclusion, because both own their own complete multi-file commit
-    sequence and must never have a stray single-file `tickets.md` commit
-    spliced into it from outside.
+    instant it is added -- T-2603: PROVIDED it also gets a
+    `LEDGER_VERB_STRATEGY` entry in `frob.app.ticket_runner.
+    _ledger_mirror`, which `ledger_write_strategy_for` enforces by
+    raising loudly rather than silently defaulting for an unclassified
+    verb (the exact class of gap a two-frozenset-plus-special-case design
+    could reopen with no signal until someone happened to notice).
 
-    T-2587: `"promote"` is also in `_LEDGER_TRANSACTIONAL_VERBS` (it owns
-    its own commit sequence too, `_commit_promote_rename`) and is handled
-    as a special case BEFORE the exclusion below returns, rather than
-    added to `MIRRORED_LEDGER_VERBS` -- `promote`'s write is a multi-file
-    rename, not the single-pathspec shape that set assumes (see
-    `mirror_promote_to_primary`'s own docstring for the full reasoning).
-    `cfg.ticket_id` here is the DRAFT id the user passed to `frob ticket
-    promote <draft-id>`, exactly what `mirror_promote_to_primary` needs
-    to find its own already-committed rename commit.
+    T-2587/T-2603: `"promote"`'s `LedgerWriteStrategy.
+    OWN_TRANSACTION_LEDGER_MIRROR` is handled as its own branch BEFORE
+    the generic-commit path below, since its write is a multi-file
+    rename (see `mirror_promote_to_primary`'s own docstring for the full
+    reasoning) rather than the single-pathspec shape `GENERIC_COMMIT_
+    MIRRORED` assumes. `cfg.ticket_id` here is the DRAFT id the user
+    passed to `frob ticket promote <draft-id>`, exactly what `mirror_
+    promote_to_primary` needs to find its own already-committed rename
+    commit.
 
-    Best-effort against `cfg.ticket_id is None`: every read-only verb
-    (`list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/`sprint show`/
+    Best-effort against `cfg.ticket_id is None`: every `NOT_TICKET_
+    SCOPED` verb (`list`/`show`/`doable`/`board`/`epic`/`brief`/`flow`/
     ...) either never sets it or never dirties the ledger either way, so
     there is nothing to resolve a commit pathspec against."""
-    if command == "promote":
-        if cfg.ticket_id is not None:
-            from frob.app.ticket_runner._ledger_mirror import (
-                mirror_promote_to_primary,
-            )
+    from frob.app.ticket_runner._ledger_mirror import (
+        LedgerWriteStrategy,
+        ledger_write_strategy_for,
+        mirror_promote_to_primary,
+    )
 
+    if command is None:
+        return
+    strategy = ledger_write_strategy_for(command)
+
+    if strategy is LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR:
+        if cfg.ticket_id is not None:
             mirror_promote_to_primary(root, cfg.ticket_id)
         return
-    if command in _LEDGER_TRANSACTIONAL_VERBS:
+    if strategy is LedgerWriteStrategy.OWN_TRANSACTION:
         return
     if cfg.ticket_id is None:
         return
@@ -597,13 +607,16 @@ def _auto_commit_ledger_after_dispatch(
     # fleet can never see it. Ledger-only metadata (scope, which IS the
     # write lease here; blocker edges; attachments) has to reach main to
     # mean anything, so mirror it there now rather than hoping some later
-    # land carries it.
-    if command is not None:
-        from frob.app.ticket_runner._ledger_mirror import (
-            mirror_ledger_change_to_primary,
-        )
+    # land carries it. `_mirror_target` (gated on `strategy is
+    # GENERIC_COMMIT_MIRRORED`, via `MIRRORED_LEDGER_VERBS`) is the
+    # actual decision on whether anything happens for this `command`;
+    # `command` cannot be `None` here (the top-of-function guard already
+    # returned).
+    from frob.app.ticket_runner._ledger_mirror import (
+        mirror_ledger_change_to_primary,
+    )
 
-        mirror_ledger_change_to_primary(root, cfg.ticket_id, command)
+    mirror_ledger_change_to_primary(root, cfg.ticket_id, command)
 
 
 # frob:ticket T-1674

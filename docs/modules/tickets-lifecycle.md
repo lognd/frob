@@ -818,19 +818,81 @@ rename:
   elsewhere code edits already do today -- a deliberately narrower
   mirrored surface than the other verbs get, not an oversight.
 
-This is also why `_LEDGER_TRANSACTIONAL_VERBS` and `MIRRORED_LEDGER_VERBS`
-stay two separate sets rather than being unified into one verb table with
-a per-verb "how to mirror" attribute: `promote`'s membership in the
-former (it owns its own commit) is orthogonal to needing a mirror at all,
-and its mirror strategy (read-back-and-narrow, not copy-the-declared-
-pathspec) does not fit either set's existing shape. Folding a third,
-structurally different write pattern into one of these tables to avoid
-"two lists" would trade one duplication for a subtler one -- a single
-table whose entries silently mean different things depending on which
-verb key you look up. Unifying the two tables behind a real per-verb
-mirror-strategy abstraction is a legitimate future refactor, but it needs
-its own design pass across every current member, not a promote-shaped
-patch bolted onto the smaller of the two.
+At the time this section was written, `_LEDGER_TRANSACTIONAL_VERBS` and
+`MIRRORED_LEDGER_VERBS` stayed two separate sets rather than being
+unified into one verb table with a per-verb "how to mirror" attribute:
+`promote`'s membership in the former (it owns its own commit) was
+orthogonal to needing a mirror at all, and its mirror strategy
+(read-back-and-narrow, not copy-the-declared-pathspec) did not fit either
+set's existing shape. Folding a third, structurally different write
+pattern into one of these tables to avoid "two lists" would have traded
+one duplication for a subtler one -- a single table whose entries
+silently mean different things depending on which verb key you look up.
+That reasoning was sound, and the fix below honors it rather than
+overriding it.
+
+### One verb table, not two sets (T-2603)
+
+T-2603 did the "own design pass across every current member" this
+section asked for, rather than bolting `promote` onto whichever existing
+set was smaller. The result replaces `_LEDGER_TRANSACTIONAL_VERBS` +
+`MIRRORED_LEDGER_VERBS` + `promote`'s special case in
+`_auto_commit_ledger_after_dispatch` with ONE table,
+`frob.app.ticket_runner._ledger_mirror.LEDGER_VERB_STRATEGY`, keyed by
+every real `_ticket_dispatch_table()` verb (48 at the time of the audit)
+and valued by a `LedgerWriteStrategy` enum member -- see that enum's own
+docstring for the full definition of each of its five values.
+
+What made this safe, where the earlier promote-shaped patch would not
+have been: the two original sets encoded exactly TWO independent
+questions --
+
+1. does the verb own a complete commit transaction itself (`_LEDGER_
+   TRANSACTIONAL_VERBS`), and
+2. does the generic per-dispatch commit's result get mirrored onto the
+   primary checkout, and with which copy shape (`MIRRORED_LEDGER_VERBS`'
+   single-pathspec copy, or something else)?
+
+`promote` needed answer "yes" to (1) and a THIRD answer to (2) (a
+dedicated read-back-and-narrow mirror, not "no mirror" and not the
+single-pathspec copy) -- which is exactly what a fifth enum value
+(`OWN_TRANSACTION_LEDGER_MIRROR`) expresses cleanly, rather than forcing
+`promote` to share a value that already meant something else for every
+other member. That is the difference between this unification and the
+one T-2587's agent was right to decline: a genuinely new declared value
+for a genuinely different shape, not a shared value doing double duty.
+
+The exhaustive per-verb audit also surfaced that the OLD `MIRRORED_
+LEDGER_VERBS` included `"debt"`, whose membership there was always dead
+code -- `frob ticket debt` delegates to a separate runner that never sets
+`cfg.ticket_id`, so the mirror path was structurally unreachable for it
+regardless of set membership. The new table omits it; the derived
+`MIRRORED_LEDGER_VERBS` alias is therefore one member smaller than
+before, with no behavioural change (`tests/unit/
+test_ticket_runner_ledger_mirror.py::TestLedgerVerbStrategyTable::
+test_derived_sets_match_pre_t2603_membership` is the positive control).
+The audit also found FOUR verbs (`body`, `contention`, `milestone`,
+`waive-audit`) that had drifted out of `tests/test_ticket_leases.py`'s
+OWN independent classification test entirely -- filed separately (that
+test file is outside this ticket's declared scope), not fixed here,
+since one of the four (`milestone`) is a live but out-of-scope bug
+(missing a `MIRRORED_LEDGER_VERBS` entry it should have) rather than a
+classification typo this table's own correctness depends on.
+
+`frob.app.ticket_runner._ledger_mirror.ledger_write_strategy_for(command)`
+is the lookup every caller now goes through -- it raises `KeyError`
+naming the gap for any verb `_ticket_dispatch_table()` knows about that
+this table does not, rather than silently taking the old code's implicit
+default (generic-commit-but-never-mirror) the way an unlisted verb used
+to. That silent default is exactly the T-2197 bug's shape: a new ledger
+verb added without a mirror decision quietly picks "not mirrored,"
+discovered only when a worktree's edit turns out to be invisible on
+`main`. `_LEDGER_TRANSACTIONAL_VERBS` (in `frob.app.ticket_runner`) and
+`MIRRORED_LEDGER_VERBS` (in `_ledger_mirror`) both still exist and both
+still mean exactly what they meant before T-2603 -- they are now derived
+frozensets computed from `LEDGER_VERB_STRATEGY` rather than declared a
+second time, kept under their original names because tests and other
+modules still import them that way.
 
 ## Stale-worktree-cut warning (T-1059)
 
