@@ -14,10 +14,19 @@ runs_last: false
 milestone: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: T-2604 fix changes _raise_quarantine_for_red_batch behavior; two existing
+    tests encode the pre-fix expected raise and need updating, plus new positive-control
+    tests
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
