@@ -135,6 +135,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2622: unify lease-premise and follow-up-ticket-promise waiver checks (coordinate with T-2606)
 - T-2623: roughly 19 tests are red on unmodified main, hiding real regressions in the noise
 - T-2624: CLI wiring for runs_last_parallel_safe
+- T-2625: worktree classifier: ACTIVE verdict does not distinguish queued-idle from a live lease
 - T-2626: scope write path never validates individual glob syntax (semicolon-joined entries silently stored)
 - T-2629: frob ticket doable does not complete: rendering scans all 938 branches with a temp-file parse per directive
 - T-2630: tests/unit/strata/test_export_golden.py red on main: golden export drift

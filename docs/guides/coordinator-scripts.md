@@ -251,6 +251,21 @@ T-2599: classifies one worktree as `"STRANDED"`, `"STALE"`, or `"ACTIVE"`
 against `main`, returning `(verdict, samples)` where `samples` is up to 5
 example added lines backing a `STRANDED` verdict.
 
+**T-2625: the `ACTIVE` short-circuit now distinguishes queued-idle from
+a live lease.** Previously ANY non-terminal ticket state
+(`queued`/`planned`/`in-progress`) read identically as `ACTIVE` -- a
+ticket that was merely `queued`, with nobody holding a lease on it
+anywhere, read the same as one genuinely being worked right now.
+Measured: `t-1599`'s worktree flagged `ACTIVE` while T-1599 was `queued`
+with no worktree activity and no lease anywhere (T-2617's own
+investigation). Now: `in-progress`/`planned` (or any other non-terminal,
+non-`queued` state) still resolve to `ACTIVE` unconditionally, and so
+does a `queued` ticket that DOES hold a live lease (`ticket_lease`
+non-`None`) -- ACTIVE stays the safe direction, never proposed for
+removal, for anything actually claimed. Only a `queued` ticket with NO
+lease record falls through to the ordinary content test below instead
+of an automatic `ACTIVE`.
+
 The obvious tests for "does this worktree hold unlanded work" are all
 measured wrong:
 

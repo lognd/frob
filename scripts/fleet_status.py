@@ -463,10 +463,20 @@ def worktree_content_classification(
     real-data false-positive finding, lives at `docs/guides/
     coordinator-scripts.md#worktree_content_classification` (`frob:doc`
     below) rather than duplicated here -- summary: `ticket_id` resolves
-    to `"ACTIVE"` for any non-terminal ticket state, or to `"STALE"` for
-    a terminal ticket whose `land_commit` is an ancestor of `main`
-    (T-2617's exact fix for a renamed/superseded symbol misreading as
-    stranded); failing both, a deletion-dominant diff
+    to `"ACTIVE"` for `in-progress`/`planned` (or any other non-terminal,
+    non-`queued` state), and for a `queued` ticket that still holds a
+    live lease (T-2625: `ticket_lease` is non-`None` -- a lease binds
+    only at in-progress per T-0453, so a queued ticket normally has none,
+    but this stays conservative for whatever transient state a lease
+    write outlives a state write by); a `queued` ticket with NO lease
+    record falls through to the ordinary content test below instead of
+    an automatic ACTIVE (T-2625's own fix -- previously ANY non-terminal
+    state read identically, so `t-1599`'s worktree read ACTIVE while
+    T-1599 was merely queued with no live work anywhere, per T-2617's own
+    measured finding). Failing the ticket-state checks entirely, a
+    terminal ticket whose `land_commit` is an ancestor of `main` is
+    `"STALE"` (T-2617's exact fix for a renamed/superseded symbol
+    misreading as stranded); failing both, a deletion-dominant diff
     (`_is_deletion_dominant`, T-2617's magnitude fallback for a
     ticketless worktree) is also `"STALE"`; only then does the original
     per-line presence check (`_lines_absent_from_main`) decide
@@ -476,8 +486,10 @@ def worktree_content_classification(
     if ticket_id is not None:
         frontmatter = ticket_frontmatter_on_main(ticket_id)
         if frontmatter is not None:
-            if frontmatter.get("state") not in _TERMINAL_TICKET_STATES:
-                return "ACTIVE", []
+            state = frontmatter.get("state")
+            if state not in _TERMINAL_TICKET_STATES:
+                if state != "queued" or ticket_lease(ticket_id) is not None:
+                    return "ACTIVE", []
             land_commit = frontmatter.get("land_commit")
             if land_commit and _is_ancestor_of_main(land_commit, path):
                 return "STALE", []

@@ -2,7 +2,7 @@
 id: T-2625
 title: 'worktree classifier: ACTIVE verdict does not distinguish queued-idle from
   a live lease'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -12,13 +12,48 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: test file and doc anchors touched by the fix
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: test file and doc anchors touched by the fix
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: test file and doc anchors touched by the fix
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: test file and doc anchors touched by the fix
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_queued_ticket_with_live_lease_still_active
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_queued_ticket_with_no_lease_falls_through_to_content_test
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_active_ticket_never_stranded_or_stale
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_queued_ticket_no_lease_falls_through_to_real_content_test
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_superseded_symbol_with_landed_terminal_ticket_is_stale
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_genuinely_new_symbol_absent_from_main_is_stranded
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_far_behind_main_with_no_ticket_is_stale
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification::test_queued_ticket_with_no_lease_falls_through_to_content_test
 threat: null
 component: null
 anchor: false

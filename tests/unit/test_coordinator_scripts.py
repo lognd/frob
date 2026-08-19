@@ -542,6 +542,67 @@ class TestWorktreeContentClassification:
         assert verdict == "ACTIVE"
         assert samples == []
 
+    # frob:ticket T-2625
+    def test_queued_ticket_with_live_lease_still_active(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2625 positive control: a `queued` ticket that DOES hold a
+        live lease record still reads ACTIVE unconditionally -- ACTIVE
+        stays the safe direction for anything actually claimed, even in
+        the unusual state where a lease outlives a state write."""
+        diff_args = (
+            "diff",
+            "main",
+            "HEAD",
+            "--",
+            "src",
+            "tests",
+            "docs",
+            "scripts",
+        )
+        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        monkeypatch.setattr(
+            fleet_status, "_git", self._fake_git({diff_args: diff_text}, {})
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda ticket_id: {"state": "queued"},
+        )
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_lease",
+            lambda ticket_id: {"ticket_id": ticket_id, "worktree": "/w/t-2625"},
+        )
+        verdict, samples = fleet_status.worktree_content_classification(
+            tmp_path, ticket_id="T-2625"
+        )
+        assert verdict == "ACTIVE"
+        assert samples == []
+
+    # frob:ticket T-2625
+    def test_queued_ticket_with_no_lease_falls_through_to_content_test(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2625 negative control (the ticket's own measured instance):
+        a `queued` ticket with NO lease record anywhere is NOT
+        automatically ACTIVE -- it falls through to the ordinary content
+        test, which here reports STALE for an empty diff. Without this
+        fix, `t-1599`'s queued-with-no-lease shape would read identically
+        to a genuinely in-progress worktree."""
+        monkeypatch.setattr(fleet_status, "_git", self._fake_git({}, {}))
+        monkeypatch.setattr(
+            fleet_status,
+            "ticket_frontmatter_on_main",
+            lambda ticket_id: {"state": "queued"},
+        )
+        monkeypatch.setattr(fleet_status, "ticket_lease", lambda ticket_id: None)
+        verdict, samples = fleet_status.worktree_content_classification(
+            tmp_path, ticket_id="T-1599"
+        )
+        assert verdict == "STALE"
+        assert samples == []
+
     def test_stale_when_terminal_ticket_land_commit_is_ancestor_of_main(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -872,6 +933,53 @@ class TestWorktreeContentClassificationLiveGit:
         verdict, samples = fleet_status.worktree_content_classification(worktree)
         assert verdict == "STALE"
         assert samples == []
+
+    # frob:ticket T-2625
+    def test_queued_ticket_no_lease_falls_through_to_real_content_test(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2625's own measured shape, reproduced with real git state
+        (not a string-fixture mock, per the T-2617 precedent this test
+        class exists to hold to): a `queued` ticket with genuinely
+        stranded content and NO lease file anywhere falls through the
+        (now-conditional) ACTIVE short-circuit into the real, unmocked
+        `git diff`/`git show` content test below it, which correctly
+        reports STRANDED for content absent from main -- proving the fix
+        does not just change a state-comparison in isolation, it changes
+        what the REAL classifier does end to end for T-1599's exact
+        shape (queued, no lease, some local diff)."""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "x.py").write_text("def existing():\n    pass\n")
+        tdir = repo / "tickets" / "T-1599"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text("---\nid: T-1599\nstate: queued\n---\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() plus queued ticket"], repo)
+
+        worktree = tmp_path / "t-1599"
+        _run_git(["worktree", "add", "-q", "-b", "t-1599", str(worktree)], repo)
+        (worktree / "src" / "x.py").write_text(
+            "def existing():\n    pass\n\n\ndef never_landed_anywhere():\n    return 1\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: add never_landed_anywhere"], worktree)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        # No lease file anywhere for T-1599 -- point LEASES at an empty
+        # directory so this does not accidentally read this actual
+        # project's own real .git/frob-leases/ (LEASES is a module-level
+        # constant fixed at import time from the REAL REPO, not
+        # re-derived from the patched REPO above).
+        monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
+        verdict, samples = fleet_status.worktree_content_classification(
+            worktree, ticket_id="T-1599"
+        )
+        assert verdict == "STRANDED"
+        assert any("never_landed_anywhere" in s for s in samples)
 
 
 class TestWorktreeTicketId:
