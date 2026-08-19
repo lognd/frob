@@ -14,6 +14,7 @@ parent: T-1609
 tier: ticket
 sprint: null
 runs_last: false
+milestone: 1.0.0
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: true
