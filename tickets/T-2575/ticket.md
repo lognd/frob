@@ -11,10 +11,76 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+scope:
+- src/frob/lang/__init__.py
+- src/frob/arch/__init__.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_coverage_sites.py
+- src/frob/tickets/_land.py
+- src/frob/xref/__init__.py
+- src/frob/outline/__init__.py
+- tests/unit/lang/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/arch/__init__.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/xref/__init__.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/outline/__init__.py
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/lang/**
+  reason: 'T-2575: put unsupported-extension warning guarantee in the primitive with
+    an explicit caller declaration; collapse the 6 pre-filter sites + .strata carve-out
+    onto it'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
