@@ -935,6 +935,24 @@
       "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
       "reason": "T-2595: re-verified after replacing the unconditional baseline write with a locked CAS write -- the function's documented contract (one check per sweep, file a ticket for new findings, record the fresh set as the next baseline) is unchanged",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "body",
+      "new_digest": "e0f3f2c1fab589fd7652d13c6ff77fb3a0791707c6c41ccec441e07a9d9ff007",
+      "old_digest": "2b488266f44cf0eacf6142bf96fd22fb63dbf10b8a61eaaa3ce00e53f2010cb1",
+      "reason": "Re-verified docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690\nagainst the T-2672 change: the doc's own description of the T-1690/T-2009\nattribution and multi-land rules is still accurate. The change only adds a\nsingle-land-window causal-label guard (_single_land_attribution_label) --\nit does not alter the reachability rule, the multi-land disclosure, or the\nalready-open-ticket suppression the doc describes; still true as written.\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-19",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "Re-verified docs/modules/tickets-verify-sweep.md#symbolic-attribution-t-1690\nagainst the T-2672 change: the doc's own description of the T-1690/T-2009\nattribution and multi-land rules is still accurate. The change only adds a\nsingle-land-window causal-label guard (_single_land_attribution_label) --\nit does not alter the reachability rule, the multi-land disclosure, or the\nalready-open-ticket suppression the doc describes; still true as written.\n",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     }
   ],
   "entries": [
@@ -1019,7 +1037,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "2b488266f44cf0eacf6142bf96fd22fb63dbf10b8a61eaaa3ce00e53f2010cb1",
+      "digest": "e0f3f2c1fab589fd7652d13c6ff77fb3a0791707c6c41ccec441e07a9d9ff007",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },

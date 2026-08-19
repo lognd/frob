@@ -2530,6 +2530,105 @@ class TestFileRegressionTicket:
         )
         assert filed is not None
 
+    # frob:ticket T-2672
+    def test_causally_implicated_land_still_names_itself_as_the_cause(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_causally_implicated_land_still_names_itself_as_the_cause  # noqa: E501
+        """T-2672 positive control (must-still-pass direction): when the
+        spawning land's OWN commit genuinely reaches the finding via the
+        reference graph (the exact shape `test_attributed_to_closed_
+        ticket_is_refiled` already covers for filing, this asserts the
+        TITLE too), the fix must not become indistinguishable from
+        disabling attribution -- the title still names the land as the
+        cause, unqualified."""
+        from frob.graph import CallGraph, Digests, GraphSnapshot, SymbolId, SymbolRecord
+        from frob.lang import SymbolKind
+        from frob.tickets import load_queue
+        from frob.tickets._models import TicketState
+        from frob.verify import record_intent
+
+        owner = _seed_ticket(tmp_path, state=TicketState.DONE)
+        record_intent(
+            tmp_path,
+            commit_sha="deadbeef",
+            ticket_id=owner,
+            touched_symbols=("a.py::fn",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(
+            root=str(tmp_path),
+            symbols={
+                "a.py::fn": SymbolRecord(
+                    id=SymbolId(path="a.py", qualname="fn"),
+                    kind=SymbolKind.FUNCTION,
+                    public=True,
+                    digests=Digests(sig="s", body="b", doc="d"),
+                    span=(1, 5),
+                )
+            },
+            edges=(),
+        )
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+        ticket = load_queue(tmp_path).danger_ok.tickets[filed]
+        assert "regression from T-9000" in ticket.title, (
+            f"a genuinely reaching land must still be named plainly: {ticket.title!r}"
+        )
+        assert "unattributed" not in ticket.title.lower(), (
+            f"must not hedge a real attribution: {ticket.title!r}"
+        )
+
+    # frob:ticket T-2672
+    def test_unattributed_finding_does_not_name_the_spawning_land_as_cause(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_finding_does_not_name_the_spawning_land_as_cause  # noqa: E501
+        """T-2672: six real sweep-filed tickets all named the spawning
+        land (`final_id`, the one commit in a single-land window) as the
+        cause in their title even though `_attribution.py`'s own
+        per-finding reachability check reported every one of them
+        UNATTRIBUTED -- `git show --stat` on the blamed commit showed it
+        touched none of the flagged files. This reproduces the single-
+        land-but-unattributed shape directly: a verify-queue entry exists
+        (so attribution actually runs) but its touched symbols cannot
+        reach the finding's file, so `_partition_findings_by_attribution`
+        must report every pair UNATTRIBUTED -- yet the filed ticket's own
+        title must not read as if T-9000 caused it."""
+        from frob.graph import CallGraph, GraphSnapshot
+        from frob.tickets import load_queue
+        from frob.verify import record_intent
+
+        record_intent(
+            tmp_path,
+            commit_sha="commitA",
+            ticket_id="T-0001",
+            touched_symbols=("unrelated.py::other",),
+            profile="rapid",
+        )
+        snapshot = GraphSnapshot(root=str(tmp_path), symbols={}, edges=())
+        self._patch_graph(monkeypatch, snapshot, CallGraph(calls={}))
+
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+        assert filed is not None
+
+        ticket = load_queue(tmp_path).danger_ok.tickets[filed]
+        assert "regression from T-9000" not in ticket.title, (
+            "every finding attributed UNATTRIBUTED for this batch -- the "
+            f"title must not claim T-9000 as the cause: {ticket.title!r}"
+        )
+        assert "unattributed" in ticket.title.lower(), (
+            "the title must positively disclose that these findings "
+            f"could not be attributed to any land: {ticket.title!r}"
+        )
+
     # frob:ticket T-2312
     def test_duplicate_title_disposes_to_existing_ticket_instead_of_dropping(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

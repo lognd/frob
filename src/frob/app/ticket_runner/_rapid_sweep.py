@@ -1911,6 +1911,47 @@ def _relativize_regression_scope_file(root: Path, file: str) -> str:
     return str(rel)
 
 
+# frob:ticket T-2672
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_causally_implicated_land_still_names_itself_as_the_cause  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_finding_does_not_name_the_spawning_land_as_cause  # noqa: E501
+def _single_land_attribution_label(
+    final_id: str,
+    commit_sha: str,
+    unfiled_pairs: Sequence[tuple[str, str]],
+    attributions: dict,  # noqa: ANN401 -- dict[tuple[str, str], Attribution], deferred-import type
+) -> str:
+    """T-2672: `_file_regression_ticket`'s single-land-window label (the
+    `attributed_ids`-empty case -- see T-2009's own multi-land handling
+    right above this call site, which is unaffected). Names `final_id` as
+    the cause ONLY when at least one `unfiled_pairs` entry's own symbolic
+    attribution (T-1690, already computed by the caller) actually reached
+    `commit_sha` -- never merely because `final_id` happened to be the
+    one land that spawned this detached sweep. That distinction is
+    exactly what six real sweep-filed tickets got wrong (T-2672's own
+    measurement): the per-finding attribution correctly reported every
+    one of them UNATTRIBUTED, but the filed ticket's title still read
+    "post-land sweep regression from <that land>" -- a causal claim the
+    evidence directly contradicted. When nothing implicates `final_id`,
+    the label discloses that honestly instead of silently asserting a
+    cause; the full per-pair reasoning is already in `attribution_lines`
+    (the body), this only fixes the TITLE/first-body-line framing that
+    quotes this label verbatim."""
+    implicated = any(
+        (attr := attributions.get(pair)) is not None
+        and attr.status == "attributed"
+        and attr.commit_sha == commit_sha
+        for pair in unfiled_pairs
+    )
+    if implicated:
+        return final_id
+    # Deliberately does NOT read "... from <final_id>" -- a reader who
+    # greps a filed ticket's title for a ticket id must not be pointed at
+    # a land the evidence just said did not reach these findings. The
+    # sweep that happened to notice this is still named, but never as
+    # "the cause".
+    return f"an unattributed source (sweep spawned by {final_id})"
+
+
 def _file_regression_ticket(
     root: Path,
     final_id: str,
@@ -1965,7 +2006,6 @@ def _file_regression_ticket(
     are different questions, and conflating them would let a red batch
     whose findings all happen to already be tracked slip past the
     breaker with deferred landing still enabled."""
-    attribution_label = ", ".join(attributed_ids) if attributed_ids else final_id
     from frob.tickets import TicketSpec, new_ticket
     from frob.tickets._models import Origin, Priority, TicketKind
 
@@ -1983,6 +2023,30 @@ def _file_regression_ticket(
             final_id,
         )
         return None
+
+    # T-2672: `attributed_ids` (T-2009) already handles the multi-land
+    # window honestly -- it names every land that occurred, never just
+    # `final_id`. The single-land window (`attributed_ids` empty/None)
+    # used to default straight to `final_id` as the filed ticket's named
+    # cause with NO check against what `_attribute_new_findings` actually
+    # found -- six real sweep-filed tickets were measured naming a land
+    # that touched none of the flagged files, because every one of them
+    # was this exact single-land-but-unattributed shape: the per-finding
+    # symbolic attribution above already correctly computed UNATTRIBUTED
+    # (recorded in `attribution_lines`/the body), but the TITLE and first
+    # body line still asserted causation regardless. `_causally_
+    # implicates_final_id` asks the one question this label actually
+    # needs answered: did the evidence this function already computed
+    # implicate `final_id`'s own commit for at least one of the pairs
+    # being filed here? If not, the label discloses "unattributed"
+    # instead of quietly asserting a cause the evidence contradicts.
+    attribution_label = (
+        ", ".join(attributed_ids)
+        if attributed_ids
+        else _single_land_attribution_label(
+            final_id, commit_sha, unfiled_pairs, attributions
+        )
+    )
 
     rules = sorted({rule for rule, _ in unfiled_pairs})
     true_count = _true_finding_count_for_identities(root, frozenset(unfiled_pairs))

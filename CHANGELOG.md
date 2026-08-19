@@ -160,6 +160,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2668: land records 'gates: unmeasured' and proceeds while a real SELFAUDIT001 error sits in its own findings list
 - T-2669: rapid-profile land fails to commit its own rapid-debt.jsonl, dirtying the shared root and DirtyMain-blocking the fleet (70x today)
 - T-2670: docs/modules/gates.md: 80 gate rule ids in the DOCENUM001 member list have zero documentation
+- T-2672: sweep attributes findings to lands that never touched the flagged files: 6 of 6 tickets, including two filed after T-2571 and T-2595
 
 ## [0.530.0] - unreleased
 
