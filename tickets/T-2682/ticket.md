@@ -2,7 +2,7 @@
 id: T-2682
 title: 'LANG004: behavioral coverage for test_discovery (the last of 7 capabilities
   left structural-only)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -24,6 +24,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-test_discovery]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_unchecked_capability_is_named_not_silently_true
 designated_repro_test: null
 threat: null
 component: null

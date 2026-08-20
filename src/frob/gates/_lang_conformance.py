@@ -45,7 +45,9 @@ from frob.lang._support import (
     CAPABILITY_IMPORT_GRAPH,
     CAPABILITY_PUBLICNESS,
     CAPABILITY_SYMBOL_WALK,
+    CAPABILITY_TEST_DISCOVERY,
     KNOWN_GAP_TRACKING_TICKETS,
+    CapabilityStatus,
     FacetState,
     conformance_violations,
     derive_capability_registry,
@@ -188,17 +190,42 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
 # above now has its public function call its private one (call_graph) and
 # a real import/include/use statement (import_graph).
 #
-# test_discovery remains OUT of this set on purpose: every `_TEST_
-# DISCOVERY_COLLECTORS` entry (`frob.testing.collect_*_tests`) shells out
-# to the language's real toolchain (`uv run pytest --collect-only`,
-# `cargo test --list`, cmake/ctest, ...) rather than parsing source
-# directly -- invoking that per language, per gate run, would make this
-# gate slow and environment-fragile (no cargo/npm/cmake toolchain
-# guaranteed present wherever `frob check` runs) for a capability this
-# module's own fixtures cannot exercise without standing up a real
-# project layout per language. Disclosed, deliberate remaining cut (see
-# docs/modules/lang.md's degradation-story section) -- filed as follow-up
-# scope (T-2682), not silently dropped.
+# T-2682: test_discovery joins this set too, but NOT uniformly across
+# every language -- every `_TEST_DISCOVERY_COLLECTORS` entry
+# (`frob.testing.collect_*_tests`) shells out to the language's real
+# toolchain, and those toolchains have wildly different costs, measured
+# directly while building this (T-2682's own Done report has the
+# numbers): `uv run pytest --collect-only` on a throwaway fixture is
+# ~10ms, cheap enough to run on every `frob check` invocation the same
+# way the other six capabilities already do. `cargo test --lib --
+# --list` on an empty fixture crate is a COLD ~2.3s (rustc compiles the
+# crate first) -- tolerable once, but this gate runs on every `frob
+# check`, and a fresh tmp-dir fixture never benefits from cargo's own
+# incremental cache the way a real project would. cpp's collector only
+# ever lists an ALREADY-CONFIGURED cmake build directory (never invokes
+# cmake itself, per its own docstring) -- exercising it behaviorally
+# would mean this gate running `cmake` configure itself, a second,
+# heavier toolchain step apart from cargo's cost. typescript's
+# collector needs a `vitest` dependency actually resolvable via `npx`
+# in the fixture project -- `npm install` in a tmp dir is a NETWORK
+# call, unacceptable for a gate that must stay fast and offline-safe.
+# kotlin's collector reads ALREADY-PRODUCED gradle JUnit reports (never
+# invokes gradle itself, per its own docstring) -- producing one means
+# a cold JVM + gradle build, the heaviest of the five.
+#
+# `_BEHAVIORAL_CAPABILITY_LANGUAGES` (below) is the language-scoped
+# restriction this requires: `_BEHAVIORALLY_CHECKED_CAPABILITIES`
+# alone means "check this capability for every language with an
+# IMPLEMENTED cell" (true and fine for the other six, which are all
+# single-file-fixture-cheap regardless of language) -- test_discovery
+# is the first capability where that blanket rule is wrong. rust/
+# typescript/c/cpp/kotlin test_discovery stay structural-only for now,
+# same honest status they had before this ticket (LANG001 still holds
+# them to the structural-completeness bar) -- a real, disclosed,
+# COST-driven cut, not silence. Filed as follow-up scope (T-2698) to
+# revisit if/when a bounded, offline-safe way to exercise them exists
+# (e.g. a pre-built, checked-in fixture project per toolchain instead
+# of a from-scratch tmp-dir build every gate run).
 _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
     {
         CAPABILITY_SYMBOL_WALK,
@@ -207,8 +234,29 @@ _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
         CAPABILITY_DIRECTIVE_PARSE,
         CAPABILITY_CALL_GRAPH,
         CAPABILITY_IMPORT_GRAPH,
+        CAPABILITY_TEST_DISCOVERY,
     }
 )
+
+# T-2682: capability -> the language subset it is actually behaviorally
+# checked for, when narrower than "every IMPLEMENTED language" (the
+# default `_BEHAVIORALLY_CHECKED_CAPABILITIES` membership alone
+# implies). A capability absent from this dict is checked for every
+# language with an IMPLEMENTED cell, unchanged from before this ticket.
+_BEHAVIORAL_CAPABILITY_LANGUAGES: dict[str, frozenset[str]] = {
+    CAPABILITY_TEST_DISCOVERY: frozenset({"python"}),
+}
+
+
+def _behaviorally_checked_languages(capability: str) -> frozenset[str] | None:
+    """The language subset `capability` is behaviorally checked for, or
+    `None` meaning "every language with an IMPLEMENTED cell" (the default
+    every capability had before T-2682 introduced the first exception).
+    Shared by `capability_conformance_gate` and the test suite's own
+    `_implemented_behavioral_cells` so the two can never silently
+    disagree about which (language, capability) cells this module
+    actually exercises."""
+    return _BEHAVIORAL_CAPABILITY_LANGUAGES.get(capability)
 
 
 def _strata_capability_fixture_source() -> str | None:
@@ -302,6 +350,31 @@ def _check_import_graph(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:
 # new behaviorally-checked capability means adding one function plus one
 # entry here, not growing one long if/elif chain past ARCH001's
 # length-and-complexity threshold again.
+def _check_test_discovery(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_TEST_DISCOVERY`'s own behavioral check (T-2682) --
+    ONLY ever invoked for `language == "python"`
+    (`_BEHAVIORAL_CAPABILITY_LANGUAGES` restricts dispatch before this
+    runs; see that dict's own comment for the measured per-language cost
+    that ruled out rust/typescript/c/cpp/kotlin this round). Ignores the
+    shared single-file `parsed`/`path` fixture entirely -- test discovery
+    needs its own small real pytest project, not a parsed source file --
+    and writes one under a nested `tmp_path` directory instead."""
+    project = tmp_path / "test_discovery_fixture"
+    project.mkdir(exist_ok=True)
+    (project / "test_fixture.py").write_text(
+        "def test_capability_fixture_discoverable():\n    assert True\n",
+        encoding="utf-8",
+    )
+    from frob.testing import collect_python_tests
+
+    collected = collect_python_tests(project)
+    if collected.is_err:
+        return False, f"collect_python_tests failed: {collected.danger_err}"
+    node_ids = collected.danger_ok.node_ids
+    ok = any("test_capability_fixture_discoverable" in n for n in node_ids)
+    return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+
 _CAPABILITY_CHECKERS: dict[str, Callable[[object, Path, Path], tuple[bool, str]]] = {
     CAPABILITY_SYMBOL_WALK: _check_symbol_walk,
     CAPABILITY_PUBLICNESS: _check_publicness,
@@ -309,6 +382,7 @@ _CAPABILITY_CHECKERS: dict[str, Callable[[object, Path, Path], tuple[bool, str]]
     CAPABILITY_DIRECTIVE_PARSE: _check_directive_parse,
     CAPABILITY_CALL_GRAPH: _check_call_graph,
     CAPABILITY_IMPORT_GRAPH: _check_import_graph,
+    CAPABILITY_TEST_DISCOVERY: _check_test_discovery,
 }
 
 
@@ -636,12 +710,16 @@ def capability_conformance_gate() -> tuple[Violation, ...]:
     the claim. T-1599 extended coverage from the original four
     (symbol_walk/publicness/doc_extract/directive_parse) to six, adding
     call_graph/import_graph once both turned out to be exercisable from
-    the same single-file fixture. Only `test_discovery` remains outside
-    `_BEHAVIORALLY_CHECKED_CAPABILITIES` now -- see that constant's own
-    comment for why (every collector shells out to a real toolchain,
-    which this gate deliberately does not do) -- silently skipped here;
-    `lang_conformance_gate` still holds that cell to the structural-
-    completeness bar, this gate just cannot verify it BEHAVIORALLY yet.
+    the same single-file fixture. T-2682 added `test_discovery` as the
+    seventh -- but ONLY for python (`_behaviorally_checked_languages`
+    restricts dispatch; see `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own
+    comment for the measured per-toolchain cost that ruled out rust/
+    typescript/c/cpp/kotlin this round). Those five languages' test_
+    discovery cells stay outside this gate's behavioral reach -- loudly
+    disclosed (this docstring, `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own
+    comment, docs/modules/lang.md, and T-2698), not silently skipped;
+    `lang_conformance_gate` still holds every one of those cells to the
+    structural-completeness bar regardless.
     """
     registry = derive_capability_registry()
     violations: list[Violation] = []
@@ -649,30 +727,55 @@ def capability_conformance_gate() -> tuple[Violation, ...]:
         tmp_path = Path(tmp)
         for language, support in sorted(registry.items()):
             for capability, status in sorted(support.capabilities.items()):
-                if status.state is not FacetState.IMPLEMENTED:
-                    continue
-                if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
-                    continue
-                ok, detail = _behavioral_capability_check(
-                    language, capability, tmp_path
+                violation = _lang004_check_cell(
+                    language, capability, status, tmp_path
                 )
-                if not ok:
-                    violations.append(
-                        Violation(
-                            rule="LANG004",
-                            severity=Severity.ERROR,
-                            file="src/frob/lang/_support.py",
-                            line=0,
-                            message=(
-                                f"LANG004: {language} capability "
-                                f"'{capability}' is declared IMPLEMENTED "
-                                f"but failed its behavioral check: {detail}"
-                            ),
-                        )
-                    )
+                if violation is not None:
+                    violations.append(violation)
     _log.info(
         "capability_conformance_gate: %d language(s) checked, %d violation(s)",
         len(registry),
         len(violations),
     )
     return tuple(violations)
+
+
+def _lang004_should_check(
+    capability: str, status: CapabilityStatus, language: str
+) -> bool:
+    """Whether `_lang004_check_cell` should actually dispatch a behavioral
+    check for this (language, capability, status) triple -- factored out
+    of `capability_conformance_gate`'s own loop purely to keep that
+    function under ARCH001's length threshold; no behavior change."""
+    if status.state is not FacetState.IMPLEMENTED:
+        return False
+    if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
+        return False
+    allowed_languages = _behaviorally_checked_languages(capability)
+    return allowed_languages is None or language in allowed_languages
+
+
+def _lang004_check_cell(
+    language: str, capability: str, status: CapabilityStatus, tmp_path: Path
+) -> Violation | None:
+    """One `(language, capability)` cell's LANG004 outcome: `None` if it
+    is not behaviorally checked at all (see `_lang004_should_check`) or
+    the check passes; a real ERROR `Violation` if an `IMPLEMENTED` claim
+    fails its behavioral check. Split out of `capability_conformance_
+    gate`'s own loop for the same ARCH001 reason as `_lang004_should_
+    check`."""
+    if not _lang004_should_check(capability, status, language):
+        return None
+    ok, detail = _behavioral_capability_check(language, capability, tmp_path)
+    if ok:
+        return None
+    return Violation(
+        rule="LANG004",
+        severity=Severity.ERROR,
+        file="src/frob/lang/_support.py",
+        line=0,
+        message=(
+            f"LANG004: {language} capability '{capability}' is declared "
+            f"IMPLEMENTED but failed its behavioral check: {detail}"
+        ),
+    )

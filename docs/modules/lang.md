@@ -715,48 +715,54 @@ something they discover by noticing an analysis never ran.
 - **`call_graph` absent** -- `frob.graph.callgraph.build_call_graph`
   (and everything built on it: `closure`, `build_ordered_call_graph`,
   DEAD001's reachability walk) simply never resolves an edge FROM or TO
-  that language's symbols. A dead-code scan over a mixed-language repo
-  silently under-reports for that language's files specifically -- no
-  ERROR, no WARN, the affected files just never produce a call edge.
-  LANG001/LANG003 are the only place this is visible today: the
-  registry cell itself is `KNOWN_GAP` there, loud in `frob check`'s
-  output, but nothing at DEAD001's own call site re-surfaces "this
-  finding set is call_graph-incomplete for language X."
+  that language's symbols. RESOLVED (T-2683): `build_call_graph`'s own
+  return value now self-discloses this -- `CallGraph.degraded_languages`
+  (docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683)
+  names any language present in its input whose `call_graph` cell is a
+  live `KNOWN_GAP`, and a WARNING is logged the same call. Currently
+  empty in practice (every registered language is `IMPLEMENTED`, T-1599)
+  -- the mechanism is proven by a monkeypatched positive control
+  (`tests/test_graph.py::TestCapabilityGapDisclosure::
+  test_known_gap_is_disclosed_on_the_output_itself`), not just present.
 - **`import_graph` absent** -- `frob.cycle`'s dependency graph and
   `build_call_graph`'s own `verify_imports=True` cross-file resolution
   (see that function's docstring) both silently skip edges for that
   language's files -- a real circular import in an unregistered-walker
   language produces no `frob.cycle` finding at all, not a degraded one.
-  Same visibility gap as `call_graph`: the registry cell is loud in
-  `frob check`, the downstream consumer's own output is not.
-  Currently every registered language is `IMPLEMENTED` (T-2494's live
-  derivation, see above) -- this degradation path exists in the
-  contract but has no live instance today.
+  PARTIALLY RESOLVED (T-2683): `build_call_graph`'s `verify_imports=True`
+  path is covered by the same `CallGraph.degraded_languages` mechanism
+  as `call_graph` above. `frob.cycle.import_graph_gap_disclosure` (the
+  same primitive pre-bound to `import_graph`) exists and is tested, but
+  is NOT YET wired into `DependencyGraph`/`find_cycles`'s own output --
+  that file (`src/frob/cycle/graph.py`) sat outside T-2683's own
+  declared scope. <!-- frob:until T-2700 --> Tracked as T-2700.
 - **`test_discovery` absent** -- `frob.testing.collect_*_tests` (and
   therefore any `frob:tests` evidence binding that relies on collecting
   that language's real test node ids) has no entrypoint for that
   language at all: `frob check`'s coverage/evidence gates cannot verify
   a `frob:tests` directive naming a test in that language actually
   exists and collects, and LANG004's own behavioral suite cannot
-  exercise the capability either (see `_BEHAVIORALLY_CHECKED_
-  CAPABILITIES`'s own comment in `frob.gates._lang_conformance` for
-  why -- every collector shells out to a real toolchain, which that
-  suite deliberately does not do). This is the most consequential
-  `OPTIONAL` gap of the three: an evidence claim in an affected
-  language is unverifiable, not merely unresolved.
+  exercise the capability either for 5 of 6 languages (see
+  `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own comment in `frob.gates.
+  _lang_conformance` for the measured per-toolchain cost that ruled out
+  rust/typescript/c/cpp/kotlin, T-2682/T-2698 -- python alone is
+  behaviorally checked). This is the most consequential `OPTIONAL` gap
+  of the three: an evidence claim in an affected language is
+  unverifiable, not merely unresolved. Consumer-side self-disclosure
+  for this one is NOT built (no `frob.testing` consumer analogous to
+  `CallGraph.degraded_languages` exists yet) -- out of T-2683's own
+  declared scope (`src/frob/graph/callgraph.py`, `src/frob/cycle/
+  __init__.py` only), real remaining work.
 
 The common thread: an `OPTIONAL` capability's `KNOWN_GAP` state is
 always loud at the REGISTRY layer (LANG001/LANG003, `frob check`'s own
-output) but currently silent at each DOWNSTREAM CONSUMER's own output
-(`frob.graph.callgraph`, `frob.cycle`, evidence binding) -- a user
-reading only `dead001`/`cycle001`/evidence-gate results for an affected
-language sees a clean or absent result, not a "this analysis is
-incomplete for your language" note. Making each consumer's own output
-self-disclose an active `OPTIONAL` gap it silently relied on is real,
-unbuilt follow-up scope -- filed as T-2683 (do not conflate with T-2682,
-which is LANG004's own missing test_discovery BEHAVIORAL check; T-2683
-is about consumer-side disclosure once a gap DOES exist, which none of
-the three has today).
+output). T-2683 closed the DOWNSTREAM-CONSUMER silence for `call_graph`
+and `build_call_graph`'s own `import_graph` usage -- `frob.graph.
+callgraph`'s output now self-discloses. `frob.cycle`'s own output
+(T-2700) and evidence-binding's `test_discovery` gap remain silent at
+the consumer layer; a user reading only `cycle001`/evidence-gate
+results for an affected language still sees a clean or absent result
+today, not a "this analysis is incomplete for your language" note.
 
 ### Behavioral conformance (LANG004, T-2365)
 
@@ -767,7 +773,7 @@ IMPLEMENTED cells are actually true": a wrong registry entry claiming a
 capability works, with a plausible-sounding `detail` string, would pass
 that check trivially. `frob.gates._lang_conformance.capability_
 conformance_gate` (LANG004, ERROR severity) closes that gap by actually
-EXERCISING every `IMPLEMENTED` cell among six of the seven capabilities
+EXERCISING every `IMPLEMENTED` cell of the original six capabilities
 `frob.lang.parse_file` alone can drive in isolation (`symbol_walk`,
 `publicness`, `doc_extract`, `directive_parse`, and -- T-1599 -- also
 `call_graph`/`import_graph`, both resolvable from the SAME single-file
@@ -777,13 +783,24 @@ would need) against a real, hand-written per-language fixture -- one
 containing a public symbol, a private symbol, a call from the public
 symbol to the private one, a real import/include/use statement, and a
 `frob:tests \` continuation directive split across two physical comment
-lines. `test_discovery` alone remains structural-completeness-only
-(a disclosed cut, not silence -- follow-up scope is T-2682): every
-`_TEST_DISCOVERY_COLLECTORS` entry shells out to the language's real
-toolchain (`pytest --collect-only`, `cargo test --list`, cmake/ctest)
-rather than parsing source, which this gate deliberately does not do
-per invocation (see "Optional-capability degradation" above for what
-that gap means for a consumer). LANG004 itself is wired into `frob
+lines. T-2682 added `test_discovery` as the seventh, but NOT uniformly:
+only `python`'s cell is behaviorally checked (a real fixture pytest
+project, `frob.testing.collect_python_tests`, ~10ms measured) --
+rust/typescript/c/cpp/kotlin stay structural-completeness-only on
+purpose, `_BEHAVIORAL_CAPABILITY_LANGUAGES` restricting dispatch to
+python alone. This is a MEASURED cost decision, not an oversight:
+`cargo test --lib -- --list` on an empty fixture crate is a cold ~2.3s
+(rustc compiles it first); cpp's collector only lists an
+ALREADY-CONFIGURED cmake build dir (exercising it would mean this gate
+running `cmake` configure itself); typescript's collector needs `npx
+vitest` resolvable, which means an `npm install` -- a network call, not
+acceptable in a gate that must stay fast and offline-safe; kotlin's
+collector reads ALREADY-PRODUCED gradle JUnit reports (producing one
+means a cold JVM + gradle build, the heaviest of the five). Filed as
+follow-up scope (T-2698) to revisit if/when a bounded, offline-safe
+fixture exists per toolchain -- a disclosed cut, not silence (see
+"Optional-capability degradation" above for what the gap means for a
+consumer of an affected language). LANG004 itself is wired into `frob
 check`'s job table (T-2411, `src/frob/gates/__init__.py` was outside
 T-2365's own declared scope, so this was a separate ticket).
 

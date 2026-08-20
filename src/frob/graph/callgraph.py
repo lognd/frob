@@ -33,6 +33,10 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
+
 __all__ = [
     "UNRESOLVED_CALLEE",
     "CallGraph",
@@ -41,6 +45,7 @@ __all__ = [
     "build_call_graph",
     "build_ordered_call_graph",
     "build_reference_graph",
+    "capability_gap_disclosure",
     "closure",
     "is_symref",
     "scope_private_helper_gaps",
@@ -89,6 +94,16 @@ class CallGraph(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     calls: Mapping[str, tuple[str, ...]] = {}
+    #: T-2683: languages present in `build_call_graph`'s own `paths` input
+    #: whose `call_graph` (or, when `verify_imports=True`, `import_graph`)
+    #: capability cell is a live registry `KNOWN_GAP` -- the SELF-
+    #: DISCLOSURE this ticket exists to add. Empty in the common case
+    #: (every registered language is `IMPLEMENTED` for both today). A
+    #: caller holding a `CallGraph` can inspect this directly instead of
+    #: re-deriving it -- the output announces its own incompleteness
+    #: rather than a consumer having to separately query the registry
+    #: and cross-reference it against what it just consumed.
+    degraded_languages: tuple[str, ...] = ()
 
 
 # frob:doc docs/modules/graph.md#call-graph
@@ -327,6 +342,61 @@ def _parse_package(root: Path, paths: Sequence[str]) -> dict[str, list]:
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_default_preserves_old_silent_omission_behavior  # noqa: E501
 # frob:tests tests/test_graph.py::TestCallGraph.test_build_call_graph_resolved_private_callee_is_not_also_unresolved  # noqa: E501
 # invariant spec: [INV-014](invariants/INV-014.md)
+# frob:ticket T-2683
+# frob:doc docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683  # noqa: E501
+# frob:tests tests/test_graph.py::TestCapabilityGapDisclosure.test_capability_gap_disclosure_empty_for_no_gap  # noqa: E501
+# frob:tests tests/test_graph.py::TestCapabilityGapDisclosure.test_known_gap_is_disclosed_on_the_output_itself  # noqa: E501
+def capability_gap_disclosure(
+    languages: frozenset[str], capability: str
+) -> tuple[str, ...]:
+    """One human-readable warning per language in `languages` whose
+    `capability` cell is a live registry `KNOWN_GAP` (`frob.lang._
+    support.derive_capability_registry`) -- empty when every present
+    language is `IMPLEMENTED`/`NOT_APPLICABLE`, which is the honest
+    common case today (T-1599 made call_graph/import_graph IMPLEMENTED
+    for every registered language). Shared by every consumer that wants
+    to self-disclose "my output silently degraded for language X because
+    of an OPTIONAL capability gap" instead of staying silent about it --
+    see `CallGraph.degraded_languages` for the first real caller, and
+    `frob.cycle.import_graph_gap_disclosure` for the second (T-2683's own
+    scope boundary: this function is the shared primitive both consumers
+    use, kept here since `frob.cycle`'s own real DependencyGraph/
+    find_cycles output type lives in `frob.cycle.graph`, out of this
+    ticket's declared scope -- see docs/modules/graph.md#call-graph's
+    T-2683 note)."""
+    from frob.lang._support import FacetState, derive_capability_registry
+
+    registry = derive_capability_registry()
+    warnings: list[str] = []
+    for language in sorted(languages):
+        support = registry.get(language)
+        if support is None:
+            continue
+        status = support.capabilities.get(capability)
+        if status is not None and status.state is FacetState.KNOWN_GAP:
+            warnings.append(
+                f"{language}: '{capability}' is a KNOWN_GAP ({status.detail}) "
+                f"-- results for {language} files silently omit edges this "
+                f"capability would have produced"
+            )
+    return tuple(warnings)
+
+
+def _languages_present(paths: Sequence[str]) -> frozenset[str]:
+    """The distinct `frob.lang` language labels among `paths`' own
+    extensions (unknown/unregistered extensions silently excluded --
+    `capability_gap_disclosure` only ever needs to check languages the
+    registry actually knows about)."""
+    from frob.lang import language_for_extension
+
+    languages: set[str] = set()
+    for p in paths:
+        label = language_for_extension(Path(p).suffix)
+        if label is not None:
+            languages.add(label)
+    return frozenset(languages)
+
+
 def build_call_graph(
     root: Path,
     paths: Sequence[str],
@@ -469,7 +539,34 @@ def build_call_graph(
             else None
         ),
     )
-    return CallGraph(calls=calls)
+    degraded = _call_graph_degraded_languages(paths, verify_imports=verify_imports)
+    if degraded:
+        _log.warning(
+            "build_call_graph: %d language(s) present with a live capability "
+            "KNOWN_GAP -- output silently omits edges for them: %s",
+            len(degraded),
+            degraded,
+        )
+    return CallGraph(calls=calls, degraded_languages=degraded)
+
+
+def _call_graph_degraded_languages(
+    paths: Sequence[str], *, verify_imports: bool
+) -> tuple[str, ...]:
+    """T-2683: `build_call_graph`'s own self-disclosure computation --
+    call_graph gaps always checked; import_graph gaps ALSO checked when
+    `verify_imports=True`, since that path directly depends on import
+    extraction accuracy (an import_graph KNOWN_GAP degrades cross-file
+    resolution the same way a call_graph KNOWN_GAP would). Factored out
+    of `build_call_graph` itself to keep that function under ARCH001's
+    length threshold."""
+    from frob.lang._support import CAPABILITY_CALL_GRAPH, CAPABILITY_IMPORT_GRAPH
+
+    languages = _languages_present(paths)
+    degraded = set(capability_gap_disclosure(languages, CAPABILITY_CALL_GRAPH))
+    if verify_imports:
+        degraded |= set(capability_gap_disclosure(languages, CAPABILITY_IMPORT_GRAPH))
+    return tuple(sorted(degraded))
 
 
 # frob:doc docs/modules/graph.md#call-graph

@@ -388,6 +388,37 @@ clarity) -- it has a permanent, different correctness requirement (same-
 directory co-location, not import reachability) unrelated to this
 blocker.
 
+### Self-disclosure of a silently degraded capability (T-2683)
+
+<!-- frob:describes src/frob/graph/callgraph.py::capability_gap_disclosure -->
+<!-- frob:describes src/frob/graph/callgraph.py::CallGraph -->
+
+`build_call_graph`'s output can be silently incomplete for a language
+whose `call_graph` (or, when `verify_imports=True`, `import_graph`)
+adapter capability is a live registry `KNOWN_GAP` (docs/modules/
+lang.md#optional-capability-degradation-t-1599) -- before T-2683, a
+consumer had no way to learn this from the `CallGraph` object itself; it
+would have to separately query `frob.lang._support.derive_capability_
+registry` and cross-reference it against the languages it happened to
+scan. `CallGraph.degraded_languages` closes that: `build_call_graph`
+computes it on every call (via `capability_gap_disclosure`, the shared
+primitive) and logs a WARNING when non-empty, so the OUTPUT announces
+its own incompleteness rather than staying silent about it.
+
+```python
+def capability_gap_disclosure(languages: frozenset[str], capability: str) -> tuple[str, ...]
+```
+
+One human-readable warning per language in `languages` whose
+`capability` cell is `KNOWN_GAP` in the live registry -- empty in the
+common case (every registered language is `call_graph`/`import_graph`
+`IMPLEMENTED` today, T-1599). `frob.cycle.import_graph_gap_disclosure`
+(`src/frob/cycle/__init__.py`) is the same primitive pre-bound to
+`import_graph`, exposed for `frob.cycle.graph`'s own future use -- **not
+yet wired into `DependencyGraph`/`find_cycles`'s own output**, since
+that file sat outside T-2683's own declared scope; tracked as T-2700.
+<!-- frob:until T-2700 -->
+
 ## Import graph
 
 <!-- frob:describes src/frob/graph/imports.py::ImportGraph -->

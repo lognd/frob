@@ -2,7 +2,7 @@
 id: T-2683
 title: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently
   degrades output
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -21,10 +21,18 @@ scope:
 - src/frob/cycle/__init__.py
 - docs/modules/lang.md
 - docs/modules/graph.md
+evidence_scope:
+- tests/test_graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_graph.py::TestCapabilityGapDisclosure::test_clean_tree_has_no_degraded_languages
+- tests/test_graph.py::TestCapabilityGapDisclosure::test_known_gap_is_disclosed_on_the_output_itself
+- tests/test_graph.py::TestCapabilityGapDisclosure::test_capability_gap_disclosure_empty_for_no_gap
+- tests/test_graph.py::TestCycleImportGraphGapDisclosure::test_empty_for_no_gap
+- tests/test_graph.py::TestCycleImportGraphGapDisclosure::test_delegates_to_the_shared_primitive
 designated_repro_test: null
 threat: null
 component: null

@@ -10,6 +10,7 @@ import pytest
 from frob.gates._lang_conformance import (
     _BEHAVIORALLY_CHECKED_CAPABILITIES,
     _behavioral_capability_check,
+    _behaviorally_checked_languages,
     capability_conformance_gate,
     lang_conformance_gate,
     project_lang_conformance_gate,
@@ -159,11 +160,14 @@ def _implemented_behavioral_cells() -> list[tuple[str, str]]:
     # own identical-shape support.facets sort"
     for language, support in sorted(registry.items()):
         for capability, status in sorted(support.capabilities.items()):
-            if (
-                capability in _BEHAVIORALLY_CHECKED_CAPABILITIES
-                and status.state is FacetState.IMPLEMENTED
-            ):
-                cells.append((language, capability))
+            if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
+                continue
+            if status.state is not FacetState.IMPLEMENTED:
+                continue
+            allowed = _behaviorally_checked_languages(capability)
+            if allowed is not None and language not in allowed:
+                continue
+            cells.append((language, capability))
     return cells
 
 
@@ -281,15 +285,44 @@ class TestBehavioralCapabilityCheck:
     ) -> None:
         """Per epic T-2391's doctrine: a capability this module does not
         (yet) behaviorally check must be reported explicitly as such
-        (`ok=False` naming the gap), never silently read as a pass.
-        T-1599 moved call_graph/import_graph into the checked set;
-        test_discovery is the one capability still outside it (see
-        `_BEHAVIORALLY_CHECKED_CAPABILITIES`'s own comment for why)."""
+        (`ok=False` naming the gap), never silently read as a pass. T-1599
+        moved call_graph/import_graph into the checked set; T-2682 moved
+        test_discovery in too, but ONLY for python -- a capability name
+        entirely outside `_CAPABILITY_CHECKERS` (a made-up one, standing
+        in for "a future 8th capability nobody wired a checker for yet")
+        is still the genuine unchecked case at the `_behavioral_
+        capability_check` level today."""
         ok, detail = _behavioral_capability_check(
-            "python", "test_discovery", tmp_path
+            "python", "not_a_real_capability", tmp_path
         )
         assert not ok
         assert "no behavioral check" in detail
+
+    # frob:ticket T-2682
+    def test_test_discovery_is_not_behaviorally_checked_outside_python(
+        self,
+    ) -> None:
+        """T-2682's own cost-driven scope decision must be LOUD and
+        verifiable, not just prose in a comment: rust/typescript/c/cpp/
+        kotlin all have `test_discovery` IMPLEMENTED in the live registry
+        (T-2499), but `_behaviorally_checked_languages` restricts the
+        behavioral check to python only -- so none of the other five
+        appear in `_implemented_behavioral_cells()`'s own parametrization,
+        confirmed directly rather than assumed."""
+        registry = derive_capability_registry()
+        non_python_implemented = {
+            language
+            for language, support in registry.items()
+            if language != "python"
+            and support.capabilities["test_discovery"].state
+            is FacetState.IMPLEMENTED
+        }
+        # A real, non-vacuous set: at least rust/typescript/kotlin/c/cpp
+        # are IMPLEMENTED today (T-2499's own live derivation).
+        assert non_python_implemented
+        cells = set(_implemented_behavioral_cells())
+        for language in non_python_implemented:
+            assert (language, "test_discovery") not in cells
 
 
 # frob:ticket T-2365

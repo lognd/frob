@@ -2819,3 +2819,124 @@ class TestScopePrivateHelperGaps:
         assert len(gaps) == 1
         assert gaps[0].caller == "flat/test_a.py::test_x"
         assert gaps[0].callee == "flat/test_b.py::_git"
+
+
+# frob:ticket T-2683
+class TestCapabilityGapDisclosure:
+    """T-2683: `build_call_graph`'s output self-discloses when a
+    language present in its input silently degraded because of a live
+    OPTIONAL capability KNOWN_GAP -- proven both ways (clean-tree empty,
+    monkeypatched-gap non-empty) so a vacuous "always empty" shape could
+    never pass this suite."""
+
+    def test_clean_tree_has_no_degraded_languages(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        from frob.graph.callgraph import build_call_graph
+
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def _helper() -> int:\n    return 1\n\n\ndef entry() -> int:\n    return _helper()\n",
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        # Every registered language is call_graph-IMPLEMENTED today
+        # (T-1599) -- this is a real, not vacuous, empty-set assertion.
+        assert call_graph.degraded_languages == ()
+
+    def test_known_gap_is_disclosed_on_the_output_itself(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/graph/callgraph.py::build_call_graph
+        """Positive control: monkeypatch python's call_graph cell to a
+        live KNOWN_GAP and confirm `build_call_graph`'s own output
+        announces it -- proving the mechanism actually fires rather than
+        just existing."""
+        import frob.lang._support as support_module
+        from frob.graph.callgraph import build_call_graph
+        from frob.lang._support import (
+            CapabilityRequirement,
+            CapabilityStatus,
+            FacetState,
+        )
+
+        _write(tmp_path, "src/a.py", "def _helper() -> int:\n    return 1\n")
+
+        real_derive = support_module.derive_capability_registry
+
+        def _fake_registry():
+            registry = real_derive()
+            python_support = registry["python"]
+            gapped = dict(python_support.capabilities)
+            gapped["call_graph"] = CapabilityStatus(
+                requirement=CapabilityRequirement.REQUIRED,
+                state=FacetState.KNOWN_GAP,
+                detail="synthetic gap for T-2683's own positive control",
+            )
+            registry["python"] = python_support.model_copy(
+                update={"capabilities": gapped}
+            )
+            return registry
+
+        monkeypatch.setattr(
+            support_module, "derive_capability_registry", _fake_registry
+        )
+        call_graph = build_call_graph(tmp_path, ("src/a.py",))
+        assert call_graph.degraded_languages != ()
+        assert any("python" in w for w in call_graph.degraded_languages)
+        assert any("call_graph" in w for w in call_graph.degraded_languages)
+
+    def test_capability_gap_disclosure_empty_for_no_gap(self) -> None:
+        # frob:tests src/frob/graph/callgraph.py::capability_gap_disclosure
+        from frob.graph.callgraph import capability_gap_disclosure
+
+        assert capability_gap_disclosure(frozenset({"python"}), "call_graph") == ()
+
+
+# frob:ticket T-2683
+class TestCycleImportGraphGapDisclosure:
+    """`frob.cycle.import_graph_gap_disclosure` -- the same `capability_
+    gap_disclosure` primitive pre-bound to `import_graph`, exposed for
+    `frob.cycle`'s own future use (not yet wired into `DependencyGraph`/
+    `find_cycles`'s own output, T-2700)."""
+
+    def test_empty_for_no_gap(self) -> None:
+        # frob:tests src/frob/cycle/__init__.py::import_graph_gap_disclosure
+        from frob.cycle import import_graph_gap_disclosure
+
+        assert import_graph_gap_disclosure(frozenset({"python"})) == ()
+
+    def test_delegates_to_the_shared_primitive(self, monkeypatch) -> None:
+        # frob:tests src/frob/cycle/__init__.py::import_graph_gap_disclosure
+        """Positive control: monkeypatch the registry so python's
+        import_graph cell is a live KNOWN_GAP and confirm the disclosure
+        actually fires, proving delegation is real, not a stub."""
+        import frob.lang._support as support_module
+        from frob.cycle import import_graph_gap_disclosure
+        from frob.lang._support import (
+            CapabilityRequirement,
+            CapabilityStatus,
+            FacetState,
+        )
+
+        real_derive = support_module.derive_capability_registry
+
+        def _fake_registry():
+            registry = real_derive()
+            python_support = registry["python"]
+            gapped = dict(python_support.capabilities)
+            gapped["import_graph"] = CapabilityStatus(
+                requirement=CapabilityRequirement.REQUIRED,
+                state=FacetState.KNOWN_GAP,
+                detail="synthetic gap for T-2683's own positive control",
+            )
+            registry["python"] = python_support.model_copy(
+                update={"capabilities": gapped}
+            )
+            return registry
+
+        monkeypatch.setattr(
+            support_module, "derive_capability_registry", _fake_registry
+        )
+        warnings = import_graph_gap_disclosure(frozenset({"python"}))
+        assert warnings != ()
+        assert any("import_graph" in w for w in warnings)
