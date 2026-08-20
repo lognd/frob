@@ -85,7 +85,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e70b60710557ff91e61fa1d804f4ec447019c832
 ---
 Reported by a downstream consumer repo (aprog-public) on frob 0.530.0,
 2026-08-20.
