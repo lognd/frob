@@ -2,7 +2,7 @@
 id: T-2713
 title: Deferred verification advances the watermark and records the rolling baseline
   from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -22,6 +22,7 @@ scope:
 - tests/unit/test_rapid_sweep.py
 - tests/unit/test_ticket_runner_gate_findings.py
 - docs/modules/tickets-verify-sweep.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,24 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
   reason: doc target for scoped symbols
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2713 fix documented alongside the T-1703/T-2456 sections it extends in
+    tickets-landing.md
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2713 fix documented alongside the T-1703/T-2456 sections it extends in
+    tickets-landing.md
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2713 fix documented alongside the T-1703/T-2456 sections it extends in
+    tickets-landing.md
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
