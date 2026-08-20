@@ -47,8 +47,9 @@ poll (no `.frob/land-status.json`, no `frob ticket show`/`fleet_status`
 field distinguishing "queued behind lock" from "actively running gates"
 from "dead, needs a retry"). Fold this into the T-2141 disclosure
 direction: a small land-status marker file (holder pid, phase,
-started_at, last-heartbeat) that `fleet_status.py` and a future `frob
-land status` can read, so "is my land alive, and did it accomplish
+started_at, last-heartbeat) that `fleet_status.py` and a future,
+not-yet-implemented "frob land status" verb can read, so "is my land
+alive, and did it accomplish
 anything" stops requiring manual `ps`/`git log --grep`/`git status`
 archaeology after the fact.
 

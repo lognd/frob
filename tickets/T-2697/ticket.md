@@ -2,7 +2,7 @@
 id: T-2697
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-1549):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -27,7 +27,11 @@ scope_changes:
   reason: regression test proving the T-2697 DOC006 fix in tickets/T-2691/ticket.md
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2691Doc006Regression::test_backticked_future_verb_is_flagged
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2691Doc006Regression::test_prose_description_of_future_verb_not_flagged
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2691Doc006Regression::test_real_ticket_file_not_flagged
+designated_repro_test: tests/unit/test_ticket_2691_doc006.py::TestTicket2691Doc006Regression::test_real_ticket_file_not_flagged
 threat: null
 component: null
 anchor: false

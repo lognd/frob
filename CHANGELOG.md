@@ -181,6 +181,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2679: A timed-out land marks the ticket done and records evidence while zero code reaches main
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
+- T-2697: post-land sweep regression from an unattributed source (sweep spawned by T-1549): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)
 - T-2702: T-2690's phantom-refile fix does not work: two more auto-filed recoveries from lands that contained it
 - T-2703: DOC006 scans inline code spans, reading C++ lambda captures as TOML section keys (72 false positives downstream)
 - T-2704: DOC008/DOC011 normalize ../ with a string replace instead of path resolution, breaking every valid parent-relative link (2 sites)
