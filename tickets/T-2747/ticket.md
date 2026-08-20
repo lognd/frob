@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'record two further false-LEAK instances and widen the root cause: a series
+    worktree can only encode one ticket id, so name-based lease correlation fails
+    for every sibling ticket it holds'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2667
+  new_length: 4285
 designated_repro_test: null
 threat: null
 component: null
@@ -90,3 +99,41 @@ authoritative source for lands, leases and root cleanliness -- correctly,
 since hand-rolled probes are worse -- a wrong verdict from it now
 propagates further than it used to. Worth a pass over its other verdicts
 for the same class of assumption.
+
+
+
+
+## TWO MORE INSTANCES, and the naming assumption is worse than first described
+
+Measured shortly after filing:
+
+    LEASES 5 (1 live, 2 leaked, 0 blocked-open)
+      T-2737 -> <no worktree>  [LEAK]
+      T-2740 -> <no worktree>  [LEAK]
+
+Both verdicts are FALSE. Both worktrees exist, are registered, and hold
+substantial live work:
+
+    .claude/worktrees/t2738-t2737   [t-2738]              27 unlanded commits
+    .claude/worktrees/waive-liveness [agent/waive-liveness] 29 unlanded commits
+
+T-2737's case is the more instructive one and widens the defect beyond
+'custom worktree names'. That worktree IS named by convention -- it is
+just named for T-2738, the OTHER ticket in the same series. An agent
+working a series in one worktree can only encode one id in the directory
+name, so every additional ticket it holds is unresolvable by a name-based
+correlation. This is not an edge case; working a series in a single
+worktree is the standard dispatch pattern here.
+
+So the detector is wrong for at least three shapes:
+  1. worktree named after the subject rather than a ticket id
+  2. worktree named after ticket A while holding a lease for sibling B
+  3. (by extension) any renamed or reused worktree
+
+Acting on either verdict would have reclaimed a lease from a live agent
+mid-series -- 27 and 29 commits respectively.
+
+Note also that both tickets DO have a genuine, separate problem worth not
+conflating with this one: their work is complete-but-unlanded on a branch.
+That is real and is being chased. It is simply not what a LEAK verdict is
+supposed to mean, and the verdict gave no way to tell the two apart.
