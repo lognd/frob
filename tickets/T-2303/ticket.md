@@ -2,7 +2,7 @@
 id: T-2303
 title: ARCH001/ARCH103/PERF004/SELFAUDIT001 debt in _land_cmd.py, telemetry.py, _new.py,
   design (found by T-2206 sweep)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -33,6 +33,14 @@ scope_changes:
     debt split out, not fixed in this pass
   actor: logan
   at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: fix already landed onto main as a passenger of T-1549''s
+    own land; repro test structurally cannot fail at parent any more'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2324
+  new_length: 3092
 evidence:
 - tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed
 - tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all
@@ -81,3 +89,5 @@ not a regression.
 Filed from T-2206 rather than fixed there because splitting a 120-151 line
 land-critical function safely needs its own scoped, reviewed ticket -- not
 something to force inside a sweep-regression ticket's remaining budget.
+
+frob:waive BUG002 reason="T-2303's own fix (PERF004/PERF005/PERF008 waivers + frob:invariant terminates in telemetry.py/_new.py) already landed onto main as an undisclosed-turned-disclosed passenger of T-1549's own --allow-cross-ticket land (both tickets share one series worktree branch, T-1549 landed first per coordinator instruction 2026-08-19/20). main now already contains the fix, so the designated repro test structurally cannot fail at parent any more -- confirmatory-only is the only possible outcome from this point forward, not evidence the original repro was ever weak. git diff main -- src/frob/app/telemetry.py src/frob/app/ticket_runner/_new.py is empty; this land is now a ledger-close operation over already-shipped code, not a fresh code change."
