@@ -2,7 +2,7 @@
 id: T-2311
 title: 'DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent
   contended family)'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-17'
