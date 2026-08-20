@@ -44,6 +44,14 @@ scope_changes:
     a one-line-fix ticket
   actor: logan
   at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: 'BUG002 needs a waiver for a not-reproducible investigation close: no code
+    change was made because there was nothing left to fix'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 951
+  new_length: 1491
 evidence:
 - tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
@@ -68,3 +76,5 @@ Pre-existing, not caused by any of T-1899/T-1952/T-1996/T-1973's own
 work -- filed rather than silently worked around. Worth investigating
 why this one anchor's SCOPE002 findings are ERROR-severity while every
 sibling SCOPE002 finding against the same doc file is WARNING-severity.
+
+<!-- frob:waive BUG002 reason="investigation-only closure: T-2128's own finding IS that the reported defect no longer reproduces at main (live-remeasured T-1973 -- 106/106 SCOPE002 findings are severity=warning, 0 error, 0 mention of _worker.py/coalescing-verify-worker at all). There is no live defect left to write a fails-at-main/passes-at-fix test for; the bound test (test_silent_on_closed_scope) demonstrates SCOPE002's current WARN-only behavior, which is the whole point of this closure, not a fix to a bug that still exists." -->
