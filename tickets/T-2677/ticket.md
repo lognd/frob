@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 784147fdabf8279660badf8d41798d963d0e6733
 ---
 scripts/fleet_status.py's module-level constants (REPO, LEASES,
 TICKETS_DIR, WORKTREES, VERIFY_QUEUE, VERIFY_WATERMARK, QUARANTINE) are
