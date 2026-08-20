@@ -648,6 +648,27 @@ def _add_ticket_waive_audit_parser(ticket_sub):
         "status -- a collision is reported for a human/agent to "
         "classify, same posture as scan's own NEEDS_REVIEW list.",
     )
+    # frob:ticket T-2740
+    scan_p.add_argument(
+        "--check-liveness",
+        dest="waive_audit_check_liveness",
+        action="store_true",
+        help="T-2740: opt-in, report-only. Classifies each scanned waiver "
+        "as NECESSARY (a current gate run's `waived` set shows it actively "
+        "suppressing a violation), INERT (its rule has a registered scan-"
+        "membership predicate and the waiver's own file structurally falls "
+        "outside that rule's scan set -- provably not evaluated, not an "
+        "absence-of-finding inference), or UNVERIFIED (neither could be "
+        "established; never guessed). This is the honesty audit's missing "
+        "half: T-1614 judged a waiver's REASON, never whether the rule "
+        "evaluating it can even reach the file it sits in -- 11 RENDER001 "
+        "waivers in .claude/hooks/ sat INERT behind exactly that blind "
+        "spot (T-2719/T-2740). REPORT-ONLY: never removes a waiver, never "
+        "gates this command's exit status -- an INERT verdict is also "
+        "evidence the RULE's own scan pathspec may be wrong, not only that "
+        "the waiver is stale; treat it as a lead for a human/agent to "
+        "investigate the gate, not license to bulk-delete the waiver.",
+    )
     complete_p = waive_audit_sub.add_parser(
         "complete",
         help="record a finished pass's verdict and advance the watermark",

@@ -12,11 +12,13 @@ from frob.app.ticket_runner._waive_audit import (
     AuditVerdict,
     ScannedWaiver,
     WaiveAuditError,
+    WaiverLiveness,
+    classify_waiver_liveness,
     complete_pass,
     find_collision_suspects,
     run_scan,
 )
-from frob.gates._models import Severity, Violation
+from frob.gates._models import GateReport, GateStats, Severity, Violation
 from frob.gates._waive_audit_watermark import watermark_path
 
 # The parent package's __init__.py re-exports this submodule's `run` under
@@ -440,3 +442,214 @@ class TestCheckCollisionsWiring:
         out = capsys.readouterr().out
         assert "gate run failed" in out
 
+
+# frob:ticket T-2740
+class TestClassifyWaiverLiveness:
+    """T-2740: the three-way liveness verdict -- see `classify_waiver_
+    liveness`'s own docstring and this module's T-2740 section docstring
+    for exactly what each state proves. Positive controls, both
+    directions, per the coordinator brief: a waiver on a path its rule
+    does not scan reports INERT; a waiver actively suppressing a
+    reproducing finding reports NECESSARY and never INERT even when a
+    registered checker exists; a rule with no registered checker reports
+    UNVERIFIED, never a guessed OBSOLETE."""
+
+    @staticmethod
+    def _report(waived: list[Violation]) -> GateReport:
+        return GateReport(violations=(), waived=tuple(waived), stats=GateStats())
+
+    def test_necessary_when_waived_this_run(self, tmp_path: Path) -> None:
+        waiver = ScannedWaiver(
+            file="mod.py", line=3, rule="DUP001", reason="suppresses a real finding"
+        )
+        report = self._report(
+            [
+                Violation(
+                    rule="DUP001",
+                    severity=Severity.WARN,
+                    file="mod.py",
+                    line=10,
+                    message="DUP001: mod.py:10 duplicate of other.py:5",
+                )
+            ]
+        )
+
+        assert (
+            classify_waiver_liveness(waiver, report, tmp_path)
+            is WaiverLiveness.NECESSARY
+        )
+
+    def test_inert_when_rule_does_not_scan_the_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # RENDER001's real registered checker: this file lives outside
+        # both src/frob/ and the .claude/hooks/scripts/fleet_status.py
+        # extra pathspecs, so the real render001_scans predicate itself
+        # (not a stub) says False here.
+        waiver = ScannedWaiver(
+            file="somewhere/unrelated/mod.py",
+            line=3,
+            rule="RENDER001",
+            reason="claims to suppress a bare print, but this path is never scanned",
+        )
+        report = self._report([])
+
+        assert (
+            classify_waiver_liveness(waiver, report, tmp_path) is WaiverLiveness.INERT
+        )
+
+    def test_unverified_when_no_checker_registered(self, tmp_path: Path) -> None:
+        # No registered scan-membership checker exists for this rule id,
+        # and nothing suppressed it this run -- the honest default, never
+        # a guessed OBSOLETE (see this module's own T-2740 docstring for
+        # why that claim is never made from this signal alone).
+        waiver = ScannedWaiver(
+            file="mod.py", line=3, rule="DUP001", reason="not suppressed this run"
+        )
+        report = self._report([])
+
+        assert (
+            classify_waiver_liveness(waiver, report, tmp_path)
+            is WaiverLiveness.UNVERIFIED
+        )
+
+    # frob:ticket T-2740
+    def test_appconfig_check_liveness_defaults_false(self) -> None:
+        """`AppConfig.waive_audit_check_liveness` defaults to False (opt-in,
+        never the default `scan` behavior) -- same posture as its
+        `waive_audit_check_collisions` sibling (T-2496)."""
+        from frob.app.config import AppConfig
+
+        cfg = AppConfig()
+
+        assert cfg.waive_audit_check_liveness is False
+
+    def test_necessary_never_inert_even_with_a_registered_checker(
+        self, tmp_path: Path
+    ) -> None:
+        # Positive control, the other direction: RENDER001 HAS a
+        # registered checker, and this file IS inside its real scan set
+        # (src/frob/), AND it actively suppressed a violation this run --
+        # must report NECESSARY, never INERT, even though a checker
+        # exists for this rule.
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        target = tmp_path / "src" / "frob" / "mod.py"
+        target.write_text("print('hi')\n")
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"],
+            cwd=tmp_path,
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "x"],
+            cwd=tmp_path,
+            check=True,
+        )
+        waiver = ScannedWaiver(
+            file="src/frob/mod.py",
+            line=1,
+            rule="RENDER001",
+            reason="suppresses the bare print above",
+        )
+        report = self._report(
+            [
+                Violation(
+                    rule="RENDER001",
+                    severity=Severity.ERROR,
+                    file="src/frob/mod.py",
+                    line=1,
+                    message="RENDER001: src/frob/mod.py:1 bare stdout write",
+                )
+            ]
+        )
+
+        assert (
+            classify_waiver_liveness(waiver, report, tmp_path)
+            is WaiverLiveness.NECESSARY
+        )
+
+
+
+# frob:ticket T-2740
+class TestCheckLivenessWiring:
+    """T-2740: `waive-audit scan --check-liveness` wires
+    `classify_waiver_liveness` into the CLI -- report-only, additive to
+    `scan`'s own output, same posture as T-2496's `--check-collisions`
+    sibling immediately above."""
+
+    def test_check_liveness_renders_inert_and_necessary(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        from typani import Ok
+
+        from frob.gates._models import GateReport, GateStats
+
+        inert_waiver = ScannedWaiver(
+            file="somewhere/else/mod.py",
+            line=3,
+            rule="RENDER001",
+            reason="claims to suppress a bare print outside RENDER001's scan set",
+        )
+        necessary_waiver = ScannedWaiver(
+            file="src/frob/mod.py", line=1, rule="DUP001", reason="suppresses this"
+        )
+        waived_violation = Violation(
+            rule="DUP001",
+            severity=Severity.WARN,
+            file="src/frob/mod.py",
+            line=1,
+            message="DUP001: src/frob/mod.py:1 duplicate",
+        )
+        report = GateReport(
+            violations=(), waived=(waived_violation,), stats=GateStats()
+        )
+
+        monkeypatch.setattr(
+            _waive_audit,
+            "_all_current_waivers",
+            lambda root: (inert_waiver, necessary_waiver),
+        )
+        import frob.gates as gates_module
+
+        monkeypatch.setattr(gates_module, "run_gates", lambda cfg, **kw: Ok(report))
+
+        from frob.render import Renderer
+
+        renderer = Renderer.for_stream(__import__("sys").stdout)
+        _waive_audit._render_waiver_liveness(tmp_path, renderer, as_json=False)
+
+        out = capsys.readouterr().out
+        assert "necessary=1" in out
+        assert "inert=1" in out
+        assert "INERT somewhere/else/mod.py:3 frob:waive RENDER001" in out
+        # The necessary waiver never appears in the INERT-only per-site list.
+        assert "src/frob/mod.py:1 frob:waive DUP001" not in out
+
+    # frob:waive DUP001 reason="deliberately mirrors TestCheckCollisionsWiring's own \
+    # test_check_collisions_never_flags_when_gate_run_fails immediately above -- \
+    # --check-liveness and --check-collisions share the identical gate-run-failure \
+    # posture (report, swallow, never fail this command) by design, so their gate-run- \
+    # failure tests are supposed to look nearly identical; extracting a shared helper \
+    # for a 2-caller, 4-line body is not worth the indirection"
+    def test_check_liveness_never_flags_when_gate_run_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys
+    ) -> None:
+        from typani import Err
+
+        import frob.gates as gates_module
+        from frob.gates import GateError
+
+        monkeypatch.setattr(
+            gates_module,
+            "run_gates",
+            lambda cfg, **kw: Err(GateError.GraphUnavailable),
+        )
+
+        from frob.render import Renderer
+
+        renderer = Renderer.for_stream(__import__("sys").stdout)
+        _waive_audit._render_waiver_liveness(tmp_path, renderer, as_json=False)
+
+        out = capsys.readouterr().out
+        assert "gate run failed" in out

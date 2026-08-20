@@ -46,7 +46,7 @@ identical to a broken watermark read.
 from __future__ import annotations
 
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -56,6 +56,7 @@ from typani import Err, Ok, Result
 from typani.error_set import ErrorSet
 
 from frob.app.config import AppConfig
+from frob.gates._models import GateReport
 from frob.gates._waive_audit_watermark import (
     WaiveAuditWatermark,
     WaiveAuditWatermarkError,
@@ -561,8 +562,77 @@ def _run_scan_subcommand(root: Path, cfg: AppConfig) -> None:
             )
     if getattr(cfg, "waive_audit_check_collisions", False):
         _render_collision_suspects(root, renderer, as_json=as_json)
+    if getattr(cfg, "waive_audit_check_liveness", False):
+        _render_waiver_liveness(root, renderer, as_json=as_json)
     if report.verdict == AuditVerdict.WATERMARK_UNREADABLE:
         sys.exit(1)
+
+
+# frob:ticket T-2740
+def _render_waiver_liveness(root: Path, renderer: Renderer, *, as_json: bool) -> None:
+    """`--check-liveness`'s own report section: run a fresh, unscoped
+    `frob check` gate pass, classify EVERY currently-live `frob:waive`
+    directive in the repo (not only `scan`'s watermark-scoped subset --
+    liveness is a property of the waiver's own rule/file, independent of
+    when it was last audited) via `classify_waiver_liveness`, and render
+    the necessary/inert/unverified counts plus every INERT site by name.
+
+    Deliberately its own function and its own gate pass, matching
+    `_render_collision_suspects`'s own precedent immediately above: a
+    liveness verdict is a different question from `scan`'s watermark-
+    scoped "what changed" verdict, and folding the two would let a
+    liveness classification silently start counting toward `AuditVerdict.
+    CLEAN`/`NEEDS_REVIEW` -- exactly the verdict-collapsing this module's
+    own docstring says never to do. NEVER raises this command's exit
+    status, NEVER mutates a waiver -- an INERT verdict is a lead for a
+    human/agent to investigate (the waiver's site, AND the rule's own
+    scan pathspec, per this module's T-2740 section docstring), never
+    itself grounds for removal.
+
+    A gate-run failure is reported and swallowed, not fatal -- same
+    posture as `_render_collision_suspects`."""
+    from frob.gates import GateConfig, run_gates
+
+    gate_result = run_gates(GateConfig(root=str(root)))
+    if gate_result.is_err:
+        _log.warning(
+            "waive-audit --check-liveness: gate run failed (%s) -- "
+            "liveness report skipped, scan's own report above is "
+            "unaffected",
+            gate_result.danger_err,
+        )
+        if not as_json:
+            renderer.line(
+                f"check-liveness: gate run failed: {gate_result.danger_err}"
+            )
+        return
+    report = gate_result.danger_ok
+    waivers = _all_current_waivers(root)
+    classified = [
+        (w, classify_waiver_liveness(w, report, root)) for w in waivers
+    ]
+    counts: dict[str, int] = {}
+    for _w, verdict in classified:
+        counts[verdict.value] = counts.get(verdict.value, 0) + 1
+    if as_json:
+        payload = [
+            {**w.model_dump(), "liveness": verdict.value} for w, verdict in classified
+        ]
+        renderer.line(f"check_liveness: {payload}")
+        return
+    renderer.line(
+        f"check-liveness: {len(classified)} waiver(s) -- "
+        f"necessary={counts.get('necessary', 0)} "
+        f"inert={counts.get('inert', 0)} "
+        f"unverified={counts.get('unverified', 0)}"
+    )
+    for w, verdict in classified:
+        if verdict is WaiverLiveness.INERT:
+            renderer.line(
+                f"  INERT {w.file}:{w.line} frob:waive {w.rule} reason={w.reason!r} "
+                "-- rule does not scan this path; treat as a lead on BOTH the "
+                "waiver AND the rule's own scan pathspec, per T-2719"
+            )
 
 
 # frob:ticket T-2496
@@ -838,3 +908,145 @@ def find_collision_suspects(
             )
         )
     return tuple(suspects)
+
+
+# ---------------------------------------------------------------------------
+# T-2740: waiver LIVENESS, distinct from T-2493's collision-suspect honesty
+# signal above.
+#
+# WHY THIS IS A DIFFERENT QUESTION. T-1614's audit (and T-2493's collision
+# check) both judge a waiver's REASON or its collision with an ACTIVE
+# violation -- neither establishes that the waiver's own RULE ever looks at
+# the FILE the waiver sits in at all. T-2719 found 11 `frob:waive RENDER001`
+# directives in `.claude/hooks/` and `scripts/fleet_status.py` that were
+# individually honest AND collision-free (nothing to collide with, because
+# RENDER001's scan pathspec was hardcoded to `src/frob` and never reached
+# those files) -- T-1614's audit classified all 100 directives it reviewed
+# as "still necessary and honest", 11 of which were provably doing nothing.
+#
+# THE SOUNDNESS LINE, drawn deliberately narrow (same posture as T-2493's
+# own docstring above, and the same lesson the reverted T-1579
+# `_rule_has_live_finding` incident taught this repo once already):
+#
+#   NECESSARY -- the CURRENT run's `GateReport.waived` (the exact set
+#     `_apply_waivers` computed THIS run, a direct observation, never an
+#     inference from absence) contains a violation this waiver actually
+#     suppressed. Sound: this is not "the rule fired somewhere", it is
+#     "this exact waiver suppressed this exact violation just now".
+#
+#   INERT -- the waiver's rule has a REGISTERED, structural scan-membership
+#     predicate (`_LIVENESS_SCAN_CHECKERS`, e.g. RENDER001's own
+#     `render001_scans`, itself derived from the gate's real pathspec/
+#     exemption logic, never a second hardcoded copy) and that predicate
+#     says the waiver's file falls OUTSIDE the rule's scan set. This is a
+#     structural fact about what the rule enumerates, not an inference
+#     from a run finding nothing -- sound for the same reason
+#     `frob.gates._coverage_sites.site_examined`'s POSITIVE membership
+#     claims are sound, applied here to a NEGATIVE (not-in-scope) claim
+#     instead.
+#
+#   UNVERIFIED -- neither of the above could be established: the rule has
+#     no registered checker, or the checker says the file IS in scope but
+#     this run's `waived` set does not confirm active suppression. This is
+#     the HONEST default. It is deliberately NOT "OBSOLETE" -- claiming a
+#     finding "no longer reproduces" from one run's absence is exactly the
+#     T-1579 reasoning that deleted 55 live waivers, and this module does
+#     not repeat it. A caller wanting a real OBSOLETE verdict must do what
+#     T-2739 did: construct an actual synthetic diff/measurement for that
+#     specific rule and site, by hand, per this repo's own waiver-removal
+#     discipline -- this classifier reports a LEAD, never a verdict
+#     strong enough to justify removal on its own.
+#
+# REPORT-ONLY, same as T-2493: never mutates a waiver, never gates
+# `frob check`/`frob ticket land`, not wired to any auto-removal path.
+# An INERT verdict is ALSO evidence about the GATE, not only the waiver --
+# see `_run_scan_subcommand`'s own liveness section render for the prompt
+# this is meant to leave a human/agent with: an unscanned path someone is
+# writing waivers for is exactly how T-2719 found RENDER001's own pathspec
+# bug, one level up from any individual waiver.
+
+
+# frob:doc docs/modules/app.md#waive-audit-t-2467
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when\
+# _waived_this_run kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rul\
+# e_does_not_scan_the_file kind="unit"
+class WaiverLiveness(str, Enum):
+    """T-2740: the three-way answer `classify_waiver_liveness` gives for a
+    single scanned waiver -- see this module's own T-2740 section docstring
+    above for why each state is reachable only by the specific sound
+    signal it names, and why a fourth ("obsolete") state is deliberately
+    not claimed automatically anywhere in this file."""
+
+    #: This run's own `GateReport.waived` shows the waiver actively
+    #: suppressing a real violation -- direct observation, not inference.
+    NECESSARY = "necessary"
+    #: The waiver's rule has a registered scan-membership predicate, and
+    #: the waiver's file structurally falls outside that rule's scan set.
+    INERT = "inert"
+    #: Neither NECESSARY nor INERT could be established this run. The
+    #: honest default -- never "obsolete", see this module's own T-2740
+    #: docstring for why that claim is never made from this signal alone.
+    UNVERIFIED = "unverified"
+
+
+#: rule id -> `(root, repo_relative_file) -> bool` structural scan-
+#: membership predicate, the INERT half of `classify_waiver_liveness`.
+#: T-2740: starts with RENDER001 (the rule T-2719 found the hardcoded-
+#: pathspec bug in); add a new rule here, and ONLY here, to extend
+#: coverage -- matching `frob.gates._coverage_sites._FAMILY_REPORTERS`'s
+#: own one-line-addition shape.
+_LIVENESS_SCAN_CHECKERS: dict[str, "Callable[[Path, str], bool]"] = {}
+
+
+def _load_liveness_scan_checkers() -> "dict[str, Callable[[Path, str], bool]]":
+    """Lazily builds `_LIVENESS_SCAN_CHECKERS`'s real contents on first
+    use -- same deferred-import posture as `_load_family_reporters` in
+    `frob.gates._coverage_sites` (T-1921), for the identical reason: a
+    module-level import of a gate module here risks the same import-cycle
+    shape `frob.gates.__init__` already sits in."""
+    if not _LIVENESS_SCAN_CHECKERS:
+        from frob.gates._render_lint import render001_scans
+
+        _LIVENESS_SCAN_CHECKERS["RENDER001"] = render001_scans
+    return _LIVENESS_SCAN_CHECKERS
+
+
+# frob:doc docs/modules/app.md#waive-audit-t-2467
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_when\
+# _waived_this_run kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_inert_when_rul\
+# e_does_not_scan_the_file kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_unverified_whe\
+# n_no_checker_registered kind="unit"
+# frob:tests \
+# tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness.test_necessary_neve\
+# r_inert_even_with_a_registered_checker kind="unit"
+def classify_waiver_liveness(
+    waiver: ScannedWaiver, report: GateReport, root: Path
+) -> WaiverLiveness:
+    """T-2740: classify one `ScannedWaiver` against `report` (a `GateReport`
+    from a fresh, unscoped `run_gates` call against `root`) -- see this
+    module's own T-2740 section docstring for exactly what each of the
+    three states proves and why. NECESSARY is checked FIRST and always
+    wins over INERT: a waiver that actively suppressed a violation this
+    run is, by construction, in the rule's scan set, so the two verdicts
+    can never legitimately disagree -- checking order only matters if a
+    registered checker were ever wrong, and NECESSARY's direct-observation
+    signal is strictly stronger evidence than INERT's structural one."""
+    file = _repo_relative(waiver.file, root)
+    for violation in report.waived:
+        if violation.rule == waiver.rule and _repo_relative(violation.file, root) == (
+            file
+        ):
+            return WaiverLiveness.NECESSARY
+    checkers = _load_liveness_scan_checkers()
+    checker = checkers.get(waiver.rule)
+    if checker is not None and not checker(root, file):
+        return WaiverLiveness.INERT
+    return WaiverLiveness.UNVERIFIED

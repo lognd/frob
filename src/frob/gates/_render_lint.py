@@ -250,6 +250,43 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
 
 
 # frob:doc docs/modules/render.md#renderer
+# frob:waive AFFECT001 reason="T-2740 adds this predicate as an exposed reuse of \
+# render_lint_gate's own membership logic; render.md#renderer already documents \
+# RENDER001's scan/exemption rules this function is derived from verbatim -- no new \
+# behavior for that anchor's prose to describe, only a new caller"
+# frob:waive WIRE001 reason="T-2740: wired via frob.app.ticket_runner._waive_audit's \
+# _LIVENESS_SCAN_CHECKERS dict-dispatch (same shape as _load_family_reporters' \
+# archgate/perf/strata/graph/vet entries in frob.gates._coverage_sites, which carry an \
+# identical WIRE001 waiver for the identical reason) -- static call-graph analysis of \
+# a dict-value assignment cannot see the real runtime caller" follow_up="T-2057"
+# frob:ticket T-2740
+# frob:tests \
+# tests/test_gates.py::TestRenderLintGate.test_render001_scans_true_for_a_real_scanned_\
+# file kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestRenderLintGate.test_render001_scans_false_for_an_exempt_pat\
+# h kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestRenderLintGate.test_render001_scans_false_for_a_path_outside\
+# _any_pathspec kind="unit"
+def render001_scans(root: Path, rel_path: str) -> bool:
+    """True iff RENDER001's own scan set would actually examine `rel_path`
+    for a bare stdout write -- the exact membership test `render_lint_gate`
+    itself uses (self-exclusion, `_EXEMPT_PREFIXES`, and real git-tracked
+    pathspec membership via `_tracked_python_files`), exposed as a public
+    predicate so a waiver-liveness classifier (`frob.app.ticket_runner.
+    _waive_audit`) can ask "does this rule even look at this file" without
+    re-deriving or hardcoding RENDER001's pathspec a second time -- T-2719's
+    own root cause (a hardcoded `src/frob` scan root, silently unscanning
+    `.claude/hooks/` and `scripts/fleet_status.py`) is exactly the class of
+    bug a second, independent hardcoded copy of this membership test would
+    risk reintroducing."""
+    if rel_path in _SELF_EXCLUDED_FILES or rel_path.startswith(_EXEMPT_PREFIXES):
+        return False
+    return rel_path in _tracked_python_files(root)
+
+
+# frob:doc docs/modules/render.md#renderer
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_bare_print_fires
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_render_package_exempt
 # frob:tests tests/test_gates.py::TestRenderLintGate.test_stderr_directed_print_is_silent  # noqa: E501
@@ -301,4 +338,4 @@ def render_lint_gate(root: Path) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
-__all__ = ["render_lint_gate"]
+__all__ = ["render_lint_gate", "render001_scans"]

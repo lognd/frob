@@ -578,6 +578,10 @@ class AppConfig(BaseModel):
     #: T-2496: `waive-audit scan --check-collisions` opt-in flag -- also
     #: runs `find_collision_suspects` (T-2493) against a fresh gate pass.
     waive_audit_check_collisions: bool = False
+    #: T-2740: `waive-audit scan --check-liveness` opt-in flag -- classifies
+    #: each scanned waiver NECESSARY/INERT/UNVERIFIED (see
+    #: `frob.app.ticket_runner._waive_audit.classify_waiver_liveness`).
+    waive_audit_check_liveness: bool = False
     ticket_show_blocked: bool = False
     ticket_ignore_lease: bool = False
     # frob:ticket T-0810

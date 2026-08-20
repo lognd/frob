@@ -2,7 +2,7 @@
 id: T-2740
 title: 'waive-audit cannot distinguish a necessary waiver from an inert one: 11 RENDER001
   waivers sat on paths the gate never scanned'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -22,6 +22,7 @@ scope:
 - tests/test_gates.py
 - src/frob/app/config.py
 - src/frob/app/_config_external.py
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +77,23 @@ scope_changes:
     --check-collisions'
   actor: logan
   at: '2026-08-20'
+- op: add
+  glob: docs/modules/app.md
+  reason: T-2694's lease released (now done); add the --check-liveness doc paragraph
+    directly instead of deferring via AFFECT001/T-2752
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_necessary_when_waived_this_run
+- tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_inert_when_rule_does_not_scan_the_file
+- tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_unverified_when_no_checker_registered
+- tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_necessary_never_inert_even_with_a_registered_checker
+- tests/test_gates.py::TestRenderLintGate::test_render001_scans_true_for_a_real_scanned_file
+- tests/test_gates.py::TestRenderLintGate::test_render001_scans_false_for_an_exempt_path
+- tests/test_gates.py::TestRenderLintGate::test_render001_scans_false_for_a_path_outside_any_pathspec
+- tests/unit/test_waive_audit_runner.py::TestClassifyWaiverLiveness::test_appconfig_check_liveness_defaults_false
+- tests/unit/test_waive_audit_runner.py::TestCheckLivenessWiring::test_check_liveness_renders_inert_and_necessary
+- tests/unit/test_waive_audit_runner.py::TestCheckLivenessWiring::test_check_liveness_never_flags_when_gate_run_fails
 designated_repro_test: null
 threat: null
 component: null

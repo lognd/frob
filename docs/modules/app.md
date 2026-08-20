@@ -544,6 +544,38 @@ ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
   hidden. Deliberately did NOT add an "and clean up"/auto-drop mode in
   this wiring -- that decision needs its own separate review, per the
   T-2493 brief this ticket inherited.
+- T-2740: `classify_waiver_liveness(waiver, report, root)` -- the missing
+  half T-2493's own docstring names above: NOT "is this waiver honest",
+  NOT "does an active violation collide with it", but "does this
+  waiver's own RULE even scan the FILE it sits in at all". T-2719 found
+  11 `frob:waive RENDER001` directives in `.claude/hooks/` and `scripts/
+  fleet_status.py` that were individually honest AND collision-free
+  (nothing to collide with, since RENDER001's scan pathspec was
+  hardcoded to `src/frob` and never reached those files) -- T-1614's own
+  audit classified all 100 directives it reviewed as "still necessary
+  and honest", 11 of which were provably doing nothing. Three states,
+  deliberately not the same three T-1614's honest/cop-out rubric uses:
+  `WaiverLiveness.NECESSARY` (this run's own `GateReport.waived` --
+  `_apply_waivers`'s real output, a direct observation -- shows the
+  waiver actively suppressing a violation), `INERT` (the waiver's rule
+  has a registered structural scan-membership predicate in
+  `_LIVENESS_SCAN_CHECKERS`, e.g. RENDER001's own `render001_scans`
+  re-exported from `frob.gates._render_lint` rather than re-hardcoded
+  here, and the waiver's file falls outside it), and `UNVERIFIED` (the
+  honest default -- deliberately never "obsolete": claiming a finding no
+  longer reproduces from one run's absence is exactly the T-1579
+  `_rule_has_live_finding` reasoning that deleted 55 live waivers, and
+  this module does not repeat it; a real OBSOLETE verdict needs a
+  by-hand synthetic-diff measurement per this repo's own waiver-removal
+  discipline, e.g. T-2739's own). `frob ticket waive-audit scan
+  --check-liveness` wires this into the CLI, same report-only, additive,
+  opt-in posture as `--check-collisions` immediately above (its own
+  fresh unscoped `frob check` gate pass, never gates this command's exit
+  status, never mutates a waiver) -- `_render_waiver_liveness` prints
+  necessary/inert/unverified counts plus every INERT site by name, and
+  frames an INERT verdict explicitly as a lead on the GATE's own scan
+  pathspec too, not only the waiver (exactly how T-2719 was found: by
+  widening a scan, not by deleting a waiver).
 
 ## Shared graph-snapshot helper (T-1085)
 

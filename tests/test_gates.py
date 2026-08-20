@@ -17992,6 +17992,7 @@ class TestRuleFixability:
 
 
 # frob:ticket T-0459
+# frob:ticket T-2740
 class TestRenderLintGate:
     """RENDER001: bare stdout write outside frob.render
     (docs/modules/render.md#renderer)."""
@@ -18193,6 +18194,54 @@ class TestRenderLintGate:
 
         assert ".claude/hooks/some-hook.py" in files
         assert "scripts/fleet_status.py" in files
+
+    # frob:ticket T-2740
+    def test_render001_scans_true_for_a_real_scanned_file(
+        self, tmp_path: Path
+    ) -> None:
+        """`render001_scans` (T-2740): a plain `src/frob/**.py` file is
+        genuinely in RENDER001's scan set."""
+        from frob.gates._render_lint import render001_scans
+
+        self._init_repo(tmp_path)
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "mod.py").write_text("print('x')\n")
+        self._commit(tmp_path)
+
+        assert render001_scans(tmp_path, "src/frob/mod.py") is True
+
+    # frob:ticket T-2740
+    def test_render001_scans_false_for_an_exempt_path(self, tmp_path: Path) -> None:
+        """`render001_scans` (T-2740): `.claude/hooks/` is exempt by
+        `_EXEMPT_PREFIXES` -- the exact structural signal T-2733's own
+        waiver removal relied on."""
+        from frob.gates._render_lint import render001_scans
+
+        self._init_repo(tmp_path)
+        hooks = tmp_path / ".claude" / "hooks"
+        hooks.mkdir(parents=True)
+        (hooks / "some-hook.py").write_text("print('x')\n")
+        self._commit(tmp_path)
+
+        assert render001_scans(tmp_path, ".claude/hooks/some-hook.py") is False
+
+    # frob:ticket T-2740
+    def test_render001_scans_false_for_a_path_outside_any_pathspec(
+        self, tmp_path: Path
+    ) -> None:
+        """`render001_scans` (T-2740): a file outside every scanned
+        pathspec (not `src/frob`, not `.claude/hooks`, not the single
+        `scripts/fleet_status.py` file) is structurally unreachable by
+        RENDER001 -- the shape T-2719 found 11 waivers sitting on."""
+        from frob.gates._render_lint import render001_scans
+
+        self._init_repo(tmp_path)
+        other = tmp_path / "somewhere" / "else"
+        other.mkdir(parents=True)
+        (other / "mod.py").write_text("print('x')\n")
+        self._commit(tmp_path)
+
+        assert render001_scans(tmp_path, "somewhere/else/mod.py") is False
 
 
 # frob:ticket T-0726

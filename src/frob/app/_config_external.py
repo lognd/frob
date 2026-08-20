@@ -371,6 +371,8 @@ _BOOL_FLAGS = (
     "waive_audit_partial",
     # frob:ticket T-2496
     "waive_audit_check_collisions",
+    # frob:ticket T-2740
+    "waive_audit_check_liveness",
     "scaffold_force",
     "cycle_suggest",
     "outline_json",
