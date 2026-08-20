@@ -281,8 +281,13 @@ class TestBehavioralCapabilityCheck:
     ) -> None:
         """Per epic T-2391's doctrine: a capability this module does not
         (yet) behaviorally check must be reported explicitly as such
-        (`ok=False` naming the gap), never silently read as a pass."""
-        ok, detail = _behavioral_capability_check("python", "call_graph", tmp_path)
+        (`ok=False` naming the gap), never silently read as a pass.
+        T-1599 moved call_graph/import_graph into the checked set;
+        test_discovery is the one capability still outside it (see
+        `_BEHAVIORALLY_CHECKED_CAPABILITIES`'s own comment for why)."""
+        ok, detail = _behavioral_capability_check(
+            "python", "test_discovery", tmp_path
+        )
         assert not ok
         assert "no behavioral check" in detail
 

@@ -32,14 +32,17 @@ from __future__ import annotations
 
 import re
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
 from frob.lang import language_for_extension, supported_extensions
 from frob.lang._support import (
+    CAPABILITY_CALL_GRAPH,
     CAPABILITY_DIRECTIVE_PARSE,
     CAPABILITY_DOC_EXTRACT,
+    CAPABILITY_IMPORT_GRAPH,
     CAPABILITY_PUBLICNESS,
     CAPABILITY_SYMBOL_WALK,
     KNOWN_GAP_TRACKING_TICKETS,
@@ -88,10 +91,11 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     "python": (
-        '"""Capability fixture module docstring."""\n\n\n'
+        '"""Capability fixture module docstring."""\n\n'
+        "import os\n\n\n"
         "def public_fn():\n"
         '    """A public function."""\n'
-        "    return 1\n\n\n"
+        "    return _private_fn()\n\n\n"
         "# frob:tests \\\n"
         f"# {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "def _private_fn():\n"
@@ -99,8 +103,9 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
     "typescript": (
         "// Capability fixture module doc.\n\n"
+        'import fs from "fs";\n\n'
         "export function publicFn(): number {\n"
-        "  return 1;\n"
+        "  return privateFn();\n"
         "}\n\n"
         "// frob:tests \\\n"
         f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
@@ -110,8 +115,9 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
     "rust": (
         "// Capability fixture module doc.\n\n"
+        "use std::fmt;\n\n"
         "pub fn public_fn() -> i32 {\n"
-        "    1\n"
+        "    private_fn()\n"
         "}\n\n"
         "// frob:tests \\\n"
         f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
@@ -137,8 +143,9 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     # continuation fold; see docs/modules/lang.md).
     "c": (
         "// Capability fixture module doc.\n\n"
+        "#include <stdio.h>\n\n"
         "int public_fn(void) {\n"
-        "    return 1;\n"
+        "    return private_fn();\n"
         "}\n\n"
         f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "static int private_fn(void) {\n"
@@ -147,8 +154,9 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
     "cpp": (
         "// Capability fixture module doc.\n\n"
+        "#include <cstdio>\n\n"
         "int public_fn() {\n"
-        "    return 1;\n"
+        "    return private_fn();\n"
         "}\n\n"
         f"// frob:tests {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "static int private_fn() {\n"
@@ -157,8 +165,9 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
     "kotlin": (
         "// Capability fixture module doc.\n\n"
+        "import kotlin.math.PI\n\n"
         "fun publicFn(): Int {\n"
-        "    return 1\n"
+        "    return privateFn()\n"
         "}\n\n"
         "// frob:tests \\\n"
         f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
@@ -168,20 +177,36 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
     ),
 }
 
-# T-2365: the four capabilities `frob.lang.parse_file` alone (no repo-wide
-# scan, no build system) can behaviorally exercise in isolation. call_graph/
-# import_graph/test_discovery need a real multi-file repo tree to exercise
-# meaningfully and stay at this gate's structural-registry-completeness
-# level only (`lang_conformance_gate`'s own missing/unreasoned-cell check,
-# which `derive_capability_registry`'s cells already flow through) -- a
-# disclosed, deliberate cut (see docs/modules/lang.md), not silence: filed
-# as follow-up scope, not dropped.
+# T-2365: the original four capabilities `frob.lang.parse_file` alone (no
+# repo-wide scan, no build system) can behaviorally exercise in isolation.
+# T-1599 added call_graph/import_graph to this set: both turned out to be
+# exercisable from the SAME single-file fixture `frob.lang.parse_file`
+# already drives -- `build_call_graph`/`extract_imports` both resolve
+# intra-file edges/specifiers from one parsed file, no multi-file repo
+# tree required, contrary to this comment's own prior claim (corrected
+# here, not just in the ticket that found it). Each per-language fixture
+# above now has its public function call its private one (call_graph) and
+# a real import/include/use statement (import_graph).
+#
+# test_discovery remains OUT of this set on purpose: every `_TEST_
+# DISCOVERY_COLLECTORS` entry (`frob.testing.collect_*_tests`) shells out
+# to the language's real toolchain (`uv run pytest --collect-only`,
+# `cargo test --list`, cmake/ctest, ...) rather than parsing source
+# directly -- invoking that per language, per gate run, would make this
+# gate slow and environment-fragile (no cargo/npm/cmake toolchain
+# guaranteed present wherever `frob check` runs) for a capability this
+# module's own fixtures cannot exercise without standing up a real
+# project layout per language. Disclosed, deliberate remaining cut (see
+# docs/modules/lang.md's degradation-story section) -- filed as follow-up
+# scope (T-2682), not silently dropped.
 _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
     {
         CAPABILITY_SYMBOL_WALK,
         CAPABILITY_PUBLICNESS,
         CAPABILITY_DOC_EXTRACT,
         CAPABILITY_DIRECTIVE_PARSE,
+        CAPABILITY_CALL_GRAPH,
+        CAPABILITY_IMPORT_GRAPH,
     }
 )
 
@@ -206,6 +231,87 @@ def _strata_capability_fixture_source() -> str | None:
     return text[:idx] + directive_block + text[idx:]
 
 
+def _check_symbol_walk(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_SYMBOL_WALK`'s own behavioral check -- see `_behavioral_
+    capability_check`'s dispatch table."""
+    ok = len(parsed.symbols) >= 2
+    return ok, f"{len(parsed.symbols)} symbol(s) extracted"
+
+
+def _check_publicness(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_PUBLICNESS`'s own behavioral check."""
+    publics = {s.public for s in parsed.symbols}
+    ok = True in publics and False in publics
+    return ok, f"public values observed: {sorted(publics)}"
+
+
+def _check_doc_extract(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_DOC_EXTRACT`'s own behavioral check."""
+    ok = len(parsed.comments) >= 1
+    return ok, f"{len(parsed.comments)} comment(s) extracted"
+
+
+def _check_directive_parse(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_DIRECTIVE_PARSE`'s own behavioral check."""
+    from frob.graph._models import EdgeKind
+    from frob.graph.dsl import parse_directives
+
+    edges, malformed = parse_directives(parsed)
+    matched = any(
+        e.kind is EdgeKind.TESTS and e.target == _CAPABILITY_FIXTURE_TESTS_TARGET
+        for e in edges
+    )
+    ok = matched and not malformed
+    return ok, (
+        f"{len(edges)} edge(s), {len(malformed)} malformed, "
+        f"continuation-target-matched={matched}"
+    )
+
+
+def _check_call_graph(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_CALL_GRAPH`'s own behavioral check (T-1599): the
+    fixture's public function calls its private one, so `build_call_graph`
+    (private-callee-only edges, see its own docstring) must resolve
+    exactly one intra-file edge -- proof the adapter's symbols/RawSymbol.
+    public feed call resolution at all, not just that a registry cell
+    claims it does."""
+    from frob.graph.callgraph import build_call_graph
+
+    graph = build_call_graph(tmp_path, (path.name,))
+    ok = any(callees for callees in graph.calls.values())
+    return ok, f"calls={dict(graph.calls)}"
+
+
+def _check_import_graph(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_IMPORT_GRAPH`'s own behavioral check (T-1599): the
+    fixture declares one real import/include/use statement --
+    `extract_imports` must recover at least one raw specifier from it."""
+    from frob.lang import extract_imports
+
+    imports_result = extract_imports(path)
+    if imports_result.is_err:
+        return False, f"extract_imports failed: {imports_result.danger_err}"
+    specifiers = imports_result.danger_ok
+    ok = len(specifiers) >= 1
+    return ok, f"{len(specifiers)} import specifier(s): {specifiers}"
+
+
+# T-1599: one behavioral checker per `_BEHAVIORALLY_CHECKED_CAPABILITIES`
+# member, each `(parsed, path, tmp_path) -> (worked, detail)` -- the
+# dispatch table `_behavioral_capability_check` indexes into, so adding a
+# new behaviorally-checked capability means adding one function plus one
+# entry here, not growing one long if/elif chain past ARCH001's
+# length-and-complexity threshold again.
+_CAPABILITY_CHECKERS: dict[str, Callable[[object, Path, Path], tuple[bool, str]]] = {
+    CAPABILITY_SYMBOL_WALK: _check_symbol_walk,
+    CAPABILITY_PUBLICNESS: _check_publicness,
+    CAPABILITY_DOC_EXTRACT: _check_doc_extract,
+    CAPABILITY_DIRECTIVE_PARSE: _check_directive_parse,
+    CAPABILITY_CALL_GRAPH: _check_call_graph,
+    CAPABILITY_IMPORT_GRAPH: _check_import_graph,
+}
+
+
 def _behavioral_capability_check(
     language: str, capability: str, tmp_path: Path
 ) -> tuple[bool, str]:
@@ -218,8 +324,11 @@ def _behavioral_capability_check(
     Only covers `_BEHAVIORALLY_CHECKED_CAPABILITIES` -- any other
     capability name returns `(False, ...)` naming the gap explicitly
     rather than silently reporting success for something never checked.
+    Per-capability logic lives in `_CAPABILITY_CHECKERS`; this function is
+    purely fixture setup plus dispatch.
     """
-    if capability not in _BEHAVIORALLY_CHECKED_CAPABILITIES:
+    checker = _CAPABILITY_CHECKERS.get(capability)
+    if checker is None:
         return False, f"no behavioral check implemented for capability '{capability}'"
     ext = _CAPABILITY_FIXTURE_EXTENSIONS.get(language)
     if language == "strata":
@@ -238,31 +347,7 @@ def _behavioral_capability_check(
     if parsed_result.is_err:
         return False, f"parse_file failed: {parsed_result.danger_err}"
     parsed = parsed_result.danger_ok
-
-    if capability == CAPABILITY_SYMBOL_WALK:
-        ok = len(parsed.symbols) >= 2
-        return ok, f"{len(parsed.symbols)} symbol(s) extracted"
-    if capability == CAPABILITY_PUBLICNESS:
-        publics = {s.public for s in parsed.symbols}
-        ok = True in publics and False in publics
-        return ok, f"public values observed: {sorted(publics)}"
-    if capability == CAPABILITY_DOC_EXTRACT:
-        ok = len(parsed.comments) >= 1
-        return ok, f"{len(parsed.comments)} comment(s) extracted"
-    # CAPABILITY_DIRECTIVE_PARSE
-    from frob.graph._models import EdgeKind
-    from frob.graph.dsl import parse_directives
-
-    edges, malformed = parse_directives(parsed)
-    matched = any(
-        e.kind is EdgeKind.TESTS and e.target == _CAPABILITY_FIXTURE_TESTS_TARGET
-        for e in edges
-    )
-    ok = matched and not malformed
-    return ok, (
-        f"{len(edges)} edge(s), {len(malformed)} malformed, "
-        f"continuation-target-matched={matched}"
-    )
+    return checker(parsed, path, tmp_path)
 
 
 # T-0406: well-known general-purpose-language extensions frob has NO
@@ -548,11 +633,15 @@ def capability_conformance_gate() -> tuple[Violation, ...]:
     cell `_BEHAVIORALLY_CHECKED_CAPABILITIES` covers, via `_behavioral_
     capability_check`, against a real per-language fixture -- fail LOUDLY
     (ERROR) the moment a claim and reality disagree, rather than trusting
-    the claim. Every cell outside `_BEHAVIORALLY_CHECKED_CAPABILITIES`
-    (call_graph/import_graph/test_discovery, T-2365's disclosed cut) is
-    silently skipped here -- `lang_conformance_gate` still holds those
-    cells to the structural-completeness bar, this gate just cannot verify
-    them BEHAVIORALLY yet.
+    the claim. T-1599 extended coverage from the original four
+    (symbol_walk/publicness/doc_extract/directive_parse) to six, adding
+    call_graph/import_graph once both turned out to be exercisable from
+    the same single-file fixture. Only `test_discovery` remains outside
+    `_BEHAVIORALLY_CHECKED_CAPABILITIES` now -- see that constant's own
+    comment for why (every collector shells out to a real toolchain,
+    which this gate deliberately does not do) -- silently skipped here;
+    `lang_conformance_gate` still holds that cell to the structural-
+    completeness bar, this gate just cannot verify it BEHAVIORALLY yet.
     """
     registry = derive_capability_registry()
     violations: list[Violation] = []

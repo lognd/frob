@@ -672,11 +672,16 @@ The seven capabilities, and what each one actually checks:
   threat-discharge graphs cover the equivalent ground under a different
   vocabulary).
 - **`import_graph`** -- `frob.lang._extract._IMPORT_WALKERS` has a real
-  per-language walker. `IMPLEMENTED` for python/c/cpp only;
-  typescript/rust/kotlin are a real, ticketed `KNOWN_GAP`
-  (T-2408); `.strata` is `NOT_APPLICABLE` (module dependencies
-  resolve through strata-core's own parser, not this tree-sitter-only
-  table).
+  per-language walker. T-2494 replaced this cell's own prior hardcoded
+  `{"python", "c", "cpp"}` membership set (the exact staleness this
+  paragraph itself used to describe: typescript/rust/kotlin walkers
+  landed under T-2408 while this cell kept reporting them `KNOWN_GAP`
+  anyway) with a derivation from `_IMPORT_WALKERS`'s own keys, so
+  `IMPLEMENTED` now tracks the real registry live. Currently
+  `IMPLEMENTED` for python/typescript/rust/c/cpp/kotlin -- every
+  registered language; `.strata` is `NOT_APPLICABLE` (module
+  dependencies resolve through strata-core's own parser, not this
+  tree-sitter-only table).
 - **`test_discovery`** -- T-2499: `IMPLEMENTED` iff `language` has a
   real entry in `frob.lang._support._TEST_DISCOVERY_COLLECTORS`, a
   language -> `frob.testing.collect_*_tests` qualname registry this
@@ -693,6 +698,66 @@ The seven capabilities, and what each one actually checks:
   `NOT_APPLICABLE` (design files declare no runnable test suite of
   their own).
 
+### Optional-capability degradation (T-1599)
+
+Every `ADAPTER_CAPABILITIES` cell is `REQUIRED` or `OPTIONAL`
+(`CapabilityRequirement`) -- today `call_graph`/`import_graph`/
+`test_discovery` are the only `OPTIONAL` ones (see each capability's own
+bullet above for its per-language `NOT_APPLICABLE` exemptions; every
+`REQUIRED` capability is either `IMPLEMENTED` or a ticketed `KNOWN_GAP`
+for every registered language as of this writing). A `KNOWN_GAP` cell on
+an `OPTIONAL` capability is a legitimate steady state, not a build
+failure -- but "legitimate steady state" must not mean "silent": here is
+exactly what a user of a language with an `OPTIONAL` gap experiences,
+capability by capability, so the answer is a fact this doc states, not
+something they discover by noticing an analysis never ran.
+
+- **`call_graph` absent** -- `frob.graph.callgraph.build_call_graph`
+  (and everything built on it: `closure`, `build_ordered_call_graph`,
+  DEAD001's reachability walk) simply never resolves an edge FROM or TO
+  that language's symbols. A dead-code scan over a mixed-language repo
+  silently under-reports for that language's files specifically -- no
+  ERROR, no WARN, the affected files just never produce a call edge.
+  LANG001/LANG003 are the only place this is visible today: the
+  registry cell itself is `KNOWN_GAP` there, loud in `frob check`'s
+  output, but nothing at DEAD001's own call site re-surfaces "this
+  finding set is call_graph-incomplete for language X."
+- **`import_graph` absent** -- `frob.cycle`'s dependency graph and
+  `build_call_graph`'s own `verify_imports=True` cross-file resolution
+  (see that function's docstring) both silently skip edges for that
+  language's files -- a real circular import in an unregistered-walker
+  language produces no `frob.cycle` finding at all, not a degraded one.
+  Same visibility gap as `call_graph`: the registry cell is loud in
+  `frob check`, the downstream consumer's own output is not.
+  Currently every registered language is `IMPLEMENTED` (T-2494's live
+  derivation, see above) -- this degradation path exists in the
+  contract but has no live instance today.
+- **`test_discovery` absent** -- `frob.testing.collect_*_tests` (and
+  therefore any `frob:tests` evidence binding that relies on collecting
+  that language's real test node ids) has no entrypoint for that
+  language at all: `frob check`'s coverage/evidence gates cannot verify
+  a `frob:tests` directive naming a test in that language actually
+  exists and collects, and LANG004's own behavioral suite cannot
+  exercise the capability either (see `_BEHAVIORALLY_CHECKED_
+  CAPABILITIES`'s own comment in `frob.gates._lang_conformance` for
+  why -- every collector shells out to a real toolchain, which that
+  suite deliberately does not do). This is the most consequential
+  `OPTIONAL` gap of the three: an evidence claim in an affected
+  language is unverifiable, not merely unresolved.
+
+The common thread: an `OPTIONAL` capability's `KNOWN_GAP` state is
+always loud at the REGISTRY layer (LANG001/LANG003, `frob check`'s own
+output) but currently silent at each DOWNSTREAM CONSUMER's own output
+(`frob.graph.callgraph`, `frob.cycle`, evidence binding) -- a user
+reading only `dead001`/`cycle001`/evidence-gate results for an affected
+language sees a clean or absent result, not a "this analysis is
+incomplete for your language" note. Making each consumer's own output
+self-disclose an active `OPTIONAL` gap it silently relied on is real,
+unbuilt follow-up scope -- filed as T-2683 (do not conflate with T-2682,
+which is LANG004's own missing test_discovery BEHAVIORAL check; T-2683
+is about consumer-side disclosure once a gap DOES exist, which none of
+the three has today).
+
 ### Behavioral conformance (LANG004, T-2365)
 
 `capability_conformance_violations` (mirroring `conformance_violations`)
@@ -702,18 +767,25 @@ IMPLEMENTED cells are actually true": a wrong registry entry claiming a
 capability works, with a plausible-sounding `detail` string, would pass
 that check trivially. `frob.gates._lang_conformance.capability_
 conformance_gate` (LANG004, ERROR severity) closes that gap by actually
-EXERCISING every `IMPLEMENTED` cell among the four capabilities `frob.
-lang.parse_file` alone can drive in isolation (`symbol_walk`,
-`publicness`, `doc_extract`, `directive_parse`) against a real,
-hand-written per-language fixture -- one containing a public symbol, a
-private symbol, and a `frob:tests \` continuation directive split across
-two physical comment lines. `call_graph`/`import_graph`/`test_discovery`
-need a real multi-file repo tree to exercise meaningfully and stay at
-`lang_conformance_gate`'s structural-completeness level only for now (a
-disclosed cut, not silence -- follow-up scope is T-2411, which
-also covers wiring LANG004 itself into `frob check`'s job table:
-`src/frob/gates/__init__.py` was outside this ticket's own declared
-scope).
+EXERCISING every `IMPLEMENTED` cell among six of the seven capabilities
+`frob.lang.parse_file` alone can drive in isolation (`symbol_walk`,
+`publicness`, `doc_extract`, `directive_parse`, and -- T-1599 -- also
+`call_graph`/`import_graph`, both resolvable from the SAME single-file
+fixture via `build_call_graph`/`extract_imports` rather than the
+multi-file repo tree this section originally (incorrectly) said they
+would need) against a real, hand-written per-language fixture -- one
+containing a public symbol, a private symbol, a call from the public
+symbol to the private one, a real import/include/use statement, and a
+`frob:tests \` continuation directive split across two physical comment
+lines. `test_discovery` alone remains structural-completeness-only
+(a disclosed cut, not silence -- follow-up scope is T-2682): every
+`_TEST_DISCOVERY_COLLECTORS` entry shells out to the language's real
+toolchain (`pytest --collect-only`, `cargo test --list`, cmake/ctest)
+rather than parsing source, which this gate deliberately does not do
+per invocation (see "Optional-capability degradation" above for what
+that gap means for a consumer). LANG004 itself is wired into `frob
+check`'s job table (T-2411, `src/frob/gates/__init__.py` was outside
+T-2365's own declared scope, so this was a separate ticket).
 
 `.c`/`.cpp`'s fixture is deliberately a SINGLE physical line, not a
 continuation, per a real language-boundary quirk this suite discovered

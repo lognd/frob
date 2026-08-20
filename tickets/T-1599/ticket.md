@@ -2,7 +2,7 @@
 id: T-1599
 title: 'Language adapter capability matrix: make the cross-language contract statically
   enforced'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
