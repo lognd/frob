@@ -11,13 +11,53 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
-- src/frob/**
 - design/frob.strata
-- tests/**
-- docs/modules/gates.md
+- src/frob/app/check_runner.py
+- src/frob/app/sys_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/**
+  reason: 'T-1656 batch 1: narrow to the 2 files examined+waived this pass; 82-file
+    remainder needs the same per-file judgement, tracked back on the original ticket
+    for a future batch'
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  glob: tests/**
+  reason: 'T-1656 batch 1: narrow to the 2 files examined+waived this pass; 82-file
+    remainder needs the same per-file judgement, tracked back on the original ticket
+    for a future batch'
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: 'T-1656 batch 1: narrow to the 2 files examined+waived this pass; 82-file
+    remainder needs the same per-file judgement, tracked back on the original ticket
+    for a future batch'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: 'T-1656 batch 1: narrow to the 2 files examined+waived this pass; 82-file
+    remainder needs the same per-file judgement, tracked back on the original ticket
+    for a future batch'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: 'T-1656 batch 1: narrow to the 2 files examined+waived this pass; 82-file
+    remainder needs the same per-file judgement, tracked back on the original ticket
+    for a future batch'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
