@@ -1,7 +1,7 @@
 ---
 id: T-2689
 title: Recovered from T-2685's phantom TICK006 citation of T-draft-be1e79b5
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -34,3 +34,6 @@ id lists, empty). Filed T-draft-be1e79b5 for the underlying tool bug
 ### Verification
 
 Before: `frob check --only docanchor --only dr
+
+## Drop reason
+- 2026-08-19: Measured (T-2690 series triage): cites T-draft-be1e79b5, which git history confirms was renamed (git show -M --name-status a44f96e60: R099 tickets/T-draft-be1e79b5/ticket.md -> tickets/T-2678/ticket.md) to the real, live ticket T-2678 ('frob ticket body writes an archived ticket's update to a fresh non-archive...', state=queued) -- the exact underlying tool bug T-2689's own quoted excerpt (T-2685's Done report, 'Filed T-draft-be1e79b5 for the underlying tool bug') describes. A bookkeeping duplicate, not independent work. Root mechanism (the auto-recovery mechanism that filed T-2689 without checking git rename history first) fixed in T-2690.
