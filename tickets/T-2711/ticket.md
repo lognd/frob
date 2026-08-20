@@ -17,11 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_verify.py
-- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: narrowing to avoid T-2715's live lease collision -- the T-2711 fix belongs
+    in _check_already_landed (_land.py), not _land_cmd.py
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: cross-reference T-2678/T-2679 as the same mirror-copies-too-much pattern
