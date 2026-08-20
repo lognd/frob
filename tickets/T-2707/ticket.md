@@ -20,6 +20,7 @@ scope:
 - src/frob/strata/_errors.py
 - src/frob/strata/_design_load.py
 - src/frob/gates/_sys.py
+- docs/strata/surface.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,11 @@ scope_changes:
   reason: capture+propagate the real strata_core ImportError through DesignLoadError
     into the SYS004 message, instead of only ever printing the fixed not-installed
     hint
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/strata/surface.md
+  reason: sys004 message-detail doc anchor already lives here
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
