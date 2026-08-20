@@ -138,12 +138,12 @@ body_changes:
     \ -- a dormant hole, not an\n   active incident. The actual fix (threading per-violation\n\
     \   enclosing-symbol resolution through the 5 PII-structural emitters) is\n  \
     \ real feature engineering, not a re-waive task, so it does not belong\n   in\
-    \ this classification ticket -- filed as its own successor\n   (T-2696\
-    \ at filing time, renumbers on land) rather than\n   attempted here under time\
-    \ pressure, mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as\
-    \ separate tickets for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed,\
-    \ or rewritten by this ticket -- the 142\nfindings it was filed to classify no\
-    \ longer exist on main."
+    \ this classification ticket -- filed as its own successor\n   (T-2696 at filing\
+    \ time, renumbers on land) rather than\n   attempted here under time pressure,\
+    \ mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as separate tickets\
+    \ for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed, or rewritten by\
+    \ this ticket -- the 142\nfindings it was filed to classify no longer exist on\
+    \ main."
   actor: logan
   at: '2026-08-19'
   old_length: 4941
@@ -174,12 +174,12 @@ body_changes:
     \ -- a dormant hole, not an\n   active incident. The actual fix (threading per-violation\n\
     \   enclosing-symbol resolution through the 5 PII-structural emitters) is\n  \
     \ real feature engineering, not a re-waive task, so it does not belong\n   in\
-    \ this classification ticket -- filed as its own successor\n   (T-2696\
-    \ at filing time, renumbers on land) rather than\n   attempted here under time\
-    \ pressure, mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as\
-    \ separate tickets for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed,\
-    \ or rewritten by this ticket -- the 142\nfindings it was filed to classify no\
-    \ longer exist on main."
+    \ this classification ticket -- filed as its own successor\n   (T-2696 at filing\
+    \ time, renumbers on land) rather than\n   attempted here under time pressure,\
+    \ mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as separate tickets\
+    \ for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed, or rewritten by\
+    \ this ticket -- the 142\nfindings it was filed to classify no longer exist on\
+    \ main."
   actor: logan
   at: '2026-08-19'
   old_length: 7354
@@ -191,7 +191,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c6290d52e3cb520eeff1b95a4044526ecccb0789
 ---
 T-1659 fixed CACHE001 and OPAQUE001's missing Violation.symref (both now
 symbol-exact). That symref narrowing surfaced real work this ticket's
