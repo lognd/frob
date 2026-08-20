@@ -918,16 +918,20 @@ def _done_report_section(text: str) -> str:
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_description_before_done_report_is_not_flagged  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_done_report_still_fires  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
     """Non-`None` if `text` looks like it discloses unfinished/cut work,
     or `None` otherwise. Two independent signals, either one sufficient
     (T-1648 original + T-2638 hardening):
 
     1. A `_DISCLOSURE_PHRASES` member found (case-insensitive) anywhere
-       in `text` -- a deliberately generous heuristic, not a parser of
-       English; still catches a plain-prose disclosure with no heading
-       at all. Kept as a widening hint, not the sole decision (T-2638:
-       a phrase-only decision is exactly what a heading rename defeats).
+       in the LAST `## Done report` section (`_done_report_section`,
+       same scope signal 2 uses) -- a deliberately generous heuristic,
+       not a parser of English; still catches a plain-prose disclosure
+       with no heading at all. Kept as a widening hint, not the sole
+       decision (T-2638: a phrase-only decision is exactly what a
+       heading rename defeats).
     2. A markdown subheading (`### ...` or deeper, `_SUBHEADING_RE`)
        anywhere under the LAST `## Done report` heading
        (`_done_report_section`), EXCLUDING the exact fixed titles
@@ -938,6 +942,18 @@ def disclosure_shaped_language(text: str) -> str | None:
        template, whatever words end up in its title. A report carrying
        ONLY the tool's own routine Changed/Evidence/Captured-claims/
        Acceptance-amendments headings is not this shape at all.
+
+    T-2726: signal 1 used to scan the WHOLE `text` (ticket description
+    and Plan sections included), while signal 2 was already scoped to
+    the Done-report section -- an inconsistency found live when T-2718's
+    own ticket DESCRIPTION, which discusses disclosure-shaped language
+    as its subject matter (quoting "named no follow-up" while describing
+    the bug), tripped signal 1 on close independent of anything in its
+    Done report or its own fix. A ticket's DESCRIPTION legitimately
+    discusses whatever the ticket is about; the Done report is where a
+    hedged completion claim actually matters, since that is the claim of
+    completion this guard exists to police. Both signals now scan only
+    `_done_report_section(text)`.
 
     T-1648's own docstring establishes the accepted tradeoff and it still
     holds for signal 2: a narrative that happens to use one of the
@@ -959,11 +975,11 @@ def disclosure_shaped_language(text: str) -> str | None:
     incident shape) or adding any other subsection alongside them still
     trips this exactly as before; only the tool's own unmodified,
     exact-title template output is exempt."""
-    lowered = text.lower()
+    section = _done_report_section(text)
+    lowered = section.lower()
     for phrase in _DISCLOSURE_PHRASES:
         if phrase in lowered:
             return phrase
-    section = _done_report_section(text)
     for match in _SUBHEADING_RE.finditer(section):
         title = match.group(1).strip()
         if title in _TIER_A_GENERATED_SUBHEADINGS:

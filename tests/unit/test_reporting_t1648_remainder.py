@@ -15,12 +15,18 @@ class TestDisclosureShapedLanguage:
 
     def test_detects_known_phrase(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
-        text = "Split 1 of 53 files; the other 52 were not attempted."
+        # T-2726: signal 1 now scopes to the Done-report section, same
+        # as signal 2 -- so the phrase must sit under that heading.
+        text = (
+            "## Done report\n\n"
+            "Split 1 of 53 files; the other 52 were not attempted.\n"
+        )
         assert disclosure_shaped_language(text) == "not attempted"
 
     def test_case_insensitive(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_case_insensitive  # noqa: E501
-        assert disclosure_shaped_language("STILL OUTSTANDING work here") is not None
+        text = "## Done report\n\nSTILL OUTSTANDING work here\n"
+        assert disclosure_shaped_language(text) is not None
 
     def test_clean_narrative_is_not_flagged(self) -> None:
         # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
@@ -61,6 +67,43 @@ class TestDisclosureShapedLanguage:
             "## Done report\n\nFixed everything, all clean.\n"
         )
         assert disclosure_shaped_language(text) is None
+
+    # frob:ticket T-2726
+    def test_phrase_in_description_before_done_report_is_not_flagged(self) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_description_before_done_report_is_not_flagged  # noqa: E501
+        # T-2726's own confirmed incident: T-2718's ticket DESCRIPTION
+        # discussed disclosure-shaped language as its subject matter,
+        # quoting "named no follow-up" -- signal 1 used to scan the
+        # WHOLE body (description included), independent of signal 2's
+        # already-scoped Done-report check, and independent of the
+        # Done report's own content. A ticket whose description
+        # legitimately discusses this guard's subject must close clean
+        # when its Done report itself is clean.
+        text = (
+            "## Description\n\n"
+            "Signal 1 fires even when the Done report named no follow-up "
+            "and disclosed cut work honestly -- that phrase alone should "
+            "not have blocked close.\n\n"
+            "## Done report\n\nAll clean, nothing cut.\n\n"
+            "### Changed\n\n- x.py\n\n"
+            "### Evidence\n\n- tests/x.py::test_ok\n"
+        )
+        assert disclosure_shaped_language(text) is None
+
+    # frob:ticket T-2726
+    def test_phrase_in_done_report_still_fires(self) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_phrase_in_done_report_still_fires  # noqa: E501
+        # The positive control the narrowing must not remove: a genuine
+        # hedged claim INSIDE the Done report itself -- no subheading,
+        # plain prose -- still fires exactly as before T-2726.
+        text = (
+            "## Description\n\nOrdinary ticket about something else.\n\n"
+            "## Done report\n\n"
+            "Fixed most of it; the edge case was not addressed.\n\n"
+            "### Changed\n\n- x.py\n\n"
+            "### Evidence\n\n- tests/x.py::test_ok\n"
+        )
+        assert disclosure_shaped_language(text) == "not addressed"
 
     # frob:ticket T-2638
     def test_no_done_report_heading_is_not_flagged_by_structure(self) -> None:

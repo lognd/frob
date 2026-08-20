@@ -2,7 +2,7 @@
 id: T-2726
 title: disclosure_shaped_language signal 1 (phrase match) scans the whole ticket body,
   not just the Done report
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -18,6 +18,8 @@ scope:
 - src/frob/tickets/_reporting.py
 - tests/unit/test_reporting_t1648_remainder.py
 - docs/modules/tickets-data-storage.md
+evidence_scope:
+- tests/unit/test_close_t1648_remainder.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +35,13 @@ scope_changes:
   reason: document signal-1 scope fix per frob:doc target on disclosure_shaped_language
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_phrase_in_description_before_done_report_is_not_flagged
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_phrase_in_done_report_still_fires
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_detects_known_phrase
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_case_insensitive
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_clean_narrative_is_unaffected
+- tests/unit/test_close_t1648_remainder.py::TestRemainderDisclosureGuard::test_refuses_when_disclosure_language_has_no_filed_ticket
 designated_repro_test: null
 threat: null
 component: null

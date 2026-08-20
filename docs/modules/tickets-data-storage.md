@@ -1462,26 +1462,33 @@ had no owner until a coordinator noticed by hand and filed T-1646; T-1204
 did the same for 5 undone PERF rule families (T-1647).
 
 - `frob.tickets._reporting.disclosure_shaped_language(text)` returns
-  non-`None` on either of two independent signals (T-2638 hardening):
-  a deliberately generous phrase match over the Done report's own
-  narrative (`"not attempted"`, `"still outstanding"`, `"out of scope
-  for this pass"`, and similar -- not an English parser), OR a markdown
-  subheading (`### ...` or deeper) found anywhere under the LAST `##
-  Done report` heading in the body. The phrase match alone used to be
-  the sole decision, and a real incident (T-2623/T-2638) showed it is
-  trivially defeated by rewording: renaming a disclosure heading from
-  "What was NOT done, and why" to a phrase-free "Scope boundary:
-  measurement only, zero repairs (by design)" silenced the phrase scan
-  completely while the disclosed content underneath was unchanged. The
-  subheading check is structural instead of lexical -- it fires on the
-  heading's SYNTAX existing, not on any particular wording, so it
-  cannot be defeated by paraphrase the way the phrase-only design was.
-  It is scoped strictly to content under `## Done report` (never the
-  ticket's own description, which routinely carries its own rich `##`
-  structure that would otherwise false-positive on nearly every
-  ticket). A false positive from either signal costs one extra `Filed:`
-  line; a false negative is the incident this exists to prevent, so
-  both heuristics err toward firing.
+  non-`None` on either of two independent signals (T-2638 hardening),
+  BOTH scoped strictly to content under the LAST `## Done report`
+  heading in the body (`_done_report_section`, T-2726): a deliberately
+  generous phrase match over the Done report's own narrative (`"not
+  attempted"`, `"still outstanding"`, `"out of scope for this pass"`,
+  and similar -- not an English parser), OR a markdown subheading (`###
+  ...` or deeper) found anywhere in that same section. The phrase match
+  alone used to be the sole decision, and a real incident (T-2623/
+  T-2638) showed it is trivially defeated by rewording: renaming a
+  disclosure heading from "What was NOT done, and why" to a
+  phrase-free "Scope boundary: measurement only, zero repairs (by
+  design)" silenced the phrase scan completely while the disclosed
+  content underneath was unchanged. The subheading check is structural
+  instead of lexical -- it fires on the heading's SYNTAX existing, not
+  on any particular wording, so it cannot be defeated by paraphrase the
+  way the phrase-only design was. Neither signal scans the ticket's own
+  description, which routinely carries its own rich `##` structure (and,
+  for a ticket ABOUT this guard, routinely discusses disclosure/
+  follow-up language as its subject matter) that would otherwise
+  false-positive on nearly every ticket -- confirmed live when T-2718's
+  own DESCRIPTION quoted "named no follow-up" while describing the bug
+  and tripped the (then body-wide) phrase signal on close, independent
+  of its Done report's own content; T-2726 aligned signal 1's scope to
+  match signal 2's, which was already correctly narrowed. A false
+  positive from either signal costs one extra `Filed:` line; a false
+  negative is the incident this exists to prevent, so both heuristics
+  err toward firing.
 - `frob.tickets._reporting.filed_followup_tickets(body)` parses every
   `T-####` or `T-draft-<hex>` id named on a `Filed:` line -- the existing
   playbook Done-report convention (`docs/guides/agent-playbook.md`
@@ -1524,8 +1531,9 @@ title is NOT one of the four exact, fixed generator strings
 EXACT title, not prefix/substring, so T-2638's own reword-proof
 guarantee is untouched: renaming any of the four, or adding any other
 subsection alongside them, still fires exactly as before. Only the
-tool's own unmodified template output is exempt; the phrase-based signal
-1 is completely unaffected either way.
+tool's own unmodified template output is exempt; the phrase-based
+signal 1 is unaffected by this exemption (it has its own, separate
+scoping history -- see T-2726 above).
 
 ## Mega-glob scope refused at start (T-1866)
 
