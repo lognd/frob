@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record the discriminating second measurement that separates this budget
+    shortfall from T-2713's resume-file defect
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3415
+  new_length: 4868
 designated_repro_test: null
 threat: null
 component: null
@@ -108,3 +116,35 @@ already exceeds 492s. This budget is self-imposed.
 
 The verify queue is stuck right now and will stay stuck until this lands.
 Post-land regression detection is not running.
+
+
+
+
+## CONFIRMED by a second, discriminating measurement (2026-08-20)
+
+The first observed failure could have been either this budget shortfall
+or T-2713's resume-file bug. A second `frob verify now`, run after
+T-2713 landed and against a fresh resume state, discriminates them --
+and BOTH are real, independent defects:
+
+    WARNING: `frob check --json --budget` run deferred 1 stage group(s)
+    (static) -- error-finding identities are unmeasured, not a partial set
+    ERROR: verify worker: unmeasurable verification at dd22aa95dc00 --
+    watermark and queue left untouched
+
+This run reported a GENUINE BUDGET001 deferral of exactly one group,
+which is the arithmetic in this ticket rather than T-2713's mechanism:
+
+    ran:       gates-fast 168.49 + gates-native 88.48
+             + gates-security 135.35 + lint 3.69   = 396.01
+    remaining: static 96.17                        -> 492.18 total
+    budget:                                           480.00
+
+So with a clean resume state the run still cannot fit, and `static` is
+deferred every time. T-2713's fix correctly refuses to advance on it.
+
+DISTINCTION TO PRESERVE: T-2713 fixed a run whose `deferred` list read
+EMPTY while 4 groups silently never executed (a stale narrow resume file).
+This ticket is a run that HONESTLY reports deferring `static` because the
+work genuinely exceeds the budget. Fixing one does not fix the other, and
+T-2713's guarantee must survive whatever is done here.
