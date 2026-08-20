@@ -2,7 +2,7 @@
 id: T-2739
 title: verify T-2481/T-1943 COV005 waivers against T-2720's narrowed detector, remove
   any that no longer reproduce
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -21,6 +21,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:/tmp/verify_t2739.sh exit=0 sha256=e329d59bd789
 designated_repro_test: null
 threat: null
 component: null

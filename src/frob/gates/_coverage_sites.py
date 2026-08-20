@@ -134,11 +134,6 @@ def _load_family_reporters() -> dict[str, Callable[[Path], frozenset[str]]]:
 # strata/graph/vet, which T-2011 investigated and left unwired) since WIRE002 requires \
 # a live open ticket citation, not because that ticket is expected to touch this \
 # specific waiver" follow_up="T-2057"
-# frob:waive COV005 reason="T-1943: this is a brand-new private function, not a helper \
-# extracted above attach_examined_sites/site_examined -- COV005's (kind, \
-# target)=(waive, 'WIRE001') key is shared by every WIRE001 waiver in this file, so \
-# adding a fourth, independent WIRE001 waiver on a genuinely new private symbol looks \
-# identical to a rebind even though nothing moved"
 # frob:ticket T-2575
 def _perf_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's PERF-family
@@ -182,9 +177,6 @@ def _perf_examined_sites(root: Path) -> frozenset[str]:
 # siblings in this module -- no production caller wired here, deliberately, until \
 # T-2011 (open) does the wiring the way T-1942 already did for archgate" \
 # follow_up="T-2057"
-# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
-# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
-# explanation of why this file's shared WIRE001 target triggers a false rebind read"
 def _strata_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's STRATA-family
     reporter -- the repo-relative `.strata` file paths this call's own
@@ -225,9 +217,6 @@ def _strata_examined_sites(root: Path) -> frozenset[str]:
 # substrate-only per T-1921's own precedent rather than wiring a consumer in this same \
 # diff. Open follow-up T-2011 covers wiring this reporter (and its three siblings) \
 # into WAIVE004" follow_up="T-2057"
-# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
-# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
-# explanation of why this file's shared WIRE001 target triggers a false rebind read"
 def _graph_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's GRAPH-family
     reporter -- `frob.graph.build_graph`'s own `GraphSnapshot.file_hashes`
@@ -261,9 +250,6 @@ def _graph_examined_sites(root: Path) -> frozenset[str]:
 # frob:waive WIRE001 reason="VET reporter -- last of the four T-1943 substrate-only \
 # additions, no production caller wired in this diff. T-2011 is the open ticket that \
 # wires this and its siblings into a real WAIVE004 guard" follow_up="T-2057"
-# frob:waive COV005 reason="T-1943: brand-new private function, not a helper extracted \
-# from a public def -- see _perf_examined_sites's own COV005 waiver above for the full \
-# explanation of why this file's shared WIRE001 target triggers a false rebind read"
 def _vet_examined_sites(root: Path) -> frozenset[str]:
     """T-1943: the per-site analysis-coverage substrate's VET-family
     reporter -- the repo-relative file paths `frob.vet._capability.

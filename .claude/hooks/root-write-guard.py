@@ -99,9 +99,6 @@ REASON = (
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 #: T-2481: known MUTATING `frob ticket` subcommands -- deliberately excludes
 #: read-only ones (`list`, `show`, `doable`, `wave`, `contention`, `board`,
 #: `epic`, `brief`, `flow`, `merge-driver`, `runs-last`) so a query command
@@ -151,9 +148,6 @@ _MUTATING_TICKET_VERBS = frozenset(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 #: T-2481: matches `frob ticket <mutating-verb>` (optionally `uv run frob`/
 #: `python -m frob` prefixed) anywhere in a command string.
 _TICKET_VERB_RE = re.compile(
@@ -164,18 +158,12 @@ _TICKET_VERB_RE = re.compile(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 #: T-2481: a leading `cd <dir>` segment (chained with `&&`/`;`), captured so
 #: an effective cwd can be computed without a real shell parser.
 _LEADING_CD_RE = re.compile(r"^\s*cd\s+(\"[^\"]+\"|'[^']+'|\S+)\s*(?:&&|;)")
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 #: T-2481: redirect/in-place-edit targets this hook is willing to infer --
 #: deliberately narrow (see module docstring). Each pattern captures ONE
 #: candidate target path in group 1.
@@ -187,9 +175,6 @@ _REDIRECT_TARGET_RES = (
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 #: T-2481: any of these appearing in a candidate path (or in the whole
 #: command, for the `frob ticket` case) makes static resolution unreliable
 #: -- treat as ambiguous and ALLOW rather than guess (acceptance 4).
@@ -282,9 +267,6 @@ def _target_path(tool_name: str, tool_input: dict) -> str:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _strip_quotes(raw: str) -> str:
     """Strip one layer of matching `'...'`/`"..."` quoting from `raw` -- the
     candidate-path captures above may include the quotes verbatim."""
@@ -295,9 +277,6 @@ def _strip_quotes(raw: str) -> str:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _leading_cd_target(command: str) -> str | None:
     """The directory a command's leading `cd <dir> &&`/`cd <dir>;` segment
     names, or `None` if the command has no such prefix -- the "cd into a
@@ -311,9 +290,6 @@ def _leading_cd_target(command: str) -> str | None:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _resolve_relative(raw: str, base: str) -> str:
     """Join `raw` onto `base` when it is relative, else return `raw`
     unchanged -- the one path-join rule every resolver below shares."""
@@ -322,9 +298,6 @@ def _resolve_relative(raw: str, base: str) -> str:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _under_any(path: str, roots: list[str]) -> bool:
     """True when `path` equals or sits under any directory in `roots`."""
     return any(path == root or path.startswith(root + os.sep) for root in roots)
@@ -332,9 +305,6 @@ def _under_any(path: str, roots: list[str]) -> bool:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _unambiguous_target(raw_target: str) -> str | None:
     """`raw_target` with one layer of quoting stripped, or `None` when it
     contains a `$`/backtick/glob character this hook declines to resolve
@@ -347,9 +317,6 @@ def _unambiguous_target(raw_target: str) -> str | None:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _effective_cwd(command: str, payload_cwd: str) -> str | None:
     """The directory a Bash command's write actually lands in: the leading
     `cd <dir>` target if the command starts with one, else `payload_cwd`
@@ -366,9 +333,6 @@ def _effective_cwd(command: str, payload_cwd: str) -> str | None:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _resolves_under_primary(
     raw_target: str, effective_cwd: str, primary_real: str, worktree_reals: list[str]
 ) -> bool:
@@ -388,9 +352,6 @@ def _resolves_under_primary(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _bash_ticket_verb_targets_root(
     command: str, effective_cwd: str, primary_real: str
 ) -> bool:
@@ -406,9 +367,6 @@ def _bash_ticket_verb_targets_root(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _bash_redirect_targets_root(
     command: str, effective_cwd: str, primary_real: str, worktree_reals: list[str]
 ) -> bool:
@@ -425,9 +383,6 @@ def _bash_redirect_targets_root(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _bash_targets_root(
     command: str, payload_cwd: str, primary_real: str, worktree_reals: list[str]
 ) -> bool:
@@ -454,9 +409,6 @@ def _bash_targets_root(
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _agent_worktree_paths(cwd: str) -> list[str] | None:
     """`_worktree_paths(cwd)` gated behind `_is_agent_context`, or `None`
     when either check comes back negative -- the one "is this even worth
@@ -505,9 +457,6 @@ def _deny() -> None:
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _file_write_targets_root(file_path: str, cwd: str, paths: list[str]) -> bool:
     """The pure decision half of `_handle_file_write`: `True` when
     `file_path` (resolved against `cwd`) lands under the primary checkout
@@ -532,9 +481,6 @@ def _file_write_targets_root(file_path: str, cwd: str, paths: list[str]) -> bool
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
-# frob:waive COV005 reason="T-2481: brand-new private helper, not a helper extracted \
-# from a public def -- see src/frob/gates/_coverage_sites.py's own COV005 waiver \
-# precedent for the same false-positive shape"
 def _handle_file_write(file_path: str, cwd: str) -> None:
     """`main`'s `Write`/`Edit`/`NotebookEdit` branch, split out to keep
     `main` under the length/complexity thresholds `ARCH001`/`ARCH103`

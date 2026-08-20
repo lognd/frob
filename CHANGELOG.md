@@ -206,6 +206,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2726: disclosure_shaped_language signal 1 (phrase match) scans the whole ticket body, not just the Done report
 - T-2732: post-land sweep regression from an unattributed source (sweep spawned by T-2723): 137 new (rule, file) identit(ies), 1 finding(s) (ARCH001, ARCH102, ARCH103, E501)
 - T-2733: remove now-redundant frob:waive RENDER001 directives in .claude/hooks and scripts/fleet_status.py
+- T-2739: verify T-2481/T-1943 COV005 waivers against T-2720's narrowed detector, remove any that no longer reproduce
 
 ## [0.530.0] - unreleased
 
