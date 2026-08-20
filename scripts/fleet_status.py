@@ -959,20 +959,26 @@ def _matches_any_scope_glob(path: str, scope_globs: Sequence[str]) -> bool:
 
 # frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
 # frob:ticket T-2665
+# frob:ticket T-2747
 def _worktree_matches_ticket_by_scope_only(
     path: Path, scope_globs: Sequence[str]
 ) -> bool:
-    """`worktrees_touching_ticket`'s own ARCH001 split: the naming-
-    identity fast path (T-2665) -- `True` when `path`'s own unlanded
-    history (`main..HEAD`) carries any commit touching `scope_globs`, NO
-    `tickets/<id>/` cross-check required. Only ever called once the
-    caller has already confirmed `path`'s directory name resolves to the
-    SAME ticket id being queried (`_worktree_ticket_id`, T-2599) -- that
-    naming identity is itself the correlation `worktrees_touching_
-    ticket`'s stricter dual-condition check exists to establish for an
-    AMBIGUOUS (ad-hoc-named) worktree, so re-demanding a `tickets/<id>/`-
-    touching commit here would require a shape the standard workflow
-    does not produce (see `worktrees_touching_ticket`'s own docstring)."""
+    """`worktrees_touching_ticket`'s own ARCH001 split: the started-
+    ticket fast path (T-2665, correlation source replaced by T-2747) --
+    `True` when `path`'s own unlanded history (`main..HEAD`) carries any
+    commit touching `scope_globs`, NO `tickets/<id>/` cross-check
+    required. Only ever called once the caller has already confirmed
+    `path` structurally started the SAME ticket id being queried
+    (`_worktree_started_ticket`, T-2747 -- originally a `t-<id>`
+    directory-name match, T-2599/T-2665, replaced because a worktree's
+    name is not a reliable proxy for which ticket(s) it holds: renamed,
+    reused, subject-named, or a series worktree holding several
+    tickets' leases under one name) -- that starting evidence is itself
+    the correlation `worktrees_touching_ticket`'s stricter dual-condition
+    check exists to establish for a worktree that never started this
+    ticket at all, so re-demanding a `tickets/<id>/`-touching commit here
+    would require a shape the standard workflow does not produce (see
+    `worktrees_touching_ticket`'s own docstring)."""
     unlanded = _git(["log", "main..HEAD", "--format=%H"], path)
     shas = [line.strip() for line in unlanded.splitlines() if line.strip()]
     for sha in shas:
@@ -1012,10 +1018,56 @@ def _worktree_matches_ticket_by_dual_correlation(
     return False
 
 
+# frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket
+# frob:ticket T-2747
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicket.test_true_when_star\
+# t_transition_commit_present
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicket.test_false_when_abs\
+# ent
+def _worktree_started_ticket(path: Path, ticket_id: str) -> bool:
+    """`True` if `path`'s unlanded history (`main..HEAD`) carries the
+    canonical start-transition commit `frob.tickets._leases.
+    commit_start_transition` writes -- subject exactly `chore(tickets):
+    record <ticket_id> start transition` -- the moment `frob ticket
+    start`/`work` runs for `ticket_id` IN THIS WORKTREE (T-1054).
+
+    T-2747's replacement for `worktrees_touching_ticket`'s old directory-
+    NAME correlation (`_worktree_ticket_id`, T-2599/T-2665): a worktree's
+    name is an arbitrary human label (renamed, reused, or chosen after
+    the ticket's SUBJECT rather than its id -- e.g. `waive-liveness` for
+    T-2740) or, for the standard series-dispatch pattern (one worktree,
+    several tickets in order, this playbook's own convention), a name
+    that resolves to only ONE of several ids the worktree actually holds
+    live leases for (e.g. `t2738-t2737` naming T-2738 but also holding
+    T-2737's lease). Both shapes measured as false LEAKs in `fleet_
+    status.py`'s own live run against this repo (T-2747's own report).
+
+    This checks something structural instead: `commit_start_transition`
+    is written unconditionally, in the SAME worktree the ticket was
+    started in, by every `frob ticket start`/`work` invocation regardless
+    of what that worktree is named or how many other tickets share it --
+    so a worktree's own commit history already records, precisely, which
+    ticket ids were genuinely started there. This is unrelated to (and
+    deliberately weaker than) `_worktree_matches_ticket_by_dual_
+    correlation`'s per-commit `tickets/<id>/`-plus-scope check below,
+    which exists for the opposite case: a worktree that has NEVER
+    started this ticket but happens to share branch history with one
+    that touched its ledger for an unrelated reason (T-2181's
+    collision-recovery-renumbering false positive) -- that check must
+    stay strict precisely because it has no start-transition signal to
+    lean on."""
+    target = f"chore(tickets): record {ticket_id} start transition"
+    subjects = _git(["log", "main..HEAD", "--format=%s"], path).splitlines()
+    return any(subject.strip() == target for subject in subjects)
+
+
 # frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
 # frob:ticket T-2133
 # frob:ticket T-2179
 # frob:ticket T-2665
+# frob:ticket T-2747
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_finds_a_bran\
 # ch_with_unlanded_commits
@@ -1025,6 +1077,12 @@ def _worktree_matches_ticket_by_dual_correlation(
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_ledger_only_\
 # churn_is_not_reported
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_non_conventi\
+# onally_named_worktree_matches_via_start_transition
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket.test_series_workt\
+# ree_matches_sibling_ticket_via_start_transition
 def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> list[str]:
     """Names of live worktrees whose branch carries an unlanded commit
     that, in that SAME commit's own diff, BOTH (a) touches
@@ -1071,14 +1129,18 @@ def worktrees_touching_ticket(ticket_id: str, scope_globs: Sequence[str]) -> lis
         return []
     hits = []
     for path in sorted(p for p in WORKTREES.iterdir() if p.is_dir()):
-        # T-2665: a `t-<id>`-NAMED worktree already identifies which
-        # ticket it belongs to via the same naming convention
-        # `_worktree_ticket_id` (T-2599) reads elsewhere in this module,
-        # so it only needs the (weaker, ARCH001-split-out) scope-only
-        # check; every other worktree still needs the original, stricter
-        # dual-condition correlation -- see the two helpers' own
-        # docstrings for why each applies to its own case.
-        if _worktree_ticket_id(path.name) == ticket_id:
+        # T-2747: a worktree whose OWN unlanded history carries the
+        # start-transition commit for `ticket_id` (`_worktree_started_
+        # ticket`) already structurally identifies itself as having
+        # started this ticket -- true regardless of the worktree's own
+        # NAME (a `t-<id>`-named worktree per T-2599/T-2665, a subject-
+        # named one like `waive-liveness`, or a series worktree holding
+        # several tickets' leases where the name resolves to only one of
+        # them) -- so it only needs the (weaker, ARCH001-split-out)
+        # scope-only check; every other worktree still needs the
+        # original, stricter dual-condition correlation -- see the two
+        # helpers' own docstrings for why each applies to its own case.
+        if _worktree_started_ticket(path, ticket_id):
             matched = _worktree_matches_ticket_by_scope_only(path, scope_globs)
         else:
             matched = _worktree_matches_ticket_by_dual_correlation(

@@ -612,35 +612,77 @@ back to the old, looser behavior.
 
 **T-2665 (ARCH001 split):** the function now dispatches to one of two
 named helpers per worktree rather than inlining both strategies --
-`_worktree_matches_ticket_by_scope_only` for a `t-<id>`-named worktree
-that already resolves to the ticket being queried, `_worktree_matches_
+`_worktree_matches_ticket_by_scope_only` for a worktree that has
+structurally started the ticket being queried, `_worktree_matches_
 ticket_by_dual_correlation` (the original T-2179/T-2181 logic described
 above, unchanged) for everything else.
+
+**T-2747 (correlation source replaced):** the dispatch condition
+originally read the worktree's directory NAME (`_worktree_ticket_id`,
+T-2599: `True` only for a literal `t-<id>` name). Measured wrong three
+ways in one real fleet-status run: (1) a worktree named after its
+subject rather than its ticket id (`waive-liveness`, T-2740) never
+matches the regex at all; (2) a worktree named for ticket A while ALSO
+holding a live lease for sibling ticket B (`t2738-t2737`, holding both
+T-2738 and T-2737 -- the standard series-dispatch pattern this repo's
+own playbook prescribes, not an edge case) resolves only A, never B;
+(3) by construction, any renamed or reused worktree. All three read as
+`[LEAK]` in `fleet_status.py`'s leases section despite being live,
+multi-commit worktrees -- dangerous specifically because this session
+treats a genuine leak as safe to reclaim. The dispatch condition is now
+`_worktree_started_ticket` (below): a worktree's OWN unlanded commit
+history, not its name, decides which ticket ids it has started.
+
+### `_worktree_started_ticket`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket -->
+
+T-2747. `True` if a worktree's own unlanded history (`main..HEAD`)
+carries the exact commit `frob.tickets._leases.commit_start_transition`
+writes for a ticket -- subject `chore(tickets): record <id> start
+transition` -- committed, unconditionally, IN that worktree the moment
+`frob ticket start`/`work` runs there (T-1054). Verified directly
+against this repo's own live worktrees: `waive-liveness` (T-2740) and
+`t2738-t2737` (T-2738 AND T-2737) each carry the exact expected subject
+line in `git log main..HEAD --format=%s`, independent of either
+worktree's directory name.
+
+Replaces the naming-identity fast path (`_worktree_ticket_id`, T-2599/
+T-2665) as `worktrees_touching_ticket`'s dispatch condition -- see
+T-2747's paragraph above for the three false-LEAK shapes that motivated
+the change. `_worktree_ticket_id` itself is unchanged and still used
+elsewhere (`worktree_content_classification`'s own `t-<id>` short
+circuit) -- naming convention remains a legitimate signal for THAT
+narrower question ("did a ticket-NAMED worktree land its own work"), it
+was only the wrong signal for "which ticket(s) does an arbitrarily-named
+worktree hold".
 
 ### `_worktree_matches_ticket_by_scope_only`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_matches_ticket_by_scope_only -->
 
-T-2665. The naming-identity fast path: `True` when a `t-<id>`-named
-worktree's own unlanded history (`main..HEAD`) has ANY commit touching
-`scope_globs`, with no `tickets/<id>/` cross-check at all. Only called
-once the caller has already confirmed the worktree's directory name
-resolves to the SAME ticket id via `_worktree_ticket_id` (T-2599) --
-that naming identity already answers the "is this genuinely the same
-ticket" question the dual-condition check below exists to answer for an
-AMBIGUOUS (ad-hoc-named) worktree.
+T-2665, correlation source replaced by T-2747. The started-ticket fast
+path: `True` when a worktree that has structurally started the ticket
+being queried (`_worktree_started_ticket`) has ANY unlanded commit
+touching `scope_globs`, with no `tickets/<id>/` cross-check at all. Only
+called once the caller has already confirmed the worktree started this
+exact ticket -- that starting evidence already answers the "is this
+genuinely the same ticket" question the dual-condition check below
+exists to answer for a worktree that never started it.
 
 Real incident this exists to fix: `frob ticket start`'s own ledger
-commit (the only routine commit that ever touches `tickets/<id>/`)
-lands on the shared PRIMARY checkout, never on a worktree's own branch
--- so a normal in-progress ticket's worktree branch consists purely of
-scope-touching commits and, by design, essentially never contains a
-commit that ALSO touches `tickets/<id>/`. The dual-condition check below
-requires a shape the standard workflow does not produce, so it silently
-reported empty for the overwhelmingly common case (T-2665's own
-measured incident: T-2583, in-progress, its lease FILE already removed,
-a real live worktree with an unlanded commit implementing its own
-scope -- reported `[LEAK]` anyway).
+commit is written directly into the worktree it runs in (`root`,
+`commit_start_transition`, T-1054) -- but that same commit's message is
+`chore(tickets): record <id> start transition`, never a second commit
+that ALSO touches scope files in the same diff; the actual code changes
+for a ticket land in wholly separate commits. So a normal in-progress
+ticket's worktree branch, by design, essentially never contains a
+SINGLE commit that touches both `tickets/<id>/` and scope together --
+the dual-condition check below requires a shape the standard workflow
+does not produce, so it silently reported empty for the overwhelmingly
+common case (T-2665's own measured incident: T-2583, in-progress, its
+lease FILE already removed, a real live worktree with an unlanded
+commit implementing its own scope -- reported `[LEAK]` anyway).
 
 ### `_worktree_matches_ticket_by_dual_correlation`
 

@@ -1,7 +1,7 @@
 ---
 id: T-2746
 title: WIRE001 cannot see a @property's own attribute-access caller (false positive)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -15,12 +15,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
-- tests/test_wire.py
+- tests/unit/test_wire001_property_attribute_access.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: tests/test_wire.py
+  reason: correct test path to match this repo's actual per-shape WIRE001 test file
+    convention (tests/unit/test_wire001_*.py), tests/test_wire.py does not exist
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_wire001_property_attribute_access.py
+  reason: correct test path to match this repo's actual per-shape WIRE001 test file
+    convention (tests/unit/test_wire001_*.py), tests/test_wire.py does not exist
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_read_via_attribute_access_is_not_flagged
+- tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_with_no_caller_anywhere_still_flagged_positive_control
+- tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_ordinary_new_method_still_flagged_positive_control
+designated_repro_test: tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_read_via_attribute_access_is_not_flagged
 threat: null
 component: null
 anchor: false

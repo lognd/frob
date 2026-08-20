@@ -1493,6 +1493,141 @@ class TestWorktreesTouchingTicket:
             == []
         )
 
+    # frob:ticket T-2747
+    def test_non_conventionally_named_worktree_matches_via_start_transition(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2747 positive control 1: a worktree named after its SUBJECT
+        (`waive-liveness`, the real T-2740 shape) rather than `t-<id>`
+        still matches -- because its own `main..HEAD` history carries the
+        start-transition commit `commit_start_transition` writes, the
+        dispatch condition no longer depends on the directory name at
+        all."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "waive-liveness").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        # Realistic per-commit shape (matches the real T-2740 measurement):
+        # the start-transition commit and the real scope-touching commit
+        # are TWO SEPARATE commits -- no single commit touches both
+        # `tickets/T-2740/` and scope, so the OLD dual-correlation check
+        # genuinely returns False here (proving this is a real repro, not
+        # a mock coincidence): only the NEW started-ticket fast path can
+        # see the scope-touching commit at all.
+        def fake_git(args: list[str], cwd: Path) -> str:
+            if args[0] == "log" and args[-1] == "--format=%s":
+                return "chore(tickets): record T-2740 start transition"
+            if args[0] == "log" and args[-1] == "tickets/T-2740/":
+                return "aaa111"  # ledger-only bookkeeping commit
+            if args[0] == "log":
+                return "bbb222"  # the real, separate scope-touching commit
+            if args[0] == "show":
+                sha = args[-1]
+                if sha == "aaa111":
+                    return "tickets/T-2740/ticket.md"
+                if sha == "bbb222":
+                    return "src/a.py"
+                return ""
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status.worktrees_touching_ticket(
+            "T-2740", ["src/a.py"]
+        ) == ["waive-liveness"]
+
+    # frob:ticket T-2747
+    def test_series_worktree_matches_sibling_ticket_via_start_transition(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2747 positive control 2: a worktree named for ticket A
+        (`t2738-t2737`, named after T-2738) that ALSO started sibling
+        ticket B (T-2737, the standard series-dispatch pattern) resolves
+        B too -- the real shape the old `t-<id>`-regex fast path could
+        never see, since the name only ever resolves to one id."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "t2738-t2737").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        # Same realistic per-commit split as the sibling test above: the
+        # T-2737 start-transition commit and its own real scope-touching
+        # commit are separate commits, so the OLD dual-correlation check
+        # (which the worktree's NAME resolves to T-2738, never T-2737)
+        # genuinely cannot see T-2737 as reached here either way -- this
+        # proves the NEW started-ticket path is what recovers it.
+        def fake_git(args: list[str], cwd: Path) -> str:
+            if args[0] == "log" and args[-1] == "--format=%s":
+                return (
+                    "chore(tickets): record T-2738 start transition\n"
+                    "chore(tickets): record T-2737 start transition"
+                )
+            if args[0] == "log" and args[-1] == "tickets/T-2737/":
+                return "ccc333"  # ledger-only bookkeeping commit
+            if args[0] == "log":
+                return "ddd444"  # the real, separate scope-touching commit
+            if args[0] == "show":
+                sha = args[-1]
+                if sha == "ccc333":
+                    return "tickets/T-2737/ticket.md"
+                if sha == "ddd444":
+                    return "src/b.py"
+                return ""
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status.worktrees_touching_ticket(
+            "T-2737", ["src/b.py"]
+        ) == ["t2738-t2737"]
+
+    # frob:ticket T-2747
+    def test_a_leaked_ticket_with_no_worktree_anywhere_still_reports_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2747 positive control 3 (the detector's purpose must
+        survive): a ticket genuinely abandoned -- no worktree started it,
+        no worktree touches its scope -- must still resolve to no hits at
+        all, i.e. still read as a leak. Without this, the fix would have
+        traded a false LEAK for a false LIVE, which is the more dangerous
+        direction (a stranded lease would never get reclaimed)."""
+        worktrees_dir = tmp_path / "worktrees"
+        (worktrees_dir / "unrelated").mkdir(parents=True)
+        monkeypatch.setattr(fleet_status, "WORKTREES", worktrees_dir)
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            if args[0] == "log" and args[-1] == "--format=%s":
+                return "chore(tickets): record T-9999 start transition"
+            if args[0] == "log":
+                return ""
+            return ""
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status.worktrees_touching_ticket("T-2114", ["src/a.py"]) == []
+
+
+class TestWorktreeStartedTicket:
+    """`fleet_status._worktree_started_ticket` (T-2747)."""
+
+    def test_true_when_start_transition_commit_present(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """frob:tests scripts/fleet_status.py::_worktree_started_ticket"""
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            return "chore(tickets): record T-2740 start transition"
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status._worktree_started_ticket(tmp_path, "T-2740") is True
+
+    def test_false_when_absent(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """frob:tests scripts/fleet_status.py::_worktree_started_ticket"""
+
+        def fake_git(args: list[str], cwd: Path) -> str:
+            return "some other commit subject"
+
+        monkeypatch.setattr(fleet_status, "_git", fake_git)
+        assert fleet_status._worktree_started_ticket(tmp_path, "T-2740") is False
+
 
 class TestScopeIntersections:
     """`fleet_status.scope_intersections` (T-2180)."""

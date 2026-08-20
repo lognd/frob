@@ -214,6 +214,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2739: verify T-2481/T-1943 COV005 waivers against T-2720's narrowed detector, remove any that no longer reproduce
 - T-2740: waive-audit cannot distinguish a necessary waiver from an inert one: 11 RENDER001 waivers sat on paths the gate never scanned
 - T-2743: Repo-wide pre-existing debt surfaced by T-2713/T-2715's deferred-verification repair (from T-2716 re-triage)
+- T-2747: fleet_status reports a live worktree as a leaked lease when the worktree is not named t-<id>
 - T-2751: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts, spurious failure
 
 ## [0.530.0] - unreleased

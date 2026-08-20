@@ -1007,6 +1007,24 @@
       "old_digest": null,
       "reason": "T-2695: pure code relocation, doc content unchanged; docs/modules/tickets-data-storage.md itself is under another ticket's live lease (T-2718) and cannot be edited right now -- ack records the doc is still accurate against the new location",
       "ref": "src/frob/tickets/_store_migrate.py::migrate_to_ledger"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "710f97048f2cbaa2f4bb7aaefa15b1fb471ca05185d0c86ad3e72d64df29b4f3",
+      "old_digest": "a4eeba3bb6ee073b0ad600eab7042f5c9dd265337910115d81ba0080579a3ccf",
+      "reason": "T-2747: dispatch condition switched from directory-name (_worktree_ticket_id) to structural start-transition-commit correlation (_worktree_started_ticket); scope-only/dual-correlation split unchanged",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "old_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
+      "reason": "T-2747: dispatch condition switched from directory-name (_worktree_ticket_id) to structural start-transition-commit correlation (_worktree_started_ticket); scope-only/dual-correlation split unchanged",
+      "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     }
   ],
   "entries": [
@@ -1021,7 +1039,7 @@
       "ref": "design/frob.strata::frob.vet"
     },
     {
-      "digest": "a4eeba3bb6ee073b0ad600eab7042f5c9dd265337910115d81ba0080579a3ccf",
+      "digest": "710f97048f2cbaa2f4bb7aaefa15b1fb471ca05185d0c86ad3e72d64df29b4f3",
       "facet": "body",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     },

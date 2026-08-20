@@ -188,18 +188,77 @@ def _new_callable_records(
 _JOB_TABLE_MARKER_NAMES = frozenset({"_ProcessJob"})
 
 
+# frob:ticket T-2746
+_PROPERTY_DECORATOR_RE = re.compile(r"^\s*@property\s*$")
+
+
+# frob:ticket T-2746
+def _is_property(root: Path, record) -> bool:
+    """True if `record`'s span opens with a bare `@property` decorator --
+    a `@property`'s ONLY legal Python access shape is attribute access
+    with NO trailing call parens (`graph.degraded_languages`, never
+    `graph.degraded_languages()`), which WIRE001's ordinary call-shaped
+    scan (`short(`) can never match. Same regex-over-span-snippet shape
+    as `frob.gates._dead_symbols._is_pydantic_validator`/`_is_autouse_
+    pytest_fixture` (this module already imports both back for the same
+    reason) -- a real dynamic-dispatch-vs-text-scan gap, not a new
+    pattern. Kept local to this module rather than added alongside those
+    two: DEAD001 (`_dead_symbols.py`) resolves reachability via the real
+    call graph (`build_reference_graph`), which already sees a property's
+    plain attribute access correctly -- this gap is specific to WIRE001's
+    own bespoke text-scan substrate, so the fix belongs where the gap is.
+
+    Deliberately narrow: only the bare `@property` getter decorator, not
+    `@x.setter`/`@x.deleter` (those are reached by ASSIGNMENT --
+    `obj.x = value`/`del obj.x` -- a different shape this ticket's own
+    scope does not cover) and not a parenthesized/qualified variant
+    (`@property()`/`@builtins.property`, neither of which this repo's
+    own codebase uses -- confirmed empirically, T-2746). A record whose
+    span does not open on a line matching exactly `@property` (optional
+    surrounding whitespace) returns `False`, same fail-closed posture as
+    its two sibling checks."""
+    try:
+        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start, end = record.span
+    snippet = "\n".join(lines[start - 1 : end])
+    return any(_PROPERTY_DECORATOR_RE.match(line) for line in snippet.splitlines())
+
+
 # frob:ticket T-1502
+# frob:ticket T-2746
 def _wire_reach_patterns(
-    short: str, kind: SymbolKind
-) -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str] | None]:
-    """The three "reached" regexes `_is_reached_outside_diff_tests` scans
+    short: str, kind: SymbolKind, *, is_property: bool = False
+) -> tuple[
+    re.Pattern[str], re.Pattern[str], re.Pattern[str] | None, re.Pattern[str] | None
+]:
+    """The four "reached" regexes `_is_reached_outside_diff_tests` scans
     with: a plain call-shaped token, the T-1502/T-1532/T-1684
     bare-name-argument shape (decorator/memoization wrapper markers, job-
     table constructors, PLUS dict-table values -- all three pass the
     symbol BY REFERENCE, not as a call),
-    and (CLASS records only, T-1527) the ErrorSet bare-member-access
-    shape -- split out purely to keep the scanning function itself under
-    ARCH001's line threshold, no behavior change from inlining."""
+    (CLASS records only, T-1527) the ErrorSet bare-member-access
+    shape, and (T-2746, only when `is_property` is set) a property-
+    shaped bare ATTRIBUTE-access alternative -- split out purely to keep
+    the scanning function itself under ARCH001's line threshold, no
+    behavior change from inlining beyond the new fourth pattern.
+
+    T-2746: a `@property`'s ONLY legal Python access shape is attribute
+    access with no trailing call parens (`graph.degraded_languages`,
+    never `graph.degraded_languages()`), which none of the first three
+    patterns can ever match -- `call_pattern` demands a `(`,
+    `wrapper_pattern` demands one of a fixed marker-name set, and
+    `member_access_pattern` only exists for `CLASS` records and matches
+    in the OPPOSITE direction (`short.Member`, not `something.short`).
+    `property_access_pattern` is `None` whenever `is_property` is
+    `False` (every existing caller of a non-property `METHOD` record is
+    unaffected byte-for-byte) -- only a record this ticket's own
+    `_is_property` check confirms is a bare `@property` getter gets the
+    widened match, so an ordinary method passed BY REFERENCE
+    (`obj.method` with no call, e.g. as a callback) still relies on the
+    existing wrapper-marker shape rather than silently rescuing every
+    method in the repo from WIRE001."""
     call_pattern = re.compile(rf"(?<![A-Za-z0-9_.]){re.escape(short)}\s*\(")
     if kind == SymbolKind.METHOD:
         # T-2532: a classmethod/staticmethod's ONLY legal call shape in
@@ -248,7 +307,20 @@ def _wire_reach_patterns(
         member_access_pattern = re.compile(
             rf"(?<![A-Za-z0-9_.]){re.escape(short)}\.[A-Za-z_][A-Za-z0-9_]*"
         )
-    return call_pattern, wrapper_pattern, member_access_pattern
+    property_access_pattern = None
+    if is_property:
+        # T-2746: `something.short` (or a dotted chain ending in `.short`),
+        # NOT followed by a call-token (`(`) or another identifier
+        # character -- the negative lookahead excludes both a genuine
+        # call (`obj.short(`, already covered by `call_pattern`'s dotted
+        # alternative for METHOD kind, so this stays additive rather than
+        # duplicating a match) and an unrelated longer attribute name
+        # that merely starts with `short` (`obj.short_extra`).
+        property_access_pattern = re.compile(
+            rf"(?<![A-Za-z0-9_.])[A-Za-z_][A-Za-z0-9_]*"
+            rf"(?:\.[A-Za-z_][A-Za-z0-9_]*)*\.{re.escape(short)}(?![A-Za-z0-9_(])"
+        )
+    return call_pattern, wrapper_pattern, member_access_pattern, property_access_pattern
 
 
 # frob:waive EXHAUST003 reason="T-1371: leaked Unknown traces to re.compile/ \
@@ -363,10 +435,17 @@ def _is_reached_outside_diff_tests(
     ANOTHER test file (a shared fixture used across files), and -- as of
     T-1746 -- from a genuine `test_*` caller in its OWN file too (a
     fixture two test classes in ONE file both call directly); see
-    `_wire_test_path_excluded`/`_reached_in_file` for the exact rules."""
+    `_wire_test_path_excluded`/`_reached_in_file` for the exact rules.
+
+    T-2746: a bare `@property` getter (`_is_property`) additionally gets
+    a property-shaped bare-attribute-access alternative
+    (`property_access_pattern`, `_wire_reach_patterns`) -- its only
+    legal Python access shape, which none of the call-shaped/wrapper/
+    member-access patterns above can see."""
     short = _short_name(record.id.qualname)
-    call_pattern, wrapper_pattern, member_access_pattern = _wire_reach_patterns(
-        short, record.kind
+    is_property = record.kind == SymbolKind.METHOD and _is_property(root, record)
+    call_pattern, wrapper_pattern, member_access_pattern, property_access_pattern = (
+        _wire_reach_patterns(short, record.kind, is_property=is_property)
     )
     def_pattern = re.compile(rf"^\s*(async\s+def|def|class)\s+{re.escape(short)}\b")
 
@@ -384,6 +463,7 @@ def _is_reached_outside_diff_tests(
             call_pattern=call_pattern,
             wrapper_pattern=wrapper_pattern,
             member_access_pattern=member_access_pattern,
+            property_access_pattern=property_access_pattern,
             require_test_caller=require_test_caller,
         ):
             return True
@@ -418,14 +498,16 @@ def _reached_in_file(
     call_pattern: re.Pattern[str],
     wrapper_pattern: re.Pattern[str],
     member_access_pattern: re.Pattern[str] | None,
+    property_access_pattern: re.Pattern[str] | None = None,
     require_test_caller: bool,
 ) -> bool:
     """The per-file line scan half of `_is_reached_outside_diff_tests`
     (T-1746, split out to keep that function under ARCH001's line
-    threshold): True if `path`'s text shows a call/wrapper/member-access
-    match for the record's short name, outside its own definition
-    line(s), that (when `require_test_caller` is set -- the T-1746
-    same-file allowance) also sits inside a genuine `test_*` function."""
+    threshold): True if `path`'s text shows a call/wrapper/member-access/
+    property-access (T-2746) match for the record's short name, outside
+    its own definition line(s), that (when `require_test_caller` is set
+    -- the T-1746 same-file allowance) also sits inside a genuine
+    `test_*` function."""
     try:
         lines = (root / path).read_text(encoding="utf-8").splitlines()
     except (OSError, UnicodeDecodeError):
@@ -438,6 +520,8 @@ def _reached_in_file(
         reached_here = call_pattern.search(text) or wrapper_pattern.search(text)
         if not reached_here and member_access_pattern is not None:
             reached_here = member_access_pattern.search(text)
+        if not reached_here and property_access_pattern is not None:
+            reached_here = property_access_pattern.search(text)
         if not reached_here:
             continue
         if require_test_caller and not _enclosing_def_is_test_function(lines, lineno):

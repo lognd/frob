@@ -2,7 +2,7 @@
 id: T-2747
 title: fleet_status reports a live worktree as a leaked lease when the worktree is
   not named t-<id>
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -41,7 +41,14 @@ body_changes:
   at: '2026-08-20'
   old_length: 2667
   new_length: 4285
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_finds_a_branch_with_unlanded_commits
+- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_non_conventionally_named_worktree_matches_via_start_transition
+- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_series_worktree_matches_sibling_ticket_via_start_transition
+- tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_a_leaked_ticket_with_no_worktree_anywhere_still_reports_empty
+- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicket::test_true_when_start_transition_commit_present
+- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicket::test_false_when_absent
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestWorktreesTouchingTicket::test_series_worktree_matches_sibling_ticket_via_start_transition
 threat: null
 component: null
 anchor: false
