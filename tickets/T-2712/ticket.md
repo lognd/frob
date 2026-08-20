@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 802534a13ec31014fcbdee9fed8224a2c0073228
 ---
 T-2696 populated `Violation.symref` for PII010/011/012 (a genuine
 per-symbol gap, distinct from PERF's intentionally file-scoped design --
