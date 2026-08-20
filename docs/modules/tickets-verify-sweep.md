@@ -1027,7 +1027,7 @@ its write completed and lost to a race) -- the observable defect is
 identical in all three (`root` cannot resolve the id), so one check
 covers all three. `"dismissed"` dispositions are untouched: their
 `ref_or_reason` is free-text, not a ticket id. SECONDARY (defense in
-depth, and the direct fix for the T-2736 mechanism specifically):
+depth, and the direct fix for the `T-2736` mechanism specifically):
 `_commit_regression_ticket` now returns the underlying commit-or-discard
 success bool instead of `None`, and `_file_regression_ticket` skips
 `_auto_dispose_filed_findings` entirely when it is `False`, logging at

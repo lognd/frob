@@ -219,6 +219,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2745: post-land sweep regression from an unattributed source (sweep spawned by T-2712): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)
 - T-2747: fleet_status reports a live worktree as a leaked lease when the worktree is not named t-<id>
 - T-2751: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts, spurious failure
+- T-2759: DOC011: docs/modules/tickets-verify-sweep.md cites phantom T-2736 without a waiver
 
 ## [0.530.0] - unreleased
 
