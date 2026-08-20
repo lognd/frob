@@ -82,6 +82,7 @@ from frob.gates._docblocks import (
     _resolve_command_chain,
     _tracked_md_files,
 )
+from frob.gates._markdown_scan import strip_code_spans as _strip_code_spans
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
 from frob.graph._models import EdgeKind, GraphSnapshot
@@ -558,7 +559,48 @@ def _cli_violations(
 # Kind 3: CONFIG REFERENCE ([section] / [section.key] against frob.toml)
 # ---------------------------------------------------------------------------
 
-_CONFIG_REF_RE = re.compile(r"^\[{1,2}([\w.-]+)\]{1,2}$")
+#: T-2703: unlike kinds 1/2/4 (which genuinely need to look INSIDE a
+#: backtick span -- that is how a doc points at a file path or symbol),
+#: a `[section]`/`[section.key]` bracket shape collides with ordinary
+#: prose written about non-TOML syntax that merely happens to look the
+#: same (a C++ lambda capture clause `` `[x]` ``, a regex character
+#: class, a list literal). CONFIG REFERENCE therefore scans the CODE-
+#: SPAN-STRIPPED prose directly (`frob.gates._markdown_scan.
+#: strip_code_spans`, the same shared helper DOC008/DOC011 already use)
+#: instead of reusing the backtick-derived `tokens` list every other
+#: DOC006 kind shares -- a genuine config pointer in plain prose still
+#: fires, the identical shape inside a code span (now blanked) cannot.
+#: The trailing `(?!\()` excludes a markdown link LABEL (`[text](url)`,
+#: always followed by `(`), which would otherwise false-positive on
+#: nearly every single-word link in the doc tree. Requiring at least one
+#: DOT-separated segment (`(?:\.[\w-]+)+`) is a second, load-bearing
+#: narrowing: this repo's own docs are full of plain-prose bracket shapes
+#: that are NOT config pointers at all -- numbered citations (`[0]`,
+#: `[2]`), bare-word footnote/memory-slug citations (`[silent-zero]`,
+#: `[catalogued-is-not-enforced]`) -- and every one of those is a single
+#: undotted segment; a real `[section]`/`[section.key]` TOML pointer this
+#: repo's own docs write in PLAIN prose (as opposed to inside a now-
+#: exempt code span) always has the dotted, multi-segment shape in
+#: practice (verified against `tests/test_docptr_gate.py::
+#: TestDoc004Doc006ZeroOnFrobsOwnRepo` -- 0 findings with this narrowing,
+#: dozens of false ones without it).
+_CONFIG_REF_PROSE_RE = re.compile(r"\[{1,2}([A-Za-z][\w-]*(?:\.[\w-]+)+)\]{1,2}(?!\()")
+
+
+def _config_ref_candidates(text: str) -> list[tuple[int, str]]:
+    """`(line_no, dotted)` for every `[section]`/`[section.key]`-shaped
+    substring in `text`'s prose, OUTSIDE any fenced/inline code span
+    (T-2703) -- see `_CONFIG_REF_PROSE_RE`'s own comment for why this
+    kind cannot share the backtick-derived `_prose_tokens` source every
+    other DOC006 kind uses."""
+    stripped = _strip_code_spans(text)
+    newline_offsets = [i for i, ch in enumerate(stripped) if ch == "\n"]
+    candidates: list[tuple[int, str]] = []
+    for match in _CONFIG_REF_PROSE_RE.finditer(stripped):
+        line_no = bisect.bisect_right(newline_offsets, match.start()) + 1
+        candidates.append((line_no, match.group(1)))
+    return candidates
+
 
 #: T-1016 matcher hardening: a bracketed token whose section root is ALL
 #: CAPS (`[IN-REPO]`, `[TRUNCATED]`) is a prose citation/label TAG, not a
@@ -684,7 +726,7 @@ def _config_path_exists(data: dict, dotted: str) -> bool:
 def _config_violations(
     doc_path: str,
     doc_lines: list[str],
-    tokens: list[tuple[int, str]],
+    text: str,
     frob_toml: dict | None,
     other_manifests: list[dict],
 ) -> list[Violation]:
@@ -698,15 +740,14 @@ def _config_violations(
     (`_ALL_CAPS_TAG_RE`) is a citation tag, not a TOML pointer, and a
     dotted name in `_DECLARED_BUT_UNSET_CONFIG_SECTIONS` is a section this
     codebase's own loaders genuinely read even though it happens not to
-    appear in this project's own manifests."""
+    appear in this project's own manifests. T-2703: candidates come from
+    `_config_ref_candidates` (code-span-stripped prose), not the shared
+    backtick-derived `tokens` list every other DOC006 kind uses -- see
+    `_CONFIG_REF_PROSE_RE`'s own comment."""
     violations: list[Violation] = []
     if frob_toml is None and not other_manifests:
         return violations
-    for line_no, token in tokens:
-        match = _CONFIG_REF_RE.match(token)
-        if match is None:
-            continue
-        dotted = match.group(1)
+    for line_no, dotted in _config_ref_candidates(text):
         if _ALL_CAPS_TAG_RE.match(dotted.split(".", 1)[0]):
             continue
         if _nearby_waived(doc_lines, line_no):
@@ -1354,9 +1395,7 @@ _TICKET_DOC_RE = re.compile(r"^tickets/(T-\d+)/(ticket\.md|done-report\.md)$")
 #: DOC006 only ever scans `.md` files in the first place (the caller's own
 #: git-tracked-`.md`-file loop), so a non-`.md` match here is unreachable
 #: dead weight, not a hole.
-_TICKET_SUBDIR_DOC_RE = re.compile(
-    r"^tickets/(T-\d+)/(?:evidence|attachments)/[^/]+$"
-)
+_TICKET_SUBDIR_DOC_RE = re.compile(r"^tickets/(T-\d+)/(?:evidence|attachments)/[^/]+$")
 
 
 # frob:ticket T-2505
@@ -1572,7 +1611,7 @@ def doc006_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
             )
         )
         violations.extend(
-            _config_violations(doc_path, doc_lines, tokens, frob_toml, other_manifests)
+            _config_violations(doc_path, doc_lines, text, frob_toml, other_manifests)
         )
         violations.extend(
             _symbol_violations(

@@ -434,7 +434,7 @@ into vet's models, never an auto-install):
 | advisories | osv-scanner (or pip-audit / cargo-audit as ecosystem fallbacks when osv-scanner is absent) | VET005 |
 | malware-heuristics | GuardDog | corroborates VET004 signals with maintained typosquat/exfil rules |
 | repo-health | OpenSSF Scorecard | advisory metadata on verdicts (unmaintained, unreviewed-commits) -- informational, not a gate |
-| provenance | sigstore/cosign, SLSA attestations | VET007 (new, opt-in): artifact hash lacks valid provenance for packages listed in [vet.require-provenance] |
+| provenance | sigstore/cosign, SLSA attestations | VET007 (new, opt-in): artifact hash lacks valid provenance for packages listed in <!-- frob:waive DOC006 reason="VET007 is itself explicitly marked new/opt-in in this same cell -- vet.require-provenance is a forward-looking config key this feature does not implement yet, not a stale/bogus pointer" --> [vet.require-provenance] |
 
 ## First-party detectors (the non-public layer)
 

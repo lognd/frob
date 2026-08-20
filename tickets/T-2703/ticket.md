@@ -2,7 +2,7 @@
 id: T-2703
 title: DOC006 scans inline code spans, reading C++ lambda captures as TOML section
   keys (72 false positives downstream)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -44,6 +44,11 @@ scope_changes:
   reason: DOC006 finding newly surfaced by T-2703 prose-scan fix, needs frob:waive
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Config::test_bracket_shape_inside_code_span_is_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_bare_bracket_word_without_dot_never_a_candidate
+- tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_flagged
+- tests/test_docptr_gate.py::TestDoc006Config::test_bogus_section_in_fenced_block_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null

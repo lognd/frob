@@ -50,7 +50,7 @@ Verified against code before filing (2026-08-18):
   _other_open_tickets is non-empty; fellow runs_last tickets are already
   excluded from that count (the sibling carve-out M4b must preserve).
 - _doable_sort_key (src/frob/tickets/__init__.py) is exactly
-  (-PRIORITY_RANK[t.priority], t.created, t.id).
+  `(-PRIORITY_RANK[t.priority], t.created, t.id)`.
 - Ticket (src/frob/tickets/_models.py) has
   model_config = ConfigDict(frozen=True, extra="allow") -- confirmed via
   the class docstring, which documents this as a deliberate forward-

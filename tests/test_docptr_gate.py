@@ -265,12 +265,20 @@ class TestDoc006Cli:
 
 class TestDoc006Config:
     """Kind 3: CONFIG REFERENCE -- `[section]`/`[section.key]` checked
-    against this project's own loaded frob.toml."""
+    against this project's own loaded frob.toml.
+
+    T-2703: candidates now come from the CODE-SPAN-STRIPPED prose (plain
+    text, not backtick-wrapped) -- a `[section]`/`[section.key]` shape
+    INSIDE a backtick span is deliberately inert (see
+    `_CONFIG_REF_PROSE_RE`'s own comment: it collides with unrelated code
+    syntax that happens to share the bracket shape, e.g. a C++ lambda
+    capture `` `[x]` ``). These fixtures write the pointer as plain prose
+    accordingly; a dedicated code-span-inertness test lives just below."""
 
     def test_bogus_section_flagged(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
-        _write(tmp_path, "docs/guide.md", "Add `[bogus.section]` to frob.toml.\n")
+        _write(tmp_path, "docs/guide.md", "Add [bogus.section] to frob.toml.\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         found = _by_rule(violations, "docs/guide.md")
@@ -280,7 +288,7 @@ class TestDoc006Config:
     def test_real_section_passes(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", '[gates.severity]\nDOC001 = "warn"\n')
-        _write(tmp_path, "docs/guide.md", "Add `[gates.severity]` to frob.toml.\n")
+        _write(tmp_path, "docs/guide.md", "Add [gates.severity] to frob.toml.\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
@@ -292,7 +300,7 @@ class TestDoc006Config:
         bracketed root is structurally never a config reference."""
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
-        _write(tmp_path, "docs/guide.md", "Rows already covered are `[IN-REPO]`.\n")
+        _write(tmp_path, "docs/guide.md", "Rows already covered are [IN-REPO].\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
@@ -305,7 +313,7 @@ class TestDoc006Config:
         for (this repo's own `frob.toml` has the identical gap)."""
         _init_repo(tmp_path)
         _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
-        _write(tmp_path, "docs/guide.md", "Configure detectors via `[vet.allow]`.\n")
+        _write(tmp_path, "docs/guide.md", "Configure detectors via [vet.allow].\n")
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
         assert not _by_rule(violations, "docs/guide.md")
@@ -323,7 +331,61 @@ class TestDoc006Config:
         _write(
             tmp_path,
             "docs/guide.md",
-            'Set `[profile] profile = "rapid"` for a small repo.\n',
+            'Set [profile.profile] to "rapid" for a small repo.\n',
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2703
+    def test_bracket_shape_inside_code_span_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2703 control: the reported false positive -- a dotted
+        bracket shape that collides with `[section.key]` syntax but is
+        actually unrelated code (illustrating attribute-access shorthand),
+        written inside a backtick span -- must NOT fire."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Fancy indexing docs often show (`[arr.dtype]`) as shorthand "
+            "for the dtype attribute.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2703
+    def test_bare_bracket_word_without_dot_never_a_candidate(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2703 control: an undotted `[word]` in plain prose (a
+        numbered citation, a footnote-style slug) is structurally never a
+        `[section.key]` TOML pointer in this repo's real usage -- must
+        not fire, backticked or not."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "See finding [silent-zero] in the audit above.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2703
+    def test_bogus_section_in_fenced_block_is_not_flagged(self, tmp_path: Path) -> None:
+        """T-2703 control: a fenced code block showing bracket syntax
+        stays inert -- pre-existing behavior, must not regress."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", "[gates]\nseverity = {}\n")
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Example:\n\n```toml\n[bogus.section]\n```\n",
         )
         _add_all(tmp_path)
         violations = doc006_gate(tmp_path, _snapshot(tmp_path))
