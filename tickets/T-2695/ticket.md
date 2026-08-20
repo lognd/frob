@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_store.py
 - tests/unit/test_ticket_store.py
 - src/frob/tickets/_store_migrate.py
+- docs/design/ledger-v2.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -84,6 +85,11 @@ scope_changes:
     computation / per-rule violation classification / orchestration), genuinely larger
     surgery than this batch''s remaining budget, not a lazy waiver or a forced line-count
     split'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: 'T-2695: doc anchor needs updating to the new _store_migrate.py location'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
