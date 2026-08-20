@@ -2,7 +2,7 @@
 id: T-2679
 title: A timed-out land marks the ticket done and records evidence while zero code
   reaches main
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,13 @@ scope_changes:
     sequencing'
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_ticket_land.py::TestFinalizeRepairMarker::test_no_marker_is_a_silent_no_op
+- tests/test_ticket_land.py::TestFinalizeRepairMarker::test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not
+- tests/test_ticket_land.py::TestFinalizeRepairMarker::test_repair_is_silent_when_root_already_shows_the_ticket_done
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_normal_land_reaches_done_exactly_once_no_extra_transition
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable
 designated_repro_test: null
 threat: null
 component: null
