@@ -4422,6 +4422,53 @@ def _check_passenger_tickets(
 # frob:ticket T-1618
 # frob:ticket T-1675
 # frob:ticket T-1950
+# frob:ticket T-2737
+# frob:tests tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_sole_rapid_debt_dirt_reads_as_clean  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_rapid_debt_plus_another_file_still_reads_dirty  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_a_different_lone_dirty_file_still_reads_dirty  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt.test_clean_worktree_reads_as_clean  # noqa: E501
+def _dirty_ignoring_rapid_debt(worktree: Path) -> Result[bool, LandError]:
+    """`_check_already_landed`'s own dirty-worktree gate (T-2737): same
+    contract as `_porcelain_dirty`, EXCEPT an uncommitted `rapid-
+    debt.jsonl` on its own no longer counts as dirt.
+
+    Root cause (T-2737, reproduced LIVE twice during a real land/close
+    series, not reasoned about): `rapid-debt.jsonl` is mechanical,
+    land-owned bookkeeping (`record_rapid_debt`/the detached post-land
+    sweep) -- never a ticket's own hand-written change. A PRIOR failed
+    land attempt (BUG002, a killed 540s shell timeout, anything that
+    dies after appending a debt row but before `_commit_rapid_debt`
+    commits it) leaves that one row sitting uncommitted in the worktree
+    between land invocations. `_check_already_landed`'s plain
+    `_porcelain_dirty` gate cannot tell that mechanical leftover apart
+    from real uncommitted work, so it always deferred (`Ok(None)`,
+    "cannot tell, assume not-yet-landed") the moment that row existed --
+    even when the ticket's own content-diff against `base_ref` was
+    independently confirmed empty. The retried land then fell through
+    into a confusing BUG002/TEST016 refusal instead of the clean
+    already-landed outcome T-1618 exists to give it.
+
+    Mirrors `_commit_rapid_debt_only_drift`'s existing SOLE-dirty-path
+    pattern (T-1699, `frob.tickets._land_git_ops`) rather than inventing
+    a new one: `rapid-debt.jsonl` is excluded ONLY when the caller asks
+    whether the worktree is otherwise clean, never elsewhere -- any
+    OTHER dirty path (alone or alongside `rapid-debt.jsonl`) still reads
+    as dirty here, exactly as `_porcelain_dirty` would. This is
+    deliberately narrower than blanket-ignoring the file: it does not
+    change what `land`'s own wip-commit stage stages, what `DirtyMain`
+    refuses on, or any other `_porcelain_dirty` caller -- only this one
+    already-landed gate's read of "is there real work here"."""
+    from frob.tickets._land_git_ops import _porcelain_dirty_paths
+
+    dirty = _porcelain_dirty(worktree)
+    if dirty.is_err:
+        return dirty
+    if not dirty.danger_ok:
+        return dirty
+    remaining = frozenset(_porcelain_dirty_paths(worktree)) - {"rapid-debt.jsonl"}
+    return Ok(bool(remaining))
+
+
 # frob:doc \
 # docs/modules/tickets-landing.md#already-landed-on-main-first-class-outcome-t-1618
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_with_a_diagnostic_message_when_scope_diff_is_empty  # noqa: E501
@@ -4432,6 +4479,8 @@ def _check_passenger_tickets(
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_stale_rapid_debt_dirt_does_not_block_already_landed_detection  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -4455,15 +4504,13 @@ def _check_already_landed(
     ancestry-based diff -- see that helper's own docstring for why.
 
     No-op (`Ok(None)`) when `ticket.scope` is empty or `worktree` has
-    UNCOMMITTED changes (`_porcelain_dirty` -- runs before `land`'s own
-    wip-commit stage, so uncommitted real work must not look identical
-    to "already landed")."""
+    UNCOMMITTED changes (`_dirty_ignoring_rapid_debt`, T-2737)."""
     from frob.tickets._models import LEDGER_PATH, TicketState, scope_matches
     from frob.tickets._store import archive_path
 
     if not ticket.scope:
         return Ok(None)
-    dirty = _porcelain_dirty(worktree)
+    dirty = _dirty_ignoring_rapid_debt(worktree)
     if dirty.is_err or dirty.danger_ok:
         return Ok(None)
     changed = _branch_vs_base_content_diff(worktree, base_ref)

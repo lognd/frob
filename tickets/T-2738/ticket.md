@@ -2,7 +2,7 @@
 id: T-2738
 title: frob ticket close does not promote pending drafts, so a closed ticket's follow-ups
   are silently lost
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -32,6 +32,10 @@ scope_changes:
   reason: close must promote pending T-draft-* follow-ups the way land does
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_promotes_a_draft_the_ticket_filed
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_with_no_drafts_is_unchanged
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted
 designated_repro_test: null
 threat: null
 component: null

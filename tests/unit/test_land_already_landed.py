@@ -365,3 +365,123 @@ class TestAlreadyLandedOnMain:
         result = land(repo, tid, wt, dry_run=False)
 
         assert result.is_ok, result.err
+
+
+# frob:ticket T-2737
+class TestDirtyIgnoringRapidDebt:
+    """`_dirty_ignoring_rapid_debt` -- a worktree dirty ONLY on `rapid-
+    debt.jsonl` (a prior failed land's own uncommitted mechanical
+    bookkeeping append, T-2737) reads as clean; any other dirt, alone or
+    alongside it, still reads dirty exactly as `_porcelain_dirty` would."""
+
+    def test_clean_worktree_reads_as_clean(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_dirty_ignoring_rapid_debt kind="unit"
+        from frob.tickets._land import _dirty_ignoring_rapid_debt
+
+        result = _dirty_ignoring_rapid_debt(repo)
+        assert result.is_ok
+        assert result.danger_ok is False
+
+    def test_sole_rapid_debt_dirt_reads_as_clean(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_dirty_ignoring_rapid_debt kind="unit"
+        from frob.tickets._land import _dirty_ignoring_rapid_debt
+
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"ticket": "T-9999", "skipped": "example"}\n'
+        )
+        result = _dirty_ignoring_rapid_debt(repo)
+        assert result.is_ok
+        assert result.danger_ok is False
+
+    def test_rapid_debt_plus_another_file_still_reads_dirty(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_dirty_ignoring_rapid_debt kind="unit"
+        from frob.tickets._land import _dirty_ignoring_rapid_debt
+
+        (repo / "rapid-debt.jsonl").write_text(
+            '{"ticket": "T-9999", "skipped": "example"}\n'
+        )
+        (repo / "src" / "feature.py").write_text("# real uncommitted change\n")
+        result = _dirty_ignoring_rapid_debt(repo)
+        assert result.is_ok
+        assert result.danger_ok is True
+
+    def test_a_different_lone_dirty_file_still_reads_dirty(self, repo: Path) -> None:
+        # frob:tests src/frob/tickets/_land.py::_dirty_ignoring_rapid_debt kind="unit"
+        from frob.tickets._land import _dirty_ignoring_rapid_debt
+
+        (repo / "src" / "feature.py").write_text("# real uncommitted change\n")
+        result = _dirty_ignoring_rapid_debt(repo)
+        assert result.is_ok
+        assert result.danger_ok is True
+
+
+# frob:ticket T-2737
+class TestAlreadyLandedStaleRapidDebtDirt:
+    """End-to-end (through `_check_already_landed` directly): stale,
+    uncommitted `rapid-debt.jsonl` dirt left by a PRIOR failed land must
+    not defeat the already-landed detection, but genuine uncommitted
+    CODE dirt alongside it must still defer exactly as before (the
+    positive control against a guard that always says 'already
+    landed')."""
+
+    def test_stale_rapid_debt_dirt_does_not_block_already_landed_detection(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        from frob.tickets._land import _check_already_landed
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-stale-debt", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Already landed, stale debt dirt", scope=("src/feature.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _seed_done_on_main(repo, wt, tid)
+        # Committed on the branch (mirroring the sibling already-landed
+        # test above) so the worktree is otherwise clean before the
+        # stale debt dirt is introduced.
+        (wt / "src" / "unrelated.py").write_text("# unrelated bookkeeping\n")
+        _commit_all(wt, f"{tid}: ledger-only, no scope change")
+        # Stale, uncommitted rapid-debt.jsonl dirt from a prior failed
+        # land attempt against this SAME worktree -- the exact T-2737
+        # incident shape. No other uncommitted change exists.
+        (wt / "rapid-debt.jsonl").write_text(
+            '{"ticket": "' + tid + '", "skipped": "example"}\n'
+        )
+
+        result = _check_already_landed(wt, load_all(wt).danger_ok[tid], "main")
+
+        assert result.is_err
+        assert result.danger_err == LandError.AlreadyLandedOnMain
+
+    def test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        from frob.tickets._land import _check_already_landed
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "solo-real-plus-debt", str(wt)], repo)
+        created = new_ticket(
+            wt, _spec("Not yet landed, real dirt", scope=("src/feature.py",))
+        )
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _seed_done_on_main(repo, wt, tid)
+        (wt / "src" / "unrelated.py").write_text("# unrelated bookkeeping\n")
+        _commit_all(wt, f"{tid}: ledger-only, no scope change")
+        (wt / "rapid-debt.jsonl").write_text(
+            '{"ticket": "' + tid + '", "skipped": "example"}\n'
+        )
+        # Genuine uncommitted work alongside the stale debt dirt -- this
+        # MUST still defer (Ok(None)), never a false already-landed
+        # positive; a fix that ignores rapid-debt.jsonl unconditionally
+        # would wrongly refuse here too.
+        (wt / "src" / "feature.py").write_text("# real uncommitted change\n")
+
+        result = _check_already_landed(wt, load_all(wt).danger_ok[tid], "main")
+
+        assert result.is_ok

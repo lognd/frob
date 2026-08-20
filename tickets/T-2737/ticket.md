@@ -2,7 +2,7 @@
 id: T-2737
 title: rapid-debt.jsonl dirt from a failed land defeats _check_already_landed's dirty-worktree
   guard
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -16,10 +16,39 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
+- tests/unit/test_land_already_landed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: stale rapid-debt.jsonl dirt defeats _check_already_landed dirty guard
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_land_already_landed.py
+  reason: stale rapid-debt.jsonl dirt defeats _check_already_landed dirty guard
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/tickets/_land.py
+  reason: stale rapid-debt.jsonl dirt defeats _check_already_landed dirty guard
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_land_already_landed.py
+  reason: stale rapid-debt.jsonl dirt defeats _check_already_landed dirty guard
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt::test_clean_worktree_reads_as_clean
+- tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt::test_sole_rapid_debt_dirt_reads_as_clean
+- tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt::test_rapid_debt_plus_another_file_still_reads_dirty
+- tests/unit/test_land_already_landed.py::TestDirtyIgnoringRapidDebt::test_a_different_lone_dirty_file_still_reads_dirty
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt::test_stale_rapid_debt_dirt_does_not_block_already_landed_detection
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt::test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt
 designated_repro_test: null
 threat: null
 component: null
