@@ -2,7 +2,7 @@
 id: T-2244
 title: Repoint trivial Makefile aliases (format/lint/typecheck/test*) at existing
   frob quality/fmt subcommands
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -13,10 +13,15 @@ parent: T-1382
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - Makefile
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 attachments:
 - path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
@@ -26,7 +31,7 @@ attachments:
   sha256: b0ec580fcb0e0e4a77cbea888ba619fa74df8fb5884627ec35ce10a09ae47d2d
 acceptance:
 - text: 'GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck: recipes
-    call ''uv run frob fmt'' / ''uv run frob quality check'' instead of raw ruff/ty
+    call ''uv run frob format''/''uv run frob check --only ...'' instead of raw ruff/ty
     invocations'
   evidence: []
 - text: 'GIVEN the Makefile WHEN read THEN test:/test-fast:/test-unit:/test-integration:/test-system:
@@ -37,6 +42,22 @@ acceptance:
     fixture THEN the repointed targets still fail with a nonzero exit -- no strictness
     regression from the swap
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: 'GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck:
+    recipes call ''uv run frob fmt'' / ''uv run frob quality check'' instead of raw
+    ruff/ty invocations'
+  new_text: 'GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck:
+    recipes call ''uv run frob format''/''uv run frob check --only ...'' instead of
+    raw ruff/ty invocations'
+  reason: 'premise correction: frob fmt is directive-comment canonicalization not
+    ruff, and frob quality check bundles ruff-check+ruff-format inseparably with no
+    write mode -- T-2251 built frob format and frob check''s existing --only/--skip-ruff-format
+    stage selection is the real replacement, per this ticket''s own 2026-08-16/2026-08-18
+    Failure log entries'
+  actor: logan
+  at: '2026-08-19'
 threat: null
 component: null
 anchor: false
