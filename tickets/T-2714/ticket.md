@@ -2,7 +2,7 @@
 id: T-2714
 title: A killed land strands its staged snapshot in the shared root, DirtyMain-blocking
   the whole fleet
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

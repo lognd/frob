@@ -2158,6 +2158,300 @@ def refuse_if_worktree_in_use(
     return Ok(None)
 
 
+# frob:ticket T-2714
+# T-2714: three measured incidents in one session (T-2696's own land, a
+# `frob ticket new` ledger commit, and a `frob ticket scope` mirror-write)
+# all showed the SAME shape -- a process killed strictly between `git add`
+# and `git commit` below strands the shared root DIRTY, and that dirt
+# DirtyMain-blocks every OTHER agent's land/ledger-write until a human
+# adjudicates by hand. In every measured case the staged content was
+# COMPLETE and CORRECT (the write itself, `write_ticket`/`set_scope`/etc.,
+# already finished on disk before this function was ever called -- only
+# the git bookkeeping after it was interrupted), so the fix here is
+# RECONCILIATION, not prevention: a marker recorded immediately before
+# `git add` runs, cleared right after (success or failure) in a `finally`,
+# mirroring `frob.tickets._land`'s own T-0907/T-2679 marker families
+# exactly. `_repair_stale_ledger_commit_markers` (below) reconciles any
+# marker a PRIOR call left behind at the START of every subsequent call to
+# this same function -- for any ticket, not just a retry of the same one
+# -- by re-attempting the identical, already-fully-staged add+commit
+# (safe: pathspec-limited, same as this function's own T-1432 contract),
+# never a `git reset --hard` of unrelated content. Unlike
+# `frob.tickets._land_git_ops.reclaim_orphaned_squash_residue` (a full-tree
+# reset when finishing is not attempted), a failed finish here leaves the
+# dirty pathspecs and the marker in place and logs loudly -- the residue
+# is pathspec-scoped and small, so deferring to a human is cheap and never
+# destroys content this module cannot prove is safe to discard.
+_LEDGER_COMMIT_REPAIR_DIRNAME = "ledger-commit-repair"
+
+
+def _ledger_commit_repair_dir(root: Path) -> Path:
+    """`<root>/.frob/ledger-commit-repair`, where a crashed `_add_and_
+    commit_tickets_md`'s in-flight add+commit is recorded (T-2714)."""
+    return root / ".frob" / _LEDGER_COMMIT_REPAIR_DIRNAME
+
+
+def _ledger_commit_repair_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket ledger-commit-repair marker path under `root`
+    (T-2714). Keyed by `ticket_id`, matching every other marker family in
+    this repo's tickets machinery -- a SECOND call for the SAME ticket_id
+    before the first cleared its marker would overwrite it, but
+    `_add_and_commit_tickets_md`'s only concurrency guard is the same
+    "one land/ledger-write pipeline at a time" posture every other marker
+    family here already assumes (T-0907's own docstring notes this
+    explicitly)."""
+    return _ledger_commit_repair_dir(root) / f"{ticket_id}.json"
+
+
+def _write_ledger_commit_repair_marker(
+    root: Path,
+    ticket_id: str,
+    message: str,
+    pathspecs: tuple[str, ...],
+    pre_tip: str | None,
+) -> None:
+    """Record `message`/`pathspecs`/`pre_tip` under `root`'s ledger-
+    commit-repair marker for `ticket_id` (T-2714), immediately BEFORE
+    `_add_and_commit_tickets_md` runs `git add` -- so a crash between this
+    write and `_clear_ledger_commit_repair_marker` (including an
+    uncatchable SIGKILL) leaves a durable record of exactly what commit
+    was interrupted, for `_repair_stale_ledger_commit_markers` to finish
+    or report on the next call. Best-effort, like its `frob.tickets._land`
+    siblings: a write failure is logged but never fails the ledger commit
+    itself."""
+    path = _ledger_commit_repair_marker_path(root, ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(
+                {
+                    "ticket_id": ticket_id,
+                    "message": message,
+                    "pathspecs": list(pathspecs),
+                    "pre_tip": pre_tip,
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        _log.warning(
+            "tickets: %s could not write ledger-commit-repair marker (%s) "
+            "-- proceeding without the T-2714 crash-recovery aid for this "
+            "call",
+            ticket_id,
+            exc,
+        )
+
+
+def _clear_ledger_commit_repair_marker(root: Path, ticket_id: str) -> None:
+    """Remove `ticket_id`'s ledger-commit-repair marker under `root`, if
+    any (T-2714) -- called when `_add_and_commit_tickets_md`'s add+commit
+    attempt returns for ANY reason (success or a clean, handled `Err`),
+    from a `finally` block, mirroring every other marker family's own
+    unconditional-cleanup shape."""
+    path = _ledger_commit_repair_marker_path(root, ticket_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "tickets: %s could not clear ledger-commit-repair marker: %s",
+            ticket_id,
+            exc,
+        )
+
+
+def _rev_parse_head(root: Path) -> str | None:
+    """`git rev-parse HEAD` in `root`, best-effort (T-2714) -- `None`
+    (never raises) on any failure, matching this module's existing
+    degrade-and-log posture for git calls that are not this function's own
+    core job."""
+    result = gitio.run_argv(["git", "-C", str(root), "rev-parse", "HEAD"])
+    if result.is_err or result.danger_ok.returncode != 0:
+        return None
+    return result.danger_ok.stdout.strip()
+
+
+# frob:ticket T-2714
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finishes_a_killed_commit_when_the_staged_content_is_still_there  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
+def _repair_stale_ledger_commit_markers(root: Path) -> None:
+    """Reconcile every leftover T-2714 ledger-commit-repair marker under
+    `root` -- called at the very start of `_add_and_commit_tickets_md`,
+    before that call's OWN marker is written, so every ledger-committing
+    verb self-heals any PRIOR crashed call first, for any ticket, the same
+    scan-the-whole-directory posture `frob.tickets._land`'s T-0907/T-2679
+    marker families already use. Per-marker decision logic lives in
+    `_reconcile_one_ledger_commit_marker` (ARCH001 split); never raises."""
+    marker_dir = _ledger_commit_repair_dir(root)
+    if not marker_dir.is_dir():
+        return
+    for marker_path in sorted(marker_dir.glob("*.json")):
+        _reconcile_one_ledger_commit_marker(root, marker_path)
+
+
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
+def _load_ledger_commit_marker(
+    marker_path: Path,
+) -> tuple[str, tuple[str, ...], str | None] | None:
+    """Parse one T-2714 ledger-commit-repair marker (ARCH001 split of
+    `_reconcile_one_ledger_commit_marker`): `(message, pathspecs, pre_tip)`
+    on success, `None` -- after clearing the unreadable marker and logging
+    a warning -- on any parse failure. Pure extraction, no behavior
+    change."""
+    marker_ticket_id = marker_path.stem
+    try:
+        raw = json.loads(marker_path.read_text(encoding="utf-8"))
+        message = str(raw["message"])
+        pathspecs = tuple(str(p) for p in raw["pathspecs"])
+        pre_tip = raw.get("pre_tip")
+        pre_tip = str(pre_tip) if pre_tip is not None else None
+    except (OSError, ValueError, KeyError) as exc:
+        _log.warning(
+            "tickets: found an unreadable T-2714 ledger-commit-repair "
+            "marker at %s (%s) -- clearing it; inspect %s's own ledger "
+            "state by hand if a crashed commit is suspected",
+            marker_path,
+            exc,
+            marker_ticket_id,
+        )
+        marker_path.unlink(missing_ok=True)
+        return None
+    return message, pathspecs, pre_tip
+
+
+def _reconcile_one_ledger_commit_marker(root: Path, marker_path: Path) -> None:
+    """One T-2714 ledger-commit-repair marker's reconciliation --
+    `_repair_stale_ledger_commit_markers`'s per-marker half, split out to
+    keep that function under ARCH001's threshold (pure extraction, no
+    behavior change).
+
+    - if `root`'s current tip has already ADVANCED past the marker's
+      recorded `pre_tip`, something else already committed since (a
+      retry succeeded, or an unrelated commit landed) -- the marker is
+      stale/superseded, clear it silently.
+    - else (tip unchanged: nothing has committed since the crash) and the
+      marker's own `pathspecs` are NOT currently dirty, the crash happened
+      before `git add` ever ran (nothing to finish) -- clear it silently.
+    - else (tip unchanged AND the pathspecs are dirty): the exact shape
+      every measured T-2714 incident had -- the write completed, only the
+      git bookkeeping was interrupted. Delegates to `_finish_ledger_
+      commit_marker` to re-attempt the IDENTICAL, pathspec-limited
+      add+commit.
+
+    Best-effort throughout: an unreadable marker is logged and cleared
+    (nothing safe to act on) by `_load_ledger_commit_marker`; never
+    raises."""
+    marker_ticket_id = marker_path.stem
+    loaded = _load_ledger_commit_marker(marker_path)
+    if loaded is None:
+        return
+    message, pathspecs, pre_tip = loaded
+
+    current_tip = _rev_parse_head(root)
+    if pre_tip is not None and current_tip is not None and current_tip != pre_tip:
+        _log.info(
+            "tickets: %s's T-2714 ledger-commit-repair marker is stale "
+            "-- %s's tip has advanced since (%s -> %s, a retry or an "
+            "unrelated commit already landed) -- clearing it",
+            marker_ticket_id,
+            root,
+            pre_tip,
+            current_tip,
+        )
+        marker_path.unlink(missing_ok=True)
+        return
+
+    if not pathspecs:
+        marker_path.unlink(missing_ok=True)
+        return
+    status = gitio.run_argv(
+        ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
+    )
+    dirty = bool(status.is_ok and status.danger_ok.stdout.strip())
+    if not dirty:
+        _log.info(
+            "tickets: %s's T-2714 ledger-commit-repair marker had "
+            "nothing dirty left to finish (crashed before `git add` "
+            "ran) -- clearing it",
+            marker_ticket_id,
+        )
+        marker_path.unlink(missing_ok=True)
+        return
+
+    _finish_ledger_commit_marker(
+        root, marker_path, marker_ticket_id, message, pathspecs
+    )
+
+
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finishes_a_killed_commit_when_the_staged_content_is_still_there  # noqa: E501
+# frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
+def _finish_ledger_commit_marker(
+    root: Path,
+    marker_path: Path,
+    marker_ticket_id: str,
+    message: str,
+    pathspecs: tuple[str, ...],
+) -> None:
+    """`_reconcile_one_ledger_commit_marker`'s finish-attempt half (ARCH001
+    split): re-attempt the IDENTICAL, pathspec-limited add+commit a killed
+    call left staged. Success clears the marker and logs loudly; failure
+    leaves the marker AND the dirty pathspecs untouched for a human, same
+    rationale as the caller's own docstring."""
+    _log.warning(
+        "tickets: %s's ledger commit was killed after writing its "
+        "content but before `git commit` completed (T-2714) -- "
+        "%s still has the complete, correct staged change; "
+        "re-attempting the identical commit now",
+        marker_ticket_id,
+        root,
+    )
+    added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
+    if added.is_ok and added.danger_ok.returncode == 0:
+        with _without_agent_commit_guard():
+            committed = gitio.run_argv(
+                ["git", "-C", str(root), "commit", "-m", message, "--", *pathspecs]
+            )
+            committed = _retry_commit_with_fallback_identity(
+                root, message, committed, pathspecs
+            )
+    else:
+        committed = added
+    if (
+        added.is_err
+        or added.danger_ok.returncode != 0
+        or committed.is_err
+        or committed.danger_ok.returncode != 0
+    ):
+        _log.error(
+            "tickets: %s's T-2714 self-heal FAILED -- %s is still "
+            "dirty for %s. This needs a human: `git -C %s add %s && "
+            "git -C %s commit -m \"%s\" -- %s`, or discard by hand if "
+            "the content is no longer wanted",
+            marker_ticket_id,
+            root,
+            pathspecs,
+            root,
+            " ".join(pathspecs),
+            root,
+            message,
+            " ".join(pathspecs),
+        )
+        return
+    _log.warning(
+        "tickets: %s's killed ledger commit SELF-HEALED (T-2714) -- "
+        "committed the content that was already staged, %s is clean "
+        "again",
+        marker_ticket_id,
+        root,
+    )
+    marker_path.unlink(missing_ok=True)
+
+
 # frob:ticket T-1054
 # frob:ticket T-1432
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_pre_staged_unrelated_file_never_rides_along_into_the_commit  # noqa: E501
@@ -2204,23 +2498,38 @@ def _add_and_commit_tickets_md(
     `commit_full_ledger_change` (T-1615, a whole-ledger write not scoped
     to one ticket, e.g. `archive`) passes `_full_ledger_pathspecs(root)`
     explicitly instead, reusing this same core. See the module comment
-    directly above this function for the T-1432/T-1619 rationale."""
+    directly above this function for the T-1432/T-1619 rationale.
+
+    T-2714: reconciles any stale ledger-commit-repair marker a PRIOR
+    crashed call left behind (for any ticket) BEFORE this call's own work
+    starts, then brackets its OWN add+commit with the same marker family
+    -- written right after computing `pathspecs`, cleared in a `finally`
+    once the add+commit attempt below returns for any reason. See
+    `_repair_stale_ledger_commit_markers`'s own docstring for the crash
+    window this closes and why re-attempting the identical commit is
+    safe."""
+    _repair_stale_ledger_commit_markers(root)
     land_check = refuse_if_land_in_progress(root)
     if land_check.is_err:
         return Err(land_check.danger_err)
     if pathspecs is None:
         pathspecs = _ledger_pathspecs(root, ticket_id)
-    added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
-    if added.is_ok and added.danger_ok.returncode == 0:
-        with _without_agent_commit_guard():
-            committed = gitio.run_argv(
-                ["git", "-C", str(root), "commit", "-m", message, "--", *pathspecs]
-            )
-            committed = _retry_commit_with_fallback_identity(
-                root, message, committed, pathspecs
-            )
-    else:
-        committed = added
+    pre_tip = _rev_parse_head(root)
+    _write_ledger_commit_repair_marker(root, ticket_id, message, pathspecs, pre_tip)
+    try:
+        added = gitio.run_argv(["git", "-C", str(root), "add", *pathspecs])
+        if added.is_ok and added.danger_ok.returncode == 0:
+            with _without_agent_commit_guard():
+                committed = gitio.run_argv(
+                    ["git", "-C", str(root), "commit", "-m", message, "--", *pathspecs]
+                )
+                committed = _retry_commit_with_fallback_identity(
+                    root, message, committed, pathspecs
+                )
+        else:
+            committed = added
+    finally:
+        _clear_ledger_commit_repair_marker(root, ticket_id)
     if (
         added.is_err
         or added.danger_ok.returncode != 0

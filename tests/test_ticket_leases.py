@@ -1160,6 +1160,164 @@ class TestCommitTicketLedgerChange:
         assert log.stdout.strip() == "frob-bot <frob-bot@example.invalid>"
 
 
+# frob:ticket T-2714
+class TestLedgerCommitRepairMarker:
+    """T-2714: a process killed strictly between `git add` and `git
+    commit` inside `_add_and_commit_tickets_md` used to strand the shared
+    root DIRTY, DirtyMain-blocking every other agent's land/ledger-write
+    until a human adjudicated by hand. `_repair_stale_ledger_commit_
+    markers` reconciles this the same way `frob.tickets._land`'s T-0907/
+    T-2679 marker families do: a marker recorded before `git add`, cleared
+    right after, reconciled -- by finishing the already-staged commit,
+    never by discarding it -- at the start of the NEXT ledger commit."""
+
+    def test_no_marker_is_a_silent_no_op(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+        from frob.tickets._leases import _repair_stale_ledger_commit_markers
+
+        _repair_stale_ledger_commit_markers(repo)  # must not raise
+
+    def test_finishes_a_killed_commit_when_the_staged_content_is_still_there(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finishes_a_killed_commit_when_the_staged_content_is_still_there  # noqa: E501
+        import logging
+
+        from frob.tickets import transition
+        from frob.tickets._leases import (
+            _ledger_pathspecs,
+            _repair_stale_ledger_commit_markers,
+            _rev_parse_head,
+            _write_ledger_commit_repair_marker,
+        )
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        pre_tip = _rev_parse_head(repo)
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        message = "chore(tickets): T-0001 planned"
+        # Simulate the exact measured shape: the write already happened
+        # (transition() above wrote it to disk), a marker was recorded,
+        # and the process was killed before `git add`/`git commit` ran --
+        # nothing staged in the index yet, only a dirty working tree.
+        _write_ledger_commit_repair_marker(repo, "T-0001", message, pathspecs, pre_tip)
+
+        with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
+            _repair_stale_ledger_commit_markers(repo)
+
+        assert any(
+            "SELF-HEALED" in r.message for r in caplog.records
+        ), [r.message for r in caplog.records]
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() == ""
+        log = _run(["git", "log", "-1", "--pretty=%s"], repo)
+        assert log.stdout.strip() == message
+        marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
+        assert not marker.exists()
+
+    def test_already_advanced_tip_just_clears_the_marker(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_already_advanced_tip_just_clears_the_marker  # noqa: E501
+        from frob.tickets import transition
+        from frob.tickets._leases import (
+            _ledger_pathspecs,
+            _repair_stale_ledger_commit_markers,
+            _rev_parse_head,
+            _write_ledger_commit_repair_marker,
+        )
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        stale_pre_tip = _rev_parse_head(repo)
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        _write_ledger_commit_repair_marker(
+            repo, "T-0001", "chore(tickets): stale message", pathspecs, stale_pre_tip
+        )
+        # A completely UNRELATED commit advances root's tip -- the marker
+        # no longer describes the run that would have produced HEAD, so
+        # reconciliation must not trust its positive-evidence assumption
+        # blindly; it defers to the ordinary DirtyMain path instead of
+        # guessing whether the still-dirty ledger is safe to finish.
+        (repo / "unrelated.txt").write_text("something else landed meanwhile\n")
+        _run(["git", "add", "unrelated.txt"], repo)
+        _run(["git", "commit", "-q", "-m", "unrelated: advance main"], repo)
+        advanced_tip = _rev_parse_head(repo)
+        assert advanced_tip != stale_pre_tip
+
+        _repair_stale_ledger_commit_markers(repo)
+
+        marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
+        assert not marker.exists()
+        # The tickets/T-0001 dirt is untouched either way -- reconciling
+        # a stale, tip-diverged marker must never re-commit content it can
+        # no longer prove is safe.
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() != ""
+
+    def test_nothing_dirty_clears_the_marker_silently(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_nothing_dirty_clears_the_marker_silently  # noqa: E501
+        from frob.tickets._leases import (
+            _ledger_pathspecs,
+            _repair_stale_ledger_commit_markers,
+            _rev_parse_head,
+            _write_ledger_commit_repair_marker,
+        )
+
+        pre_tip = _rev_parse_head(repo)
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        # A marker with nothing dirty behind it -- the crash happened
+        # before even the write that would have dirtied the ledger.
+        _write_ledger_commit_repair_marker(
+            repo, "T-0001", "chore(tickets): nothing to see", pathspecs, pre_tip
+        )
+
+        _repair_stale_ledger_commit_markers(repo)
+
+        marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
+        assert not marker.exists()
+        status = _run(["git", "status", "--porcelain"], repo)
+        assert status.stdout.strip() == ""
+
+    def test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestLedgerCommitRepairMarker.test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human  # noqa: E501
+        import logging
+
+        from frob.tickets import transition
+        from frob.tickets._leases import (
+            _ledger_pathspecs,
+            _repair_stale_ledger_commit_markers,
+            _rev_parse_head,
+            _write_ledger_commit_repair_marker,
+        )
+
+        # An unconditionally-refusing pre-commit hook -- a real commit
+        # FAILURE at reconcile time, not merely "nothing to finish".
+        hooks_dir = repo / ".git" / "hooks"
+        hooks_dir.mkdir(parents=True, exist_ok=True)
+        (hooks_dir / "pre-commit").write_text(
+            '#!/bin/sh\necho "refusing, for the test" >&2\nexit 1\n'
+        )
+        (hooks_dir / "pre-commit").chmod(0o755)
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        pre_tip = _rev_parse_head(repo)
+        pathspecs = _ledger_pathspecs(repo, "T-0001")
+        message = "chore(tickets): T-0001 planned"
+        _write_ledger_commit_repair_marker(repo, "T-0001", message, pathspecs, pre_tip)
+
+        with caplog.at_level(logging.ERROR, logger="frob.tickets._leases"):
+            _repair_stale_ledger_commit_markers(repo)
+
+        assert any(
+            "self-heal FAILED" in r.message for r in caplog.records
+        ), [r.message for r in caplog.records]
+        marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
+        # The marker AND the dirty content are both left in place --
+        # never silently discarded, never a partial/blind reset.
+        assert marker.exists()
+        status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
+        assert status.stdout.strip() != ""
+
+
 # frob:ticket T-1615
 class TestCommitFullLedgerChange:
     """T-1615: `commit_full_ledger_change` -- `commit_ticket_ledger_
@@ -1713,6 +1871,41 @@ class TestDispatchLandGuard:
         finally:
             fcntl.flock(holder_fd, fcntl.LOCK_UN)
             os.close(holder_fd)
+
+    # frob:ticket T-2714
+    def test_orphaned_squash_residue_is_reclaimed_before_a_mutating_verb_dispatches(
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501
+        """T-2714: `reclaim_orphaned_squash_residue` used to be reachable
+        ONLY from inside `land()` itself -- a killed land's staged residue
+        stayed DirtyMain-stranded until someone happened to run `land`
+        again, blocking every OTHER mutating verb in the meantime. The
+        pre-dispatch guard now reclaims it for ANY non-exempt, non-
+        read-only verb too, BEFORE the DirtyMain-adjacent refusal below
+        even has a chance to fire on residue that is safely reclaimable."""
+        from frob.app.ticket_runner import _refuse_if_land_in_progress_for_dispatch
+        from frob.tickets._land import _write_land_repair_marker
+
+        pre_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        # The exact shape a killed squash-apply leaves: a tracked file
+        # modified and staged, plus the T-0907/T-2286 positive-evidence
+        # marker `reclaim_orphaned_squash_residue` requires before it will
+        # touch anything.
+        _write_land_repair_marker(repo, "T-9999", pre_tip)
+        (repo / "src" / "feature.py").write_text("# squash-staged residue\n")
+        _run(["git", "add", "src/feature.py"], repo)
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() != ""
+
+        _refuse_if_land_in_progress_for_dispatch(repo, "priority")
+
+        assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
+        marker_dir = repo / ".frob" / "land-repair"
+        assert not list(marker_dir.glob("*.json"))
+        assert (repo / "src" / "feature.py").read_text() != "# squash-staged residue\n", (
+            "the residue survived the pre-dispatch guard -- reclaim was "
+            "never invoked (or invoked too late) before dispatch"
+        )
 
     def test_refused_verb_never_writes_the_ticket_file_at_all(self, repo: Path) -> None:
         # frob:tests src/frob/app/ticket_runner/__init__.py::_refuse_if_land_in_progress_for_dispatch kind="unit"  # noqa: E501

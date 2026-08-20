@@ -523,10 +523,32 @@ def _refuse_if_land_in_progress_for_dispatch(root: Path, command: str | None) ->
     and sweep-async's deliberate racing) -- exits the process with
     `sys.exit(1)` rather than returning a `Result`, matching every other
     top-level dispatch refusal in this module (`run()` has no caller that
-    consumes a return value)."""
+    consumes a return value).
+
+    T-2714: for that same non-exempt, non-read-only verb set, ALSO
+    reclaims any orphaned squash-merge residue a killed `frob ticket land`
+    left staged in `root` (`reclaim_orphaned_squash_residue`, T-2170's own
+    fix -- previously only ever invoked from inside `land()` itself, so a
+    root left dirty by a killed land stayed dirty, and DirtyMain-blocked,
+    until someone happened to run `land` again rather than any OTHER
+    mutating verb). Runs BEFORE the land-in-progress refusal below, same
+    ordering `land()` itself already uses (reclaim first, since a
+    genuinely live land still holds `land.lock` and this is a provable
+    no-op against it -- see that function's own docstring)."""
     if command in _LAND_SAFE_READ_ONLY_VERBS or command in _LAND_LOCK_EXEMPT_VERBS:
         return
+    from frob.tickets._land_git_ops import reclaim_orphaned_squash_residue
     from frob.tickets._leases import refuse_if_land_in_progress
+
+    reclaimed = reclaim_orphaned_squash_residue(root, f"<dispatch:{command}>")
+    if reclaimed.is_err:
+        _log.warning(
+            "ticket %s: T-2714 pre-dispatch orphaned-squash-residue "
+            "reclaim failed (%s) -- proceeding to the ordinary DirtyMain "
+            "refusal below, which will surface the dirt if any remains",
+            command or "<unknown>",
+            reclaimed.danger_err,
+        )
 
     refused = refuse_if_land_in_progress(root)
     if refused.is_err:

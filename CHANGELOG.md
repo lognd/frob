@@ -190,6 +190,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2707: SYS004 replaces the real ImportError with a hardcoded not-installed message, misdirecting diagnosis
 - T-2708: make install-tool is broken on uv 0.11.19: uv tool install has no --extra flag, blocking the only sanctioned install path
 - T-2713: Deferred verification advances the watermark and records the rolling baseline from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)
+- T-2714: A killed land strands its staged snapshot in the shared root, DirtyMain-blocking the whole fleet
 
 ## [0.530.0] - unreleased
 
