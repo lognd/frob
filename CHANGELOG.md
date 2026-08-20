@@ -211,6 +211,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2733: remove now-redundant frob:waive RENDER001 directives in .claude/hooks and scripts/fleet_status.py
 - T-2738: frob ticket close does not promote pending drafts, so a closed ticket's follow-ups are silently lost
 - T-2739: verify T-2481/T-1943 COV005 waivers against T-2720's narrowed detector, remove any that no longer reproduce
+- T-2751: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts, spurious failure
 
 ## [0.530.0] - unreleased
 

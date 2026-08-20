@@ -2,7 +2,7 @@
 id: T-2737
 title: rapid-debt.jsonl dirt from a failed land defeats _check_already_landed's dirty-worktree
   guard
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

@@ -1,8 +1,8 @@
 ---
-id: T-draft-d6effe18
+id: T-2751
 title: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts,
   spurious failure
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

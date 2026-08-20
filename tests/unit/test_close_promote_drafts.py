@@ -90,6 +90,39 @@ class TestClosePromotesPendingDrafts:
         assert promoted, f"expected a promoted real id in {sorted(tickets)}"
         assert not is_draft_id(promoted[0])
 
+    def test_close_ignores_an_already_dropped_draft(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_ignores_an_already_dropped_draft  # noqa: E501
+        """A draft-id ticket already terminal (DROPPED, e.g. a past
+        land's leftover draft dropped as dead residue) is NOT pending
+        work -- `load_queue` returns the merged active+archive view, so
+        it is visible here, but attempting to promote it would be a
+        spurious failure over a ticket this close has nothing to do
+        with."""
+        from frob.tickets import TicketState, load_queue
+        from frob.tickets._provisional import mint_draft_id
+
+        _init_git_repo(tmp_path)
+        draft_id = mint_draft_id()
+        _write_ticket(
+            tmp_path,
+            "T-0900",
+            TicketState.DONE,
+            "## Description\nx\n\n## Done report\n\nNothing filed here.\n",
+        )
+        _write_ticket(
+            tmp_path,
+            draft_id,
+            TicketState.DROPPED,
+            "## Description\nan old, already-dropped draft\n",
+        )
+
+        _promote_pending_drafts_after_close(tmp_path, "T-0900")
+
+        queue = load_queue(tmp_path)
+        assert queue.is_ok, queue.err
+        # Untouched: still sitting under its own draft id, never renamed.
+        assert draft_id in queue.danger_ok.tickets
+
     def test_close_with_no_drafts_is_unchanged(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_with_no_drafts_is_unchanged  # noqa: E501
         from frob.tickets import TicketState, load_queue

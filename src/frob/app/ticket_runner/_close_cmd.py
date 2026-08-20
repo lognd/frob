@@ -1358,7 +1358,7 @@ def _promote_pending_drafts_after_close(root: Path, closed_ticket_id: str) -> No
     stranded draft. `root` carrying no draft-id tickets at all (the
     common case) is a silent no-op -- no new log noise for a ticket that
     filed no drafts."""
-    from frob.tickets import finalize_draft, load_queue
+    from frob.tickets import TicketState, finalize_draft, load_queue
     from frob.tickets._provisional import is_draft_id
 
     queue_result = load_queue(root)
@@ -1372,8 +1372,18 @@ def _promote_pending_drafts_after_close(root: Path, closed_ticket_id: str) -> No
             queue_result.danger_err,
         )
         return
-    active_tickets = queue_result.danger_ok.tickets
-    draft_ids = sorted(tid for tid in active_tickets if is_draft_id(tid))
+    all_tickets = queue_result.danger_ok.tickets
+    # T-2738: `load_queue` returns the merged active+archive view, so an
+    # already-terminal (DONE/DROPPED) draft -- e.g. one deliberately
+    # dropped in a past land, still sitting archived under its never-
+    # finalized draft id -- is NOT "pending" and must never be attempted
+    # here; only a draft still in an OPEN state is real unfinished work
+    # this close could be stranding.
+    draft_ids = sorted(
+        tid
+        for tid, t in all_tickets.items()
+        if is_draft_id(tid) and t.state not in (TicketState.DONE, TicketState.DROPPED)
+    )
     if not draft_ids:
         return
 
