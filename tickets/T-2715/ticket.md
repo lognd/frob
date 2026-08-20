@@ -14,10 +14,47 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/_check_chunking.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_check_budget.py
+- tests/unit/test_app_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_check_chunking.py
+  reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
+    of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
+    of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
+    of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_check_budget.py
+  reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
+    of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_ticket_land.py
+  reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
+    of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: record the discriminating second measurement that separates this budget
