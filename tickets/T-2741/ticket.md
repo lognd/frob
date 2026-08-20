@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 79c9e4a436160f20b1c1f7712b676ec450784e0e
 ---
 T-2712's detector-side fixes (symref path-prefix, directive-comment
 continuation exclusion, single-char-TLD email exemption, wrapped
