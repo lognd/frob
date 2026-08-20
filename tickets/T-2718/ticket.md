@@ -2,7 +2,7 @@
 id: T-2718
 title: 'TICK011 refuses to close a Done report that frob''s own Tier-A generator produced,
   forcing a hand-appended Filed: line'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -42,6 +42,25 @@ body_changes:
   at: '2026-08-20'
   old_length: 2500
   new_length: 2674
+- mode: append
+  reason: cite the follow-up discovered while landing this ticket
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2664
+  new_length: 2833
+- mode: append
+  reason: cite the follow-up discovered while landing this ticket
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2833
+  new_length: 3002
+- mode: append
+  reason: explicit sync trigger so main reflects the close promptly rather than waiting
+    on an unrelated future write
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3002
+  new_length: 3119
 evidence:
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_no_real_followup_closes_clean
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean
@@ -111,3 +130,9 @@ the existing backlog; this one is about the gate firing on frob's own
 generated output, which would keep regenerating that backlog.
 
 Filed: T-2726 (disclosure_shaped_language signal 1 is unscoped to the Done report -- found while validating this fix; a genuine follow-up, not disclosure theatre)
+
+Filed: T-draft-cf0b0af7 (rapid-debt.jsonl dirt from a prior failed land defeated the already-landed detection during this very land -- found while landing this ticket)
+
+Filed: T-draft-cf0b0af7 (rapid-debt.jsonl dirt from a prior failed land defeated the already-landed detection during this very land -- found while landing this ticket)
+
+(state sync: closed done in this worktree; propagating to main via this write per the known T-2563 mirror behavior)
