@@ -110,4 +110,4 @@ WARN gates to zero, then promote to error). That ticket is about clearing
 the existing backlog; this one is about the gate firing on frob's own
 generated output, which would keep regenerating that backlog.
 
-Filed: T-draft-4aa75f72 (disclosure_shaped_language signal 1 is unscoped to the Done report -- found while validating this fix; a genuine follow-up, not disclosure theatre)
+Filed: T-2726 (disclosure_shaped_language signal 1 is unscoped to the Done report -- found while validating this fix; a genuine follow-up, not disclosure theatre)

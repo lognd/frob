@@ -2,7 +2,7 @@
 id: T-2711
 title: A passenger ticket's content lands via --allow-cross-ticket while its own ledger
   state stays non-terminal, leaking its scope lease
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -172,4 +172,4 @@ this loop today. Either exempt the auto-generated `### Changed` header
 specifically from the disclosure-language heuristic, or teach the
 heuristic to recognize IT'S OWN generator's fixed section names.
 
-Filed: T-draft-4aa75f72 (disclosure_shaped_language signal 1 is unscoped to the Done report section, unlike signal 2 -- found while validating T-2718's fix in this same series; a genuine follow-up)
+Filed: T-2726 (disclosure_shaped_language signal 1 is unscoped to the Done report section, unlike signal 2 -- found while validating T-2718's fix in this same series; a genuine follow-up)

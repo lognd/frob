@@ -68,6 +68,70 @@ class TestDisclosureShapedLanguage:
         text = "## Root cause\n\nSomething.\n\n### Details\n\nMore.\n"
         assert disclosure_shaped_language(text) is None
 
+    # frob:ticket T-2718
+    def test_tier_a_generated_report_with_no_real_followup_closes_clean(self) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_no_real_followup_closes_clean  # noqa: E501
+        # T-2718's own positive control: a Tier-A `compose_done_report`
+        # shape (Changed + Evidence, the two headings it always writes)
+        # with a clean narrative and no genuinely cut work must NOT be
+        # flagged, even with no hand-appended `Filed:` line -- the
+        # measured incident (T-2141/T-2303/T-2679/T-2128) was exactly
+        # this report shape refusing to close.
+        text = (
+            "## Done report\n\nAll clean, nothing cut.\n\n"
+            "### Changed\n\n- src/frob/tickets/_land.py\n\n"
+            "### Evidence\n\n- tests/unit/test_x.py::test_ok\n"
+        )
+        assert disclosure_shaped_language(text) is None
+
+    # frob:ticket T-2718
+    def test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean(
+        self,
+    ) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean  # noqa: E501
+        # All FOUR fixed generator headings together, still exempt.
+        text = (
+            "## Done report\n\nAll clean.\n\n"
+            "### Changed\n\n- x.py\n\n"
+            "### Evidence\n\n- tests/x.py::test_ok\n\n"
+            "### Captured claims\n\n- 0 errors\n\n"
+            "### Acceptance amendments\n\n- [0] replace: 'a' -> 'b'\n"
+        )
+        assert disclosure_shaped_language(text) is None
+
+    # frob:ticket T-2718
+    def test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires(
+        self,
+    ) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires  # noqa: E501
+        # The negative control this fix must NOT remove: a ticket that
+        # genuinely cut scope and named no follow-up, expressed as a
+        # real subheading sitting ALONGSIDE the generated ones, still
+        # trips the structural check -- the fix only exempts the four
+        # exact fixed titles, never anything else.
+        text = (
+            "## Done report\n\nMostly done.\n\n"
+            "### Changed\n\n- x.py\n\n"
+            "### Evidence\n\n- tests/x.py::test_ok\n\n"
+            "### Scope boundary: measurement only\n\nThe rest was cut.\n"
+        )
+        result = disclosure_shaped_language(text)
+        assert result is not None
+        assert "Scope boundary" in result
+
+    # frob:ticket T-2718
+    def test_renaming_a_generated_heading_still_fires(self) -> None:
+        # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
+        # T-2638's own reword-proof guarantee, preserved: the exemption
+        # is an EXACT-title allowlist, not a prefix/substring match, so
+        # renaming "### Evidence" to anything else still fires.
+        text = (
+            "## Done report\n\nDid it.\n\n"
+            "### Changed\n\n- x.py\n\n"
+            "### Proof (renamed from Evidence)\n\n- tests/x.py::test_ok\n"
+        )
+        assert disclosure_shaped_language(text) is not None
+
 
 class TestFiledFollowupTickets:
     """Parses the playbook's own 'Filed:' Done-report convention."""

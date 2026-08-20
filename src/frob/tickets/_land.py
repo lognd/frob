@@ -3587,6 +3587,42 @@ def _branch_changed_files(
     )
 
 
+# frob:ticket T-2711
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
+def _branch_vs_base_content_diff(
+    worktree: Path, base_ref: str, ref: str = "HEAD"
+) -> Result[frozenset[str], LandError]:
+    """The set of paths whose CURRENT content differs between `base_ref`
+    and `ref` (default `HEAD`), via a direct two-ref `git diff --name-only
+    <base_ref> <ref>` -- deliberately NOT `_branch_changed_files`'s
+    three-dot merge-base diff. `_branch_changed_files` answers "what has
+    this branch's own commit history touched since it forked", which
+    stays non-empty forever once a ticket's own commits exist, even after
+    `base_ref` independently gains byte-identical content (T-2711: the
+    shared-worktree passenger shape, where a sibling ticket's earlier
+    `--allow-cross-ticket` land already squash-carried this exact content
+    onto `base_ref`, but this branch's own history still shows the
+    commits that originally introduced it). This function answers a
+    different, narrower question -- "does the CURRENT tree at `ref`
+    differ from the CURRENT tree at `base_ref`, for this path" -- which is
+    the one `_check_already_landed` actually needs: content equality,
+    not ancestry. `Err(GitFailed)` on a git failure; an empty set (never
+    an error) when the two trees already match byte-for-byte."""
+    diffed = run_argv(
+        ["git", "-C", str(worktree), "diff", "--name-only", base_ref, ref]
+    )
+    if diffed.is_err or diffed.danger_ok.returncode != 0:
+        return Err(LandError.GitFailed)
+    return Ok(
+        frozenset(
+            line.strip()
+            for line in diffed.danger_ok.stdout.splitlines()
+            if line.strip()
+        )
+    )
+
+
 # frob:ticket T-1675
 def _ledger_ticket_at_ref(worktree: Path, ref: str, ticket_id: str) -> Ticket | None:
     """`ticket_id`'s ticket record as it exists in the ledger AT `ref`
@@ -4394,6 +4430,8 @@ def _check_passenger_tickets(
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_sibling_carried_this_tickets_content_before_it_ever_landed  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:
@@ -4409,11 +4447,12 @@ def _check_already_landed(
     (1) T-1675: `ticket.id`'s ledger record on `base_ref` already shows
     `state: done`. (2) T-1950: `_ticket_directive_present_on_ref` --
     covers a ticket carried by a SIBLING's `--allow-cross-ticket` land
-    BEFORE this ticket itself ever landed, so it has no `done` state of
-    its own yet. See that function's docstring and docs/modules/tickets.
-    md#already-landed-on-main-first-class-outcome-t-1618 for the full
-    writeup and the measured T-1720/T-1922 incident. Neither signal
-    proves the content is CORRECT on `base_ref`, only PRESENT.
+    BEFORE this ticket itself ever landed. See docs/modules/tickets-
+    landing.md#already-landed-on-main-first-class-outcome-t-1618 for the
+    full writeup. Neither signal proves CORRECTNESS, only PRESENCE.
+    T-2711: the empty-scope-diff half compares CONTENT
+    (`_branch_vs_base_content_diff`), not `_branch_changed_files`'s
+    ancestry-based diff -- see that helper's own docstring for why.
 
     No-op (`Ok(None)`) when `ticket.scope` is empty or `worktree` has
     UNCOMMITTED changes (`_porcelain_dirty` -- runs before `land`'s own
@@ -4427,7 +4466,7 @@ def _check_already_landed(
     dirty = _porcelain_dirty(worktree)
     if dirty.is_err or dirty.danger_ok:
         return Ok(None)
-    changed = _branch_changed_files(worktree, base_ref)
+    changed = _branch_vs_base_content_diff(worktree, base_ref)
     if changed.is_err:
         # Best-effort: a git failure surfaces via another preflight step.
         return Ok(None)

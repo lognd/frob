@@ -250,6 +250,93 @@ class TestAlreadyLandedOnMain:
 
         assert result.is_ok, result.err
 
+    # frob:ticket T-2711
+    def test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content(  # noqa: E501
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        # T-2711: the real, measured shape (T-2141/T-2303, 2026-08-19/20)
+        # every prior test in this class does NOT cover -- the ticket's
+        # OWN worktree branch genuinely committed its declared-scope file
+        # (it is the ticket that wrote the fix), so `_branch_changed_
+        # files`'s three-dot diff would find it forever, regardless of
+        # what `base_ref` gains later. A SIBLING ticket sharing the same
+        # worktree branch then lands first with `--allow-cross-ticket`,
+        # squash-carrying byte-IDENTICAL content onto `base_ref` (and its
+        # own frob:ticket directive, T-1950's positive signal) before
+        # this ticket's own land ever runs. The fix must compare CONTENT
+        # (base_ref vs HEAD), not "did this branch's history ever touch
+        # the file" -- otherwise this falls through to Ok(None) and the
+        # land proceeds into whatever unrelated gate fires next, exactly
+        # the BUG002-confirmatory-only confusion the incident recorded.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "shared-carried", str(wt)], repo)
+        created = new_ticket(wt, _spec("Carried by a sibling", scope=("src/held.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+
+        # The ticket's OWN branch genuinely commits its own scope file --
+        # this is what makes the three-dot `_branch_changed_files` diff
+        # non-empty forever, the exact case the old check mishandled.
+        held_content = f"# frob:ticket {tid}\ndef held() -> None:\n    pass\n"
+        (wt / "src" / "held.py").write_text(held_content)
+        _commit_all(wt, f"{tid}: real implementation, committed on the branch")
+
+        # A sibling ticket sharing this SAME worktree branch lands first
+        # (simulated directly on `repo`/main): byte-identical content,
+        # naming the same frob:ticket directive -- the squash-carry.
+        (repo / "src" / "held.py").write_text(held_content)
+        _commit_all(repo, "seed: a sibling's --allow-cross-ticket land carried it")
+
+        with caplog.at_level("WARNING"):
+            result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.AlreadyLandedOnMain
+        assert "frob ticket close" in caplog.text
+        assert tid in caplog.text
+
+    # frob:ticket T-2711
+    def test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # frob:tests src/frob/tickets/_land.py::_check_already_landed kind="unit"
+        # Positive control for the T-2711 fix in the OTHER direction: the
+        # branch's own scope file differs from base_ref's current content
+        # (genuine, still-unlanded work) -- the content-diff comparison
+        # must find that non-empty and let the normal land path proceed,
+        # not misfire "already landed" just because a similarly-named
+        # directive mention (naming this same ticket id) happens to exist
+        # on main from a sibling.
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "shared-real-work", str(wt)], repo)
+        created = new_ticket(wt, _spec("Genuinely new work", scope=("src/held.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "held.py").write_text(
+            f"# frob:ticket {tid}\ndef held() -> None:\n    return None\n"
+        )
+        _commit_all(wt, f"{tid}: real, still-unlanded change")
+
+        # base_ref has a DIFFERENT frob:ticket directive for the same id
+        # already (e.g. a stale/unrelated mention) but NOT this content --
+        # the content-diff must still see a real difference and proceed.
+        (repo / "src" / "other.py").write_text(f"# frob:ticket {tid}\n# just a note\n")
+        _commit_all(repo, "seed: an unrelated directive mention, not the real content")
+
+        result = land(repo, tid, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        # NOTE: the `frob:ticket` directive itself gets renamed from the
+        # draft id to the final landed id as part of `land()` -- assert
+        # on the body the fix actually cares about, not the directive
+        # line's exact id text.
+        assert "def held() -> None:\n    return None\n" in (
+            repo / "src" / "held.py"
+        ).read_text()
+
     def test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed(
         self, repo: Path
     ) -> None:

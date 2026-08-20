@@ -871,6 +871,26 @@ _TICKET_ID_RE = re.compile(r"T-(?:\d+|draft-[0-9a-fA-F]+)")
 _DONE_REPORT_HEADING = "## Done report"
 _SUBHEADING_RE = re.compile(r"(?m)^#{2,6}[ \t]+(\S.*)$")
 
+# frob:ticket T-2718
+#: The EXACT, fixed subheading titles `compose_done_report` itself always
+#: writes (T-1005/T-0754/T-1422's own literal strings: `"### Changed"`,
+#: `"### Evidence"`, `_CLAIMS_HEADING = "### Captured claims"` in
+#: `_models.py`, and the `"### Acceptance amendments"` block above) --
+#: never hand-typed, so a Done report carrying ONLY these is not an
+#: author disclosing cut work, it is the tool's own routine template.
+#: T-2638's structural signal exists to be immune to REWORDING a genuine
+#: disclosure heading, not to catch every heading unconditionally; firing
+#: on frob's own fixed output was never what it was calibrated against
+#: (measured 2026-08-19/20: T-2141/T-2303/T-2679/T-2128, four independent
+#: agents hand-appending a disclosure-theatre `Filed:` line with no real
+#: follow-up just to clear this). Kept as an exact-title allowlist, not a
+#: prefix/substring match -- an agent renaming ANY of these four (T-2638's
+#: own incident shape) or adding a genuinely new subheading alongside them
+#: still trips signal 2 below.
+_TIER_A_GENERATED_SUBHEADINGS = frozenset(
+    {"Changed", "Evidence", "Captured claims", "Acceptance amendments"}
+)
+
 
 def _done_report_section(text: str) -> str:
     """The slice of `text` from the LAST `## Done report` heading to the
@@ -894,6 +914,10 @@ def _done_report_section(text: str) -> str:
 # close-t-1648
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_detects_known_phrase  # noqa: E501
 # frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_clean_narrative_is_not_flagged  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_no_real_followup_closes_clean  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires  # noqa: E501
+# frob:tests tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage.test_renaming_a_generated_heading_still_fires  # noqa: E501
 def disclosure_shaped_language(text: str) -> str | None:
     """Non-`None` if `text` looks like it discloses unfinished/cut work,
     or `None` otherwise. Two independent signals, either one sufficient
@@ -906,25 +930,45 @@ def disclosure_shaped_language(text: str) -> str | None:
        a phrase-only decision is exactly what a heading rename defeats).
     2. A markdown subheading (`### ...` or deeper, `_SUBHEADING_RE`)
        anywhere under the LAST `## Done report` heading
-       (`_done_report_section`) -- structural, and therefore immune to
-       rewording: the author added a titled subsection beyond the plain
-       Changed/Evidence/Filed/Gates template, whatever words end up in
-       its title.
+       (`_done_report_section`), EXCLUDING the exact fixed titles
+       `compose_done_report` itself always writes
+       (`_TIER_A_GENERATED_SUBHEADINGS`, T-2718) -- structural, and
+       therefore immune to rewording: the author added a titled
+       subsection beyond the plain Changed/Evidence/Filed/Gates
+       template, whatever words end up in its title. A report carrying
+       ONLY the tool's own routine Changed/Evidence/Captured-claims/
+       Acceptance-amendments headings is not this shape at all.
 
     T-1648's own docstring establishes the accepted tradeoff and it still
     holds for signal 2: a narrative that happens to use one of the
     phrases, or a Done report that happens to carry an unrelated
     subheading, while discussing something already resolved, is a false
     positive -- it costs an author one extra `Filed:` line, never a
-    silently dropped cut, which is the harm this guards against."""
+    silently dropped cut, which is the harm this guards against.
+
+    T-2718: signal 2 used to fire on the FIRST subheading found
+    regardless of title, which is always `### Changed` in a Tier-A
+    generated report (`compose_done_report` writes it first, every time)
+    -- so every generated Done report tripped this unconditionally,
+    forcing a hand-appended `Filed:` line even with nothing genuinely cut
+    (measured 2026-08-19/20 across four independent agents: T-2141,
+    T-2303, T-2679, T-2128, each rediscovering the same workaround).
+    Fixed by scanning EVERY subheading in the section and only returning
+    non-`None` for the first one whose title is NOT one of the four fixed
+    generated titles -- an agent renaming one of those four (T-2638's own
+    incident shape) or adding any other subsection alongside them still
+    trips this exactly as before; only the tool's own unmodified,
+    exact-title template output is exempt."""
     lowered = text.lower()
     for phrase in _DISCLOSURE_PHRASES:
         if phrase in lowered:
             return phrase
     section = _done_report_section(text)
-    match = _SUBHEADING_RE.search(section)
-    if match:
-        return f"non-standard Done-report subsection ({match.group(1).strip()!r})"
+    for match in _SUBHEADING_RE.finditer(section):
+        title = match.group(1).strip()
+        if title in _TIER_A_GENERATED_SUBHEADINGS:
+            continue
+        return f"non-standard Done-report subsection ({title!r})"
     return None
 
 

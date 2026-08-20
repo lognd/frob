@@ -1827,6 +1827,48 @@ directive-present), sharing the same refusal message and remedy
 (`_refuse_already_landed`) with only the naming of which signal fired
 differing.
 
+**The empty-diff half must compare CONTENT, not ancestry (T-2711).** Both
+positive signals above were sound, but the "empty scope-diff" half they
+both sit alongside had its own latent gap: it was computed via
+`_branch_changed_files`, a three-dot `git diff base_ref...HEAD` (merge-
+base diff) answering "which files has THIS BRANCH'S OWN COMMIT HISTORY
+touched since it forked from `base_ref`". That question is right for
+`_check_cross_ticket_leakage` and `_check_passenger_tickets` (they need
+to know what the branch is ABOUT to carry), but wrong here: once a
+ticket's own commits exist, that answer stays non-empty FOREVER, even
+after `base_ref` independently gains byte-identical content. Measured
+2026-08-19/20 (T-2141 and T-2303, both landed as passengers of T-1549's
+`--allow-cross-ticket` land, all three sharing one series worktree
+branch): each sibling's own scope file WAS genuinely committed on the
+shared branch (it is the ticket that wrote the fix), so `_branch_changed_
+files` kept finding it in-scope long after `base_ref` already held an
+identical copy via the earlier carry -- the empty-diff half of this check
+never went empty, `_check_already_landed` returned `Ok(None)`, and each
+land fell through into the normal pipeline, surfacing whichever unrelated
+gate fired first (BUG002 confirmatory-only in both cases) instead of this
+function's own actionable refusal. Two land attempts and two rounds of
+"send me the verbatim error" were spent before the shape was understood;
+the actual remedy that resolved it by hand each time was exactly this
+check's own suggested recipe (verify content, then `frob ticket close`
+directly) -- the mechanism's OUTPUT was right, the mechanism just never
+fired.
+
+The fix (`_branch_vs_base_content_diff`) swaps the empty-diff computation
+to a direct two-ref `git diff --name-only base_ref HEAD`, comparing
+CURRENT tree content on both sides regardless of either ref's ancestry --
+the only question `_check_already_landed` actually needs answered here.
+`_branch_changed_files` itself is untouched (its ancestry-aware semantics
+are still correct for the leakage/passenger checks that use it); only
+`_check_already_landed`'s own empty-diff half switched primitives. See
+`tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain
+.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_
+file_but_base_ref_now_has_identical_content` (the regression) and its
+`test_no_op_when_the_branch_committed_real_unlanded_content_differing_
+from_base_ref` sibling (the positive control: a branch's genuinely
+different, still-unlanded content must still proceed to a normal land,
+not misfire "already landed" merely because an unrelated `frob:ticket`
+mention for the same id happens to exist on `base_ref`).
+
 ### Already-landed markers at DISPATCH time (T-1744 case 1)
 
 T-1675's `_check_already_landed` above catches a ticket already `state:

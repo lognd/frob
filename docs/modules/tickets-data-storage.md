@@ -1506,6 +1506,27 @@ the filed ticket's own content actually describes the disclosed
 remainder -- only that SOMETHING checkable was recorded, keeping the
 ceremony cheap enough that honest disclosure is not punished.
 
+**The structural signal is exempt on frob's own fixed headings (T-2718).**
+T-2638's subheading signal fired on the FIRST subheading found under `##
+Done report` regardless of title -- and that is always `### Changed`,
+because `compose_done_report` (T-1005/T-0754/T-1422) writes it first,
+every time, alongside `### Evidence`, `### Captured claims` (when
+`claims` is supplied), and `### Acceptance amendments` (when amendments
+exist). Every Tier-A generated Done report therefore tripped this guard
+unconditionally, with nothing actually cut -- measured 2026-08-19/20
+across four independent agents (T-2141, T-2303, T-2679, T-2128), each
+rediscovering the same workaround: hand-appending a `Filed:` line
+naming a real follow-up purely to clear the check, disclosure theatre
+when no real follow-up exists. `disclosure_shaped_language` now scans
+EVERY subheading in the section and only fires on the first one whose
+title is NOT one of the four exact, fixed generator strings
+(`_TIER_A_GENERATED_SUBHEADINGS` in `_reporting.py`) -- an allowlist by
+EXACT title, not prefix/substring, so T-2638's own reword-proof
+guarantee is untouched: renaming any of the four, or adding any other
+subsection alongside them, still fires exactly as before. Only the
+tool's own unmodified template output is exempt; the phrase-based signal
+1 is completely unaffected either way.
+
 ## Mega-glob scope refused at start (T-1866)
 
 `frob ticket start` REFUSES (exit 1) a scope containing a mega-glob

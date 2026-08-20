@@ -164,7 +164,7 @@ def _add_ticket_close_parser(ticket_sub):
         action="store_true",
         help="the first-class front door (T-2393) for a doc-only/epic-"
         "rollup/structural ticket with no runtime defect to reproduce: "
-        "writes `frob:no-behavior-change reason=\"...\"` into the ticket's "
+        'writes `frob:no-behavior-change reason="..."` into the ticket\'s '
         "body (via `frob.tickets.set_body`, T-2392) before BUG002 runs, "
         "the SAME remedy that previously required a hand-edit of "
         "tickets/T-####/ticket.md. Requires --no-behavior-change-reason/"
