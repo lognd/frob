@@ -1166,6 +1166,14 @@ _KNOWN_GATE_RULES = frozenset(
         # scan) -- deleted along with its writer per T-1870; its "390
         # ledger references" are historical tickets.md prose, not code,
         # and are out of this scanner's remit.
+        # T-2684: the `GateError.QueueUnavailable` sentinel `frob.check.
+        # _python._gates_error_result` emits when the ticket queue itself
+        # fails to load (a malformed `tickets/T-####/ticket.md`, or a
+        # duplicate id across active/archive) -- an infrastructure-failure
+        # marker, not a per-rule-family gate finding, but registered here
+        # like any other rule id so it is waivable/searchable rather than
+        # rendering with an empty rule id.
+        "QUEUE001",
     }
 )
 # frob-zone-end known-gate-rules T-1002

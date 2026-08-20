@@ -59,8 +59,12 @@ from frob.tickets._store import (
     _split_done_report,
     _store_mode,
     ledger_lock,
+    load_all,
     load_archive,
+    v2_archive_dir,
     v2_state_transitions,
+    v2_ticket_dir,
+    write_archived_ticket,
     write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
@@ -345,6 +349,42 @@ def _amend_raw_body(raw_body: str, text: str, mode: str) -> str:
     return text
 
 
+# frob:ticket T-2678
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_archived_ticket_writes_archive_path_only  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append_on_active_ticket_still_writes_active_path  # noqa: E501
+def _ticket_currently_archived(root: Path, ticket_id: str) -> bool:
+    """True when `ticket_id` currently lives ONLY in archive storage, not
+    active (T-2678): `set_body` (and any other same-id mutation routed
+    through `write_ticket`) must target `write_archived_ticket` for such a
+    ticket instead of the plain active-tree `write_ticket` -- writing an
+    archived ticket's amendment to the active path creates a FRESH
+    `tickets/<id>/` directory alongside the untouched `tickets/archive/<id>/`
+    one, the exact DuplicateId corruption T-2678 traces (`frob ticket show`
+    then refuses outright, fleet-wide, since the id now resolves to two
+    different files). v2 mode: checked by plain path existence, not a full
+    `load_all`/`load_archive` parse, so this stays cheap enough to call on
+    every `set_body` write. Single mode: archive is one shared
+    `tickets-archive.md` monofile with no per-ticket path to check, so this
+    loads both stores and tests membership directly -- `set_body`'s own
+    caller-visible cost either way, never a hot loop. `dir` mode has no
+    archive concept (mirrors `write_archived_ticket`'s own dir-mode refusal)
+    and always reads as active (False)."""
+    mode = _store_mode(root)
+    if mode == "v2":
+        archived_path = v2_archive_dir(root, ticket_id) / "ticket.md"
+        active_path = v2_ticket_dir(root, ticket_id) / "ticket.md"
+        return archived_path.is_file() and not active_path.is_file()
+    if mode == "single":
+        active = load_all(root)
+        if active.is_ok and ticket_id in active.danger_ok:
+            return False
+        archived = load_archive(root)
+        return archived.is_ok and ticket_id in archived.danger_ok
+    return False
+
+
 # frob:ticket T-2392
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_body.py::TestBodyAmend.test_append_appends_text
@@ -443,7 +483,11 @@ def set_body(
             "body_changes": ticket.body_changes + (entry,),
         }
         updated = ticket.model_copy(update=update)
-        write_result = write_ticket(root, updated)
+        write_result = (
+            write_archived_ticket(root, updated)
+            if _ticket_currently_archived(root, ticket_id)
+            else write_ticket(root, updated)
+        )
         if write_result.is_err:
             return Err(write_result.danger_err)
     _log.info(

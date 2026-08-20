@@ -116,3 +116,36 @@ class TestQueueUnavailableSentinelIsExcludedFromDivergence:
         )
         assert result is not None
         assert result.is_err
+
+
+# frob:ticket T-2684
+class TestQueue001CodedSentinelIsAlsoExcluded:
+    """T-2684: `_gates_error_result` now sets a real `code="QUEUE001"`
+    (and `file=None`) on the QueueUnavailable sentinel instead of the
+    old empty-rule-id/`file="tickets.md"` shape -- the exclusion above
+    must recognize this new shape too, or T-2684's own fix silently
+    reintroduces the T-1549 bug it is supposed to leave fixed."""
+
+    # frob:tests \
+    # tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded.test_queue001_coded_sentinel_does_not_refuse  # noqa: E501
+    def test_queue001_coded_sentinel_does_not_refuse(self, tmp_path: Path) -> None:
+        """Positive control (T-2684 shape): a `("QUEUE001", "")` finding
+        as the ONLY new finding must NOT refuse the land, same as the old
+        empty-rule-id shape did before this ticket."""
+        ticket = _make_ticket(tmp_path, scope=("src/frob/tickets/**",))
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=0,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=frozenset(),
+        )
+        result = _reverify_gate_findings_by_identity(
+            ticket,
+            claims,
+            ticket.id,
+            check_gate_findings=lambda: frozenset({("QUEUE001", "")}),
+        )
+        assert result is not None
+        assert result.is_ok

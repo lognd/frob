@@ -176,6 +176,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2672: sweep attributes findings to lands that never touched the flagged files: 6 of 6 tickets, including two filed after T-2571 and T-2595
 - T-2673: DOCENUM001's ID_TOKEN_RE cannot match hyphenated ids ending in letters (PORT001-IDENT, PORT001-PATH)
 - T-2674: Persistent unfixed repo-debt tracking (continuation of T-2653): 37 identit(ies) remaining
+- T-2678: frob ticket body writes an archived ticket's update to a fresh non-archive copy, causing DuplicateId
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
 

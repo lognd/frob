@@ -2,7 +2,7 @@
 id: T-2684
 title: 'gates: QueueUnavailable manufactures an empty-rule-id finding against the
   retired tickets.md path'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -62,12 +62,25 @@ body_changes:
   old_length: 3569
   new_length: 3555
 evidence:
-- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_old_empty_rule_shape_still_excluded_too
-- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_a_real_rule_named_differently_still_refuses
+- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueueUnavailableSentinelIsExcludedFromDivergence::test_sentinel_alone_does_not_refuse
+- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueueUnavailableSentinelIsExcludedFromDivergence::test_real_new_in_scope_finding_still_refuses
 - tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable::test_queue_unavailable_sets_real_code_and_no_stale_path
 - tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable::test_other_gate_error_is_a_soft_skip_not_an_error
 - tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_queue001_coded_sentinel_does_not_refuse
 designated_repro_test: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_queue001_coded_sentinel_does_not_refuse
+evidence_changes:
+- old_node: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_old_empty_rule_shape_still_excluded_too
+  new_node: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueueUnavailableSentinelIsExcludedFromDivergence::test_sentinel_alone_does_not_refuse
+  reason: the trimmed duplicate test was removed (DUP001); its coverage is the pre-existing
+    sibling test
+  actor: logan
+  at: '2026-08-20'
+- old_node: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_a_real_rule_named_differently_still_refuses
+  new_node: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueueUnavailableSentinelIsExcludedFromDivergence::test_real_new_in_scope_finding_still_refuses
+  reason: the trimmed duplicate test was removed (DUP001); its coverage is the pre-existing
+    sibling test
+  actor: logan
+  at: '2026-08-20'
 threat: null
 component: null
 anchor: false

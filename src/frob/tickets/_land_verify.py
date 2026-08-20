@@ -581,10 +581,11 @@ def _reverify_gate_findings_by_identity(
         )
         return None
     # frob:ticket T-1549
+    # frob:ticket T-2684
     # T-1549: an empty rule id is never a real gate finding -- every real
     # rule id is a non-empty code (ARCH001, COV003, ...). `frob.check.
-    # _python._gates_error_result` synthesizes exactly one such sentinel
-    # (`Diagnostic(file="tickets.md", ...)`, no `code=`) whenever
+    # _python._gates_error_result` used to synthesize exactly one such
+    # sentinel (`Diagnostic(file="tickets.md", ...)`, no `code=`) whenever
     # `run_gates` itself fails with `GateError.QueueUnavailable` (a
     # malformed ledger entry, not a real gate result) -- and because
     # `scope_matches` treats `tickets.md`/`LEDGER_PATH` as ALWAYS
@@ -604,7 +605,24 @@ def _reverify_gate_findings_by_identity(
     # reproduces: four burned land attempts against exactly this
     # sentinel, T-1531's own recipe failing identically on retry because
     # the queue failure, not a stale claim, was the actual cause).
-    sentinel_findings = [(rule, file) for rule, file in fresh_findings if not rule]
+    #
+    # T-2684: `_gates_error_result` now sets a REAL `code="QUEUE001"`
+    # (and `file=None`, no longer the retired v1 `tickets.md` path) on
+    # this exact sentinel, so it is waivable/searchable by rule id like
+    # every other gate finding -- but that means the ORIGINAL `not rule`
+    # test alone would stop matching it, silently un-excluding the
+    # sentinel and reintroducing the very ClaimDivergence bug this
+    # section exists to prevent. The exclusion is widened to recognize
+    # BOTH shapes: an empty rule id (any OLDER cached/stale diagnostic
+    # from before T-2684, or a captured claim from before this land
+    # ships) and the new `QUEUE001` code (the current, real shape) --
+    # never narrowed to just the new shape, since a stale claim captured
+    # before this fix must still be recognized as the same sentinel.
+    sentinel_findings = [
+        (rule, file)
+        for rule, file in fresh_findings
+        if not rule or rule == "QUEUE001"
+    ]
     if sentinel_findings:
         _log.warning(
             "land: %s fresh `frob check --ticket %s` reported %d "

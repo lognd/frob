@@ -806,6 +806,88 @@ class TestWriteArchivedTicket:
     # frob:ticket T-1583
 
 
+# frob:ticket T-2678
+class TestSetBodyArchivedTicketRouting:
+    """T-2678: `set_body` (`frob ticket body`) against an ARCHIVED ticket
+    must amend `tickets/archive/<id>/ticket.md` in place, never create a
+    fresh `tickets/<id>/` -- the exact DuplicateId corruption T-2678
+    traces (both paths carrying the same id, `frob ticket show <id>`
+    refusing outright fleet-wide)."""
+
+    def test_append_on_archived_ticket_writes_archive_path_only(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append\
+        # _on_archived_ticket_writes_archive_path_only kind="unit"
+        from frob.tickets import set_body
+        from frob.tickets._store import v2_archive_dir
+
+        ticket = _ticket("T-1688")
+        (tmp_path / "tickets" / "archive" / "T-1688").mkdir(parents=True)
+        (tmp_path / "tickets" / "archive" / "T-1688" / "ticket.md").write_text(
+            _serialize_ticket(ticket)
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        result = set_body(
+            tmp_path,
+            "T-1688",
+            "an appended note",
+            mode="append",
+            reason="test append",
+        )
+        assert result.is_ok
+
+        # The must-fire control: the archive copy is amended in place.
+        archived_path = v2_archive_dir(tmp_path, "T-1688") / "ticket.md"
+        assert archived_path.exists()
+        assert "an appended note" in archived_path.read_text(encoding="utf-8")
+
+        # The must-NOT-fire control: no fresh active-side copy was created.
+        assert not v2_ticket_dir(tmp_path, "T-1688").exists()
+
+        # A subsequent load must see exactly one T-1688, not a DuplicateId.
+        archived = load_archive(tmp_path)
+        assert archived.is_ok
+        assert archived.danger_ok.keys() == {"T-1688"}
+        active = load_all(tmp_path)
+        assert active.is_ok
+        assert active.danger_ok == {}
+
+    def test_append_on_active_ticket_still_writes_active_path(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting.test_append\
+        # _on_active_ticket_still_writes_active_path kind="unit"
+        # Must-NOT-regress control: a NON-archived ticket keeps writing to
+        # the active tree exactly as before this fix.
+        from frob.tickets import set_body
+        from frob.tickets._store import v2_ticket_dir as _v2_dir
+
+        ticket = _ticket("T-2000")
+        (tmp_path / "tickets" / "T-2000").mkdir(parents=True)
+        (tmp_path / "tickets" / "T-2000" / "ticket.md").write_text(
+            _serialize_ticket(ticket)
+        )
+        assert _store_mode(tmp_path) == "v2"
+
+        result = set_body(
+            tmp_path,
+            "T-2000",
+            "an appended note",
+            mode="append",
+            reason="test append",
+        )
+        assert result.is_ok
+
+        active_path = _v2_dir(tmp_path, "T-2000") / "ticket.md"
+        assert active_path.exists()
+        assert "an appended note" in active_path.read_text(encoding="utf-8")
+        assert not (tmp_path / "tickets" / "archive" / "T-2000").exists()
+
+
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_store.py::migrate_to_ledger kind="unit"

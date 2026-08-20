@@ -2422,3 +2422,47 @@ class TestExportsRealPaths:
 
         (tmp_path / "mod.py").write_text("x = 1\n")
         assert _run_exports(tmp_path) == []
+
+
+# frob:ticket T-2684
+class TestGatesErrorResultQueueUnavailable:
+    """T-2684: `_gates_error_result`'s `GateError.QueueUnavailable`
+    branch names a real `code="QUEUE001"` and `file=None` -- never the
+    retired ledger v1 `tickets.md` path (deleted repo-wide by T-2356)
+    with no code at all, which sent a reader hunting for a nonexistent
+    monofile instead of the real ledger corruption."""
+
+    # frob:tests \
+    # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_queue_unavailable_sets_real_code_and_no_stale_path  # noqa: E501
+    def test_queue_unavailable_sets_real_code_and_no_stale_path(self) -> None:
+        """Must-fire control: a QueueUnavailable error produces exactly
+        one ERROR diagnostic with code="QUEUE001" and file=None -- never
+        the old file="tickets.md", empty-code shape."""
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+
+        result = _gates_error_result(GateError.QueueUnavailable, GateError)
+
+        assert result.tool == "gates"
+        assert result.exit_code == 1
+        assert len(result.diagnostics) == 1
+        diag = result.diagnostics[0]
+        assert diag.code == "QUEUE001"
+        assert diag.file is None
+        assert diag.severity == "error"
+        assert "tickets.md" not in diag.message
+
+    # frob:tests \
+    # tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable.test_other_gate_error_is_a_soft_skip_not_an_error  # noqa: E501
+    def test_other_gate_error_is_a_soft_skip_not_an_error(self) -> None:
+        """Must-NOT-regress control: any OTHER GateError value is still a
+        soft, zero-diagnostic skip -- QUEUE001 is scoped to exactly the
+        QueueUnavailable branch, not applied to every gate error."""
+        from frob.check._python import _gates_error_result
+        from frob.gates import GateError
+
+        result = _gates_error_result(GateError.GitFailed, GateError)
+
+        assert result.tool == "gates"
+        assert result.exit_code == 0
+        assert result.diagnostics == []

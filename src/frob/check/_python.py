@@ -995,26 +995,52 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
     return results
 
 
+# frob:ticket T-2684
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
-    ticket queue itself failed to load, else a soft skip."""
+    ticket queue itself failed to load, else a soft skip.
+
+    T-2684: the QueueUnavailable branch used to hardcode
+    `Diagnostic(file="tickets.md", ...)` with no `code=` -- `tickets.md`
+    is the retired ledger v1 monofile (deleted repo-wide by T-2356) and
+    cannot be the real failing artifact under ledger v2's file-per-ticket
+    layout (a malformed `tickets/T-####/ticket.md`, or a duplicate id
+    across active/archive -- T-2678's own incident). A finding naming a
+    path that exists nowhere on disk sends whoever reads it looking for a
+    stale monofile instead of the real ledger corruption (the confirmed
+    T-2134 incident this ticket traces: four failed land attempts and a
+    long misdiagnosis). `GateError` (a bare `ErrorSet` value with no
+    payload) carries no path detail to surface here, so `file=None`
+    (rather than a second wrong guess) plus a real `code="QUEUE001"` (so
+    the finding is waivable/searchable by rule id, unlike the empty
+    rule id this used to render with) is the honest fix available at
+    this layer -- naming the ACTUAL failing path would need `GateError`
+    itself to carry one, a separate, larger change this ticket's own
+    scope does not cover."""
     if err is gate_error_cls.QueueUnavailable:
         return ToolResult(
             tool="gates",
             exit_code=1,
             diagnostics=[
                 Diagnostic(
-                    file="tickets.md",
+                    file=None,
                     severity="error",
+                    code="QUEUE001",
                     message=(
-                        "ticket queue failed to load: all gates were skipped. "
-                        "This is a hard failure, not a soft skip -- fix the "
-                        "malformed entry (check evidence: blocks and YAML "
-                        "syntax) and re-run `frob check`."
+                        "QUEUE001: ticket queue failed to load: all gates "
+                        "were skipped. This is a hard failure, not a soft "
+                        "skip -- run `frob ticket list` or `frob ticket "
+                        "show <id>` directly for a more specific error (a "
+                        "malformed tickets/T-####/ticket.md, or a "
+                        "duplicate id across active/archive), fix it, and "
+                        "re-run `frob check`."
                     ),
                 )
             ],
-            summary=("gates FAILED: ticket queue failed to load -- fix tickets.md"),
+            summary=(
+                "gates FAILED: ticket queue failed to load -- run "
+                "`frob ticket list` for the specific ledger error"
+            ),
         )
     return ToolResult(
         tool="gates",

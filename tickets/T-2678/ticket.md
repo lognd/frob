@@ -2,7 +2,7 @@
 id: T-2678
 title: frob ticket body writes an archived ticket's update to a fresh non-archive
   copy, causing DuplicateId
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -76,7 +76,10 @@ body_changes:
   at: '2026-08-19'
   old_length: 2169
   new_length: 4280
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_append_on_archived_ticket_writes_archive_path_only
+- tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_append_on_active_ticket_still_writes_active_path
+designated_repro_test: tests/unit/test_ticket_store.py::TestSetBodyArchivedTicketRouting::test_append_on_archived_ticket_writes_archive_path_only
 threat: null
 component: null
 anchor: false
