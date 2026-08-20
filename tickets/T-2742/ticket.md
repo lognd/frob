@@ -26,6 +26,13 @@ body_changes:
   at: '2026-08-20'
   old_length: 3083
   new_length: 4901
+- mode: append
+  reason: record why this ticket tripped DOC006 and disclose that its hypothetical
+    verb name is prose, not a command
+  actor: logan
+  at: '2026-08-20'
+  old_length: 4901
+  new_length: 5592
 designated_repro_test: null
 threat: null
 component: null
@@ -140,3 +147,19 @@ This is an instance of a pattern worth naming: a capability that ships
 but is not reachable from where people look is functionally absent, and
 gets rebuilt or worked around. Check whether the thing exists before
 building it -- I did not, and nearly commissioned a duplicate.
+
+
+
+## DOC006 note (coordinator)
+
+This ticket's own body originally proposed a hypothetical verb inside a
+backtick code span. DOC006 correctly read that as a live CLI invocation
+that does not resolve, fired, and the resulting quarantine blocked
+deferred landing repo-wide until it was disposed -- a ticket about
+observability degrading the fleet through its own prose.
+
+Treat any verb name in this body as PROSE, not a command. The proposal is
+a first-class land-status query; per the correction above, the capability
+already exists in scripts/fleet_status.py, so no new verb should be
+minted at all. Same shape as T-2691, which was resolved by moving a
+future-verb mention out of backticks.
