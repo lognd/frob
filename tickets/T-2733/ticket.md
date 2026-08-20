@@ -1,7 +1,7 @@
 ---
 id: T-2733
 title: remove now-redundant frob:waive RENDER001 directives in .claude/hooks and scripts/fleet_status.py
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:/tmp/verify_t2733.sh exit=0 sha256=d0e352f3be03
 designated_repro_test: null
 threat: null
 component: null

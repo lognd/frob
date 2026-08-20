@@ -213,8 +213,6 @@ def main() -> int:
         return 0
     decision = _decision(payload)
     if decision is not None:
-        # frob:waive RENDER001 reason="standalone Claude Code hook script, no frob \
-        # import; stdout IS the hook's JSON-decision contract"
         print(json.dumps(decision))
     return 0
 

@@ -100,8 +100,6 @@ def main() -> None:
     # frob:waive SEC110 reason="FROB_AGENT is a boolean context flag (T-0574), never a \
     # secret"
     if os.environ.get("FROB_AGENT") and tool_input.get("run_in_background") is True:
-        # frob:waive RENDER001 reason="standalone Claude Code hook script, no frob \
-        # import; stdout IS the hook's JSON-decision contract"
         print(
             json.dumps(
                 {
@@ -119,8 +117,6 @@ def main() -> None:
     # purely because `uv run frob test` appeared inside a quoted string
     # it was carrying. Same class its own docstring warns about.
     if PATTERN.search(strip_quoted(command)) and timeout_ms < MIN_TIMEOUT_MS:
-        # frob:waive RENDER001 reason="standalone Claude Code hook script, no frob \
-        # import; stdout IS the hook's JSON-decision contract"
         print(
             json.dumps(
                 {

@@ -490,8 +490,6 @@ def _handle_bash(command: str, cwd: str) -> None:
 def _deny() -> None:
     """Emit the PreToolUse deny payload -- same shape every other hook in
     this directory uses."""
-    # frob:waive RENDER001 reason="standalone Claude Code hook script, no frob import; \
-    # stdout IS the hook's JSON-decision contract"
     print(
         json.dumps(
             {

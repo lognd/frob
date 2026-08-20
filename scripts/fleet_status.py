@@ -3336,20 +3336,13 @@ def _print_verify_queue_line() -> None:
     factors out) rather than inlined."""
     depth, oldest_age_s = verify_queue_state()
     if depth < 0:
-        # frob:waive RENDER001 reason="this whole script deliberately never imports \
-        # frob.* (must stay usable without a built venv/native extensions) -- every \
-        # other print() in this file is the same bare-stdout style, grandfathered by \
-        # RENDER001's does-not-worsen gate only because it predates T-2280; this is a \
-        # NEW site in the identical, already-established style, not a new exception"
         print("VERIFY QUEUE UNKNOWN -- .frob/verify-queue.json unreadable")
     elif depth == 0:
-        # frob:waive RENDER001 reason="same as above -- established bare-print style"
         print("VERIFY QUEUE empty")
     else:
         age_note = (
             f", oldest {oldest_age_s:.0f}s old" if oldest_age_s is not None else ""
         )
-        # frob:waive RENDER001 reason="same as above -- established bare-print style"
         print(f"VERIFY QUEUE depth={depth}{age_note}")
 
 
@@ -3553,11 +3546,6 @@ def _print_worktrees_section(idle_seconds: int) -> None:
         tail = "  IDLE?" if idle else ""
         if idle:
             tail += f"  [{verdicts[name]}]"
-        # frob:waive RENDER001 reason="pre-existing bare print, unchanged text -- \
-        # T-2126's own new _print_verify_queue_line() insertion above shifted this \
-        # line's number relative to merge-base, which the does-not-worsen gate reads \
-        # as a new site; same established bare-stdout style as every other print in \
-        # this deliberately frob.*-import-free script"
         print(f"  {name:28} last-commit {mins:>9}{tail}")
 
 
@@ -3584,15 +3572,11 @@ def _print_scope_intersections(tickets: list[str]) -> None:
     branch, pulled out (ARCH103) alongside `_print_all_ticket_readiness`
     above."""
     collisions = scope_intersections(tickets)
-    # frob:waive RENDER001 reason="pre-existing bare print, unchanged text -- shifted \
-    # by T-2126's own new _print_verify_queue_line() insertion above, same line-drift \
-    # false-positive as the WORKTREES print in _print_fleet_report"
     print(f"SCOPE INTERSECTIONS: {len(collisions)}")
     for collision in collisions:
         globs = ", ".join(
             f"{ga!r}<->{gb!r}" for ga, gb in collision["overlapping_globs"]
         )
-        # frob:waive RENDER001 reason="same line-drift false-positive as above"
         print(f"  {collision['a']} x {collision['b']}: {globs}")
 
 
