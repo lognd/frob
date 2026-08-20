@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- design
 - docs/modules/cli.md
 - src/frob/_cli_parsers/_ticket/_new.py
 - src/frob/app/ticket_runner/_verify.py
@@ -58,6 +57,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: design
+  reason: collides with T-2694's live lease on design/frob.strata; SELFAUDIT001 design
+    identity deferred separately, not blocking the other 42 identities' re-triage
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
