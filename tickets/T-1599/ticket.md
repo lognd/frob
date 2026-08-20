@@ -130,14 +130,13 @@ acceptance:
     this stale note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
     degradation story (see criterion [2]).'
   evidence: []
-- text: 'MEASURED 2026-08-17: the existing FACETS axis (grammar/capability/dup/arch/docblock,
-    src/frob/lang/_support.py FACETS tuple) is SUBSYSTEM-INTEGRATION coverage (does
-    frob.vet/frob.dup/frob.arch/frob.gates._docblocks have an entry for this language),
-    a DIFFERENT axis than this ticket''s own deliverable 1 (symbol walk, public/private
-    determination, docstring/doc-comment extraction, comment/directive parsing incl.
-    continuations, call graph edges, import/dependency edges, test discovery) -- an
-    ADAPTER-CAPABILITY axis. No facet or registry for that axis exists today; this
-    remains real, unbuilt work.'
+- text: 'MEASUREMENT NOTE, superseded: this criterion''s own premise ("No facet or
+    registry for [the adapter-capability] axis exists today") was already false by
+    the time this ticket''s own scoping work started -- ADAPTER_CAPABILITIES/CapabilityRequirement/CapabilityStatus/AdapterCapabilitySupport/derive_capability_registry
+    (src/frob/lang/_support.py) already give every registered language a typed cell
+    for all seven capabilities this criterion names, built under T-2365. Not this
+    ticket''s own work; found already built during reconnaissance and confirmed by
+    direct code reading before writing anything.'
   evidence: []
 - text: 'MEASURED 2026-08-17: deliverable 2 (a conformance test suite parameterized
     over every registered adapter, failing when a language declares a capability it
@@ -168,6 +167,52 @@ acceptance_amendments:
     real remaining scope, confirmed against that live state rather than this stale
     note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
     degradation story (see criterion [2]).'
+  reason: 'The three original acceptance entries are 2026-08-17 MEASUREMENT NOTES,
+
+    not given/when/then criteria -- they describe what a prior sweep found
+
+    missing, not a testable claim this ticket''s own work can resolve with
+
+    pytest evidence. Direct code reading before any work started this round
+
+    found their premise stale in frob''s favor: ADAPTER_CAPABILITIES /
+
+    derive_capability_registry (src/frob/lang/_support.py, T-2365) and
+
+    LANG004 / capability_conformance_gate (src/frob/gates/_lang_
+
+    conformance.py, T-2365) both already existed -- built before this
+
+    ticket''s own filing predates them, contradicting criteria [1]/[2]''s own
+
+    "no facet or registry exists" / "conformance suite does not exist"
+
+    claims. Amending rather than binding evidence to a false premise, per
+
+    the coordinator''s explicit instruction not to bind evidence to a
+
+    criterion it does not actually prove.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: replace
+  index: 1
+  old_text: 'MEASURED 2026-08-17: the existing FACETS axis (grammar/capability/dup/arch/docblock,
+    src/frob/lang/_support.py FACETS tuple) is SUBSYSTEM-INTEGRATION coverage (does
+    frob.vet/frob.dup/frob.arch/frob.gates._docblocks have an entry for this language),
+    a DIFFERENT axis than this ticket''s own deliverable 1 (symbol walk, public/private
+    determination, docstring/doc-comment extraction, comment/directive parsing incl.
+    continuations, call graph edges, import/dependency edges, test discovery) -- an
+    ADAPTER-CAPABILITY axis. No facet or registry for that axis exists today; this
+    remains real, unbuilt work.'
+  new_text: 'MEASUREMENT NOTE, superseded: this criterion''s own premise ("No facet
+    or registry for [the adapter-capability] axis exists today") was already false
+    by the time this ticket''s own scoping work started -- ADAPTER_CAPABILITIES/CapabilityRequirement/CapabilityStatus/AdapterCapabilitySupport/derive_capability_registry
+    (src/frob/lang/_support.py) already give every registered language a typed cell
+    for all seven capabilities this criterion names, built under T-2365. Not this
+    ticket''s own work; found already built during reconnaissance and confirmed by
+    direct code reading before writing anything.'
   reason: 'The three original acceptance entries are 2026-08-17 MEASUREMENT NOTES,
 
     not given/when/then criteria -- they describe what a prior sweep found
