@@ -20,8 +20,6 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_check_budget.py
 - tests/unit/test_app_ticket_land.py
-- docs/modules/tickets-verify-sweep.md
-- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +63,18 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: 'T-2715: doc targets for touched land-sweep budget functions'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-2715: revert doc adds -- closure cascade is repo-wide pre-existing noise
+    unrelated to this fix'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2715: revert doc adds -- closure cascade is repo-wide pre-existing noise
+    unrelated to this fix'
   actor: logan
   at: '2026-08-20'
 body_changes:
