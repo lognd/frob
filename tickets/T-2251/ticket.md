@@ -23,6 +23,9 @@ scope:
 - tests/unit/test_app_lazy_dispatch.py
 - src/frob/app/_config_external.py
 - src/frob/_cli_parsers/__init__.py
+- README.md
+- docs/modules/cli.md
+- docs/commands/format.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +63,27 @@ scope_changes:
   glob: src/frob/_cli_parsers/__init__.py
   reason: new _add_format_parser needs export/import wiring alongside every sibling
     parser in this package's __init__
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: README.md
+  reason: 'DOC005/DOC012 gates fire for the new frob format subcommand: README command
+    table + count, cli.md generated table (frob docs --sync-commands), and a dedicated
+    docs/commands/format.md section'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'DOC005/DOC012 gates fire for the new frob format subcommand: README command
+    table + count, cli.md generated table (frob docs --sync-commands), and a dedicated
+    docs/commands/format.md section'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/commands/format.md
+  reason: 'DOC005/DOC012 gates fire for the new frob format subcommand: README command
+    table + count, cli.md generated table (frob docs --sync-commands), and a dedicated
+    docs/commands/format.md section'
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
