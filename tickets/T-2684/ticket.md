@@ -20,6 +20,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'correct a fabricated symbol citation: frob.app._check_chunking._run_gate_chunks_stamping_progress
+    never existed; the real symbol (confirmed via grep) is _run_baseline_chunks at
+    src/frob/app/_check_chunking.py:136'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 3569
+  new_length: 3555
 designated_repro_test: null
 threat: null
 component: null
@@ -63,7 +72,7 @@ with no `code=` set at all. Two defects compound here:
    rule id -- unwaivable by rule id, unsearchable by rule id, and
    indistinguishable from any other code-less diagnostic.
 
-`frob.app._check_chunking._run_gate_chunks_stamping_progress` has the
+`frob.app._check_chunking._run_baseline_chunks` has the
 same `GateError.QueueUnavailable` branch but only logs and exits; it does
 not manufacture a Diagnostic, so it is not part of this defect.
 
