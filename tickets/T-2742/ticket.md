@@ -18,6 +18,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'correct the ticket''s premise: fleet_status already reports LANDS IN FLIGHT,
+    so this is a discoverability and documentation fix, not a build'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3083
+  new_length: 4901
 designated_repro_test: null
 threat: null
 component: null
@@ -93,3 +101,42 @@ enforcement path is fine. This is purely about OBSERVABILITY -- agents
 cannot see what the tool already knows, so they guess, and the guess is
 systematically wrong. Same shape as T-2141's carried-changeset disclosure
 and T-2737's pollable-progress request.
+
+
+
+
+## CORRECTION (coordinator, same day): the capability ALREADY EXISTS
+
+I filed this as 'build a first-class query'. That was wrong. `scripts/fleet_status.py` already reports it, authoritatively and correctly:
+
+    ROOT CLEAN
+    LANDS IN FLIGHT: 1
+    LAND LOCK: file exists, no live holder -- normal resting state (flock
+      releases instantly on holder death; the recorded pid may be reused,
+      do not trust it or lock age)
+
+It even carries the warning about not trusting the lock's recorded pid --
+the exact trap I was about to send an implementer into by suggesting they
+read `.frob/land.lock`.
+
+So this ticket is NOT 'build the query'. Do not build a second one. It is:
+
+1. SURFACE IT. Every agent, and I, reached for a hand-rolled `pgrep`
+   instead. That is a discoverability failure, not a missing feature.
+   Find why: check whether `docs/guides/agent-playbook.md` recommends a
+   pgrep form, and correct it to point at fleet_status.
+2. REMOVE THE BROKEN GUIDANCE wherever it appears. My own dispatch briefs
+   propagated two successive wrong pgrep patterns, and the repo's own
+   `frob-suggest` hook already nudges toward fleet_status -- the guidance
+   and the tooling disagree.
+3. Only if fleet_status's own count proves unreliable under load should
+   any code change follow, and that needs measurement first.
+
+The measured evidence in this ticket body still stands and is still the
+justification: 4 pgrep matches vs 1 real land, and five wrong conclusions
+in one session. The remedy is different from what I first wrote.
+
+This is an instance of a pattern worth naming: a capability that ships
+but is not reachable from where people look is functionally absent, and
+gets rebuilt or worked around. Check whether the thing exists before
+building it -- I did not, and nearly commissioned a duplicate.
