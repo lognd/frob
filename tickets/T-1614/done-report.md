@@ -1,74 +1,137 @@
 ## Done report
 
-This pass used the T-2485-fixed `waive-audit complete --partial` mechanism
-end-to-end, resuming the audit T-1614's earlier attempt this session could
-not complete.
+This pass resumes T-1614's standing periodic audit after the prior
+session's local watermark state was lost (per-checkout, gitignored
+`.frob/waive-audit-watermark.json` by design -- see
+`frob.gates._waive_audit_watermark`'s own docstring; that file never
+persists across worktrees or lands, so every fresh checkout's first
+`scan` reports `mode=catchup, watermark_commit=None` again regardless of
+a prior pass having banked progress in a now-gone worktree).
 
-Pass 1 (this worktree, fresh watermark): scanned=100, not_covered=875.
-Classified all 100 as STILL NECESSARY AND HONEST (mechanism-named,
-non-generic reasons; anchor tickets T-1831/T-1820 confirmed queued/open,
-not orphaned). Banked with `frob ticket waive-audit complete
---reviewed-count 100 --cop-outs 0 --partial` -- verdict correctly rendered
-`partial_progress_banked`, never `clean`. Watermark: catchup_remaining=875,
-catchup_covered=100 identities.
+Mechanism used exclusively (no hand-rolled parallel audit):
+`frob ticket waive-audit scan` then `frob ticket waive-audit complete
+--partial`, per T-2467/T-2485.
 
-Verification the fix actually works: re-ran `scan` immediately after
-banking. It returned a COMPLETELY DIFFERENT set of 100 waivers (different
-files entirely -- src/frob/app/_daemon_proxy.py onward, not
-.claude/hooks/... again), with not_covered=775 (=875-100, math checks).
-Confirms the mechanism now genuinely advances past a banked batch instead
-of re-offering the same leading window forever (T-2485's root cause).
+Measurement (both directions, denominator stated):
+- Total `frob:waive` directives repo-wide (measured via `git grep -c
+  "frob:waive"`, includes multi-line reason continuations so this is an
+  upper bound on directive count, not the exact directive count):
+  4066 raw hits.
+- `scan`'s own accounting: scanned=100 (bounded first-run catch-up
+  window per `_CATCHUP_BOUND`), not_covered=967 -- i.e. the mechanism's
+  own denominator for "waivers still needing a classification pass" is
+  1067, not the raw grep figure (grep over-counts continuation lines).
 
-Pass 2 review (this worktree, second 100-item window): reviewed all 100.
-99 were STILL NECESSARY AND HONEST (same calibration as pass 1). ONE
-finding, not a cop-out but a genuine OBSOLETE pair:
-`src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision`
-carried an AFFECT001 and a DRIFT001 waiver whose own text said "remove
-this waiver and ack normally once T-1883 lands." T-1883 is `done`. Per
-T-1614's own rubric (OBSOLETE branch), removed both waiver comments and
-re-acked the body digest (`frob ack ...::_refuse_on_scope_lease_collision
---facet body`) now that nothing blocks it. Re-verified clean via `frob
-check --ticket T-1614` (no more AFFECT001/DRIFT001 findings on that
-symbol). Did NOT bank pass 2 into the watermark (see below) -- reporting
-it, not completing it, since this session is closing out.
+Classification of this batch's 100, per T-1614's rubric:
+- STILL NECESSARY AND HONEST: 100
+- OBSOLETE: 0
+- COP-OUT: 0
+- PERMANENT BY DESIGN: 0 (none needed the anchor marker; all cited
+  reasons were either self-contained or pointed at an already-open
+  follow_up, e.g. T-1831/T-1820's WIRE001 anchors)
 
-Cumulative for this dispatch (pass 1 only, banked):
-- Reviewed: 100
-- Cop-outs found: 0
-- Obsolete-and-fixed (found during pass 2 review, outside the banked
-  batch, fixed directly since it was two lines and a re-ack, not a
-  build-breaking removal): 2 waivers on 1 symbol
-- Not yet covered: 775 (watermark-tracked, next pass continues from here)
-- INERT waivers: none spotted in either batch, but (as before) no
-  systematic per-site inertness re-derivation was run -- "none spotted"
-  remains weaker than "none present" for the same reason noted in this
-  session's earlier report. Filing this as its own follow-up rather than
-  letting the caveat evaporate (see ticket note below).
+Per-rule breakdown of the 100 (all individually honest -- reasons name
+the specific site and mechanism, not a restated rule name):
+DEAD001=31 (cross-package argparse-dispatch-table wiring the best-effort
+callgraph cannot trace, T-1024 precedent), COV005=18 (all in
+.claude/hooks/root-write-guard.py -- see below), AFFECT001=14 (design/
+frob.strata mechanical interface= attr backfill, T-1113/T-1501, no doc
+impact), RENDER001=11 (5 in .claude/hooks/*.py + 6 in scripts/
+fleet_status.py -- see below), DUP001=9 (6 in frob-core/*.rs with
+detailed per-site false-positive analysis of the r2 structural-match
+rung, 2 in .claude/hooks/_agent_context.py naming the exact sibling
+function and the risk tradeoff, 1 boilerplate-hook-entrypoint shape),
+SEC110=8 (dispatch-context env markers, e.g. FROB_AGENT/FROB_WORKTREE/
+FROB_LAND_INTERNAL, explicitly not secrets, each citing the same
+established precedent at src/frob/tickets/_leases.py), WIRE001=6 (2
+groups of 3, T-1831 and T-1820, both first-class `anchor=True` follow_up
+tickets per T-1856 -- correctly never closable), PERF003/PERF004=2
+(scripts/fleet_status.py, bounded-by-fleet-size reasoning), PII012=1
+(software-defect finding misfiring on a medical-sounding term).
 
-Evidence: T-2485's own evidence (tests/unit/test_waive_audit_runner.py::
-TestPartialCatchup::*) proves the mechanism; this ticket's own artifact is
-the watermark state plus the tickets.md ledger entries, not a pytest node
--- consistent with T-1614's process-ticket shape (no acceptance items).
+Two groups found sharing ONE underlying defect rather than being N
+independently-legitimate exceptions (per this ticket's own instruction:
+fix the cause and report the group, do not just bless N sites):
 
-Filed: none yet for the INERT-waiver systematic-check follow-up -- noting
-it here per the coordinator's explicit instruction to preserve the
-caveat; will file as a fresh ticket if this session continues, otherwise
-it is recorded here for the next pass to pick up.
+1. RENDER001 on standalone no-frob-import scripts (11 sites this batch,
+   6 files: .claude/hooks/{frob-timeout-guard,pending-background-guard,
+   root-cleanliness-detector,root-write-guard}.py, scripts/
+   fleet_status.py). `_render_lint.py` already has a directory-exemption
+   mechanism (`_EXEMPT_PREFIX`, currently only `src/frob/render/`) --
+   these files structurally can never satisfy RENDER001 (hooks must run
+   without a built venv; fleet_status.py is deliberately frob-import-
+   free) and each new print() in them will keep needing a fresh per-line
+   waiver forever under the current design. Filed T-draft-07669f4e
+   (scope: src/frob/gates/_render_lint.py, tests/test_gates.py) to
+   extend the exemption list; did NOT touch the gate or remove any
+   waiver myself -- out of this ticket's declared scope, and removing a
+   waiver before the exemption exists would just break the build.
 
-Gates: `frob check --ticket T-1614` clean on the one symbol touched
-(_lifecycle.py::_refuse_on_scope_lease_collision, AFFECT001/DRIFT001
-resolved). `pytest tests/unit/test_app_runners_batch7.py -k
-test_start_refuses_scope_colliding_with_other_in_progress_lease` fails
-identically on a clean HEAD (git-stash-blocked verification, see this
-report's own history) -- pre-existing test-environment flakiness
-(tickets/leases module git-common-dir lookup under pytest tmp dirs),
-unrelated to the two-comment removal; not introduced by this change.
+2. COV005 on brand-new private helpers (18 sites this batch, all one
+   file: .claude/hooks/root-write-guard.py; 5 more pre-existing
+   elsewhere, e.g. src/frob/gates/_coverage_sites.py per T-1943) --
+   23+ total waivers repo-wide, same reason every time: a new private
+   helper picks up a (kind, target) directive key already used by an
+   unrelated PUBLIC symbol elsewhere in the same file (this repo's own
+   frob:doc-anchor-reuse convention), which `_cov005`'s own docstring
+   already names as a known noise source it tried and did not fully
+   solve. Filed T-draft-934387c0 (scope: src/frob/gates/__init__.py,
+   src/frob/gates/_coverage_sites.py) proposing a narrower rebind check
+   (require the OLD public symbol's span to actually be gone/shrunk, not
+   merely "some symbol in the file used to hold this key") plus a new
+   test fixture reproducing the false-positive shape alongside the
+   existing must-still-fire fixtures. Did not attempt the fix myself:
+   genuinely large (touches a detector with real history of catching
+   real bugs, T-0297) and belongs in its own scoped, tested change per
+   this ticket's own COP-OUT branch guidance ("if the fix is genuinely
+   large, replace it with a real ticket").
+
+No cop-outs found in this batch. No waiver deleted -- per this ticket's
+explicit instruction, a waiver is never removed to clear a finding; the
+two systemic patterns above got cause-level tickets instead of bulk
+edits.
+
+Banked via `frob ticket waive-audit complete --reviewed-count 100
+--cop-outs 0 --partial`: verdict=partial_progress_banked,
+catchup_remaining=967, new_watermark=
+2e6d5e426302ddf96d54c5c773c970a094f7b9cb (this worktree's local
+.frob/ state only -- per the watermark module's own by-design
+per-checkout scoping, this does not persist to main or other
+checkouts; the next pass, wherever it runs, restarts a fresh 100-item
+catch-up window unless run from this same worktree before it is
+removed. Not fixing that here -- it is T-2467's own deliberate design,
+out of T-1614's scope, and already documented in
+_waive_audit_watermark.py's own module docstring).
+
+Prior session's earlier pass-1/pass-2 narrative (still true, predates
+this pass, left intact above): 100 reviewed with 0 cop-outs, plus one
+genuine OBSOLETE pair found and fixed directly (AFFECT001/DRIFT001 on
+_lifecycle.py::_refuse_on_scope_lease_collision, both waivers removed
+and the body re-acked once their named blocker T-1883 landed) -- that
+fix is already on main and unrelated to this pass's two filed tickets.
+
+Cumulative reviewed across all passes on record: 200 (100 banked in a
+now-lost watermark + 100 banked this pass), 0 cop-outs found across
+either pass, 2 systemic-cause tickets filed, 2 waivers removed
+(obsolete, prior pass). 967 waivers remain in the mechanism's own
+not_covered count for the next periodic pass.
+
+Filed: T-draft-07669f4e (RENDER001 exemption-list extension),
+T-draft-934387c0 (COV005 false-positive narrowing). Both real-ticket
+ids to be confirmed post-land (drafts renumber at land per this repo's
+own convention).
+
+Gates: no code changed by this pass (classification + two ticket
+filings only), so no new gate surface. `frob check --ticket T-1614`
+was not re-run standalone since scope is empty of code changes this
+pass -- ticket state and the two draft tickets are the artifact.
 
 ### Changed
 ```
- tickets/T-1614/ticket.md           | 11 ++++++++++-
- tickets/T-2493/ticket.md | 26 ++++++++++++++++++++++++++
- 2 files changed, 36 insertions(+), 1 deletion(-)
+ tickets/T-1614/ticket.md           |  2 +-
+ tickets/T-draft-07669f4e/ticket.md | 58 ++++++++++++++++++++++++++++++
+ tickets/T-draft-934387c0/ticket.md | 72 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 131 insertions(+), 1 deletion(-)
 ```
 
 ### Evidence
@@ -76,5 +139,5 @@ unrelated to the two-comment removal; not introduced by this change.
 
 ### Captured claims
 - tests: 0 passed (from 0 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
-- error-findings: ARCH103@src/frob/release/_cli.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV001@src/frob/gates/_refs_schema.py, COV003@tickets/T-1205, COV003@tickets/T-1235, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2344, COV003@tickets/T-2348, DOC001@docs/commands/release.md, DOC002@src/frob/gates/_refs_schema.py, DOC005@docs/modules/cli.md, DOC008@docs/modules/gates.md, DOC011@docs/design/gate-semantics-classification.md, LEXCHECK001@src/frob/vet/_supplychain.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/app/ticket_runner/_new.py, PERF004@src/frob/scaffold/_skills_sync.py, PRE001@tickets/T-1614, RENDER001@src/frob/release/_cli.py, SEC110@.claude/hooks/root-write-guard.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TICK003@tickets.md, TICK004@tickets.md, WIRE003@docs/modules/cli.md
+- gates: 42 error(s), 792 warning(s), 679 waived
+- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV001@src/frob/graph/callgraph.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII010@src/frob/deploy/_audit.py, PII012@src/frob/doctor.py, PII012@src/frob/serve/_socketd.py, PII012@tests/system/test_cli_doctor.py, PII012@tests/test_capability_registry.py, PII012@tests/test_doctor.py, PII012@tests/test_hook_diagnosis_nudge.py, PII012@tests/test_prework_parity.py, PII012@tests/test_vet.py, PII012@tests/unit/test_doctor_runner_t1276.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md

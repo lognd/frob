@@ -1,7 +1,7 @@
 ---
 id: T-1614
 title: 'RUNS LAST: audit every frob:waive for cop-outs, after all other work is complete'
-state: in-progress
+state: done
 kind: security
 origin: human
 created: '2026-08-05'
