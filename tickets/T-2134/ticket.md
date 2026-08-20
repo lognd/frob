@@ -2,7 +2,7 @@
 id: T-2134
 title: tickets.md monofile looks stale/orphaned since the v2 sharded-ticket migration
   -- investigate and remove or document
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-11'
@@ -11,10 +11,32 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tickets.md
+- tickets/T-2684/**
+evidence_scope:
+- tests/test_tickets_migration.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-2684/**
+  reason: own residue ticket filed mid-investigation, per playbook sec 8
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-2684/**
+  reason: own residue ticket filed mid-investigation, per playbook sec 8
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_with_a_lingering_monofile_errors
+- tests/test_tickets_migration.py::TestLedgerV1DeprecationGate::test_v2_mode_repo_is_silent
 designated_repro_test: null
 threat: null
 component: null
