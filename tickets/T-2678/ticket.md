@@ -84,7 +84,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 970a4a6a08af73bb0338bab61a59764f00763279
 ---
 `frob ticket body <id> --set-file/--append-file` against an ARCHIVED
 ticket (living in `tickets/archive/<id>/`) writes its updated
