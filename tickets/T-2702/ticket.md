@@ -2,7 +2,7 @@
 id: T-2702
 title: 'T-2690''s phantom-refile fix does not work: two more auto-filed recoveries
   from lands that contained it'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_fix_engine.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - tests/test_gates.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,7 +66,29 @@ scope_changes:
     the existing home for the T-2690 controls
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 fires for fix_tick006_phantom_refile's own affects()-closure doc;
+    added a T-2702 paragraph to gates.md's TICK006 section
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 fires for fix_tick006_phantom_refile's own affects()-closure doc;
+    added a T-2702 paragraph to gates.md's TICK006 section
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: AFFECT001 fires for fix_tick006_phantom_refile's own affects()-closure doc;
+    added a T-2702 paragraph to gates.md's TICK006 section
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_lookup_failure_then_clean_retry_recovers_correctly
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
+designated_repro_test: tests/test_gates.py::TestFixEngineTierA::test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket
 threat: null
 component: null
 anchor: false
