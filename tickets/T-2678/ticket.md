@@ -15,8 +15,9 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/tickets/_body.py
 - src/frob/app/ticket_runner/_mutate.py
+- src/frob/tickets/_setters.py
+- tests/unit/test_ticket_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,30 @@ scope_changes:
   glob: src/frob/app/ticket_runner/_mutate.py
   reason: 'T-2678: narrow to _body.py''s write path plus the CLI mutate wiring; _land_cmd.py
     held by T-2141, not touched by this fix'
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  glob: src/frob/tickets/_body.py
+  reason: 'T-2678: set_body actually lives in _setters.py (scope named a nonexistent
+    _body.py); the fix is a new _ticket_currently_archived helper + routing set_body''s
+    write through write_archived_ticket, tested alongside the existing TestWriteArchivedTicket
+    class in test_ticket_store.py'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: 'T-2678: set_body actually lives in _setters.py (scope named a nonexistent
+    _body.py); the fix is a new _ticket_currently_archived helper + routing set_body''s
+    write through write_archived_ticket, tested alongside the existing TestWriteArchivedTicket
+    class in test_ticket_store.py'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'T-2678: set_body actually lives in _setters.py (scope named a nonexistent
+    _body.py); the fix is a new _ticket_currently_archived helper + routing set_body''s
+    write through write_archived_ticket, tested alongside the existing TestWriteArchivedTicket
+    class in test_ticket_store.py'
   actor: logan
   at: '2026-08-19'
 triage_changes:
