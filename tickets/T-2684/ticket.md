@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
 - src/frob/tickets/_land_verify.py
+- tests/unit/test_check.py
+- tests/unit/test_land_verify_claim_divergence_sentinel.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +31,18 @@ scope_changes:
     EMPTY rule id (not on file==tickets.md) -- adding a real code would silently un-exclude
     the sentinel and reintroduce the exact ClaimDivergence-blocks-land bug T-1549
     fixed unless the exclusion is widened to also recognize QUEUE001 by code
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'T-2684: direct evidence test files for _gates_error_result''s new shape
+    and _land_verify.py''s widened sentinel exclusion'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_land_verify_claim_divergence_sentinel.py
+  reason: 'T-2684: direct evidence test files for _gates_error_result''s new shape
+    and _land_verify.py''s widened sentinel exclusion'
   actor: logan
   at: '2026-08-19'
 body_changes:
