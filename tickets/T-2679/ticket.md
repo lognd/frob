@@ -30,6 +30,21 @@ scope_changes:
     sequencing'
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-2679: TICK011 needs a literal Filed: line in the Done report; no residue
+    tickets were opened for this fix'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2043
+  new_length: 2056
+- mode: append
+  reason: 'T-2679: TICK011 needs a literal Filed: line in the Done report; no residue
+    tickets were opened for this fix'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2056
+  new_length: 2069
 evidence:
 - tests/test_ticket_land.py::TestFinalizeRepairMarker::test_no_marker_is_a_silent_no_op
 - tests/test_ticket_land.py::TestFinalizeRepairMarker::test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not
@@ -94,3 +109,7 @@ re-run the touched test file on main, then `frob ticket land --finish`,
 which recognises the ticket as already done and runs only cleanup.
 Note the cherry-picks are NEW commits, so the original worktree shas
 read NOT-ON-MAIN -- verify by CONTENT, never by ancestry of the old shas.
+
+Filed: none
+
+Filed: none
