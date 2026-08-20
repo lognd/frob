@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_coordinator_scripts.py
   reason: test coverage for the REPO-resolution fix lives in this file
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: frob:doc target for the REPO constant this ticket changes
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
