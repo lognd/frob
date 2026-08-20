@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8fe7c92f401d41c26c7c47b498df92d04d53bab8
 ---
 Reported by a downstream consumer (aprog-public) 2026-08-20, and VERIFIED
 AND FIXED by the coordinator -- the patch is written and proven, it just
