@@ -64,9 +64,20 @@ class DependencyGraph
     @property
     def nodes(self) -> frozenset[str]
     def neighbors(self, node: str) -> set[str]
+    @property
+    def degraded_languages(self) -> tuple[str, ...]
+        # T-2700: one warning per language present among this graph's own
+        # node ids whose import_graph capability is a live registry
+        # KNOWN_GAP -- empty in the common case (see docs/modules/
+        # graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683).
 
 def find_cycles(graph: DependencyGraph) -> list[list[str]]
     # Tarjan's SCC algorithm; every strongly connected component of size
     # >= 2 (or a self-loop) is a cycle, the single entry point behind
-    # `frob cycle`.
+    # `frob cycle`. T-2700: logs a WARNING when
+    # `graph.degraded_languages` is non-empty -- the return shape itself
+    # is unchanged, but every real caller (frob cycle, the CYCLE001 gate,
+    # frob.arch's cycle smell) now sees its own input silently disclose
+    # when cycle detection is incomplete for a language, instead of
+    # reporting a falsely-clean result.
 ```

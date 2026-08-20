@@ -414,10 +414,26 @@ One human-readable warning per language in `languages` whose
 common case (every registered language is `call_graph`/`import_graph`
 `IMPLEMENTED` today, T-1599). `frob.cycle.import_graph_gap_disclosure`
 (`src/frob/cycle/__init__.py`) is the same primitive pre-bound to
-`import_graph`, exposed for `frob.cycle.graph`'s own future use -- **not
-yet wired into `DependencyGraph`/`find_cycles`'s own output**, since
-that file sat outside T-2683's own declared scope; tracked as T-2700.
-<!-- frob:until T-2700 -->
+`import_graph`, exposed for `frob.cycle.graph`'s own future use.
+
+<!-- frob:describes src/frob/cycle/graph.py::DependencyGraph.degraded_languages -->
+<!-- frob:describes src/frob/cycle/graph.py::find_cycles -->
+
+T-2700 finished the wiring T-2683 deliberately left half-done:
+`DependencyGraph.degraded_languages` derives the languages present from the
+graph's OWN node ids (every real caller -- `frob.app.cycle_runner`,
+`frob.check._python`'s CYCLE001 gate, `frob.arch._smells` -- adds nodes
+as project-relative file paths, so the suffix alone is enough, no extra
+argument needs threading through any of them) and `find_cycles` logs a
+WARNING when it is non-empty, the same self-disclosure posture `build_
+call_graph` already has for `CallGraph.degraded_languages`. Because
+`find_cycles(graph)` is the one call every consumer already makes, this
+reaches all three real callers -- including the CYCLE001 gate `frob
+check` runs -- without editing any of those three files: a repo whose
+language has a live `import_graph` `KNOWN_GAP` gets cycle output that
+NAMES the degradation, and a fully-supported repo gets no added log
+noise (`tests/test_graph.py::TestDependencyGraphDegradedLanguages`
+proves both directions).
 
 ## Import graph
 

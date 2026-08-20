@@ -2,7 +2,7 @@
 id: T-2700
 title: Wire import_graph_gap_disclosure into frob.cycle.graph's real DependencyGraph/find_cycles
   output
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'

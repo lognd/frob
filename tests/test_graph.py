@@ -2895,9 +2895,10 @@ class TestCapabilityGapDisclosure:
 # frob:ticket T-2683
 class TestCycleImportGraphGapDisclosure:
     """`frob.cycle.import_graph_gap_disclosure` -- the same `capability_
-    gap_disclosure` primitive pre-bound to `import_graph`, exposed for
-    `frob.cycle`'s own future use (not yet wired into `DependencyGraph`/
-    `find_cycles`'s own output, T-2700)."""
+    gap_disclosure` primitive pre-bound to `import_graph`. T-2700 wired
+    the same primitive directly into `DependencyGraph.degraded_languages`/
+    `find_cycles`'s own output -- see `TestDependencyGraphDegradedLanguages`
+    below for that wiring's own positive/negative controls."""
 
     def test_empty_for_no_gap(self) -> None:
         # frob:tests src/frob/cycle/__init__.py::import_graph_gap_disclosure
@@ -2940,3 +2941,90 @@ class TestCycleImportGraphGapDisclosure:
         warnings = import_graph_gap_disclosure(frozenset({"python"}))
         assert warnings != ()
         assert any("import_graph" in w for w in warnings)
+
+
+class TestDependencyGraphDegradedLanguages:
+    """T-2700: `DependencyGraph.degraded_languages` and `find_cycles`'s
+    own logged disclosure -- proven both ways (clean-tree empty AND
+    silent, monkeypatched-gap non-empty AND logged) so neither a vacuous
+    "always empty" shape nor a "warns on every run" shape could pass
+    this suite."""
+
+    def test_clean_tree_has_no_degraded_languages_and_no_log_noise(
+        self, caplog
+    ) -> None:
+        # frob:tests src/frob/cycle/graph.py::DependencyGraph.degraded_languages
+        # frob:tests src/frob/cycle/graph.py::find_cycles
+        """Negative control: a fully-supported language produces neither
+        a non-empty `degraded_languages` nor a WARNING log line -- the
+        disclosure must not become noise on every ordinary run."""
+        import logging
+
+        from frob.cycle.graph import DependencyGraph, find_cycles
+
+        graph = DependencyGraph()
+        graph.add_node("src/a.py")
+        graph.add_edge("src/a.py", "src/b.py")
+        graph.add_node("src/b.py")
+
+        # Every registered language is import_graph-IMPLEMENTED today
+        # (T-1599) -- this is a real, not vacuous, empty-set assertion.
+        assert graph.degraded_languages == ()
+
+        with caplog.at_level(logging.WARNING, logger="frob.cycle.graph"):
+            find_cycles(graph)
+        assert not [
+            r for r in caplog.records if "import_graph" in r.getMessage()
+        ]
+
+    def test_known_gap_is_disclosed_on_degraded_languages_and_logged(
+        self, monkeypatch, caplog
+    ) -> None:
+        # frob:tests src/frob/cycle/graph.py::DependencyGraph.degraded_languages
+        # frob:tests src/frob/cycle/graph.py::find_cycles
+        """Positive control: monkeypatch python's import_graph cell to a
+        live KNOWN_GAP and confirm BOTH `DependencyGraph.degraded_
+        languages` announces it AND `find_cycles` logs a WARNING on its
+        own real invocation -- proving the wiring actually fires end to
+        end, not just that the field exists on the model."""
+        import logging
+
+        import frob.lang._support as support_module
+        from frob.cycle.graph import DependencyGraph, find_cycles
+        from frob.lang._support import (
+            CapabilityRequirement,
+            CapabilityStatus,
+            FacetState,
+        )
+
+        real_derive = support_module.derive_capability_registry
+
+        def _fake_registry():
+            registry = real_derive()
+            python_support = registry["python"]
+            gapped = dict(python_support.capabilities)
+            gapped["import_graph"] = CapabilityStatus(
+                requirement=CapabilityRequirement.REQUIRED,
+                state=FacetState.KNOWN_GAP,
+                detail="synthetic gap for T-2700's own positive control",
+            )
+            registry["python"] = python_support.model_copy(
+                update={"capabilities": gapped}
+            )
+            return registry
+
+        monkeypatch.setattr(
+            support_module, "derive_capability_registry", _fake_registry
+        )
+
+        graph = DependencyGraph()
+        graph.add_node("src/a.py")
+
+        warnings = graph.degraded_languages
+        assert warnings != ()
+        assert any("import_graph" in w for w in warnings)
+
+        with caplog.at_level(logging.WARNING, logger="frob.cycle.graph"):
+            find_cycles(graph)
+        matched = [r for r in caplog.records if "import_graph" in r.getMessage()]
+        assert matched, "find_cycles did not log the degraded-language disclosure"

@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterator
+from pathlib import Path
+
+from frob.logging import get_logger
+
+_log = get_logger(__name__)
 
 
 # frob:doc docs/commands/cycle.md#public-api
@@ -28,6 +33,45 @@ class DependencyGraph:
     # frob:doc docs/commands/cycle.md#public-api
     def neighbors(self, node: str) -> set[str]:
         return self._edges.get(node, set())
+
+    # frob:ticket T-2700
+    # frob:doc \
+    # docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683
+    # frob:waive WIRE001 reason="already called at runtime from find_cycles in this \
+    # same file (graph.degraded_languages, a few lines below) -- a @property is \
+    # accessed WITHOUT call-parens by design, which is exactly the shape WIRE001's \
+    # syntactic short(...) scan cannot see; genuinely wired, not dead, proven by \
+    # tests/test_graph.py::TestDependencyGraphDegradedLanguages" \
+    # follow_up="T-2746"
+    @property
+    def degraded_languages(self) -> tuple[str, ...]:
+        """T-2700: `CallGraph.degraded_languages`'s (T-2683) analogue for
+        `DependencyGraph` -- one human-readable warning per language
+        present among THIS graph's own node ids whose `import_graph`
+        capability cell is a live registry `KNOWN_GAP`, so cycle
+        detection's own input can self-disclose "my edges are silently
+        incomplete for language X" the same way `build_call_graph`'s
+        output already does. Empty in the common case (every registered
+        language is `import_graph`-`IMPLEMENTED` today, T-1599).
+
+        Every real caller in this repo (`frob.app.cycle_runner`,
+        `frob.check._python._build_import_graph`, `frob.arch._smells`)
+        adds nodes as project-relative FILE paths (`add_node`/`add_edge`
+        both take the same string identity `_process_path` and friends
+        register), so the language present per node can be derived from
+        its suffix the same way `frob.graph.callgraph._languages_present`
+        derives it from an explicit `paths` argument -- no second
+        parameter needs threading through every caller, the graph
+        already carries what it needs."""
+        from frob.cycle import import_graph_gap_disclosure
+        from frob.lang import language_for_extension
+
+        languages: set[str] = set()
+        for node in self._nodes:
+            label = language_for_extension(Path(node).suffix)
+            if label is not None:
+                languages.add(label)
+        return import_graph_gap_disclosure(frozenset(languages))
 
 
 class _TarjanState:
@@ -106,12 +150,34 @@ class _TarjanState:
 
 
 # frob:doc docs/commands/cycle.md#public-api
+# frob:ticket T-2700
+# frob:doc \
+# docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683
 def find_cycles(graph: DependencyGraph) -> list[list[str]]:
     """
     Return a list of cycles using Tarjan's SCC algorithm.
     Each cycle is the set of nodes in a strongly connected component
     with size >= 1 (self-loops count).
+
+    T-2700: logs a WARNING (once per call, never raises/mutates the
+    return shape -- every existing caller's `list[list[str]]` contract
+    is unchanged) when `graph.degraded_languages` is non-empty, the
+    same self-disclosure posture `build_call_graph` already has for
+    `CallGraph.degraded_languages` (T-2683). This is what makes every
+    real consumer -- `frob.app.cycle_runner`, `frob.check._python`'s
+    CYCLE001 gate, `frob.arch._smells` -- actually SEE the disclosure
+    on its own real invocation, without any of those three files
+    needing an edit: they all already call `find_cycles(graph)`.
     """
+    degraded = graph.degraded_languages
+    if degraded:
+        _log.warning(
+            "find_cycles: %d language(s) present with a live import_graph "
+            "capability KNOWN_GAP -- cycle detection silently omits edges "
+            "for them: %s",
+            len(degraded),
+            degraded,
+        )
     state = _TarjanState(graph)
     # Deterministic node order, sorted once up front (not per-iteration).
     ordered_nodes = sorted(graph.nodes)
