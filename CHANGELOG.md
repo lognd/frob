@@ -181,6 +181,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
 - T-2702: T-2690's phantom-refile fix does not work: two more auto-filed recoveries from lands that contained it
 - T-2708: make install-tool is broken on uv 0.11.19: uv tool install has no --extra flag, blocking the only sanctioned install path
+- T-2713: Deferred verification advances the watermark and records the rolling baseline from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)
 
 ## [0.530.0] - unreleased
 

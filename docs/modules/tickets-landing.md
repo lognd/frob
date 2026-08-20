@@ -2450,6 +2450,65 @@ recur. When it does, `budget_deferred=` names it on the very
 defect this ticket exists for: a clean-looking result from an incomplete
 run.
 
+### A resumed run can hide truncation from BOTH T-1703/T-2456 signals (T-2713)
+
+<!-- frob:describes src/frob/app/ticket_runner/_verify.py::_budget_skipped_groups_from_payload -->
+
+T-1703/T-2456 above both key off `--budget`'s PER-INVOCATION `deferred`
+list: the stage groups THIS spawn's own `remaining` set could not fit
+inside `budget_s`. That list is empty -- no `"budget"` tool result, no
+`BUDGET001` diagnostic anywhere in `results` -- whenever `remaining`
+itself was already narrow going in, because `_resolve_budget_remaining`
+resumes from a PERSISTED resume file (`.frob/check-budget-remaining.
+json`) an EARLIER, unrelated `--budget` invocation left behind. A run
+that resumes 1-2 leftover groups, finishes them well inside budget, and
+reports its own zero-deferred result is structurally indistinguishable
+from a genuinely complete run at the `_budget_deferred_stage_groups`
+layer -- even though 3-4 OTHER stage groups (most of the repo's real
+error surface) never executed this invocation at all.
+
+MEASURED live incident (2026-08-20): `frob verify now` spawned exactly
+this shape, saw 2 error identities (`CLAUDE001`, `CYCLE001`), reported
+`GREEN`, advanced the watermark past 54 commits, and recorded those 2
+identities as the next rolling baseline `.frob/rapid-sweep-baseline.
+json` diffs against -- while an independent unbudgeted `frob check
+--json` on the identical tree found 40 distinct error identities. The
+poisoned baseline then explains the SIZE and RECURRENCE of a whole class
+of prior "regression" tickets filed against the wrong land (T-2381/
+T-2474/T-2525/T-2560, 27-39 identities each, all triaged and dropped as
+false) that T-2595's baseline-race fix and T-2571's phantom-deleted-path
+fix each only partially explained.
+
+`_budget_coverage_report`'s own T-2235 fix already closed the PRODUCER
+side of this gap: the top-level `data["budget"]["skipped_groups"]` field
+(alongside `executed_groups`/`complete`) is computed against
+`available_stages()`'s FULL universe every invocation, independent of
+resume-state history -- "the only way a single invocation's JSON stays
+honest about what IT ran" (that function's own docstring). What stayed
+unfixed until T-2713 was the CONSUMER side: neither `_parse_error_
+findings_from_json` nor `_budget_deferred_groups_from_stdout` ever read
+that field, so its honesty was invisible to every caller
+(`_unscoped_error_findings`, `run_coalesced_verification`'s `_default_
+verify_fn`, `run_deferred_post_land_sweep`) that exists specifically to
+catch this class of gap.
+
+`_budget_skipped_groups_from_payload` (`_verify.py`) reads `data
+["budget"]["skipped_groups"]` directly -- a deliberately WIDER,
+resume-history-independent signal than `_budget_deferred_stage_groups`.
+`_parse_error_findings_from_json` now checks it as a fourth independent
+`None`-producing branch (alongside the T-2521/T-1703 checks already
+there), and `_budget_deferred_groups_from_stdout` unions it into the
+group names it surfaces, so a resume-narrowed run's `LAND-PROOF:
+budget_deferred=` line names the true skipped set, not just whatever
+this invocation's own overflow happened to be. Every downstream
+consumer inherits the fix for free through the shared `None`-is-
+unmeasurable contract -- no caller-side change needed: an unmeasurable
+`run_coalesced_verification` result never advances the watermark or
+records a baseline (`WorkerError.Unmeasurable`), and an unmeasurable
+`run_deferred_post_land_sweep` result leaves the rolling baseline
+untouched (`RapidSweepError.Unmeasurable`), exactly as a fully-truncated
+run already did before this ticket.
+
 ## `frob check --land-parity` (T-1535)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings -->

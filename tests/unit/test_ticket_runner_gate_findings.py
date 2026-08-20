@@ -288,6 +288,54 @@ _FAILED_BUT_LOUD_TOOL_STDOUT = json.dumps(
 )
 
 
+# frob:ticket T-2713
+# T-2713's own reproduced incident: a `--budget` run that inherited an
+# already-narrow resume file from an EARLIER, unrelated invocation. This
+# run's own `remaining` was just `gate:SEC`, it finished that inside
+# budget, and its own `deferred` list is empty -- so no "budget" tool
+# result/BUDGET001 diagnostic appears in `results` at all, structurally
+# identical to a genuinely complete run at that layer. The ONLY signal
+# this run was partial is the top-level `budget.skipped_groups` field
+# (T-2235), naming the 4 other stage groups this invocation never
+# attempted.
+_BUDGET_RESUME_NARROWED_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "gate:SEC",
+                "exit_code": 0,
+                "diagnostics": [
+                    {
+                        "file": ".claude/hooks/sync-claude-config.py",
+                        "line": 1,
+                        "col": 1,
+                        "severity": "error",
+                        "code": "CLAUDE001",
+                        "message": "x",
+                    }
+                ],
+                "tests": [],
+                "summary": "1 errors, 0 warnings, 0 waived",
+            },
+            {
+                "tool": "gate-summary",
+                "exit_code": 0,
+                "diagnostics": [],
+                "tests": [],
+                "summary": "1 errors, 0 warnings, 0 waived  [archgate=1.00s]",
+            },
+        ],
+        "budget": {
+            "requested_seconds": 480,
+            "executed_groups": ["gates-security"],
+            "skipped_groups": ["gates-fast", "gates-native", "lint", "static"],
+            "complete": False,
+        },
+    }
+)
+
+
 class TestCheckGateFindingsFn:
     """`_check_gate_findings_fn` parsing/filtering behavior -- each method
     below carries its own `frob:tests` edge (T-1055: this class docstring
@@ -629,6 +677,64 @@ class TestParseErrorFindingsFromJson:
         fn = ticket_runner._check_gates_summary_fn(tmp_path, "T-0001")
         assert fn() is None
 
+    # frob:ticket T-2713
+    def test_resume_narrowed_run_yields_none_not_a_partial_set(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_resume_narrowed_run_yields_none_not_a_partial_set  # noqa: E501
+        """T-2713's live incident: a run that inherited an already-narrow
+        resume file from an EARLIER, unrelated invocation reports its own
+        `deferred` list as empty (nothing it selected overflowed ITS
+        budget) -- no `"budget"` tool result, no `BUDGET001` diagnostic
+        anywhere in `results`. Only the top-level `budget.skipped_groups`
+        field names the 4 stage groups this invocation never even
+        attempted. Must still parse as `None` (unmeasured), never as "the
+        1 finding the 1 group that DID run happened to see"."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _BUDGET_RESUME_NARROWED_STDOUT, 0
+        )
+        assert findings is None
+
+
+class TestBudgetSkippedGroupsFromPayload:
+    """T-2713: `_budget_skipped_groups_from_payload` reads the T-2235
+    top-level `data["budget"]["skipped_groups"]` field -- the WIDER,
+    resume-history-independent completeness signal `_budget_deferred_
+    stage_groups` alone cannot see."""
+
+    # frob:ticket T-2713
+    def test_reads_top_level_skipped_groups(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPa\
+        # yload.test_reads_top_level_skipped_groups
+        """The exact `_BUDGET_RESUME_NARROWED_STDOUT` fixture whose
+        `results` list carries no BUDGET001 diagnostic at all must still
+        surface its 4 top-level `skipped_groups` names via this
+        reading."""
+        data = json.loads(_BUDGET_RESUME_NARROWED_STDOUT)
+        skipped = ticket_runner._budget_skipped_groups_from_payload(data)
+        assert skipped == ("gates-fast", "gates-native", "lint", "static")
+
+    # frob:ticket T-2713
+    def test_empty_when_complete_or_absent(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPa\
+        # yload.test_empty_when_complete_or_absent
+        """A non-budgeted payload (no `"budget"` key) and a fully-complete
+        budgeted payload (`skipped_groups: []`) both report `()` -- the
+        must-still-pass positive control for a genuinely measured run."""
+        assert ticket_runner._budget_skipped_groups_from_payload({"results": []}) == ()
+        complete = {
+            "results": [],
+            "budget": {
+                "requested_seconds": 480,
+                "executed_groups": ["gates-fast"],
+                "skipped_groups": [],
+                "complete": True,
+            },
+        }
+        assert ticket_runner._budget_skipped_groups_from_payload(complete) == ()
+
 
 class TestBudgetDeferredGroupsFromStdout:
     """T-2456: `_budget_deferred_groups_from_stdout` is the additive,
@@ -682,6 +788,21 @@ class TestBudgetDeferredGroupsFromStdout:
             }
         )
         assert ticket_runner._budget_deferred_groups_from_stdout(clean) == ()
+
+    # frob:ticket T-2713
+    def test_includes_resume_narrowed_skipped_groups(self) -> None:
+        # frob:tests \
+        # tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromS\
+        # tdout.test_includes_resume_narrowed_skipped_groups
+        """T-2713: a resume-narrowed run (no `BUDGET001` diagnostic, only
+        a top-level `budget.skipped_groups`) must still name its skipped
+        groups here -- a `LAND-PROOF: budget_deferred=` line reading only
+        the narrower `_budget_deferred_stage_groups` signal would
+        under-report exactly this incident."""
+        deferred = ticket_runner._budget_deferred_groups_from_stdout(
+            _BUDGET_RESUME_NARROWED_STDOUT
+        )
+        assert deferred == ("gates-fast", "gates-native", "lint", "static")
 
 
 class TestPythonForTree:

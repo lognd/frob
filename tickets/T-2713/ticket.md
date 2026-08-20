@@ -2,7 +2,7 @@
 id: T-2713
 title: Deferred verification advances the watermark and records the rolling baseline
   from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -81,6 +81,11 @@ scope_changes:
     tickets-landing.md
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload::test_reads_top_level_skipped_groups
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload::test_empty_when_complete_or_absent
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_resume_narrowed_run_yields_none_not_a_partial_set
+- tests/unit/test_ticket_runner_gate_findings.py::TestBudgetDeferredGroupsFromStdout::test_includes_resume_narrowed_skipped_groups
 designated_repro_test: null
 threat: null
 component: null

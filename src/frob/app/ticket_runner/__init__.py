@@ -31,8 +31,6 @@ from frob.process._guard import guarded_subprocess_run
 
 from ._archive import _archive
 from ._attach_backfill import _attach_dispatch
-# frob:ticket T-2647
-from ._ledger_mirror import OWN_TRANSACTION_VERBS as _LEDGER_TRANSACTIONAL_VERBS
 from ._close_cmd import (
     _apply_close_time_evidence,
     _close,
@@ -69,6 +67,9 @@ from ._land_cmd import (
     _sync_gate_rules_for_land,
     _write_release_bump,
 )
+
+# frob:ticket T-2647
+from ._ledger_mirror import OWN_TRANSACTION_VERBS as _LEDGER_TRANSACTIONAL_VERBS
 from ._lifecycle import (
     _attach,
     _auto_plan_if_queued,
@@ -145,6 +146,7 @@ from ._verify import (
     _apply_cmd_evidence,
     _apply_evidence,
     _budget_deferred_groups_from_stdout,
+    _budget_skipped_groups_from_payload,
     _check_gate_findings_fn,
     _check_gates_summary_fn,
     _collect_python_and_rust_ids,
@@ -190,6 +192,7 @@ __all__ = [
     "_board",
     "_brief",
     "_budget_deferred_groups_from_stdout",
+    "_budget_skipped_groups_from_payload",
     "_check_gate_findings_fn",
     "_check_gates_summary_fn",
     "_close",

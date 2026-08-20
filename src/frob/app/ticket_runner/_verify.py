@@ -1167,19 +1167,75 @@ def _budget_deferred_groups_from_stdout(stdout: str) -> tuple[str, ...]:
     them) never got a chance to fire. Reuses `_parse_check_json` +
     `_budget_deferred_stage_groups` (T-1703) rather than a second parser,
     so this can never itself drift from what THOSE already recognize as
-    a deferral."""
+    a deferral.
+
+    T-2713: unioned with `_budget_skipped_groups_from_payload` (the
+    T-2235 top-level `skipped_groups` signal) -- `_budget_deferred_
+    stage_groups` alone misses a resumed invocation that inherited an
+    already-narrow resume file and therefore never even attempted the
+    groups an EARLIER, unrelated invocation deferred; see that helper's
+    own docstring for the measured incident. A `LAND-PROOF:
+    budget_deferred=` line naming only the narrower set would
+    under-report exactly the same gap `_parse_error_findings_from_json`
+    closes."""
     data = _parse_check_json(stdout)
     if data is None:
         return ()
     results = data.get("results")
     if not isinstance(results, list):
         return ()
-    return tuple(_budget_deferred_stage_groups(results))
+    names = dict.fromkeys(_budget_deferred_stage_groups(results))
+    names.update(dict.fromkeys(_budget_skipped_groups_from_payload(data)))
+    return tuple(names)
+
+
+# frob:ticket T-2713
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.te\
+# st_reads_top_level_skipped_groups
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestBudgetSkippedGroupsFromPayload.te\
+# st_empty_when_complete_or_absent
+def _budget_skipped_groups_from_payload(data: dict) -> tuple[str, ...]:
+    """The T-2235 top-level `data["budget"]["skipped_groups"]` field --
+    every stage group `available_stages()` names that this ONE invocation
+    did not itself execute, computed against the FULL universe regardless
+    of resume-state history (see `_budget_coverage_report`'s own
+    docstring).
+
+    T-2713: this is a DIFFERENT, WIDER signal than `_budget_deferred_
+    stage_groups`'s `results`-list `"budget"` tool entry. That narrower
+    signal only fires for groups THIS invocation's own budget could not
+    fit after starting from `remaining` -- and `remaining` itself can
+    already be a narrow leftover of an EARLIER, unrelated invocation's
+    persisted resume state (`.frob/check-budget-remaining.json`). The
+    measured live incident: a verify-worker/rapid-sweep spawn resumed a
+    resume file already trimmed to 1-2 stage groups by some prior,
+    unrelated `--budget` call, ran only those to completion well inside
+    budget, saw its OWN `deferred` list empty, and reported a fully
+    green, fully measured run -- while 3 of 5 stage groups (most of the
+    repo's real 40 error identities) never executed at all THIS
+    invocation and left no `BUDGET001` diagnostic anywhere in `results`
+    to say so. `data["budget"]["skipped_groups"]` is `_budget_coverage_
+    report`'s own T-2235 fix for exactly this gap (computed against
+    `all_groups`, "the only way a single invocation's JSON stays honest
+    about what IT ran, independent of resume-state history") -- but no
+    consumer in this module ever read it until now. Returns `()` for a
+    non-budgeted call (no `"budget"` key at all) or a budgeted call that
+    covered every group this invocation (`skipped_groups: []`)."""
+    budget_report = data.get("budget")
+    if not isinstance(budget_report, dict):
+        return ()
+    skipped = budget_report.get("skipped_groups")
+    if not isinstance(skipped, list):
+        return ()
+    return tuple(g for g in skipped if isinstance(g, str))
 
 
 # frob:ticket T-0846
 # frob:ticket T-0850
 # frob:ticket T-1703
+# frob:ticket T-2713
 def _parse_error_findings_from_json(
     ticket_id: str, data: dict
 ) -> frozenset[tuple[str, str]] | None:
@@ -1188,21 +1244,30 @@ def _parse_error_findings_from_json(
     `None` when the run is UNMEASURED -- not "measured zero", not
     "measured some" (T-1703).
 
-    THREE independent ways this returns `None`, all closing a real
+    FOUR independent ways this returns `None`, all closing a real
     incident:
 
     0. `_incomplete_tool_results` finds a FAILED tool result with zero
        error diagnostics (T-2521) -- see that function's own docstring;
        the live incident it fixes.
-    1. `--budget`-truncated (`_budget_deferred_stage_groups` finds a
-       `"budget"` tool result): gates that never ran emit no diagnostics
-       at all, so a partial run's `results` list is structurally
-       indistinguishable from a genuinely clean full run -- it is a
-       DIFFERENT question, not a smaller answer (T-1703's live incident:
-       a rolling-baseline sweep recorded `CLEAN, 0 errors` at a commit a
-       plain unscoped `frob check` found 5 errors in, 2 of them TICK006
-       regressions the same land had just introduced).
-    2. No `results` at all, or a run whose exit code and payload disagree
+    1. `--budget`-truncated THIS invocation (`_budget_deferred_stage_
+       groups` finds a `"budget"` tool result): gates that never ran
+       emit no diagnostics at all, so a partial run's `results` list is
+       structurally indistinguishable from a genuinely clean full run --
+       it is a DIFFERENT question, not a smaller answer (T-1703's live
+       incident: a rolling-baseline sweep recorded `CLEAN, 0 errors` at a
+       commit a plain unscoped `frob check` found 5 errors in, 2 of them
+       TICK006 regressions the same land had just introduced).
+    2. `--budget`-truncated across invocations (`_budget_skipped_groups_
+       from_payload` finds a non-empty top-level `skipped_groups`): the
+       T-2713 gap case 1 above misses entirely -- a resumed run whose OWN
+       `deferred` list is empty because it inherited an already-narrow
+       resume file from a prior, unrelated invocation, and therefore
+       never even attempted the stage groups that prior run deferred.
+       See that helper's own docstring for the measured incident (a
+       verify-worker run that reported GREEN, 2 error(s) at a commit an
+       independent unbudgeted `frob check` found 40 error identities in).
+    3. No `results` at all, or a run whose exit code and payload disagree
        in a way `_parse_check_json` already rejected as unparsable
        upstream -- callers see this via `_parse_check_json` returning
        `None` before this function is ever reached.
@@ -1232,6 +1297,20 @@ def _parse_error_findings_from_json(
             ticket_id,
             len(deferred),
             ", ".join(deferred),
+        )
+        return None
+    skipped = _budget_skipped_groups_from_payload(data)
+    if skipped:
+        _log.warning(
+            "ticket %s: `frob check --json --budget` run reported no "
+            "BUDGET001 deferral of its own, but %d stage group(s) (%s) "
+            "never executed THIS invocation at all (T-2713: inherited an "
+            "already-narrow resume file from an earlier, unrelated "
+            "invocation) -- error-finding identities are unmeasured, not "
+            "a partial set",
+            ticket_id,
+            len(skipped),
+            ", ".join(skipped),
         )
         return None
     incomplete = _incomplete_tool_results(results)
