@@ -560,6 +560,173 @@ def _clear_land_repair_marker(root: Path, ticket_id: str) -> None:
         _log.warning("land: %s could not clear land-repair marker: %s", ticket_id, exc)
 
 
+# frob:ticket T-2679
+# T-2679: `_land_finalize_and_close` is the step that writes the ticket's
+# TERMINAL state (`transition(..., DONE)`) -- and it commits that write
+# onto `worktree`'s own branch, which is NOT `root`, BEFORE
+# `_land_squash_apply` has run at all. The existing T-0907 land-repair
+# marker only brackets the squash-apply window (the ONLY step that
+# mutates `root`), so a kill DURING `_land_finalize_and_close` -- after
+# the worktree's ticket.md already reads `state: done`, evidence
+# recorded, Done report recorded, but before `root` has been touched at
+# all -- leaves no marker of its own. `root` itself is still safe (T-0907's
+# invariant: nothing commits there until the final squash commit), but
+# nothing previously recorded that a terminal write had happened at all --
+# a human/agent inspecting the killed worktree's OWN ticket store reads a
+# `done` ticket with no way to tell, from that reading alone, whether
+# `root` ever received the matching content. This marker closes that gap:
+# written immediately before `_land_finalize_and_close` runs, cleared in a
+# `finally` on any exit (mirroring `_write_land_repair_marker`'s own
+# unconditional-cleanup shape), and reconciled -- LOUDLY, never silently
+# -- by `_repair_stale_finalize_markers` at the start of the NEXT
+# `land()` call against the same `root`, for ANY ticket (the whole
+# directory is scanned, same as `_repair_stale_land_marker`'s own T-1963
+# posture), not just a retry of the same one. This is a strictly
+# ADDITIONAL observability aid on top of the pre-existing, already-safe
+# recovery path (T-0795's idempotent retry already resumes a worktree
+# left mid-close cleanly) -- it exists purely so a killed land's terminal
+# write is never invisible to the next reader of this module's own
+# machinery, closing the "the ledger asserted work shipped that had not"
+# failure shape at its source rather than relying on a human noticing.
+_FINALIZE_REPAIR_DIRNAME = "finalize-repair"
+
+
+def _finalize_repair_dir(root: Path) -> Path:
+    """`<root>/.frob/finalize-repair`, where a crashed `land()`'s
+    in-flight terminal-state write is recorded (T-2679) so a later
+    invocation can surface it loudly instead of leaving it invisible."""
+    return root / ".frob" / _FINALIZE_REPAIR_DIRNAME
+
+
+def _finalize_repair_marker_path(root: Path, ticket_id: str) -> Path:
+    """The per-ticket finalize-repair marker path under `root` (T-2679)."""
+    return _finalize_repair_dir(root) / f"{ticket_id}.json"
+
+
+# frob:ticket T-2679
+# frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
+def _write_finalize_repair_marker(root: Path, ticket_id: str, worktree: Path) -> None:
+    """Record `worktree` under `root`'s finalize-repair marker for
+    `ticket_id` (T-2679), immediately BEFORE `_land_finalize_and_close`
+    starts writing `ticket_id`'s terminal state -- so a crash between this
+    write and `_clear_finalize_repair_marker` (including an uncatchable
+    SIGKILL) leaves a durable record of exactly which worktree was in the
+    middle of a close-to-DONE write, for `_repair_stale_finalize_markers`
+    to reconcile on the next `land()` call. Best-effort, like its T-0907
+    sibling: a write failure is logged but never fails the land itself --
+    `root` staying untouched until the squash commit is the primary safety
+    invariant regardless of whether this marker exists."""
+    path = _finalize_repair_marker_path(root, ticket_id)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps({"ticket_id": ticket_id, "worktree": str(worktree)}) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not write finalize-repair marker (%s) -- "
+            "proceeding without the T-2679 crash-visibility aid for this run",
+            ticket_id,
+            exc,
+        )
+
+
+# frob:ticket T-2679
+# frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
+def _clear_finalize_repair_marker(root: Path, ticket_id: str) -> None:
+    """Remove `ticket_id`'s finalize-repair marker under `root`, if any
+    (T-2679) -- called when `_land_finalize_and_close` returns for ANY
+    reason (success or a clean, handled `Err`), from a `finally` block,
+    mirroring `_clear_land_repair_marker`'s own unconditional-cleanup
+    shape."""
+    path = _finalize_repair_marker_path(root, ticket_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        _log.warning(
+            "land: %s could not clear finalize-repair marker: %s", ticket_id, exc
+        )
+
+
+# frob:ticket T-2679
+# frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_is_silent_when_root_already_shows_the_ticket_done  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+def _repair_stale_finalize_markers(root: Path) -> None:
+    """Reconcile every leftover T-2679 finalize-repair marker under `root`
+    (called at the very start of `_land_locked`, right alongside its
+    T-0907 sibling `_repair_stale_land_marker`, before this run's own
+    marker for `ticket_id` is written): for each marker found, LOUDLY log
+    (`_log.error`, never silent) if `root`'s OWN ledger does not already
+    show the marker's ticket as landed -- meaning a prior `land()` crashed
+    strictly between writing that ticket's terminal state onto its
+    worktree and this run reconciling, with `root` never having received
+    the matching content (T-0907's own guarantee: `root` is untouched
+    until the squash commit, so a live finalize-repair marker with no
+    matching `done` state on `root` unambiguously means exactly this).
+    Never refuses (`land()` proceeds regardless) -- this is a visibility
+    aid for a state the pre-existing T-0795 retry path already recovers
+    from cleanly; the point is that the NEXT invocation of this module's
+    own orchestrator surfaces the anomaly itself, rather than depending on
+    a human noticing or a separate `frob ticket reconcile` sweep ever
+    being run. Best-effort throughout: an unreadable marker or a load
+    failure is logged and the marker is still cleared, never allowed to
+    block landing forever."""
+    marker_dir = _finalize_repair_dir(root)
+    if not marker_dir.is_dir():
+        return
+    from frob.tickets import _load_one
+    from frob.tickets._models import TicketState
+
+    for marker_path in sorted(marker_dir.glob("*.json")):
+        marker_ticket_id = marker_path.stem
+        worktree_hint = "<unknown>"
+        try:
+            raw = json.loads(marker_path.read_text(encoding="utf-8"))
+            worktree_hint = str(raw.get("worktree", worktree_hint))
+        except (OSError, ValueError) as exc:
+            _log.warning(
+                "land: found an unreadable T-2679 finalize-repair marker "
+                "at %s (%s) -- clearing it; inspect %s's own ticket store "
+                "by hand if a crashed land is suspected",
+                marker_path,
+                exc,
+                marker_ticket_id,
+            )
+            marker_path.unlink(missing_ok=True)
+            continue
+
+        on_root = _load_one(root, marker_ticket_id)
+        already_landed = (
+            on_root.is_ok and on_root.danger_ok.state is TicketState.DONE
+        )
+        if not already_landed:
+            _log.error(
+                "land: %s's terminal state was written to worktree %s by a "
+                "prior `frob ticket land` that crashed before that content "
+                "ever reached %s (T-2679: the worktree's own ticket.md may "
+                "read `state: done` with evidence/a Done report recorded, "
+                "but %s does NOT show %s landed -- root was never touched, "
+                "so nothing here is lost, but the ledger must never be "
+                "trusted as shipped from this reading alone). If %s still "
+                "exists, retry `frob ticket land %s --worktree %s` to "
+                "resume and land it for real; if it was removed, the "
+                "content is only recoverable from that worktree's own "
+                "branch history",
+                marker_ticket_id,
+                worktree_hint,
+                root,
+                root,
+                marker_ticket_id,
+                worktree_hint,
+                marker_ticket_id,
+                worktree_hint,
+            )
+        marker_path.unlink(missing_ok=True)
+
+
 # frob:ticket T-0907
 # frob:ticket T-1963
 # frob:tests tests/test_ticket_land.py::TestLandRepairMarker.test_repair_resets_root_when_current_tip_matches_the_marker  # noqa: E501
@@ -1757,6 +1924,10 @@ def _land_locked(
     repaired = _repair_stale_land_marker(root)
     if repaired.is_err:
         return Err(repaired.danger_err)
+    # T-2679: reconciled right alongside the T-0907 marker above, same
+    # "start of every land() call, whole directory" posture -- see
+    # `_repair_stale_finalize_markers`'s own docstring.
+    _repair_stale_finalize_markers(root)
 
     root_pre_land_tip = _rev_parse(root, "HEAD")
     if root_pre_land_tip.is_err:
@@ -1935,14 +2106,24 @@ def _land_locked(
         if dry_run_report is not None:
             return Ok(dry_run_report)
 
-        finalized = _land_finalize_and_close(
-            root,
-            worktree,
-            ticket_id,
-            did_merge,
-            main_branch_name,
-            covers_scope=covers_scope,
-        )
+        # T-2679: brackets the ONE step that writes ticket_id's terminal
+        # state (`_land_finalize_and_close`'s own `transition(..., DONE)`,
+        # committed onto `worktree` -- NOT `root`) with the same
+        # write-before/clear-in-finally shape the T-0907 marker below uses
+        # for the squash-apply step -- see `_write_finalize_repair_marker`'s
+        # own docstring for the crash window this closes.
+        _write_finalize_repair_marker(root, ticket_id, worktree)
+        try:
+            finalized = _land_finalize_and_close(
+                root,
+                worktree,
+                ticket_id,
+                did_merge,
+                main_branch_name,
+                covers_scope=covers_scope,
+            )
+        finally:
+            _clear_finalize_repair_marker(root, ticket_id)
         if finalized.is_err:
             return Err(finalized.danger_err)
         final_id = finalized.danger_ok

@@ -2,7 +2,7 @@
 id: T-2679
 title: A timed-out land marks the ticket done and records evidence while zero code
   reaches main
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

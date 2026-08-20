@@ -8052,6 +8052,74 @@ class TestLandRepairMarker:
         assert not marker.exists()
 
 
+# frob:ticket T-2679
+class TestFinalizeRepairMarker:
+    """T-2679: `_repair_stale_finalize_markers` reconciles a crashed
+    land's leftover finalize-repair marker at the start of the NEXT
+    `land()` call against the same root, for ANY ticket -- the visibility
+    aid for the "terminal state written to a worktree, but root never
+    received the matching commit" window `_write_finalize_repair_marker`
+    brackets (before `_land_finalize_and_close`, cleared in a `finally`
+    right after)."""
+
+    def test_no_marker_is_a_silent_no_op(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_no_marker_is_a_silent_no_op  # noqa: E501
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            _land_mod._repair_stale_finalize_markers(repo)
+        assert not [r for r in caplog.records if r.levelname == "ERROR"]
+
+    def test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_logs_loudly_when_worktree_still_shows_done_but_root_does_not  # noqa: E501
+        # T-2679's own measured shape: a marker survives a crashed land,
+        # AND root's own ledger has no record of the ticket at all (the
+        # squash-apply never ran) -- exactly "state=done recorded
+        # somewhere, zero code on main".
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-crash", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add crashy", scope=("src/crashy.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        _commit_all(wt, "close it")
+        _land_mod._write_finalize_repair_marker(repo, tid, wt)
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            _land_mod._repair_stale_finalize_markers(repo)
+
+        error_records = [r for r in caplog.records if r.levelname == "ERROR"]
+        assert any(
+            tid in r.message and str(wt) in r.message for r in error_records
+        ), [r.message for r in error_records]
+        marker = _land_mod._finalize_repair_marker_path(repo, tid)
+        assert not marker.exists()
+
+    def test_repair_is_silent_when_root_already_shows_the_ticket_done(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestFinalizeRepairMarker.test_repair_is_silent_when_root_already_shows_the_ticket_done  # noqa: E501
+        # The self-healed case: a retry (or a manual recovery) already
+        # landed the ticket for real onto root BEFORE this reconciliation
+        # ever ran -- no anomaly to report.
+        created = new_ticket(repo, _spec("Widget"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(repo, tid)
+        assert transition(repo, tid, TicketState.DONE, covers_scope=True).is_ok
+        _commit_all(repo, "close it for real")
+        _land_mod._write_finalize_repair_marker(repo, tid, repo.parent / "gone-wt")
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            _land_mod._repair_stale_finalize_markers(repo)
+
+        assert not [r for r in caplog.records if r.levelname == "ERROR"]
+        marker = _land_mod._finalize_repair_marker_path(repo, tid)
+        assert not marker.exists()
+
+
 # frob:ticket T-1523
 class TestPostLandVerifyPendingMarker:
     """T-1523: the post-commit twin of `TestLandRepairMarker` above --
@@ -8137,6 +8205,62 @@ def _t0907_child_land(
 
     setattr(land_squash_mod, "run_argv", _patched)  # noqa: B010
     land_mod.land(root, ticket_id, worktree, dry_run=False)
+
+
+# frob:ticket T-2679
+def _t2679_child_land(
+    root: Path, ticket_id: str, worktree: Path, ready_path: Path
+) -> None:
+    """`_t0907_child_land`'s own T-2679 twin: pauses one step EARLIER --
+    right before `_land_finalize_and_close`'s terminal-state commit
+    (`_commit_finalize_writes`'s `git commit -m "finalize and close ..."`)
+    ever runs -- instead of after the squash-apply merge. This is the
+    exact window `_write_finalize_repair_marker` brackets: the worktree's
+    ticket.md has already been rewritten to `state: done` on disk
+    (`transition(..., DONE)`, called just before this commit) but that
+    write is NOT YET committed anywhere, and `root` has not been touched
+    at all -- squash-apply never even starts."""
+
+    import frob.tickets._land as land_mod
+    import frob.tickets._land_finalize as land_finalize_mod
+
+    real_run_argv = land_finalize_mod.run_argv
+
+    def _patched(
+        argv: Sequence[str], *, cwd: Path | None = None, timeout_s: int | float = 30.0
+    ) -> Result[ProcResult, GitError]:
+        if "commit" in argv and any("finalize and close" in str(a) for a in argv):
+            ready_path.write_text("ready\n")
+            time.sleep(30)
+        return real_run_argv(argv, cwd=cwd, timeout_s=timeout_s)
+
+    setattr(land_finalize_mod, "run_argv", _patched)  # noqa: B010
+    land_mod.land(root, ticket_id, worktree, dry_run=False)
+
+
+# frob:ticket T-2679
+def _t2679b_child_land(
+    root: Path, ticket_id: str, worktree: Path, ready_path: Path
+) -> None:
+    """A third sibling of `_t0907_child_land`, later still: pauses inside
+    `land()`'s own `pre_commit_sweep` hook (T-1514) -- the post-squash,
+    pre-commit RE-VERIFICATION phase the coordinator's live T-2696
+    reproduction was actually killed during. By the time this callable
+    runs, `root`'s index already holds the complete staged squash-apply
+    (T-1514's own contract) -- this reproduces "killed mid-reverification"
+    at the exact point a real `frob check`-shaped `pre_commit_sweep` spawn
+    can run long enough to exceed a wrapper's timeout on its own."""
+
+    import frob.tickets._land as land_mod
+
+    def _pausing_sweep(sweep_root: Path, final_id: str) -> bool | None:
+        ready_path.write_text("ready\n")
+        time.sleep(30)
+        return True
+
+    land_mod.land(
+        root, ticket_id, worktree, dry_run=False, pre_commit_sweep=_pausing_sweep
+    )
 
 
 # frob:ticket T-0907
@@ -8290,6 +8414,206 @@ class TestSigkillMidStaging:
         result_a = land(repo, final_id_a, wt_a, dry_run=False)
         assert result_a.is_ok, result_a.err
         assert (repo / "src" / "killable.py").exists()
+        assert _status_ignoring_frob(repo) == ""
+
+    # frob:ticket T-2679
+    def test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie(
+        self, repo: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_finalize_close_leaves_ticket_recoverable_not_a_silent_lie  # noqa: E501
+        """T-2679's own positive control, ONE step earlier than T-0907's:
+        a real `SIGKILL` delivered while `land()` is mid-
+        `_land_finalize_and_close` -- AFTER the worktree's ticket.md has
+        already been rewritten to `state: done` on disk but BEFORE that
+        write is even committed to the worktree's own branch, and BEFORE
+        `root` (main) has been touched in any way at all (squash-apply
+        never starts). This is the exact shape T-2671 measured: a
+        terminal state that could plausibly be read as "done" with zero
+        corresponding content on main. Required, both directions:
+        (1) root's tip is completely unchanged by the kill: content stays
+            absent, never a partial/corrupt land.
+        (2) the T-2679 finalize-repair marker survives the kill and the
+            NEXT `land()` call against this root (here, this same
+            ticket's own retry) reconciles it LOUDLY -- the anomaly is
+            surfaced, not silently lost.
+        (3) the retry itself still reaches `done` on root exactly once,
+            with no extra transition and no regression -- a normal
+            successful land is unaffected by this fix."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-kill2", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add killable2", scope=("src/killable2.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "killable2.py").write_text("# new file\n")
+        _commit_all(wt, "add killable2")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        ready_path = repo.parent / "ready2.flag"
+
+        ctx = multiprocessing.get_context("fork")
+        proc = ctx.Process(target=_t2679_child_land, args=(repo, tid, wt, ready_path))
+        proc.start()
+        deadline = time.monotonic() + 20
+        while not ready_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert ready_path.exists(), "child land() never reached finalize-close"
+        assert proc.pid is not None
+        os.kill(proc.pid, signal.SIGKILL)
+        proc.join(timeout=15)
+        assert not proc.is_alive()
+
+        # (1) root's tip is completely unchanged -- content stays absent.
+        after_kill_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_kill_sha == before_main_sha
+        assert not (repo / "src" / "killable2.py").exists()
+
+        # A T-2679 finalize-repair marker must survive the kill.
+        marker_dir = repo / ".frob" / "finalize-repair"
+        marker_files = list(marker_dir.glob("*.json"))
+        assert len(marker_files) == 1, marker_files
+
+        # (2) the NEXT land() call against this root reconciles it loudly
+        # -- naming the ticket, before it does anything else of its own.
+        # The killed run already wrote (uncommitted, or committed
+        # depending on exactly where the kill landed) `state: done` to
+        # the worktree -- find it the same T-0795 way the T-0907 test
+        # does.
+        wt_tickets = load_all(wt).danger_ok
+        done_ids = [i for i, t in wt_tickets.items() if t.state == TicketState.DONE]
+        assert done_ids, "finalize-close never reached the DONE write at all"
+        final_id = done_ids[0]
+
+        with caplog.at_level("ERROR", logger="frob.tickets._land"):
+            result = land(repo, final_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        # The marker was written under `tid`, the ORIGINAL (possibly
+        # draft) id `land()` was called with -- `_land_finalize_and_close`
+        # only renumbers to `final_id` INSIDE the window the marker
+        # brackets, so the reconciliation log (keyed to the marker's own
+        # filename) names `tid`, not `final_id`.
+        error_records = [r for r in caplog.records if r.levelname == "ERROR"]
+        assert any(
+            tid in r.message for r in error_records
+        ), [r.message for r in error_records]
+        assert not marker_files[0].exists()
+
+        # (3) reaches done on root exactly once, no regression.
+        on_root = load_all(repo).danger_ok[final_id]
+        assert on_root.state == TicketState.DONE
+        assert (repo / "src" / "killable2.py").exists()
+        after_retry_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_retry_sha != before_main_sha
+        assert _status_ignoring_frob(repo) == ""
+
+    # frob:ticket T-2679
+    def test_normal_land_reaches_done_exactly_once_no_extra_transition(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_normal_land_reaches_done_exactly_once_no_extra_transition  # noqa: E501
+        """The required OTHER direction: an ordinary, uninterrupted land
+        must be completely unaffected by the T-2679 finalize-repair
+        marker -- it is written and cleared within the same call, no
+        extra ledger transition, no stray marker left behind, `done`
+        reached exactly once."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-normal", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add normal", scope=("src/normal.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "normal.py").write_text("# new file\n")
+        _commit_all(wt, "add normal")
+
+        result = land(repo, tid, wt, dry_run=False)
+        assert result.is_ok, result.err
+
+        marker_dir = repo / ".frob" / "finalize-repair"
+        assert not (marker_dir.is_dir() and list(marker_dir.glob("*.json")))
+        landed = load_all(repo).danger_ok
+        final_ids = [i for i, t in landed.items() if t.title == "Add normal"]
+        assert len(final_ids) == 1
+        assert landed[final_ids[0]].state == TicketState.DONE
+        assert (repo / "src" / "normal.py").exists()
+
+    # frob:ticket T-2679
+    def test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_sigkill_during_post_squash_reverification_leaves_ticket_recoverable  # noqa: E501
+        """The coordinator's own live-fire control (a real T-2696
+        reproduction, 2026-08-20): a land was killed not right after the
+        squash-merge stages (T-0907's own test, above), but LATER, during
+        the post-squash RE-VERIFICATION phase that runs before the final
+        commit (`land()`'s own `pre_commit_sweep` hook, T-1514) -- a phase
+        that can run long enough on its own to exceed a wrapper's timeout.
+        `root` was left with the FULL, correct squash-apply staged in its
+        index, uncommitted -- `tickets/<id>/ticket.md` read `state: done`
+        in the working tree with no matching commit anywhere.
+
+        This is squarely inside the SAME T-0907 land-repair-marker window
+        `_write_land_repair_marker`/`_repair_stale_land_marker` already
+        bracket (written before `_land_squash_apply` starts, which is
+        BEFORE the squash-merge even runs, and cleared only once THAT
+        whole call -- staging, `pre_commit_sweep`, the T-0463 completeness
+        assertion, and the final commit -- returns): no new production
+        code is needed to make this window safe, only proof that it
+        already is, at the SPECIFIC point the coordinator's own incident
+        actually hit. Required, both directions, mirroring T-2679's other
+        SIGKILL control:
+        (1) root's tip is unchanged by the kill -- the staged content
+            (correct or not) never becomes a partial commit.
+        (2) the marker survives and the NEXT `land()` call for this same
+            root reconciles it (T-0907's existing `_repair_stale_land_
+            marker`) and the ticket lands cleanly on retry -- never left
+            terminal with no matching commit."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-reverify", str(wt)], repo)
+        created = new_ticket(wt, _spec("Add reverify", scope=("src/reverify.py",)))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        _make_closeable(wt, tid)
+        (wt / "src" / "reverify.py").write_text("# new file\n")
+        _commit_all(wt, "add reverify")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        ready_path = repo.parent / "ready3.flag"
+
+        ctx = multiprocessing.get_context("fork")
+        proc = ctx.Process(
+            target=_t2679b_child_land, args=(repo, tid, wt, ready_path)
+        )
+        proc.start()
+        deadline = time.monotonic() + 20
+        while not ready_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert ready_path.exists(), "child land() never reached pre_commit_sweep"
+        assert proc.pid is not None
+        os.kill(proc.pid, signal.SIGKILL)
+        proc.join(timeout=15)
+        assert not proc.is_alive()
+
+        # (1) root's tip is completely unchanged -- staged, never committed.
+        after_kill_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_kill_sha == before_main_sha
+        marker_dir = repo / ".frob" / "land-repair"
+        assert len(list(marker_dir.glob("*.json"))) == 1
+
+        # (2) the ticket's worktree-side write already reads `done` (the
+        # exact incident shape: a terminal state with, at this instant,
+        # no matching commit anywhere) -- and the NEXT land() call
+        # reconciles + actually lands it, never leaving it a silent lie.
+        wt_tickets = load_all(wt).danger_ok
+        final_id = next(i for i, t in wt_tickets.items() if t.state == TicketState.DONE)
+
+        result = land(repo, final_id, wt, dry_run=False)
+        assert result.is_ok, result.err
+        assert not list(marker_dir.glob("*.json"))
+        on_root = load_all(repo).danger_ok[final_id]
+        assert on_root.state == TicketState.DONE
+        assert (repo / "src" / "reverify.py").exists()
+        after_retry_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert after_retry_sha != before_main_sha
         assert _status_ignoring_frob(repo) == ""
 
 
