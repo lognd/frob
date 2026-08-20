@@ -194,25 +194,25 @@ def record_rule_firing_counts(root, report) -> None
 
 ## Public API
 
-<!-- frob:describes src/frob/app/telemetry.py::TELEMETRY_REL -->
-<!-- frob:describes src/frob/app/telemetry.py::T -->
-<!-- frob:describes src/frob/app/telemetry.py::is_disabled -->
-<!-- frob:describes src/frob/app/telemetry.py::iso_now -->
-<!-- frob:describes src/frob/app/telemetry.py::redact_command -->
-<!-- frob:describes src/frob/app/telemetry.py::append_event -->
-<!-- frob:describes src/frob/app/telemetry.py::tree_hash -->
-<!-- frob:describes src/frob/app/telemetry.py::estimate_tokens -->
-<!-- frob:describes src/frob/app/telemetry.py::record_cli_event -->
-<!-- frob:describes src/frob/app/telemetry.py::record_ticket_event -->
-<!-- frob:describes src/frob/app/telemetry.py::record_dispatch_event -->
-<!-- frob:describes src/frob/app/telemetry.py::timed_call -->
-<!-- frob:describes src/frob/app/telemetry.py::Tip -->
-<!-- frob:describes src/frob/app/telemetry.py::tips_disabled -->
-<!-- frob:describes src/frob/app/telemetry.py::detect_footguns -->
-<!-- frob:describes src/frob/app/telemetry.py::render_tips -->
-<!-- frob:describes src/frob/app/telemetry.py::SubcommandTimeSink -->
-<!-- frob:describes src/frob/app/telemetry.py::UsageReport -->
-<!-- frob:describes src/frob/app/telemetry.py::usage_report -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::TELEMETRY_REL -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::T -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::is_disabled -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::iso_now -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::redact_command -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::append_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::tree_hash -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::estimate_tokens -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_cli_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_ticket_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_dispatch_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::timed_call -->
+<!-- frob:describes src/frob/app/telemetry/_footguns.py::Tip -->
+<!-- frob:describes src/frob/app/telemetry/_footguns.py::tips_disabled -->
+<!-- frob:describes src/frob/app/telemetry/_footguns.py::detect_footguns -->
+<!-- frob:describes src/frob/app/telemetry/_footguns.py::render_tips -->
+<!-- frob:describes src/frob/app/telemetry/_usage.py::SubcommandTimeSink -->
+<!-- frob:describes src/frob/app/telemetry/_usage.py::UsageReport -->
+<!-- frob:describes src/frob/app/telemetry/_usage.py::usage_report -->
 
 ```python
 TELEMETRY_REL: Path                # ".frob/telemetry.jsonl", relative to a repo root

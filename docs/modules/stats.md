@@ -149,10 +149,10 @@ The derived numbers `agentic_report` alone could not produce:
 <!-- frob:describes src/frob/stats/_agentic.py::MarginalRunDelta -->
 <!-- frob:describes src/frob/stats/_agentic.py::DispatchCostReport -->
 <!-- frob:describes src/frob/stats/_agentic.py::dispatch_cost_report -->
-<!-- frob:describes src/frob/app/telemetry.py::record_cli_event -->
-<!-- frob:describes src/frob/app/telemetry.py::record_ticket_event -->
-<!-- frob:describes src/frob/app/telemetry.py::record_dispatch_event -->
-<!-- frob:describes src/frob/app/telemetry.py::timed_call -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_cli_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_ticket_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::record_dispatch_event -->
+<!-- frob:describes src/frob/app/telemetry/__init__.py::timed_call -->
 
 ```python
 class TicketStats(BaseModel)      # queue-health snapshot: state/kind counts, doable/blocked, failure entries

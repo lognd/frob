@@ -2,7 +2,7 @@
 id: T-2694
 title: 'Split src/frob/app/telemetry.py: 3 real seams (event/footgun/usage), T-1656
   successor'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'

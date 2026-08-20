@@ -27,7 +27,7 @@ from frob.app.telemetry import (
 
 
 def test_append_event_writes_one_json_line(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::append_event
+    # frob:tests src/frob/app/telemetry/__init__.py::append_event
     append_event(tmp_path, {"a": 1})
     append_event(tmp_path, {"a": 2})
     lines = (tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").splitlines()
@@ -35,7 +35,7 @@ def test_append_event_writes_one_json_line(tmp_path: Path):
 
 
 def test_append_event_respects_no_telemetry_env(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry.py::is_disabled
+    # frob:tests src/frob/app/telemetry/__init__.py::is_disabled
     monkeypatch.setenv("FROB_NO_TELEMETRY", "1")
     assert is_disabled()
     append_event(tmp_path, {"a": 1})
@@ -43,7 +43,7 @@ def test_append_event_respects_no_telemetry_env(tmp_path: Path, monkeypatch):
 
 
 def test_no_telemetry_env_false_like_values_stay_enabled(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry.py::is_disabled
+    # frob:tests src/frob/app/telemetry/__init__.py::is_disabled
     monkeypatch.setenv("FROB_NO_TELEMETRY", "0")
     assert not is_disabled()
     monkeypatch.delenv("FROB_NO_TELEMETRY", raising=False)
@@ -51,7 +51,7 @@ def test_no_telemetry_env_false_like_values_stay_enabled(tmp_path: Path, monkeyp
 
 
 def test_record_cli_event_shape(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::record_cli_event
+    # frob:tests src/frob/app/telemetry/__init__.py::record_cli_event
     record_cli_event(
         tmp_path,
         subcommand="check",
@@ -70,7 +70,7 @@ def test_record_cli_event_shape(tmp_path: Path):
 
 
 def test_record_ticket_event_shape(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::record_ticket_event
+    # frob:tests src/frob/app/telemetry/__init__.py::record_ticket_event
     record_ticket_event(tmp_path, ticket_id="T-0001", event="started")
     line = (tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip()
     record = json.loads(line)
@@ -88,7 +88,7 @@ class TestRecordDispatchEvent:
     window."""
 
     def test_start_and_end_events_shaped_correctly(self, tmp_path: Path):
-        # frob:tests src/frob/app/telemetry.py::record_dispatch_event
+        # frob:tests src/frob/app/telemetry/__init__.py::record_dispatch_event
         record_dispatch_event(
             tmp_path,
             dispatch_id="d1",
@@ -111,7 +111,7 @@ class TestRecordDispatchEvent:
         assert end["event"] == "end"
 
     def test_optional_fields_omitted_when_none(self, tmp_path: Path):
-        # frob:tests src/frob/app/telemetry.py::record_dispatch_event
+        # frob:tests src/frob/app/telemetry/__init__.py::record_dispatch_event
         record_dispatch_event(tmp_path, dispatch_id="d1", event="start")
         record = json.loads(
             (tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip()
@@ -123,7 +123,7 @@ class TestRecordDispatchEvent:
 
 # invariant spec: [INV-022](invariants/INV-022.md)
 def test_redact_command_hides_recognizable_secret():
-    # frob:tests src/frob/app/telemetry.py::redact_command
+    # frob:tests src/frob/app/telemetry/__init__.py::redact_command
     fake_key = "sk-ant-api03-" + ("a" * 95)
     redacted = redact_command(f"echo {fake_key}")
     assert fake_key not in redacted
@@ -131,19 +131,19 @@ def test_redact_command_hides_recognizable_secret():
 
 
 def test_redact_command_leaves_ordinary_text_alone():
-    # frob:tests src/frob/app/telemetry.py::redact_command
+    # frob:tests src/frob/app/telemetry/__init__.py::redact_command
     assert redact_command("check --json --path .") == "check --json --path ."
 
 
 def test_estimate_tokens_is_len_over_four():
-    # frob:tests src/frob/app/telemetry.py::estimate_tokens
+    # frob:tests src/frob/app/telemetry/__init__.py::estimate_tokens
     assert estimate_tokens("") == 0
     assert estimate_tokens("abcd") == 1
     assert estimate_tokens("abcdefgh") == 2
 
 
 def test_iso_now_has_iso_shape_with_z_suffix():
-    # frob:tests src/frob/app/telemetry.py::iso_now
+    # frob:tests src/frob/app/telemetry/__init__.py::iso_now
     ts = iso_now()
     assert ts.endswith("Z")
     assert "T" in ts
@@ -152,7 +152,7 @@ def test_iso_now_has_iso_shape_with_z_suffix():
 
 
 def test_timed_call_records_event_and_returns_value(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     result = timed_call(tmp_path, subcommand="check", args_head="check", fn=lambda: 42)
     assert result == 42
     record = json.loads((tmp_path / TELEMETRY_REL).read_text(encoding="utf-8").strip())
@@ -161,7 +161,7 @@ def test_timed_call_records_event_and_returns_value(tmp_path: Path):
 
 
 def test_timed_call_records_nonzero_exit_on_system_exit(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     def _boom():
         raise SystemExit(1)
 
@@ -174,7 +174,7 @@ def test_timed_call_records_nonzero_exit_on_system_exit(tmp_path: Path):
 
 
 def test_timed_call_maps_bare_system_exit_to_zero(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     def _bare_exit():
         raise SystemExit()
 
@@ -187,7 +187,7 @@ def test_timed_call_maps_bare_system_exit_to_zero(tmp_path: Path):
 
 
 def test_timed_call_maps_non_int_system_exit_code_to_one(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     def _msg_exit():
         raise SystemExit("boom")
 
@@ -200,7 +200,7 @@ def test_timed_call_maps_non_int_system_exit_code_to_one(tmp_path: Path):
 
 
 def test_append_event_swallows_oserror_and_logs(tmp_path: Path, caplog):
-    # frob:tests src/frob/app/telemetry.py::append_event
+    # frob:tests src/frob/app/telemetry/__init__.py::append_event
     # T-1457: an I/O failure writing the telemetry file must never raise --
     # telemetry is best-effort and must not be able to break a real
     # invocation. Force `Path.open` to fail with an OSError and confirm the
@@ -215,7 +215,7 @@ def test_append_event_swallows_oserror_and_logs(tmp_path: Path, caplog):
 
 
 def test_tree_hash_returns_unknown_when_git_spawn_errors(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # frob:tests src/frob/app/telemetry/__init__.py::tree_hash
     # T-1457: `run_argv` itself failing (git binary missing, spawn refused,
     # etc.) is the `spawned.is_err` branch -- must degrade to "unknown"
     # rather than raise.
@@ -228,7 +228,7 @@ def test_tree_hash_returns_unknown_when_git_spawn_errors(tmp_path: Path):
 
 
 def test_tree_hash_returns_unknown_on_nonzero_returncode(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # frob:tests src/frob/app/telemetry/__init__.py::tree_hash
     # T-1457: git ran but exited nonzero (e.g. not a git repo) -- the
     # separate `result.returncode != 0` fallback branch.
     from typani import Ok
@@ -246,7 +246,7 @@ def test_tree_hash_returns_unknown_on_nonzero_returncode(tmp_path: Path):
 
 
 def test_tree_hash_returns_stripped_stdout_on_success(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::tree_hash
+    # frob:tests src/frob/app/telemetry/__init__.py::tree_hash
     # T-1457: happy path, kept alongside the two "unknown" fallback
     # branches so the whole function reads as intentional, not accidental.
     from typani import Ok
@@ -264,7 +264,7 @@ def test_tree_hash_returns_stripped_stdout_on_success(tmp_path: Path):
 
 
 def test_record_ticket_event_merges_extra_fields(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::record_ticket_event
+    # frob:tests src/frob/app/telemetry/__init__.py::record_ticket_event
     # T-1457: the `if extra:` branch -- extra keys must land in the
     # written record alongside the fixed ticket-event fields.
     record_ticket_event(
@@ -281,7 +281,7 @@ def test_record_ticket_event_merges_extra_fields(tmp_path: Path):
 
 
 def test_timed_call_records_nonzero_exit_on_plain_exception(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     # T-1457: a plain (non-SystemExit) exception from `fn()` must still
     # record exit_code=1 and re-raise unchanged -- the `except Exception`
     # branch, distinct from the SystemExit branches already covered above.
@@ -299,7 +299,7 @@ def test_timed_call_records_nonzero_exit_on_plain_exception(tmp_path: Path):
 
 
 def test_timed_call_does_not_leak_gitio_logs_onto_stdout(tmp_path: Path, capsys):
-    # frob:tests src/frob/app/telemetry.py::timed_call
+    # frob:tests src/frob/app/telemetry/__init__.py::timed_call
     # T-1360 regression: `_finish_timed_call`'s footgun-detection path used
     # to call `tree_hash(root)` (which spawns `git` via `frob.gitio`,
     # logging at DEBUG) OUTSIDE `quiet_stdout_logs()` -- only the LATER
@@ -343,7 +343,7 @@ def test_timed_call_does_not_leak_gitio_logs_onto_stdout(tmp_path: Path, capsys)
 
 
 def test_detect_footguns_flags_redundant_rerun(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     record_cli_event(
         tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0
     )
@@ -360,7 +360,7 @@ def test_detect_footguns_flags_redundant_rerun(tmp_path: Path):
 
 
 def test_detect_footguns_flags_fast_exit1(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     tips = detect_footguns(
         tmp_path,
         subcommand="check",
@@ -373,7 +373,7 @@ def test_detect_footguns_flags_fast_exit1(tmp_path: Path):
 
 
 def test_detect_footguns_does_not_flag_fast_exit1_on_success(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     tips = detect_footguns(
         tmp_path,
         subcommand="check",
@@ -386,7 +386,7 @@ def test_detect_footguns_does_not_flag_fast_exit1_on_success(tmp_path: Path):
 
 
 def test_detect_footguns_flags_repeated_failure_streak(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     for _ in range(2):
         record_cli_event(
             tmp_path,
@@ -407,7 +407,7 @@ def test_detect_footguns_flags_repeated_failure_streak(tmp_path: Path):
 
 
 def test_detect_footguns_respects_suppress_env(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     monkeypatch.setenv("FROB_SUPPRESS_TIPS", "FAST_EXIT1")
     tips = detect_footguns(
         tmp_path,
@@ -421,8 +421,8 @@ def test_detect_footguns_respects_suppress_env(tmp_path: Path, monkeypatch):
 
 
 def test_detect_footguns_returns_empty_when_tips_disabled(tmp_path: Path, monkeypatch):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
-    # frob:tests src/frob/app/telemetry.py::tips_disabled
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::tips_disabled
     monkeypatch.setenv("FROB_NO_FOOTGUN_TIPS", "1")
     assert tips_disabled()
     tips = detect_footguns(
@@ -437,7 +437,7 @@ def test_detect_footguns_returns_empty_when_tips_disabled(tmp_path: Path, monkey
 
 
 def test_render_tips_json_is_parseable(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::render_tips
+    # frob:tests src/frob/app/telemetry/_footguns.py::render_tips
     tips = detect_footguns(
         tmp_path,
         subcommand="check",
@@ -452,13 +452,14 @@ def test_render_tips_json_is_parseable(tmp_path: Path):
 
 
 def test_render_tips_empty_list_is_empty_string():
-    # frob:tests src/frob/app/telemetry.py::render_tips
+    # frob:tests src/frob/app/telemetry/_footguns.py::render_tips
     assert render_tips([], as_json=True) == ""
     assert render_tips([], as_json=False) == ""
 
 
 def test_render_tips_human_readable_names_the_rule():
-    # frob:tests src/frob/app/telemetry.py::render_tips
+    # frob:tests src/frob/app/telemetry/_footguns.py::render_tips
+    # frob:tests src/frob/app/telemetry/_footguns.py::Tip
     from frob.app.telemetry import Tip
 
     rendered = render_tips([Tip(rule_id="FAST_EXIT1", message="boom")], as_json=False)
@@ -469,7 +470,8 @@ def test_render_tips_human_readable_names_the_rule():
 
 
 def test_usage_report_empty_corpus_is_all_zero(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::UsageReport
     report = usage_report(tmp_path)
     assert report.total_calls == 0
     assert report.total_duration_ms == 0.0
@@ -478,7 +480,8 @@ def test_usage_report_empty_corpus_is_all_zero(tmp_path: Path):
 
 
 def test_usage_report_aggregates_time_and_failures(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::SubcommandTimeSink
     record_cli_event(
         tmp_path, subcommand="check", args_head="check", duration_ms=1000, exit_code=0
     )
@@ -502,7 +505,7 @@ def test_usage_report_aggregates_time_and_failures(tmp_path: Path):
 
 
 def test_usage_report_counts_redundant_reruns(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::usage_report
     for _ in range(3):
         record_cli_event(
             tmp_path,
@@ -517,7 +520,7 @@ def test_usage_report_counts_redundant_reruns(tmp_path: Path):
 
 
 def test_usage_report_counts_fast_exit1(tmp_path: Path):
-    # frob:tests src/frob/app/telemetry.py::usage_report
+    # frob:tests src/frob/app/telemetry/_usage.py::usage_report
     record_cli_event(
         tmp_path, subcommand="check", args_head="check", duration_ms=100, exit_code=1
     )
@@ -531,7 +534,7 @@ def test_usage_report_counts_fast_exit1(tmp_path: Path):
 def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
     tmp_path: Path, monkeypatch
 ):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     # Reproduces the exact live incident: `frob claude sync --check`
     # reported drifted; `frob claude sync` wrote ~/.claude/refs/*; the next
     # `--check` claimed REDUNDANT_RERUN ("nothing has changed since") even
@@ -576,7 +579,7 @@ def test_redundant_rerun_not_flagged_when_home_claude_config_changed(
 def test_redundant_rerun_still_flags_when_nothing_changed_at_all(
     tmp_path: Path, monkeypatch
 ):
-    # frob:tests src/frob/app/telemetry.py::detect_footguns
+    # frob:tests src/frob/app/telemetry/_footguns.py::detect_footguns
     # The positive case: when NEITHER the repo tree NOR ~/.claude changed,
     # REDUNDANT_RERUN must still fire -- the fix must not blunt the
     # detector into never firing at all.

@@ -196,7 +196,7 @@ _PII012_REVIEWED_NON_PII: frozenset[tuple[str, str]] = frozenset(
     {
         # "token" homonym.
         ("src/frob/app/stats_runner.py", "_agentic_ticket_and_token_lines"),
-        ("src/frob/app/telemetry.py", "token"),
+        ("src/frob/app/telemetry/__init__.py", "token"),
         ("src/frob/arch/_python.py", "_TYPE_TOKEN_RE"),
         ("src/frob/arch/_python.py", "token"),
         ("src/frob/deploy/_conform.py", "token"),

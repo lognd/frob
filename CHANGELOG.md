@@ -185,6 +185,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2683: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently degrades output
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
+- T-2694: Split src/frob/app/telemetry.py: 3 real seams (event/footgun/usage), T-1656 successor
 - T-2695: LARGE001 remainder batch 2: ~80 files after T-1656's batch-1 (2 waived, 1 seam filed)
 - T-2697: post-land sweep regression from an unattributed source (sweep spawned by T-1549): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)
 - T-2700: Wire import_graph_gap_disclosure into frob.cycle.graph's real DependencyGraph/find_cycles output
