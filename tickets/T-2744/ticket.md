@@ -1,0 +1,97 @@
+---
+id: T-2744
+title: Quarantine was cleared citing an auto-filed ticket that does not exist, releasing
+  findings against a phantom home
+state: queued
+kind: bug
+origin: human
+created: '2026-08-20'
+priority: high
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+## Measured, 2026-08-20
+
+`.frob/quarantine.json` was observed carrying:
+
+    cleared_reason: auto-filed by rapid sweep as T-2736
+    findings: 2
+
+T-2736 does not exist and never did:
+
+    ls tickets/T-2736            -> No such file or directory
+    ls tickets/archive/T-2736    -> No such file or directory
+    git log --all -- 'tickets/T-2736/**'  -> empty
+
+An independent agent, dispatched to triage it, searched main, worktree
+history, the full git history and the ledger archive and reached the same
+conclusion -- then reported the absence rather than fabricating triage for
+a ticket that was not there.
+
+## Why this is serious
+
+Quarantine is the circuit breaker: while raised, deferred landing is OFF
+and every land runs fully-synchronous verification repo-wide. Clearing it
+is therefore load-bearing, and the ONLY justification recorded is the
+`cleared_reason`. Here that reason names a home that does not exist.
+
+So the findings were released from quarantine against a phantom ticket.
+Whatever they were, nothing now tracks them, and the ledger asserts
+otherwise. This is the disposal-side twin of the silent-zero: the record
+says "handled", the handling is absent, and nothing downstream re-checks.
+
+## What to determine first
+
+Do not assume the mechanism. Read `_rapid_sweep.py`'s auto-file-then-clear
+path and establish which of these it is:
+
+(a) the file genuinely failed and the clear proceeded anyway (the clear is
+    not conditional on the filing succeeding);
+(b) the file succeeded on a worktree branch that never landed, so the id
+    exists only there -- this repo has three measured instances today of
+    work stranded on a branch and invisible on main, so it is a live
+    possibility;
+(c) the id was allocated and reported before the write, and the write was
+    lost to a race or an interrupted ledger commit.
+
+The remedy differs per branch: (a) needs the clear gated on the filing;
+(b) needs the sweep's filing mirrored to the primary checkout the way
+ledger writes already are; (c) needs the id allocated after a durable
+write.
+
+## Required, whichever it is
+
+Clearing quarantine must be conditional on the cited ticket EXISTING and
+being reachable on main. A `cleared_reason` naming an unresolvable id
+should refuse the clear, loudly, rather than release the findings.
+
+## Positive controls, both directions
+
+- a sweep whose auto-file fails leaves quarantine RAISED and says why
+- a sweep whose auto-file succeeds clears quarantine and the cited id
+  resolves on main afterwards
+- an operator clearing manually with a real ticket id still works
+  unchanged (do not make the normal path harder)
+
+## Recovery for the instance already lost
+
+The 2 findings released under the phantom T-2736 reference are untracked.
+They cannot be recovered from the cleared record alone. A full unbudgeted
+`frob check --json` re-measurement will re-surface them if they are still
+live -- do that as part of this ticket rather than assuming they were
+trivial.
