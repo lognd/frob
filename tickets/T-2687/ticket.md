@@ -1,7 +1,7 @@
 ---
 id: T-2687
 title: Recovered from T-2134's phantom TICK006 citation of T-draft-f3bbfd8e
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -32,3 +32,6 @@ empty-rule-id finding against the retired tickets.md path -- real id
 after land)
 
 ### Change
+
+## Drop reason
+- 2026-08-19: Measured (T-2690 series triage): cites T-draft-f3bbfd8e, which git history confirms was renamed (git show -M --name-status 946c41ac1: R100 tickets/T-draft-f3bbfd8e/ticket.md -> tickets/T-2684/ticket.md) to the real, live ticket T-2684 ('gates: QueueUnavailable manufactures an empty-rule-id finding against the retired tickets.md path', state=queued, full correct body, already had its own citation bug fixed this session). T-2687's own body is a garbled truncated fragment of the same underlying finding T-2684 already tracks correctly -- a bookkeeping duplicate, not independent work. Root mechanism (the auto-recovery mechanism that filed T-2687 without checking git rename history first) fixed in T-2690.
