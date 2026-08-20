@@ -18,6 +18,8 @@ scope:
 - src/frob/strata/_parse.py
 - src/frob/strata/_facts.py
 - src/frob/strata/_errors.py
+- src/frob/strata/_design_load.py
+- src/frob/gates/_sys.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,17 +27,37 @@ no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/strata/_parse.py
-  reason: narrow to the ImportError-masking sites
+  reason: capture+propagate the real strata_core ImportError through DesignLoadError
+    into the SYS004 message, instead of only ever printing the fixed not-installed
+    hint
   actor: logan
   at: '2026-08-20'
 - op: add
   glob: src/frob/strata/_facts.py
-  reason: narrow to the ImportError-masking sites
+  reason: capture+propagate the real strata_core ImportError through DesignLoadError
+    into the SYS004 message, instead of only ever printing the fixed not-installed
+    hint
   actor: logan
   at: '2026-08-20'
 - op: add
   glob: src/frob/strata/_errors.py
-  reason: narrow to the ImportError-masking sites
+  reason: capture+propagate the real strata_core ImportError through DesignLoadError
+    into the SYS004 message, instead of only ever printing the fixed not-installed
+    hint
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/strata/_design_load.py
+  reason: capture+propagate the real strata_core ImportError through DesignLoadError
+    into the SYS004 message, instead of only ever printing the fixed not-installed
+    hint
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/gates/_sys.py
+  reason: capture+propagate the real strata_core ImportError through DesignLoadError
+    into the SYS004 message, instead of only ever printing the fixed not-installed
+    hint
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
