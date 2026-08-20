@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b35f47220b8df35922128690bf88cfc38e48e0dc
 ---
 ## Measured, 2026-08-20, in a real downstream consumer repo
 
