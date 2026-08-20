@@ -59,7 +59,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 58add1e118bb8954f5baf2386093187e3ebea81a
 ---
 `frob check --ticket <id> --only scope` reports 8 SCOPE002 ERRORS (not
 warnings) for docs/modules/tickets.md#coalescing-verify-worker-t-1688's
