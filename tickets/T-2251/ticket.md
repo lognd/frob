@@ -33,13 +33,13 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/**
-  reason: narrow to avoid lease collision with T-draft-5f8ebb34 on _ticket/_new.py;
+  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py;
     only _misc.py needed for the new frob format parser
   actor: logan
   at: '2026-08-19'
 - op: add
   glob: src/frob/_cli_parsers/_misc.py
-  reason: narrow to avoid lease collision with T-draft-5f8ebb34 on _ticket/_new.py;
+  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py;
     only _misc.py needed for the new frob format parser
   actor: logan
   at: '2026-08-19'

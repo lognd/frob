@@ -11,12 +11,17 @@ parent: T-1662
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
 - tests/unit/gates/test_lexical_selfcheck.py
 - tests/unit/gates/test_wire001_cli_dest_semantic.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: tests/**
@@ -43,8 +48,21 @@ evidence:
 - tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_wired_only_through_tuple_structure_is_not_flagged
 - tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_mentioned_only_in_a_comment_is_flagged
 - tests/unit/gates/test_wire001_cli_dest_semantic.py::TestWire001CliDestViolations::test_dest_not_wired_at_all_is_flagged
-- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_gates_module_module_stays_clean
+- tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_every_known_gates_module_module_stays_clean
+  new_node: tests/unit/gates/test_lexical_selfcheck.py::TestLexcheck001::test_supplychain_lexcheck001_backlog_is_empty_t2469
+  reason: 'COV003: the original node id was renamed twice, not deleted. T-2466 widened
+    this gates-only scan to include vet/strata/check/, surfaced 5 real symref-less
+    lexical deciders in src/frob/vet/_supplychain.py, and renamed this test to test_every_known_detector_package_module_stays_clean
+    (backlog non-empty, named explicitly). T-2469 then fixed all 5 at the root (each
+    detector now uses a real parser instead of a text regex) and renamed it again
+    to test_supplychain_lexcheck001_backlog_is_empty_t2469, backlog empty again. Confirmed
+    this successor exists in the current tree and the real repo LEXCHECK001 scan is
+    clean right now -- same underlying claim T-2348 originally proved, unbroken chain.'
+  actor: logan
+  at: '2026-08-19'
 threat: null
 component: null
 anchor: false
