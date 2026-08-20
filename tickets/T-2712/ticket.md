@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_pii_structural/**
+- tests/test_pii_structural_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: evidence for the PII010/011/012 re-triage fixes lives in this gate's own
+    test file; the pii_structural/** scope covered the source fix but not its test
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
