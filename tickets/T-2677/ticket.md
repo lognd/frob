@@ -2,7 +2,7 @@
 id: T-2677
 title: fleet_status.py's REPO constant resolves via __file__, giving 0 live leases
   when run from a worktree
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: test coverage for the REPO-resolution fix lives in this file
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
