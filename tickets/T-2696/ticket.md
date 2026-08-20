@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_pii_structural/**
 - tests/test_pii_structural_gate.py
 - tickets/T-draft-fae57bcc/**
+- rapid-debt.jsonl
 evidence_scope:
 - tests/test_pii_structural_gate.py
 scope_breadth_ack: false
@@ -36,6 +37,12 @@ scope_changes:
     filed as part of this ticket's own work
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: land-owned derived debt-tracking file appended by rapid-sweep mechanics
+    during merge/land; not directly edited by this ticket's own work
+  actor: logan
+  at: '2026-08-20'
 evidence:
 - tests/test_pii_structural_gate.py::TestSymrefPopulation::test_class_field_symref_is_class_dot_none_shape
 - tests/test_pii_structural_gate.py::TestSymrefPopulation::test_orm_column_inside_method_symref_is_nested_dotted
