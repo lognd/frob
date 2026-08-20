@@ -35,6 +35,13 @@ scope_changes:
   reason: documenting the T-2711/T-2718 exempt-fixed-headings decision
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: cite the genuine follow-up filed while validating T-2718's own fix
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2500
+  new_length: 2674
 evidence:
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_no_real_followup_closes_clean
 - tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean
@@ -102,3 +109,5 @@ This is adjacent to but distinct from T-2372 (burn TICK004/TICK007/TICK011
 WARN gates to zero, then promote to error). That ticket is about clearing
 the existing backlog; this one is about the gate firing on frob's own
 generated output, which would keep regenerating that backlog.
+
+Filed: T-draft-4aa75f72 (disclosure_shaped_language signal 1 is unscoped to the Done report -- found while validating this fix; a genuine follow-up, not disclosure theatre)
