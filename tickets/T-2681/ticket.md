@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 446a7bee8031fd35ebf59f54caeb51d7c2f8daf2
 ---
 `frob ticket block <id> --by <blocker>` is the only writer of
 `blocked_by` post-creation, and it can only APPEND -- there is no CLI
