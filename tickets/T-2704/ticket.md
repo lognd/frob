@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: dd22aa95dc00a5fefaeb0efa3555220084da2349
 ---
 Reported by a downstream consumer repo (aprog-public) on frob 0.530.0,
 2026-08-20. 10 correct parent-relative links reported broken.
