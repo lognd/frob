@@ -314,3 +314,23 @@ class TestBuildFactsNativeExtensionUnavailable:
         result = build_facts(model)
         assert result.is_err
         assert result.danger_err is StrataError.NativeExtensionUnavailable
+
+
+# frob:ticket T-2707
+class TestFactsStrataCoreImportError:
+    """T-2707: `frob.strata._facts.strata_core_import_error()` mirrors
+    `_parse.py`'s own captured-detail accessor -- confirms the second,
+    independently-guarded import site is not left masking its exception
+    while `_parse.py`'s is fixed."""
+
+    # frob:ticket T-2707
+    # frob:tests tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError.test_names_the_real_exception  # noqa: E501
+    def test_names_the_real_exception(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        facts_mod = sys.modules["frob.strata._facts"]
+        monkeypatch.setattr(facts_mod, "strata_core", None)
+        monkeypatch.setattr(
+            facts_mod, "_import_error", "ImportError: some ABI mismatch detail"
+        )
+        assert facts_mod.strata_core_import_error() == (
+            "ImportError: some ABI mismatch detail"
+        )

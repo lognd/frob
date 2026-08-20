@@ -34,7 +34,7 @@ from ._ast import Module, PolicyDecl, ResourceDecl
 from ._errors import StrataError
 from ._models import KernelModel
 from ._multifile import FileModule, elaborate_merged
-from ._parse import parse_module
+from ._parse import parse_module, strata_core_import_error
 
 _log = get_logger(__name__)
 
@@ -62,10 +62,19 @@ DEFAULT_DESIGN_DIR = "design"
 # frob:doc docs/strata/surface.md#directives-t-0080
 @dataclass(frozen=True)
 class DesignLoadError:
-    """One `.strata` file that failed to parse or elaborate, kept for reporting."""
+    """One `.strata` file that failed to parse or elaborate, kept for reporting.
+
+    `detail` (T-2707) carries the REAL caught exception text when `error`
+    is `StrataError.NativeExtensionUnavailable` -- `strata_core`'s own
+    guarded import can fail for reasons other than "not installed" (an
+    ABI/symbol mismatch, a failing secondary import inside the module),
+    and SYS004's fixed-string hint alone previously misattributed all of
+    them to the one common cause. `None` for every other `error` kind, or
+    when no import error was actually captured."""
 
     path: str
     error: StrataError
+    detail: str | None = None
 
 
 # frob:doc docs/strata/surface.md#directives-t-0080
@@ -224,7 +233,14 @@ def _parse_one_design_file(
     parsed = parse_module(text)
     if parsed.is_err:
         _log.warning("load_design_ids: %s failed to parse: %s", rel, parsed.danger_err)
-        return rel, None, DesignLoadError(path=rel, error=parsed.danger_err)
+        detail = (
+            strata_core_import_error()
+            if parsed.danger_err is StrataError.NativeExtensionUnavailable
+            else None
+        )
+        return rel, None, DesignLoadError(
+            path=rel, error=parsed.danger_err, detail=detail
+        )
     return rel, parsed.danger_ok, None
 
 

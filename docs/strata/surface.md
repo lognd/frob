@@ -1220,6 +1220,26 @@ Python entry point (`src/frob/strata/_parse.py`):
   calls the Rust parser, logs the line/col/message on failure at ERROR,
   and returns `Err(StrataError.ParseFailed)` or a validated `Module`.
 
+**Guarded `strata_core` import, and naming the real cause (T-2707).**
+Both `_parse.py` and `_facts.py` independently guard their own
+`import strata_core` (T-0133/T-0134/T-0135) and degrade to a typed
+`Err(StrataError.NativeExtensionUnavailable)` instead of crashing. Prior
+to T-2707, the caught `ImportError` was discarded entirely, so an ABI/
+symbol mismatch or a failing SECONDARY import inside `strata_core` read
+identically to a genuinely absent extension -- a downstream consumer
+(aprog-public) hit exactly this and was misdirected into reinstalling
+natives that were already fine.
+
+- `strata_core_import_error() -> str | None` <!-- frob:describes src/frob/strata/_parse.py::strata_core_import_error --> <!-- frob:describes src/frob/strata/_facts.py::strata_core_import_error -->
+  the real caught exception text from that module's own guarded import,
+  or `None` when the import succeeded (or genuinely never failed).
+  `DesignLoadError.detail` (`_design_load.py`, docs/strata/surface.md
+  #directives-t-0080) carries this through `load_design_ids` into
+  `frob.gates._sys._sys004`'s SYS004 message, appended ALONGSIDE
+  `StrataError.NativeExtensionUnavailable`'s existing not-installed hint
+  rather than replacing it -- the common case stays the common case, but
+  a genuinely different cause is now named, not guessed.
+
 ## Elaborator
 
 <!-- frob:ticket T-0060 -->

@@ -154,6 +154,8 @@ def _sys004_native_hint(root: Path) -> str:
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_load_failure
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_suppresses_sys001
 # frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_stale_native_as_likely_remedy  # noqa: E501
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_missing_native_hint_when_genuinely_absent  # noqa: E501
+# frob:tests tests/test_gates.py::TestSysGate.test_sys004_names_real_exception_when_strata_core_fails_differently  # noqa: E501
 # frob:enforces CHK-GATE-SYS004
 def _sys004(design_ids, root: Path) -> list[Violation]:
     """SYS004: a `.strata` design file itself failed to parse/elaborate.
@@ -163,7 +165,15 @@ def _sys004(design_ids, root: Path) -> list[Violation]:
     (fix the design file vs. fix the directive) -- collapsing them would
     misdirect whoever reads the message (reviewer-caught, T-0080 REJECT
     round 1). Also names a stale native build as a likely cause (T-0248
-    follow-up) when one is detected, per the T-0166 incident precedent."""
+    follow-up) when one is detected, per the T-0166 incident precedent.
+
+    T-2707: when `error.detail` is set (only possible for a
+    `NativeExtensionUnavailable` error), the REAL caught exception is
+    appended alongside the friendly not-installed hint rather than
+    silently displacing it -- a `strata_core` present-but-failing-to-
+    import case (an ABI/symbol mismatch, a failing secondary import
+    inside the extension) previously read identically to a genuinely
+    absent extension and misdirected diagnosis toward reinstalling."""
     native_hint = _sys004_native_hint(root)
     return [
         Violation(
@@ -178,6 +188,11 @@ def _sys004(design_ids, root: Path) -> list[Violation]:
                 f"merged across all design files and a missing sibling's ids "
                 f"cannot be told apart from a genuinely dangling reference"
                 f"{native_hint}"
+                + (
+                    f" -- actual import error: {error.detail}"
+                    if error.detail
+                    else ""
+                )
             ),
         )
         for error in design_ids.errors

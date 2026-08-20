@@ -16546,6 +16546,51 @@ class TestSysGate:
         assert "make core" in sys004[0].message
         assert "strata_core" in sys004[0].message
 
+    # frob:ticket T-2707
+    def test_sys004_names_missing_native_hint_when_genuinely_absent(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """POSITIVE CONTROL (genuinely-absent direction, T-2707): with
+        `strata_core` truly missing and NO import error captured, SYS004
+        still names the friendly not-installed hint -- the common,
+        useful case must not be lost by naming the real exception."""
+        import frob.strata._parse as parse_mod
+
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+        monkeypatch.setattr(parse_mod, "_import_error", None)
+        _write(tmp_path, "design/bad.strata", "module m")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys004 = _by_rule(violations, "SYS004")
+        assert len(sys004) == 1
+        assert "not installed" in sys004[0].message
+        assert "actual import error" not in sys004[0].message
+
+    # frob:ticket T-2707
+    def test_sys004_names_real_exception_when_strata_core_fails_differently(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL (T-2707's critical control): a
+        `strata_core` that raised a DIFFERENT `ImportError` (ABI/symbol
+        mismatch or a failing secondary import) must have SYS004 report
+        THAT exception, not silently relabel it as the generic
+        not-installed guess -- the exact masking defect a downstream
+        consumer (aprog-public) hit and was misdirected by."""
+        import frob.strata._parse as parse_mod
+
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+        monkeypatch.setattr(
+            parse_mod,
+            "_import_error",
+            "ImportError: libstrata_core.abi3.so: undefined symbol: some_native_fn",
+        )
+        _write(tmp_path, "design/bad.strata", "module m")
+        snapshot = _snapshot(tmp_path)
+        violations = sys_gate(tmp_path, snapshot)
+        sys004 = _by_rule(violations, "SYS004")
+        assert len(sys004) == 1
+        assert "undefined symbol" in sys004[0].message
+
     def test_doc003_proved_claim_passes(self, tmp_path: Path, monkeypatch) -> None:
         """T-0085: a `frob:claims <view>` marker whose obligations are all
         discharged produces no DOC003 violation."""

@@ -21,15 +21,20 @@ from types import ModuleType
 
 try:
     strata_core: ModuleType | None = importlib.import_module("strata_core")
-except ImportError:  # pragma: no cover - environment-dependent
+except ImportError as _exc:  # pragma: no cover - environment-dependent
     # The native parser is a maturin-built extension present in dev venvs
     # but not in standalone tool installs; degrade `build_facts` to a
     # typed Err instead of crashing every `frob check` on a repo with a
     # design/ dir (T-0133's guarded-import pattern, applied here for
     # T-0134 -- charter D3's "no pure-Python fallback" still holds, it
     # just now fails closed through Result instead of an unhandled
-    # ImportError).
-    strata_core = None
+    # ImportError). T-2707: the caught exception is captured (single
+    # tuple-assignment statement, so ruff's E402 try/except-guarded-
+    # import exemption still recognizes this as an import guard) rather
+    # than discarded -- a symbol/ABI mismatch or a failing SECONDARY
+    # import inside `strata_core` also raises `ImportError` and was
+    # previously indistinguishable from a genuinely absent extension.
+    strata_core, _import_error = None, f"{type(_exc).__name__}: {_exc}"
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
@@ -45,7 +50,28 @@ from ._models import (
     Node,
 )
 
+#: T-2707: `_import_error` is only ever bound above, inside the `except`
+#: clause -- on a successful import it is never assigned at all, so this
+#: default (placed AFTER every import to avoid re-triggering ruff's E402
+#: try/except-guarded-import exemption check above) fills it in for the
+#: success path only.
+if "_import_error" not in globals():
+    _import_error: str | None = None
+
 _log = get_logger(__name__)
+
+
+# frob:doc docs/strata/surface.md#parser
+# frob:tests tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError.test_names_the_real_exception  # noqa: E501
+def strata_core_import_error() -> str | None:
+    """The real exception text from this module's guarded `strata_core`
+    import, or `None` when the import succeeded. T-2707: mirrors
+    `frob.strata._parse.strata_core_import_error` (each module guards its
+    own import independently, T-0134/T-0135) so a caller reporting
+    `StrataError.NativeExtensionUnavailable` can name the actual cause
+    instead of only the fixed not-installed guess."""
+    return _import_error
+
 
 #: Flow attr prefix for the demand-propagation multiplier (surface `fanout NUM`).
 _FANOUT_PREFIX = "fanout="
@@ -550,7 +576,10 @@ def _validate_build_facts_preconditions(
     levels valid, quantities non-negative. Order matters -- the first
     failing check's `StrataError` is the one `build_facts` returns."""
     if strata_core is None:
-        _log.error("build_facts: strata_core native extension unavailable")
+        _log.error(
+            "build_facts: strata_core native extension unavailable (%s)",
+            _import_error or "no import error captured",
+        )
         return Err(StrataError.NativeExtensionUnavailable)
     for lattice in (model.trust, model.labels):
         if not _lattice_is_acyclic(lattice):

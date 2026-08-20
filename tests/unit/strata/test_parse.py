@@ -8,6 +8,7 @@ import sys
 import pytest
 
 from frob.strata import Module, StrataError, parse_module
+from frob.strata._parse import strata_core_import_error
 
 
 class TestParseModule:
@@ -280,3 +281,60 @@ class TestParseModuleNativeExtensionUnavailable:
         result = parse_module("module m")
         assert result.is_err
         assert result.danger_err is StrataError.NativeExtensionUnavailable
+
+
+# frob:ticket T-2707
+class TestStrataCoreImportError:
+    """T-2707: `strata_core_import_error()` surfaces the REAL exception a
+    guarded `import strata_core` raised, rather than discarding it -- the
+    masking defect a downstream consumer (aprog-public) hit: any
+    `ImportError` (a genuinely absent extension, an ABI/symbol mismatch,
+    or a failing secondary import inside the module) previously collapsed
+    to the same fixed "not installed" guess."""
+
+    # frob:ticket T-2707
+    # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_none_when_import_succeeded  # noqa: E501
+    def test_none_when_import_succeeded(self) -> None:
+        """POSITIVE CONTROL (genuinely-present direction): a real
+        successful import (the normal state in this dev venv, natives
+        built) reports no captured error at all."""
+        result = strata_core_import_error()
+        assert result is None
+
+    # frob:ticket T-2707
+    # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_names_the_real_exception_not_the_generic_guess  # noqa: E501
+    def test_names_the_real_exception_not_the_generic_guess(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL (T-2707's critical control): a
+        `strata_core` that raised a DIFFERENT `ImportError` (a stubbed-in
+        ABI mismatch) must be reported as THAT exception, not silently
+        relabeled as the common not-installed case."""
+        parse_mod = sys.modules["frob.strata._parse"]
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+        monkeypatch.setattr(
+            parse_mod,
+            "_import_error",
+            "ImportError: libstrata_core.abi3.so: undefined symbol: some_native_fn",
+        )
+        detail = strata_core_import_error()
+        assert detail is not None
+        assert "undefined symbol" in detail
+        assert "not installed" not in detail
+
+    # frob:ticket T-2707
+    # frob:tests tests/unit/strata/test_parse.py::TestStrataCoreImportError.test_parse_module_log_names_captured_detail  # noqa: E501
+    def test_parse_module_log_names_captured_detail(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """`parse_module`'s own log line names the captured detail
+        alongside the typed error, not just the bare "unavailable" text."""
+        import logging
+
+        parse_mod = sys.modules["frob.strata._parse"]
+        monkeypatch.setattr(parse_mod, "strata_core", None)
+        monkeypatch.setattr(parse_mod, "_import_error", "ImportError: boom")
+        with caplog.at_level(logging.ERROR, logger="frob.strata._parse"):
+            result = parse_module("module m")
+        assert result.is_err
+        assert any("boom" in record.message for record in caplog.records)

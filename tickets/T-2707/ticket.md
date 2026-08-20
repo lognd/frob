@@ -2,7 +2,7 @@
 id: T-2707
 title: SYS004 replaces the real ImportError with a hardcoded not-installed message,
   misdirecting diagnosis
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -21,6 +21,10 @@ scope:
 - src/frob/strata/_design_load.py
 - src/frob/gates/_sys.py
 - docs/strata/surface.md
+evidence_scope:
+- tests/unit/strata/test_parse.py
+- tests/unit/strata/test_facts.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +70,16 @@ scope_changes:
   reason: sys004 message-detail doc anchor already lives here
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/strata/test_parse.py::TestStrataCoreImportError::test_none_when_import_succeeded
+- tests/unit/strata/test_parse.py::TestStrataCoreImportError::test_names_the_real_exception_not_the_generic_guess
+- tests/unit/strata/test_parse.py::TestStrataCoreImportError::test_parse_module_log_names_captured_detail
+- tests/unit/strata/test_facts.py::TestFactsStrataCoreImportError::test_names_the_real_exception
+- tests/test_gates.py::TestSysGate::test_sys004_load_failure
+- tests/test_gates.py::TestSysGate::test_sys004_suppresses_sys001
+- tests/test_gates.py::TestSysGate::test_sys004_names_stale_native_as_likely_remedy
+- tests/test_gates.py::TestSysGate::test_sys004_names_missing_native_hint_when_genuinely_absent
+- tests/test_gates.py::TestSysGate::test_sys004_names_real_exception_when_strata_core_fails_differently
 designated_repro_test: null
 threat: null
 component: null
