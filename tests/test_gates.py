@@ -7,6 +7,13 @@
 # 2026-08-03, drain-to-zero WAIVE004 sweep: left in place -- SCOPE001 is a \
 # scope/lease-dependent rule, not a stale finding a full unscoped run can prove dead)"
 
+# frob:waive SCOPE001 reason="T-2722's declared scope is tickets/T-1614/done-report.md \
+# and tickets.md; its own regression tests for the TICK006 fix necessarily live in \
+# this file (the existing home for every other TICK006 test, \
+# TestTick006PhantomFiling), and T-2722 could not extend scope to add \
+# tests/test_gates.py -- T-2740 (in-progress) already holds a tests/test_gates.py \
+# lease at the time of this land -- same T-1398 precedent immediately above"
+
 from __future__ import annotations
 
 import builtins
@@ -18548,6 +18555,59 @@ class TestTick006PhantomFiling:
         tick006 = [v for v in violations if v.rule == "TICK006"]
         assert len(tick006) == 1
         assert "T-draft-deadbeef" in tick006[0].message
+
+    # frob:ticket T-2722
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_renumbered_draft_corrected_to_real_id_is_silent  # noqa: E501
+    def test_renumbered_draft_corrected_to_real_id_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2722: a Done report that ORIGINALLY named a pre-renumber
+        draft id (`T-draft-...`) but was corrected, post-land, to name
+        the real id it was renumbered to at land -- the fix this ticket
+        applied to T-1614's own Done report. Unlike the T-0577 draft-loss
+        shape (`test_filed_bare_draft_without_colon_fires` above), the
+        draft here DID survive land as a real ticket; only the Done
+        report's own prose was stale. Naming the real id, not the draft
+        id, is silent -- exactly TICK006's own error-message remedy
+        ("correct the Done report to name the real id")."""
+        followup = _ticket(ticket_id="T-2719", body="## Description\nx\n")
+        reporter = _ticket(
+            ticket_id="T-1614",
+            body=(
+                "## Done report\n\n"
+                "Filed: T-2719 (renumbered at land from the draft id "
+                "this pass originally filed).\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(followup, reporter))
+        assert not any(v.rule == "TICK006" for v in violations)
+
+    # frob:ticket T-2722
+    # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_stale_draft_id_after_renumber_still_fires  # noqa: E501
+    def test_stale_draft_id_after_renumber_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2722's own regression, reproduced directly: a Done report
+        that STILL names the pre-renumber draft id after the draft was
+        renumbered to a real ticket (the real id exists in the queue,
+        but the Done report text was never updated) still fires -- this
+        is the exact shape T-1614's Done report had before this
+        ticket's fix, and confirms the bug this ticket closes was real
+        (not stale-baseline noise): the fix is in the Done report's own
+        prose, not in TICK006 itself."""
+        followup = _ticket(ticket_id="T-2719", body="## Description\nx\n")
+        reporter = _ticket(
+            ticket_id="T-1614",
+            body=(
+                "## Done report\n\n"
+                "Filed: T-draft-07669f4e (RENDER001 exemption-list "
+                "extension). Real-ticket id to be confirmed post-land.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(followup, reporter))
+        tick006 = [v for v in violations if v.rule == "TICK006"]
+        assert len(tick006) == 1
+        assert "T-draft-07669f4e" in tick006[0].message
 
 
 # frob:ticket T-1129

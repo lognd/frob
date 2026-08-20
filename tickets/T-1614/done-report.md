@@ -61,8 +61,9 @@ fix the cause and report the group, do not just bless N sites):
    these files structurally can never satisfy RENDER001 (hooks must run
    without a built venv; fleet_status.py is deliberately frob-import-
    free) and each new print() in them will keep needing a fresh per-line
-   waiver forever under the current design. Filed T-draft-07669f4e
-   (scope: src/frob/gates/_render_lint.py, tests/test_gates.py) to
+   waiver forever under the current design. Filed T-2719
+   (renumbered at land from the draft id this pass originally filed;
+   scope: src/frob/gates/_render_lint.py, tests/test_gates.py) to
    extend the exemption list; did NOT touch the gate or remove any
    waiver myself -- out of this ticket's declared scope, and removing a
    waiver before the exemption exists would just break the build.
@@ -75,7 +76,8 @@ fix the cause and report the group, do not just bless N sites):
    unrelated PUBLIC symbol elsewhere in the same file (this repo's own
    frob:doc-anchor-reuse convention), which `_cov005`'s own docstring
    already names as a known noise source it tried and did not fully
-   solve. Filed T-draft-934387c0 (scope: src/frob/gates/__init__.py,
+   solve. Filed T-2720 (renumbered at land from the draft id this pass
+   originally filed; scope: src/frob/gates/__init__.py,
    src/frob/gates/_coverage_sites.py) proposing a narrower rebind check
    (require the OLD public symbol's span to actually be gone/shrunk, not
    merely "some symbol in the file used to hold this key") plus a new
@@ -116,10 +118,12 @@ either pass, 2 systemic-cause tickets filed, 2 waivers removed
 (obsolete, prior pass). 967 waivers remain in the mechanism's own
 not_covered count for the next periodic pass.
 
-Filed: T-draft-07669f4e (RENDER001 exemption-list extension),
-T-draft-934387c0 (COV005 false-positive narrowing). Both real-ticket
-ids to be confirmed post-land (drafts renumber at land per this repo's
-own convention).
+Filed: T-2719 (RENDER001 exemption-list extension), T-2720 (COV005
+false-positive narrowing). Both filed as drafts and renumbered to
+these real ids at land per this repo's own convention (T-2722:
+backfilled post-land -- this line originally named the pre-renumber
+draft ids, which TICK006 correctly flags as unresolved once the
+renumber happens and this report is not updated).
 
 Gates: no code changed by this pass (classification + two ticket
 filings only), so no new gate surface. `frob check --ticket T-1614`

@@ -18,6 +18,8 @@ scope:
 - tickets.md
 - tickets/T-1614/done-report.md
 - rapid-debt.jsonl
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +41,9 @@ scope_changes:
   reason: rapid profile debt bookkeeping auto-appended by frob ticket close
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestTick006PhantomFiling::test_renumbered_draft_corrected_to_real_id_is_silent
+- tests/test_gates.py::TestTick006PhantomFiling::test_stale_draft_id_after_renumber_still_fires
 designated_repro_test: null
 threat: null
 component: null

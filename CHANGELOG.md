@@ -205,6 +205,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2719: RENDER001: add directory/file exemptions for standalone no-frob-import scripts
 - T-2720: COV005: reduce false positives on brand-new private helpers sharing a directive anchor
 - T-2721: waive-audit progress is gitignored per-checkout, so an agent's audit pass is destroyed with its worktree
+- T-2722: post-land sweep regression from an unattributed source (sweep spawned by T-1614): 1 new (rule, file) identit(ies), 2 finding(s) (TICK006)
 - T-2723: Gate cache is not invalidated by a frob upgrade, so consumers keep seeing pre-fix findings on an unchanged tree
 - T-2726: disclosure_shaped_language signal 1 (phrase match) scans the whole ticket body, not just the Done report
 - T-2732: post-land sweep regression from an unattributed source (sweep spawned by T-2723): 137 new (rule, file) identit(ies), 1 finding(s) (ARCH001, ARCH102, ARCH103, E501)
