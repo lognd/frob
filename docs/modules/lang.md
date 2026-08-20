@@ -729,24 +729,24 @@ something they discover by noticing an analysis never ran.
   (see that function's docstring) both silently skip edges for that
   language's files -- a real circular import in an unregistered-walker
   language produces no `frob.cycle` finding at all, not a degraded one.
-  PARTIALLY RESOLVED (T-2683): `build_call_graph`'s `verify_imports=True`
-  path is covered by the same `CallGraph.degraded_languages` mechanism
-  as `call_graph` above. `frob.cycle.import_graph_gap_disclosure` (the
-  same primitive pre-bound to `import_graph`) exists and is tested, but
-  is NOT YET wired into `DependencyGraph`/`find_cycles`'s own output --
-  that file (`src/frob/cycle/graph.py`) sat outside T-2683's own
-  declared scope. <!-- frob:until T-2700 --> Tracked as T-2700.
+  RESOLVED (T-2683, wired T-2700): `build_call_graph`'s `verify_
+  imports=True` path is covered by the same `CallGraph.degraded_
+  languages` mechanism as `call_graph` above, and `frob.cycle.graph.
+  DependencyGraph.degraded_languages`/`find_cycles` now self-disclose
+  the same way -- see docs/modules/graph.md#self-disclosure-of-a-
+  silently-degraded-capability-t-2683 for the wiring.
 - **`test_discovery` absent** -- `frob.testing.collect_*_tests` (and
   therefore any `frob:tests` evidence binding that relies on collecting
   that language's real test node ids) has no entrypoint for that
   language at all: `frob check`'s coverage/evidence gates cannot verify
   a `frob:tests` directive naming a test in that language actually
   exists and collects, and LANG004's own behavioral suite cannot
-  exercise the capability either for 5 of 6 languages (see
+  exercise the capability either for 4 of 6 languages (see
   `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own comment in `frob.gates.
   _lang_conformance` for the measured per-toolchain cost that ruled out
-  rust/typescript/c/cpp/kotlin, T-2682/T-2698 -- python alone is
-  behaviorally checked). This is the most consequential `OPTIONAL` gap
+  typescript/c/cpp/kotlin, and the T-2698 re-measurement that moved rust
+  into the behaviorally-checked set alongside python). This is the most
+  consequential `OPTIONAL` gap
   of the three: an evidence claim in an affected language is
   unverifiable, not merely unresolved. Consumer-side self-disclosure
   for this one is NOT built (no `frob.testing` consumer analogous to
@@ -756,13 +756,15 @@ something they discover by noticing an analysis never ran.
 
 The common thread: an `OPTIONAL` capability's `KNOWN_GAP` state is
 always loud at the REGISTRY layer (LANG001/LANG003, `frob check`'s own
-output). T-2683 closed the DOWNSTREAM-CONSUMER silence for `call_graph`
-and `build_call_graph`'s own `import_graph` usage -- `frob.graph.
-callgraph`'s output now self-discloses. `frob.cycle`'s own output
-(T-2700) and evidence-binding's `test_discovery` gap remain silent at
-the consumer layer; a user reading only `cycle001`/evidence-gate
-results for an affected language still sees a clean or absent result
-today, not a "this analysis is incomplete for your language" note.
+output). T-2683/T-2700 closed the DOWNSTREAM-CONSUMER silence for both
+`call_graph` and `import_graph` -- `frob.graph.callgraph`'s output and
+`frob.cycle`'s own `DependencyGraph`/`find_cycles` output both now
+self-disclose. Evidence-binding's `test_discovery` gap remains silent
+at the consumer layer for the languages LANG004 still cannot
+behaviorally verify (typescript/c/cpp/kotlin); a user reading only
+`cycle001`/evidence-gate results for one of those languages still sees
+a clean or absent result today, not a "this analysis is incomplete for
+your language" note.
 
 ### Behavioral conformance (LANG004, T-2365)
 
@@ -784,21 +786,23 @@ containing a public symbol, a private symbol, a call from the public
 symbol to the private one, a real import/include/use statement, and a
 `frob:tests \` continuation directive split across two physical comment
 lines. T-2682 added `test_discovery` as the seventh, but NOT uniformly:
-only `python`'s cell is behaviorally checked (a real fixture pytest
-project, `frob.testing.collect_python_tests`, ~10ms measured) --
-rust/typescript/c/cpp/kotlin stay structural-completeness-only on
-purpose, `_BEHAVIORAL_CAPABILITY_LANGUAGES` restricting dispatch to
-python alone. This is a MEASURED cost decision, not an oversight:
-`cargo test --lib -- --list` on an empty fixture crate is a cold ~2.3s
-(rustc compiles it first); cpp's collector only lists an
-ALREADY-CONFIGURED cmake build dir (exercising it would mean this gate
-running `cmake` configure itself); typescript's collector needs `npx
-vitest` resolvable, which means an `npm install` -- a network call, not
-acceptable in a gate that must stay fast and offline-safe; kotlin's
-collector reads ALREADY-PRODUCED gradle JUnit reports (producing one
-means a cold JVM + gradle build, the heaviest of the five). Filed as
-follow-up scope (T-2698) to revisit if/when a bounded, offline-safe
-fixture exists per toolchain -- a disclosed cut, not silence (see
+only `python`'s cell was behaviorally checked at first (a real fixture
+pytest project, `frob.testing.collect_python_tests`, ~10ms measured).
+T-2698 re-measured rust (a real fixture crate, `frob.testing.collect_
+rust_tests`, ~0.9s on a warm cargo registry cache in this repo's own
+environment, offline -- the fixture declares zero dependencies) and
+added it alongside python, `_BEHAVIORAL_CAPABILITY_LANGUAGES` now
+covering `{"python", "rust"}`. typescript/c/cpp/kotlin stay structural-
+completeness-only on purpose -- still a MEASURED cost decision, not an
+oversight: cpp's collector only lists an ALREADY-CONFIGURED cmake build
+dir (exercising it would mean this gate running `cmake` configure
+itself, a whole second toolchain step this gate does not otherwise
+run); typescript's collector needs `npx vitest` resolvable, which means
+an `npm install` -- a network call, not acceptable in a gate that must
+stay fast and offline-safe; kotlin's collector reads ALREADY-PRODUCED
+gradle JUnit reports (producing one means a cold JVM + gradle build,
+the heaviest of the four remaining). A disclosed, partial delivery (2
+of 6 languages now behaviorally verified, up from 1), not silence (see
 "Optional-capability degradation" above for what the gap means for a
 consumer of an affected language). LANG004 itself is wired into `frob
 check`'s job table (T-2411, `src/frob/gates/__init__.py` was outside

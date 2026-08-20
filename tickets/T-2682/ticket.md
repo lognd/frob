@@ -26,9 +26,17 @@ no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-test_discovery]
-- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust
 - tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_unchecked_capability_is_named_not_silently_true
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python
+  new_node: tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust
+  reason: T-2698 renamed this test (rust joined the behaviorally-checked set); re-point
+    T-2682's evidence to the renamed node in the same diff per the land-time OrphanedEvidenceDeletion
+    guard
+  actor: logan
+  at: '2026-08-20'
 threat: null
 component: null
 anchor: false

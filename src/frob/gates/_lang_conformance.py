@@ -198,35 +198,45 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
 # directly while building this (T-2682's own Done report has the
 # numbers): `uv run pytest --collect-only` on a throwaway fixture is
 # ~10ms, cheap enough to run on every `frob check` invocation the same
-# way the other six capabilities already do. `cargo test --lib --
-# --list` on an empty fixture crate is a COLD ~2.3s (rustc compiles the
-# crate first) -- tolerable once, but this gate runs on every `frob
-# check`, and a fresh tmp-dir fixture never benefits from cargo's own
-# incremental cache the way a real project would. cpp's collector only
-# ever lists an ALREADY-CONFIGURED cmake build directory (never invokes
+# way the other six capabilities already do. cpp's collector only ever
+# lists an ALREADY-CONFIGURED cmake build directory (never invokes
 # cmake itself, per its own docstring) -- exercising it behaviorally
 # would mean this gate running `cmake` configure itself, a second,
-# heavier toolchain step apart from cargo's cost. typescript's
-# collector needs a `vitest` dependency actually resolvable via `npx`
-# in the fixture project -- `npm install` in a tmp dir is a NETWORK
-# call, unacceptable for a gate that must stay fast and offline-safe.
-# kotlin's collector reads ALREADY-PRODUCED gradle JUnit reports (never
-# invokes gradle itself, per its own docstring) -- producing one means
-# a cold JVM + gradle build, the heaviest of the five.
+# heavier toolchain step. typescript's collector needs a `vitest`
+# dependency actually resolvable via `npx` in the fixture project --
+# `npm install` in a tmp dir is a NETWORK call, unacceptable for a gate
+# that must stay fast and offline-safe. kotlin's collector reads
+# ALREADY-PRODUCED gradle JUnit reports (never invokes gradle itself,
+# per its own docstring) -- producing one means a cold JVM + gradle
+# build, the heaviest of the four remaining.
+#
+# T-2698: rust MOVED from this excluded set into `_TEST_DISCOVERY_
+# BUILDERS`/`_BEHAVIORAL_CAPABILITY_LANGUAGES` below -- re-measured at
+# ~0.9s cold (`cargo test --lib -- --list` on a two-file, zero-
+# dependency fixture crate, this repo's own environment, T-2682's
+# original ~2.3s figure was measured on a colder cargo registry cache)
+# and, critically, fully OFFLINE: the fixture crate declares no
+# dependencies, so `cargo test` never touches the network the way
+# typescript's `npm install` would. Bounded and offline-safe was
+# exactly the bar `_BEHAVIORAL_CAPABILITY_LANGUAGES`'s own prior
+# comment asked a future revisit to clear; rust clears it, the other
+# three do not (cpp needs a whole second toolchain step this gate does
+# not otherwise run; typescript needs the network; kotlin needs a cold
+# JVM+gradle build) -- a real, disclosed, COST-driven partial delivery
+# (1 of 4 remaining), not a forced uniform rollout.
 #
 # `_BEHAVIORAL_CAPABILITY_LANGUAGES` (below) is the language-scoped
 # restriction this requires: `_BEHAVIORALLY_CHECKED_CAPABILITIES`
 # alone means "check this capability for every language with an
 # IMPLEMENTED cell" (true and fine for the other six, which are all
 # single-file-fixture-cheap regardless of language) -- test_discovery
-# is the first capability where that blanket rule is wrong. rust/
-# typescript/c/cpp/kotlin test_discovery stay structural-only for now,
-# same honest status they had before this ticket (LANG001 still holds
-# them to the structural-completeness bar) -- a real, disclosed,
-# COST-driven cut, not silence. Filed as follow-up scope (T-2698) to
-# revisit if/when a bounded, offline-safe way to exercise them exists
-# (e.g. a pre-built, checked-in fixture project per toolchain instead
-# of a from-scratch tmp-dir build every gate run).
+# is the first capability where that blanket rule is wrong. typescript/
+# c/cpp/kotlin test_discovery stay structural-only for now, same honest
+# status they had before T-2682 (LANG001 still holds them to the
+# structural-completeness bar) -- a real, disclosed, COST-driven cut,
+# not silence. Revisit if/when a bounded, offline-safe way to exercise
+# them exists (e.g. a pre-built, checked-in fixture project per
+# toolchain instead of a from-scratch tmp-dir build every gate run).
 _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
     {
         CAPABILITY_SYMBOL_WALK,
@@ -245,7 +255,7 @@ _BEHAVIORALLY_CHECKED_CAPABILITIES = frozenset(
 # implies). A capability absent from this dict is checked for every
 # language with an IMPLEMENTED cell, unchanged from before this ticket.
 _BEHAVIORAL_CAPABILITY_LANGUAGES: dict[str, frozenset[str]] = {
-    CAPABILITY_TEST_DISCOVERY: frozenset({"python"}),
+    CAPABILITY_TEST_DISCOVERY: frozenset({"python", "rust"}),
 }
 
 
@@ -351,17 +361,10 @@ def _check_import_graph(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:
 # new behaviorally-checked capability means adding one function plus one
 # entry here, not growing one long if/elif chain past ARCH001's
 # length-and-complexity threshold again.
-def _check_test_discovery(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
-    """`CAPABILITY_TEST_DISCOVERY`'s own behavioral check (T-2682) --
-    ONLY ever invoked for `language == "python"`
-    (`_BEHAVIORAL_CAPABILITY_LANGUAGES` restricts dispatch before this
-    runs; see that dict's own comment for the measured per-language cost
-    that ruled out rust/typescript/c/cpp/kotlin this round). Ignores the
-    shared single-file `parsed`/`path` fixture entirely -- test discovery
-    needs its own small real pytest project, not a parsed source file --
-    and writes one under a nested `tmp_path` directory instead."""
-    project = tmp_path / "test_discovery_fixture"
-    project.mkdir(exist_ok=True)
+def _check_test_discovery_python(project: Path) -> tuple[bool, str]:
+    """`CAPABILITY_TEST_DISCOVERY`'s python-specific behavioral check
+    (T-2682): a single real pytest module, collected via `frob.testing.
+    collect_python_tests` (~10ms measured, T-2682's own Done report)."""
     (project / "test_fixture.py").write_text(
         "def test_capability_fixture_discoverable():\n    assert True\n",
         encoding="utf-8",
@@ -374,6 +377,73 @@ def _check_test_discovery(parsed, path: Path, tmp_path: Path) -> tuple[bool, str
     node_ids = collected.danger_ok.node_ids
     ok = any("test_capability_fixture_discoverable" in n for n in node_ids)
     return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+
+def _check_test_discovery_rust(project: Path) -> tuple[bool, str]:
+    """`CAPABILITY_TEST_DISCOVERY`'s rust-specific behavioral check
+    (T-2698): a minimal real crate (`Cargo.toml` + `src/lib.rs` with one
+    `#[test]` fn), collected via `frob.testing.collect_rust_tests`
+    (`cargo test --lib -- --list`). Measured ~0.9s cold on a warm cargo
+    registry cache (T-2682's own ~2.3s figure was measured on a colder
+    environment; both are bounded and fully offline -- no crates.io
+    fetch, since the fixture declares zero dependencies) -- tolerable on
+    every `frob check` the way the other six single-file-fixture
+    capabilities already are, unlike typescript/kotlin's network/JVM
+    costs or cpp's missing configure step (see `_BEHAVIORAL_CAPABILITY_
+    LANGUAGES`'s own comment for why those three stay structural-only)."""
+    (project / "Cargo.toml").write_text(
+        '[package]\nname = "fixture"\nversion = "0.1.0"\nedition = "2021"\n',
+        encoding="utf-8",
+    )
+    src = project / "src"
+    src.mkdir(exist_ok=True)
+    (src / "lib.rs").write_text(
+        "pub fn add(a: i32, b: i32) -> i32 {\n    a + b\n}\n\n"
+        "#[cfg(test)]\nmod tests {\n    use super::*;\n\n    #[test]\n"
+        "    fn test_capability_fixture_discoverable() {\n"
+        "        assert_eq!(add(2, 2), 4);\n    }\n}\n",
+        encoding="utf-8",
+    )
+    from frob.testing import collect_rust_tests
+
+    collected = collect_rust_tests(project)
+    if collected.is_err:
+        return False, f"collect_rust_tests failed: {collected.danger_err}"
+    node_ids = collected.danger_ok.node_ids
+    ok = any("test_capability_fixture_discoverable" in n for n in node_ids)
+    return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+
+# T-2698: language -> its own test_discovery fixture-builder, dispatched
+# by `_check_test_discovery` on the fixture file's own suffix (the
+# checker signature carries no separate `language` argument -- see
+# `_behavioral_capability_check`'s dispatch, which only ever threads
+# `(parsed, path, tmp_path)` through). Extending coverage to a new
+# language means adding one function here plus one entry, not touching
+# `_check_test_discovery` itself.
+_TEST_DISCOVERY_BUILDERS: dict[str, Callable[[Path], tuple[bool, str]]] = {
+    ".py": _check_test_discovery_python,
+    ".rs": _check_test_discovery_rust,
+}
+
+
+def _check_test_discovery(parsed, path: Path, tmp_path: Path) -> tuple[bool, str]:  # noqa: ANN001
+    """`CAPABILITY_TEST_DISCOVERY`'s own behavioral check (T-2682, widened
+    T-2698) -- ONLY ever invoked for a language present in `_TEST_
+    DISCOVERY_BUILDERS` (`_BEHAVIORAL_CAPABILITY_LANGUAGES` restricts
+    dispatch before this runs; see that dict's own comment for the
+    measured per-language cost that still rules out typescript/c/cpp/
+    kotlin). Ignores the shared single-file `parsed`/`path` fixture
+    CONTENT entirely -- test discovery needs its own small real project,
+    not a parsed source file -- but reuses `path.suffix` to pick which
+    language-specific fixture builder to run, and writes that project
+    under a nested `tmp_path` directory."""
+    builder = _TEST_DISCOVERY_BUILDERS.get(path.suffix)
+    if builder is None:
+        return False, f"no test_discovery fixture builder for suffix {path.suffix!r}"
+    project = tmp_path / "test_discovery_fixture"
+    project.mkdir(exist_ok=True)
+    return builder(project)
 
 
 _CAPABILITY_CHECKERS: dict[str, Callable[[object, Path, Path], tuple[bool, str]]] = {

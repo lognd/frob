@@ -299,30 +299,88 @@ class TestBehavioralCapabilityCheck:
         assert "no behavioral check" in detail
 
     # frob:ticket T-2682
-    def test_test_discovery_is_not_behaviorally_checked_outside_python(
+    # frob:ticket T-2698
+    def test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust(
         self,
     ) -> None:
         """T-2682's own cost-driven scope decision must be LOUD and
-        verifiable, not just prose in a comment: rust/typescript/c/cpp/
-        kotlin all have `test_discovery` IMPLEMENTED in the live registry
+        verifiable, not just prose in a comment: typescript/c/cpp/kotlin
+        all have `test_discovery` IMPLEMENTED in the live registry
         (T-2499), but `_behaviorally_checked_languages` restricts the
-        behavioral check to python only -- so none of the other five
-        appear in `_implemented_behavioral_cells()`'s own parametrization,
-        confirmed directly rather than assumed."""
+        behavioral check to python/rust (T-2698 added rust) -- so none of
+        the remaining four appear in `_implemented_behavioral_cells()`'s
+        own parametrization, confirmed directly rather than assumed."""
         registry = derive_capability_registry()
-        non_python_implemented = {
+        remaining_implemented = {
             language
             for language, support in registry.items()
-            if language != "python"
+            if language not in ("python", "rust")
             and support.capabilities["test_discovery"].state
             is FacetState.IMPLEMENTED
         }
-        # A real, non-vacuous set: at least rust/typescript/kotlin/c/cpp
-        # are IMPLEMENTED today (T-2499's own live derivation).
-        assert non_python_implemented
+        # A real, non-vacuous set: at least typescript/kotlin/c/cpp are
+        # IMPLEMENTED today (T-2499's own live derivation).
+        assert remaining_implemented
         cells = set(_implemented_behavioral_cells())
-        for language in non_python_implemented:
+        for language in remaining_implemented:
             assert (language, "test_discovery") not in cells
+
+    # frob:ticket T-2698
+    def test_rust_test_discovery_is_behaviorally_checked(self) -> None:
+        """T-2698's own positive control, the mirror of the negative
+        control above: rust IS in `_implemented_behavioral_cells()`'s own
+        parametrization now, proving the widened dispatch actually
+        reaches rust rather than the docstring/comment claiming it does
+        while the dispatch dict silently still excludes it."""
+        cells = set(_implemented_behavioral_cells())
+        assert ("rust", "test_discovery") in cells
+
+    # frob:ticket T-2698
+    def test_rust_test_discovery_passes_on_a_real_discoverable_fixture(
+        self, tmp_path: Path
+    ) -> None:
+        """Positive control: the real rust fixture builder
+        (`_check_test_discovery_rust`) writes a genuine `#[test]` fn and
+        `collect_rust_tests` (`cargo test --lib -- --list`) finds it --
+        proves the adapter's own real toolchain integration works, not
+        just that a checker function exists."""
+        ok, detail = _behavioral_capability_check("rust", "test_discovery", tmp_path)
+        assert ok, detail
+        assert "test_capability_fixture_discoverable" in detail
+
+    # frob:ticket T-2698
+    def test_rust_test_discovery_fails_when_the_crate_cannot_compile(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL positive control (the rust analogue of `test_no_
+        symbols_fixture_is_caught_not_rubber_stamped` above): a `Cargo.
+        toml` with no `[package]` table is not a real crate, so `cargo
+        test --lib -- --list` cannot discover anything from it --
+        `collect_rust_tests` must report failure/emptiness, and this
+        check must propagate that as `ok=False`, proving it genuinely
+        inspects `collect_rust_tests`'s own result rather than always
+        reporting success once cargo runs at all."""
+        import frob.gates._lang_conformance as module
+
+        def _broken_rust_project(project: Path) -> tuple[bool, str]:
+            # No [package] table at all -- cargo has nothing to build or
+            # list tests for, the rust-toolchain equivalent of the
+            # "no symbols" python fixture above.
+            (project / "Cargo.toml").write_text("", encoding="utf-8")
+            from frob.testing import collect_rust_tests
+
+            collected = collect_rust_tests(project)
+            if collected.is_err:
+                return False, f"collect_rust_tests failed: {collected.danger_err}"
+            node_ids = collected.danger_ok.node_ids
+            ok = any("test_capability_fixture_discoverable" in n for n in node_ids)
+            return ok, f"{len(node_ids)} node id(s) collected: {sorted(node_ids)}"
+
+        monkeypatch.setitem(
+            module._TEST_DISCOVERY_BUILDERS, ".rs", _broken_rust_project
+        )
+        ok, detail = _behavioral_capability_check("rust", "test_discovery", tmp_path)
+        assert not ok, f"unbuildable crate was wrongly reported as passing: {detail}"
 
 
 # frob:ticket T-2365

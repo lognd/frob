@@ -2,7 +2,7 @@
 id: T-2698
 title: 'LANG004: behavioral test_discovery coverage for rust/typescript/c/cpp/kotlin
   (cost-blocked, needs a bounded offline-safe fixture design)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -22,6 +22,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_rust_test_discovery_is_behaviorally_checked
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_rust_test_discovery_passes_on_a_real_discoverable_fixture
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_rust_test_discovery_fails_when_the_crate_cannot_compile
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_test_discovery_is_not_behaviorally_checked_outside_python_and_rust
 designated_repro_test: null
 threat: null
 component: null
