@@ -135,6 +135,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: carry the coordinator's misattribution measurement and detection-vs-regression
+    analysis onto the surviving ticket before dropping the duplicate T-2731
+  actor: logan
+  at: '2026-08-20'
+  old_length: 25424
+  new_length: 27829
 designated_repro_test: null
 threat: null
 component: null
@@ -427,3 +435,61 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - PERF004  tests/unit/test_extending_guides_complete.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+
+
+## COORDINATOR ANALYSIS (2026-08-20): these are real, and the blame is wrong
+
+Measured before this ticket was auto-filed:
+
+    b35f47220 (T-2723's land) touched exactly ONE source file:
+      src/frob/gates/_gate_cache.py
+
+    quarantined findings span 116 files
+    files touched by the blamed land:  0
+
+Every one of the 137 findings also carries `commit_sha: null` and
+`ticket_id: null` -- the attribution engine could not connect any of them
+to a commit, which is CORRECT, because they predate the batch.
+
+Breakdown:
+
+    PERF004  54     ARCH103  24     ARCH001  22
+    ARCH102  15     PERF003  15     PERF002   5
+    E501      1     PERF001   1
+
+## Why they all surfaced at once -- this is a DETECTION event, not a regression
+
+Before T-2713 and T-2715 landed, the deferred verification ran under a
+budget that silently dropped most gate families and recorded a rolling
+baseline of TWO findings against a tree that genuinely had ~40 error
+identities -- then reported GREEN and advanced the watermark anyway.
+
+With both repaired, the first COMPLETE verification saw the real floor for
+the first time and raised all of it. The machinery is working. But it means
+the first honest run after repairing a measurement will always look like a
+catastrophic regression, and quarantine currently cannot tell 'newly
+detected' from 'newly introduced'.
+
+That distinction is worth building: a finding whose file was untouched by
+the blamed batch, carrying a null commit_sha, is a detection event. Consider
+whether quarantine should raise on those at all, or raise separately without
+blocking deferred landing repo-wide.
+
+## Disposition
+
+Work these as ordinary debt, grouped by rule. PERF004 and ARCH103/ARCH001
+dominate and are likely a small number of underlying causes rather than 137
+independent problems -- where a group shares one cause, fix the cause and
+report the group, as T-1614's waiver audit did (see T-2719, T-2720).
+
+Do NOT dismiss them wholesale. They are real findings that reproduce on
+current main.
+
+Per-fix controls, both directions: the finding stops reproducing at the named
+site, AND a planted genuine violation of that rule still fires. A narrowing
+fix that stops detecting anything is a regression -- this repo has shipped
+that mistake before.
+
+Supersedes T-2731, which I filed for this same finding set moments before the
+rapid sweep auto-filed this one; T-2731 is dropped as a duplicate.
