@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +26,11 @@ scope_changes:
   glob: src/frob/tickets/_reporting.py
   reason: 'the disclosure-shaped-language structural check (T-1648/T-2638) that fires
     on the auto-generated ### Changed/Evidence headings lives here'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: documenting the T-2711/T-2718 exempt-fixed-headings decision
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
