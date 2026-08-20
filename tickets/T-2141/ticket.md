@@ -43,6 +43,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5acddd68b029dfd8bfabfbe8db050a92696d4ad3
 ---
 frob:waive BUG002 reason="T-2141's own fix (_cross_ticket_carried_paths, _land_cmd.py) already landed onto main as an undisclosed-turned-disclosed passenger of T-1549's own --allow-cross-ticket land (both tickets share one series worktree branch, T-1549 landed first per coordinator instruction 2026-08-19/20). main now already contains the fix, so the designated repro test structurally cannot fail at parent any more -- confirmatory-only is the only possible outcome from this point forward, not evidence the original repro was ever weak. git diff main -- src/frob/app/ticket_runner/_land_cmd.py is empty; this land is now a ledger-close operation over already-shipped code, not a fresh code change."
