@@ -14,6 +14,11 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_store.py
+- src/frob/strata/_selfconform.py
+- tests/unit/test_ticket_store.py
+- tests/unit/strata/test_selfconform.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +29,34 @@ scope_changes:
   reason: 'T-2695: narrow to a tractable first batch -- src/frob/** as declared scope
     is a repo-wide write lease that stalls every other agent; per coordinator direction,
     narrow before start and work in batches'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: 'T-2695 batch 2a: two named split-candidate files from the ticket body --
+    _store.py (single-vs-legacy-backend seam) and _selfconform.py (SYS100-SYS107 numbered-rule
+    seam)'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'T-2695 batch 2a: two named split-candidate files from the ticket body --
+    _store.py (single-vs-legacy-backend seam) and _selfconform.py (SYS100-SYS107 numbered-rule
+    seam)'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: 'T-2695 batch 2a: two named split-candidate files from the ticket body --
+    _store.py (single-vs-legacy-backend seam) and _selfconform.py (SYS100-SYS107 numbered-rule
+    seam)'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'T-2695 batch 2a: two named split-candidate files from the ticket body --
+    _store.py (single-vs-legacy-backend seam) and _selfconform.py (SYS100-SYS107 numbered-rule
+    seam)'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
