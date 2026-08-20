@@ -1,7 +1,7 @@
 ---
 id: T-2699
 title: Recovered from T-2685's phantom TICK006 citation of T-draft-be1e79b5
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-19'
@@ -34,3 +34,6 @@ id lists, empty). Filed T-draft-be1e79b5 for the underlying tool bug
 ### Verification
 
 Before: `frob check --only docanchor --only dr
+
+## Drop reason
+- 2026-08-20: phantom citation T-draft-be1e79b5 resolves via git rename to T-2678 (git show -M --name-status a44f96e60: R099 tickets/T-draft-be1e79b5/ticket.md -> tickets/T-2678/ticket.md); this recovery ticket is itself a duplicate filing caused by the T-2699/T-2701 bug fixed in T-2702 -- re-measured 2026-08-20 via _resolve_via_git_rename_measured(root, 'T-draft-be1e79b5') = ('T-2678', True)
