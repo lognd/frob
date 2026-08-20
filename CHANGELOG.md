@@ -19,6 +19,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 ## [0.531.0] - unreleased
 
+- T-1549: Tier-A auto-fix: ClaimDivergence re-run via done-report recap
 - T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
 - T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
 - T-2128: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity while every other SCOPE002 against this doc is a warning

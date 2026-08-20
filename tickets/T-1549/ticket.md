@@ -1,7 +1,7 @@
 ---
 id: T-1549
 title: 'Tier-A auto-fix: ClaimDivergence re-run via done-report recap'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'

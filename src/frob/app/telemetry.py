@@ -184,6 +184,14 @@ _HOME_CLAUDE_RUNTIME_STATE_DIRS = frozenset(
 
 
 # frob:ticket T-2322
+# frob:ticket T-2303
+# frob:invariant terminates reason="recurses only into a DIRECT child directory entry \
+# (entry.is_dir()) returned by os.scandir(root) -- the filesystem directory tree \
+# rooted at home_claude is finite depth (no directory can be its own descendant \
+# outside a symlink cycle, and this walk never follows symlinks: entry.is_dir/is_file \
+# both pass follow_symlinks=False), so every recursive call strictly descends one real \
+# directory level toward that finite floor" measure="depth of the home_claude \
+# directory subtree strictly decreases with each recursive call"
 def _walk_home_claude_entries(root: Path, home_claude: Path) -> list[str]:
     """Recursive part of `_home_config_state_hash` (T-2322 ARCH001 split,
     zero behavior change): returns `"relpath:size:mtime_ns"` entries for
@@ -404,6 +412,12 @@ def _external_path_arg_hash(root: Path, args_head: str) -> str:
             continue
         candidate = Path(token)
         try:
+            # frob:waive PERF008 reason="T-2303: candidate is THIS iteration's own \
+            # token (a different path every time args_head.split() advances) -- cwd is \
+            # the only genuinely loop-invariant operand here, and it is already \
+            # computed once above the loop; there is nothing loop-invariant left to \
+            # hoist, the same shape already accepted for _land_cmd.py:2361/1321 and \
+            # _rapid_sweep.py:2411 (T-2321/T-1841)"
             resolved = (
                 candidate if candidate.is_absolute() else cwd / candidate
             ).resolve()

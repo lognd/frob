@@ -580,6 +580,51 @@ def _reverify_gate_findings_by_identity(
             ticket_id,
         )
         return None
+    # frob:ticket T-1549
+    # T-1549: an empty rule id is never a real gate finding -- every real
+    # rule id is a non-empty code (ARCH001, COV003, ...). `frob.check.
+    # _python._gates_error_result` synthesizes exactly one such sentinel
+    # (`Diagnostic(file="tickets.md", ...)`, no `code=`) whenever
+    # `run_gates` itself fails with `GateError.QueueUnavailable` (a
+    # malformed ledger entry, not a real gate result) -- and because
+    # `scope_matches` treats `tickets.md`/`LEDGER_PATH` as ALWAYS
+    # implicitly in scope for every ticket, that sentinel used to reach
+    # `scoped_new` below unconditionally, presenting as a brand-new
+    # in-scope finding and refusing the land with `ClaimDivergence` for
+    # EVERY ticket landing while the queue happened to be unreadable --
+    # not a stale claim (the T-1531 manual recipe's own target: re-run
+    # `done-report` to refresh a genuinely outdated capture), but an
+    # unmeasurable upstream failure a done-report refresh cannot fix at
+    # all, since the SAME queue failure recurs on the refresh's own
+    # capture run. Filtering these out here, before the scope check,
+    # keeps a corrupt-queue land from ever presenting as a claim
+    # divergence in the first place -- the correct fix is distinguishing
+    # the two cases, not auto-retrying one that structurally cannot
+    # succeed (see this ticket's Done report for the incident this
+    # reproduces: four burned land attempts against exactly this
+    # sentinel, T-1531's own recipe failing identically on retry because
+    # the queue failure, not a stale claim, was the actual cause).
+    sentinel_findings = [(rule, file) for rule, file in fresh_findings if not rule]
+    if sentinel_findings:
+        _log.warning(
+            "land: %s fresh `frob check --ticket %s` reported %d "
+            "identity-less finding(s) (%s) -- these are infrastructure- "
+            "failure sentinels (a `run_gates` queue-load failure, not a "
+            "real gate rule), never real findings; excluded from the "
+            "identity-based comparison below. If this land refuses "
+            "downstream, the fix is repairing whatever made the ticket "
+            "queue fail to load (check the sentinel file for a malformed "
+            "entry), NOT re-running `frob ticket done-report` -- that "
+            "recipe only helps a genuinely stale claim, and this is not "
+            "one",
+            ticket_id,
+            ticket_id,
+            len(sentinel_findings),
+            sorted(sentinel_findings),
+        )
+    fresh_findings = frozenset(
+        pair for pair in fresh_findings if pair not in sentinel_findings
+    )
     new_findings = fresh_findings - claims.error_findings
     # T-0846: `ticket.scope` is the diff-touched-files PROXY this module
     # has on hand -- `frob.tickets` deliberately has no `frob.gitio`/

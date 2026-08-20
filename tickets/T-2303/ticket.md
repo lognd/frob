@@ -2,7 +2,7 @@
 id: T-2303
 title: ARCH001/ARCH103/PERF004/SELFAUDIT001 debt in _land_cmd.py, telemetry.py, _new.py,
   design (found by T-2206 sweep)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -19,6 +19,9 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_new.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
+evidence_scope:
+- tests/test_telemetry.py
+- tests/unit/test_new_ticket_scope_overlap_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +33,10 @@ scope_changes:
     debt split out, not fixed in this pass
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_telemetry.py::test_redundant_rerun_not_flagged_when_home_claude_config_changed
+- tests/test_telemetry.py::test_redundant_rerun_still_flags_when_nothing_changed_at_all
+- tests/unit/test_new_ticket_scope_overlap_warning.py::TestNonRelativeScopeDoesNotCrash::test_corrupt_row_is_named_loudly_not_silently_coerced
 designated_repro_test: null
 threat: null
 component: null

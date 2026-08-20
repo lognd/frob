@@ -19,6 +19,8 @@ import pytest
 
 from frob._cli_parsers._ticket import _add_ticket_land_parser
 from frob.app.config import AppConfig
+from frob.tickets import Origin, TicketKind, new_ticket
+from frob.tickets._models import TicketSpec
 
 
 def _parse(argv: list[str]) -> argparse.Namespace:
@@ -375,3 +377,178 @@ class TestLandDrain:
         _land_cmd._land_drain(tmp_path, cfg)
 
         assert land_core_calls == ["T-0001", "T-0002"]
+
+
+# frob:ticket T-2141
+class TestCrossTicketCarriedPathsDisclosure:
+    """`_cross_ticket_carried_paths` (T-2141): the full set of touched
+    files a `--allow-cross-ticket` land carries OUTSIDE the landing
+    ticket's own declared scope -- the disclosure meant to replace a
+    manual post-land `git show --stat`."""
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestCrossTicketCarriedPathsDisclosure.test_out_of_scope_file_is_reported_carried  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_cross_ticket_carried_paths kind="unit"  # noqa: E501
+    def test_out_of_scope_file_is_reported_carried(self, tmp_path: Path) -> None:
+        """Positive control: a touched file outside the ticket's own
+        scope MUST show up in the carried set -- this is the planted
+        violation the disclosure exists to surface."""
+        from frob.app.ticket_runner import _land_cmd
+
+        spec = TicketSpec(
+            title="seed",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/app/ticket_runner/_land_cmd.py",),
+        )
+        ticket = new_ticket(tmp_path, spec).danger_ok
+
+        touched = frozenset(
+            {"src/frob/app/ticket_runner/_land_cmd.py", "src/frob/other/module.py"}
+        )
+        carried = _land_cmd._cross_ticket_carried_paths(tmp_path, ticket.id, touched)
+
+        assert carried == ("src/frob/other/module.py",)
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestCrossTicketCarriedPathsDisclosure.test_all_files_in_scope_reports_nothing_carried  # noqa: E501
+    def test_all_files_in_scope_reports_nothing_carried(self, tmp_path: Path) -> None:
+        """Negative control: every touched file matches the ticket's own
+        declared scope -- must NOT be flagged as carried (a false
+        positive here would train the operator to ignore the warning)."""
+        from frob.app.ticket_runner import _land_cmd
+
+        spec = TicketSpec(
+            title="seed",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/app/ticket_runner/**",),
+        )
+        ticket = new_ticket(tmp_path, spec).danger_ok
+
+        touched = frozenset(
+            {
+                "src/frob/app/ticket_runner/_land_cmd.py",
+                "src/frob/app/ticket_runner/_new.py",
+            }
+        )
+        carried = _land_cmd._cross_ticket_carried_paths(tmp_path, ticket.id, touched)
+
+        assert carried == ()
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestCrossTicketCarriedPathsDisclosure.test_none_touched_paths_is_unmeasurable_not_empty  # noqa: E501
+    def test_none_touched_paths_is_unmeasurable_not_empty(
+        self, tmp_path: Path
+    ) -> None:
+        """`None` in must mean `None` out -- an unmeasurable diff must
+        never be reported as "nothing was carried" (a silent-zero, per
+        this repo's own standing doctrine)."""
+        from frob.app.ticket_runner import _land_cmd
+
+        spec = TicketSpec(
+            title="seed",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/app/ticket_runner/_land_cmd.py",),
+        )
+        ticket = new_ticket(tmp_path, spec).danger_ok
+
+        carried = _land_cmd._cross_ticket_carried_paths(tmp_path, ticket.id, None)
+
+        assert carried is None
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestCrossTicketCarriedPathsDisclosure.test_unloadable_ticket_returns_none_not_empty  # noqa: E501
+    def test_unloadable_ticket_returns_none_not_empty(self, tmp_path: Path) -> None:
+        """An unloadable ticket is also "could not compute", never a
+        silent empty carried set."""
+        from frob.app.ticket_runner import _land_cmd
+
+        carried = _land_cmd._cross_ticket_carried_paths(
+            tmp_path, "T-9999", frozenset({"some/file.py"})
+        )
+
+        assert carried is None
+
+
+# frob:ticket T-2141
+class TestWarnLandOverrideFlagsDisclosesCarriedSet:
+    """`_warn_land_override_flags` (T-2141): the log-visible side of the
+    disclosure -- must actually surface the carried set when
+    `--allow-cross-ticket` is set, not just compute it silently."""
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestWarnLandOverrideFlagsDisclosesCarriedSet.test_carried_file_is_logged_at_warning  # noqa: E501
+    # frob:tests src/frob/app/ticket_runner/_land_cmd.py::_warn_land_override_flags kind="unit"  # noqa: E501
+    def test_carried_file_is_logged_at_warning(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        from frob.app.ticket_runner import _land_cmd
+
+        spec = TicketSpec(
+            title="seed",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/app/ticket_runner/_land_cmd.py",),
+        )
+        ticket = new_ticket(tmp_path, spec).danger_ok
+
+        argv = [
+            "land",
+            ticket.id,
+            "--worktree",
+            str(tmp_path),
+            "--allow-cross-ticket",
+        ]
+        cfg = AppConfig.from_external(_parse(argv), tmp_path / "frob.toml")
+        cfg = cfg.model_copy(update={"ticket_id": ticket.id})
+
+        with caplog.at_level("WARNING"):
+            _land_cmd._warn_land_override_flags(
+                cfg,
+                tmp_path,
+                frozenset(
+                    {
+                        "src/frob/app/ticket_runner/_land_cmd.py",
+                        "src/frob/passenger/file.py",
+                    }
+                ),
+            )
+
+        assert any(
+            "src/frob/passenger/file.py" in record.message for record in caplog.records
+        )
+
+    # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestWarnLandOverrideFlagsDisclosesCarriedSet.test_no_flag_no_disclosure_logged  # noqa: E501
+    def test_no_flag_no_disclosure_logged(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Negative control: without `--allow-cross-ticket`, no carried-set
+        disclosure is logged at all -- this is not a general-purpose
+        "what did I touch" printout, only the escape-hatch's own
+        justification trail."""
+        from frob.app.ticket_runner import _land_cmd
+
+        spec = TicketSpec(
+            title="seed",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            scope=("src/frob/app/ticket_runner/_land_cmd.py",),
+        )
+        ticket = new_ticket(tmp_path, spec).danger_ok
+
+        argv = ["land", ticket.id, "--worktree", str(tmp_path)]
+        cfg = AppConfig.from_external(_parse(argv), tmp_path / "frob.toml")
+        cfg = cfg.model_copy(update={"ticket_id": ticket.id})
+
+        with caplog.at_level("WARNING"):
+            _land_cmd._warn_land_override_flags(
+                cfg,
+                tmp_path,
+                frozenset(
+                    {
+                        "src/frob/app/ticket_runner/_land_cmd.py",
+                        "src/frob/passenger/file.py",
+                    }
+                ),
+            )
+
+        assert not any(
+            "src/frob/passenger/file.py" in record.message for record in caplog.records
+        )

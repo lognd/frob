@@ -979,6 +979,11 @@ def _expand_scope_globs_to_paths(root: Path, globs) -> set[Path]:  # noqa: ANN00
             # bounded-subtree walk this could prune ahead of time -- the same shape \
             # scripts/fleet_status.py::_expand_scope_globs_to_paths (T-2225) already \
             # takes for the identical call"
+            # frob:waive PERF008 reason="T-2303: match is THIS iteration's own glob \
+            # hit (a different file every time root.glob(pattern) advances) -- there \
+            # is no loop-invariant operand to hoist; matches the already- accepted \
+            # _land_cmd.py/telemetry.py shape for the identical varies-per-iteration \
+            # false-positive class (T-2321)"
             for match in root.glob(pattern):
                 if match.is_file():
                     paths.add(match.resolve())
@@ -1046,6 +1051,11 @@ def _scope_overlap_warnings(root: Path, new_ticket_id: str, scope) -> tuple[str,
                 "-- repair via `frob ticket scope` (never hand-edit)"
             )
         other_paths = _expand_scope_globs_to_paths(root, other.scope)
+        # frob:waive PERF004 reason="T-2303: the intersection my_paths & other_paths \
+        # is THIS iteration's own set (other_paths differs per other_id) -- there is \
+        # no fixed, iteration-independent sequence to sort once outside the loop and \
+        # reuse; a genuinely different sort target every time is not the \
+        # accidental-repeated-sort shape this rule targets"
         overlap = sorted(
             str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
             for p in (my_paths & other_paths)

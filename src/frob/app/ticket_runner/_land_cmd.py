@@ -2930,12 +2930,73 @@ def _land_rebuild_natives_fn():  # noqa: ANN201
     return fn
 
 
+# frob:ticket T-2141
+def _cross_ticket_carried_paths(
+    worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
+) -> tuple[str, ...] | None:
+    """T-2141: the FULL set of `touched_paths` that fall OUTSIDE
+    `ticket_id`'s own declared scope -- every file this land will carry
+    onto main beyond what the ticket itself claims, sorted for stable
+    output. This is deliberately broader than `CrossTicketLeakage`'s own
+    `leaked` dict (`_report_leaked_tickets` in `frob.tickets._land`),
+    which only names files that collide with ANOTHER open ticket's
+    declared scope -- a file with no scope owner at all (an untracked
+    doc tweak, a stray directive citation) never appears there, yet it
+    still rides the land silently. Motivating incident: an agent needed
+    `--allow-cross-ticket` for nothing more than a stray `frob:ticket`
+    doc-directive citation, then had to run `git show --stat` BY HAND
+    after the land to confirm what actually rode along -- this function
+    makes that disclosure happen BEFORE the land instead.
+
+    Returns `None` (never an empty tuple used as a false "nothing
+    carried") when `touched_paths` is `None` (T-1404's own unmeasurable-
+    diff case) or the ticket itself fails to load -- both are "could not
+    compute this", not "nothing was carried", and the caller must not
+    conflate the two."""
+    if touched_paths is None:
+        return None
+    from frob.tickets import _load_one
+    from frob.tickets._models import scope_matches
+
+    loaded = _load_one(worktree, ticket_id)
+    if loaded.is_err:
+        _log.warning(
+            "ticket land: %s could not load its own ticket to compute the "
+            "--allow-cross-ticket carried-file disclosure (%s) -- skipping "
+            "the disclosure, not claiming an empty carried set",
+            ticket_id,
+            loaded.danger_err,
+        )
+        return None
+    ticket = loaded.danger_ok
+    carried = sorted(
+        path
+        for path in touched_paths
+        if not scope_matches(
+            path, ticket.scope, kind=ticket.kind, ticket_id=ticket_id
+        )
+    )
+    return tuple(carried)
+
+
 # frob:ticket T-1369
-def _warn_land_override_flags(cfg: AppConfig) -> None:
+# frob:ticket T-2141
+def _warn_land_override_flags(
+    cfg: AppConfig, worktree: Path, touched_paths: frozenset[str] | None
+) -> None:
     """`_land`'s flag-warning phase: log a WARNING for each land-time
     refusal override (`--skip-mutation-evidence`, `--allow-cross-ticket`)
     that is set, so an override that lets a real finding through is at
-    least visible in the log, even though it does not stop this land."""
+    least visible in the log, even though it does not stop this land.
+
+    T-2141: when `--allow-cross-ticket` is set, ALSO logs the full set of
+    `touched_paths` carried outside the ticket's own declared scope
+    (`_cross_ticket_carried_paths`) -- the whole changeset the operator
+    is about to ship, not just whichever files happen to collide with
+    another OPEN ticket's scope (the narrower set `CrossTicketLeakage`
+    itself reports). Scoped to the whole changeset deliberately, per
+    T-2141's own finding: a passenger file with no scope owner at all is
+    invisible to the leakage check but still rides the land."""
     assert cfg.ticket_id is not None  # narrows for the type checker; enforced by caller
     if cfg.ticket_skip_mutation_evidence:
         _log.warning(
@@ -2946,6 +3007,35 @@ def _warn_land_override_flags(cfg: AppConfig) -> None:
             cfg.ticket_id,
         )
     if cfg.ticket_allow_cross_ticket:
+        carried = _cross_ticket_carried_paths(worktree, cfg.ticket_id, touched_paths)
+        if carried is None:
+            _log.warning(
+                "ticket land: %s --allow-cross-ticket set -- could not "
+                "compute the full carried-changeset disclosure (see prior "
+                "warning); the operator cannot see what is being carried "
+                "from this log alone -- verify manually before trusting "
+                "this land",
+                cfg.ticket_id,
+            )
+        elif carried:
+            _log.warning(
+                "ticket land: %s --allow-cross-ticket set -- this land "
+                "carries %d file(s) OUTSIDE %s's own declared scope: %s "
+                "-- review this full list now, this is the disclosure "
+                "that replaces a manual post-land `git show --stat`",
+                cfg.ticket_id,
+                len(carried),
+                cfg.ticket_id,
+                list(carried),
+            )
+        else:
+            _log.info(
+                "ticket land: %s --allow-cross-ticket set, but every "
+                "touched file matches %s's own declared scope -- nothing "
+                "outside it is being carried",
+                cfg.ticket_id,
+                cfg.ticket_id,
+            )
         _log.warning(
             "ticket land: %s --allow-cross-ticket set -- a CrossTicketLeakage "
             "finding will be logged but will NOT refuse this land "
@@ -4525,7 +4615,7 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # as its T-1523 sibling immediately above.
     _report_stale_land_finish_pending_markers(root)
 
-    _warn_land_override_flags(cfg)
+    _warn_land_override_flags(cfg, worktree, touched_paths)
 
     # frob:ticket T-1575
     # T-1575: rapid profile skips the T-1514 pre-commit sweep ("single
