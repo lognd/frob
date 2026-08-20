@@ -106,6 +106,14 @@ scope_changes:
     was already precisely scoped'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'coordinator-directed rescope: acceptance criteria were stale, most deliverables
+    already built; narrow to the real gap and drop the T-1598 dependency'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 1645
+  new_length: 5870
 designated_repro_test: null
 acceptance:
 - text: 'MEASURED 2026-08-17: significant relevant infrastructure already landed (T-0405/T-0406,
@@ -157,3 +165,75 @@ Deliverables:
 4. An explicit, documented answer to what happens when an OPTIONAL capability is absent: which gates degrade, which skip, and how a user learns their language will not get a given check. Silent absence is the failure mode to design out -- the same class as this drive's degraded-run and truncated-suite problems, where missing analysis was indistinguishable from clean analysis.
 
 This ticket is the machinery the epic exists to stress-test. It must land before the per-language batches.
+
+RESCOPED (this round): reconnaissance found this ticket's own acceptance
+notes (dated 2026-08-17) are stale in frob's favour -- most of what they
+describe as unbuilt is already built and landed:
+
+- `ADAPTER_CAPABILITIES` / `derive_capability_registry()`
+  (src/frob/lang/_support.py, built under T-2365) already gives every
+  registered language a typed cell for all seven capabilities this
+  ticket's deliverable 1 lists (symbol_walk, publicness, doc_extract,
+  directive_parse, call_graph, import_graph, test_discovery), each
+  REQUIRED/OPTIONAL with IMPLEMENTED/NOT_APPLICABLE/KNOWN_GAP state.
+  Deliverable 1 is done.
+- The exact stale-disclosure hazard this ticket's dispatch note warned
+  about (a capability shipped but still disclosed as a gap) is now
+  structurally closed, not just patched once: `_capability_import_graph_
+  status` (T-2494) and `_capability_test_discovery_status` (T-2499) both
+  derive IMPLEMENTED/KNOWN_GAP LIVE from the real registry keys
+  (`frob.lang._extract._IMPORT_WALKERS`, `frob.lang._support._TEST_
+  DISCOVERY_COLLECTORS`) instead of a hand-maintained membership set --
+  the class of bug that produced the original TypeScript import_graph
+  incident (T-2365 disclosed, T-2408 implemented, disclosure never
+  retired) cannot recur through this path, and a regression test
+  (tests/test_lang_support.py::TestDeriveCapabilityRegistry::
+  test_test_discovery_known_gap_when_registry_entry_is_stale) guards it.
+- `LANG004` (`capability_conformance_gate`, src/frob/gates/
+  _lang_conformance.py, built T-2365) is a real conformance suite
+  exercising every IMPLEMENTED cell against a hand-written per-language
+  fixture, with must-fail positive controls
+  (tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck,
+  TestCapabilityConformanceGate::test_wrong_implemented_claim_fails)
+  proving it is not a rubber stamp. It is wired into `frob check`'s job
+  table (T-2411, done). Deliverable 3 is largely done.
+
+What is genuinely left, and what this ticket is now scoped to:
+
+(a) Behavioral coverage for the 3 of 7 capabilities LANG004 exercises
+    only structurally: call_graph / import_graph / test_discovery
+    (src/frob/gates/_lang_conformance.py's own
+    _BEHAVIORALLY_CHECKED_CAPABILITIES only covers symbol_walk/
+    publicness/doc_extract/directive_parse -- the other three "need a
+    real multi-file repo tree to exercise meaningfully" per that
+    module's own comment, and were T-2365's disclosed cut). Build the
+    multi-file fixture harness and extend the behavioral check.
+
+(b) Deliverable 4: a documented answer to what happens when an OPTIONAL
+    capability is absent -- which gates degrade, which skip, how a user
+    learns their language will not get a given check. Not written yet
+    anywhere in docs/modules/lang.md's adapter-capability-contract
+    section.
+
+Also found in the same reconnaissance, in scope to fix alongside (a)/(b)
+since it is in this ticket's existing docs/modules/lang.md scope: that
+file's own import_graph description ("IMPLEMENTED for python/c/cpp
+only; typescript/rust/kotlin are a real, ticketed KNOWN_GAP (T-2408)")
+is now STALE DOC DRIFT -- _IMPORT_WALKERS (src/frob/lang/_extract.py)
+has carried typescript/tsx/rust/kotlin entries since T-2494 landed, so
+all six languages are IMPLEMENTED, not three. The code and the live
+registry are correct; only this paragraph of prose has not caught up.
+
+Everything else in this ticket's original deliverable text is now
+DROPPED as already-built, not cut -- see the citations above for why.
+
+blocked_by=T-1598 REMOVED (T-2411 already done): the language-ranking
+research ticket has nothing to do with closing a capability-coverage
+gap in the six languages already registered, and the coordinator
+confirmed this reading. Edge removed via the store API directly
+(frob.tickets._store.write_ticket, mirroring frob.app.ticket_runner.
+_lifecycle._block's own write path in reverse) since no CLI unblock
+verb exists -- see frob.tickets._doable._open_blockers's own docstring,
+which documents this exact gap from a prior incident (T-2076) and notes
+it "had to be cleared through the store API by hand, because no unblock
+verb existed." Filing a follow-up ticket for that CLI gap separately.
