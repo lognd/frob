@@ -2,7 +2,7 @@
 id: T-2731
 title: 137 pre-existing ARCH/PERF findings surfaced by the first honest verification
   run (misblamed on T-2723's land)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -87,3 +87,6 @@ Per rule group: the finding must stop reproducing at the named site, AND
 a planted genuine violation of that rule must still fire. A narrowing fix
 that stops detecting anything is a regression -- this repo has shipped
 that mistake before.
+
+## Drop reason
+- 2026-08-20: Duplicate-with-a-named-survivor, NOT a false positive: I filed T-2731 for the 137 quarantined ARCH/PERF findings moments before the rapid sweep auto-filed the identical set as T-2732. Same 137 findings, same 116 files. T-2732 survives because the quarantine's own cleared_reason references it; T-2731's analysis (the misattribution measurement and the detection-vs-regression distinction) has been appended to T-2732 verbatim, so nothing is lost. (absorbed by T-2732)
