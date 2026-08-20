@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_doclink_docanchor.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_doclink_docanchor.py
   reason: ../ resolution fix for DOC008/DOC011, both sites
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: existing tests for docanchor/doclink gates
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
