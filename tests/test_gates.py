@@ -1641,6 +1641,53 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         assert not any(v.rule == "COV005" for v in violations)
 
+    # frob:tests \
+    # tests/test_gates.py::TestCoverageGate.test_cov005_new_private_helper_sharing_anchor_with_undisturbed_public_is_clean  # noqa: E501
+    # frob:ticket T-2720
+    def test_cov005_new_private_helper_sharing_anchor_with_undisturbed_public_is_clean(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2720 false-positive shape (T-1614's waive audit, root cause of
+        18+ `frob:waive COV005` sites in `.claude/hooks/root-write-guard.
+        py`): `foo` stays public, keeps its OWN `frob:doc` directive
+        unchanged across the diff -- it is NOT displaced. A brand-new,
+        UNRELATED private helper `_bar_impl` is added in the same diff and
+        happens to reuse the SAME shared doc anchor (this repo's own
+        documented convention: one `frob:doc <page>#<anchor>` target
+        covers every symbol a doc page describes). This must NOT fire
+        COV005 -- `_bar_impl` was never `foo`'s directive riding along; it
+        is its own, brand-new, correctly-anchored binding. Before T-2720's
+        narrowing, `_cov005_file` flagged it anyway: any new private edge
+        under the same (kind, target) key as some old public qualname
+        fired, regardless of whether that old public qualname's OWN
+        directive was still intact."""
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def foo(x):\n    # frob:doc docs/x.md#anchor\n    return x\n",
+        )
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "src/a.py",
+            "def foo(x):\n"
+            "    # frob:doc docs/x.md#anchor\n"
+            "    return x\n"
+            "\n"
+            "\n"
+            "def _bar_impl(y):\n"
+            "    # frob:doc docs/x.md#anchor\n"
+            "    return y\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = snap.symbols["src/a.py::_bar_impl"]
+        diff = Diff(base="HEAD", hunks=(Hunk(file="src/a.py", span=record.span),))
+        queue = TicketQueue(tickets={"T-0001": _ticket(state=TicketState.IN_PROGRESS)})
+        tests = CollectedTests(node_ids=frozenset())
+        violations = coverage_gate(tmp_path, snap, queue, diff, tests)
+        cov005 = [v for v in violations if v.rule == "COV005"]
+        assert cov005 == [], cov005
+
     def test_cov006_flags_test_with_no_call_graph_reachability(
         self, tmp_path: Path
     ) -> None:

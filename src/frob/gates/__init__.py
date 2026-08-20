@@ -2172,6 +2172,21 @@ def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation,
     that file -- i.e. the private symbol carrying the directive is itself
     part of what this diff just changed, which is exactly the "extracted
     helper directly above an existing def" shape the ticket describes.
+
+    T-2720: hunk-overlap alone still over-fired on a SECOND false-positive
+    shape -- a brand-new, genuinely unrelated private helper added near an
+    undisturbed public `def` that happens to reuse the SAME shared anchor
+    (the doc-reuse convention this docstring already names above). The old
+    public qualname's own edge for that (kind, target) key was still
+    present and unchanged at the new revision -- nothing rode along onto
+    the new helper, the new helper just has its own, correctly-written
+    directive. `_cov005_file` now checks that first: only when the old
+    public qualname's OWN (kind, target) edge is GONE at the new revision
+    (renamed, deleted, or its directive comment moved off it entirely) is
+    ANY new private edge under that key treated as a candidate rebind --
+    matching the real T-0297 shape (`_foo_impl`'s directive is the ONLY
+    edge left for that key once `foo` no longer carries it) without
+    flagging a sibling symbol whose own binding was never displaced.
     """
     new_edges_by_file: dict[str, list[Edge]] = {}
     for edge in snapshot.edges:
@@ -2198,6 +2213,64 @@ def _cov005(root: Path, snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation,
     return tuple(violations)
 
 
+#: Shared `(kind, target)` directive-identity key type for the COV005
+#: helpers below (T-2720, extracted purely to keep `_cov005_new_key_
+#: indexes`'s own signature line under E501's width limit).
+_Cov005Key = tuple[EdgeKind, str]
+
+
+def _cov005_new_key_indexes(
+    new_edges: Sequence[Edge],
+) -> tuple[dict[_Cov005Key, list[Edge]], dict[_Cov005Key, set[str]]]:
+    """`(edges-by-key, qualnames-by-key)` for `new_edges` (T-2720, extracted
+    from `_cov005_file` to keep it under ARCH001's line threshold): the
+    first lets `_cov005_file` enumerate every new edge sharing a (kind,
+    target) key, the second lets it cheaply ask "does qualname `q` still
+    have an edge under this exact key?" -- the check that tells a genuine
+    T-0297 displacement (old qualname's own edge is gone) from a sibling
+    symbol merely reusing the same shared anchor (old qualname's edge is
+    still there)."""
+    by_key: dict[tuple[EdgeKind, str], list[Edge]] = {}
+    qualnames_by_key: dict[tuple[EdgeKind, str], set[str]] = {}
+    for edge in new_edges:
+        key = (edge.kind, edge.target)
+        by_key.setdefault(key, []).append(edge)
+        qualname = edge.src.split("::", 1)[1] if "::" in edge.src else edge.src
+        qualnames_by_key.setdefault(key, set()).add(qualname)
+    return by_key, qualnames_by_key
+
+
+def _cov005_violation(
+    kind: EdgeKind, target: str, base: str, file: str, new_edge: Edge, line: int
+) -> Violation:
+    """The single COV005 `Violation` (already logged) for `new_edge` having
+    displaced `kind`/`target`'s old public binding -- extracted from
+    `_cov005_file` (T-2720) to keep it under ARCH001's line threshold."""
+    _log.debug(
+        "COV005: %s:%s %s rebound onto private %s (was public at %s)",
+        kind.value,
+        target,
+        file,
+        new_edge.src,
+        base,
+    )
+    return Violation(
+        rule="COV005",
+        severity=Severity.ERROR,
+        file=file,
+        line=line,
+        message=(
+            f"COV005: frob:{kind.value} {target} now binds "
+            f"{new_edge.src} (private), but the same "
+            f"directive bound a PUBLIC symbol in this file "
+            f"before this change -- looks like it silently "
+            f"rode along onto an extracted/renamed helper; "
+            f"move the directive back onto the intended "
+            f"public symbol"
+        ),
+    )
+
+
 # frob:enforces CHK-GATE-COV005
 def _cov005_file(
     root: Path,
@@ -2212,9 +2285,7 @@ def _cov005_file(
     old_bindings = _old_directive_bindings(root, base, file)
     if not old_bindings:
         return []
-    new_by_key: dict[tuple[EdgeKind, str], list[Edge]] = {}
-    for edge in new_edges:
-        new_by_key.setdefault((edge.kind, edge.target), []).append(edge)
+    new_by_key, new_qualnames_by_key = _cov005_new_key_indexes(new_edges)
     # T-0529: qualnames already privately bound to a given (kind, target) at
     # `base` -- a new private edge for one of THESE qualnames is the same
     # binding continuing, never a rebind, even when some OTHER symbol also
@@ -2224,8 +2295,20 @@ def _cov005_file(
         if not was_public:
             already_private.setdefault((kind, target), set()).add(qualname)
     violations: list[Violation] = []
-    for kind, target, _qualname, was_public in old_bindings:
+    for kind, target, old_qualname, was_public in old_bindings:
         if not was_public:
+            continue
+        # T-2720: the old PUBLIC qualname's own (kind, target) directive is
+        # still intact at the new revision (still has an edge for the exact
+        # same key) -- it was never displaced. A DIFFERENT new private
+        # symbol reusing the same shared anchor (this repo's own `frob:doc
+        # <page>#<anchor>` reuse-across-symbols convention, named above) is
+        # its own, correctly-anchored binding, not a rebind riding along
+        # from the old symbol -- skip this key entirely. Only when the old
+        # qualname's OWN edge for this key is GONE (renamed, deleted, or
+        # its directive comment moved away) does a new private edge under
+        # the same key become suspect (the T-0297 shape below).
+        if old_qualname in new_qualnames_by_key.get((kind, target), ()):
             continue
         for new_edge in new_by_key.get((kind, target), ()):
             record = snapshot.symbols.get(new_edge.src)
@@ -2238,30 +2321,8 @@ def _cov005_file(
                 continue
             if not any(_overlaps(span, record.span) for span in file_hunks):
                 continue
-            _log.debug(
-                "COV005: %s:%s %s rebound onto private %s (was public at %s)",
-                kind.value,
-                target,
-                file,
-                new_edge.src,
-                base,
-            )
             violations.append(
-                Violation(
-                    rule="COV005",
-                    severity=Severity.ERROR,
-                    file=file,
-                    line=record.span[0],
-                    message=(
-                        f"COV005: frob:{kind.value} {target} now binds "
-                        f"{new_edge.src} (private), but the same "
-                        f"directive bound a PUBLIC symbol in this file "
-                        f"before this change -- looks like it silently "
-                        f"rode along onto an extracted/renamed helper; "
-                        f"move the directive back onto the intended "
-                        f"public symbol"
-                    ),
-                )
+                _cov005_violation(kind, target, base, file, new_edge, record.span[0])
             )
     return violations
 

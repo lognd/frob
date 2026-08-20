@@ -2209,6 +2209,8 @@
 {"commit": "37a25fde43652d837bd3e9ec2a85bbdb5b6f7abc", "skipped": "land-evidence-scope-unbound", "ticket": "T-2695"}
 {"commit": "bedfa76811c2252c5d73c6e7aadab92a94839aa5", "skipped": "land-evidence-scope-unbound", "ticket": "T-2719"}
 {"commit": "e94d0a5c7bfb6c5c614746cd0d76479dcda06596", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2719"}
+{"commit": "f926f804474fd15a5bbb428b0756667ae9b9f595", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2720"}
 {"commit": "7e1814cb9f5de6fd1a9b5ee9b7bc1c703b5fef5b", "skipped": "land-evidence-scope-unbound", "ticket": "T-2695"}
 {"commit": "1bb7a3315eb0e251aaa07672cec0ecc84f4e5a80", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2695"}
 {"commit": "f50d5fcc56c86720f2c9762c3818afac0464850e", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2721"}
+{"commit": "ae4713c8fba5d33027ba4a079a06cda4bff9376d", "skipped": "land-evidence-scope-unbound", "ticket": "T-2720"}

@@ -2,7 +2,7 @@
 id: T-2720
 title: 'COV005: reduce false positives on brand-new private helpers sharing a directive
   anchor'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -30,7 +30,12 @@ scope_changes:
     TestCoverageGate class
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov005_directive_rebound_to_private_symbol_flags
+- tests/test_gates.py::TestCoverageGate::test_cov005_same_symbol_no_rebind_is_clean
+- tests/test_gates.py::TestCoverageGate::test_cov005_no_old_blob_is_clean
+- tests/test_gates.py::TestCoverageGate::test_cov005_new_private_helper_sharing_anchor_with_undisturbed_public_is_clean
+designated_repro_test: tests/test_gates.py::TestCoverageGate::test_cov005_new_private_helper_sharing_anchor_with_undisturbed_public_is_clean
 threat: null
 component: null
 anchor: false
