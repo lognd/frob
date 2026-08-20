@@ -18,10 +18,19 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - Makefile
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: T-2244's acceptance criteria need real pytest evidence for the Makefile's
+    repointed recipe content; test_makefile_coverage.py is this repo's existing precedent/home
+    for exactly this kind of Makefile-recipe-content assertion (TestCoverageRecipeDelegatesToFrobCoverageFull)
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 attachments:
 - path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
