@@ -16,11 +16,24 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_body.py
-- src/frob/app/ticket_runner
+- src/frob/app/ticket_runner/_mutate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/ticket_runner
+  reason: 'T-2678: narrow to _body.py''s write path plus the CLI mutate wiring; _land_cmd.py
+    held by T-2141, not touched by this fix'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: 'T-2678: narrow to _body.py''s write path plus the CLI mutate wiring; _land_cmd.py
+    held by T-2141, not touched by this fix'
+  actor: logan
+  at: '2026-08-19'
 triage_changes:
 - field: priority
   old_value: medium
