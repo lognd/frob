@@ -11,13 +11,31 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/app.py
 - src/frob/app/pyfmt_runner.py
-- src/frob/_cli_parsers/**
 - tests/unit/test_pyfmt_runner.py
+- src/frob/_cli_parsers/_misc.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/_cli_parsers/**
+  reason: narrow to avoid lease collision with T-draft-5f8ebb34 on _ticket/_new.py;
+    only _misc.py needed for the new frob format parser
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: narrow to avoid lease collision with T-draft-5f8ebb34 on _ticket/_new.py;
+    only _misc.py needed for the new frob format parser
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
