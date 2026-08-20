@@ -2,7 +2,7 @@
 id: T-2714
 title: A killed land strands its staged snapshot in the shared root, DirtyMain-blocking
   the whole fleet
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -55,6 +55,20 @@ scope_changes:
     test module exists as the dispatch-guard test home
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-2714: TICK011 needs a literal Filed: line in the Done report'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3273
+  new_length: 3448
+evidence:
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_no_marker_is_a_silent_no_op
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_finishes_a_killed_commit_when_the_staged_content_is_still_there
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_already_advanced_tip_just_clears_the_marker
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_nothing_dirty_clears_the_marker_silently
+- tests/test_ticket_leases.py::TestLedgerCommitRepairMarker::test_finish_failure_leaves_the_marker_and_the_dirt_for_a_human
+- tests/test_ticket_leases.py::TestDispatchLandGuard::test_orphaned_squash_residue_is_reclaimed_before_a_mutating_verb_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -137,3 +151,5 @@ from a diff.
 It is the guard that stops agents clobbering each other. The bug is that a
 killed land CREATES the condition DirtyMain refuses on -- not that it
 refuses.
+
+Filed: candidate follow-up noted in the Done report (land's own squash-residue reclaim staying reset-only, not finish-capable) -- not filed as a ticket yet; no other residue
