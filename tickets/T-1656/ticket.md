@@ -81,7 +81,7 @@ body_changes:
 
     budget. Remaining ~80 files carried forward to a fresh successor ticket
 
-    (T-draft-a90be6dc) rather than left as an indefinitely-open umbrella --
+    (T-2695) rather than left as an indefinitely-open umbrella --
 
     same closure discipline this repo''s own T-1651/T-1656/T-1661/T-1608-
 
@@ -169,7 +169,7 @@ reasoning added, both comment-only changes -- no runtime behavior
 changed by either). One genuine split seam identified (telemetry.py)
 and filed separately rather than attempted under this pass's time
 budget. Remaining ~80 files carried forward to a fresh successor ticket
-(T-draft-a90be6dc) rather than left as an indefinitely-open umbrella --
+(T-2695) rather than left as an indefinitely-open umbrella --
 same closure discipline this repo's own T-1651/T-1656/T-1661/T-1608-
 style umbrella tickets already use (finite batch, explicit successor for
 the rest). No behavioral delta: both waivers are comments (frob:waive

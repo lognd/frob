@@ -138,7 +138,7 @@ body_changes:
     \ -- a dormant hole, not an\n   active incident. The actual fix (threading per-violation\n\
     \   enclosing-symbol resolution through the 5 PII-structural emitters) is\n  \
     \ real feature engineering, not a re-waive task, so it does not belong\n   in\
-    \ this classification ticket -- filed as its own successor\n   (T-draft-e6af67c0\
+    \ this classification ticket -- filed as its own successor\n   (T-2696\
     \ at filing time, renumbers on land) rather than\n   attempted here under time\
     \ pressure, mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as\
     \ separate tickets for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed,\
@@ -174,7 +174,7 @@ body_changes:
     \ -- a dormant hole, not an\n   active incident. The actual fix (threading per-violation\n\
     \   enclosing-symbol resolution through the 5 PII-structural emitters) is\n  \
     \ real feature engineering, not a re-waive task, so it does not belong\n   in\
-    \ this classification ticket -- filed as its own successor\n   (T-draft-e6af67c0\
+    \ this classification ticket -- filed as its own successor\n   (T-2696\
     \ at filing time, renumbers on land) rather than\n   attempted here under time\
     \ pressure, mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as\
     \ separate tickets for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed,\
@@ -311,7 +311,7 @@ frob:no-behavior-change reason="Investigation-only outcome, no code behavior cha
    enclosing-symbol resolution through the 5 PII-structural emitters) is
    real feature engineering, not a re-waive task, so it does not belong
    in this classification ticket -- filed as its own successor
-   (T-draft-e6af67c0 at filing time, renumbers on land) rather than
+   (T-2696 at filing time, renumbers on land) rather than
    attempted here under time pressure, mirroring how T-1659 (fix) and
    T-1666 (classify) were kept as separate tickets for OPAQUE001/
    CACHE001.
@@ -354,7 +354,7 @@ frob:no-behavior-change reason="Investigation-only outcome, no code behavior cha
    enclosing-symbol resolution through the 5 PII-structural emitters) is
    real feature engineering, not a re-waive task, so it does not belong
    in this classification ticket -- filed as its own successor
-   (T-draft-e6af67c0 at filing time, renumbers on land) rather than
+   (T-2696 at filing time, renumbers on land) rather than
    attempted here under time pressure, mirroring how T-1659 (fix) and
    T-1666 (classify) were kept as separate tickets for OPAQUE001/
    CACHE001.

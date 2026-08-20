@@ -36,6 +36,20 @@ runtime-enforcement config skeletons from its `KernelModel`
 seccomp/IAM mapping semantics.
 """
 
+# frob:waive LARGE001 reason="T-1656: seam considered and rejected -- this file's own \
+# module docstring already states the design ('run below should grow one more if \
+# cfg.sys_command == ... branch per verb as they land, never a parallel dispatch \
+# mechanism'), i.e. one CLI subcommand family (`frob sys <verb>`) intentionally kept \
+# as a single dispatcher plus each verb's own private implementation, not a bundle of \
+# unrelated concerns. The verbs (plan/doc/export/audit/trace/capacity) are already \
+# each other's distinct consumer set at the FUNCTION level (_run_plan/_run_doc/ \
+# _run_export/_run_audit/_run_trace/_run_capacity, each with its own private helpers \
+# below it) -- the seam that would split this file already exists as internal \
+# structure, but splitting it into separate MODULES would fragment the single `run()` \
+# dispatch table this docstring explicitly says must stay unified, trading one \
+# 1197-line warning for N import-cycle-prone modules with no independent reader. Same \
+# orchestrator-with-exclusive-per-verb-helpers shape T-1656's own body already accepts \
+# as risky for _land_cmd.py/_land.py (ranks 4-5)."
 from __future__ import annotations
 
 import sys

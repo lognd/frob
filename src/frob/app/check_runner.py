@@ -1,3 +1,16 @@
+# frob:waive LARGE001 reason="T-1656: seam considered and rejected -- this file is the \
+# single `frob check` CLI subcommand's full pipeline (stage selection, progress \
+# rendering, polyglot/deploy-stage dispatch, JSON/human output formatting) with one \
+# public entrypoint (`run`) and 59 private helpers that exist ONLY to serve it, same \
+# orchestrator shape T-1656's own body flags as high-risk for the sibling _land_cmd.py \
+# (rank 5) and already-decided-risky for _land.py (rank 4). There is no distinct \
+# consumer set to split along -- every helper here is reachable only from this one \
+# subcommand's `run()`, so a line-count cut would bisect one control flow (which \
+# stages ran, in what order, formatted how) with no natural seam to hang the cut on, \
+# the same 'strictly worse than the warning' outcome T-1651 already established as the \
+# standard here. Already delegates the genuinely separable heavy lifting to \
+# frob.app._check_chunking and frob.check -- what remains is the orchestration itself, \
+# not a bundle of unrelated concerns."
 from __future__ import annotations
 
 import contextlib
