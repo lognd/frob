@@ -28,6 +28,19 @@ scope_changes:
     ticket-id-mention shape) rather than fixing prose with no verifying evidence
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'BUG002 is unsatisfiable by construction here per T-1616''s documented escape
+    hatch: the fix is a doc-body backtick-quoting edit, not a code change, so no designated
+    test can genuinely fail-at-parent/pass-at-fix (DOC011''s gate logic never changed,
+    only doc DATA did)'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 1216
+  new_length: 1654
+evidence:
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_t2757_bare_mention_of_a_deliberately_nonexistent_id_is_flagged
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_t2757_fix_backtick_quoting_the_second_mention_clears_it
 designated_repro_test: null
 threat: null
 component: null
@@ -48,3 +61,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC011  docs/modules/tickets-verify-sweep.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="pure content/prose fix -- the defect was a bare, non-code-spanned second mention of a phantom ticket id (T-2736) in doc prose (data, not code), so DOC011 gate LOGIC is unchanged before/after; the added regression tests (TestDoc011TicketIdProse::test_t2757_*) prove the pre-fix bare shape fires and the post-fix backtick-quoted shape does not, exercising the same gate logic the T-1542 precedent already covers"
