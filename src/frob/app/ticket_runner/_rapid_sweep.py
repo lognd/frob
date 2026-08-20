@@ -146,13 +146,17 @@ _REGRESSION_TITLE_PREFIX = "post-land sweep regression from "
 #: ticket's own obligation).
 _REGRESSION_IDENTITY_HEADING = "New (rule, file) identit(ies) filed here:"
 
-#: T-1935: the check budget (seconds) `_true_finding_count_for_identities`
-#: passes to its own independent `frob check --budget --json` re-measure.
-#: Deliberately the SAME value as `_land_cmd._POST_LAND_SWEEP_BUDGET_S`
-#: (300) rather than an import of it -- `_land_cmd.py` is under another
-#: agent's live lease at the time of this fix (T-1720), so this is a
-#: literal duplicate of one constant, not a shared import; keep the two
-#: values in sync by hand if either changes.
+#: T-1935: the FALLBACK check budget (seconds)
+#: `_true_finding_count_for_identities`/`_identities_still_reproducing`
+#: pass to their own independent `frob check --budget --json` re-measure
+#: when `budget=None` (both functions' default) and `root` has no (or too
+#: little) recorded `.frob/check-budget-timing.json` data yet -- see
+#: `_matching_error_diagnostics`. T-2715: this used to be a hardcoded
+#: literal duplicate of `_land_cmd._POST_LAND_SWEEP_BUDGET_S`, kept in
+#: sync by hand (the original comment here even said so) -- exactly the
+#: drift class T-2715 found had already happened (this constant still
+#: read 300 while `_land_cmd`'s had moved to 480). Both now default to
+#: the SAME live-derived ceiling instead of two hand-synced numbers.
 _TRUE_COUNT_BUDGET_S = 300
 
 #: T-2106: the check budget (seconds) `revalidate_dispatchable_sweep_
@@ -1534,23 +1538,27 @@ def _spawn_true_count_check(root: Path, budget: int):  # noqa: ANN201 -- Result[
 # frob:ticket T-1935
 # frob:ticket T-2006
 def _matching_error_diagnostics(
-    root: Path, pairs: frozenset[tuple[str, str]], budget: int
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int | None
 ) -> list[dict] | None:
     """T-2006 (ARCH001 split, extracted from the pre-T-2006 body of
     `_true_finding_count_for_identities`): the shared low-level fetch
     both that function (T-1935, raw per-finding count) and
     `_identities_still_reproducing` (T-2006, which IDENTITIES are still
     live) build on -- ONE independent `frob check --budget --json` spawn
-    (`_spawn_true_count_check`) and parse, never two, for callers that
-    both want "what does `pairs` look like right now". Returns every
+    (`_spawn_true_count_check`) and parse, never two. Returns every
     `severity == "error"` diagnostic dict whose `(code, file)` is in
-    `pairs`, or `None` on any unmeasurable outcome (spawn refused,
-    timeout, unparsable/budget-truncated output) -- never an empty list
-    standing in for "could not measure"."""
+    `pairs`, or `None` on any unmeasurable outcome -- never an empty list
+    standing in for "could not measure". T-2715: `budget=None` derives the
+    ceiling from `root`'s own measured stage timing, falling back to
+    `_TRUE_COUNT_BUDGET_S` (see `_derive_post_land_sweep_budget_s`)."""
+    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
     from frob.app.ticket_runner._verify import (
         _incomplete_tool_results,
         _parse_check_json,
     )
+
+    if budget is None:
+        budget = _derive_post_land_sweep_budget_s(root, default=_TRUE_COUNT_BUDGET_S)
 
     proc = _spawn_true_count_check(root, budget)
     if proc is None:
@@ -1598,7 +1606,7 @@ def _matching_error_diagnostics(
 # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_unparsable_json_is_none_not_zero  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestTrueFindingCount.test_spawn_refused_is_none_not_zero  # noqa: E501
 def _true_finding_count_for_identities(
-    root: Path, pairs: frozenset[tuple[str, str]], budget: int = _TRUE_COUNT_BUDGET_S
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int | None = None
 ) -> int | None:
     """T-1935: the TRUE per-finding count restricted to `pairs` -- as
     opposed to `len(pairs)`, which is only ever a count of DISTINCT
@@ -1625,7 +1633,7 @@ def _true_finding_count_for_identities(
 # frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_only_reproducing_identities_returned  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestIdentitiesStillReproducing.test_unmeasurable_is_none  # noqa: E501
 def _identities_still_reproducing(
-    root: Path, pairs: frozenset[tuple[str, str]], budget: int = _TRUE_COUNT_BUDGET_S
+    root: Path, pairs: frozenset[tuple[str, str]], budget: int | None = None
 ) -> frozenset[tuple[str, str]] | None:
     """T-2006: which of `pairs` (rule, file) identities STILL reproduce
     right now, restricted to exactly `pairs` (never a full unscoped

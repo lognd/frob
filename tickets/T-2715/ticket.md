@@ -2,7 +2,7 @@
 id: T-2715
 title: 'Deferred verification is deadlocked: the 480s budget is 12s short of the tool''s
   own recorded 492s stage total'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -85,6 +85,10 @@ body_changes:
   at: '2026-08-20'
   old_length: 3415
   new_length: 4868
+evidence:
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_derives_from_measured_timing_with_headroom
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_falls_back_to_default_with_no_timing_data
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_floor_protects_against_sparse_timing_data
 designated_repro_test: null
 threat: null
 component: null

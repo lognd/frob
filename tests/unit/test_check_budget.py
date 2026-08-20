@@ -91,6 +91,55 @@ class TestUpdateBudgetTiming:
         assert original == {"g": 10.0}
 
 
+# frob:ticket T-2715
+class TestDerivePostLandSweepBudget:
+    """`_derive_post_land_sweep_budget_s`: the post-land sweep ceiling
+    derived from a checkout's own recorded stage timing, replacing the
+    hardcoded `_POST_LAND_SWEEP_BUDGET_S` constant that drifted stale
+    against the repo's real measured total (T-2715)."""
+
+    def test_derives_from_measured_timing_with_headroom(self, tmp_path: Path) -> None:
+        """T-2715's own live incident, reproduced: a recorded total of
+        492.18s (gates-fast 168.49 + gates-native 88.48 + gates-security
+        135.35 + lint 3.69 + static 96.17) must derive a budget that
+        actually COVERS that total -- the old hardcoded 480 did not."""
+        check_chunking_mod._save_budget_timing(
+            tmp_path,
+            {
+                "gates-fast": 168.49,
+                "gates-native": 88.48,
+                "gates-security": 135.35,
+                "lint": 3.69,
+                "static": 96.17,
+            },
+        )
+        budget = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path)
+        measured_total = 168.49 + 88.48 + 135.35 + 3.69 + 96.17
+        assert budget > measured_total
+        assert budget == int(measured_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM)
+
+    def test_falls_back_to_default_with_no_timing_data(self, tmp_path: Path) -> None:
+        """A fresh checkout with no `.frob/check-budget-timing.json` yet
+        (or an unreadable one) has no measurement to derive from -- the
+        caller's `default` is used verbatim, never a budget computed from
+        zero groups."""
+        budget = check_chunking_mod._derive_post_land_sweep_budget_s(
+            tmp_path, default=480
+        )
+        assert budget == 480
+
+    def test_floor_protects_against_sparse_timing_data(self, tmp_path: Path) -> None:
+        """A tiny recorded total (e.g. only one fast group ever measured)
+        must not derive an unrealistically small budget that would starve
+        every other stage group's first-ever measurement -- the floor
+        wins over the headroom-scaled value."""
+        check_chunking_mod._save_budget_timing(tmp_path, {"lint": 3.69})
+        budget = check_chunking_mod._derive_post_land_sweep_budget_s(
+            tmp_path, default=480
+        )
+        assert budget == check_chunking_mod._POST_LAND_SWEEP_BUDGET_FLOOR_S
+
+
 # frob:ticket T-2235
 # frob:ticket T-2250
 class TestRunBudgetedCheck:

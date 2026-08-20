@@ -313,6 +313,71 @@ def _save_budget_timing(root: Path, timing: dict[str, float]) -> None:
     path.write_text(_json.dumps(timing))
 
 
+# frob:ticket T-2715
+#: Multiplier `_derive_post_land_sweep_budget_s` applies to the measured
+#: stage-group total when deriving a sweep budget -- generous headroom for
+#: normal variance while still refusing an unbounded machine (same intent
+#: the T-2456 comment on the old hardcoded 480 described, now computed
+#: from a live measurement instead of frozen at whatever the repo's size
+#: happened to be the day someone last read the number by hand).
+_BUDGET_DERIVE_HEADROOM = 1.5
+
+#: T-2715: floor for a derived post-land sweep budget (seconds) -- guards
+#: against a near-empty or partially-populated timing file (a handful of
+#: groups measured, most still at `_BUDGET_DEFAULT_ESTIMATE_S`) deriving
+#: an unrealistically small budget. Below this, prefer the caller's
+#: hardcoded `default` instead of trusting the partial measurement.
+_POST_LAND_SWEEP_BUDGET_FLOOR_S = 300
+
+
+# frob:ticket T-2715
+# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_derives_from_measured_timing_with_headroom  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_falls_back_to_default_with_no_timing_data  # noqa: E501
+# frob:tests tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget.test_floor_protects_against_sparse_timing_data  # noqa: E501
+def _derive_post_land_sweep_budget_s(root: Path, *, default: int = 480) -> int:
+    """T-2715: the post-land/pre-commit unscoped sweep's `--budget` ceiling,
+    derived from `root`'s own recorded `.frob/check-budget-timing.json`
+    stage-group EMA (measured total * `_BUDGET_DERIVE_HEADROOM`) rather
+    than a hardcoded constant.
+
+    ROOT CAUSE this replaces: `_land_cmd._POST_LAND_SWEEP_BUDGET_S` was a
+    single number (480) calibrated once (T-2456, 2026-08-18) against the
+    repo's measured stage total at that moment. The repo kept growing;
+    the constant did not move with it, and nothing watched the gap --
+    by 2026-08-20 the real measured total (492.18s) had drifted PAST the
+    budget meant to cover it with headroom, silently deferring the
+    `static` stage group on every post-land sweep and, downstream, making
+    T-2713's (correct) unmeasurable-run refusal permanent -- the queue
+    could never drain because the budget could never fit the work
+    (T-2715).
+
+    Deriving the ceiling from the SAME timing file `--budget`'s own chunk
+    planner (`_select_budget_chunks`) already reads means the number
+    tracks repo growth automatically: as stage groups get slower (or
+    faster), the next sweep's budget moves with them instead of staying
+    frozen at whatever a human last measured by hand. Falls back to
+    `default` when `root` has fewer than `_POST_LAND_SWEEP_BUDGET_FLOOR_S`
+    seconds' worth of recorded timing (empty/missing file -- a fresh
+    checkout with no rolling estimate yet -- or a still-sparse one) so a
+    first run, or one with only a couple of groups measured, is not
+    starved by a budget derived from an unrepresentative partial
+    measurement; the derived value is also floored at
+    `_POST_LAND_SWEEP_BUDGET_FLOOR_S` for the same reason once timing
+    data does exist.
+
+    T-2715 direction 2 (a loud pre-deadlock drift check) is subsumed by
+    this: since the ceiling now tracks the measurement instead of sitting
+    fixed, there is no longer a silent gap between "measured total" and
+    "budget" for a check to detect -- the two move together by
+    construction."""
+    timing = _load_budget_timing(root)
+    if not timing:
+        return default
+    measured_total = sum(timing.values())
+    derived = int(measured_total * _BUDGET_DERIVE_HEADROOM)
+    return max(derived, _POST_LAND_SWEEP_BUDGET_FLOOR_S)
+
+
 # frob:ticket T-1004
 # frob:ticket T-1195
 def _update_budget_timing(

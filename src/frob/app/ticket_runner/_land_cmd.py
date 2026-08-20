@@ -544,22 +544,19 @@ def _tier_a_pre_land_step(
 # land's sweep spawn then died on TimeoutExpired, which also ESCAPED as an
 # unhandled crash instead of the documented None/skip path (fixed below).
 #
-# T-2456: 300 raised to 480. MEASURED against root's own steady-state
-# `.frob/check-budget-timing.json` EMA (2026-08-18, post-T-2443
-# forkserver-leak fix): gates-fast 109.5s + gates-native 51.2s +
-# gates-security 87.4s + lint 2.6s + static 83.9s = 334.6s total -- ALREADY
-# over the old 300s budget on a healthy, non-degraded machine, meaning
-# the `static` stage group (cycle/dup/arch/bind/exports) was being
-# silently deferred from EVERY post-land sweep, not only during unusual
-# load. 480s covers the full measured total with ~145s of headroom for
-# normal variance while still refusing to chase an unbounded machine --
-# a run that genuinely cannot finish 5 stage groups in 480s is exactly
-# the degraded-machine case `budget_deferred=` (see `_print_land_proof`)
-# now names explicitly rather than silently. This does not slow a land
-# whose sweep already finishes under budget (the common case measures
-# ~131-220s wall time for the parts of the split this ticket measured
-# directly) -- it only changes the outcome for the sweep that was
-# ALREADY taking the full budget and silently dropping a stage group.
+# T-2456: 300 raised to 480, a number MEASURED once against root's
+# steady-state `.frob/check-budget-timing.json` EMA (2026-08-18) and then
+# frozen. That is exactly the failure mode T-2715 found: the repo kept
+# growing, the hardcoded 480 did not move with it, and by 2026-08-20 the
+# real measured total (492.18s) had drifted PAST it -- silently deferring
+# the `static` stage group on every post-land sweep and, downstream,
+# making T-2713's (correct) unmeasurable-run refusal permanent, since the
+# budget could never again fit the work. `_POST_LAND_SWEEP_BUDGET_S` now
+# survives only as the FALLBACK `_derive_post_land_sweep_budget_s` uses
+# when a checkout has no (or too little) recorded timing data yet -- the
+# real ceiling is computed fresh from root's own measurements every call
+# (T-2715), so it tracks repo growth instead of needing a human to
+# re-measure and re-hardcode it again in another two years.
 _POST_LAND_SWEEP_BUDGET_S = 480
 
 #: T-1804: PRE001/SCOPE001, in their OWN "no active ticket derivable" mode
@@ -601,13 +598,20 @@ def _unscoped_error_findings(
     root: Path,
     ticket_id: str,
     *,
-    budget: int = _POST_LAND_SWEEP_BUDGET_S,
+    budget: int | None = None,
     env: dict[str, str] | None = None,
 ) -> frozenset[tuple[str, str]] | None:
     """Spawn an UNSCOPED, `--budget`-bounded `frob check --json` in `root`
     and parse the `(rule_id, file)` error-identity set from it, reusing
     `_parse_error_findings_from_stdout` (T-0846's shared parser -- no
-    second hand-typed copy of the `## Errors` section format). Unlike
+    second hand-typed copy of the `## Errors` section format).
+
+    T-2715: `budget=None`, the default for every caller below, derives the
+    ceiling from `root`'s own measured stage timing via `derive_post_land_
+    sweep_budget_s` instead of a frozen constant -- pass an explicit `int`
+    only to override that (e.g. a test pinning a specific value).
+
+    Unlike
     `_check_gate_findings_fn`, this deliberately passes NO `--ticket`: the
     whole point of T-1456's post-land sweep is catching residue OUTSIDE
     any one ticket's own scope (a relocated waiver, drifted format, a
@@ -654,6 +658,15 @@ def _unscoped_error_findings(
     import subprocess
 
     from frob.app import ticket_runner as _ticket_runner
+    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
+
+    if budget is None:
+        # T-2715: derive from root's own measured stage timing rather
+        # than a hardcoded constant -- see `_POST_LAND_SWEEP_BUDGET_S`'s
+        # comment for why a frozen number drifted stale.
+        budget = _derive_post_land_sweep_budget_s(
+            root, default=_POST_LAND_SWEEP_BUDGET_S
+        )
 
     spawn_kwargs: dict[str, object] = {
         "cwd": root,
@@ -1118,13 +1131,12 @@ def _drop_checkpoint_exempt_findings(
     return findings - exempt
 
 
-#: `land_parity_findings`'s own budget default (T-1535) -- deliberately
-#: the SAME `_POST_LAND_SWEEP_BUDGET_S` the post-land/pre-commit sweeps
-#: already use, so a worktree-mode `--land-parity` run and the real land
-#: sweep it exists to preview measure against an identical time budget,
-#: never a narrower one that could hide a stage the real sweep would see.
-# frob:ticket T-1535
-_LAND_PARITY_BUDGET_S = _POST_LAND_SWEEP_BUDGET_S
+# T-1535/T-2715: `land_parity_findings` shares `_unscoped_error_findings`'s
+# own `budget=None` default (below), so a worktree-mode `--land-parity`
+# run and the real land sweep it exists to preview measure against the
+# SAME derived ceiling (`_derive_post_land_sweep_budget_s`, read from the
+# SAME `root`) -- never a narrower one that could hide a stage the real
+# sweep would see.
 
 
 # frob:doc docs/modules/tickets-landing.md#frob-check---land-parity-t-1535
@@ -1133,7 +1145,7 @@ _LAND_PARITY_BUDGET_S = _POST_LAND_SWEEP_BUDGET_S
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_forces_no_gate_cache_env_on_the_spawn kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_work_and_land_finish.py::TestLandParityFindings.test_parity_with_the_land_sweeps_own_exemption_function kind="unit"  # noqa: E501
 def land_parity_findings(
-    root: Path, *, budget: int = _LAND_PARITY_BUDGET_S
+    root: Path, *, budget: int | None = None
 ) -> frozenset[tuple[str, str]] | None:
     """`frob check --land-parity`'s own evaluation (T-1535): the EXACT
     same `(rule, file)` unscoped-error identity-set computation the
