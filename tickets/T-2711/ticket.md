@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 980a1f919de0d7b0b20aa3e5c8b8c0a4cd1ed8db
 ---
 Real incident, three independent instances in one worktree
 (2026-08-19/20): `--allow-cross-ticket` lets a series worktree's SIBLING
