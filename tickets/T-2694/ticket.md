@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 52f9bf021b75bca605ad9c9dfe13e08c9ec59b64
 ---
 Successor to T-1656 (LARGE001 remainder): a genuine seam identified but not
 attempted here, per T-1656's own precedent for rank-1-3 candidates (own
