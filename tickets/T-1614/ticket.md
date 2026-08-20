@@ -1,7 +1,7 @@
 ---
 id: T-1614
 title: 'RUNS LAST: audit every frob:waive for cop-outs, after all other work is complete'
-state: queued
+state: in-progress
 kind: security
 origin: human
 created: '2026-08-05'
@@ -19,6 +19,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
+evidence_scope:
+- tests/unit/test_waive_audit_runner.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: 'standing periodic audit ticket per T-2467: scope is intentionally
   repo-wide since any file may contain a frob:waive directive to review'
@@ -59,6 +61,16 @@ body_changes:
   at: '2026-08-18'
   old_length: 2480
   new_length: 4199
+- mode: append
+  reason: land refused on BUG002 EvidenceConfirmatoryOnly; this pass has no code diff
+    to mutation-test, per T-1748's own documented BUG002 remedy list
+  actor: logan
+  at: '2026-08-20'
+  old_length: 4198
+  new_length: 4568
+evidence:
+- tests/unit/test_waive_audit_runner.py::TestPartialCatchup::test_partial_banks_batch_and_advances_watermark
+- tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
 designated_repro_test: null
 threat: null
 component: null
@@ -116,3 +128,5 @@ obsolete or cop-out waivers, then runs `complete` with the count reviewed.
 This ticket now represents the STANDING PROCESS, not a single terminal
 audit -- it stays open/queued as the periodic mechanism's home rather
 than closing once one pass finishes.
+
+frob:waive BUG002 reason="this pass is a classification-only audit ledger correction (frob ticket waive-audit scan/complete, two systemic-defect tickets filed) with no diff-touched production code -- there is no repro test to reach; a confirmatory-only test is not the honest answer, per BUG002's own remedy option 3 (ledger/doc correction filed as kind=bug/security)"
