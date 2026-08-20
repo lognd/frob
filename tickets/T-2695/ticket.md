@@ -2,7 +2,7 @@
 id: T-2695
 title: 'LARGE001 remainder batch 2: ~80 files after T-1656''s batch-1 (2 waived, 1
   seam filed)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,6 +19,7 @@ scope:
 - src/frob/strata/_selfconform.py
 - tests/unit/test_ticket_store.py
 - tests/unit/strata/test_selfconform.py
+- src/frob/tickets/_store_migrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,16 @@ scope_changes:
   reason: 'T-2695 batch 2a: two named split-candidate files from the ticket body --
     _store.py (single-vs-legacy-backend seam) and _selfconform.py (SYS100-SYS107 numbered-rule
     seam)'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/tickets/_store_migrate.py
+  reason: 'T-2695: new module the _store.py migration split created'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/tickets/_store_migrate.py
+  reason: 'T-2695: new module the _store.py migration split created'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
