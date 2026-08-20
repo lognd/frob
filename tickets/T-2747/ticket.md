@@ -2,7 +2,7 @@
 id: T-2747
 title: fleet_status reports a live worktree as a leaked lease when the worktree is
   not named t-<id>
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -14,10 +14,24 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- scripts/fleet_status.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/fleet_status.py
+  reason: correlate lease-to-worktree structurally, not by directory name
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: correlate lease-to-worktree structurally, not by directory name
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: 'record two further false-LEAK instances and widen the root cause: a series
