@@ -1,7 +1,7 @@
 ---
 id: T-2741
 title: Fix 2 remaining PII012 waiver-placement gaps T-2712 could not touch
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002: comment-only waiver placement fix, no executable behavior change
+    for a mutation test to prove'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 1900
+  new_length: 2211
+evidence:
+- tests/test_capability_registry.py::TestBoto3NextTierServiceBindingResolution::test_secretsmanager_put_secret_value_reports_net_mutate
 designated_repro_test: null
 threat: null
 component: null
@@ -60,3 +70,5 @@ scope, so T-2712 could not touch them:
 
 Both fixes are single-comment-line edits with no detector code
 involved; scope should be exactly these two files.
+
+frob:waive BUG002 reason="T-2741 is a comment-only waiver-placement fix (moving/adding frob:waive PII012 directives) with no behavior change to the code paths themselves -- there is no wiring for a mutation-killing repro to reach, since the fix is entirely in comment placement/content, not executable logic."
