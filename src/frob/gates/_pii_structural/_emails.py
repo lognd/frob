@@ -10,7 +10,7 @@ from email.utils import parseaddr
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
-from ._node_index import _build_node_index, _NodeIndex
+from ._node_index import _build_node_index, _NodeIndex, enclosing_qualname
 
 _log = get_logger(__name__)
 
@@ -110,14 +110,24 @@ def _is_email_shaped(value: str) -> bool:
     return True
 
 
-def _pii011_violation(rel_path: str, lineno: int, value: str) -> Violation:
-    """The PII011 `Violation` for one email-shaped string literal (T-0349)."""
+def _pii011_violation(
+    rel_path: str, lineno: int, value: str, *, symref: str | None = None
+) -> Violation:
+    """The PII011 `Violation` for one email-shaped string literal (T-0349).
+
+    T-2696: `symref` (the enclosing class/function's dotted qualname, from
+    `_node_index.enclosing_qualname`) lets `_match_waiver` require an exact
+    `path::qualname` match instead of the file-wide fallback every PII011
+    finding used before this ticket -- `None` for a module-level literal
+    (no enclosing symbol), matching `Violation.symref`'s own documented
+    contract."""
     _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
     return Violation(
         rule="PII011",
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
+        symref=symref,
         message=(
             f"PII011: {rel_path}:{lineno} string literal {value!r} is "
             f"email-shaped (structural parseaddr match) with no PII "
@@ -154,5 +164,12 @@ def _scan_python_email_values(
             continue
         if _line_marks_fake_email(lines, node.lineno):
             continue
-        violations.append(_pii011_violation(rel_path, node.lineno, value))
+        violations.append(
+            _pii011_violation(
+                rel_path,
+                node.lineno,
+                value,
+                symref=enclosing_qualname(index, node.lineno),
+            )
+        )
     return tuple(violations)

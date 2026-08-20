@@ -822,3 +822,120 @@ class TestDriftLock:
         violations = _scan_python_fields(tree, "fixture.py")
         matched = [v for v in violations if sig.keyword in v.message]
         assert matched, f"signature {sig.id!r} did not fire against its own fixture"
+
+
+# frob:ticket T-2696
+class TestSymrefPopulation:
+    """T-2696: PII010/011/012's `Violation.symref` is now populated
+    (a genuine per-symbol gap this ticket's own investigation found --
+    `Violation.symref`'s docstring names PERF/TEST005/TEST006 as
+    intentionally file-scoped, PII was never one of them), via
+    `_node_index.enclosing_qualname` -- reused from the SAME `_NodeIndex`
+    every PII sub-scan already builds (T-1209), no second AST walk, no
+    file re-parse."""
+
+    def test_class_field_symref_is_class_dot_none_shape(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
+        """A direct data-structure field's symref is the enclosing
+        class's own name (no method between the class and the field)."""
+        src = (
+            "from dataclasses import dataclass\n\n"
+            "@dataclass\n"
+            "class User:\n"
+            "    password: str\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "example.py")
+        pii010 = [v for v in violations if v.rule == "PII010"]
+        assert pii010
+        assert pii010[0].symref == "User"
+
+    def test_orm_column_inside_method_symref_is_nested_dotted(self) -> None:
+        """A `Column(...)` declaration inside a class body still resolves
+        to the enclosing class (T-0348 family 2's own PII010 shape) --
+        proves `_scan_orm_columns`' own call site threads symref too, not
+        just `_scan_class_fields`'s direct-field path."""
+        src = (
+            "class User(Base):\n"
+            "    ssn = Column('ssn', String)\n"
+        )
+        tree = ast.parse(src)
+        from frob.gates._pii_structural._node_index import _build_node_index
+        from frob.gates._pii_structural._python_fields import _scan_orm_columns
+
+        index = _build_node_index(tree)
+        violations = _scan_orm_columns(index, "example.py")
+        pii010 = [v for v in violations if v.rule == "PII010"]
+        assert pii010
+        assert pii010[0].symref == "User"
+
+    def test_email_literal_inside_function_symref_is_function_name(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
+        """PII011 (email-shaped literal) inside a function body resolves
+        to that function's own name."""
+        src = (
+            "def seed_fixture():\n"
+            "    return " + repr("user" + "@" + "realmail.dev") + "\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        pii011 = [v for v in violations if v.rule == "PII011"]
+        assert pii011
+        assert pii011[0].symref == "seed_fixture"
+
+    def test_keyword_sweep_identifier_symref_is_function_name(self) -> None:
+        """PII012 (bare identifier keyword sweep) inside a function
+        resolves to that function's own name."""
+        src = "def handler():\n    password = load_secret()\n    return password\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        pii012 = [v for v in violations if v.rule == "PII012"]
+        assert pii012
+        assert any(v.symref == "handler" for v in pii012)
+
+    def test_module_level_field_symref_is_none(self) -> None:
+        """T-2696 negative control: a module-level site (no enclosing
+        class/function) still gets `symref=None` -- proves this fix did
+        not fabricate a symref where none exists, matching `Violation.
+        symref`'s own documented `None` contract."""
+        src = "password = 'hunter2'\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "example.py", src)
+        pii012 = [v for v in violations if v.rule == "PII012"]
+        assert pii012
+        assert all(v.symref is None for v in pii012)
+
+    def test_enclosing_qualname_nested_method_is_dotted(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
+        """`enclosing_qualname` itself: a method nested inside a class
+        resolves to `Class.method`, not just the tightest-spanning name
+        alone -- the dotted-nesting shape `Violation.symref`'s own
+        `path::qualname` contract expects."""
+        from frob.gates._pii_structural._node_index import (
+            _build_node_index,
+            enclosing_qualname,
+        )
+
+        src = "class Outer:\n" "    def method(self):\n" "        x = 1\n"
+        tree = ast.parse(src)
+        index = _build_node_index(tree)
+        # Line 3 (`x = 1`) is inside `method`, which is inside `Outer`.
+        assert enclosing_qualname(index, 3) == "Outer.method"
+        # Line 2 (the `def method` line itself) is still inside `Outer`
+        # AND inside `method`'s own span (a FunctionDef's span starts at
+        # its own `def` line).
+        assert enclosing_qualname(index, 2) == "Outer.method"
+
+    def test_enclosing_qualname_module_level_is_none(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
+        """`enclosing_qualname` negative control: a line with no
+        containing class/function returns `None`."""
+        from frob.gates._pii_structural._node_index import (
+            _build_node_index,
+            enclosing_qualname,
+        )
+
+        src = "x = 1\n"
+        tree = ast.parse(src)
+        index = _build_node_index(tree)
+        assert enclosing_qualname(index, 1) is None

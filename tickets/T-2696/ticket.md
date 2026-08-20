@@ -1,7 +1,7 @@
 ---
 id: T-2696
 title: Populate PII010/011/012 symref (dormant over-forgiveness hole, T-1666 successor)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,7 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_pii_structural/**
 - tests/test_pii_structural_gate.py
-- tickets/T-draft-fae57bcc/**
+- tickets/T-2712/**
 - rapid-debt.jsonl
 evidence_scope:
 - tests/test_pii_structural_gate.py
@@ -32,7 +32,7 @@ scope_changes:
   actor: logan
   at: '2026-08-19'
 - op: add
-  glob: tickets/T-draft-fae57bcc/**
+  glob: tickets/T-2712/**
   reason: tests exercising the new symref-population fix, plus the classify follow-up
     filed as part of this ticket's own work
   actor: logan

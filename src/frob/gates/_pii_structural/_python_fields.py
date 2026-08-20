@@ -12,7 +12,7 @@ from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
 from ._declared_surface import _EMPTY_DECLARED_SURFACE, _DeclaredSurface
-from ._node_index import _build_node_index, _NodeIndex
+from ._node_index import _build_node_index, _NodeIndex, enclosing_qualname
 from ._signatures import _field_name_hit, _field_type_hit
 
 _log = get_logger(__name__)
@@ -70,9 +70,17 @@ def _is_data_structure(cls: ast.ClassDef) -> bool:
     return False
 
 
-def _pii010_violation(rel_path: str, lineno: int, field_name: str, sig) -> Violation:  # noqa: ANN001
+def _pii010_violation(  # noqa: ANN001
+    rel_path: str, lineno: int, field_name: str, sig, *, symref: str | None = None
+) -> Violation:
     """The PII010 `Violation` for one PII-shaped field, built once so both
-    the name-hit and type-hit call sites share identical message wording."""
+    the name-hit and type-hit call sites share identical message wording.
+
+    T-2696: `symref` (the enclosing class/function's dotted qualname, from
+    `_node_index.enclosing_qualname`) lets `_match_waiver` require an exact
+    `path::qualname` match instead of the file-wide fallback every PII010
+    finding used before this ticket -- `None` when no enclosing symbol
+    exists (matches `Violation.symref`'s own documented contract)."""
     _log.warning(
         "PII010: %s:%d field %r matches %s (%s) -- category %s",
         rel_path,
@@ -87,6 +95,7 @@ def _pii010_violation(rel_path: str, lineno: int, field_name: str, sig) -> Viola
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
+        symref=symref,
         message=(
             f"PII010: {rel_path}:{lineno} field {field_name!r} is PII-shaped "
             f"(matches {sig.kind} signature {sig.keyword!r}, category "
@@ -102,10 +111,16 @@ def _scan_class_fields(
     cls: ast.ClassDef,
     rel_path: str,
     declared: _DeclaredSurface = _EMPTY_DECLARED_SURFACE,
+    *,
+    _index: _NodeIndex | None = None,
 ) -> list[Violation]:
     """Every PII010 hit among `cls`'s direct `AnnAssign` fields, for a class
     `_is_data_structure` already accepted -- skipping any field whose
-    category `declared` (T-0351) already `carries` for this file."""
+    category `declared` (T-0351) already `carries` for this file. `_index`
+    (T-2696): threaded through so each violation's `symref` can be resolved
+    via `enclosing_qualname` -- `None` (no symref) when the caller has no
+    index to give (matching every other optional-`_index`-kwarg callee in
+    this package)."""
     violations: list[Violation] = []
     for stmt in cls.body:
         if not isinstance(stmt, ast.AnnAssign) or not isinstance(stmt.target, ast.Name):
@@ -115,7 +130,10 @@ def _scan_class_fields(
         type_sig = _field_type_hit(stmt.annotation)
         sig = name_sig or type_sig
         if sig is not None and not declared._has_pii(rel_path, sig.category):
-            violations.append(_pii010_violation(rel_path, stmt.lineno, field_name, sig))
+            symref = enclosing_qualname(_index, stmt.lineno) if _index else cls.name
+            violations.append(
+                _pii010_violation(rel_path, stmt.lineno, field_name, sig, symref=symref)
+            )
     return violations
 
 
@@ -143,7 +161,9 @@ def _scan_python_fields(
     violations: list[Violation] = []
     for node in index.class_defs:
         if _is_data_structure(node):
-            violations.extend(_scan_class_fields(node, rel_path, declared))
+            violations.extend(
+                _scan_class_fields(node, rel_path, declared, _index=index)
+            )
     return tuple(violations)
 
 
@@ -207,7 +227,13 @@ def _scan_orm_columns(
             sig = _field_name_hit(string_name)
             if sig is not None and not declared._has_pii(rel_path, sig.category):
                 violations.append(
-                    _pii010_violation(rel_path, node.lineno, string_name, sig)
+                    _pii010_violation(
+                        rel_path,
+                        node.lineno,
+                        string_name,
+                        sig,
+                        symref=enclosing_qualname(index, node.lineno),
+                    )
                 )
     for node in index.assigns:
         if not (isinstance(node.value, ast.Call) and _is_column_call(node.value)):
@@ -217,7 +243,13 @@ def _scan_orm_columns(
                 sig = _field_name_hit(target.id)
                 if sig is not None and not declared._has_pii(rel_path, sig.category):
                     violations.append(
-                        _pii010_violation(rel_path, node.lineno, target.id, sig)
+                        _pii010_violation(
+                            rel_path,
+                            node.lineno,
+                            target.id,
+                            sig,
+                            symref=enclosing_qualname(index, node.lineno),
+                        )
                     )
     return violations
 
@@ -308,7 +340,13 @@ def _scan_ddl_strings(
             sig = _field_name_hit(column_name)
             if sig is not None and not declared._has_pii(rel_path, sig.category):
                 violations.append(
-                    _pii010_violation(rel_path, node.lineno, column_name, sig)
+                    _pii010_violation(
+                        rel_path,
+                        node.lineno,
+                        column_name,
+                        sig,
+                        symref=enclosing_qualname(index, node.lineno),
+                    )
                 )
     return violations
 

@@ -1,5 +1,5 @@
 ---
-id: T-draft-0ca6b1ef
+id: T-2711
 title: A passenger ticket's content lands via --allow-cross-ticket while its own ledger
   state stays non-terminal, leaking its scope lease
 state: queued

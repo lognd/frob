@@ -103,3 +103,50 @@ def _build_node_index(tree: ast.Module) -> _NodeIndex:
             index.aliases.append(node)
     _log.debug("_build_node_index: bucketed %d node(s) in one ast.walk pass", position)
     return index
+
+
+# frob:ticket T-2696
+# frob:waive AFFECT001 reason="T-2696 adds per-violation symref precision \
+# (Violation.symref) to PII010/011/012's existing behavior -- WHICH sites fire and why \
+# is unchanged (verified via this ticket's own live re-run against this repo's tree), \
+# only the waiver-matching precision each finding carries, so \
+# docs/modules/gates.md#structural-pii-secrets-detection- t-0207's mechanism \
+# description needs no update, matching the identical T-1209 _index-kwarg precedent \
+# immediately below in this same file family"
+# frob:doc docs/modules/gates.md#structural-pii-secrets-detection-t-0207
+# frob:tests \
+# tests/test_pii_structural_gate.py::TestSymrefPopulation.test_enclosing_qualname_neste\
+# d_method_is_dotted kind="unit"
+# frob:tests \
+# tests/test_pii_structural_gate.py::TestSymrefPopulation.test_enclosing_qualname_modul\
+# e_level_is_none kind="unit"
+def enclosing_qualname(index: _NodeIndex, line: int) -> str | None:
+    """T-2696: the tightest-spanning `ClassDef`/`FunctionDef`/
+    `AsyncFunctionDef`'s dotted qualname covering `line`, built from the
+    SAME `_NodeIndex` bucketing pass `_build_node_index` already performs
+    -- no second `ast.walk`, no re-parse, no file read. `None` for a
+    module-level site (no enclosing class/function contains `line`).
+
+    Unlike `frob.gates._opaque._enclosing_qualname` (which re-parses the
+    file via `frob.lang.parse_file` to get pre-computed qualnames), this
+    reconstructs nesting itself from the flat `class_defs`/`function_defs`
+    buckets: every containing node (line-span covers `line`) is collected,
+    then sorted OUTERMOST-first by span size (a containing class/function
+    always spans at least as many lines as anything nested inside it), and
+    their `.name`s dot-joined -- `Outer.method` for a method, `Outer.Inner`
+    for a nested function, a bare function name for a module-level
+    function, `None` for module-level data (PII010's most common site,
+    a class field, is exactly the `Class.__init__`-less case this still
+    handles: dataclass/pydantic fields have no enclosing FunctionDef, so
+    the class's own bare name is the correct, and only, qualname)."""
+    candidates = [
+        node
+        for node in (*index.class_defs, *index.function_defs)
+        if node.lineno <= line <= (node.end_lineno or node.lineno)
+    ]
+    if not candidates:
+        return None
+    candidates.sort(
+        key=lambda node: (node.end_lineno or node.lineno) - node.lineno, reverse=True
+    )
+    return ".".join(node.name for node in candidates)

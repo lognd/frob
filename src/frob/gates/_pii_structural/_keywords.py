@@ -17,7 +17,7 @@ import tokenize
 from frob.gates._models import Severity, Violation
 from frob.logging import get_logger
 
-from ._node_index import _build_node_index, _NodeIndex
+from ._node_index import _build_node_index, _NodeIndex, enclosing_qualname
 from ._python_fields import _is_data_structure_field_target
 from ._signatures import _camel_to_snake, _field_name_hit, _FieldSignature
 
@@ -101,14 +101,28 @@ def _token_literal_assignment_target_ids(index: _NodeIndex) -> frozenset[int]:
 
 
 def _pii012_violation(
-    rel_path: str, lineno: int, token: str, sig: _FieldSignature
+    rel_path: str,
+    lineno: int,
+    token: str,
+    sig: _FieldSignature,
+    *,
+    symref: str | None = None,
 ) -> Violation:
     """The PII012 `Violation` for one keyword-sweep hit (T-0350 family 5) --
     SUGGESTION-level signal: an identifier or comment word alone is never
     proof of an actual PII surface (module docstring: "no hard fail on
     names alone"), so this fires at the same WARN severity `frob check`
     already treats as non-failing by default, explicitly worded as a
-    suggestion rather than a declared-surface finding."""
+    suggestion rather than a declared-surface finding.
+
+    T-2696: `symref` (the enclosing class/function's dotted qualname, from
+    `_node_index.enclosing_qualname`) lets `_match_waiver` require an exact
+    `path::qualname` match instead of the file-wide fallback every PII012
+    finding used before this ticket -- `None` for a module-level site
+    (matches `Violation.symref`'s own documented contract). For a comment-
+    token hit (`_scan_comment_keywords`), this is the symbol enclosing the
+    COMMENT's own line, the same site precision an inline `frob:waive
+    PII012` placed above that comment would target."""
     _log.warning(
         "PII012: %s:%d keyword-sweep hit %r matches %s (%s) -- category %s",
         rel_path,
@@ -123,6 +137,7 @@ def _pii012_violation(
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
+        symref=symref,
         message=(
             f"PII012 (suggestion): {rel_path}:{lineno} identifier/comment "
             f"token {token!r} resembles a PII-shaped keyword (matches "
@@ -482,7 +497,11 @@ def _scan_identifier_keywords(index: _NodeIndex, rel_path: str) -> list[Violatio
         if key in seen:
             continue
         seen.add(key)
-        violations.append(_pii012_violation(rel_path, lineno, name, sig))
+        violations.append(
+            _pii012_violation(
+                rel_path, lineno, name, sig, symref=enclosing_qualname(index, lineno)
+            )
+        )
     return violations
 
 
@@ -652,7 +671,10 @@ def _scan_comment_keywords(
             if key in seen:
                 continue
             seen.add(key)
-            violations.append(_pii012_violation(rel_path, lineno, token, sig))
+            symref = enclosing_qualname(index, lineno)
+            violations.append(
+                _pii012_violation(rel_path, lineno, token, sig, symref=symref)
+            )
     return violations
 
 
