@@ -2,7 +2,7 @@
 id: T-2718
 title: 'TICK011 refuses to close a Done report that frob''s own Tier-A generator produced,
   forcing a hand-appended Filed: line'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reporting.py
 - docs/modules/tickets-data-storage.md
+evidence_scope:
+- tests/unit/test_reporting_t1648_remainder.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,7 +35,12 @@ scope_changes:
   reason: documenting the T-2711/T-2718 exempt-fixed-headings decision
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_no_real_followup_closes_clean
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_captured_claims_and_amendments_closes_clean
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_genuine_hand_typed_subheading_alongside_generated_ones_still_fires
+- tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_renaming_a_generated_heading_still_fires
+designated_repro_test: tests/unit/test_reporting_t1648_remainder.py::TestDisclosureShapedLanguage::test_tier_a_generated_report_with_no_real_followup_closes_clean
 threat: null
 component: null
 anchor: false
