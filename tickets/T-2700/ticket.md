@@ -31,6 +31,12 @@ scope_changes:
     / find_cycles wiring
   actor: logan
   at: '2026-08-20'
+- op: add
+  glob: tests/test_graph.py
+  reason: T-2700 own positive/negative control tests for DependencyGraph.degraded_languages
+    / find_cycles wiring
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
