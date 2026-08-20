@@ -138,13 +138,16 @@ acceptance:
     ticket''s own work; found already built during reconnaissance and confirmed by
     direct code reading before writing anything.'
   evidence: []
-- text: 'MEASURED 2026-08-17: deliverable 2 (a conformance test suite parameterized
-    over every registered adapter, failing when a language declares a capability it
-    does not implement) does not exist -- tests/test_lang_support.py and tests/test_lang_conformance_gate.py
-    test the EXISTING facet-registry-derivation and gate logic (does a registry entry
-    exist), not adapter BEHAVIOR against a capability declaration. This remains real,
-    unbuilt work, and is the load-bearing gap for the epic''s stated purpose (batch-adding
-    20-50 languages safely).'
+- text: 'GIVEN LANG004''s behavioral conformance suite (capability_conformance_gate,
+    src/frob/gates/_lang_conformance.py, built under T-2365 -- this criterion''s own
+    prior claim that it "does not exist" was already false before this ticket''s work
+    started), WHEN a registered language''s capability cell is IMPLEMENTED for symbol_walk/publicness/doc_extract/directive_parse/call_graph/import_graph
+    (6 of the 7 axis members; test_discovery remains disclosed structural-only, filed
+    T-2682), THEN _behavioral_capability_check actually exercises it against a real
+    per-language fixture and the parameterized suite (tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck)
+    passes for every such cell -- this ticket''s real, delivered work: extending that
+    suite''s own coverage from 4/7 to 6/7 capabilities (call_graph, import_graph newly
+    added this round).'
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -213,6 +216,54 @@ acceptance_amendments:
     for all seven capabilities this criterion names, built under T-2365. Not this
     ticket''s own work; found already built during reconnaissance and confirmed by
     direct code reading before writing anything.'
+  reason: 'The three original acceptance entries are 2026-08-17 MEASUREMENT NOTES,
+
+    not given/when/then criteria -- they describe what a prior sweep found
+
+    missing, not a testable claim this ticket''s own work can resolve with
+
+    pytest evidence. Direct code reading before any work started this round
+
+    found their premise stale in frob''s favor: ADAPTER_CAPABILITIES /
+
+    derive_capability_registry (src/frob/lang/_support.py, T-2365) and
+
+    LANG004 / capability_conformance_gate (src/frob/gates/_lang_
+
+    conformance.py, T-2365) both already existed -- built before this
+
+    ticket''s own filing predates them, contradicting criteria [1]/[2]''s own
+
+    "no facet or registry exists" / "conformance suite does not exist"
+
+    claims. Amending rather than binding evidence to a false premise, per
+
+    the coordinator''s explicit instruction not to bind evidence to a
+
+    criterion it does not actually prove.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: replace
+  index: 2
+  old_text: 'MEASURED 2026-08-17: deliverable 2 (a conformance test suite parameterized
+    over every registered adapter, failing when a language declares a capability it
+    does not implement) does not exist -- tests/test_lang_support.py and tests/test_lang_conformance_gate.py
+    test the EXISTING facet-registry-derivation and gate logic (does a registry entry
+    exist), not adapter BEHAVIOR against a capability declaration. This remains real,
+    unbuilt work, and is the load-bearing gap for the epic''s stated purpose (batch-adding
+    20-50 languages safely).'
+  new_text: 'GIVEN LANG004''s behavioral conformance suite (capability_conformance_gate,
+    src/frob/gates/_lang_conformance.py, built under T-2365 -- this criterion''s own
+    prior claim that it "does not exist" was already false before this ticket''s work
+    started), WHEN a registered language''s capability cell is IMPLEMENTED for symbol_walk/publicness/doc_extract/directive_parse/call_graph/import_graph
+    (6 of the 7 axis members; test_discovery remains disclosed structural-only, filed
+    T-2682), THEN _behavioral_capability_check actually exercises it against a real
+    per-language fixture and the parameterized suite (tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck)
+    passes for every such cell -- this ticket''s real, delivered work: extending that
+    suite''s own coverage from 4/7 to 6/7 capabilities (call_graph, import_graph newly
+    added this round).'
   reason: 'The three original acceptance entries are 2026-08-17 MEASUREMENT NOTES,
 
     not given/when/then criteria -- they describe what a prior sweep found
