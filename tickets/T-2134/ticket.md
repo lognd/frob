@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: df48a0519fcd1dc70ccd49e5216023c4f7438aec
 ---
 T-0969/T-2131 residue. `tickets.md` (the pre-v2-migration single-file
 ledger) still exists at the repo root, 545KB/11252 lines, and trips 10
