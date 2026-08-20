@@ -29,6 +29,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2141: --allow-cross-ticket carries an undeclared set: the operator cannot state which tickets they expect to carry, so a legitimate sibling batch and an accidental foreign carry look identical
 - T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
 - T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
+- T-2251: frob format subcommand: replace make format/lint-fix/all (ruff fix+format wrapper)
 - T-2311: DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent contended family)
 - T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
 - T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles

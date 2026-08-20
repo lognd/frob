@@ -143,6 +143,12 @@ class Subcommand(str, enum.Enum):
     fleet = "fleet"
     # T-0441: `frob:` directive comment canonical-form wrap/unwrap.
     fmt = "fmt"
+    # frob:ticket T-2251
+    # T-2251: `ruff check --fix` + `ruff format` write pass -- the frob-
+    # native replacement for the Makefile's format/lint-fix/all targets.
+    # Distinct from `fmt` above (frob: directive comments, not Python
+    # source formatting).
+    format = "format"
     # frob:ticket T-1808
     # T-1808: materialize this repo's git-tracked Claude config out to
     # ~/.claude/ (folds .claude/hooks/sync-claude-config.py into a verb).
@@ -1023,6 +1029,15 @@ class AppConfig(BaseModel):
     #: T-2298: opt-in to also rewriting test-input corpus files
     #: (tests/**/*.strata) -- excluded by default.
     fmt_include_test_corpora: bool = False
+
+    # format (T-2251: `ruff check --fix` + `ruff format` write pass --
+    # replaces the Makefile's format/lint-fix/all targets)
+    format_path: Path | None = None
+    #: T-2251: `--select-imports-only` restricts the `ruff check --fix`
+    #: stage to `--select I` (import sorting only), the `format:` Makefile
+    #: target's narrower fix scope; the default (unset) is `lint-fix:`'s
+    #: full-rule-set autofix.
+    format_select_imports_only: bool = False
 
     # claude (T-1808: fold .claude/hooks/sync-claude-config.py into a verb)
     claude_command: str | None = None  # sync

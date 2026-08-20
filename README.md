@@ -51,7 +51,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 
 ## Commands
 
-45 total commands, statically bound to the live subcommand registry
+46 total commands, statically bound to the live subcommand registry
 (DOC005, docs/modules/gates.md#doc005-readme-command-table-drift-lock-t-0435)
 -- a subcommand added or removed here with no matching edit below fails
 `frob check`.
@@ -113,6 +113,7 @@ Every violation message embeds its own remedy command, so an agent acting on
 | `frob verify` | The T-1686 unverified window: depth/age/quarantine status, force a drain, explain an attribution, dispose a quarantined finding (`status`/`now`/`explain`/`dispose`) |
 | `frob clean` | Remove build/test/cache artifacts (tiered, dry-run by default) |
 | `frob fmt` | Canonicalize `frob:` directive comment line-wrapping: fewest physical lines within the line-length limit (`--check` previews without writing) |
+| `frob format` | `ruff check --fix` + `ruff format`, write mode: all rules by default, or `--select I` (import sorting only) with `--select-imports-only` |
 | `frob agent` | Print/export the dispatched-agent guard env (`FROB_WORKTREE`/`FROB_AGENT`) for a worktree (`env`) |
 | `frob worktree` | Manage dispatched-agent git worktrees: lease-aware stale-worktree cleanup (`sweep`) |
 

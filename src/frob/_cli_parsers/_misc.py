@@ -488,6 +488,33 @@ def _add_fmt_parser(sub) -> None:
     )
 
 
+# frob:ticket T-2251
+# frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
+# argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \
+# does not trace this cross-package private import -- same class of gap as \
+# _add_fmt_parser's own DEAD001 waiver just above (T-1024 precedent)"
+def _add_format_parser(sub) -> None:
+    """Register the `frob format` subcommand: `ruff check --fix` + `ruff
+    format`, the write-mode replacement for the Makefile's `format`/
+    `lint-fix`/`all` targets (T-2251)."""
+    # -- format --------------------------------------------------------
+    format_p = sub.add_parser(
+        "format",
+        help="ruff check --fix + ruff format, write mode (T-2251)",
+    )
+    format_p.add_argument("format_path", metavar="path", nargs="?", default=".")
+    format_p.add_argument(
+        "--select-imports-only",
+        dest="format_select_imports_only",
+        action="store_true",
+        help=(
+            "restrict ruff check --fix to --select I (import sorting only) "
+            "-- the Makefile format: target's narrower fix scope; omit for "
+            "lint-fix:'s full-rule-set autofix"
+        ),
+    )
+
+
 # frob:ticket T-1808
 # frob:waive DEAD001 reason="genuinely called directly from src/frob/__main__.py's \
 # argparse dispatch-table wiring, but the best-effort callgraph (frob.graph.callgraph) \

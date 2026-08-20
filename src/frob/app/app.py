@@ -32,6 +32,7 @@ _RUNNER_MODULE_NAMES = (
     "exports_runner",
     "fleet_runner",
     "fmt_runner",
+    "pyfmt_runner",
     "gitlog_runner",
     "graph_runner",
     "map_runner",
@@ -104,6 +105,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.doctor: "doctor_runner",
     Subcommand.clean: "clean_runner",
     Subcommand.fmt: "fmt_runner",
+    Subcommand.format: "pyfmt_runner",
     Subcommand.natives: "natives_runner",
     Subcommand.coverage: "coverage_runner",
     Subcommand.verify: "verify_runner",
@@ -179,6 +181,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.fleet_runner as module
     elif name == "fmt_runner":
         import frob.app.fmt_runner as module
+    elif name == "pyfmt_runner":
+        import frob.app.pyfmt_runner as module
     elif name == "gitlog_runner":
         import frob.app.gitlog_runner as module
     elif name == "graph_runner":
@@ -299,7 +303,7 @@ class App:
                 "<scaffold|cycle|outline|map|xref|parse|dup|arch|docs|bind|"
                 "exports|check|gitlog|graph|ack|debt|deprecated|pool|ticket|test|vet|"
                 "perf|release|stats|serve|mutate|sys|deploy|doctor|clean|fleet|fmt|"
-                "verify|claude>"
+                "format|verify|claude>"
                 " ..."
             )
             sys.exit(1)

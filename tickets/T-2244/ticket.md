@@ -31,6 +31,16 @@ scope_changes:
     for exactly this kind of Makefile-recipe-content assertion (TestCoverageRecipeDelegatesToFrobCoverageFull)
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_format_calls_frob_format_select_imports_only
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_lint_fix_calls_frob_format_full_rule_set
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_lint_calls_frob_check_ruff_no_format_check_plus_ty
+- tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_typecheck_calls_frob_check_only_ty
+- tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_calls_frob_test_all
+- tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_unit_scopes_frob_test_to_tests_unit
+- tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_integration_scopes_frob_test_to_tests_integration
+- tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_system_scopes_frob_test_to_tests_system
+- tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_fast_keeps_raw_pytest_testmon_disclosed_gap
 designated_repro_test: null
 attachments:
 - path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
@@ -42,11 +52,20 @@ acceptance:
 - text: 'GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck: recipes
     call ''uv run frob format''/''uv run frob check --only ...'' instead of raw ruff/ty
     invocations'
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_format_calls_frob_format_select_imports_only
+  - tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_lint_fix_calls_frob_format_full_rule_set
+  - tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_lint_calls_frob_check_ruff_no_format_check_plus_ty
+  - tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob::test_typecheck_calls_frob_check_only_ty
 - text: 'GIVEN the Makefile WHEN read THEN test:/test-unit:/test-integration:/test-system:
     recipes call ''uv run frob test'' with T-2319''s directory-scoped path selection;
     test-fast: stays on raw pytest --testmon (disclosed no-frob-equivalent gap)'
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_calls_frob_test_all
+  - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_unit_scopes_frob_test_to_tests_unit
+  - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_integration_scopes_frob_test_to_tests_integration
+  - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_system_scopes_frob_test_to_tests_system
+  - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_fast_keeps_raw_pytest_testmon_disclosed_gap
 - text: GIVEN a deliberately introduced ruff violation or a deliberately broken test
     fixture THEN the repointed targets still fail with a nonzero exit -- no strictness
     regression from the swap

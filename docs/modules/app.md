@@ -280,6 +280,7 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
 <!-- frob:describes src/frob/app/doctor_runner.py::run -->
 <!-- frob:describes src/frob/app/fleet_runner.py::run -->
 <!-- frob:describes src/frob/app/fmt_runner.py::run -->
+<!-- frob:describes src/frob/app/pyfmt_runner.py::run -->
 <!-- frob:describes src/frob/app/natives_runner.py::run -->
 <!-- frob:describes src/frob/app/pool_runner.py::run -->
 <!-- frob:describes src/frob/app/registry_runner.py::run -->
@@ -419,6 +420,12 @@ lines. `FROB_VERBOSE=1` restores the full diagnostic stream.
   cross-repo status/gate rollup and ticket routing (docs/modules/fleet.md).
 - `fmt_runner.run` -- `frob fmt [path] [--check] [--json]` (T-0441):
   directive canonicalization.
+- `pyfmt_runner.run` -- `frob format [path] [--select-imports-only]`
+  (T-2251): write-mode `ruff check --fix` + `ruff format`, the frob-native
+  replacement for the Makefile's `format`/`lint-fix`/`all` targets. Default
+  (no flag) delegates to `frob.check._python._run_ruff_autofix` (T-2320/
+  T-2252, also `frob check --fix-ruff`'s own entry point); `--select-
+  imports-only` narrows the `ruff check --fix` stage to `--select I`.
 - `natives_runner.run` -- `frob natives build`: frob-owned native crate
   builds (T-0864/T-0735).
 - `pool_runner.run` -- `frob pool snapshot|clear` (T-0569): ratchet-pool

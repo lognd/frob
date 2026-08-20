@@ -27,6 +27,7 @@ from frob._cli_parsers import (
     _add_exports_parser,
     _add_fleet_parser,
     _add_fmt_parser,
+    _add_format_parser,
     _add_gitlog_parser,
     _add_graph_parser,
     _add_map_parser,
@@ -415,6 +416,7 @@ def _add_workflow_subparsers(sub) -> None:
     _add_doctor_parser(sub)
     _add_clean_parser(sub)
     _add_fmt_parser(sub)
+    _add_format_parser(sub)
     _add_claude_parser(sub)
     _add_natives_parser(sub)
     _add_coverage_parser(sub)

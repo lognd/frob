@@ -2,7 +2,7 @@
 id: T-2251
 title: 'frob format subcommand: replace make format/lint-fix/all (ruff fix+format
   wrapper)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -33,14 +33,14 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/_cli_parsers/**
-  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py;
-    only _misc.py needed for the new frob format parser
+  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py; only _misc.py
+    needed for the new frob format parser
   actor: logan
   at: '2026-08-19'
 - op: add
   glob: src/frob/_cli_parsers/_misc.py
-  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py;
-    only _misc.py needed for the new frob format parser
+  reason: narrow to avoid lease collision with T-2685 on _ticket/_new.py; only _misc.py
+    needed for the new frob format parser
   actor: logan
   at: '2026-08-19'
 - op: add
@@ -86,6 +86,12 @@ scope_changes:
     docs/commands/format.md section'
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+- tests/unit/test_pyfmt_runner.py::TestRun::test_select_imports_only_uses_dash_dash_select_i
+- tests/unit/test_pyfmt_runner.py::TestRun::test_nonzero_exit_propagates
+- tests/unit/test_pyfmt_runner.py::TestRunRuffCheckFixSelectImports::test_missing_binary_yields_typed_result
+- tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly::test_missing_binary_yields_typed_result
 designated_repro_test: null
 threat: null
 component: null

@@ -484,6 +484,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob exports` | generate __init__.py from public symbols in a package directory |
 | `frob fleet` | cross-repo status, gate rollup, and ticket routing over a fleet.toml manifest of sibling repos (T-0573) |
 | `frob fmt` | canonicalize frob: directive comment line-wrapping (T-0441) |
+| `frob format` | ruff check --fix + ruff format, write mode (T-2251) |
 | `frob gitlog` | summarize git history by type/granularity (conventional commits) |
 | `frob graph` | obligation graph: build cache, query symbols, explain drift |
 | `frob map` | show whole-project structural map (symbols + line counts) -- also available as `frob explore map` (T-1238) |

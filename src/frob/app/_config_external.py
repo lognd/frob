@@ -284,6 +284,8 @@ _PATH_FIELDS = (
     "clean_path",
     "fleet_manifest",
     "fmt_path",
+    # frob:ticket T-2251
+    "format_path",
     # frob:ticket T-0864
     "natives_path",
     # frob:ticket T-1525
@@ -513,6 +515,8 @@ _BOOL_FLAGS = (
     "fmt_json",
     # frob:ticket T-2298
     "fmt_include_test_corpora",
+    # frob:ticket T-2251
+    "format_select_imports_only",
     # frob:ticket T-1808
     "claude_check",
     # frob:ticket T-1525

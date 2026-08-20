@@ -163,3 +163,85 @@ class TestCoverageRecipeReconcilesStaleLeasesBeforeDoctor:
         reconcile_idx = recipe.index("uv run frob ticket reconcile --apply")
         doctor_idx = recipe.index("uv run frob doctor")
         assert reconcile_idx < doctor_idx, recipe
+
+
+# frob:ticket T-2244
+class TestFormatLintTypecheckRecipesDelegateToFrob:
+    """T-2244 acceptance[0]: `format:`/`lint:`/`lint-fix:`/`typecheck:` no
+    longer shell out to raw `ruff`/`ty` -- each delegates to a frob
+    subcommand (`frob format`, T-2251; `frob check`'s existing `--only`/
+    `--skip-ruff-format` stage selection)."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_format_calls_frob_format_select_imports_only  # noqa: E501
+    def test_format_calls_frob_format_select_imports_only(self) -> None:
+        recipe = _recipe_body("format")
+        assert "uv run frob format --select-imports-only" in recipe, recipe
+        assert "ruff" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_lint_fix_calls_frob_format_full_rule_set  # noqa: E501
+    def test_lint_fix_calls_frob_format_full_rule_set(self) -> None:
+        recipe = _recipe_body("lint-fix")
+        assert "uv run frob format" in recipe, recipe
+        assert "--select-imports-only" not in recipe, recipe
+        assert "ruff" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_lint_calls_frob_check_ruff_no_format_check_plus_ty  # noqa: E501
+    def test_lint_calls_frob_check_ruff_no_format_check_plus_ty(self) -> None:
+        """`lint:` must keep its pre-T-2244 lint-only scope (no `ruff
+        format --check` stage) -- bundling format-check in would newly
+        fail on the ~180 pre-existing files T-2359 has not yet
+        reformatted, a strictness regression T-2244's acceptance[2]
+        forbids."""
+        recipe = _recipe_body("lint")
+        assert "uv run frob check" in recipe, recipe
+        assert "--only ruff" in recipe, recipe
+        assert "--skip-ruff-format" in recipe, recipe
+        assert "--only ty" in recipe, recipe
+        assert "ruff check" not in recipe
+        assert "ty check" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestFormatLintTypecheckRecipesDelegateToFrob.test_typecheck_calls_frob_check_only_ty  # noqa: E501
+    def test_typecheck_calls_frob_check_only_ty(self) -> None:
+        recipe = _recipe_body("typecheck")
+        assert "uv run frob check --only ty" in recipe, recipe
+        assert "ty check" not in recipe
+
+
+# frob:ticket T-2244
+class TestTestRecipesUseFrobTestPathSelection:
+    """T-2244 acceptance[1]: `test:`/`test-unit:`/`test-integration:`/
+    `test-system:` delegate to `frob test` (T-2319's directory-scoped
+    SELECTION, matching `pytest PATH`'s subset semantics); `test-fast:`
+    keeps raw pytest --testmon (disclosed no-frob-equivalent gap)."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection.test_test_calls_frob_test_all  # noqa: E501
+    def test_test_calls_frob_test_all(self) -> None:
+        recipe = _recipe_body("test")
+        assert "uv run frob test --all" in recipe, recipe
+        assert "uv run pytest" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection.test_test_unit_scopes_frob_test_to_tests_unit  # noqa: E501
+    def test_test_unit_scopes_frob_test_to_tests_unit(self) -> None:
+        recipe = _recipe_body("test-unit")
+        assert "uv run frob test $(TESTS)/unit" in recipe, recipe
+        assert "uv run pytest" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection.test_test_integration_scopes_frob_test_to_tests_integration  # noqa: E501
+    def test_test_integration_scopes_frob_test_to_tests_integration(self) -> None:
+        recipe = _recipe_body("test-integration")
+        assert "uv run frob test $(TESTS)/integration" in recipe, recipe
+        assert "uv run pytest" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection.test_test_system_scopes_frob_test_to_tests_system  # noqa: E501
+    def test_test_system_scopes_frob_test_to_tests_system(self) -> None:
+        recipe = _recipe_body("test-system")
+        assert "uv run frob test $(TESTS)/system" in recipe, recipe
+        assert "uv run pytest" not in recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection.test_test_fast_keeps_raw_pytest_testmon_disclosed_gap  # noqa: E501
+    def test_test_fast_keeps_raw_pytest_testmon_disclosed_gap(self) -> None:
+        """No `frob test` equivalent to `--testmon`'s incremental-rerun mode
+        exists today (T-2244's own ticket body) -- this stays on raw
+        pytest deliberately, not an oversight."""
+        recipe = _recipe_body("test-fast")
+        assert "uv run pytest $(TESTS)/ -q --testmon" in recipe, recipe

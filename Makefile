@@ -476,21 +476,33 @@ install-tool:
 	uv tool install --force --reinstall . --with ./strata-core --with ./frob-core --extra serve
 
 # ---------- formatting & linting ----------
+#
+# T-2244: repointed at frob-native subcommands instead of raw ruff/ty/pytest
+# invocations (T-1382's Makefile-retirement directive -- workflows belong in
+# frob subcommands, not GNU-make recipes). `format:`/`lint-fix:` need
+# `frob format` (T-2251); `lint:`/`typecheck:` need `frob check`'s existing
+# `--only`/`--skip-ruff-*` stage selection. `-n auto --dist=loadgroup` is not
+# repeated below -- it is already baked into pyproject.toml's
+# `[tool.pytest.ini_options] addopts`, so every pytest invocation (raw or
+# via `frob test`) gets it automatically; the old recipes' explicit `-n
+# auto` was already redundant with that.
 
 format: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix --select I
-	uv run ruff format $(SRC)/ $(TESTS)/
+	uv run frob format --select-imports-only
 
+# T-2244: `--skip-ruff-format` (T-2320) keeps this the same lint-only check
+# `lint:` always was -- `frob check --only ruff` alone would ALSO run
+# `ruff format --check`, which is a real behavior change this repo is not
+# ready for yet (T-2359, still open, tracks the ~180 pre-existing files
+# that would newly fail a format-check gate).
 lint: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/
-	uv run ty check $(SRC)/
+	uv run frob check --only ruff --skip-ruff-format --only ty
 
 lint-fix: $(STAMP)
-	uv run ruff check $(SRC)/ $(TESTS)/ --fix
-	uv run ruff format $(SRC)/ $(TESTS)/
+	uv run frob format
 
 typecheck: $(STAMP)
-	uv run ty check $(SRC)/
+	uv run frob check --only ty
 
 # ---------- tests ----------
 
@@ -498,20 +510,26 @@ typecheck: $(STAMP)
 # see `check`'s T-0340 note above for why. Every one of these collects and
 # runs pytest, which hard-fails with ModuleNotFoundError on strata_core/
 # frob_core if a `uv sync` clobbered them since the last `make core`.
+#
+# T-2244: `test`/`test-unit`/`test-integration`/`test-system` repointed at
+# `frob test` (T-2319's directory-scoped SELECTION -- `frob test PATH`
+# matches `pytest PATH`'s subset semantics). `test-fast`'s `--testmon`
+# incremental-rerun mode has no `frob test` equivalent today -- disclosed
+# gap, left on raw pytest deliberately (T-2244's own ticket body).
 test: core
-	uv run pytest $(TESTS)/ -q -n auto
+	uv run frob test --all
 
 test-fast: core
 	uv run pytest $(TESTS)/ -q --testmon
 
 test-unit: core
-	uv run pytest $(TESTS)/unit/ -q -n auto
+	uv run frob test $(TESTS)/unit
 
 test-integration: core
-	uv run pytest $(TESTS)/integration/ -q
+	uv run frob test $(TESTS)/integration
 
 test-system: core
-	uv run pytest $(TESTS)/system/ -q -n auto
+	uv run frob test $(TESTS)/system
 
 # ---------- skills / agents sync ----------
 # T-2241: full bidirectional sync (create/update/remove-stale) now lives in
