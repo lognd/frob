@@ -1358,5 +1358,81 @@ def _block(root: Path, cfg: AppConfig) -> None:
     _log.info("%s now blocked by %s", cfg.ticket_id, cfg.ticket_by)
 
 
+# frob:ticket T-2681
+# frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
+# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_removes_edge
+# frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_when_not_present  # noqa: E501
+# frob:tests \
+# tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_invalid_ref
+def _unblock(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket unblock <id> --by <blocker>`: the missing inverse of
+    `_block` above (T-2681) -- `blocked_by` could only ever be APPENDED to
+    via the CLI, never removed, so a genuinely obsolete or mistaken edge
+    (the blocker was deferred, rescoped away, or blocked the wrong ticket
+    entirely) had no first-class way to clear; every prior case (T-2076,
+    T-1599) had to reach past the CLI to `frob.tickets._store.write_
+    ticket` by hand. Mirrors `_block`'s own structure exactly -- same
+    `--by` validation, same load-then-write shape, same `write_ticket` +
+    ledger-commit path -- except the membership check is INVERTED: refuse
+    loudly if `--by` is NOT currently in `blocked_by` (nothing to remove,
+    same "tell the caller immediately, never silently no-op" posture
+    `_block`'s own duplicate-append refusal takes), then filter out
+    exactly the one matching entry, not the whole `blocked_by` tuple, so
+    a ticket with distinct multiple blockers keeps every other edge
+    intact. Deliberately does NOT skip a live blocker still open --
+    `unblock` corrects a WRONG edge, it does not let a caller route
+    around a real one; see `_open_blockers`'s own docstring for what
+    still counts as blocking after this edge is gone."""
+    from frob.tickets import _load_one, is_valid_ticket_ref
+    from frob.tickets._store import write_ticket
+
+    if cfg.ticket_id is None or cfg.ticket_by is None:
+        _log.error("frob ticket unblock requires <id> and --by")
+        sys.exit(1)
+
+    if not is_valid_ticket_ref(cfg.ticket_by):
+        _log.error(
+            "frob ticket unblock: --by %r is not a valid ticket id "
+            "(expected T-#### or T-draft-<8 hex chars>)",
+            cfg.ticket_by,
+        )
+        sys.exit(1)
+
+    loaded = _load_one(root, cfg.ticket_id)
+    if loaded.is_err:
+        _log.error("unblock failed: %s", loaded.danger_err)
+        sys.exit(1)
+    ticket = loaded.danger_ok
+
+    if cfg.ticket_by not in ticket.blocked_by:
+        _log.error(
+            "frob ticket unblock: %s is not currently blocked by %s "
+            "(blocked_by=%s) -- refusing a no-op removal; nothing to do",
+            cfg.ticket_id,
+            cfg.ticket_by,
+            ticket.blocked_by,
+        )
+        sys.exit(1)
+
+    # Remove exactly ONE occurrence of `--by`, mirroring `_block`'s own
+    # T-2216 duplicate-append refusal that keeps `blocked_by` free of
+    # duplicates in the first place -- a plain filter is therefore
+    # equivalent to a single-entry removal here, but written as an
+    # explicit one-shot removal (not `!= cfg.ticket_by` filtered
+    # wholesale) so a future relaxation that allowed duplicates would not
+    # silently start dropping every occurrence at once.
+    remaining = list(ticket.blocked_by)
+    remaining.remove(cfg.ticket_by)
+    updated = ticket.model_copy(update={"blocked_by": tuple(remaining)})
+    # frob:channel f_cli_tickets
+    # design/frob.strata's `flow f_cli_tickets : cli -> tickets_ledger` --
+    # this is one of the cli-layer write sites into the ticket ledger.
+    written = write_ticket(root, updated)
+    if written.is_err:
+        _log.error("unblock failed: %s", written.danger_err)
+        sys.exit(1)
+    _log.info("%s no longer blocked by %s", cfg.ticket_id, cfg.ticket_by)
+
+
 # frob:ticket T-0215
 # frob:ticket T-1005

@@ -153,6 +153,11 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     "scope-ack": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "sprint": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "tier": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-2681
+    # `unblock` writes the same `blocked_by` field `block` does (just
+    # removing rather than appending an entry) -- same fleet-visibility
+    # reasoning, same strategy.
+    "unblock": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # GENERIC_COMMIT_UNMIRRORED -- state-machine progress `land` already
     # carries atomically; never mirrored ahead of the work it describes.
     "new": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,

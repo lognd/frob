@@ -2,7 +2,7 @@
 id: T-2681
 title: Add frob ticket unblock verb -- blocked_by can only be appended, never removed,
   via CLI
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -42,6 +42,11 @@ scope_changes:
   reason: 'AFFECT001: touch affects()-closure docs for LEDGER_VERB_STRATEGY and _unblock'
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_removes_edge
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_refuses_when_not_present
+- tests/test_ticket_lifecycle.py::TestUnblock::test_unblock_refuses_invalid_ref
+- tests/test_ticket_lifecycle.py::TestBlockThenUnblockRoundTrip::test_block_then_unblock_round_trips
 designated_repro_test: null
 threat: null
 component: null

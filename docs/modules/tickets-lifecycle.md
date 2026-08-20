@@ -923,6 +923,19 @@ its two closest siblings: a single-value, ledger-locked bool+reason
 setter with no transaction of its own, mirrored onto the primary
 checkout via the generic per-dispatch commit path.
 
+T-2681 added `"unblock"` to `LEDGER_VERB_STRATEGY` as `GENERIC_COMMIT_
+MIRRORED`, the SAME strategy `"block"` already carries -- both write the
+same `blocked_by` field (one appends, the other removes one entry), so
+both are fleet-visible ledger metadata a concurrent `frob ticket doable`/
+`start` elsewhere in the fleet needs to see immediately, not only after
+a land. Missing this entry is not a silent-default failure the way
+T-2197 describes above -- `ledger_write_strategy_for` raises loudly for
+any verb absent from the table -- but it IS a real, observed failure
+mode of adding a new verb: `frob ticket unblock` wrote the ledger
+change correctly and then crashed on the unhandled `KeyError` before
+the CLI could report success, discovered by running the new verb
+end-to-end rather than only through its own unit tests.
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

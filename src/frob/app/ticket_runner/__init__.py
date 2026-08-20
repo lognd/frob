@@ -85,6 +85,7 @@ from ._lifecycle import (
     _spawn_background_sweep,
     _start,
     _sweep_cmd,
+    _unblock,
     _work,
 )
 from ._mutate import (
@@ -293,6 +294,7 @@ __all__ = [
     "_sync_gate_rules_for_land",
     "_ticket_spec_from_cfg",
     "_tier",
+    "_unblock",
     "_verify_ids_passing",
     "_verify_one_bucket_passing",
     "_wave",
@@ -363,6 +365,8 @@ def _ticket_dispatch_table() -> dict:
         # frob:ticket T-2254
         "attach": _attach_dispatch,
         "block": _block,
+        # frob:ticket T-2681
+        "unblock": _unblock,
         "close": _close,
         # frob:ticket T-1005
         "reverify": _reverify,

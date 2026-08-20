@@ -1,5 +1,5 @@
 """CLI parser builders for the ticket closeout subcommands: attach/block/
-close/reverify/review/fail/evidence/drop/archive/done-report.
+unblock/close/reverify/review/fail/evidence/drop/archive/done-report.
 
 Split out of `_cli_parsers/_ticket.py` (T-1270) -- no behavior change, same
 argparse tree.
@@ -20,7 +20,7 @@ from pathlib import Path
 # flags are documented in their own --help text and in \
 # frob.app.ticket_runner._attach_backfill's module docstring"
 def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
-    """Register `attach`/`block`/`close`: the non-evidence closeout subcommands."""
+    """Register `attach`/`block`/`unblock`/`close`: the non-evidence closeout subcommands."""
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
     )
@@ -74,8 +74,24 @@ def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
         "concurrent `frob ticket land`",
     )
 
+    # frob:ticket T-2681
+    ticket_unblock_p = ticket_sub.add_parser(
+        "unblock", help="remove a blocker (correcting a wrong/obsolete edge)"
+    )
+    ticket_unblock_p.add_argument("ticket_id", metavar="id")
+    ticket_unblock_p.add_argument("--by", dest="ticket_by", required=True)
+    # frob:ticket T-1615
+    ticket_unblock_p.add_argument(
+        "--no-commit",
+        dest="ticket_no_commit",
+        action="store_true",
+        help="skip T-1615's uniform auto-commit of this ledger change; "
+        "WARNS that the ledger is left dirty and will DirtyMain-block a "
+        "concurrent `frob ticket land`",
+    )
+
     ticket_close_p = _add_ticket_close_parser(ticket_sub)
-    return [ticket_attach_p, ticket_block_p, ticket_close_p]
+    return [ticket_attach_p, ticket_block_p, ticket_unblock_p, ticket_close_p]
 
 
 def _add_ticket_close_parser(ticket_sub):
