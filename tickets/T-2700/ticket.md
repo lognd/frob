@@ -21,6 +21,7 @@ scope:
 - docs/modules/graph.md
 - tests/test_graph.py
 - docs/commands/cycle.md
+- src/frob/cycle/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,17 @@ scope_changes:
     doc''s public-api anchor; T-2700 changes both symbols and must update it'
   actor: logan
   at: '2026-08-20'
+- op: add
+  glob: src/frob/cycle/__init__.py
+  reason: 'land refused CloseFailed/LiveTrackerCited: the T-2683 WIRE001 waiver on
+    import_graph_gap_disclosure cited follow_up=T-2700 as its open tracker; T-2700
+    now wires it for real, updating that waiver in the same change per land''s own
+    guidance'
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/test_graph.py::TestDependencyGraphDegradedLanguages::test_clean_tree_has_no_degraded_languages_and_no_log_noise
+- tests/test_graph.py::TestDependencyGraphDegradedLanguages::test_known_gap_is_disclosed_on_degraded_languages_and_logged
 designated_repro_test: null
 threat: null
 component: null
