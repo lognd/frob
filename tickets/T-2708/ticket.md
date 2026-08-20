@@ -2,7 +2,7 @@
 id: T-2708
 title: 'make install-tool is broken on uv 0.11.19: uv tool install has no --extra
   flag, blocking the only sanctioned install path'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -14,10 +14,29 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- Makefile
+- tests/unit/test_makefile_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: Makefile
+  reason: install-tool recipe fix
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: Makefile
+  reason: install-tool recipe fix
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_makefile_coverage.py
+  reason: regression test for install-tool recipe fix
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
