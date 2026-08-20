@@ -1,7 +1,7 @@
 ---
 id: T-2696
 title: Populate PII010/011/012 symref (dormant over-forgiveness hole, T-1666 successor)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -15,10 +15,35 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_pii_structural/**
+- tests/test_pii_structural_gate.py
+- tickets/T-draft-fae57bcc/**
+evidence_scope:
+- tests/test_pii_structural_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_pii_structural_gate.py
+  reason: tests exercising the new symref-population fix, plus the classify follow-up
+    filed as part of this ticket's own work
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tickets/T-draft-fae57bcc/**
+  reason: tests exercising the new symref-population fix, plus the classify follow-up
+    filed as part of this ticket's own work
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_class_field_symref_is_class_dot_none_shape
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_orm_column_inside_method_symref_is_nested_dotted
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_email_literal_inside_function_symref_is_function_name
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_keyword_sweep_identifier_symref_is_function_name
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_module_level_field_symref_is_none
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_enclosing_qualname_nested_method_is_dotted
+- tests/test_pii_structural_gate.py::TestSymrefPopulation::test_enclosing_qualname_module_level_is_none
 designated_repro_test: null
 threat: null
 component: null
