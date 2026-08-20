@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ad68fd37f17e6f709b6bbdbf4d07baa185bae23f
 ---
 docs/modules/lang.md's "Optional-capability degradation" section
 (T-1599, deliverable 4) documents that a KNOWN_GAP on an OPTIONAL
