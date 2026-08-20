@@ -93,12 +93,23 @@ class MergeTargetKnownIds(BaseModel):
     citation is phantom from a view you could not fully read) and files
     nothing for this pass rather than risk a false-positive recovery
     ticket. `ids` is empty and meaningless whenever `measured` is
-    `False`; callers must check `measured` first."""
+    `False`; callers must check `measured` first.
+
+    T-2702: `root`, when given, is the merge target's own checkout path
+    (main) -- `_tick006_try_resolve_without_filing`'s duplicate-recovery
+    check reads it fresh, IN ADDITION to the caller's own (possibly
+    stale) worktree `root`, closing the T-2699/T-2701 race: two lands in
+    different worktrees, both citing the same phantom, where the SECOND
+    land's own worktree ledger was cut before the FIRST land's recovery
+    ticket existed on main. `ids` alone (a bare id set) cannot support
+    this -- a title/scope duplicate check needs a real ledger to read,
+    not just a membership set."""
 
     model_config = {}
 
     ids: frozenset[str] = frozenset()
     measured: bool = True
+    root: Path | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -355,12 +366,16 @@ def _tick006_context_excerpt(done_report_text: str, tid: str) -> str:
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-1544
+# frob:ticket T-2702
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_tick006_refiles_and_rewrites_citation \
 # kind="unit"
 # frob:tests \
 # tests/test_gates.py::TestFixEngineTierA.test_tick006_known_id_is_never_touched \
 # kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_two_lands_citing_same_draft_prod\
+# uce_at_most_one_ticket kind="unit"
 def fix_tick006_phantom_refile(
     root: Path,
     queue: TicketQueue,
@@ -477,7 +492,9 @@ def fix_tick006_phantom_refile(
         tickets_to_scan = sorted(queue.tickets.values(), key=lambda t: t.id)
     applied: list[FixApplied] = []
     for ticket in tickets_to_scan:
-        applied.extend(_tick006_refile_for_ticket(root, ticket, known_ids))
+        applied.extend(
+            _tick006_refile_for_ticket(root, ticket, known_ids, merge_target_ids)
+        )
     return applied
 
 
@@ -489,6 +506,25 @@ _TICK006_GIT_RENAME_TIMEOUT_S = 10.0
 
 
 def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
+    """Back-compat wrapper over `_resolve_via_git_rename_measured` for any
+    caller that only needs the resolved id, not whether the lookup was
+    fully measured -- see that function's docstring for the T-2702 fix
+    this split exists to support. Discards the measured flag, so ONLY use
+    this where an unmeasured git spawn being silently treated as "no
+    rename" is acceptable; `_tick006_try_resolve_without_filing` uses the
+    measured variant directly instead, precisely because it is not."""
+    resolved, _measured = _resolve_via_git_rename_measured(root, tid)
+    return resolved
+
+
+# frob:ticket T-2702
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_git_rename_lookup_failure_files_\
+# nothing_never_treated_as_confirmed_non_rename kind="unit"
+# frob:tests \
+# tests/test_gates.py::TestFixEngineTierA.test_tick006_lookup_failure_then_clean_retry_\
+# recovers_correctly kind="unit"
+def _resolve_via_git_rename_measured(root: Path, tid: str) -> tuple[str | None, bool]:
     """T-2690: best-effort resolution of `tid` (an id TICK006's own
     ledger-snapshot lookup could not find) via git's OWN rename record --
     the real "renumber map" this repo has, since `frob ticket renumber`'s
@@ -498,22 +534,42 @@ def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
     a rename's SOURCE name -- the whole point of a rename is that the old
     name stops existing anywhere a snapshot could see it.
 
-    Two-step lookup, both bounded and best-effort (never raises, and a
-    failed/timed-out/absent git spawn returns `None` -- exactly like a
-    genuinely nonexistent id, since a git-lookup failure here must never
-    itself manufacture a false "not phantom" verdict): (1) `git log --all
-    --diff-filter=D -- tickets/<tid>/ticket.md` finds every commit where
-    this old path was REMOVED (a rename's deletion half is visible to a
-    pathspec-filtered log even though the paired addition is not, since
-    rename-PAIRING requires both sides in the same diff and pathspec-
-    filtering drops the new side); (2) for each such commit, `git show -M
-    --name-status` (unrestricted, so both sides of the pair are present)
-    is checked for an `R<NNN>` line whose source is exactly this old
-    path -- if found, its destination's own `tickets/<new-id>/...`
-    prefix is the resolved successor id. Multiple candidate commits are
-    tried oldest-relevant-first-found; a` tid` that was genuinely deleted
-    (not renamed) matches no `R` line in any of them and this returns
-    `None`, same as a git spawn failure."""
+    T-2702: returns `(resolved_id, measured)` -- T-2690's original single
+    `str | None` return collapsed "no rename exists" and "a git spawn
+    failed/timed out" into the identical `None`, which its OWN docstring
+    defended as deliberate ("exactly like a genuinely nonexistent id").
+    That is precisely backwards, and directly contradicts this same
+    module's T-2391 doctrine everywhere else (`merge_target_ids.
+    measured=False` refuses to file rather than risk a false positive):
+    under real concurrent-land git contention (measured: this repo's own
+    incident, T-2699/T-2701, both landed on top of a working fix, both
+    during a multi-agent drive with background auto-gc packing on every
+    commit) a `_TICK006_GIT_RENAME_TIMEOUT_S`-bounded spawn CAN and DID
+    time out, and the caller filed a duplicate phantom-recovery ticket
+    for an id that a fresh, unloaded git spawn resolves correctly in
+    under a second. `measured=True` means every git spawn this lookup
+    needed completed (exit 0) -- `resolved_id` is then trustworthy either
+    way (a real successor id, or genuinely `None` because no `R` line
+    named this path). `measured=False` means SOME spawn failed, timed
+    out, or exited nonzero -- `resolved_id` is always `None` in that case
+    and must NOT be treated as "confirmed not a rename"; the caller
+    should treat this exactly like `MergeTargetKnownIds.measured=False`
+    and file nothing this pass rather than risk the exact false positive
+    this incident measured.
+
+    Two-step lookup: (1) `git log --all --diff-filter=D -- tickets/<tid>/
+    ticket.md` finds every commit where this old path was REMOVED (a
+    rename's deletion half is visible to a pathspec-filtered log even
+    though the paired addition is not, since rename-PAIRING requires
+    both sides in the same diff and pathspec-filtering drops the new
+    side); (2) for each such commit, `git show -M --name-status`
+    (unrestricted, so both sides of the pair are present) is checked for
+    an `R<NNN>` line whose source is exactly this old path -- if found,
+    its destination's own `tickets/<new-id>/...` prefix is the resolved
+    successor id. Multiple candidate commits are tried oldest-relevant-
+    first-found; a `tid` that was genuinely deleted (not renamed)
+    matches no `R` line in any of them and this returns `(None, True)` --
+    a clean, fully-measured miss, distinct from `(None, False)`."""
     from frob.gitio import run_argv
 
     old_path = f"tickets/{tid}/ticket.md"
@@ -522,28 +578,72 @@ def _resolve_via_git_rename(root: Path, tid: str) -> str | None:
         cwd=root,
         timeout_s=_TICK006_GIT_RENAME_TIMEOUT_S,
     )
-    if log_result.is_err or log_result.danger_ok.returncode != 0:
-        return None
+    if log_result.is_err:
+        _log.warning(
+            "_resolve_via_git_rename_measured: git log spawn failed for "
+            "%s -- UNMEASURED, not a confirmed non-rename (T-2702)",
+            tid,
+        )
+        return None, False
+    if log_result.danger_ok.returncode != 0:
+        _log.warning(
+            "_resolve_via_git_rename_measured: git log exited %d for %s "
+            "-- UNMEASURED, not a confirmed non-rename (T-2702)",
+            log_result.danger_ok.returncode,
+            tid,
+        )
+        return None, False
     commit_shas = log_result.danger_ok.stdout.split()
     for commit_sha in commit_shas:
-        show_result = run_argv(
-            ["git", "show", "-M", "--name-status", "--format=", commit_sha],
-            cwd=root,
-            timeout_s=_TICK006_GIT_RENAME_TIMEOUT_S,
+        resolved, candidate_measured = _tick006_check_rename_candidate(
+            root, commit_sha, old_path, tid
         )
-        if show_result.is_err or show_result.danger_ok.returncode != 0:
+        if not candidate_measured:
+            return None, False
+        if resolved is not None:
+            return resolved, True
+    return None, True
+
+
+# frob:ticket T-2702
+def _tick006_check_rename_candidate(
+    root: Path, commit_sha: str, old_path: str, tid: str
+) -> tuple[str | None, bool]:
+    """One candidate commit's own share of `_resolve_via_git_rename_
+    measured`'s scan -- split out purely to keep that function under
+    ARCH001's line threshold, no behavior change. Returns `(resolved_id,
+    measured)`: `measured=False` (a `git show` spawn failed/timed out)
+    must short-circuit the caller's whole scan as UNMEASURED, same
+    T-2391 doctrine as the rest of this module -- a partial scan across
+    candidates is not the same as "checked every candidate, found
+    nothing"."""
+    from frob.gitio import run_argv
+
+    show_result = run_argv(
+        ["git", "show", "-M", "--name-status", "--format=", commit_sha],
+        cwd=root,
+        timeout_s=_TICK006_GIT_RENAME_TIMEOUT_S,
+    )
+    if show_result.is_err or show_result.danger_ok.returncode != 0:
+        _log.warning(
+            "_resolve_via_git_rename_measured: git show spawn failed "
+            "for candidate %s (tid=%s) -- UNMEASURED, not a confirmed "
+            "non-rename (T-2702)",
+            commit_sha,
+            tid,
+        )
+        return None, False
+    for line in show_result.danger_ok.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 3 or not parts[0].startswith("R"):
             continue
-        for line in show_result.danger_ok.stdout.splitlines():
-            parts = line.split("\t")
-            if len(parts) != 3 or not parts[0].startswith("R"):
-                continue
-            status, src, dst = parts
-            if src != old_path:
-                continue
-            dst_parts = dst.split("/")
-            if len(dst_parts) >= 2 and dst_parts[0] == "tickets":
-                return dst_parts[1]
-    return None
+        status, src, dst = parts
+        if src != old_path:
+            continue
+        dst_parts = dst.split("/")
+        if len(dst_parts) >= 2 and dst_parts[0] == "tickets":
+            return dst_parts[1], True
+    return None, True
 
 
 def _tick006_refile_ticket_spec(ticket: Ticket, tid: str, excerpt: str):  # noqa: ANN201
@@ -602,34 +702,77 @@ def _tick006_try_resolve_without_filing(
     current_body: str,
     known_ids: set[str],
     done_report_text: str,
+    merge_target_ids: "MergeTargetKnownIds | None" = None,
 ) -> tuple[str, FixApplied | None, bool]:
-    """T-2690: the two "this was never actually phantom" checks
-    `_tick006_refile_for_ticket` runs BEFORE ever calling `new_ticket` --
-    a genuine git rename (`_resolve_via_git_rename`) or an already-filed
-    recovery ticket (`_find_exact_duplicate`, the SAME check `new_ticket`'s
-    own `DuplicateTicket` refusal performs). Returns `(body, applied,
-    resolved)` -- `resolved=True` short-circuits the caller's loop
-    iteration (citation already rewritten, nothing left to file); `False`
-    means `tid` survived both checks and genuinely needs `new_ticket`.
-    Split out purely to keep `_tick006_refile_for_ticket` under ARCH001's
-    line threshold, no behavior change."""
+    """T-2690/T-2702: the checks `_tick006_refile_for_ticket` runs BEFORE
+    ever calling `new_ticket` -- a genuine git rename
+    (`_resolve_via_git_rename_measured`), an already-filed recovery
+    ticket found against THIS worktree's own ledger, or (T-2702) the
+    SAME duplicate check re-run against the land's actual merge target
+    when one is known. Returns `(body, applied, resolved)` --
+    `resolved=True` short-circuits the caller's loop iteration (citation
+    already rewritten, or deliberately left untouched pending better
+    information -- nothing left to file this pass); `False` means `tid`
+    survived every check and genuinely needs `new_ticket`.
+
+    T-2702: `_resolve_via_git_rename_measured`'s `measured=False` (a git
+    spawn failed/timed out, e.g. under the exact concurrent-land
+    contention T-2699/T-2701 measured) now REFUSES to file anything for
+    `tid` this pass -- `resolved=True` with no citation rewrite, mirroring
+    `fix_tick006_phantom_refile`'s own top-level `merge_target_ids.
+    measured=False` doctrine (T-2391: never conclude "not a rename" from
+    an incomplete git view). A `tid` that keeps hitting this either
+    resolves on a later, less-contended pass, or genuinely needs a human
+    to look -- either is safe; a spurious duplicate recovery ticket is
+    not.
+
+    T-2702: `_find_exact_duplicate` is now ALSO checked against
+    `merge_target_ids.root` (the land's actual merge target, i.e. main,
+    read fresh every call) when that differs from `root` -- this
+    worktree's own `root` can be a stale ledger mirror cut before a
+    SIBLING land (running concurrently, in a different worktree) filed
+    the exact same byte-identical recovery ticket seconds-to-minutes
+    earlier; T-2699/T-2701 are exactly this shape (T-2141's land filed
+    T-2699, T-2251's land filed a byte-identical duplicate T-2701 because
+    its own worktree's ledger snapshot predated T-2699). Checking BOTH
+    views closes that race without weakening `_find_exact_duplicate`'s
+    own exact-title/exact-scope precision -- it is the same function,
+    called against two roots, first hit wins."""
     from frob.tickets._new_renumber import _find_exact_duplicate
 
-    renamed_to = _resolve_via_git_rename(root, tid)
+    renamed_to, rename_measured = _resolve_via_git_rename_measured(root, tid)
     if renamed_to is not None:
         known_ids.add(renamed_to)
         body, applied = _tick006_rewrite_citation(
             current_body, tid, renamed_to, ticket.id, "resolved via git rename"
         )
         return body, applied, True
+    if not rename_measured:
+        _log.warning(
+            "fix_tick006_phantom_refile: %s (cited by %s) UNMEASURED via "
+            "git rename lookup -- skipping this pass rather than risk a "
+            "false-positive recovery ticket (T-2702)",
+            tid,
+            ticket.id,
+        )
+        return current_body, None, True
 
     excerpt = _tick006_context_excerpt(done_report_text, tid)
     spec = _tick006_refile_ticket_spec(ticket, tid, excerpt)
     existing = _find_exact_duplicate(root, spec)
+    merge_target_root = (
+        merge_target_ids.root if merge_target_ids is not None else None
+    )
+    if existing is None and merge_target_root is not None and merge_target_root != root:
+        existing = _find_exact_duplicate(merge_target_root, spec)
     if existing is not None:
         known_ids.add(existing.id)
         body, applied = _tick006_rewrite_citation(
-            current_body, tid, existing.id, ticket.id, "already recovered by an earlier pass"
+            current_body,
+            tid,
+            existing.id,
+            ticket.id,
+            "already recovered by an earlier pass",
         )
         return body, applied, True
 
@@ -680,7 +823,10 @@ def _tick006_file_new_recovery_ticket(
 
 
 def _tick006_refile_for_ticket(
-    root: Path, ticket: Ticket, known_ids: set[str]
+    root: Path,
+    ticket: Ticket,
+    known_ids: set[str],
+    merge_target_ids: "MergeTargetKnownIds | None" = None,
 ) -> list[FixApplied]:
     """One ticket's own share of `fix_tick006_phantom_refile`'s work:
     scan its Done report for phantom citations, refile a real ticket for
@@ -689,14 +835,17 @@ def _tick006_refile_for_ticket(
     (adds each newly refiled id) so a LATER ticket in the same pass never
     double-files against an id THIS pass already claimed.
 
-    T-2690: a candidate `tid` is resolved two more ways
+    T-2690/T-2702: a candidate `tid` is resolved further ways
     (`_tick006_try_resolve_without_filing`) before ANY `new_ticket` call
-    is attempted -- via `_resolve_via_git_rename` (a genuine renumber,
-    citation rewritten to the real successor id, never filed) and via
-    `_find_exact_duplicate` (an earlier pass already recovered this exact
-    phantom, citation rewritten to the EXISTING recovery ticket, never
-    refiled a second time). Only a `tid` that survives both checks
-    reaches `new_ticket` at all."""
+    is attempted -- via a MEASURED git rename lookup (a genuine renumber,
+    citation rewritten to the real successor id, never filed; an
+    UNMEASURED lookup also never files, T-2702) and via
+    `_find_exact_duplicate` checked against both this worktree's own
+    ledger AND (T-2702) the land's actual merge target, when known (an
+    earlier pass -- possibly a concurrently-running SIBLING land -- has
+    already recovered this exact phantom, citation rewritten to the
+    EXISTING recovery ticket, never refiled a second time). Only a `tid`
+    that survives every check reaches `new_ticket` at all."""
     from frob.gates._tickets_gate import _tick006_done_report_text, _tick006_phantom_ids
     from frob.tickets._store import write_ticket
 
@@ -709,7 +858,13 @@ def _tick006_refile_for_ticket(
         if tid in known_ids:
             continue
         current_body, resolved_fix, resolved = _tick006_try_resolve_without_filing(
-            root, tid, ticket, current_body, known_ids, done_report_text
+            root,
+            tid,
+            ticket,
+            current_body,
+            known_ids,
+            done_report_text,
+            merge_target_ids,
         )
         if resolved_fix is not None:
             applied.append(resolved_fix)

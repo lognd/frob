@@ -2,7 +2,7 @@
 id: T-2702
 title: 'T-2690''s phantom-refile fix does not work: two more auto-filed recoveries
   from lands that contained it'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

@@ -412,9 +412,9 @@ def _resolve_merge_target_known_ids(root: Path) -> "MergeTargetKnownIds":
             active_result.err if active_result.is_err else "ok",
             archived_result.err if archived_result.is_err else "ok",
         )
-        return MergeTargetKnownIds(ids=frozenset(), measured=False)
+        return MergeTargetKnownIds(ids=frozenset(), measured=False, root=root)
     ids = set(active_result.danger_ok.tickets) | set(archived_result.danger_ok)
-    return MergeTargetKnownIds(ids=frozenset(ids), measured=True)
+    return MergeTargetKnownIds(ids=frozenset(ids), measured=True, root=root)
 
 
 def _tier_a_pre_land_step(

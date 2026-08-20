@@ -179,6 +179,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2678: frob ticket body writes an archived ticket's update to a fresh non-archive copy, causing DuplicateId
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
+- T-2702: T-2690's phantom-refile fix does not work: two more auto-filed recoveries from lands that contained it
 
 ## [0.530.0] - unreleased
 

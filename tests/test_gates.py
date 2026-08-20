@@ -12575,6 +12575,307 @@ class TestFixEngineTierA:
         assert len(unscoped_applied) == 1
         assert unscoped_applied[0].rule == "TICK006"
 
+    # -- T-2702: T-2690's own fix does not fire on the real land path ------
+    #
+    # T-2699/T-2701 (measured 2026-08-19): a phantom draft citation was
+    # auto-refiled TWICE, by two separate lands, BOTH of which contained
+    # T-2690's fix. Root cause A: `_resolve_via_git_rename`'s underlying
+    # git spawn CAN fail/time out under real concurrent-land git
+    # contention, and T-2690 collapsed that failure into the identical
+    # `None` a genuine non-rename returns -- unsafe, and explicitly
+    # contradicts this same module's `MergeTargetKnownIds.measured=False`
+    # doctrine everywhere else. Root cause B: `_find_exact_duplicate`
+    # read only the calling land's own (possibly stale, pre-cut)
+    # worktree ledger, missing a byte-identical recovery ticket a
+    # SIBLING land had already filed on the real merge target seconds to
+    # minutes earlier. Both are fixed in `_resolve_via_git_rename_measured`
+    # / `_tick006_try_resolve_without_filing` -- these tests exercise the
+    # REAL failure shapes (a genuinely failing git spawn; a second,
+    # independently-rooted "sibling worktree" ledger), not just the
+    # function in isolation with a clean git repo, which is exactly what
+    # let T-2690's own four unit tests pass while production re-filed.
+
+    def test_tick006_git_rename_lookup_failure_files_nothing_never_treated_as_confirmed_non_rename(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2702 positive control: a REAL renamed draft (same fixture
+        shape as `test_tick006_renamed_draft_resolved_via_git_not_
+        refiled`), but the underlying git spawn `_resolve_via_git_
+        rename_measured` makes is forced to fail (simulating the
+        T-2699/T-2701 incident's own concurrent-load timeout) --
+        `fix_tick006_phantom_refile` must file NOTHING and rewrite
+        NOTHING this pass, not silently treat the failure as "confirmed,
+        not a rename" and fall through to `new_ticket`."""
+        from typani import Err
+
+        import frob.gitio as gitio_mod
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        draft_ticket_md = (
+            "---\n"
+            "id: T-draft-cafef00e\n"
+            "title: recovered elsewhere\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-08-01'\n"
+            "---\n"
+            "body\n"
+        )
+        (root / "tickets" / "T-draft-cafef00e").mkdir(parents=True)
+        (root / "tickets" / "T-draft-cafef00e" / "ticket.md").write_text(
+            draft_ticket_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft T-draft-cafef00e")
+        _git("mv", "tickets/T-draft-cafef00e", "tickets/T-9998")
+        (root / "tickets" / "T-9998" / "ticket.md").write_text(
+            draft_ticket_md.replace("T-draft-cafef00e", "T-9998"), encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "renumber T-draft-cafef00e -> T-9998")
+
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-cafef00e (recovery "
+                "ticket) as a follow-up.\n"
+            ),
+        )
+        write_ticket(root, claiming)
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite the now-renamed draft")
+
+        from frob.gitio import GitError
+
+        def _always_fail(*args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            return Err(GitError.GitFailed)
+
+        monkeypatch.setattr(gitio_mod, "run_argv", _always_fail)
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        applied = fix_tick006_phantom_refile(root, queue)
+
+        assert applied == []
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        # Neither rewritten to T-9998 NOR refiled as a new duplicate --
+        # the citation is untouched, exactly as it was before this pass.
+        assert "T-draft-cafef00e" in reloaded.danger_ok["T-0001"].body
+        # T-9998 is the fixture's own already-renamed draft (a real,
+        # loadable ticket regardless of this test) -- the load-bearing
+        # assertion is that no THIRD, spurious "Recovered from ..."
+        # ticket was filed.
+        assert set(reloaded.danger_ok) == {"T-0001", "T-9998"}
+
+    def test_tick006_lookup_failure_then_clean_retry_recovers_correctly(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2702: the previous test's failure mode must be RECOVERABLE,
+        not a permanent block -- once the git spawn stops failing (the
+        next land, after contention clears), the SAME citation resolves
+        correctly via the real rename. Proves this fix does not trade
+        the false-positive-refile incident for a false-negative
+        never-resolves regression."""
+        from typani import Err
+
+        import frob.gitio as gitio_mod
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.gitio import GitError
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        draft_ticket_md = (
+            "---\n"
+            "id: T-draft-cafef00f\n"
+            "title: recovered elsewhere\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-08-01'\n"
+            "---\n"
+            "body\n"
+        )
+        (root / "tickets" / "T-draft-cafef00f").mkdir(parents=True)
+        (root / "tickets" / "T-draft-cafef00f" / "ticket.md").write_text(
+            draft_ticket_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft T-draft-cafef00f")
+        _git("mv", "tickets/T-draft-cafef00f", "tickets/T-9997")
+        (root / "tickets" / "T-9997" / "ticket.md").write_text(
+            draft_ticket_md.replace("T-draft-cafef00f", "T-9997"), encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "renumber T-draft-cafef00f -> T-9997")
+
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-cafef00f (recovery "
+                "ticket) as a follow-up.\n"
+            ),
+        )
+        write_ticket(root, claiming)
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite the now-renamed draft")
+
+        real_run_argv = gitio_mod.run_argv
+        monkeypatch.setattr(
+            gitio_mod, "run_argv", lambda *a, **kw: Err(GitError.GitFailed)
+        )
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        first_pass = fix_tick006_phantom_refile(root, queue)
+        assert first_pass == []
+
+        monkeypatch.setattr(gitio_mod, "run_argv", real_run_argv)
+        from frob.tickets._store import load_all
+
+        queue2 = TicketQueue(tickets={"T-0001": load_all(root).danger_ok["T-0001"]})
+        second_pass = fix_tick006_phantom_refile(root, queue2)
+        assert len(second_pass) == 1
+        assert "resolved via git rename" in second_pass[0].detail
+        assert "T-9997" in second_pass[0].detail
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        assert "T-9997" in reloaded.danger_ok["T-0001"].body
+        assert "T-draft-cafef00f" not in reloaded.danger_ok["T-0001"].body
+        assert set(reloaded.danger_ok) == {"T-0001", "T-9997"}
+
+    def test_tick006_two_lands_citing_same_draft_produce_at_most_one_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2702 mandatory control (3/3): two lands, in SEPARATE
+        worktrees, both citing the SAME genuinely-lost draft in quick
+        succession -- the exact T-2699/T-2701 shape (T-2141's land and
+        T-2251's land, ~31 minutes apart, T-2251's own worktree ledger
+        cut before T-2141's land's recovery ticket existed on main).
+        The SECOND land's worktree `root` alone would miss the FIRST
+        land's just-filed ticket (title+scope are byte-identical,
+        exactly what makes this a duplicate at all) -- passing
+        `merge_target_ids.root` pointed at the real, live merge target
+        must catch it anyway. At most ONE recovery ticket must exist
+        after both lands run, never two."""
+        import subprocess
+
+        from frob.gates._fix_engine import (
+            MergeTargetKnownIds,
+            fix_tick006_phantom_refile,
+        )
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import load_all, write_ticket
+
+        (tmp_path / "main").mkdir()
+        main_root, _git_main = self._tick006_repo(tmp_path / "main")
+
+        # Land A's own claiming ticket, citing a genuinely lost draft --
+        # no rename record anywhere, so this is the "real recovery"
+        # shape, not the rename-resolution shape the tests above cover.
+        claiming_a = Ticket(
+            id="T-0001",
+            title="land A's claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="## Done report\n\nFiled T-draft-5eedca5e as a follow-up.\n",
+        )
+        write_ticket(main_root, claiming_a)
+        _git_main("add", "-A")
+        _git_main("commit", "-q", "-m", "land A: cite the shared phantom")
+
+        # Clone main's CURRENT state (before land A's own Tier-A pass
+        # runs) as land B's own SEPARATE worktree -- this is the stale
+        # snapshot: it will never see land A's own recovery-ticket
+        # filing unless it re-merges, exactly like a real worktree that
+        # was cut before a sibling's land landed.
+        worktree_root = tmp_path / "worktree_b"
+        subprocess.run(
+            ["git", "clone", "-q", str(main_root), str(worktree_root)], check=True
+        )
+        subprocess.run(
+            ["git", "-C", str(worktree_root), "config", "user.email", "t@example.com"],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(worktree_root), "config", "user.name", "t"], check=True
+        )
+
+        # Land A runs for real, against `main_root` directly (root ==
+        # merge target for this call, matching `_apply_root_tier_a_fixes`'s
+        # own post-land shape) -- files the one real recovery ticket.
+        queue_a = TicketQueue(tickets={"T-0001": claiming_a})
+        applied_a = fix_tick006_phantom_refile(main_root, queue_a, ticket_id="T-0001")
+        assert len(applied_a) == 1
+        assert "refiled" in applied_a[0].detail
+
+        after_a = load_all(main_root)
+        assert after_a.is_ok
+        assert len(after_a.danger_ok) == 2  # T-0001 + the new recovery ticket
+
+        # Land B's own claiming ticket -- SAME phantom, byte-identical
+        # title (both quote the same excerpt from the same phantom id,
+        # `_tick006_refile_ticket_spec`'s title is fully deterministic
+        # off `(ticket.id, tid)` -- different `ticket.id` here (T-0002
+        # vs T-0001) deliberately makes the RECOVERY ticket's title
+        # differ too, matching T-2699/T-2701's real shape where each
+        # recovery ticket's title cites ITS OWN claiming ticket
+        # (T-2685 in both real cases) -- so make land B's claiming
+        # ticket look like it is quoting the SAME originating ticket, by
+        # using the SAME claiming id T-0001's own content directly: land
+        # B is a second, stale-mirrored VIEW of the SAME land, not a
+        # different one, matching the real incident (the citation lived
+        # in T-2685's OWN done report, unrelated to which land's own
+        # Tier-A pass happened to scan it).
+        worktree_queue_ticket = load_all(worktree_root).danger_ok["T-0001"]
+        queue_b = TicketQueue(tickets={"T-0001": worktree_queue_ticket})
+        merge_target_ids = MergeTargetKnownIds(
+            ids=frozenset(after_a.danger_ok), measured=True, root=main_root
+        )
+        applied_b = fix_tick006_phantom_refile(
+            worktree_root,
+            queue_b,
+            merge_target_ids=merge_target_ids,
+            ticket_id="T-0001",
+        )
+
+        # Land B must NOT file a second duplicate -- either it resolves
+        # (rewrite-only, citation pointed at land A's already-filed
+        # ticket) or, at worst, is a no-op; either way NOTHING with
+        # `"refiled"` in its detail may appear.
+        assert not any("(refiled," in a.detail for a in applied_b)
+
+        after_b = load_all(main_root)
+        assert after_b.is_ok
+        recovery_tickets = [
+            t
+            for t in after_b.danger_ok.values()
+            if t.id not in ("T-0001",) and "Recovered from" in t.title
+        ]
+        assert len(recovery_tickets) == 1, (
+            f"expected at most one recovery ticket after two lands citing "
+            f"the same draft, got {len(recovery_tickets)}: "
+            f"{[t.id for t in recovery_tickets]}"
+        )
+
     # -- SYS111 capability-ratchet lock sync (T-2001) ----------------------
 
     def _init_git_repo(self, root: Path) -> None:
