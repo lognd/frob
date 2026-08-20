@@ -2,7 +2,7 @@
 id: T-1666
 title: Classify and re-waive the 142 OPAQUE001 findings T-1659's symref fix surfaced;
   sweep PERF/PII/SEC005 for the same shape
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -104,6 +104,13 @@ scope_changes:
     ticket
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'T-1666: binds existing test_match_waiver_prefix_reach_gated_to_package_scoped_rules
+    as evidence (verifies the symref-less file-scope matching mechanism this ticket''s
+    findings rely on); citation leases the file per repo convention'
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: append
   reason: "BUG002 front door (T-2393): Investigation-only outcome, no code behavior\
@@ -141,6 +148,44 @@ body_changes:
   at: '2026-08-19'
   old_length: 4941
   new_length: 7354
+- mode: append
+  reason: "BUG002 front door (T-2393): Investigation-only outcome, no code behavior\
+    \ change:\n\n1. OPAQUE001 (the 142 findings this ticket was filed to classify):\n\
+    \   already resolved on main by T-1668 (landed after T-1666 was filed,\n   \"\
+    Delete 37 obsolete frob:waive OPAQUE001 directives left stale by\n   T-1659's\
+    \ semantic rewrite\") plus the _config_external.py 5-site\n   re-waive this ticket's\
+    \ own body called for. Measured directly:\n   `frob check --only opaque --json`\
+    \ on current main-merged worktree\n   state shows gate:OPAQUE at 0 errors, 29\
+    \ note-severity (waived)\n   findings. Nothing left to classify or re-waive.\n\
+    \n2. PERF001-014: investigated and found NOT the same missing-symref bug\n   shape\
+    \ as OPAQUE001/CACHE001. `Violation.symref`'s own docstring\n   (src/frob/gates/_models.py)\
+    \ explicitly names PERF (alongside TEST005/\n   TEST006) as an intentionally file/module-scoped\
+    \ rule family: \"Left\n   None for rules that are inherently file/module-scoped\
+    \ ... where a\n   file-level waiver is the correct and intentional precision,\
+    \ not a\n   shortcut.\" No fix needed; the ticket's own suspicion does not hold\n\
+    \   for this family.\n\n3. SEC005 (src/frob/gates/_taint_gate.py): measured directly\
+    \ via\n   `taint_gate(Path(\".\"))` -- 0 live violations across all 1208 tracked\n\
+    \   .py files. No waiver-population exposure to close.\n\n4. PII010/PII011/PII012\
+    \ (src/frob/gates/_pii_structural/*.py): genuinely\n   missing symref, same structural\
+    \ shape as CACHE001's dormant hole.\n   Measured directly via `pii_structural_gate(Path(\"\
+    .\"))`: 93 raw\n   violations, 21 distinct (rule, file) pairs carry 2+ violations\
+    \ under\n   today's file-scope-only match (real latent over-forgiveness), but\n\
+    \   only 1 finding is currently UNWAIVED after matching (PII012 at\n   tests/test_capability_registry.py:902)\
+    \ -- a dormant hole, not an\n   active incident. The actual fix (threading per-violation\n\
+    \   enclosing-symbol resolution through the 5 PII-structural emitters) is\n  \
+    \ real feature engineering, not a re-waive task, so it does not belong\n   in\
+    \ this classification ticket -- filed as its own successor\n   (T-draft-e6af67c0\
+    \ at filing time, renumbers on land) rather than\n   attempted here under time\
+    \ pressure, mirroring how T-1659 (fix) and\n   T-1666 (classify) were kept as\
+    \ separate tickets for OPAQUE001/\n   CACHE001.\n\nNo waiver was added, removed,\
+    \ or rewritten by this ticket -- the 142\nfindings it was filed to classify no\
+    \ longer exist on main."
+  actor: logan
+  at: '2026-08-19'
+  old_length: 7354
+  new_length: 9767
+evidence:
+- tests/test_gates.py::TestTestGate::test_match_waiver_prefix_reach_gated_to_package_scoped_rules
 designated_repro_test: null
 threat: null
 component: null
@@ -230,6 +275,49 @@ src/frob/gates/_taint_gate.py, plus a representative slice of tests/** for
 the 136 OPAQUE001 test-fixture re-waives (do not assume every file needs a
 hand-written reason if a shared pattern emerges -- but do not blanket-waive
 either, per the playbook's waive-discipline section).
+
+frob:no-behavior-change reason="Investigation-only outcome, no code behavior change:
+
+1. OPAQUE001 (the 142 findings this ticket was filed to classify):
+   already resolved on main by T-1668 (landed after T-1666 was filed,
+   'Delete 37 obsolete frob:waive OPAQUE001 directives left stale by
+   T-1659's semantic rewrite') plus the _config_external.py 5-site
+   re-waive this ticket's own body called for. Measured directly:
+   `frob check --only opaque --json` on current main-merged worktree
+   state shows gate:OPAQUE at 0 errors, 29 note-severity (waived)
+   findings. Nothing left to classify or re-waive.
+
+2. PERF001-014: investigated and found NOT the same missing-symref bug
+   shape as OPAQUE001/CACHE001. `Violation.symref`'s own docstring
+   (src/frob/gates/_models.py) explicitly names PERF (alongside TEST005/
+   TEST006) as an intentionally file/module-scoped rule family: 'Left
+   None for rules that are inherently file/module-scoped ... where a
+   file-level waiver is the correct and intentional precision, not a
+   shortcut.' No fix needed; the ticket's own suspicion does not hold
+   for this family.
+
+3. SEC005 (src/frob/gates/_taint_gate.py): measured directly via
+   `taint_gate(Path('.'))` -- 0 live violations across all 1208 tracked
+   .py files. No waiver-population exposure to close.
+
+4. PII010/PII011/PII012 (src/frob/gates/_pii_structural/*.py): genuinely
+   missing symref, same structural shape as CACHE001's dormant hole.
+   Measured directly via `pii_structural_gate(Path('.'))`: 93 raw
+   violations, 21 distinct (rule, file) pairs carry 2+ violations under
+   today's file-scope-only match (real latent over-forgiveness), but
+   only 1 finding is currently UNWAIVED after matching (PII012 at
+   tests/test_capability_registry.py:902) -- a dormant hole, not an
+   active incident. The actual fix (threading per-violation
+   enclosing-symbol resolution through the 5 PII-structural emitters) is
+   real feature engineering, not a re-waive task, so it does not belong
+   in this classification ticket -- filed as its own successor
+   (T-draft-e6af67c0 at filing time, renumbers on land) rather than
+   attempted here under time pressure, mirroring how T-1659 (fix) and
+   T-1666 (classify) were kept as separate tickets for OPAQUE001/
+   CACHE001.
+
+No waiver was added, removed, or rewritten by this ticket -- the 142
+findings it was filed to classify no longer exist on main."
 
 frob:no-behavior-change reason="Investigation-only outcome, no code behavior change:
 
