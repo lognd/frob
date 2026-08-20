@@ -732,10 +732,9 @@ _MAKEFILE_TARGET_RE = re.compile(r"^([A-Za-z][\w.-]*)\s*:(?!=)")
 # frob:waive EXHAUST003 reason="T-1636: leaked Unknown traces to \
 # _MAKEFILE_TARGET_RE.match, a compiled-regex match over an already-caught read_text() \
 # output; a compiled pattern match cannot raise"
-def _makefile_targets(root: Path) -> set[str]:
-    """Every recipe name declared in `root`'s Makefile (`target:` lines,
+def _makefile_targets(makefile: Path) -> set[str]:
+    """Every recipe name declared in `makefile` (`target:` lines,
     `.PHONY`/pattern/variable-assignment lines excluded)."""
-    makefile = root / "Makefile"
     try:
         text = makefile.read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -748,6 +747,35 @@ def _makefile_targets(root: Path) -> set[str]:
         if match:
             targets.add(match.group(1))
     return targets
+
+
+def _makefiles_for_doc(root: Path, doc_rel: str) -> list[Path]:
+    """T-2705: the ordered chain of Makefiles a `` `make <target>` ``
+    citation in `doc_rel` resolves against -- the NEAREST `Makefile`
+    walking up from the doc's own directory toward `root` (if any),
+    THEN `root`'s own Makefile as a fallback (if it exists and differs
+    from the nearest one already found). Consumer repos legitimately
+    nest sub-projects, each with their own `Makefile` and their own docs
+    describing it (e.g. `slidegen/Makefile`'s `preview:` target
+    documented by `slidegen/docs/scripts.md`) -- resolving every
+    citation repo-root-only made every nested project's own docs read as
+    broken regardless of correctness. The root fallback keeps a nested
+    doc that legitimately cites a ROOT-level target (present in root's
+    Makefile but not the nested one) resolving correctly too."""
+    chain: list[Path] = []
+    current = (root / doc_rel).parent
+    while True:
+        candidate = current / "Makefile"
+        if candidate.exists():
+            chain.append(candidate)
+            break
+        if current == root or current.parent == current:
+            break
+        current = current.parent
+    root_makefile = root / "Makefile"
+    if root_makefile.exists() and root_makefile not in chain:
+        chain.append(root_makefile)
+    return chain
 
 
 # frob:enforces CHK-GATE-DOC010
@@ -783,14 +811,29 @@ def _doc010_violation(doc_rel: str, line: int, target: str) -> Violation:
 # _line_index/_MAKE_TARGET_CITATION_RE.finditer, a module-local helper and a \
 # compiled-regex scan over an already-caught read_text() output; neither can raise"
 def _doc010_scan_doc(
-    root: Path, doc_rel: str, make_targets: set[str]
+    root: Path,
+    doc_rel: str,
+    target_cache: dict[Path, set[str]],
 ) -> list[Violation]:
     """DOC010 violations for every `` `make <target>` `` citation in
-    `doc_rel` whose target does not resolve against `make_targets`."""
+    `doc_rel` whose target does not resolve against ANY Makefile in
+    `doc_rel`'s resolution chain (T-2705: nearest Makefile first, root
+    Makefile as fallback -- `_makefiles_for_doc`). `target_cache` memoizes
+    `_makefile_targets` per Makefile path across the whole doc scan (a
+    repo-wide sweep would otherwise re-parse the same root Makefile once
+    per doc)."""
     try:
         text = (root / doc_rel).read_text(encoding="utf-8", errors="replace")
     except OSError:
         return []
+    makefiles = _makefiles_for_doc(root, doc_rel)
+    if not makefiles:
+        return []
+    make_targets: set[str] = set()
+    for makefile in makefiles:
+        if makefile not in target_cache:
+            target_cache[makefile] = _makefile_targets(makefile)
+        make_targets |= target_cache[makefile]
     violations: list[Violation] = []
     line_of = _line_index(text)
     for match in _MAKE_TARGET_CITATION_RE.finditer(text):
@@ -807,11 +850,14 @@ def docmake_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """DOC010: every `` `make <target>` `` citation in an obligated doc must
     name a real Makefile recipe -- the Makefile has no graph node of its
     own, so a renamed/removed target's doc citation was invisible to every
-    other doc gate (gate-gap class 4)."""
+    other doc gate (gate-gap class 4). T-2705: resolves against the
+    NEAREST Makefile to the citing doc (a nested sub-project's own
+    Makefile), falling back to the repo-root Makefile -- see
+    `_makefiles_for_doc`."""
     root = Path(root)
     if not (root / "Makefile").exists():
         return ()
-    make_targets = _makefile_targets(root)
+    target_cache: dict[Path, set[str]] = {}
     include, exclude, roots = _doclink_config(root)
     docs = (
         _obligated_docs(root, include, exclude)
@@ -821,7 +867,7 @@ def docmake_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     violations = tuple(
         v
         for doc_rel in sorted(docs)
-        for v in _doc010_scan_doc(root, doc_rel, make_targets)
+        for v in _doc010_scan_doc(root, doc_rel, target_cache)
     )
     _log.info("docmake: %d doc(s) scanned, %d violation(s)", len(docs), len(violations))
     return violations

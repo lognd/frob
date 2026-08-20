@@ -2,7 +2,7 @@
 id: T-2705
 title: DOC010 only resolves make targets against the root Makefile, missing nested
   project Makefiles
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -32,6 +32,11 @@ scope_changes:
   reason: existing DOC010 tests
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestDocmakeGate::test_nested_project_target_resolves_against_nested_makefile
+- tests/test_gates.py::TestDocmakeGate::test_nested_project_bogus_target_still_fires
+- tests/test_gates.py::TestDocmakeGate::test_root_level_doc_still_resolves_against_root_makefile
+- tests/test_gates.py::TestDocmakeGate::test_nested_doc_falls_back_to_root_target_when_absent_nested
 designated_repro_test: null
 threat: null
 component: null

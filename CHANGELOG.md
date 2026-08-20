@@ -185,6 +185,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2702: T-2690's phantom-refile fix does not work: two more auto-filed recoveries from lands that contained it
 - T-2703: DOC006 scans inline code spans, reading C++ lambda captures as TOML section keys (72 false positives downstream)
 - T-2704: DOC008/DOC011 normalize ../ with a string replace instead of path resolution, breaking every valid parent-relative link (2 sites)
+- T-2705: DOC010 only resolves make targets against the root Makefile, missing nested project Makefiles
 - T-2707: SYS004 replaces the real ImportError with a hardcoded not-installed message, misdirecting diagnosis
 - T-2708: make install-tool is broken on uv 0.11.19: uv tool install has no --extra flag, blocking the only sanctioned install path
 - T-2713: Deferred verification advances the watermark and records the rolling baseline from a budget-truncated check (saw 2 of 40 error identities, called it GREEN)

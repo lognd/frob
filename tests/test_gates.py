@@ -11350,7 +11350,9 @@ class TestDoclinkGate:
         (root / "docs" / "architecture" / "config.md").write_text(
             "# Config\n\n[quiz](../../design/mini-quizzes.md)\n", encoding="utf-8"
         )
-        (root / "design" / "mini-quizzes.md").write_text("# Quizzes\n", encoding="utf-8")
+        (root / "design" / "mini-quizzes.md").write_text(
+            "# Quizzes\n", encoding="utf-8"
+        )
 
         snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
         violations = doclink_gate(root, snap)
@@ -11562,6 +11564,102 @@ class TestDocmakeGate:
         )
         snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
         assert docmake_gate(root, snap) == ()
+
+    def test_nested_project_target_resolves_against_nested_makefile(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # T-2705: a nested sub-project's own docs citing ITS OWN Makefile's
+        # target (not present in the root Makefile) must resolve, not fire.
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "slidegen" / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.docs]\ninclude = ["**/*.md"]\n', encoding="utf-8"
+        )
+        (root / "Makefile").write_text("build:\n\techo hi\n", encoding="utf-8")
+        (root / "slidegen" / "Makefile").write_text(
+            "preview:\n\techo previewing\n", encoding="utf-8"
+        )
+        (root / "slidegen" / "docs" / "scripts.md").write_text(
+            "# Scripts\n\nRun `make preview` to preview a deck.\n", encoding="utf-8"
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = docmake_gate(root, snap)
+        assert violations == (), violations
+
+    def test_nested_project_bogus_target_still_fires(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # T-2705 control: a target absent from BOTH the nearest and the
+        # root Makefile must still fire, even inside a nested project.
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "slidegen" / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.docs]\ninclude = ["**/*.md"]\n', encoding="utf-8"
+        )
+        (root / "Makefile").write_text("build:\n\techo hi\n", encoding="utf-8")
+        (root / "slidegen" / "Makefile").write_text(
+            "preview:\n\techo previewing\n", encoding="utf-8"
+        )
+        (root / "slidegen" / "docs" / "scripts.md").write_text(
+            "# Scripts\n\nRun `make nonexistent-nested-target` first.\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = docmake_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC010"}
+        assert any("nonexistent-nested-target" in v.message for v in violations)
+
+    def test_root_level_doc_still_resolves_against_root_makefile(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # T-2705 control: no regression for the single-Makefile case -- a
+        # doc at repo root still resolves against the root Makefile.
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "Makefile").write_text(
+            "build:\n\techo hi\ninstall-tool:\n\techo installing\n", encoding="utf-8"
+        )
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\nRun `make install-tool` first.\n", encoding="utf-8"
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docmake_gate(root, snap) == ()
+
+    def test_nested_doc_falls_back_to_root_target_when_absent_nested(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # T-2705 control: a nested Makefile EXISTS but does not contain the
+        # cited target, while the root Makefile does -- must resolve via
+        # the root fallback rather than firing.
+        from frob.gates import docmake_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "slidegen" / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.docs]\ninclude = ["**/*.md"]\n', encoding="utf-8"
+        )
+        (root / "Makefile").write_text(
+            "build:\n\techo hi\ninstall-tool:\n\techo installing\n", encoding="utf-8"
+        )
+        (root / "slidegen" / "Makefile").write_text(
+            "preview:\n\techo previewing\n", encoding="utf-8"
+        )
+        (root / "slidegen" / "docs" / "scripts.md").write_text(
+            "# Scripts\n\nSee `make install-tool` for the root install path.\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = docmake_gate(root, snap)
+        assert violations == (), violations
 
 
 class TestDocanchorGate:
@@ -12548,8 +12646,7 @@ class TestFixEngineTierA:
         recovery = Ticket(
             id="T-0002",
             title=(
-                "Recovered from T-0001's phantom TICK006 citation of "
-                "T-draft-abc12345"
+                "Recovered from T-0001's phantom TICK006 citation of T-draft-abc12345"
             ),
             state=TicketState.QUEUED,
             kind=TicketKind.BUG,
@@ -12611,10 +12708,7 @@ class TestFixEngineTierA:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             created=date.today(),
-            body=(
-                "## Done report\n\nFiled T-draft-face0001 as a "
-                "follow-up.\n"
-            ),
+            body=("## Done report\n\nFiled T-draft-face0001 as a follow-up.\n"),
         )
         write_ticket(root, landing)
         write_ticket(root, unrelated)
