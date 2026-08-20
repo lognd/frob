@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-1614/**
 - src/frob/gates/_waive_audit_watermark.py
@@ -122,7 +125,7 @@ evidence:
 - tests/unit/test_waive_audit_watermark.py::TestLoadWatermark::test_malformed_json_is_malformed
 - tests/unit/test_waive_audit_watermark.py::TestLoadWatermark::test_valid_file_round_trips
 - tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_round_trips_through_load
-- tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_creates_frob_dir_if_missing
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_creates_parent_dir_if_missing
 - tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_watermark_bounds_catchup
 - tests/unit/test_waive_audit_runner.py::TestRunScan::test_watermark_malformed_is_unreadable
 - tests/unit/test_waive_audit_runner.py::TestRunScan::test_no_new_waivers_when_nothing_changed_since_watermark
@@ -130,6 +133,13 @@ evidence:
 - tests/unit/test_waive_audit_runner.py::TestCompletePass::test_catchup_incomplete_refuses_full_completion
 - tests/unit/test_waive_audit_runner.py::TestCompletePass::test_matching_reviewed_count_advances_watermark
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_creates_frob_dir_if_missing
+  new_node: tests/unit/test_waive_audit_watermark.py::TestSaveWatermark::test_creates_parent_dir_if_missing
+  reason: T-2721 renamed this test (watermark moved from .frob/ to a git-tracked repo-root
+    path, so the old name no longer describes what it checks)
+  actor: logan
+  at: '2026-08-20'
 threat: null
 component: null
 anchor: false

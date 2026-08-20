@@ -94,6 +94,15 @@ FROBLEMS.md
 # Rapid-profile verification debt (T-1681) -- tracked deliberately
 !rapid-debt.jsonl
 
+# T-2721: waive-audit progress watermark -- tracked deliberately, same
+# posture as rapid-debt.jsonl above. Was `.frob/waive-audit-watermark.json`
+# (gitignored, per-checkout) until T-2721: an agent's audit pass ran inside
+# a disposable worktree and its progress was destroyed with it on cleanup,
+# defeating T-2467's whole periodic-incremental design. Tracked at the repo
+# root, outside `.frob/`, so it survives a worktree's removal and a `frob
+# ticket land`/git push actually carries it.
+!waive-audit-watermark.json
+
 # Stray agent done-report scratch files (T-2524): the canonical home is
 # tickets/<id>/done-report.md
 done-report-*.md

@@ -199,6 +199,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2714: A killed land strands its staged snapshot in the shared root, DirtyMain-blocking the whole fleet
 - T-2715: Deferred verification is deadlocked: the 480s budget is 12s short of the tool's own recorded 492s stage total
 - T-2719: RENDER001: add directory/file exemptions for standalone no-frob-import scripts
+- T-2721: waive-audit progress is gitignored per-checkout, so an agent's audit pass is destroyed with its worktree
 - T-2723: Gate cache is not invalidated by a frob upgrade, so consumers keep seeing pre-fix findings on an unchanged tree
 
 ## [0.530.0] - unreleased

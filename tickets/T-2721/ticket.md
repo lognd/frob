@@ -2,7 +2,7 @@
 id: T-2721
 title: waive-audit progress is gitignored per-checkout, so an agent's audit pass is
   destroyed with its worktree
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -41,7 +41,14 @@ scope_changes:
     gitignore
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermarkGitTracking::test_commits_the_watermark_in_a_real_repo
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermarkGitTracking::test_second_save_advances_with_its_own_commit
+- tests/unit/test_waive_audit_watermark.py::TestSaveWatermarkGitTracking::test_non_git_root_still_succeeds_on_disk
+- tests/unit/test_waive_audit_watermark.py::TestMirrorToPrimary::test_worktree_pass_reaches_primary_without_a_land
+- tests/unit/test_waive_audit_watermark.py::TestMirrorToPrimary::test_two_worktree_passes_do_not_lose_either_ones_progress
+- tests/unit/test_waive_audit_watermark.py::TestMirrorToPrimary::test_calling_from_the_primary_checkout_itself_mirrors_nothing_extra
+designated_repro_test: tests/unit/test_waive_audit_watermark.py::TestMirrorToPrimary::test_worktree_pass_reaches_primary_without_a_land
 threat: null
 component: null
 anchor: false
