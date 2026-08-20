@@ -989,6 +989,24 @@
       "old_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
       "reason": "Re-verified docs/guides/coordinator-scripts.md#worktrees_touching_ticket\nagainst the ARCH001 split: the doc's description of the dual-condition\nT-2179/T-2181 correlation is unchanged and still true; the new naming-\nidentity fast path is separately documented at the two new helper\nfunctions' own anchors, both added in this same change.\n",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "a97a3ad3d64eaf85989c8bd30c70c22849cdd4705cb0d966984432b0debda7de",
+      "old_digest": null,
+      "reason": "T-2695: pure code relocation, doc content unchanged; docs/modules/tickets-data-storage.md itself is under another ticket's live lease (T-2718) and cannot be edited right now -- ack records the doc is still accurate against the new location",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_to_ledger"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "517558cbb061b836e32623e2897ba5b107ea817acaa36b3ac7f39cc9c3b3a2ce",
+      "old_digest": null,
+      "reason": "T-2695: pure code relocation, doc content unchanged; docs/modules/tickets-data-storage.md itself is under another ticket's live lease (T-2718) and cannot be edited right now -- ack records the doc is still accurate against the new location",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_to_ledger"
     }
   ],
   "entries": [
@@ -1956,6 +1974,16 @@
       "digest": "9b27320b33ca48cfdde2896e81ca1425945211dc45fd157b2533604efa24f105",
       "facet": "sig",
       "ref": "src/frob/tickets/_setters.py::ticket_flow"
+    },
+    {
+      "digest": "a97a3ad3d64eaf85989c8bd30c70c22849cdd4705cb0d966984432b0debda7de",
+      "facet": "body",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_to_ledger"
+    },
+    {
+      "digest": "517558cbb061b836e32623e2897ba5b107ea817acaa36b3ac7f39cc9c3b3a2ce",
+      "facet": "sig",
+      "ref": "src/frob/tickets/_store_migrate.py::migrate_to_ledger"
     },
     {
       "digest": "16dd69d6531a3f4a287d539fc5112ea94ee69be195a8f410bae001955953fd6a",

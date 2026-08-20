@@ -2,7 +2,7 @@
 id: T-2695
 title: 'LARGE001 remainder batch 2: ~80 files after T-1656''s batch-1 (2 waived, 1
   seam filed)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,6 +19,9 @@ scope:
 - tests/unit/test_ticket_store.py
 - src/frob/tickets/_store_migrate.py
 - docs/design/ledger-v2.md
+evidence_scope:
+- tests/test_tickets_migration.py
+- tests/unit/test_claims_and_store_batch6.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -92,6 +95,11 @@ scope_changes:
   reason: 'T-2695: doc anchor needs updating to the new _store_migrate.py location'
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_tickets_migration.py::TestMigrateV1ToV2::test_golden_round_trip_semantic_equality
+- tests/test_tickets_migration.py::TestMigrateMissingV2::test_migrates_only_the_monofile_only_tickets
+- tests/unit/test_ticket_store.py::TestMigrateToLedger::test_moves_legacy_files_into_ledger
+- tests/unit/test_claims_and_store_batch6.py::TestTicketStoreWriteAndMigrate::test_migrate_to_ledger_moves_dir_files_into_ledger
 designated_repro_test: null
 threat: null
 component: null

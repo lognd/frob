@@ -890,7 +890,7 @@ class TestSetBodyArchivedTicketRouting:
 
 class TestMigrateToLedger:
     def test_moves_legacy_files_into_ledger(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_store.py::migrate_to_ledger kind="unit"
+        # frob:tests src/frob/tickets/_store_migrate.py::migrate_to_ledger kind="unit"
         d = tmp_path / "tickets"
         d.mkdir()
         ticket = _ticket()
