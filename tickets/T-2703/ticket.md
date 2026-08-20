@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +25,11 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_docptr.py
   reason: DOC006 code-span-aware scan fix
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: DOC006 test file
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
