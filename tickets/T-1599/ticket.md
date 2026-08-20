@@ -2,7 +2,7 @@
 id: T-1599
 title: 'Language adapter capability matrix: make the cross-language contract statically
   enforced'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -114,18 +114,21 @@ body_changes:
   at: '2026-08-19'
   old_length: 1645
   new_length: 5870
+evidence:
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-call_graph]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_implemented_capability_behaves_as_claimed[python-import_graph]
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_every_registered_language_is_covered
+- tests/test_lang_conformance_gate.py::TestBehavioralCapabilityCheck::test_unchecked_capability_is_named_not_silently_true
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_real_registry_is_behaviorally_clean
 designated_repro_test: null
 acceptance:
-- text: 'MEASURED 2026-08-17: significant relevant infrastructure already landed (T-0405/T-0406,
-    src/frob/lang/_support.py) before this ticket''s own filing predates it (filed
-    2026-08-05) -- LanguageSupport/FacetState/FacetStatus already give every registered
-    language a typed per-facet IMPLEMENTED/NOT_APPLICABLE(reason)/KNOWN_GAP(tracking
-    ticket) cell, derived live from each subsystem''s own registry (frob.lang/frob.vet/frob.dup/frob.arch/frob.gates._docblocks);
-    LANG001 (lang_conformance_gate) already fails the build when a cell is unaccounted
-    for; LANG002/LANG003 already cover the per-PROJECT half (a repo language frob
-    does not parse at all, or a KNOWN_GAP present in the tree with a stale/unverifiable
-    ticket ref). Deliverables 3 and 4 as originally written are LARGELY already satisfied
-    by this existing mechanism -- re-verify against it before building anything parallel.'
+- text: 'MEASUREMENT NOTE, superseded (T-1599 own investigation, this round): ADAPTER_CAPABILITIES/derive_capability_registry
+    (src/frob/lang/_support.py) and LANG004 capability_conformance_gate (src/frob/gates/_lang_conformance.py)
+    were already built under T-2365, before this ticket''s own scoping work started,
+    and LANG004 was already wired into frob check''s job table (T-2411, done). This
+    ticket''s real remaining scope, confirmed against that live state rather than
+    this stale note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
+    degradation story (see criterion [2]).'
   evidence: []
 - text: 'MEASURED 2026-08-17: the existing FACETS axis (grammar/capability/dup/arch/docblock,
     src/frob/lang/_support.py FACETS tuple) is SUBSYSTEM-INTEGRATION coverage (does
@@ -144,6 +147,56 @@ acceptance:
     unbuilt work, and is the load-bearing gap for the epic''s stated purpose (batch-adding
     20-50 languages safely).'
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: 'MEASURED 2026-08-17: significant relevant infrastructure already landed
+    (T-0405/T-0406, src/frob/lang/_support.py) before this ticket''s own filing predates
+    it (filed 2026-08-05) -- LanguageSupport/FacetState/FacetStatus already give every
+    registered language a typed per-facet IMPLEMENTED/NOT_APPLICABLE(reason)/KNOWN_GAP(tracking
+    ticket) cell, derived live from each subsystem''s own registry (frob.lang/frob.vet/frob.dup/frob.arch/frob.gates._docblocks);
+    LANG001 (lang_conformance_gate) already fails the build when a cell is unaccounted
+    for; LANG002/LANG003 already cover the per-PROJECT half (a repo language frob
+    does not parse at all, or a KNOWN_GAP present in the tree with a stale/unverifiable
+    ticket ref). Deliverables 3 and 4 as originally written are LARGELY already satisfied
+    by this existing mechanism -- re-verify against it before building anything parallel.'
+  new_text: 'MEASUREMENT NOTE, superseded (T-1599 own investigation, this round):
+    ADAPTER_CAPABILITIES/derive_capability_registry (src/frob/lang/_support.py) and
+    LANG004 capability_conformance_gate (src/frob/gates/_lang_conformance.py) were
+    already built under T-2365, before this ticket''s own scoping work started, and
+    LANG004 was already wired into frob check''s job table (T-2411, done). This ticket''s
+    real remaining scope, confirmed against that live state rather than this stale
+    note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
+    degradation story (see criterion [2]).'
+  reason: 'The three original acceptance entries are 2026-08-17 MEASUREMENT NOTES,
+
+    not given/when/then criteria -- they describe what a prior sweep found
+
+    missing, not a testable claim this ticket''s own work can resolve with
+
+    pytest evidence. Direct code reading before any work started this round
+
+    found their premise stale in frob''s favor: ADAPTER_CAPABILITIES /
+
+    derive_capability_registry (src/frob/lang/_support.py, T-2365) and
+
+    LANG004 / capability_conformance_gate (src/frob/gates/_lang_
+
+    conformance.py, T-2365) both already existed -- built before this
+
+    ticket''s own filing predates them, contradicting criteria [1]/[2]''s own
+
+    "no facet or registry exists" / "conformance suite does not exist"
+
+    claims. Amending rather than binding evidence to a false premise, per
+
+    the coordinator''s explicit instruction not to bind evidence to a
+
+    criterion it does not actually prove.
+
+    '
+  actor: logan
+  at: '2026-08-19'
 threat: null
 component: null
 anchor: false
