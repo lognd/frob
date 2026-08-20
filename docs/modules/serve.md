@@ -228,6 +228,8 @@ already applies to the tree-state half of the key.
 <!-- frob:describes src/frob/gates/_gate_cache.py::evaluate_cacheable_gate -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::invalidate -->
 <!-- frob:describes src/frob/gates/_gate_cache.py::model_side_channel_key -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::extra_key -->
+<!-- frob:describes src/frob/gates/_gate_cache.py::_gate_build_fingerprint -->
 <!-- frob:describes src/frob/gates/__init__.py::run_gates -->
 
 `run_gates(cfg, use_cache=True)` -- the call `frob_check_delta` makes --
@@ -290,6 +292,36 @@ identical violation fingerprints) plus `verify_mismatch_count`. A `False`
 `verified` would mean the warm graph/baseline/test cache served a stale
 answer -- a bug, not an expected outcome; it is not a performance-only
 knob to skip in normal use.
+
+**T-2723: the cache key now includes the RUNNING BUILD, not just tree
+content.** Measured incident: T-2706 fixed a LANG004 false positive; after
+landing it and reinstalling into a consumer repo (`make install-tool`),
+`frob check` on that repo's unchanged tree kept serving the identical
+pre-fix violation count (`--no-cache` produced the correct, fixed result
+against the same installed binary). Every key this cache -- and the T-1445
+root-scanning cache, and the T-2585 whole-run replay cache below -- built
+before T-2723 was a pure function of tracked TREE content; none included
+any signal identifying the CODE that produced the cached verdict, so an
+upgrade with no tree edit at all was indistinguishable from a no-op rerun
+and kept replaying the old build's answer indefinitely.
+`frob.gates._gate_cache._gate_build_fingerprint()` fixes this: it folds
+the installed `frob` distribution's `importlib.metadata.version` together
+with a content hash of every `.py` file under the running `frob.gates`
+package into one fingerprint, cached for the life of the process
+(`@lru_cache`) and recomputed fresh in every new process -- so a fresh
+build's fingerprint always reflects the build actually running right now.
+`extra_key(values)` now always folds this fingerprint in alongside its
+caller-supplied `values`, which covers both the per-gate cache above and
+the T-1445 root-scanning cache (`load_root_gate_cache`/
+`store_root_gate_cache`, both keyed via `extra_key`) with one change;
+`_replay_fingerprint` (T-2585's whole-run replay, the cache the measured
+incident actually hit) does not route through `extra_key` at all and folds
+the same build fingerprint in directly. This is additive, not a
+replacement for the tree-content keys -- a tracked-file edit under a fixed
+build still invalidates exactly as before; only an unchanged-tree,
+different-build combination is a new miss case. See
+`_gate_build_fingerprint`'s own docstring for why both signals (version
+AND code hash) are folded together rather than either alone.
 
 ## Daemon jobs
 

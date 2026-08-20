@@ -86,11 +86,14 @@ the one place a future reader will actually look):
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
+import importlib.util
 import json
 import sqlite3
 import time
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
@@ -374,15 +377,91 @@ def _touched_key(file_hashes: Mapping[str, str], touched: Iterable[str]) -> str:
     )
 
 
+# frob:ticket T-2723
+@lru_cache(maxsize=1)
+def _gate_build_fingerprint() -> str:
+    """T-2723: identify the RUNNING frob build so a cache entry produced by
+    one build can never be replayed for a different one.
+
+    Measured incident: after T-2706 fixed a LANG004 false positive and the
+    tool was reinstalled into a consumer repo (`make install-tool`), `frob
+    check` on an UNCHANGED tree kept serving the pre-fix 4-violation result
+    -- every existing key in this module (`_membership_key`/`_touched_key`/
+    `root_content_key`) is a pure function of TREE content, so an unchanged
+    tree collides with a cache entry recorded by the OLD, buggy build. An
+    upgrade with no tree edit must still invalidate.
+
+    Two identifiers are folded together rather than picking just one:
+    `importlib.metadata.version("frob")` (cheap, present for every real
+    `pip`/`uv tool install`) plus a content hash of every `.py` file under
+    the RUNNING `frob.gates` package (this module's own package -- exactly
+    the code whose bugs this cache is at risk of immortalizing). The
+    version alone is not sufficient: a dev/editable checkout mid-session
+    can patch gate logic without a version bump (this repo's own release
+    stamp, T-1930's REL001, is scoped to public API surface, not every
+    gate fix), so a version-only key would keep replaying a stale result
+    across exactly that case. The content hash alone is not sufficient
+    either -- it is a second, independent signal that degrades gracefully
+    (see below) when the package cannot be located at all (a frozen/
+    zipapp-style install with no `.py` files on disk), so version and hash
+    corroborate rather than substitute for each other.
+
+    `@lru_cache`: this reads `importlib.metadata` and walks a directory
+    tree, non-trivial cost for something computed once per gate call
+    across a `frob check` run -- cached for the lifetime of THIS process,
+    never across processes (a fresh process re-derives it from the build
+    actually running right now, which is exactly the point).
+
+    Never raises: any failure locating the installed version or walking
+    the package tree folds a distinguishing marker string into the
+    fingerprint instead (so a broken/degraded probe still produces SOME
+    fingerprint, just one that will not collide with a healthy build's)
+    rather than crashing gate evaluation over a cache-freshness probe."""
+    parts: list[str] = []
+    try:
+        parts.append(f"version={importlib.metadata.version('frob')}")
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        parts.append(f"version=<unresolvable:{exc}>")
+
+    try:
+        spec = importlib.util.find_spec("frob.gates")
+        pkg_dir = (
+            Path(spec.submodule_search_locations[0])
+            if spec and spec.submodule_search_locations
+            else None
+        )
+        if pkg_dir is None:
+            parts.append("gates_hash=<no-package-dir>")
+        else:
+            file_parts: list[str] = []
+            for path in sorted(pkg_dir.rglob("*.py")):
+                try:
+                    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                except OSError as exc:
+                    digest = f"<unreadable:{exc}>"
+                file_parts.append(f"{path.relative_to(pkg_dir)}={digest}")
+            parts.append(f"gates_hash={_hash_parts(file_parts)}")
+    except Exception as exc:  # noqa: BLE001 -- best-effort probe, never fatal
+        parts.append(f"gates_hash=<unresolvable:{exc}>")
+
+    return _hash_parts(parts)
+
+
 # frob:doc \
 # docs/modules/serve.md#per-gate-dependency-tracked-partial-re-evaluation-t-0602
 # frob:ticket T-0602
+# frob:ticket T-2723
 def extra_key(values: Iterable[str]) -> str:
     """Fold a gate's non-file scalar inputs (a ticket id, `date.today()`,
-    ...) into the same key space as the file-based halves above -- a
-    cacheable gate that also depends on one of these must never reuse a
-    cached result recorded under a different scalar value."""
-    return _hash_parts(values)
+    ...) -- PLUS the running build's own fingerprint (T-2723,
+    `_gate_build_fingerprint`) -- into the same key space as the
+    file-based halves above. A cacheable gate that also depends on one of
+    the caller-supplied `values` must never reuse a cached result recorded
+    under a different scalar value; every cacheable gate, regardless of
+    its own `values`, must never reuse a result recorded by a DIFFERENT
+    frob build on an otherwise-unchanged tree (T-2723's fix -- see
+    `_gate_build_fingerprint`'s docstring for the incident this closes)."""
+    return _hash_parts((*values, _gate_build_fingerprint()))
 
 
 # frob:doc \
@@ -808,18 +887,24 @@ def _replay_signature(
 
 
 # frob:ticket T-2585
+# frob:ticket T-2723
 def _replay_fingerprint(root: Path) -> str | None:
     """The tree state a stored replay is valid against (T-2585):
     `root_content_key` (T-1445, tracked-file content digest) folded with a
-    digest of `.frob/baseline`'s own bytes. `.frob/baseline` is gitignored
-    -- outside `root_content_key`'s `git ls-files` walk entirely -- but
-    `--delta` mode reads it directly (`_apply_delta`), so a re-stamped
-    baseline against an otherwise-unchanged tracked tree must still
-    invalidate a stored delta-mode replay; folding its digest in here
-    closes that gap without a second, independently-maintained key.
-    Returns `None` (never replayable) whenever `root_content_key` itself
-    is unavailable -- an unverifiable tree state must never serve, or
-    accept, a replay."""
+    digest of `.frob/baseline`'s own bytes, PLUS the running build's own
+    fingerprint (T-2723, `_gate_build_fingerprint`). `.frob/baseline` is
+    gitignored -- outside `root_content_key`'s `git ls-files` walk
+    entirely -- but `--delta` mode reads it directly (`_apply_delta`), so
+    a re-stamped baseline against an otherwise-unchanged tracked tree must
+    still invalidate a stored delta-mode replay; folding its digest in
+    here closes that gap without a second, independently-maintained key.
+    The build fingerprint closes a second, distinct gap T-2723 measured
+    directly: this whole-run replay cache is keyed purely on tree content
+    like the two per-gate caches above it, so an upgraded frob build with
+    no tree edit at all replayed a PRE-FIX verdict indefinitely -- see
+    `_gate_build_fingerprint`'s docstring for the incident. Returns `None`
+    (never replayable) whenever `root_content_key` itself is unavailable
+    -- an unverifiable tree state must never serve, or accept, a replay."""
     tree_key = root_content_key(root)
     if tree_key is None:
         return None
@@ -827,7 +912,10 @@ def _replay_fingerprint(root: Path) -> str | None:
         baseline_bytes = (root / ".frob" / "baseline").read_bytes()
     except OSError:
         baseline_bytes = b""
-    return f"{tree_key}:{hashlib.sha256(baseline_bytes).hexdigest()}"
+    return (
+        f"{tree_key}:{hashlib.sha256(baseline_bytes).hexdigest()}"
+        f":{_gate_build_fingerprint()}"
+    )
 
 
 @dataclass(frozen=True)
@@ -848,11 +936,11 @@ class GateRunReplay:
 
     # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
     # frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
-    # frob:waive WIRE001 follow_up="T-2610" reason="read via plain attribute \
-    # access (replay.age_s) in frob.check._python._label_replay, a real production \
-    # caller -- the resolver's call-graph only follows call-expression syntax, not \
-    # property attribute reads, so a genuinely wired property reads as unwired; \
-    # follow-up tracks extending WIRE001's resolver to cover this"
+    # frob:waive WIRE001 follow_up="T-2610" reason="read via plain attribute access \
+    # (replay.age_s) in frob.check._python._label_replay, a real production caller -- \
+    # the resolver's call-graph only follows call-expression syntax, not property \
+    # attribute reads, so a genuinely wired property reads as unwired; follow-up \
+    # tracks extending WIRE001's resolver to cover this"
     @property
     def age_s(self) -> float:
         """Seconds since this verdict was computed -- callers surface this

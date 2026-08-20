@@ -831,3 +831,186 @@ class TestRunReplay:
             delta=False,
         )
         assert scoped is not None
+
+
+# frob:ticket T-2723
+class TestGateBuildFingerprint:
+    """T-2723: a cache entry recorded by one frob BUILD must never serve a
+    request from a different build, even on an unchanged tree. Measured
+    incident: after T-2706 fixed a LANG004 false positive and the tool was
+    reinstalled into a consumer repo, `frob check` on an unchanged tree
+    kept replaying the pre-fix result -- every existing key in this module
+    was a pure function of tree content, with no build/gate-code identity
+    folded in anywhere. `_gate_build_fingerprint` closes that gap; these
+    tests are its own required positive controls, both directions."""
+
+    def _fake_result(self) -> list[ToolResult]:
+        """One minimal `ToolResult` list, standing in for `_run_gates`'s
+        real return shape."""
+        return [ToolResult(tool="gate-summary", exit_code=0, summary="0/0")]
+
+    def test_extra_key_changes_when_build_fingerprint_changes(
+        self, monkeypatch
+    ) -> None:
+        """Same non-build `values`, different `_gate_build_fingerprint` ->
+        different `extra_key` -- the per-gate (`evaluate_cacheable_gate`)
+        and root-scanning (`load_root_gate_cache`/`store_root_gate_cache`)
+        caches both route their `extra` through `extra_key`, so this one
+        change covers both of them.
+        frob:tests src/frob/gates/_gate_cache.py::extra_key
+        frob:tests src/frob/gates/_gate_cache.py::_gate_build_fingerprint"""
+        import frob.gates._gate_cache as gc
+
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-a")
+        key_a = extra_key(["T-0001"])
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-b")
+        key_b = extra_key(["T-0001"])
+        assert key_a != key_b
+
+    def test_extra_key_stable_for_same_build(self, monkeypatch) -> None:
+        """Two calls under the SAME build fingerprint (the everyday
+        same-process, unchanged-tree case) must still agree -- the fix
+        must not degrade the cache into invalidating on every call, which
+        would be as bad as no cache (`frob check` is ~71% of agent wall
+        time here).
+        frob:tests src/frob/gates/_gate_cache.py::extra_key"""
+        import frob.gates._gate_cache as gc
+
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-a")
+        assert extra_key(["T-0001"]) == extra_key(["T-0001"])
+
+    def test_replay_fingerprint_changes_when_build_fingerprint_changes(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """The whole-run replay cache (T-2585) does not route through
+        `extra_key` at all -- verify `_replay_fingerprint` independently
+        folds in the build fingerprint. This is the exact cache the
+        measured incident hit directly (`--no-cache` produced 0, the warm
+        replay kept serving 4).
+        frob:tests src/frob/gates/_gate_cache.py::_replay_fingerprint"""
+        import frob.gates._gate_cache as gc
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-a")
+        fp_a = gc._replay_fingerprint(tmp_path)
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-b")
+        fp_b = gc._replay_fingerprint(tmp_path)
+        assert fp_a is not None
+        assert fp_a != fp_b
+
+    def test_upgrade_forces_real_replay_on_unchanged_tree(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2723's required positive control, direction 1: store a replay
+        under one build, then simulate an upgrade with NO tree edit at all
+        -- the stored replay must miss, forcing a real re-run, never
+        reprinting the old build's (possibly pre-fix) verdict.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay
+        frob:tests src/frob/gates/_gate_cache.py::store_gate_run_replay"""
+        import frob.gates._gate_cache as gc
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-old")
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is not None
+        )
+        # Simulate an upgrade: identical tree, new build.
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-new")
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is None
+        )
+
+    def test_same_build_same_tree_still_replays_twice(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2723's required positive control, direction 2: the fix must
+        not turn this into an invalidate-on-every-run cache -- two lookups
+        under the SAME build and an unchanged tree must both hit.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay"""
+        import frob.gates._gate_cache as gc
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-a")
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is not None
+        )
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is not None
+        )
+
+    def test_tree_change_still_invalidates_under_same_build(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """T-2723's required positive control, direction 3: the build
+        fingerprint is folded IN ADDITION to tree content, never in place
+        of it -- a tracked-file edit under a fixed, unchanged build must
+        still force a miss, exactly as it did before this ticket.
+        frob:tests src/frob/gates/_gate_cache.py::load_gate_run_replay"""
+        import frob.gates._gate_cache as gc
+        from frob.gates._gate_cache import load_gate_run_replay, store_gate_run_replay
+
+        _write(tmp_path, "a.py", "def f():\n    pass\n")
+        _git_init(tmp_path)
+        monkeypatch.setattr(gc, "_gate_build_fingerprint", lambda: "build-a")
+        store_gate_run_replay(
+            tmp_path,
+            gates=frozenset(),
+            ticket=None,
+            base=None,
+            delta=False,
+            results=self._fake_result(),
+        )
+        _write(tmp_path, "a.py", "def f():\n    return 1\n")
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        assert (
+            load_gate_run_replay(
+                tmp_path, gates=frozenset(), ticket=None, base=None, delta=False
+            )
+            is None
+        )
+
+    def test_real_fingerprint_is_stable_and_never_raises(self) -> None:
+        """Smoke-test the REAL (unpatched) `_gate_build_fingerprint` --
+        never raises, and is stable (the `@lru_cache`) across repeated
+        calls within the same process.
+        frob:tests \
+        src/frob/gates/_gate_cache.py::_gate_build_fingerprint"""
+        import frob.gates._gate_cache as gc
+
+        fp1 = gc._gate_build_fingerprint()
+        fp2 = gc._gate_build_fingerprint()
+        assert fp1 == fp2
+        assert isinstance(fp1, str) and fp1
