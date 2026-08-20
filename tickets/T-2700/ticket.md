@@ -61,7 +61,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0f7517207b98a24ed7adda2e04e875316619fa5a
 ---
 T-2683 built the self-disclosure primitive (frob.graph.callgraph.
 capability_gap_disclosure) and wired it into build_call_graph's own
