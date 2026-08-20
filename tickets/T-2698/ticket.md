@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 21cb414a74d34280f6a2861b12ab8348fe64abdc
 ---
 T-2682 extended LANG004's behavioral test_discovery check to python
 only (a real fixture pytest project, ~10ms measured), leaving rust/
