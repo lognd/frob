@@ -12,9 +12,6 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
-milestone: null
-runs_last_parallel_safe: false
-runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_nodes.py
 - tests/test_lang.py
@@ -22,8 +19,6 @@ scope:
 - tests/unit/test_lang_primitives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/graph.md
@@ -62,9 +57,6 @@ attachments:
   caption: three confirmed vacuous consumers (attribution, cycle, arch layering);
     per-consumer must-still-pass acceptance criteria
   sha256: e1de499843567281d791d0c15f96ef5ce65d56dd2f2db7679543675311449bc4
-- path: T-2195/attachments/04-untitled.md
-  caption: ''
-  sha256: 67a97f6b18ee8dba2b34fe2fb9d414f21a5de1707242258ec818ef22d70eac16
 threat: null
 component: null
 anchor: false
