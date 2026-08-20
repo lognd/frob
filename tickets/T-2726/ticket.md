@@ -2,7 +2,7 @@
 id: T-2726
 title: disclosure_shaped_language signal 1 (phrase match) scans the whole ticket body,
   not just the Done report
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
