@@ -33,7 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: adeff417ebafb723099fe65cf54a5622bf97d818
 ---
 T-1599 extended LANG004's behavioral conformance suite to cover
 call_graph/import_graph (both exercisable from a single-file fixture
