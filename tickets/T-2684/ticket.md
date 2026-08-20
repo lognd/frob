@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land_verify.py
 - tests/unit/test_check.py
 - tests/unit/test_land_verify_claim_divergence_sentinel.py
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +46,12 @@ scope_changes:
     and _land_verify.py''s widened sentinel exclusion'
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: 'T-2684: register the new QUEUE001 rule id in _KNOWN_GATE_RULES (GATERULE001
+    requires it before the ticket can close)'
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: set
   reason: 'correct a fabricated symbol citation: frob.app._check_chunking._run_gate_chunks_stamping_progress
@@ -54,7 +61,13 @@ body_changes:
   at: '2026-08-19'
   old_length: 3569
   new_length: 3555
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_old_empty_rule_shape_still_excluded_too
+- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_a_real_rule_named_differently_still_refuses
+- tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable::test_queue_unavailable_sets_real_code_and_no_stale_path
+- tests/unit/test_check.py::TestGatesErrorResultQueueUnavailable::test_other_gate_error_is_a_soft_skip_not_an_error
+- tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_queue001_coded_sentinel_does_not_refuse
+designated_repro_test: tests/unit/test_land_verify_claim_divergence_sentinel.py::TestQueue001CodedSentinelIsAlsoExcluded::test_queue001_coded_sentinel_does_not_refuse
 threat: null
 component: null
 anchor: false
