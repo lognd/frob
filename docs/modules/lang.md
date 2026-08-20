@@ -825,3 +825,25 @@ the real `capability_conformance_gate` entrypoint while the live registry
 still claims python's `directive_parse` is `IMPLEMENTED`, produces a real
 LANG004 ERROR `Violation` -- the gate-level half of the same must-fail
 control, not just the underlying checker.
+
+**Repo-scoping (T-2706).** `capability_conformance_gate` is an assertion
+about FROB'S OWN `frob.lang` adapter table, not about anything in the
+repo `frob check` is being run against -- but it used to run (and fail)
+unconditionally, so a downstream consumer running `frob check` in their
+own repo got four LANG004 errors anchored at
+`src/frob/lang/_support.py:0`, a path that does not exist in their tree
+and that nothing in their repo can fix (no consumer can register a
+strata behavioral fixture). The gate now takes `repo_root: Path` and
+returns `()` immediately unless `frob.repo_meta.is_frob_own_repo
+(repo_root)` is True (`repo_root`'s own `pyproject.toml` declares
+`[project] name = "frob"`) -- the same PORT001 declare-not-hardcode
+pattern `frob.repo_meta._declared_frob_version` already established for
+the stale-install-warning check. Both directions are must-fail-tested
+(`TestCapabilityConformanceGate.test_consumer_repo_is_silent_even_with_a_
+broken_claim` -- a repo declaring a non-frob project name stays silent
+even with a corrupted fixture that WOULD fire in frob's own repo -- and
+`test_real_registry_is_behaviorally_clean`, run against frob's own
+`repo_root`, still asserts a clean result there): this is a scope fix
+(who the finding is actionable for), never a suppression of the
+underlying self-conformance claim, which stays real and enforced in
+frob's own repo.

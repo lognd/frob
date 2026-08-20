@@ -127,12 +127,12 @@ def load_arch_config(root: Path) -> dict[str, int]:
         return defaults
 
 
-def _declared_frob_version(repo_root: Path) -> str | None:
-    """This checkout's own declared `[project] version`, or `None` when
-    `repo_root` has no `pyproject.toml`, it is unparseable, or the project
-    it declares is not `frob` at all -- `stale_install_warning`'s
-    pyproject-read step, split out to keep that function under ARCH001's
-    line threshold (T-1022)."""
+def _read_pyproject_project(repo_root: Path) -> dict[str, object] | None:
+    """Parsed `[project]` table of `repo_root`'s own `pyproject.toml`, or
+    `None` when the file is missing or unparseable -- the shared TOML-read
+    step `_declared_frob_version` and `is_frob_own_repo` both build on, so
+    a checkout's own project identity is read exactly one way rather than
+    twice in slightly different ways (T-2706)."""
     pyproject = repo_root / "pyproject.toml"
     if not pyproject.exists():
         return None
@@ -141,8 +141,37 @@ def _declared_frob_version(repo_root: Path) -> str | None:
             data = tomllib.load(fh)
     except Exception:
         return None
-    project = data.get("project", {})
-    if project.get("name") != "frob":
+    return data.get("project", {})
+
+
+# frob:ticket T-2706
+# frob:doc docs/modules/lang.md#behavioral-conformance-lang004-t-2365
+# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
+# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_consumer_repo_is_silent_even_with_a_broken_claim  # noqa: E501
+# frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_repo_root_with_no_pyproject_is_silent  # noqa: E501
+def is_frob_own_repo(repo_root: Path) -> bool:
+    """True when `repo_root`'s own `pyproject.toml` declares `[project]
+    name = "frob"` -- i.e. this checkout IS the frob source repo itself,
+    not a downstream consumer running an installed `frob` build. T-2706:
+    the declare-not-hardcode (PORT001) check gates that let a
+    frob-internal self-conformance assertion (LANG004's `capability_
+    conformance_gate`) fire in frob's own repo while staying silent
+    -- and actionable -- in every consumer repo it runs against.
+    Deliberately does not also require `version` to parse (unlike
+    `_declared_frob_version`): a repo whose pyproject.toml omits/mistypes
+    `version` is still frob's own repo for this purpose."""
+    project = _read_pyproject_project(repo_root)
+    return bool(project) and project.get("name") == "frob"
+
+
+def _declared_frob_version(repo_root: Path) -> str | None:
+    """This checkout's own declared `[project] version`, or `None` when
+    `repo_root` has no `pyproject.toml`, it is unparseable, or the project
+    it declares is not `frob` at all -- `stale_install_warning`'s
+    pyproject-read step, split out to keep that function under ARCH001's
+    line threshold (T-1022)."""
+    project = _read_pyproject_project(repo_root)
+    if project is None or project.get("name") != "frob":
         return None
     version = project.get("version")
     return version if isinstance(version, str) else None

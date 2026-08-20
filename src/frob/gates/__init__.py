@@ -6364,6 +6364,14 @@ class _ProcessJob:
 # (DEPR005's baseline-lock/live-reference-set resolution, filesystem-
 # dependent beyond the snapshot) -- removed from this allowlist rather than
 # cached unsoundly; see the exclusion note above.
+# T-2706: "capability_conformance" (LANG004) removed from this allowlist --
+# same reasoning as the T-0639 "deprecated" removal directly above. The
+# gate now reads `st.repo_root` (`is_frob_own_repo`, a single bounded
+# `pyproject.toml` read gating the whole check to frob's own checkout so
+# a downstream consumer never sees findings anchored at a
+# `src/frob/lang/_support.py` path that does not exist in their tree) --
+# exactly the `st.repo_root`-reading shape this allowlist's own comment
+# excludes, so it stays cached-unsound if left here rather than moved out.
 _CACHEABLE_GATES: frozenset[str] = frozenset(
     {
         "drift",
@@ -6372,7 +6380,6 @@ _CACHEABLE_GATES: frozenset[str] = frozenset(
         "parse_failures",
         "debt",
         "lang_conformance",
-        "capability_conformance",
         "affect_drift",
     }
 )
@@ -6492,7 +6499,6 @@ def _cacheable_gate_factories(
             (current_date, current_version, model_side_channel_key(st.queue)),
         ),
         "lang_conformance": (lambda _snap: lang_conformance_gate(), ()),
-        "capability_conformance": (lambda _snap: capability_conformance_gate(), ()),
         "affect_drift": (
             lambda snap: affect_drift_gate(snap, st.diff),
             (model_side_channel_key(st.diff),),
@@ -6772,9 +6778,15 @@ def _build_thread_jobs(
         # against frob's own shipped registry, not the checked repo's
         # queue.
         "lang_project_conformance": lambda: project_lang_conformance_gate(st.repo_root),
-        # T-2411: LANG004, same no-side-input shape as lang_conformance
-        # above (reads frob.lang's live in-process registry directly).
-        "capability_conformance": lambda: capability_conformance_gate(),
+        # T-2411: LANG004. T-2706: now takes st.repo_root (never the
+        # possibly-scoped st.root, same reasoning as lang_project_
+        # conformance directly above) so it can gate itself to frob's own
+        # checkout (`is_frob_own_repo`) -- a downstream consumer repo
+        # must never see this self-conformance finding, since it is an
+        # assertion about frob's OWN `frob.lang` adapter table, anchored
+        # at a `src/frob/lang/_support.py` path that does not exist
+        # outside frob's own tree.
+        "capability_conformance": lambda: capability_conformance_gate(st.repo_root),
         # T-0851: FMT001, diff-scoped like TODO001/coverage above -- always
         # against repo_root so a `frob check <subdir>` run resolves the same
         # repo-relative diff hunk paths coverage_gate's TODO001 half does.

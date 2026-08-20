@@ -2,7 +2,7 @@
 id: T-2706
 title: LANG004 reports frob's own src/frob/ paths into consumer repos, where they
   are unactionable
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

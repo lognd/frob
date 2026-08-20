@@ -335,8 +335,10 @@ class TestCapabilityConformanceGate:
     def test_real_registry_is_behaviorally_clean(self) -> None:
         """The repo's own registered adapters all behave as their
         registry claims today -- this gate is clean, not just wired-but-
-        untested."""
-        assert capability_conformance_gate() == ()
+        untested. Called against frob's OWN repo root: T-2706's scoping
+        must NOT silence this real self-conformance check here."""
+        repo_root = Path(__file__).resolve().parents[1]
+        assert capability_conformance_gate(repo_root) == ()
 
     # frob:ticket T-2365
     def test_wrong_implemented_claim_fails(self, monkeypatch) -> None:
@@ -360,7 +362,8 @@ class TestCapabilityConformanceGate:
             "    return 2\n"
         )
         monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
-        violations = module.capability_conformance_gate()
+        repo_root = Path(__file__).resolve().parents[1]
+        violations = module.capability_conformance_gate(repo_root)
         assert len(violations) >= 1
         assert all(v.rule == "LANG004" for v in violations)
         assert all(v.severity is Severity.ERROR for v in violations)
@@ -368,6 +371,42 @@ class TestCapabilityConformanceGate:
             "python" in v.message and "directive_parse" in v.message
             for v in violations
         )
+
+    # frob:ticket T-2706
+    def test_consumer_repo_is_silent_even_with_a_broken_claim(
+        self, tmp_path, monkeypatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL for the OTHER direction (T-2706
+        acceptance criterion): a repo whose `pyproject.toml` declares a
+        project name OTHER than 'frob' must get zero LANG004 findings --
+        even with the SAME broken python fixture that
+        `test_wrong_implemented_claim_fails` proves fires a real
+        violation in frob's own repo. This is the exact defect a
+        downstream consumer (aprog-public) reported: four errors anchored
+        at `src/frob/lang/_support.py`, a path that does not exist in
+        their tree and that nothing in their repo can fix."""
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            '"""Capability fixture module docstring."""\n\n\n'
+            "def public_fn():\n"
+            '    """A public function."""\n'
+            "    return 1\n\n\n"
+            "# frob:tests \\\n"
+            "def _private_fn():\n"
+            "    return 2\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "aprog-public"\nversion = "0.1.0"\n'
+        )
+        assert module.capability_conformance_gate(tmp_path) == ()
+
+    # frob:ticket T-2706
+    def test_repo_root_with_no_pyproject_is_silent(self, tmp_path) -> None:
+        """A repo with no `pyproject.toml` at all (no declared project
+        identity) is not frob's own repo either -- silent, not a crash."""
+        assert capability_conformance_gate(tmp_path) == ()
 
 
 # frob:ticket T-2411
@@ -426,6 +465,16 @@ class TestCapabilityConformanceWiring:
             check=True,
         )
         subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+        # T-2706: capability_conformance_gate now scopes itself to frob's
+        # OWN repo (`is_frob_own_repo`) -- this fixture must declare
+        # itself as "frob" so this test still exercises the real
+        # dispatch path for the finding, rather than proving the T-2706
+        # scoping (that direction is
+        # TestCapabilityConformanceGate.test_consumer_repo_is_silent_
+        # even_with_a_broken_claim instead).
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\nversion = "0.0.0"\n', encoding="utf-8"
+        )
         (tmp_path / "tickets.md").write_text("# Tickets\n", encoding="utf-8")
         ticket = Ticket(
             id="T-0001",

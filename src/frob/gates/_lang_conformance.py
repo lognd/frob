@@ -54,6 +54,7 @@ from frob.lang._support import (
     derive_language_registry,
 )
 from frob.logging import get_logger
+from frob.repo_meta import is_frob_own_repo
 
 _log = get_logger(__name__)
 
@@ -691,7 +692,7 @@ def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
 # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
 # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_wrong_implemented_claim_fails  # noqa: E501
 # frob:enforces CHK-GATE-LANG004
-def capability_conformance_gate() -> tuple[Violation, ...]:
+def capability_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
     """LANG004 (T-2365): the BEHAVIORAL half of the adapter-capability axis.
 
     `lang_conformance_gate` (LANG001) and this gate's own registry
@@ -720,7 +721,15 @@ def capability_conformance_gate() -> tuple[Violation, ...]:
     comment, docs/modules/lang.md, and T-2698), not silently skipped;
     `lang_conformance_gate` still holds every one of those cells to the
     structural-completeness bar regardless.
+
+    T-2706: `is_frob_own_repo(repo_root)` (PORT001's declare-not-hardcode
+    pattern) gates this whole check to frob's own source checkout -- an
+    assertion about FROB's OWN adapter table, unactionable for a
+    downstream consumer (anchored at `src/frob/lang/_support.py`, a path
+    that does not exist in their tree). `()` immediately elsewhere.
     """
+    if not is_frob_own_repo(repo_root):
+        return ()
     registry = derive_capability_registry()
     violations: list[Violation] = []
     with tempfile.TemporaryDirectory(prefix="frob-lang004-") as tmp:
