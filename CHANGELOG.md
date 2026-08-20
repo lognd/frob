@@ -26,6 +26,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
 - T-2128: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity while every other SCOPE002 against this doc is a warning
 - T-2134: tickets.md monofile looks stale/orphaned since the v2 sharded-ticket migration -- investigate and remove or document
+- T-2141: --allow-cross-ticket carries an undeclared set: the operator cannot state which tickets they expect to carry, so a legitimate sibling batch and an accidental foreign carry look identical
 - T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
 - T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
 - T-2311: DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent contended family)

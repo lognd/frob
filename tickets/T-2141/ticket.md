@@ -3,7 +3,7 @@ id: T-2141
 title: '--allow-cross-ticket carries an undeclared set: the operator cannot state
   which tickets they expect to carry, so a legitimate sibling batch and an accidental
   foreign carry look identical'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'

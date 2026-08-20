@@ -62,7 +62,7 @@ byte-identical between both copies) and removed it, keeping the
 updated active-location copy as canonical. `frob ticket show T-1688`
 resolves clean afterward; confirmed no other id is duplicated across
 `tickets/` and `tickets/archive/` repo-wide (`comm -12` on the sorted
-id lists, empty). Filed T-draft-be1e79b5 for the underlying tool bug
+id lists, empty). Filed T-2699 for the underlying tool bug
 (coordinator does not need to take it).
 
 ### Verification

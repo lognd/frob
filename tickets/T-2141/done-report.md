@@ -20,23 +20,15 @@ unmeasurable diff (`None` in) and an unloadable ticket both return `None`
 rather than a false empty set; the log-visible warning only fires when
 `--allow-cross-ticket` is actually set (no flag, no disclosure noise).
 
+Filed: T-draft-11aa55a2 (frob ticket land has no externally-pollable progress/lock-contention status -- the land-visibility gap this same series ran into while landing T-2141/T-1549/T-2303).
+
 ### Changed
 ```
- rapid-debt.jsonl                                   |   5 +
- src/frob/app/telemetry.py                          |  14 ++
- src/frob/app/ticket_runner/_land_cmd.py            |  96 ++++++++++-
- src/frob/app/ticket_runner/_new.py                 |  10 ++
- src/frob/tickets/_land_verify.py                   |  45 ++++++
- .../test_land_verify_claim_divergence_sentinel.py  | 118 ++++++++++++++
- tests/unit/test_ticket_runner_land_cmd_flags.py    | 177 +++++++++++++++++++++
- tickets/T-1549/done-report.md                      |  63 ++++++++
- tickets/T-2141/done-report.md                      |  42 +++++
- tickets/T-2141/ticket.md                           |  16 +-
- tickets/T-2303/done-report.md                      |  84 ++++++++++
- tickets/T-2303/ticket.md                           |   9 +-
- tickets/T-2691/ticket.md                 |  58 +++++++
- tickets/T-2692/ticket.md                 |  42 +++++
- 14 files changed, 774 insertions(+), 5 deletions(-)
+ rapid-debt.jsonl                   |  2 ++
+ tickets/T-2141/done-report.md      | 23 ++++++-----------------
+ tickets/T-2685/done-report.md      |  2 +-
+ tickets/T-2699/ticket.md | 36 ++++++++++++++++++++++++++++++++++++
+ 4 files changed, 45 insertions(+), 18 deletions(-)
 ```
 
 ### Evidence
@@ -49,5 +41,5 @@ rather than a false empty set; the log-visible warning only fires when
 
 ### Captured claims
 - tests: 6 passed (from 6 evidence id(s))
-- gates: 34 error(s), 875 warning(s), 700 waived
-- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DOC006@tickets/T-2691/ticket.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, TICK006@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
+- gates: 33 error(s), 865 warning(s), 702 waived
+- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DOC006@tickets/T-2691/ticket.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
