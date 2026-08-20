@@ -2,7 +2,7 @@
 id: T-2745
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2712):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -16,10 +16,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-2742/ticket.md
+- tests/unit/test_ticket_2691_doc006.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_2691_doc006.py
+  reason: 'add T-2742 regression case to the existing DOC006 recurring-shape test
+    file (same root cause as T-2691/T-2697: a backtick-quoted hypothetical CLI verb
+    read as a real invocation) rather than fixing prose with no verifying evidence'
+  actor: logan
+  at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'BUG002 is unsatisfiable by construction here: the fix is a ticket-body
+    prose edit, not a code change, so no designated test can genuinely fail at parent
+    and pass at fix (both would evaluate DOC006''s unchanged gate logic identically);
+    documenting per T-1616/BUG002 escape-hatch guidance in docs/modules/gates.md'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 1192
+  new_length: 1643
 designated_repro_test: null
 threat: null
 component: null
@@ -40,3 +59,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-2742/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="pure content/prose fix -- the defect was a hypothetical CLI verb quoted in backticks inside a ticket body (data, not code), so no code path or gate LOGIC changed for the designated evidence test to differentiate before/after; the added regression tests (TestTicket2742Doc006Regression) prove the FIXED shape does not trip DOC006 and the PRE-FIX shape still does, exercising the same gate logic T-2697/T-2691 already covers"
