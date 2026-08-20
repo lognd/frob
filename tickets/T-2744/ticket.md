@@ -55,6 +55,14 @@ scope_changes:
     gating (T-2736 phantom-ticket incident)
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: record that the auto-file succeeds intermittently, which rules out an unconditional-clear
+    cause and points at a race or an unreachable write
+  actor: logan
+  at: '2026-08-20'
+  old_length: 2965
+  new_length: 3857
 designated_repro_test: null
 threat: null
 component: null
@@ -132,3 +140,26 @@ They cannot be recovered from the cleared record alone. A full unbudgeted
 `frob check --json` re-measurement will re-surface them if they are still
 live -- do that as part of this ticket rather than assuming they were
 trivial.
+
+
+
+
+## The defect is INTERMITTENT, which narrows the cause
+
+Observed a second auto-file-then-clear cycle on 2026-08-20T14:17:32Z:
+
+    cleared_reason: auto-filed by rapid sweep as T-2749
+
+and T-2749 DOES exist on main. So the sweep's auto-file succeeds
+sometimes and not others -- the T-2736 case was not a permanently broken
+path.
+
+That argues against hypothesis (a) (the clear is simply never conditional
+on the filing) and toward (b) or (c): a filing that landed somewhere
+unreachable, or a race between id allocation and a durable write. Two
+successful cycles were also observed clearing to T-2732 and T-2743.
+
+Do not let the intermittency reduce the severity. A clear that USUALLY
+cites a real ticket is more dangerous than one that never does, because
+nothing downstream ever checks -- the one failure in four releases its
+findings silently and looks identical to the three that worked.
