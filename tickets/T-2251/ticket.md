@@ -22,6 +22,7 @@ scope:
 - docs/modules/app.md
 - tests/unit/test_app_lazy_dispatch.py
 - src/frob/app/_config_external.py
+- src/frob/_cli_parsers/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +54,12 @@ scope_changes:
   glob: src/frob/app/_config_external.py
   reason: new bool CLI flag --select-imports-only needs registering in _apply_bool_fields'
     _BOOL_FLAGS tuple, same as every other frob subcommand's flags
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/_cli_parsers/__init__.py
+  reason: new _add_format_parser needs export/import wiring alongside every sibling
+    parser in this package's __init__
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
