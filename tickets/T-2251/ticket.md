@@ -19,6 +19,8 @@ scope:
 - src/frob/app/pyfmt_runner.py
 - tests/unit/test_pyfmt_runner.py
 - src/frob/_cli_parsers/_misc.py
+- docs/modules/app.md
+- tests/unit/test_app_lazy_dispatch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +36,16 @@ scope_changes:
   glob: src/frob/_cli_parsers/_misc.py
   reason: narrow to avoid lease collision with T-draft-5f8ebb34 on _ticket/_new.py;
     only _misc.py needed for the new frob format parser
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/app.md
+  reason: close doc/test edges surfaced by scope closure check for app.py CLI wiring
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/unit/test_app_lazy_dispatch.py
+  reason: close doc/test edges surfaced by scope closure check for app.py CLI wiring
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
