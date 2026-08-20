@@ -2,7 +2,7 @@
 id: T-2681
 title: Add frob ticket unblock verb -- blocked_by can only be appended, never removed,
   via CLI
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,10 +19,17 @@ scope:
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/test_ticket_lifecycle.py
+- src/frob/_cli_parsers/_ticket/_closeout.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_cli_parsers/_ticket/_closeout.py
+  reason: unblock CLI parser lives alongside block parser in this file
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
