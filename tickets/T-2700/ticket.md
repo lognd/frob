@@ -20,6 +20,7 @@ scope:
 - src/frob/cycle/graph.py
 - docs/modules/graph.md
 - tests/test_graph.py
+- docs/commands/cycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
   glob: tests/test_graph.py
   reason: T-2700 own positive/negative control tests for DependencyGraph.degraded_languages
     / find_cycles wiring
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/commands/cycle.md
+  reason: 'AFFECT001: DependencyGraph/find_cycles affects()-closure includes this
+    doc''s public-api anchor; T-2700 changes both symbols and must update it'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
