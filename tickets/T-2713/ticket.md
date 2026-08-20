@@ -14,10 +14,48 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/verify/**
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_verify.py
+- tests/unit/verify/**
+- tests/unit/test_rapid_sweep.py
+- tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/**
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/verify/**
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
