@@ -11332,6 +11332,73 @@ class TestDoclinkGate:
         violations = doclink_gate(root, snap)
         assert set(_rules(violations)) == set()
 
+    def test_valid_parent_relative_link_with_two_dotdots_resolves(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        # T-2704: `.replace("../", "")` deleted the `../` TEXT instead of
+        # popping a directory, so `../../design/x.md` from `docs/architecture`
+        # kept BOTH segments (`docs/architecture/design/x.md`, which does not
+        # exist) instead of resolving to `design/x.md` (which does).
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs" / "architecture").mkdir(parents=True)
+        (root / "design").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[config](architecture/config.md)\n", encoding="utf-8"
+        )
+        (root / "docs" / "architecture" / "config.md").write_text(
+            "# Config\n\n[quiz](../../design/mini-quizzes.md)\n", encoding="utf-8"
+        )
+        (root / "design" / "mini-quizzes.md").write_text("# Quizzes\n", encoding="utf-8")
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == set(), violations
+
+    def test_genuinely_missing_target_still_fires_doc008_after_dotdot_fix(
+        self, tmp_path
+    ):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        # T-2704 control: the ../ resolution fix must not turn DOC008 into a
+        # no-op -- a link that genuinely does not resolve, even with a
+        # correctly-walked `../`, must still fire.
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs" / "architecture").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[config](architecture/config.md)\n", encoding="utf-8"
+        )
+        (root / "docs" / "architecture" / "config.md").write_text(
+            "# Config\n\n[nope](../../design/does-not-exist.md)\n", encoding="utf-8"
+        )
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC008"}
+        assert any("does-not-exist.md" in v.message for v in violations)
+
+    def test_dotdot_link_escaping_above_repo_root_is_refused(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::doclink_gate kind="unit"
+        # T-2704 control: a link with more `../` segments than there are
+        # directories to pop must be refused, not silently resolved to a
+        # path outside the repo root.
+        from frob.gates import doclink_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n[escape](../../../etc/passwd.md)\n", encoding="utf-8"
+        )
+
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = doclink_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC008"}
+        assert any("escapes above the repo root" in v.message for v in violations)
+
 
 class TestDocstatusGate:
     def test_missing_status_header_fires_doc009(self, tmp_path):

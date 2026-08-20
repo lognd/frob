@@ -65,6 +65,29 @@ _URL_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://|^mailto:")
 # extraction fixed.
 
 
+def _resolve_relative_link(base: PurePosixPath, target: str) -> str | None:
+    """Resolve a markdown link's relative path PART (no `#fragment`, no
+    scheme) against `base` (the linking doc's own directory) using real
+    `..`-pops-a-directory semantics -- T-2704: the prior `.replace("../",
+    "")` deleted the `../` TEXT instead of popping a segment, so every
+    valid parent-relative link (`../../design/x.md` from `docs/architecture`
+    should resolve to `design/x.md`) instead kept both segments and read
+    as broken. Returns `None` if the walk pops past the repo root (an
+    escape attempt) -- callers must treat that as unresolvable, not
+    silently accept a path outside the tree the crawl/scan is rooted at."""
+    stack: list[str] = list(base.parts)
+    for part in PurePosixPath(target).parts:
+        if part in (".", ""):
+            continue
+        if part == "..":
+            if not stack:
+                return None
+            stack.pop()
+        else:
+            stack.append(part)
+    return str(PurePosixPath(*stack)) if stack else "."
+
+
 def _doclink_config(root: Path) -> tuple[list[str], list[str], list[str]]:
     """`(include, exclude, roots)` globs for doclink, with frob.toml overrides."""
     include = ["docs/**/*.md"]
@@ -138,8 +161,13 @@ def _crawl_reachable(
         for target in targets:
             if target.startswith(("http://", "https://", "mailto:")):
                 continue
-            resolved = str(PurePosixPath(*(base / target).parts)).replace("../", "")
-            for candidate in (resolved, target.lstrip("./")):
+            resolved = _resolve_relative_link(base, target)
+            candidates = (
+                (target.lstrip("./"),)
+                if resolved is None
+                else (resolved, target.lstrip("./"))
+            )
+            for candidate in candidates:
                 if candidate in obligated and candidate not in seen:
                     linked.add(candidate)
                     queue.append(candidate)
@@ -240,6 +268,54 @@ def _doc008_violation(doc_rel: str, line: int, message: str) -> Violation:
 # -- both writes/reads are guarded by an immediately-preceding 'if resolved not in \
 # slug_cache'/'if doc_rel not in slug_cache' membership check, so the key is always \
 # present by construction; the resolver's syntactic bracket scan cannot see the guard"
+def _doc008_resolve_path_target(
+    root: Path,
+    doc_rel: str,
+    base: PurePosixPath,
+    target: str,
+    path_part: str,
+    line: int,
+    slug_cache: dict[str, Option[set[str]]],
+) -> tuple[str, set[str], Violation | None] | None:
+    """DOC008's path-half resolution (a link with a real file target, as
+    opposed to a same-file `#fragment`-only link) -- split out of
+    `_doc008_scan_doc` (T-2704) to keep that function under ARCH001's
+    length threshold after adding the `../` escape check. Returns `None`
+    when the link resolves cleanly with nothing further to check, else
+    `(resolved, slugs, violation_or_None)` for the caller's own fragment
+    check."""
+    resolved = _resolve_relative_link(base, path_part)
+    if resolved is None:
+        return (
+            "",
+            set(),
+            _doc008_violation(
+                doc_rel,
+                line,
+                f"DOC008: link target {target!r} escapes above the repo root",
+            ),
+        )
+    target_path = root / resolved
+    if not target_path.exists():
+        return (
+            resolved,
+            set(),
+            _doc008_violation(
+                doc_rel,
+                line,
+                f"DOC008: link target {target!r} does not resolve "
+                f"(no file at {resolved!r})",
+            ),
+        )
+    _, _, frag = target.partition("#")
+    if not frag or target_path.suffix != ".md":
+        return None
+    if resolved not in slug_cache:
+        slug_cache[resolved] = _doc_anchor_slugs(target_path)
+    slugs = slug_cache[resolved].or_else(lambda: Some(set())).danger_some
+    return (resolved, slugs, None)
+
+
 def _doc008_scan_doc(
     root: Path,
     doc_rel: str,
@@ -268,23 +344,15 @@ def _doc008_scan_doc(
         line = line_of(match.start())
         path_part, _, frag = target.partition("#")
         if path_part:
-            resolved = str(PurePosixPath(*(base / path_part).parts)).replace("../", "")
-            target_path = root / resolved
-            if not target_path.exists():
-                violations.append(
-                    _doc008_violation(
-                        doc_rel,
-                        line,
-                        f"DOC008: link target {target!r} does not resolve "
-                        f"(no file at {resolved!r})",
-                    )
-                )
+            outcome = _doc008_resolve_path_target(
+                root, doc_rel, base, target, path_part, line, slug_cache
+            )
+            if outcome is None:
                 continue
-            if not frag or target_path.suffix != ".md":
+            resolved, slugs, early_violation = outcome
+            if early_violation is not None:
+                violations.append(early_violation)
                 continue
-            if resolved not in slug_cache:
-                slug_cache[resolved] = _doc_anchor_slugs(target_path)
-            slugs = slug_cache[resolved].or_else(lambda: Some(set())).danger_some
         else:
             # Same-file anchor (`[text](#slug)`): resolve against this doc.
             if not frag:

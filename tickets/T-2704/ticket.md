@@ -2,7 +2,7 @@
 id: T-2704
 title: DOC008/DOC011 normalize ../ with a string replace instead of path resolution,
   breaking every valid parent-relative link (2 sites)
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -32,6 +32,11 @@ scope_changes:
   reason: existing tests for docanchor/doclink gates
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_valid_parent_relative_link_with_two_dotdots_resolves
+- tests/test_gates.py::TestDoclinkGate::test_genuinely_missing_target_still_fires_doc008_after_dotdot_fix
+- tests/test_gates.py::TestDoclinkGate::test_dotdot_link_escaping_above_repo_root_is_refused
+- tests/test_gates.py::TestDoclinkGate::test_broken_relative_link_target_fires_doc008
 designated_repro_test: null
 threat: null
 component: null
