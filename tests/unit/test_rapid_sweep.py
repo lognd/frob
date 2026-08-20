@@ -1300,6 +1300,7 @@ class TestDescribeRootDirt:
         assert "unattributed" in rendered
 
 
+# frob:ticket T-2744
 class TestCommitRegressionTicket:
     """T-1755: the filed regression ticket's `tickets.md` write must be
     committed by the sweep itself, scoped to the ledger paths only."""
@@ -2556,6 +2557,7 @@ class TestBuildRegressionBody:
 
 
 # frob:ticket T-1791
+# frob:ticket T-2744
 class TestFileRegressionTicket:
     """T-1690: attributed findings owned by a still-open ticket are not
     re-filed; everything else is filed with a full attribution trail."""
@@ -2580,6 +2582,48 @@ class TestFileRegressionTicket:
             tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
         )
         assert filed is not None
+
+    def test_commit_failure_skips_auto_dispose_and_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2744: the T-2736 incident -- if the regression ticket's
+        ledger write never lands, `_file_regression_ticket` must not
+        proceed to dispose/clear quarantine against an id that does not
+        exist on `root`. It must return `None` (no id to report as
+        filed) and quarantine must be left exactly as it was."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_commit_failure_skips_auto_dispose_and_returns_none  # noqa: E501
+        import frob.app.ticket_runner._rapid_sweep as rapid_sweep_mod
+        from frob.verify._quarantine import (
+            QuarantinedFinding,
+            load_quarantine,
+            raise_quarantine,
+        )
+
+        raise_quarantine(
+            tmp_path,
+            batch_commit_shas=("deadbeef",),
+            findings=(QuarantinedFinding(rule_id="RULE1", file="a.py", line=1),),
+        )
+
+        monkeypatch.setattr(
+            rapid_sweep_mod, "_commit_regression_ticket", lambda *a, **k: False
+        )
+        disposed_calls: list[object] = []
+        monkeypatch.setattr(
+            rapid_sweep_mod,
+            "_auto_dispose_filed_findings",
+            lambda *a, **k: disposed_calls.append(a),
+        )
+
+        filed = _file_regression_ticket(
+            tmp_path, "T-9000", "deadbeef", frozenset({("RULE1", "a.py")})
+        )
+
+        assert filed is None
+        assert disposed_calls == []
+        record = load_quarantine(tmp_path).danger_ok
+        assert record is not None
+        assert record.cleared_at is None  # still raised, not phantom-cleared
 
     def test_attributed_to_open_ticket_is_not_refiled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

@@ -109,6 +109,7 @@ def _is_unidentifiable(finding: QuarantinedFinding) -> bool:
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
+# frob:ticket T-2744
 class QuarantineError(ErrorSet):
     """Fallible outcomes of this module's raise/clear/status operations."""
 
@@ -124,6 +125,15 @@ class QuarantineError(ErrorSet):
     #: dispose path is the right tool for a well-formed finding).
     NoUnidentifiableFindings = (
         "no identity-less (empty rule_id and file) finding is present to retire"
+    )
+    #: T-2744: a `dispositions` entry disposes a finding as `"filed"`
+    #: against a ticket id that does not resolve on `root` -- the clear
+    #: must refuse rather than release the finding against a phantom
+    #: home (the T-2736 incident: quarantine was cleared citing an
+    #: auto-filed ticket that was never durably written, so nothing
+    #: tracked the released findings afterward).
+    UnresolvableFiledTicket = (
+        "a 'filed' disposition names a ticket id that does not exist on root"
     )
 
 
@@ -467,7 +477,53 @@ def _refuse_if_undisposed(
     return QuarantineError.FindingsNotDisposed
 
 
+# frob:ticket T-2744
+# frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_refuses_when_filed_ticket_does_not_resolve  # noqa: E501
+def _refuse_if_filed_ticket_unresolvable(
+    root: Path,
+    dispositions: dict[tuple[str, str, int | None], tuple[str, str]],
+) -> QuarantineError | None:
+    """T-2744: `clear_quarantine`'s own gate on every `"filed"`
+    disposition's `ref_or_reason` -- it must name a ticket id that
+    actually resolves on `root`, or the clear is refused loudly rather
+    than releasing the finding against a home nothing tracks.
+
+    This is deliberately mechanism-agnostic: whether the citing id was
+    never durably written (a failed ledger commit that a caller
+    proceeded past anyway), lives only on a worktree branch that never
+    landed, or was allocated and reported before its write completed,
+    the observable defect is identical -- `root` cannot resolve the id
+    -- so one check here closes all three at the single point every
+    clear (CLI, rapid sweep, or otherwise) must pass through, rather
+    than each caller re-deriving its own success check.
+
+    A `"dismissed"` disposition's `ref_or_reason` is a free-text human
+    reason, not a ticket id, and is never checked here."""
+    from frob.tickets import _load_one
+
+    for (rule_id, file, line), (kind, ref_or_reason) in dispositions.items():
+        if kind != "filed":
+            continue
+        loaded = _load_one(root, ref_or_reason)
+        if loaded.is_err:
+            _log.error(
+                "quarantine: clear_quarantine refused -- disposition for "
+                "(%s, %s, %s) cites ticket %s as 'filed', but it does not "
+                "resolve on %s (%s); the clear would release this finding "
+                "against a phantom home",
+                rule_id,
+                file,
+                line,
+                ref_or_reason,
+                root,
+                loaded.danger_err,
+            )
+            return QuarantineError.UnresolvableFiledTicket
+    return None
+
+
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
+# frob:ticket T-2744
 def clear_quarantine(
     root: Path,
     *,
@@ -489,7 +545,13 @@ def clear_quarantine(
     `Err(QuarantineError.NotQuarantined)` if nothing is currently raised
     -- clearing an already-clear quarantine is a caller bug, not a no-op,
     since it would otherwise silently accept a `reason`/`actor` for an
-    event that never happened."""
+    event that never happened.
+
+    T-2744: `Err(QuarantineError.UnresolvableFiledTicket)` if any
+    `"filed"` disposition names a ticket id that does not resolve on
+    `root` -- checked BEFORE any finding is disposed, so a bogus id
+    refuses the whole clear rather than releasing that finding against a
+    home nothing tracks (see `_refuse_if_filed_ticket_unresolvable`)."""
     # late import, mirrors raise_quarantine
     from frob.tickets._land_queue import file_lock
 
@@ -505,6 +567,10 @@ def clear_quarantine(
                 root,
             )
             return Err(QuarantineError.NotQuarantined)
+
+        ticket_refusal = _refuse_if_filed_ticket_unresolvable(root, dispositions)
+        if ticket_refusal is not None:
+            return Err(ticket_refusal)
 
         disposed_findings = tuple(
             _dispose_one(f, dispositions) for f in record.findings

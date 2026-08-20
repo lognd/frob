@@ -994,6 +994,57 @@ reopen the hole T-1693 closed (a real unaddressed finding still gates
 landing).
 <!-- frob:describes src/frob/verify/_quarantine.py::retire_unidentifiable_findings -->
 
+**A `"filed"` disposition's ticket id must resolve, or the clear is
+refused (T-2744).** A live incident: `.frob/quarantine.json` was
+observed cleared with `cleared_reason: auto-filed by rapid sweep as
+T-2736`, naming a ticket id that did not exist anywhere -- not on main,
+not on any worktree branch, not in the archive. Root cause, confirmed by
+reading `_file_regression_ticket`: `_commit_regression_ticket` writes the
+newly-filed regression ticket's ledger entry with a retry-then-discard
+guarantee (T-1841/T-2034) -- if every commit attempt fails (the routine
+case is a concurrent land holding root's lock), the just-written,
+never-committed `tickets/<id>/` directory is deliberately DISCARDED so
+root stays clean, and the id it was allocated under is never durably
+written anywhere. But `_commit_regression_ticket` returned `None`
+unconditionally (a deliberate "must never fail an already-succeeded
+sweep" best-effort posture, matching `_commit_rapid_debt` next to it),
+so its caller had no way to tell a genuine commit from an exhausted-
+retries discard, and proceeded to `_auto_dispose_filed_findings` /
+`clear_quarantine` citing the discarded id regardless -- releasing the
+findings from quarantine against a home that was never written.
+
+Two fixes, layered. PRIMARY: `clear_quarantine` itself now refuses
+(`Err(QuarantineError.UnresolvableFiledTicket)`) if ANY `"filed"`
+disposition's ticket id does not resolve on `root`
+(`_refuse_if_filed_ticket_unresolvable`, checked before any finding is
+disposed) -- this is the single choke point every caller (the CLI's
+`frob verify dispose --file-ticket`, the rapid sweep, or any future
+caller) passes through, so it closes the bug regardless of WHICH of the
+three candidate mechanisms produced the phantom id (a failed write the
+caller proceeded past anyway; a write that landed only on a worktree
+branch that never reached main; or an id allocated and reported before
+its write completed and lost to a race) -- the observable defect is
+identical in all three (`root` cannot resolve the id), so one check
+covers all three. `"dismissed"` dispositions are untouched: their
+`ref_or_reason` is free-text, not a ticket id. SECONDARY (defense in
+depth, and the direct fix for the T-2736 mechanism specifically):
+`_commit_regression_ticket` now returns the underlying commit-or-discard
+success bool instead of `None`, and `_file_regression_ticket` skips
+`_auto_dispose_filed_findings` entirely when it is `False`, logging at
+ERROR and leaving quarantine raised rather than even attempting a clear
+against an id it just watched get discarded.
+
+Positive controls: a sweep whose auto-file commit fails now leaves
+quarantine raised and logs why (`test_commit_failure_skips_auto_dispose_
+and_returns_none`); a sweep whose auto-file commit succeeds clears
+quarantine exactly as before, and the cited id resolves on main
+afterward (unchanged `TestFileRegressionTicket`/`TestAutoDisposeFiled
+Findings` coverage); an operator's manual `frob verify dispose
+--file-ticket` with a real ticket id is unaffected (`TestDispose`) --
+only a ticket id that does NOT resolve is newly refused.
+<!-- frob:describes src/frob/verify/_quarantine.py::_refuse_if_filed_ticket_unresolvable -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_commit_regression_ticket -->
+
 ## `frob verify` CLI (T-1697)
 
 <!-- frob:describes src/frob/app/verify_runner.py::VerifyQuarantineFindingView -->

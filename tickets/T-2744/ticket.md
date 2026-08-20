@@ -2,7 +2,7 @@
 id: T-2744
 title: Quarantine was cleared citing an auto-filed ticket that does not exist, releasing
   findings against a phantom home
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,7 @@ scope:
 - tests/unit/verify/test_quarantine.py
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +56,11 @@ scope_changes:
     gating (T-2736 phantom-ticket incident)
   actor: logan
   at: '2026-08-20'
+- op: add
+  glob: frob.lock
+  reason: frob ack on _file_regression_ticket writes frob.lock
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: record that the auto-file succeeds intermittently, which rules out an unconditional-clear
@@ -63,6 +69,9 @@ body_changes:
   at: '2026-08-20'
   old_length: 2965
   new_length: 3857
+evidence:
+- tests/unit/verify/test_quarantine.py::TestClearQuarantine::test_refuses_when_filed_ticket_does_not_resolve
+- tests/unit/test_rapid_sweep.py::TestFileRegressionTicket::test_commit_failure_skips_auto_dispose_and_returns_none
 designated_repro_test: null
 threat: null
 component: null

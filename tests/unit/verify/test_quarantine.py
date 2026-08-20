@@ -39,6 +39,24 @@ def _seed_stuck_store(tmp_path: Path, *, extra: tuple = ()) -> QuarantinedFindin
     return identity_less
 
 
+# frob:ticket T-2744
+# frob:waive WIRE001 reason="private test-seed helper (leading underscore, lives under tests/) called only by this module's own test methods -- there is no production caller to wire it to by design, the T-1592 permanent-test-helper shape docs/modules/gates.md's WIRE001/WIRE002 section documents" permanent="true"  # noqa: E501
+def _seed_real_ticket(tmp_path: Path) -> str:
+    """A minimal real ticket, seeded on `tmp_path` -- T-2744's
+    `_refuse_if_filed_ticket_unresolvable` check requires every `"filed"`
+    disposition's ticket id to actually resolve, so tests exercising the
+    normal clear-succeeds path can no longer cite a bare literal like
+    `"T-1000"` (that WAS exactly the T-2736 phantom-ticket shape this
+    ticket fixes)."""
+    from frob.tickets import Origin, TicketKind, new_ticket
+    from frob.tickets._models import TicketSpec
+
+    spec = TicketSpec(title="seed", kind=TicketKind.BUG, origin=Origin.AGENT)
+    created = new_ticket(tmp_path, spec)
+    assert created.is_ok
+    return created.danger_ok.id
+
+
 # frob:ticket T-1693
 class TestLoadQuarantine:
     # frob:ticket T-1693
@@ -88,12 +106,13 @@ class TestIsQuarantined:
         assert raise_quarantine(
             tmp_path, batch_commit_shas=("deadbeef",), findings=(finding,)
         ).is_ok
+        real_id = _seed_real_ticket(tmp_path)
         cleared = clear_quarantine(
             tmp_path,
             dispositions={
-                (finding.rule_id, finding.file, finding.line): ("filed", "T-9999")
+                (finding.rule_id, finding.file, finding.line): ("filed", real_id)
             },
-            reason="filed as T-9999",
+            reason=f"filed as {real_id}",
             actor="test",
         )
         assert cleared.is_ok
@@ -203,6 +222,7 @@ class TestRaiseQuarantine:
 
 
 # frob:ticket T-1693
+# frob:ticket T-2744
 class TestClearQuarantine:
     # frob:ticket T-1693
     def test_refuses_when_not_raised(self, tmp_path: Path) -> None:
@@ -212,6 +232,31 @@ class TestClearQuarantine:
         )
         assert result.is_err
         assert result.danger_err is QuarantineError.NotQuarantined
+
+    # frob:ticket T-2744
+    def test_refuses_when_filed_ticket_does_not_resolve(self, tmp_path: Path) -> None:
+        """T-2744: the T-2736 incident, reproduced directly at
+        `clear_quarantine`'s own boundary -- a `"filed"` disposition
+        naming a ticket id that does not exist on `root` must refuse the
+        whole clear, loudly, rather than release the finding against a
+        phantom home."""
+        # frob:tests src/frob/verify/_quarantine.py::clear_quarantine kind="unit"
+        finding = QuarantinedFinding(rule_id="TEST001", file="src/x.py", line=1)
+        assert raise_quarantine(
+            tmp_path, batch_commit_shas=("abc123",), findings=(finding,)
+        ).is_ok
+        result = clear_quarantine(
+            tmp_path,
+            dispositions={
+                (finding.rule_id, finding.file, finding.line): ("filed", "T-2736")
+            },
+            reason="auto-filed by rapid sweep as T-2736",
+            actor="test",
+        )
+        assert result.is_err
+        assert result.danger_err is QuarantineError.UnresolvableFiledTicket
+        # A refused clear must NOT have silently cleared it.
+        assert is_quarantined(tmp_path).danger_ok is True
 
     # frob:ticket T-1693
     def test_refuses_when_a_finding_is_undisposed(self, tmp_path: Path) -> None:
@@ -237,10 +282,11 @@ class TestClearQuarantine:
         assert raise_quarantine(
             tmp_path, batch_commit_shas=("abc123",), findings=(a, b)
         ).is_ok
+        real_id = _seed_real_ticket(tmp_path)
         result = clear_quarantine(
             tmp_path,
             dispositions={
-                (a.rule_id, a.file, a.line): ("filed", "T-1000"),
+                (a.rule_id, a.file, a.line): ("filed", real_id),
                 (b.rule_id, b.file, b.line): ("dismissed", "false positive"),
             },
             reason="both disposed",
@@ -252,7 +298,7 @@ class TestClearQuarantine:
         assert record.cleared_reason == "both disposed"
         by_rule = {f.rule_id: f for f in record.findings}
         assert by_rule["TEST001"].disposition == "filed"
-        assert by_rule["TEST001"].disposition_ref == "T-1000"
+        assert by_rule["TEST001"].disposition_ref == real_id
         assert by_rule["TEST002"].disposition == "dismissed"
         assert by_rule["TEST002"].disposition_reason == "false positive"
 
@@ -279,10 +325,11 @@ class TestClearQuarantine:
                 QuarantinedFinding(rule_id="TEST001", file=stored_relative, line=1),
             ),
         ).is_ok
+        real_id = _seed_real_ticket(tmp_path)
         with caplog.at_level("ERROR"):
             result = clear_quarantine(
                 tmp_path,
-                dispositions={("TEST001", absolute_given, 1): ("filed", "T-1000")},
+                dispositions={("TEST001", absolute_given, 1): ("filed", real_id)},
                 reason="tried with the wrong path shape",
                 actor="test",
             )
@@ -380,9 +427,10 @@ class TestIdentityLessFindingRecovery:
         # The identity-less record IS retired even though the overall
         # clear is refused -- confirmed by disposing the real one next
         # via the normal path, which now clears cleanly.
+        real_id = _seed_real_ticket(tmp_path)
         followup = clear_quarantine(
             tmp_path,
-            dispositions={(real.rule_id, real.file, real.line): ("filed", "T-9999")},
+            dispositions={(real.rule_id, real.file, real.line): ("filed", real_id)},
             reason="real finding filed",
             actor="test",
         )

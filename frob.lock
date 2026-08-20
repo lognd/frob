@@ -1012,10 +1012,28 @@
       "actor": "logan",
       "at": "2026-08-20",
       "facet": "body",
+      "new_digest": "cdb31b52234867975d256d06b39b505c2290ed25c8a9c7e385f97cc19b8810c4",
+      "old_digest": "e0f3f2c1fab589fd7652d13c6ff77fb3a0791707c6c41ccec441e07a9d9ff007",
+      "reason": "T-2744: added a frob:ticket tag plus skip-auto-dispose-on-commit-failure gating; no doc drift, docs/modules/tickets-verify-sweep.md already updated in the same change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
       "new_digest": "710f97048f2cbaa2f4bb7aaefa15b1fb471ca05185d0c86ad3e72d64df29b4f3",
       "old_digest": "a4eeba3bb6ee073b0ad600eab7042f5c9dd265337910115d81ba0080579a3ccf",
       "reason": "T-2747: dispatch condition switched from directory-name (_worktree_ticket_id) to structural start-transition-commit correlation (_worktree_started_ticket); scope-only/dual-correlation split unchanged",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-2744: added a frob:ticket tag plus skip-auto-dispose-on-commit-failure gating; no doc drift, docs/modules/tickets-verify-sweep.md already updated in the same change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },
     {
       "actor": "logan",
@@ -1119,7 +1137,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "e0f3f2c1fab589fd7652d13c6ff77fb3a0791707c6c41ccec441e07a9d9ff007",
+      "digest": "cdb31b52234867975d256d06b39b505c2290ed25c8a9c7e385f97cc19b8810c4",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },

@@ -2063,6 +2063,9 @@ def _single_land_attribution_label(
     return f"an unattributed source (sweep spawned by {final_id})"
 
 
+# frob:ticket T-2744
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_commit_failure_skips_auto_dispose_and_returns_none  # noqa: E501
 def _file_regression_ticket(
     root: Path,
     final_id: str,
@@ -2211,7 +2214,26 @@ def _file_regression_ticket(
             root, spec, final_id, unfiled_pairs, created.danger_err
         )
     regression_id = created.danger_ok.id
-    _commit_regression_ticket(root, regression_id, attribution_label)
+    committed = _commit_regression_ticket(root, regression_id, attribution_label)
+    if not committed:
+        # T-2744: the T-2736 incident -- `regression_id` was allocated and
+        # would otherwise be cited as the clearing reason below, but its
+        # ledger write never landed (retries exhausted, the uncommitted
+        # dir was discarded per `_discard_uncommitted_regression_ticket`).
+        # Disposing/clearing against an id that does not exist on `root`
+        # is exactly the phantom-home bug this ticket fixes -- skip it
+        # here (defense in depth on top of `clear_quarantine`'s own
+        # `UnresolvableFiledTicket` refusal, which would also catch this)
+        # and leave quarantine raised so the findings stay tracked.
+        _log.error(
+            "rapid sweep: %s: regression ticket could not be committed -- "
+            "skipping auto-dispose/clear against it; quarantine stays "
+            "raised for %d finding(s) until a human refiles and disposes "
+            "them",
+            regression_id,
+            len(unfiled_pairs),
+        )
+        return None
     _auto_dispose_filed_findings(root, unfiled_pairs, regression_id)
     return regression_id
 
@@ -2439,6 +2461,7 @@ def _commit_or_discard_ledger_write(
 # frob:ticket T-1755
 # frob:ticket T-1791
 # frob:ticket T-1841
+# frob:ticket T-2744
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commits_the_ledger_write  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_commit_failure_logs_at_error_and_does_not_raise  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestCommitRegressionTicket.test_retries_then_succeeds_on_a_transient_land_in_progress  # noqa: E501
@@ -2450,7 +2473,7 @@ def _commit_regression_ticket(
     *,
     max_attempts: int = _REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS,
     retry_delay_s: float = _REGRESSION_TICKET_COMMIT_RETRY_DELAY_S,
-) -> None:
+) -> bool:
     """T-1755: `_file_regression_ticket`'s `new_ticket(root, spec)` call
     (the whole point of the deferred sweep) writes `tickets.md` through
     `frob.tickets._new_renumber.new_ticket` DIRECTLY -- the LIBRARY
@@ -2484,23 +2507,32 @@ def _commit_regression_ticket(
     now calls `_discard_uncommitted_regression_ticket` instead of leaving
     the file behind -- T-1841's own requirement: "if the commit cannot
     succeed ... the sweep must NOT leave the file behind. Either
-    write-then-commit atomically or do not write." This function's own
-    return type stays `None` (best-effort, matching `_commit_rapid_debt`'s
-    identical "must never fail an already-succeeded sweep" posture
-    immediately below it in this module) -- a land it degraded is already
-    published either way; only whether ROOT stays clean is at stake.
+    write-then-commit atomically or do not write."
 
-    T-2034: the retry/backoff/give-up loop itself now lives in
-    the SHARED `_commit_or_discard_ledger_write` (this function just
-    supplies the message and the regression-ticket-specific discard
-    action); behavior is unchanged, this is the same retry shape as
-    before, just no longer re-derived independently of the drop path
-    below."""
+    T-2744: this function's return value now propagates
+    `_commit_or_discard_ledger_write`'s own success bool -- it USED TO
+    stay `None` unconditionally (best-effort, matching
+    `_commit_rapid_debt`'s identical "must never fail an already-
+    succeeded sweep" posture immediately below it in this module), which
+    meant `_file_regression_ticket` could not tell a genuine commit from
+    an exhausted-retries discard and proceeded to cite `regression_id` as
+    a `clear_quarantine` disposition either way -- exactly the T-2736
+    incident (a phantom ticket id named in `cleared_reason`). The write-
+    then-commit-or-discard GUARANTEE this function makes is unchanged (a
+    land it degraded is still published either way; only whether ROOT
+    stays clean was ever at stake there) -- only the caller's ability to
+    observe which branch happened is new.
+
+    T-2034: the retry/backoff/give-up loop itself lives in the SHARED
+    `_commit_or_discard_ledger_write` (this function just supplies the
+    message and the regression-ticket-specific discard action); behavior
+    is unchanged, this is the same retry shape as before, just no longer
+    re-derived independently of the drop path below."""
     message = (
         f"chore(tickets): file {regression_id} "
         f"(post-land sweep regression from {final_id})"
     )
-    _commit_or_discard_ledger_write(
+    return _commit_or_discard_ledger_write(
         root,
         regression_id,
         message,

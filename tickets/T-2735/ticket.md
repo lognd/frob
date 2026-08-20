@@ -1,7 +1,7 @@
 ---
 id: T-2735
 title: Document T-2721's git-tracked/mirrored waive-audit watermark in docs/modules/app.md
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-20'
