@@ -1,0 +1,50 @@
+---
+id: T-2700
+title: Wire import_graph_gap_disclosure into frob.cycle.graph's real DependencyGraph/find_cycles
+  output
+state: queued
+kind: feature
+origin: human
+created: '2026-08-19'
+priority: medium
+blocked_by:
+- T-2683
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/cycle/graph.py
+- docs/modules/graph.md
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+T-2683 built the self-disclosure primitive (frob.graph.callgraph.
+capability_gap_disclosure) and wired it into build_call_graph's own
+CallGraph.degraded_languages output, plus exposed frob.cycle.
+import_graph_gap_disclosure as a thin pre-bound wrapper -- but T-2683's
+own declared scope was src/frob/graph/callgraph.py, src/frob/cycle/
+__init__.py (the re-export shim), and two docs -- NOT src/frob/cycle/
+graph.py, where DependencyGraph/find_cycles's own real output type
+lives. That means frob.cycle.import_graph_gap_disclosure exists and is
+tested, but find_cycles's own return value does not yet self-disclose
+an import_graph gap the way CallGraph.degraded_languages does.
+
+Scope: wire import_graph_gap_disclosure into DependencyGraph (or
+find_cycles's own return, whichever shape fits without breaking
+existing callers) the same way T-2683 wired capability_gap_disclosure
+into CallGraph -- add a degraded_languages-shaped field, populate it
+from the languages present in find_cycles's own input, and confirm
+frob.check's cycle-consuming gate(s) actually see it (not just that
+the field exists on the model).
