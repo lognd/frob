@@ -2,7 +2,7 @@
 id: T-2251
 title: 'frob format subcommand: replace make format/lint-fix/all (ruff fix+format
   wrapper)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_misc.py
 - docs/modules/app.md
 - tests/unit/test_app_lazy_dispatch.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_app_lazy_dispatch.py
   reason: close doc/test edges surfaced by scope closure check for app.py CLI wiring
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: new bool CLI flag --select-imports-only needs registering in _apply_bool_fields'
+    _BOOL_FLAGS tuple, same as every other frob subcommand's flags
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
