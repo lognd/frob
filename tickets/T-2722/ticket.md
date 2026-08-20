@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tickets.md
 - tickets/T-1614/done-report.md
+- rapid-debt.jsonl
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,16 @@ scope_changes:
   glob: tickets/T-1614/done-report.md
   reason: 'TICK006 fix: correct T-1614''s Done report to name the post-renumber real
     ids instead of the pre-renumber draft ids'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: rapid profile debt bookkeeping auto-appended by frob ticket close
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: rapid profile debt bookkeeping auto-appended by frob ticket close
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
