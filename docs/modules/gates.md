@@ -5253,6 +5253,42 @@ guess, never a waiver insertion):
   TICK006 reports it rather than rewriting it to an id that was never
   actually filed.
 
+  **T-2690: three false-positive/blast-radius fixes**, measured against
+  a 92% false-positive rate (23/23 triaged auto-filings were bookkeeping
+  duplicates of already-completed work):
+
+  1. `ticket_id` (the landing ticket's id, threaded per every other
+     handler's own T-1548 convention) now scopes the scan to THAT
+     ticket's own Done report alone during a land, never the whole
+     active queue -- before this, a land's pre-land Tier-A pass
+     re-scanned every ticket mirrored into the worktree's ledger
+     (T-2563's fleet-wide mirror) for phantom citations regardless of
+     relevance, so a stale citation in an unrelated, already-landed
+     ticket B got processed (and could fail noisily) during ticket A's
+     land. `ticket_id=None` (bare `frob check --fix`) still scans the
+     whole queue, unchanged.
+  2. `_resolve_via_git_rename` checks git's own history (`tickets/<id>/`
+     is `git mv`-renamed by `frob ticket renumber`'s v2 path) for every
+     candidate BEFORE treating it as phantom -- a draft id that was
+     genuinely renamed to a real successor is recoverable directly from
+     git, the actual "renumber map" this repo has, since a ledger
+     snapshot (even the T-2400 merge-target-unioned one) structurally
+     cannot contain a rename's source name. This was the dominant
+     false-positive shape measured: a draft filed on a PARENT ticket's
+     worktree branch, cited from a SIBLING branch that copied the
+     citation before the parent's land renumbered it.
+  3. `_find_exact_duplicate` (the SAME check `new_ticket`'s own
+     `DuplicateTicket` refusal performs, reused rather than
+     reimplemented) is checked before every `new_ticket` attempt -- a
+     phantom already recovered by an earlier pass (the recovery
+     ticket's title is fully deterministic) has its citation rewritten
+     to the EXISTING recovery ticket instead of repeating an identical
+     failed `new_ticket` call, and leaving an identical unrewritten
+     citation, on every subsequent land. This is the "refusing to file
+     ... already has this exact title" noise that was once
+     misdiagnosed as land lock contention -- unlike contention,
+     retrying a duplicate-title refusal never clears it.
+
 T-1261 adds a second batch of four Tier-A handlers, none of which invent
 new rewrite logic -- each rule already names its own remedy verbatim in
 its finding message, so the handler just calls that existing remedy:

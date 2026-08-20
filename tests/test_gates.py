@@ -12320,6 +12320,261 @@ class TestFixEngineTierA:
         applied = fix_tick006_phantom_refile(root, queue, merge_target_ids)
         assert applied == []
 
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    # frob:tests src/frob/gates/_fix_engine.py::_resolve_via_git_rename kind="unit"
+    def test_tick006_renamed_draft_resolved_via_git_not_refiled(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2690 positive control (1/2): a draft id genuinely renamed
+        (`git mv`, what `frob ticket renumber`'s v2 path does) to a real
+        id must be resolved via git history and its citation rewritten
+        to the real successor -- NOT re-filed as a duplicate. This is
+        the dominant false-positive shape T-2690 measured (23/23 triaged
+        auto-filings were exactly this)."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+
+        # A draft gets filed, then renamed (git mv) to a real id -- the
+        # exact shape `renumber_one_v2` produces on land.
+        draft_ticket_md = (
+            "---\n"
+            "id: T-draft-cafef00d\n"
+            "title: recovered elsewhere\n"
+            "state: queued\n"
+            "kind: bug\n"
+            "origin: agent\n"
+            "created: '2026-08-01'\n"
+            "---\n"
+            "body\n"
+        )
+        (root / "tickets" / "T-draft-cafef00d").mkdir(parents=True)
+        (root / "tickets" / "T-draft-cafef00d" / "ticket.md").write_text(
+            draft_ticket_md, encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "file draft T-draft-cafef00d")
+        _git("mv", "tickets/T-draft-cafef00d", "tickets/T-9999")
+        # `git mv` alone leaves the renamed file's own `id:` frontmatter
+        # field stale (real `renumber_one_v2` rewrites it too) -- fix it
+        # up so `load_all` at the end of this test can load T-9999 as a
+        # valid ticket, matching what a real renumber leaves behind.
+        (root / "tickets" / "T-9999" / "ticket.md").write_text(
+            draft_ticket_md.replace("T-draft-cafef00d", "T-9999"), encoding="utf-8"
+        )
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "renumber T-draft-cafef00d -> T-9999")
+
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-cafef00d (recovery "
+                "ticket) as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite the now-renamed draft")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        applied = fix_tick006_phantom_refile(root, queue)
+
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+        assert "resolved via git rename" in applied[0].detail
+        assert "T-9999" in applied[0].detail
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        # No new ticket was filed -- T-0001 is still the only ticket
+        # `load_all` (the active ledger) knows about besides T-9999 was
+        # never part of the active ledger to begin with (it lives only
+        # as a renamed directory this fixture built by hand), so the
+        # real assertion is narrower and load-bearing: no THIRD id
+        # (a spurious "Recovered from ..." refile) exists.
+        assert "T-draft-cafef00d" not in reloaded.danger_ok
+        assert "T-9999" in reloaded.danger_ok["T-0001"].body
+        assert "T-draft-cafef00d" not in reloaded.danger_ok["T-0001"].body
+
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2690 negative control: a `tid` with NO git rename record and
+        NO existing recovery ticket must still be refiled exactly as
+        before -- proves neither new check (git-rename resolution,
+        duplicate-recovery reuse) made the detector blind to a real
+        loss, only to the two false-positive shapes T-2690 measured."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-105af0be (genuinely lost "
+                "work, never merged anywhere) as a follow-up.\n"
+            ),
+        )
+        write_result = write_ticket(root, claiming)
+        assert write_result.is_ok
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "cite a genuinely never-existed draft")
+
+        queue = TicketQueue(tickets={"T-0001": claiming})
+        applied = fix_tick006_phantom_refile(root, queue)
+
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+        assert "refiled" in applied[0].detail
+        assert "resolved via git rename" not in applied[0].detail
+        assert "already recovered" not in applied[0].detail
+
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_already_recovered_citation_rewritten_not_refiled_again(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2690 positive control (2/2): a phantom whose recovery ticket
+        already exists (an earlier pass filed it, but never rewrote THIS
+        citing ticket's own body -- e.g. because the citing ticket had
+        already landed/closed by the time the first recovery happened)
+        must have its citation rewritten to the EXISTING recovery ticket,
+        never attempt a second `new_ticket` call -- this is the exact
+        "refusing to file ... already has this exact title" noise a
+        coordinator once misdiagnosed as land contention."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        claiming = Ticket(
+            id="T-0001",
+            title="claiming ticket",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-abc12345 (already "
+                "recovered elsewhere) as a follow-up.\n"
+            ),
+        )
+        # The recovery ticket an EARLIER pass already filed for this
+        # exact phantom -- same deterministic title
+        # `_tick006_refile_ticket_spec` would build.
+        recovery = Ticket(
+            id="T-0002",
+            title=(
+                "Recovered from T-0001's phantom TICK006 citation of "
+                "T-draft-abc12345"
+            ),
+            state=TicketState.QUEUED,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="Auto-filed by an earlier pass.",
+        )
+        write_ticket(root, claiming)
+        write_ticket(root, recovery)
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "citing ticket plus its own already-filed recovery")
+
+        queue = TicketQueue(tickets={"T-0001": claiming, "T-0002": recovery})
+        applied = fix_tick006_phantom_refile(root, queue)
+
+        assert len(applied) == 1
+        assert applied[0].rule == "TICK006"
+        assert "already recovered" in applied[0].detail
+        assert "T-0002" in applied[0].detail
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        # No THIRD ticket was filed -- still exactly T-0001 and T-0002.
+        assert set(reloaded.danger_ok) == {"T-0001", "T-0002"}
+        assert "T-0002" in reloaded.danger_ok["T-0001"].body
+        assert "T-draft-abc12345" not in reloaded.danger_ok["T-0001"].body
+
+    # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    def test_tick006_ticket_id_scopes_to_landing_ticket_only(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2690 positive control: when `ticket_id` names the ticket
+        actually landing, an UNRELATED ticket's own phantom citation
+        (T-0002's, not T-0001's -- the one this land has nothing to do
+        with) must be left completely untouched -- proves a land no
+        longer processes, and cannot be blocked or spammed by, another
+        ticket's stale citation. `ticket_id=None` (the bare `frob check
+        --fix` default) still processes the whole queue, unchanged."""
+        from frob.gates._fix_engine import fix_tick006_phantom_refile
+        from frob.tickets import Origin, Ticket, TicketKind, TicketQueue, TicketState
+        from frob.tickets._store import write_ticket
+
+        root, _git = self._tick006_repo(tmp_path)
+        landing = Ticket(
+            id="T-0001",
+            title="the ticket actually landing",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body="## Done report\n\nNo phantom citation here at all.\n",
+        )
+        unrelated = Ticket(
+            id="T-0002",
+            title="an unrelated ticket with its own phantom",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date.today(),
+            body=(
+                "## Done report\n\nFiled T-draft-face0001 as a "
+                "follow-up.\n"
+            ),
+        )
+        write_ticket(root, landing)
+        write_ticket(root, unrelated)
+        _git("add", "-A")
+        _git("commit", "-q", "-m", "two tickets, only one with a phantom citation")
+
+        queue = TicketQueue(tickets={"T-0001": landing, "T-0002": unrelated})
+
+        # Scoped to the landing ticket (T-0001): T-0002's own phantom
+        # citation must be left alone entirely -- no filing, no error,
+        # no touch.
+        scoped_applied = fix_tick006_phantom_refile(root, queue, ticket_id="T-0001")
+        assert scoped_applied == []
+
+        from frob.tickets._store import load_all
+
+        reloaded = load_all(root)
+        assert reloaded.is_ok
+        assert "T-draft-face0001" in reloaded.danger_ok["T-0002"].body
+        assert set(reloaded.danger_ok) == {"T-0001", "T-0002"}
+
+        # Unscoped (ticket_id=None, the bare `frob check --fix` shape)
+        # still processes the whole queue, unchanged from before T-2690.
+        unscoped_applied = fix_tick006_phantom_refile(root, queue)
+        assert len(unscoped_applied) == 1
+        assert unscoped_applied[0].rule == "TICK006"
+
     # -- SYS111 capability-ratchet lock sync (T-2001) ----------------------
 
     def _init_git_repo(self, root: Path) -> None:

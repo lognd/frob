@@ -2,7 +2,7 @@
 id: T-2690
 title: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal
   blocks unrelated lands
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -42,6 +42,11 @@ scope_changes:
   reason: documenting the fix under the existing TICK006 Tier-A section
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_already_recovered_citation_rewritten_not_refiled_again
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_ticket_id_scopes_to_landing_ticket_only
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_genuinely_lost_draft_still_caught_no_rename_no_duplicate
 designated_repro_test: null
 threat: null
 component: null
