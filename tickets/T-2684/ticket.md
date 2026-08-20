@@ -2,7 +2,7 @@
 id: T-2684
 title: 'gates: QueueUnavailable manufactures an empty-rule-id finding against the
   retired tickets.md path'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,10 +16,21 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/check/_python.py
+- src/frob/tickets/_land_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_land_verify.py
+  reason: T-2684's fix adds a real code=QUEUE001 to the QueueUnavailable sentinel,
+    but T-1549's own reverify-side sentinel exclusion in _land_verify.py keys on an
+    EMPTY rule id (not on file==tickets.md) -- adding a real code would silently un-exclude
+    the sentinel and reintroduce the exact ClaimDivergence-blocks-land bug T-1549
+    fixed unless the exclusion is widened to also recognize QUEUE001 by code
+  actor: logan
+  at: '2026-08-19'
 body_changes:
 - mode: set
   reason: 'correct a fabricated symbol citation: frob.app._check_chunking._run_gate_chunks_stamping_progress
