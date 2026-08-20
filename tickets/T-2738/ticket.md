@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b864a1074d3e74064cd98a0e3322b27064cedbf9
 ---
 ## Measured, 2026-08-20
 
