@@ -2,7 +2,7 @@
 id: T-2757
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2741):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC011)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-verify-sweep.md
+- tests/unit/gates/test_doc011.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/gates/test_doc011.py
+  reason: add T-2757 regression cases to the existing DOC011 test file (a bare-vs-code-span
+    ticket-id-mention shape) rather than fixing prose with no verifying evidence
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
