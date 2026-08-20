@@ -76,7 +76,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9681080a9bc6dbadbb00f3f5131537517d0da780
 ---
 Audit every frob:waive directive in the repository and confirm each is a genuine, still-necessary exception rather than a cop-out.
 
