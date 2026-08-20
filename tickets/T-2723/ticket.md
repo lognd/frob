@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_gate_cache.py
 - tests/test_gate_cache.py
+- docs/modules/serve.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,16 @@ scope_changes:
 - op: add
   glob: tests/test_gate_cache.py
   reason: narrow to the cache-key module fixing T-2723 and its test file
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/serve.md
+  reason: doc targets for symbols this ticket edits
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc targets for symbols this ticket edits
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
