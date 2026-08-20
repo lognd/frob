@@ -2,7 +2,7 @@
 id: T-2721
 title: waive-audit progress is gitignored per-checkout, so an agent's audit pass is
   destroyed with its worktree
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
