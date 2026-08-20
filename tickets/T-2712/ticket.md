@@ -1,7 +1,7 @@
 ---
 id: T-2712
 title: Re-triage 20 newly-unwaived PII010/011/012 findings after T-2696's symref population
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
