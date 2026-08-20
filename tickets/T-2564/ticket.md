@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2e542f83861b7b4ea148bebdd8b69a7fd0d374b8
 ---
 OBSERVED 2026-08-18 by the agent landing T-2539, reported rather than
 worked around.
