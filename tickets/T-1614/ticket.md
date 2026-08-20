@@ -13,8 +13,10 @@ blocked_by:
 parent: T-1609
 tier: ticket
 sprint: null
-runs_last: true
+runs_last: false
 milestone: 1.0.0
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_lifecycle.py
 scope_breadth_ack: true
@@ -63,8 +65,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: null
-runs_last_parallel_safe: false
-runs_last_parallel_safe_reason: null
 ---
 Audit every frob:waive directive in the repository and confirm each is a genuine, still-necessary exception rather than a cop-out.
 
