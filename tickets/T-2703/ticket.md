@@ -2,7 +2,7 @@
 id: T-2703
 title: DOC006 scans inline code spans, reading C++ lambda captures as TOML section
   keys (72 false positives downstream)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docptr.py
 - tests/test_docptr_gate.py
+- docs/modules/vet.md
+- tickets/T-2573/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,16 @@ scope_changes:
 - op: add
   glob: tests/test_docptr_gate.py
   reason: DOC006 test file
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/vet.md
+  reason: DOC006 finding newly surfaced by T-2703 prose-scan fix, needs frob:waive
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tickets/T-2573/ticket.md
+  reason: DOC006 finding newly surfaced by T-2703 prose-scan fix, needs frob:waive
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
