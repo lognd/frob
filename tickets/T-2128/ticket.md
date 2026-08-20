@@ -2,7 +2,7 @@
 id: T-2128
 title: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity
   while every other SCOPE002 against this doc is a warning
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-11'

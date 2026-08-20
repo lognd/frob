@@ -2,7 +2,7 @@
 id: T-2311
 title: 'DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent
   contended family)'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-17'
@@ -11,13 +11,23 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-landing.md
 - docs/modules/tickets-lifecycle.md
 - docs/modules/tickets-verify-sweep.md
+evidence_scope:
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Symbol::test_real_symbol_passes
+- tests/test_docptr_gate.py::TestDoc006DocAnchor::test_real_anchor_passes
 designated_repro_test: null
 threat: null
 component: null

@@ -21,6 +21,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 
 - T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
 - T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
+- T-2128: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity while every other SCOPE002 against this doc is a warning
 - T-2134: tickets.md monofile looks stale/orphaned since the v2 sharded-ticket migration -- investigate and remove or document
 - T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
 - T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
