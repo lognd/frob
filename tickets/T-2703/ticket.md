@@ -54,7 +54,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f23afa9a448f7ca4374afdc16dc86da7a1895440
 ---
 Reported by a downstream consumer repo (aprog-public) running frob 0.530.0
 on 2026-08-20. 72 of that repo's 87 DOC errors are this one false positive.
