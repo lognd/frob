@@ -14,10 +14,28 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_fix_engine.py
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: 'TICK006 Tier-A phantom-citation recovery lives entirely in _fix_engine.py:
+    scope-narrow to ticket_id (already threaded per T-1548), resolve via git rename
+    before filing, dedupe against an existing recovery ticket before re-filing'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'TICK006 Tier-A phantom-citation recovery lives entirely in _fix_engine.py:
+    scope-narrow to ticket_id (already threaded per T-1548), resolve via git rename
+    before filing, dedupe against an existing recovery ticket before re-filing'
+  actor: logan
+  at: '2026-08-19'
 designated_repro_test: null
 threat: null
 component: null
