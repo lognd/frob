@@ -40,8 +40,7 @@ def _init_git_repo(tmp_path: Path) -> None:
     body)."""
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True)
-    # frob:secret-fake reason="fixture git identity for a scratch tmp_path repo, not a \
-    # real person"
+    # frob:secret-fake reason="fixture git identity for a scratch tmp_path repo, not a real person"  # noqa: E501
     subprocess.run(["git", "config", "user.email", "a@b.c"], cwd=tmp_path, check=True)
     subprocess.run(["git", "config", "user.name", "a"], cwd=tmp_path, check=True)
 

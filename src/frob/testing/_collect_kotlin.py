@@ -238,6 +238,7 @@ def collect_kotlin_tests(root: Path) -> Result[CollectedTests, TestingError]:
     node_ids: set[str] = set()
     for report_dir in report_dirs:
         project_dir = report_dir.parents[2]  # build/test-results/test -> project root
+        # frob:waive PERF004 reason="report_dir.glob is one Kotlin module's own JUnit XML report files (a handful per module, not repo-scale); sort is required for deterministic node-id ordering, not a hot-path re-sort"  # noqa: E501
         for xml_path in sorted(report_dir.glob("TEST-*.xml")):
             for classname, name in _parse_junit_xml(xml_path):
                 node_ids.add(_kotlin_node_id(root, project_dir, classname, name))

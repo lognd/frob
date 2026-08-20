@@ -35,10 +35,18 @@ scope_changes:
   at: '2026-08-05'
 evidence:
 - tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
-- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_still_rebuilds_natives_first
+- tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
 - tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
 designated_repro_test: null
 evidence_changes:
+- old_node: tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_still_rebuilds_natives_first
+  new_node: tests/test_coverage.py::TestCoverageTargetNativesGuard::test_coverage_fast_incremental_branch_restores_and_verifies_natives
+  reason: 'T-2743 sweep: T-2240 deleted the Makefile test class this cited; the
+    successor asserts the identical claim (coverage-fast''s incremental branch
+    restores/verifies natives before pytest runs) against the native coverage-fast
+    entrypoint directly.'
+  actor: logan
+  at: '2026-08-20'
 - old_node: tests/unit/test_makefile_coverage.py::TestCoverageXmlIgnoreErrors::test_coverage_xml_invocations_pass_ignore_errors
   new_node: tests/test_coverage.py::TestNativeCoverageRefresh::test_full_run_when_no_stamp_exists
   reason: 'T-2256: T-2240 retired the Makefile-text-slicing coverage tests. Shared

@@ -6,9 +6,9 @@
       "ticket": "T-1628"
     },
     "cli::env.read": {
-      "accepted_count": 3,
-      "reason": "T-2407 drift sweep: measured cumulative site-count growth from this drive's many already-authorized lands (T-2390 series schema-gate children each declared into gates' via-list, T-2358's capability split, process/_reap.py-adjacent work, etc.) -- every contributing file is already a declared via-source for this (node, capability) pair, so this is accumulated legitimate growth within an existing authorization, not a newly undeclared file (SYS100 fires separately for that and is handled on its own). Bumping the ceiling to the current measured count rather than re-justifying each site individually.",
-      "ticket": "T-2407"
+      "accepted_count": 11,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "cli::eval": {
       "accepted_count": 1,
@@ -21,9 +21,9 @@
       "ticket": "T-1628"
     },
     "cli::fs.read": {
-      "accepted_count": 16,
-      "reason": "T-2407 drift sweep: measured cumulative site-count growth from this drive's many already-authorized lands (T-2390 series schema-gate children each declared into gates' via-list, T-2358's capability split, process/_reap.py-adjacent work, etc.) -- every contributing file is already a declared via-source for this (node, capability) pair, so this is accumulated legitimate growth within an existing authorization, not a newly undeclared file (SYS100 fires separately for that and is handled on its own). Bumping the ceiling to the current measured count rather than re-justifying each site individually.",
-      "ticket": "T-2407"
+      "accepted_count": 18,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "cli::fs.write": {
       "accepted_count": 19,
@@ -41,9 +41,9 @@
       "ticket": "T-1628"
     },
     "core::env.read": {
-      "accepted_count": 2,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 3,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "core::env.write": {
       "accepted_count": 1,
@@ -61,9 +61,9 @@
       "ticket": "T-1628"
     },
     "core::fs.read": {
-      "accepted_count": 33,
-      "reason": "T-2465: src/frob/release/_fragments.py's changelog.d/*.md fragment reads (Path.exists/Path.read_text) are a genuine new fs.read site, now declared in design/frob.strata's core node via-list -- ceiling bumped to match the newly-authorized site, same posture as the T-2453/T-2407 bumps in this same file.",
-      "ticket": "T-2465"
+      "accepted_count": 34,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "core::fs.write": {
       "accepted_count": 25,
@@ -96,9 +96,9 @@
       "ticket": "T-2460"
     },
     "graphlang::env.read": {
-      "accepted_count": 1,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 2,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "graphlang::eval": {
       "accepted_count": 2,
@@ -106,9 +106,9 @@
       "ticket": "T-1628"
     },
     "graphlang::fs.read": {
-      "accepted_count": 7,
-      "reason": "T-1977: this ratchet was built and unit-tested by T-1628 but never wired into a live gate path until now -- the previous accepted_count was T-1628's own initial measurement, never re-baselined across the lands that landed in between (the check could not have caught them, since nothing called it). Re-measured at T-1977 wiring time via capability_via_site_counts against the current design/frob.strata + src/frob tree; this is the FIRST live enforcement point, so this is the equivalent of T-1628's own 'initial baseline' act, not a fresh justification for any individual grant.",
-      "ticket": "T-1977"
+      "accepted_count": 8,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "graphlang::fs.write": {
       "accepted_count": 6,
@@ -156,9 +156,9 @@
       "ticket": "T-1628"
     },
     "testsuite::env.read": {
-      "accepted_count": 5,
-      "reason": "T-2340: this ticket's own deliberate capability grant for tests/unit/verify/test_watermark.py (os.environ read in a test-fixture git-repo helper, SELFAUDIT001-flagged undeclared effect) adds one via-list site",
-      "ticket": "T-2340"
+      "accepted_count": 7,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "testsuite::eval": {
       "accepted_count": 15,
@@ -166,9 +166,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 194,
-      "reason": "T-2666: restores exec's per-file via-list on testsuite after T-2503 collapsed it to an ambient (via-less) grant, which collided with T-2224's SYS107 fail-closed policy for exec on a large node (ERROR, unconditional). Count is a FRESH scan (extract_effects over the real testsuite code binding at this ticket's investigation time), not the pre-T-2503 188-site list carried forward stale -- new exec-using test files were added between T-2488 and T-2503/T-2666.",
-      "ticket": "T-2666"
+      "accepted_count": 195,
+      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 194 to 195 site(s) (fix_sys111_capability_ratchet_sync)",
+      "ticket": "T-2001"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,
@@ -236,14 +236,14 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::fs.read": {
-      "accepted_count": 22,
-      "reason": "T-2001 auto-baseline: this land's own diff grew fs.read on tickets_ledger from 21 to 22 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 23,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 18,
-      "reason": "T-2407 drift sweep: measured cumulative site-count growth from this drive's many already-authorized lands (T-2390 series schema-gate children each declared into gates' via-list, T-2358's capability split, process/_reap.py-adjacent work, etc.) -- every contributing file is already a declared via-source for this (node, capability) pair, so this is accumulated legitimate growth within an existing authorization, not a newly undeclared file (SYS100 fires separately for that and is handled on its own). Bumping the ceiling to the current measured count rather than re-justifying each site individually.",
-      "ticket": "T-2407"
+      "accepted_count": 19,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     },
     "verify::exec": {
       "accepted_count": 2,
@@ -289,6 +289,16 @@
       "accepted_count": 1,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
+    },
+    "gates::exec": {
+      "accepted_count": 1,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
+    },
+    "testsuite::env.write": {
+      "accepted_count": 1,
+      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
+      "ticket": "T-2743"
     }
   },
   "generated_by": "T-1628",

@@ -621,6 +621,7 @@ def _matching_close_paren(text: bytes, open_idx: int) -> int | None:
         ch = text[idx : idx + 1]
         if ch in (b'"', b"'"):
             quote = ch
+            # frob:waive PERF003 reason="single triple-quote byte comparison inside an outer while-loop; the nested while-loop below (string-content skip) is unrelated to this == and does not bound-var-match it -- PERF003 has a documented while-loop fallback gap (any == anywhere in body counted, no bound-var check possible for while)"  # noqa: E501
             triple = text[idx : idx + 3] == quote * 3
             qlen = 3 if triple else 1
             idx += qlen
@@ -659,6 +660,7 @@ def _top_level_arg_strings(text: bytes, args_start: int, args_end: int) -> list[
         ch = text[idx : idx + 1]
         if ch in (b'"', b"'"):
             quote = ch
+            # frob:waive PERF003 reason="single triple-quote byte comparison inside an outer while-loop; the nested while-loop below (string-content skip) is unrelated to this == and does not bound-var-match it -- PERF003 has a documented while-loop fallback gap (any == anywhere in body counted, no bound-var check possible for while)"  # noqa: E501
             triple = text[idx : idx + 3] == quote * 3
             qlen = 3 if triple else 1
             idx += qlen

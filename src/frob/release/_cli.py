@@ -18,6 +18,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from frob.render import Renderer
+
 
 # frob:ticket T-2242
 # frob:doc docs/modules/release.md#frob-release-publish-t-2242
@@ -57,6 +59,7 @@ def add_release_publish_parser(sub: argparse._SubParsersAction) -> None:
 # frob:doc docs/modules/release.md#frob-release-publish-t-2242
 # frob:tests tests/test_release.py::TestRunReleasePublishCommand.test_dry_run_prints_the_plan_and_exits_0  # noqa: E501
 # frob:tests tests/test_release.py::TestRunReleasePublishCommand.test_publish_failure_exits_nonzero  # noqa: E501
+# frob:waive ARCH103 reason="T-0977: CLI entrypoint whose one job is orchestration -- resolve the root, invoke publish(), and render the outcome (error path vs dry-run vs real-run); the two decision points ARE that dispatch, matching every other CLI runner already waived under T-0977 (see app/*_runner.py)"  # noqa: E501
 def run_release_publish_command(args: argparse.Namespace) -> int:
     """Execute a parsed `frob release publish [--dry-run]` invocation and
     print the disclosed report; returns the process exit code (0 success,
@@ -73,15 +76,16 @@ def run_release_publish_command(args: argparse.Namespace) -> int:
 
     report = result.danger_ok
     plan = report.plan
+    renderer = Renderer.for_stream(sys.stdout)
     if report.dry_run:
-        print(
+        renderer.line(
             f"release publish --dry-run: would bump {plan.current_version} -> "
             f"{plan.new_version}"
         )
-        print(f"  would commit: {', '.join(plan.files_to_commit)}")
-        print("  would push, build, and publish")
+        renderer.line(f"  would commit: {', '.join(plan.files_to_commit)}")
+        renderer.line("  would push, build, and publish")
     else:
-        print(
+        renderer.line(
             f"release publish: {plan.current_version} -> {plan.new_version}, "
             f"steps: {', '.join(report.executed_steps)}"
         )

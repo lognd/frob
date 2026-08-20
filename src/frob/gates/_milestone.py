@@ -139,6 +139,7 @@ def _mile001_blocked_by_later_milestone(
         t_milestone, _t_source = effective_milestone(queue, t, root)
         if t_milestone is None:
             continue
+        # frob:waive PERF004 reason="t.blocked_by is a single ticket's own blocked-by set, bounded by how many other tickets one ticket names (tens at most, never repo-scale); re-sorting it is required for deterministic MILE001 output ordering, not a hot-path re-sort"  # noqa: E501
         for blocker_id in sorted(t.blocked_by):
             blocker = queue.tickets.get(blocker_id)
             if blocker is None or blocker.state in _TERMINAL_STATES:
@@ -237,6 +238,7 @@ def _mile002_descendant_later_milestone(
         if ancestor_milestone is None:
             continue
         descendants = _descendants_of(ancestor.id, children_of)
+        # frob:waive PERF004 reason="descendants is one ancestor ticket's own child subtree, bounded by ticket-tree fanout (tens at most); re-sorting is required for deterministic output ordering, not a hot-path re-sort"  # noqa: E501
         for descendant in sorted(descendants, key=lambda t: t.id):
             if descendant.state in _TERMINAL_STATES:
                 continue
@@ -356,6 +358,7 @@ def _mile004_unordered_runs_last(
     groups = _group_runs_last_by_milestone(root, queue)
     violations: list[Violation] = []
     for milestone, tickets in groups.items():
+        # frob:waive PERF004 reason="tickets is one milestone's own runs-last group, bounded by how many tickets share a milestone (small); resort is required for deterministic pairwise-comparison ordering below, not a hot-path re-sort"  # noqa: E501
         ordered_tickets = sorted(tickets, key=lambda t: t.id)
         for i, a in enumerate(ordered_tickets):
             for b in ordered_tickets[i + 1 :]:

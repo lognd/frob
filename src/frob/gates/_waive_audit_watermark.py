@@ -280,11 +280,11 @@ def _mirror_watermark_to_primary(root: Path, message: str) -> None:
 
 # frob:doc docs/modules/app.md#waive-audit-t-2467
 # frob:ticket T-2721
-# frob:waive AFFECT001 follow_up="T-2735" reason="docs/modules/app.md was \
-# held by a LIVE cross-worktree lease (T-2694) for T-2721's entire duration, so this \
-# ticket could not touch it -- filed T-2735 to describe the new git-tracked/ \
-# mirrored watermark behaviour there once that lease frees, rather than force a \
-# same-file edit into a colliding scope lease"
+# frob:waive AFFECT001 follow_up="T-2735" reason="docs/modules/app.md was held by a \
+# LIVE cross-worktree lease (T-2694) for T-2721's entire duration, so this ticket \
+# could not touch it -- filed T-2735 to describe the new git-tracked/ mirrored \
+# watermark behaviour there once that lease frees, rather than force a same-file edit \
+# into a colliding scope lease"
 # frob:tests \
 # tests/unit/test_waive_audit_watermark.py::TestSaveWatermark.test_round_trips_through_\
 # load kind="unit"

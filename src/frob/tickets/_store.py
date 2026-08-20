@@ -1357,6 +1357,7 @@ def _read_index_cache(index_path: Path, paths: list[Path]) -> dict[str, Ticket] 
 
 
 # frob:raises BaseException
+# frob:waive ARCH103 reason="T-0977: crash-safe write primitive mirroring the already-waived atomic_write -- build the payload, temp-file-then-replace, log-and-degrade on OSError; the two decision points ARE the vanished-path skip and the crash-safety try/except, not incidental complexity to extract"  # noqa: E501
 def _write_index_cache(
     index_path: Path, paths: list[Path], tickets: dict[str, Ticket]
 ) -> None:

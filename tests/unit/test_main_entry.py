@@ -349,16 +349,13 @@ class TestGroupedHelpFormatter:
             "verb groups (each also usable standalone):",
             "also available directly:",
         ):
-            line = next(
-                ln for ln in help_text.splitlines() if header in ln
+            lines = help_text.splitlines()
+            header_idx, line = next(
+                (i, ln) for i, ln in enumerate(lines) if header in ln
             )
             header_indent = len(line) - len(line.lstrip(" "))
             entry_line = next(
-                ln
-                for ln in help_text.splitlines()[
-                    help_text.splitlines().index(line) + 1 :
-                ]
-                if ln.strip()
+                ln for ln in lines[header_idx + 1 :] if ln.strip()
             )
             entry_indent = len(entry_line) - len(entry_line.lstrip(" "))
             assert header_indent < entry_indent, (

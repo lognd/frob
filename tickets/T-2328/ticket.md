@@ -72,7 +72,7 @@ designated_repro_test: null
 attachments:
 - path: T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md
   caption: second live reproduction (T-2329's own land) + root-cause narrowing
-  sha256: 4aa18accafecb3a575c5c162b99a3c736c516c9c9b359db67b51f58e420d90d1
+  sha256: e40acecf7b55bdb7a3d26728a957eb6e1f7dcab1a73b45e03511fefef0c8c689
 - path: T-2328/attachments/02-third-reproduction-t-2323-confirmed-workaround-pre-commit-the-file-yourself-before-land.md
   caption: 'third reproduction (T-2323) + confirmed workaround: pre-commit the file
     yourself before land'

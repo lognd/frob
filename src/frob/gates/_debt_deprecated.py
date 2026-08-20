@@ -722,6 +722,7 @@ def _references_from_index(symbol: str, index: _DeprecatedRefIndex) -> frozenset
 
     alias_locals_by_file: dict[str, set[str]] = {}
     for file, aliases in index.file_aliases.items():
+        # frob:waive PERF003 reason="single-pass comprehension over one file's own small alias dict (typically 0-1 entries), not an O(n*m) equality join between two collections; the outer loop's bound var (file) never appears in the inner == at all -- PERF003's relaxed lexical scan false-positives on any comprehension following an unrelated outer loop"  # noqa: E501
         locals_for_symbol = {local for local, real in aliases.items() if real == symbol}
         if locals_for_symbol:
             importing_files.add(file)

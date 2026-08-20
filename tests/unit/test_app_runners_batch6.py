@@ -527,11 +527,12 @@ class TestPerfRunner:
 
 
 # frob:ticket T-2486
-# frob:waive WIRE001 reason="pytest fixture -- consumed via dependency injection \
-# (declared as a test method parameter), not a direct call this repo's static \
-# call-graph resolver can see; four TestJsonStdoutStructuralGuard tests in this same \
-# file use it, plus T-2492's tests/unit/test_app_runners_json_guard_t2492.py via a \
-# direct cross-module import of this same fixture"
+# frob:waive WIRE001 follow_up="T-2753" reason="pytest fixture -- consumed \
+# via dependency injection (declared as a test method parameter), not a direct call \
+# this repo's static call-graph resolver can see; four TestJsonStdoutStructuralGuard \
+# tests in this same file use it, plus T-2492's \
+# tests/unit/test_app_runners_json_guard_t2492.py via a direct cross-module import of \
+# this same fixture"
 @pytest.fixture
 def _real_console_handlers():
     """Install real stdout/stderr `StreamHandler`s on the root logger for

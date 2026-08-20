@@ -440,6 +440,40 @@ docstring documents for TICK001 -- MILE003 finding zero is therefore
 never confusable with "the queue could not be read"; that failure mode
 produces no gate report whatsoever, not a clean one.
 
+### MILE004 (T-2579 M4b)
+
+MILE004 (ERROR, `frob.gates._milestone.milestone_gate`) flags every PAIR
+of OPEN `runs_last` tickets that share one EFFECTIVE milestone
+(`frob.tickets._doable.effective_milestone`) whose relative order is
+AMBIGUOUS. Two `runs_last` tickets are allowed to coexist as
+dispatchable candidates at all because of the pre-existing T-1613
+sibling carve-out (`frob.tickets._doable._other_open_tickets`: fellow
+runs-last tickets never count as "open" against each other) -- MILE004
+does not touch that carve-out, it only detects when the coexistence it
+allows needed an explicit ordering decision that was never made
+(concrete motivating instance: T-1614 auditing every `frob:waive` while
+a sibling runs-last ticket in the same milestone retargets waivers
+underneath it).
+
+A pair is ambiguous unless one of two escapes applies:
+
+- a real `blocked_by` edge exists between the two tickets, in either
+  direction; or
+- BOTH tickets independently declare `runs_last_parallel_safe=True` --
+  a one-sided declaration is not a decision (T-2579's own body: "do not
+  relitigate").
+
+A `runs_last` ticket with no resolvable effective milestone is excluded
+from MILE004's candidate pool entirely (nothing to share a milestone
+WITH) -- that ticket's own lack of a milestone is MILE003's concern, not
+this one's. A terminal (done/dropped) ticket on either side of a pair
+never contributes a violation, the same "already resolved, not a live
+ambiguity" reasoning MILE001/MILE002 apply to a terminal blocker/
+descendant.
+
+MILE004 is registered in `_KNOWN_GATE_RULES` (`frob.gates._waive`) like
+every other rule, so `frob:waive MILE004 reason="..."` binds normally.
+
 ### Sprints (T-0715)
 
 `Ticket.sprint` is a free-form commitment label (`"2026-W30"`,

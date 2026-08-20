@@ -2,7 +2,7 @@
 id: T-2743
 title: Repo-wide pre-existing debt surfaced by T-2713/T-2715's deferred-verification
   repair (from T-2716 re-triage)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

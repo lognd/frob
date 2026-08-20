@@ -41,8 +41,7 @@ class DependencyGraph:
     # same file (graph.degraded_languages, a few lines below) -- a @property is \
     # accessed WITHOUT call-parens by design, which is exactly the shape WIRE001's \
     # syntactic short(...) scan cannot see; genuinely wired, not dead, proven by \
-    # tests/test_graph.py::TestDependencyGraphDegradedLanguages" \
-    # follow_up="T-2746"
+    # tests/test_graph.py::TestDependencyGraphDegradedLanguages" follow_up="T-2746"
     @property
     def degraded_languages(self) -> tuple[str, ...]:
         """T-2700: `CallGraph.degraded_languages`'s (T-2683) analogue for

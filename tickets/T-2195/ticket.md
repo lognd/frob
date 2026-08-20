@@ -12,6 +12,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_nodes.py
 - tests/test_lang.py
@@ -19,6 +22,8 @@ scope:
 - tests/unit/test_lang_primitives.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/graph.md
@@ -52,7 +57,7 @@ attachments:
 - path: T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
   caption: independently confirmed frob cycle vacuous on src-layout; widened acceptance
     criteria and fix-guidance (no src/ lexical special-case)
-  sha256: cb8f524a05591cd2b69401bdf42a00cafa2a5a6be873b0678ea2d05da318c51a
+  sha256: 67a97f6b18ee8dba2b34fe2fb9d414f21a5de1707242258ec818ef22d70eac16
 - path: T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
   caption: three confirmed vacuous consumers (attribution, cycle, arch layering);
     per-consumer must-still-pass acceptance criteria

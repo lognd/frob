@@ -274,6 +274,7 @@ def sync_skills(
             force=force,
         )
         reports[kind] = report
+        # frob:waive PERF004 reason="loop bound is _SYNCED_KINDS, a fixed 2-element constant tuple, not repo-scale data; sort is required for deterministic manifest ordering, not a hot-path re-sort"  # noqa: E501
         new_repo_entry[kind] = sorted(new_owned)
 
     manifest[repo_id] = new_repo_entry

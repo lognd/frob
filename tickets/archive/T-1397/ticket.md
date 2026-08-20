@@ -39,7 +39,6 @@ scope_changes:
 evidence:
 - tests/test_coverage.py::TestSubprocessCoverageRc::test_rc_never_points_at_pyproject_toml
 - tests/test_coverage.py::TestSubprocessCoverageRc::test_incremental_run_shares_the_same_rc_as_full_run
-- tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_rc_file_target_is_shared_not_duplicated
 designated_repro_test: null
 evidence_changes:
 - old_node: tests/unit/test_makefile_coverage.py::TestCoverageFastUsesAbsoluteSubprocessRc::test_coverage_fast_never_points_at_pyproject_toml

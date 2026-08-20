@@ -333,9 +333,9 @@ itself resolves to something documented, per DOC012.
 
 ## frob docs
 
-`frob docs [path] [symbol] [--overview] [--search QUERY] [--json]
+`frob docs [PATH] [symbol] [--overview] [--search QUERY] [--json]
 [--sync-commands]` inspects a file or symbol's documentation coverage:
-plain `frob docs path [symbol]` shows relevant `docs/` headings and
+`frob docs` given a plain path (and optionally a symbol) shows relevant `docs/` headings and
 summaries touching that path/symbol; `--overview` is the same view
 without narrowing to a symbol; `--search QUERY` full-text searches
 `docs/` (also reachable as `frob explore docs-search`); `--sync-commands`
