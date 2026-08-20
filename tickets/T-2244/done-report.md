@@ -59,24 +59,8 @@ via --allow-cross-ticket on T-2251's land, in declared series order.
 
 ### Changed
 ```
- Makefile                             |  40 ++++++++---
- README.md                            |   3 +-
- docs/commands/format.md              |  39 ++++++++++
- docs/modules/app.md                  |   7 ++
- docs/modules/cli.md                  |   1 +
- src/frob/__main__.py                 |   2 +
- src/frob/_cli_parsers/__init__.py    |   2 +
- src/frob/_cli_parsers/_misc.py       |  27 +++++++
- src/frob/app/_config_external.py     |   4 ++
- src/frob/app/app.py                  |   6 +-
- src/frob/app/config.py               |  15 ++++
- src/frob/app/pyfmt_runner.py         | 136 +++++++++++++++++++++++++++++++++++
- tests/unit/test_makefile_coverage.py |  82 +++++++++++++++++++++
- tests/unit/test_pyfmt_runner.py      | 131 +++++++++++++++++++++++++++++++++
- tickets/T-2244/ticket.md             |  23 +++++-
- tickets/T-2251/done-report.md        |  69 ++++++++++++++++++
- tickets/T-2251/ticket.md             |   6 ++
- 17 files changed, 578 insertions(+), 15 deletions(-)
+ tickets/T-2244/ticket.md | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 ```
 
 ### Evidence
@@ -89,11 +73,13 @@ via --allow-cross-ticket on T-2251's land, in declared series order.
 - `tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_integration_scopes_frob_test_to_tests_integration` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_system_scopes_frob_test_to_tests_system` (pytest node id, verified passing when recorded)
 - `tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_fast_keeps_raw_pytest_testmon_disclosed_gap` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_format_exits_nonzero_on_an_unfixable_syntax_error` (pytest node id, verified passing when recorded)
+- `tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_check_ty_exits_nonzero_on_a_real_type_error` (pytest node id, verified passing when recorded)
 
 ### Captured claims
-- tests: 9 passed (from 9 evidence id(s))
-- gates: 33 error(s), 747 warning(s), 707 waived
-- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DOC006@tickets/T-2691/ticket.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
+- tests: 11 passed (from 11 evidence id(s))
+- gates: 35 error(s), 739 warning(s), 703 waived
+- error-findings: ARCH103@src/frob/release/_cli.py, ARCH103@src/frob/tickets/_store.py, CLAUDE001@.claude/hooks/sync-claude-config.py, COV003@tickets/T-1397, COV003@tickets/T-1526, COV003@tickets/T-1688, COV003@tickets/T-2365, COV004@tickets/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md, COV004@tickets/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md, CYCLE001@src/frob/__init__.py, DOC002@src/frob/gates/_milestone.py, DOC006@tickets/T-2691/ticket.md, DRIFT001@src/frob/_cli_parsers/_ticket/_new.py, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, E501@/home/logan/projects/frob/.claude/worktrees/pyfmt-series/src/frob/gates/_fix_engine.py, PERF002@tests/unit/test_main_entry.py, PERF003@src/frob/gates/_debt_deprecated.py, PERF003@src/frob/vet/_capability_core.py, PERF004@src/frob/gates/_milestone.py, PERF004@src/frob/scaffold/_skills_sync.py, PERF004@src/frob/testing/_collect_kotlin.py, PII012@tests/test_capability_registry.py, PRE001@tickets/T-2244, RENDER001@src/frob/release/_cli.py, SEC004@tests/test_tickets_organization.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SELFAUDIT001@design, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md, WIRE002@tests/unit/test_app_runners_batch6.py, WIRE003@docs/modules/cli.md
 
 ### Acceptance amendments
 - [0] replace: "GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck: recipes call 'uv run frob fmt' / 'uv run frob quality check' instead of raw ruff/ty invocations" -> "GIVEN the Makefile WHEN read THEN format:/lint:/lint-fix:/typecheck: recipes call 'uv run frob format'/'uv run frob check --only ...' instead of raw ruff/ty invocations" (reason: premise correction: frob fmt is directive-comment canonicalization not ruff, and frob quality check bundles ruff-check+ruff-format inseparably with no write mode -- T-2251 built frob format and frob check's existing --only/--skip-ruff-format stage selection is the real replacement, per this ticket's own 2026-08-16/2026-08-18 Failure log entries; logan, 2026-08-19)

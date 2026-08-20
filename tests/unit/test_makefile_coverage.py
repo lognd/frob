@@ -245,3 +245,50 @@ class TestTestRecipesUseFrobTestPathSelection:
         pytest deliberately, not an oversight."""
         recipe = _recipe_body("test-fast")
         assert "uv run pytest $(TESTS)/ -q --testmon" in recipe, recipe
+
+
+# frob:ticket T-2244
+class TestRepointedTargetsStillFailNonzeroOnRealViolations:
+    """T-2244 acceptance[2]: the repointed `format:`/`lint-fix:`/`lint:`/
+    `typecheck:` recipes still exit nonzero against a real, deliberately
+    broken input -- no strictness regression from swapping raw ruff/ty
+    invocations for their frob equivalents. Exercises the actual runtime
+    code path each recipe now calls (no mocking) against real scratch
+    files, mirroring `tests/unit/test_pyfmt_runner.py`'s own real-ruff
+    end-to-end checks."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations.test_frob_format_exits_nonzero_on_an_unfixable_syntax_error  # noqa: E501
+    def test_frob_format_exits_nonzero_on_an_unfixable_syntax_error(
+        self, tmp_path: Path
+    ) -> None:
+        """`format:`/`lint-fix:` both now call `frob.app.pyfmt_runner.run`
+        (T-2251) -- a real ruff-unfixable syntax error must still exit 1,
+        same as the raw `ruff check --fix`/`ruff format` invocations did
+        before this ticket's Makefile repoint."""
+        import pytest
+
+        from frob.app.config import AppConfig
+        from frob.app.pyfmt_runner import run
+
+        (tmp_path / "broken.py").write_text("def f(:\n    pass\n", encoding="utf-8")
+        cfg = AppConfig(format_path=tmp_path, format_select_imports_only=False)
+        with pytest.raises(SystemExit) as exc_info:
+            run(cfg)
+        assert exc_info.value.code == 1
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations.test_frob_check_ty_exits_nonzero_on_a_real_type_error  # noqa: E501
+    def test_frob_check_ty_exits_nonzero_on_a_real_type_error(
+        self, tmp_path: Path
+    ) -> None:
+        """`typecheck:` (and `lint:`'s own `--only ty` stage) now call
+        `frob check --only ty` -- a real type error must still surface as
+        a failing `ToolResult`, same as raw `ty check` did before."""
+        from frob.check._python import _run_ty
+
+        (tmp_path / "bad_types.py").write_text(
+            "def needs_int(x: int) -> int:\n    return x\n\nneeds_int('not an int')\n",
+            encoding="utf-8",
+        )
+        result = _run_ty(tmp_path)
+        assert not result.passed
+        assert result.exit_code != 0

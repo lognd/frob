@@ -2,7 +2,7 @@
 id: T-2244
 title: Repoint trivial Makefile aliases (format/lint/typecheck/test*) at existing
   frob quality/fmt subcommands
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-16'
@@ -41,6 +41,8 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_integration_scopes_frob_test_to_tests_integration
 - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_system_scopes_frob_test_to_tests_system
 - tests/unit/test_makefile_coverage.py::TestTestRecipesUseFrobTestPathSelection::test_test_fast_keeps_raw_pytest_testmon_disclosed_gap
+- tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_format_exits_nonzero_on_an_unfixable_syntax_error
+- tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_check_ty_exits_nonzero_on_a_real_type_error
 designated_repro_test: null
 attachments:
 - path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
@@ -69,7 +71,9 @@ acceptance:
 - text: GIVEN a deliberately introduced ruff violation or a deliberately broken test
     fixture THEN the repointed targets still fail with a nonzero exit -- no strictness
     regression from the swap
-  evidence: []
+  evidence:
+  - tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_format_exits_nonzero_on_an_unfixable_syntax_error
+  - tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_check_ty_exits_nonzero_on_a_real_type_error
 acceptance_amendments:
 - op: replace
   index: 0
