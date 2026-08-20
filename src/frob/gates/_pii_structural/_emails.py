@@ -32,12 +32,24 @@ _RFC2606_RESERVED_EMAIL_SUFFIX = ".example"
 def _is_reserved_test_domain_email(value: str) -> bool:
     """True if `value`'s domain part is an RFC 2606 reserved documentation/
     testing domain (`_RFC2606_RESERVED_EMAIL_DOMAINS`/`_RFC2606_RESERVED_
-    EMAIL_SUFFIX`) -- such an address can never resolve to a real person,
-    so PII011 must not fire on it no matter where it appears."""
+    EMAIL_SUFFIX`), OR its TLD label is a single character (T-2712: no
+    real DNS TLD is one character -- ICANN's root zone has never
+    delegated one, every ccTLD is exactly 2 characters and every gTLD is
+    3+ -- so an address like `a@b.c`/`t@t.t` cannot resolve to any real
+    mailbox no matter what appears to its left; this is the same
+    structural, path-independent guarantee `_RFC2606_RESERVED_EMAIL_
+    DOMAINS` already rests on, just a second unregistrable shape rather
+    than a second reserved name. Confirmed live: `git config user.email`
+    test-fixture literals across this repo's own test suite use exactly
+    this shape) -- such an address can never resolve to a real person, so
+    PII011 must not fire on it no matter where it appears."""
     domain = value.rpartition("@")[2].lower()
     if domain in _RFC2606_RESERVED_EMAIL_DOMAINS:
         return True
-    return domain.endswith(_RFC2606_RESERVED_EMAIL_SUFFIX)
+    if domain.endswith(_RFC2606_RESERVED_EMAIL_SUFFIX):
+        return True
+    tld = domain.rpartition(".")[2]
+    return len(tld) == 1
 
 
 #: T-0349 (family 4) shared fake-marker convention: the SAME literal
@@ -57,20 +69,75 @@ _EMAIL_FAKE_MARKER = "frob:secret-fake"
 _EMAIL_FAKE_MARKER_REASON_RE = re.compile(r'frob:secret-fake\s+reason="([^"]*)"')
 
 
+def _joined_comment_continuation(
+    lines: list[str], index: int, max_lookback: int = 8
+) -> str | None:
+    """T-2712: reconstruct the logical text of a `#`-comment BLOCK ending
+    at 0-indexed `index`, by walking upward while each earlier physical
+    line is itself a `#`-comment ending in a trailing `\\` (this repo's
+    own multi-line directive-comment convention -- see
+    `docs/guides/agent-playbook.md` sec 1d and every `frob:waive
+    reason="...\\` / `# ...more text"` pair in this codebase). Returns
+    `None` when `lines[index]` is not a comment at all, or when it has no
+    continuation predecessor (single physical-line comment -- the caller
+    already checks that line directly, so re-joining a lone line would
+    just duplicate the same search). `max_lookback` bounds the walk so a
+    pathological file cannot make this scan the whole comment history."""
+    if not lines[index].lstrip().startswith("#"):
+        return None
+    chain = [lines[index]]
+    i = index
+    steps = 0
+    while i > 0 and steps < max_lookback:
+        prev = lines[i - 1]
+        if not prev.lstrip().startswith("#") or not prev.rstrip().endswith("\\"):
+            break
+        chain.insert(0, prev)
+        i -= 1
+        steps += 1
+    if len(chain) == 1:
+        return None
+    return " ".join(chain)
+
+
+def _line_or_block_marks_fake_email(lines: list[str], index: int) -> bool:
+    """True if the 0-indexed `index` line, ALONE or joined with the
+    multi-line comment continuation chain it is the tail of (T-2712's
+    `_joined_comment_continuation`), carries a REASON-bearing
+    `_EMAIL_FAKE_MARKER`. A single-physical-line marker matches directly;
+    a marker whose `reason="..."` text was wrapped across several `#`-
+    prefixed lines (this repo's own convention for a long reason) only
+    matches once those lines are rejoined -- the raw per-line regex
+    search a naive caller would do can see the marker keyword on one
+    physical line and the reason's closing quote on another, and match
+    neither alone."""
+    if _EMAIL_FAKE_MARKER_REASON_RE.search(lines[index]) is not None:
+        return True
+    joined = _joined_comment_continuation(lines, index)
+    if joined is None:
+        return False
+    return _EMAIL_FAKE_MARKER_REASON_RE.search(joined) is not None
+
+
 def _line_marks_fake_email(lines: list[str], lineno: int) -> bool:
     """True if the 1-indexed `lineno` line or the line directly above it
     carries a REASON-bearing `_EMAIL_FAKE_MARKER` (T-0968: mirrors
     `_secrets.py::_fake_marker_reason`'s same-line-or-line-above convention
     and its `reason="..."` requirement -- a bare marker with no reason no
-    longer discharges PII011, same as it no longer discharges SEC001)."""
+    longer discharges PII011, same as it no longer discharges SEC001).
+
+    T-2712: both the direct line and the line above are now checked via
+    `_line_or_block_marks_fake_email`, which also reconstructs a wrapped
+    multi-line marker comment before searching it -- a marker whose
+    `reason="..."` spans 2+ physical `#`-lines used to never match either
+    line alone (T-2438's own symref-precision fix made this class of gap
+    visible repo-wide; this is its PII011-marker-side counterpart)."""
     index = lineno - 1
     if index < 0 or index >= len(lines):
         return False
-    if _EMAIL_FAKE_MARKER_REASON_RE.search(lines[index]) is not None:
+    if _line_or_block_marks_fake_email(lines, index):
         return True
-    if index > 0 and _EMAIL_FAKE_MARKER_REASON_RE.search(lines[index - 1]) is not None:
-        return True
-    return False
+    return index > 0 and _line_or_block_marks_fake_email(lines, index - 1)
 
 
 #: Structural (non-regex) local-part/domain-label character allowances for
@@ -120,14 +187,22 @@ def _pii011_violation(
     `path::qualname` match instead of the file-wide fallback every PII011
     finding used before this ticket -- `None` for a module-level literal
     (no enclosing symbol), matching `Violation.symref`'s own documented
-    contract."""
+    contract.
+
+    T-2712: `enclosing_qualname` returns a bare dotted qualname with no
+    file prefix, but `Violation.symref`'s documented contract (and every
+    waiver comment's DSL-bound `waiver.src`) is `path::qualname` -- an
+    un-prefixed symref can never `_canonical_symref`-match a real waiver,
+    so this prefixes `rel_path` here, at the one place both values are
+    already in scope, rather than at each of this rule's call sites."""
     _log.warning("PII011: %s:%d email-shaped literal %r", rel_path, lineno, value)
+    qualified_symref = f"{rel_path}::{symref}" if symref is not None else None
     return Violation(
         rule="PII011",
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
-        symref=symref,
+        symref=qualified_symref,
         message=(
             f"PII011: {rel_path}:{lineno} string literal {value!r} is "
             f"email-shaped (structural parseaddr match) with no PII "

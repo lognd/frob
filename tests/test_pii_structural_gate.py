@@ -825,6 +825,7 @@ class TestDriftLock:
 
 
 # frob:ticket T-2696
+# frob:ticket T-2712
 class TestSymrefPopulation:
     """T-2696: PII010/011/012's `Violation.symref` is now populated
     (a genuine per-symbol gap this ticket's own investigation found --
@@ -834,6 +835,7 @@ class TestSymrefPopulation:
     every PII sub-scan already builds (T-1209), no second AST walk, no
     file re-parse."""
 
+    # frob:ticket T-2712
     def test_class_field_symref_is_class_dot_none_shape(self) -> None:
         # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
         """A direct data-structure field's symref is the enclosing
@@ -848,8 +850,9 @@ class TestSymrefPopulation:
         violations = _scan_python_fields(tree, "example.py")
         pii010 = [v for v in violations if v.rule == "PII010"]
         assert pii010
-        assert pii010[0].symref == "User"
+        assert pii010[0].symref == "example.py::User"
 
+    # frob:ticket T-2712
     def test_orm_column_inside_method_symref_is_nested_dotted(self) -> None:
         """A `Column(...)` declaration inside a class body still resolves
         to the enclosing class (T-0348 family 2's own PII010 shape) --
@@ -867,8 +870,9 @@ class TestSymrefPopulation:
         violations = _scan_orm_columns(index, "example.py")
         pii010 = [v for v in violations if v.rule == "PII010"]
         assert pii010
-        assert pii010[0].symref == "User"
+        assert pii010[0].symref == "example.py::User"
 
+    # frob:ticket T-2712
     def test_email_literal_inside_function_symref_is_function_name(self) -> None:
         # frob:tests src/frob/gates/_pii_structural/_node_index.py::enclosing_qualname
         """PII011 (email-shaped literal) inside a function body resolves
@@ -881,8 +885,9 @@ class TestSymrefPopulation:
         violations = _scan_python_email_values(tree, "example.py", src)
         pii011 = [v for v in violations if v.rule == "PII011"]
         assert pii011
-        assert pii011[0].symref == "seed_fixture"
+        assert pii011[0].symref == "example.py::seed_fixture"
 
+    # frob:ticket T-2712
     def test_keyword_sweep_identifier_symref_is_function_name(self) -> None:
         """PII012 (bare identifier keyword sweep) inside a function
         resolves to that function's own name."""
@@ -891,8 +896,9 @@ class TestSymrefPopulation:
         violations = _scan_python_keyword_sweep(tree, "example.py", src)
         pii012 = [v for v in violations if v.rule == "PII012"]
         assert pii012
-        assert any(v.symref == "handler" for v in pii012)
+        assert any(v.symref == "example.py::handler" for v in pii012)
 
+    # frob:ticket T-2712
     def test_module_level_field_symref_is_none(self) -> None:
         """T-2696 negative control: a module-level site (no enclosing
         class/function) still gets `symref=None` -- proves this fix did
@@ -939,3 +945,192 @@ class TestSymrefPopulation:
         tree = ast.parse(src)
         index = _build_node_index(tree)
         assert enclosing_qualname(index, 1) is None
+
+
+# frob:ticket T-2712
+class TestSymrefPathPrefix:
+    """T-2712: `_piiXXX_violation`'s `symref` must carry the `path::`
+    prefix `Violation.symref`'s own documented contract requires (and
+    every DSL-bound `frob:waive` comment's `waiver.src` always carries) --
+    `enclosing_qualname` itself only returns the bare dotted qualname, so
+    the three `_piiXXX_violation` helpers are the one place that prefixes
+    it. Before this fix, `_match_waiver_by_symref`'s exact-match could
+    never succeed for ANY PII010/011/012 finding that had a real
+    `symref`, permanently deadening the `frob:waive` directive T-2696
+    itself said this precision was supposed to enable."""
+
+    # frob:ticket T-2712
+    def test_pii010_symref_carries_path_prefix(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_python_fields.py::_pii010_violation  # noqa: E501
+        src = "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    password: str\n"
+        tree = ast.parse(src)
+        violations = _scan_python_fields(tree, "pkg/models.py")
+        pii010 = [v for v in violations if v.rule == "PII010"]
+        assert pii010
+        assert pii010[0].symref == "pkg/models.py::User"
+
+    # frob:ticket T-2712
+    def test_pii011_symref_carries_path_prefix(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_pii011_violation
+        src = "def f():\n    return " + repr("user" + "@" + "realmail.dev") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "pkg/fixtures.py", src)
+        pii011 = [v for v in violations if v.rule == "PII011"]
+        assert pii011
+        assert pii011[0].symref == "pkg/fixtures.py::f"
+
+    # frob:ticket T-2712
+    def test_pii012_symref_carries_path_prefix(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_pii012_violation
+        src = "def f():\n    password = load_secret()\n    return password\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "pkg/handlers.py", src)
+        pii012 = [v for v in violations if v.rule == "PII012"]
+        assert pii012
+        assert any(v.symref == "pkg/handlers.py::f" for v in pii012)
+
+    # frob:ticket T-2712
+    def test_module_level_symref_stays_none_with_path_prefix_fix(self) -> None:
+        """Positive control the OTHER direction: the path-prefix fix must
+        not fabricate a symref where `enclosing_qualname` returns `None`
+        (module-level site) -- `None` stays `None`, never `"path::None"`."""
+        src = "password = 'hunter2'\n"
+        tree = ast.parse(src)
+        violations = _scan_python_keyword_sweep(tree, "pkg/config.py", src)
+        pii012 = [v for v in violations if v.rule == "PII012"]
+        assert pii012
+        assert all(v.symref is None for v in pii012)
+
+
+# frob:ticket T-2712
+class TestDirectiveCommentContinuationExcluded:
+    """T-2712: a `frob:waive`/`frob:...` directive's own multi-line
+    `reason="..."` PROSE (this repo's convention for a long reason:
+    `# frob:waive PII012 reason="...\\` then `# ...rest of the reason"`
+    on the next physical line) must be excluded from the comment-keyword
+    sweep in full, not just its first physical line. Before this fix, a
+    reason explaining why a keyword is a false positive routinely
+    RESTATES that keyword (e.g. "not a mailing/contact address"), which
+    self-triggered a brand-new, permanently unwaivable PII012 finding on
+    the waiver comment's own continuation line (that line sits outside
+    the target symbol's AST span, so no symbol-exact waiver can ever
+    cover it)."""
+
+    # frob:ticket T-2712
+    def test_wrapped_directive_reason_does_not_self_trigger(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        src = (
+            "class C:\n"
+            '    # frob:waive PII012 reason="not a mailing/contact \\\n'
+            '    # address"\n'
+            "    allow_reuse_address = True\n"
+        )
+        tree = ast.parse(src)
+        from frob.gates._pii_structural._keywords import _scan_comment_keywords
+        from frob.gates._pii_structural._node_index import _build_node_index
+
+        index = _build_node_index(tree)
+        violations = _scan_comment_keywords(index, src, "pkg/server.py")
+        assert violations == []
+
+    # frob:ticket T-2712
+    def test_unwrapped_ordinary_comment_still_fires(self) -> None:
+        """Positive control the OTHER direction: an ORDINARY (non-
+        directive) standalone comment mentioning a PII-shaped keyword in
+        reference form still fires -- this fix narrows what counts as a
+        directive continuation, it does not broaden comment suppression
+        generally."""
+        # frob:tests src/frob/gates/_pii_structural/_keywords.py::_scan_comment_keywords  # noqa: E501
+        src = (
+            "def f():\n"
+            "    # `self.password` is loaded here\n"
+            "    x = load()\n"
+            "    return x\n"
+        )
+        tree = ast.parse(src)
+        from frob.gates._pii_structural._keywords import _scan_comment_keywords
+        from frob.gates._pii_structural._node_index import _build_node_index
+
+        index = _build_node_index(tree)
+        violations = _scan_comment_keywords(index, src, "pkg/server.py")
+        assert any(v.rule == "PII012" for v in violations)
+
+
+# frob:ticket T-2712
+class TestSingleCharTldEmail:
+    """T-2712: no real DNS TLD is a single character (every ccTLD is
+    exactly 2 chars, every gTLD is 3+, and ICANN's root zone has never
+    delegated a 1-character TLD) -- an email literal like `a@b.c`/
+    `t@t.t` cannot resolve to any real mailbox regardless of context,
+    the same structural non-personal guarantee `_RFC2606_RESERVED_EMAIL_
+    DOMAINS` already rests on for `example.com`. Confirmed live: this
+    repo's own `git config user.email` test fixtures use exactly this
+    shape."""
+
+    # frob:ticket T-2712
+    def test_single_char_tld_does_not_fire(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_is_reserved_test_domain_email  # noqa: E501
+        src = "email = " + repr("a" + "@" + "b.c") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    # frob:ticket T-2712
+    def test_two_char_tld_still_fires(self) -> None:
+        """Positive control: a REAL 2-char ccTLD-shaped domain still
+        fires -- this fix narrows to 1-char TLDs only, it does not widen
+        to every short domain."""
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_is_reserved_test_domain_email  # noqa: E501
+        src = "email = " + repr("real.person" + "@" + "co.uk") + "\n"
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert any(v.rule == "PII011" for v in violations)
+
+
+# frob:ticket T-2712
+class TestWrappedFakeEmailMarker:
+    """T-2712: a `# frob:secret-fake reason="..."` marker whose reason
+    wraps across 2+ physical `#`-lines (this repo's own long-reason
+    convention) must still discharge PII011 -- before this fix, `_line_
+    marks_fake_email`'s same-line-or-line-above regex search could see
+    the marker keyword on one physical line and the reason's closing
+    quote on another, matching neither line alone."""
+
+    # frob:ticket T-2712
+    def test_wrapped_marker_reason_discharges(self) -> None:
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_line_marks_fake_email
+        # Built via concatenation, same self-match dodge every other
+        # fixture literal in this file already uses (e.g. the email
+        # itself, `"a" + "@" + "..."`) -- a literal, complete `frob:
+        # secret-fake reason="..."` written directly in THIS file's own
+        # source would itself be a real, un-reasoned-on-this-line marker
+        # occurrence that a different gate (SEC004, outside this
+        # ticket's scope) flags on the raw file text.
+        marker = "frob:" + "secret-fake"
+        src = (
+            "def f():\n"
+            "    # " + marker + ' reason="fixture git identity, not a \\\n'
+            '    # real person"\n'
+            "    email = " + repr("a" + "@" + "real-shaped.example.invalid") + "\n"
+            "    return email\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert violations == ()
+
+    # frob:ticket T-2712
+    def test_unmarked_realmail_still_fires(self) -> None:
+        """Positive control: the same domain shape with NO marker at all
+        still fires -- this fix widens what a WRAPPED marker can cover,
+        it does not weaken the marker requirement itself."""
+        # frob:tests src/frob/gates/_pii_structural/_emails.py::_line_marks_fake_email
+        src = (
+            "def f():\n"
+            "    email = "
+            + repr("a" + "@" + "real-shaped.example.invalid")
+            + "\n"
+            "    return email\n"
+        )
+        tree = ast.parse(src)
+        violations = _scan_python_email_values(tree, "example.py", src)
+        assert any(v.rule == "PII011" for v in violations)

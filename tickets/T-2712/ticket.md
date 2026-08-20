@@ -1,7 +1,7 @@
 ---
 id: T-2712
 title: Re-triage 20 newly-unwaived PII010/011/012 findings after T-2696's symref population
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -27,6 +27,17 @@ scope_changes:
     test file; the pii_structural/** scope covered the source fix but not its test
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_pii_structural_gate.py::TestSymrefPathPrefix::test_pii010_symref_carries_path_prefix
+- tests/test_pii_structural_gate.py::TestSymrefPathPrefix::test_pii011_symref_carries_path_prefix
+- tests/test_pii_structural_gate.py::TestSymrefPathPrefix::test_pii012_symref_carries_path_prefix
+- tests/test_pii_structural_gate.py::TestSymrefPathPrefix::test_module_level_symref_stays_none_with_path_prefix_fix
+- tests/test_pii_structural_gate.py::TestDirectiveCommentContinuationExcluded::test_wrapped_directive_reason_does_not_self_trigger
+- tests/test_pii_structural_gate.py::TestDirectiveCommentContinuationExcluded::test_unwrapped_ordinary_comment_still_fires
+- tests/test_pii_structural_gate.py::TestSingleCharTldEmail::test_single_char_tld_does_not_fire
+- tests/test_pii_structural_gate.py::TestSingleCharTldEmail::test_two_char_tld_still_fires
+- tests/test_pii_structural_gate.py::TestWrappedFakeEmailMarker::test_wrapped_marker_reason_discharges
+- tests/test_pii_structural_gate.py::TestWrappedFakeEmailMarker::test_unmarked_realmail_still_fires
 designated_repro_test: null
 threat: null
 component: null

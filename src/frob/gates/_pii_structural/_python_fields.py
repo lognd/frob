@@ -80,7 +80,14 @@ def _pii010_violation(  # noqa: ANN001
     `_node_index.enclosing_qualname`) lets `_match_waiver` require an exact
     `path::qualname` match instead of the file-wide fallback every PII010
     finding used before this ticket -- `None` when no enclosing symbol
-    exists (matches `Violation.symref`'s own documented contract)."""
+    exists (matches `Violation.symref`'s own documented contract).
+
+    T-2712: `enclosing_qualname` returns a bare dotted qualname with no
+    file prefix, but `Violation.symref`'s documented contract (and every
+    waiver comment's DSL-bound `waiver.src`) is `path::qualname` -- an
+    un-prefixed symref can never `_canonical_symref`-match a real waiver,
+    so this prefixes `rel_path` here, at the one place both values are
+    already in scope, rather than at each of this rule's call sites."""
     _log.warning(
         "PII010: %s:%d field %r matches %s (%s) -- category %s",
         rel_path,
@@ -90,12 +97,13 @@ def _pii010_violation(  # noqa: ANN001
         sig.kind,
         sig.category,
     )
+    qualified_symref = f"{rel_path}::{symref}" if symref is not None else None
     return Violation(
         rule="PII010",
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
-        symref=symref,
+        symref=qualified_symref,
         message=(
             f"PII010: {rel_path}:{lineno} field {field_name!r} is PII-shaped "
             f"(matches {sig.kind} signature {sig.keyword!r}, category "

@@ -122,7 +122,14 @@ def _pii012_violation(
     (matches `Violation.symref`'s own documented contract). For a comment-
     token hit (`_scan_comment_keywords`), this is the symbol enclosing the
     COMMENT's own line, the same site precision an inline `frob:waive
-    PII012` placed above that comment would target."""
+    PII012` placed above that comment would target.
+
+    T-2712: `enclosing_qualname` returns a bare dotted qualname with no
+    file prefix, but `Violation.symref`'s documented contract (and every
+    waiver comment's DSL-bound `waiver.src`) is `path::qualname` -- an
+    un-prefixed symref can never `_canonical_symref`-match a real waiver,
+    so this prefixes `rel_path` here, at the one place both values are
+    already in scope, rather than at each of this rule's call sites."""
     _log.warning(
         "PII012: %s:%d keyword-sweep hit %r matches %s (%s) -- category %s",
         rel_path,
@@ -132,12 +139,13 @@ def _pii012_violation(
         sig.kind,
         sig.category,
     )
+    qualified_symref = f"{rel_path}::{symref}" if symref is not None else None
     return Violation(
         rule="PII012",
         severity=Severity.WARN,
         file=rel_path,
         line=lineno,
-        symref=symref,
+        symref=qualified_symref,
         message=(
             f"PII012 (suggestion): {rel_path}:{lineno} identifier/comment "
             f"token {token!r} resembles a PII-shaped keyword (matches "
@@ -617,6 +625,44 @@ def _is_comment_reference_form(comment: str, start: int, end: int) -> bool:
     return before in "`." or after == "`"
 
 
+class _DirectiveContinuationTracker:
+    """T-2712: stateful helper split out of `_scan_comment_keywords` (kept
+    under ARCH001's function-length ceiling) that tells whether a `#`-
+    comment line is part of a `frob:...` directive's own multi-line
+    `reason="..."` text -- either the directive's own first line, or a
+    line that immediately (contiguous lineno) continues one that ended in
+    a trailing `\\` (this repo's own long-directive convention). See
+    `_scan_comment_keywords`'s docstring for WHY this must be excluded:
+    a wrapped reason routinely restates the very keyword it explains away,
+    which would otherwise self-trigger a new, permanently unwaivable
+    finding on the directive comment's own continuation line."""
+
+    def __init__(self) -> None:
+        """Start with no directive open and no prior line seen."""
+        self._prev_lineno: int | None = None
+        self._open = False
+
+    def _consume(self, lineno: int, comment: str) -> bool:
+        """Advance the tracker by one `(lineno, comment)` pair from
+        `_extract_comments`' output (must be called in ascending lineno
+        order); returns True when this line is part of a directive (its
+        start or a continuation of it) and should be skipped by the
+        keyword sweep."""
+        is_start = bool(_FROB_DIRECTIVE_RE.match(comment))
+        is_continuation = (
+            not is_start
+            and self._open
+            and self._prev_lineno is not None
+            and lineno == self._prev_lineno + 1
+        )
+        self._prev_lineno = lineno
+        if is_start or is_continuation:
+            self._open = comment.rstrip().endswith("\\")
+            return True
+        self._open = False
+        return False
+
+
 def _scan_comment_keywords(
     index: _NodeIndex, text: str, rel_path: str
 ) -> list[Violation]:
@@ -647,8 +693,11 @@ def _scan_comment_keywords(
     in_scope_tokens = _in_scope_identifier_tokens(index)
     violations: list[Violation] = []
     seen: set[tuple[int, str]] = set()
+    # T-2712: skips a directive's first line AND its wrapped continuation
+    # lines -- see `_DirectiveContinuationTracker`'s docstring for why.
+    directive_tracker = _DirectiveContinuationTracker()
     for lineno, comment, is_trailing in _extract_comments(text):
-        if _FROB_DIRECTIVE_RE.match(comment):
+        if directive_tracker._consume(lineno, comment):
             continue
         for match in _COMMENT_WORD_RE.finditer(comment):
             token = match.group(0)
