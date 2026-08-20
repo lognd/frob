@@ -52,9 +52,51 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - python <3.11 on PATH
     tomllib = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
+# frob:ticket T-2677
+def _resolve_repo_root(fallback: Path) -> Path:
+    """Resolve the SHARED primary checkout root, not wherever this script's
+    own file happens to sit -- `__file__` alone gives the wrong answer when
+    this tracked script is run from inside a linked worktree (T-2677: every
+    worktree carries its own copy of this file, so `Path(__file__).parent.
+    parent` silently resolved to that worktree's own root, and `.git` there
+    is a FILE, not a directory, making LEASES/QUARANTINE/etc below resolve
+    to paths that can never exist -- reporting a false "0 live leases"
+    fleet-wide). `git rev-parse --path-format=absolute --git-common-dir`
+    is the same primitive `frob.gitio.git_common_dir` uses elsewhere in
+    this repo for exactly this worktree-vs-common-dir distinction; it
+    always resolves to the PRIMARY checkout's `.git` directory regardless
+    of which worktree the command runs from. This script intentionally
+    does not import `frob` (see module docstring), so the git call is
+    reimplemented here directly rather than shared via `_git()` below
+    (which is defined after this point and itself takes a `cwd` derived
+    from REPO). Falls back to the `__file__`-derived guess only if git
+    itself is unavailable or this is not a git checkout at all.
+    """
+    argv = [
+        "git",
+        "-C",
+        fallback,
+        "rev-parse",
+        "--path-format=absolute",
+        "--git-common-dir",
+    ]
+    try:
+        done = subprocess.run(
+            argv, capture_output=True, text=True, timeout=30, check=False
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return fallback
+    stdout = done.stdout.strip()
+    if done.returncode != 0 or not stdout:
+        return fallback
+    return Path(stdout).parent
+
+
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
-#: Repo root, derived from this script's own location.
-REPO = Path(__file__).resolve().parent.parent
+#: Repo root -- the SHARED primary checkout, resolved via git's own
+#: common-dir primitive (T-2677) so this constant is correct whether the
+#: script runs from the primary checkout or from inside any worktree.
+REPO = _resolve_repo_root(Path(__file__).resolve().parent.parent)
 # frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants
 #: Where per-worktree checkouts live (`.claude/worktrees/<name>`).
 WORKTREES = REPO / ".claude" / "worktrees"

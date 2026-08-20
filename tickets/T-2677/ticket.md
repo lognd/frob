@@ -2,7 +2,7 @@
 id: T-2677
 title: fleet_status.py's REPO constant resolves via __file__, giving 0 live leases
   when run from a worktree
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -33,7 +33,10 @@ scope_changes:
   reason: frob:doc target for the REPO constant this ticket changes
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
+- tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_falls_back_when_not_a_git_checkout
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestResolveRepoRoot::test_positive_control_matches_primary_checkout
 threat: null
 component: null
 anchor: false

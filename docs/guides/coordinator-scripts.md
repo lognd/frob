@@ -117,11 +117,27 @@ before either action.
 <!-- frob:doc docs/guides/coordinator-scripts.md#fleet_status-constants -->
 
 `REPO`, `WORKTREES`, and `LEASES` are the three paths every function below
-resolves relative to: the repo root (derived from this script's own file
-location, so it works regardless of the caller's cwd), the per-worktree
-checkout directory, and the cross-worktree lease directory. `TICKETS_DIR`
-(T-2182) is the fourth: the live per-ticket ledger directory
-(`tickets/<id>/ticket.md`), read directly from disk for `rotting_tickets`.
+resolves relative to: the repo root, the per-worktree checkout directory,
+and the cross-worktree lease directory. `TICKETS_DIR` (T-2182) is the
+fourth: the live per-ticket ledger directory (`tickets/<id>/ticket.md`),
+read directly from disk for `rotting_tickets`.
+
+T-2677: `REPO` is resolved via `_resolve_repo_root`, which shells out to
+`git rev-parse --path-format=absolute --git-common-dir` and takes its
+parent -- NOT via this script's own `__file__` location. This script is a
+tracked file checked out into every linked worktree, so a naive
+`Path(__file__).resolve().parent.parent` silently resolves to whichever
+worktree the script happens to be invoked from; that worktree's `.git` is
+a FILE (a gitdir pointer), not a directory, so every downstream constant
+(`LEASES`, `QUARANTINE`, `VERIFY_QUEUE`, `VERIFY_WATERMARK`) resolved to a
+path that could never exist, and the fleet-wide lease report silently read
+"0 live leases" from inside any worktree. `--git-common-dir` always
+resolves to the PRIMARY checkout's shared `.git` directory regardless of
+which worktree the command runs from -- the same primitive
+`frob.gitio.git_common_dir` uses elsewhere in this repo for the identical
+worktree-vs-common-dir distinction. `_resolve_repo_root` falls back to the
+old `__file__`-derived guess only when git itself is unavailable or the
+script is not run inside a git checkout at all.
 
 ### `root_dirt`
 

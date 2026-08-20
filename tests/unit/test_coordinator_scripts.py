@@ -145,6 +145,50 @@ def _completed(stdout: str = "", returncode: int = 0) -> subprocess.CompletedPro
     return subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr="")
 
 
+# frob:ticket T-2677
+class TestResolveRepoRoot:
+    """`fleet_status._resolve_repo_root` -- REPO must resolve to the SHARED
+    primary checkout regardless of which linked worktree the script runs
+    from (T-2677: `__file__`-derived resolution silently reported 0 live
+    leases fleet-wide when run from inside a worktree, because a
+    worktree's own `.git` is a FILE, not a directory)."""
+
+    def _init_repo(self, root: Path) -> None:
+        _run_git(["init", "-q", "-b", "main"], root)
+        _run_git(["config", "user.email", "test@example.com"], root)
+        _run_git(["config", "user.name", "Test"], root)
+        (root / "README.md").write_text("x\n")
+        _run_git(["add", "-A"], root)
+        _run_git(["commit", "-q", "-m", "c1"], root)
+
+    def test_positive_control_matches_primary_checkout(self, tmp_path: Path) -> None:
+        """The exact real-world shape T-2677 measured: resolving from
+        inside a linked worktree must return the SAME root as resolving
+        from the primary checkout itself, for the same real repo.
+        frob:tests scripts/fleet_status.py::_resolve_repo_root"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        self._init_repo(repo)
+        worktree = tmp_path / "wt"
+        _run_git(["worktree", "add", "-q", "-b", "wt-branch", str(worktree)], repo)
+
+        from_primary = fleet_status._resolve_repo_root(repo)
+        from_worktree = fleet_status._resolve_repo_root(worktree)
+
+        assert from_primary.resolve() == repo.resolve()
+        assert from_worktree.resolve() == repo.resolve()
+        assert from_worktree.resolve() == from_primary.resolve()
+
+    def test_falls_back_when_not_a_git_checkout(self, tmp_path: Path) -> None:
+        """Outside any git checkout (git itself unavailable/refuses),
+        the `__file__`-derived fallback is returned rather than raising.
+        frob:tests scripts/fleet_status.py::_resolve_repo_root"""
+        not_a_repo = tmp_path / "not-a-repo"
+        not_a_repo.mkdir()
+        result = fleet_status._resolve_repo_root(not_a_repo)
+        assert result == not_a_repo
+
+
 class TestRootDirt:
     """`fleet_status.root_dirt`."""
 
