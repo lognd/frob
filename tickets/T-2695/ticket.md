@@ -16,9 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_store.py
-- src/frob/strata/_selfconform.py
 - tests/unit/test_ticket_store.py
-- tests/unit/strata/test_selfconform.py
 - src/frob/tickets/_store_migrate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -68,6 +66,24 @@ scope_changes:
 - op: add
   glob: src/frob/tickets/_store_migrate.py
   reason: 'T-2695: new module the _store.py migration split created'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  glob: src/frob/strata/_selfconform.py
+  reason: 'T-2695: _selfconform.py split deferred to its own ticket (draft filed)
+    -- a safe split needs a real 3-layer helper-dependency map (shared observed-kinds
+    computation / per-rule violation classification / orchestration), genuinely larger
+    surgery than this batch''s remaining budget, not a lazy waiver or a forced line-count
+    split'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  glob: tests/unit/strata/test_selfconform.py
+  reason: 'T-2695: _selfconform.py split deferred to its own ticket (draft filed)
+    -- a safe split needs a real 3-layer helper-dependency map (shared observed-kinds
+    computation / per-rule violation classification / orchestration), genuinely larger
+    surgery than this batch''s remaining budget, not a lazy waiver or a forced line-count
+    split'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
