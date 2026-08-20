@@ -2,7 +2,7 @@
 id: T-2706
 title: LANG004 reports frob's own src/frob/ paths into consumer repos, where they
   are unactionable
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -46,7 +46,13 @@ scope_changes:
   reason: behavioral tests for capability_conformance_gate repo-scoping
   actor: logan
   at: '2026-08-20'
-designated_repro_test: null
+evidence:
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_real_registry_is_behaviorally_clean
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_wrong_implemented_claim_fails
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_consumer_repo_is_silent_even_with_a_broken_claim
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_repo_root_with_no_pyproject_is_silent
+- tests/test_lang_conformance_gate.py::TestCapabilityConformanceWiring::test_capability_conformance_fires_through_real_gate_dispatch
+designated_repro_test: tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_consumer_repo_is_silent_even_with_a_broken_claim
 threat: null
 component: null
 anchor: false
