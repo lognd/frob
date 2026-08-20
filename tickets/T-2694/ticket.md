@@ -2,7 +2,7 @@
 id: T-2694
 title: 'Split src/frob/app/telemetry.py: 3 real seams (event/footgun/usage), T-1656
   successor'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,10 +19,25 @@ scope:
 - src/frob/app/telemetry/**
 - design/frob.strata
 - docs/modules/app.md
+- tests/test_telemetry.py
+evidence_scope:
+- tests/test_telemetry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_telemetry.py
+  reason: 'COV002: retargeted frob:tests anchors in this file per the split -- every
+    changed line needs ticket coverage; the file was already legitimately touched
+    by the anchor-retarget commit (bb81fb312) and now by this land-fix pass'
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/test_telemetry.py::test_redact_command_hides_recognizable_secret
+- tests/test_telemetry.py::test_estimate_tokens_is_len_over_four
+- tests/test_telemetry.py::test_append_event_writes_one_json_line
 designated_repro_test: null
 threat: null
 component: null
