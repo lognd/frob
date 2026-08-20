@@ -2,7 +2,7 @@
 id: T-2716
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2707):
   43 new (rule, file) identit(ies), 45 finding(s) (ARCH103, COV003, COV004, DOC002)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -168,3 +168,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - WIRE003  docs/modules/cli.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-20: Re-measured against current main (frob check --json --no-cache, severity read correctly): of 43 (rule,file) identities, 4 no longer reproduce (DOC006 x3, LANG004), 8 PII012/PII010 identities resolved by this same series' T-2712 land, 2 PII012 sites remain live and are already tracked in T-2712's own T-2741 follow-up. The remaining ~29 identities ARE real, reproducing errors -- but nearly all are UNATTRIBUTED (no batch commit's touched symbols reach them), matching this session's finding that T-2713/T-2715's deferred-verification repair surfaced large pre-existing backlogs a budget-truncated check never saw complete before -- there is no single land to revert or blame. The 3 identities WITH real attribution (DRIFT001+SEC110 on _verify.py -> T-2713, confirmed via git show --stat to touch that file directly; DRIFT001 on tickets/__init__.py -> T-2679 via call-chain, already closed/dropped) are cross-cutting doc-drift/capability-declaration fixes, not something to force through this PII-shaped ticket. All ~29 live findings are preserved with full per-identity detail (not silently dropped) in the follow-up ticket this absorbs into. This ticket's own body explicitly permits closing with the pre-existing-residue finding stated when true. (absorbed by T-2743)
