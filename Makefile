@@ -469,11 +469,11 @@ install: $(STAMP) core
 # Rust toolchain (`cargo`); true wheel publishing to PyPI for frob-core/
 # strata-core is out of scope for this ticket -- see docs/guides/install.md.
 # T-0177: `mcp` is `frob`'s own `[serve]` extra in pyproject.toml (mirroring
-# `[smt]`) -- installing it via `--extra serve` here instead of a second,
-# independently-pinned `--with "mcp>=..."` keeps the version constraint in
+# `[smt]`) -- installing it via the `".[serve]"` package spec here instead of
+# a second, independently-pinned `--with "mcp>=..."` keeps the constraint in
 # exactly one place (pyproject.toml) rather than two that can drift apart.
 install-tool:
-	uv tool install --force --reinstall . --with ./strata-core --with ./frob-core --extra serve
+	uv tool install --force --reinstall ".[serve]" --with ./strata-core --with ./frob-core
 
 # ---------- formatting & linting ----------
 #

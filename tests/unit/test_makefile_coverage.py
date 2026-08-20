@@ -292,3 +292,23 @@ class TestRepointedTargetsStillFailNonzeroOnRealViolations:
         result = _run_ty(tmp_path)
         assert not result.passed
         assert result.exit_code != 0
+
+
+# frob:ticket T-2708
+class TestInstallToolUsesServeExtraPackageSpecNotUnsupportedFlag:
+    """T-2708: `uv tool install` has no `--extra` flag (measured on uv
+    0.11.19 -- `error: unexpected argument '--extra' found`); the serve
+    extra must be folded into the package spec (`".[serve]"`) instead, or
+    `install-tool` is the repo's only documented install path and it is
+    simply broken."""
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestInstallToolUsesServeExtraPackageSpecNotUnsupportedFlag.test_install_tool_recipe_has_no_extra_flag  # noqa: E501
+    def test_install_tool_recipe_has_no_extra_flag(self) -> None:
+        recipe = _recipe_body("install-tool")
+        assert "--extra" not in recipe, recipe
+
+    # frob:tests tests/unit/test_makefile_coverage.py::TestInstallToolUsesServeExtraPackageSpecNotUnsupportedFlag.test_install_tool_recipe_uses_serve_extra_package_spec  # noqa: E501
+    def test_install_tool_recipe_uses_serve_extra_package_spec(self) -> None:
+        recipe = _recipe_body("install-tool")
+        assert '".[serve]"' in recipe, recipe
+        assert "uv tool install" in recipe, recipe
