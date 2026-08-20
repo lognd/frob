@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/_config_external.py
 - src/frob/perf/**
 - src/frob/gates/_pii_structural/**
 - src/frob/gates/_taint_gate.py
@@ -97,6 +96,12 @@ scope_changes:
 - op: add
   glob: tests/unit/strata/test_kernel_properties.py
   reason: investigation-only close, no strata test files touched; narrowing per TICK009
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  glob: src/frob/app/_config_external.py
+  reason: T-2251 holds a live lease on this file; not touched by this investigation-only
+    ticket
   actor: logan
   at: '2026-08-19'
 body_changes:
