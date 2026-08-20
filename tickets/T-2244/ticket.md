@@ -34,9 +34,9 @@ acceptance:
     call ''uv run frob format''/''uv run frob check --only ...'' instead of raw ruff/ty
     invocations'
   evidence: []
-- text: 'GIVEN the Makefile WHEN read THEN test:/test-fast:/test-unit:/test-integration:/test-system:
-    recipes call ''uv run frob quality test'' (with the matching path/flags) instead
-    of raw pytest invocations'
+- text: 'GIVEN the Makefile WHEN read THEN test:/test-unit:/test-integration:/test-system:
+    recipes call ''uv run frob test'' with T-2319''s directory-scoped path selection;
+    test-fast: stays on raw pytest --testmon (disclosed no-frob-equivalent gap)'
   evidence: []
 - text: GIVEN a deliberately introduced ruff violation or a deliberately broken test
     fixture THEN the repointed targets still fail with a nonzero exit -- no strictness
@@ -56,6 +56,19 @@ acceptance_amendments:
     write mode -- T-2251 built frob format and frob check''s existing --only/--skip-ruff-format
     stage selection is the real replacement, per this ticket''s own 2026-08-16/2026-08-18
     Failure log entries'
+  actor: logan
+  at: '2026-08-19'
+- op: replace
+  index: 1
+  old_text: 'GIVEN the Makefile WHEN read THEN test:/test-fast:/test-unit:/test-integration:/test-system:
+    recipes call ''uv run frob quality test'' (with the matching path/flags) instead
+    of raw pytest invocations'
+  new_text: 'GIVEN the Makefile WHEN read THEN test:/test-unit:/test-integration:/test-system:
+    recipes call ''uv run frob test'' with T-2319''s directory-scoped path selection;
+    test-fast: stays on raw pytest --testmon (disclosed no-frob-equivalent gap)'
+  reason: 'premise correction: frob quality test has no directory-scoped selection
+    at ticket-file time -- T-2319 landed frob test PATH''s subset semantics since,
+    which is the real replacement'
   actor: logan
   at: '2026-08-19'
 threat: null
