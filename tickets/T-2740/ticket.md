@@ -2,7 +2,7 @@
 id: T-2740
 title: 'waive-audit cannot distinguish a necessary waiver from an inert one: 11 RENDER001
   waivers sat on paths the gate never scanned'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,8 @@ scope:
 - src/frob/_cli_parsers/_ticket/*.py
 - tests/unit/test_waive_audit_runner.py
 - tests/test_gates.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +60,20 @@ scope_changes:
   reason: 'T-2740: report per-waiver liveness (necessary/inert/obsolete) alongside
     honest/cop-out; touches the waive-audit runner, its CLI wiring, a RENDER001 scan-membership
     helper, and their tests'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'T-2740: --check-liveness flag wiring needs an AppConfig field (config.py)
+    and BOOL_FLAGS coverage entry (_config_external.py), same pattern as T-2496''s
+    --check-collisions'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: 'T-2740: --check-liveness flag wiring needs an AppConfig field (config.py)
+    and BOOL_FLAGS coverage entry (_config_external.py), same pattern as T-2496''s
+    --check-collisions'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
