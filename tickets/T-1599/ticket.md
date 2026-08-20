@@ -361,7 +361,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 71b49ffa6d5dc9bd937f18f84eea1a88884ab5ad
 ---
 Make the language adapter contract explicit and statically enforced before the batch work begins.
 
