@@ -518,15 +518,20 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             self.wfile.flush()
 
 
+# frob:waive PII012 reason="T-2741: allow_reuse_address below is stdlib \
+# socketserver.BaseServer's own reuse-addr flag (SO_REUSEADDR); no relation to a \
+# person's contact address -- a name-only false-positive match on 'address'. Placed \
+# here (directly above the class, not above the assignment) because comment.following \
+# binds a class-attribute assignment to the NEXT def/class (_DaemonServer.__init__), \
+# never to the enclosing class itself or the assignment statement -- this position is \
+# the only one that resolves via_following to _DaemonServer, matching the violation's \
+# own enclosing_qualname symref exactly (T-2438 exact-match rule)"
 class _DaemonServer(socketserver.ThreadingUnixStreamServer):
     """`ThreadingUnixStreamServer` bound to `socket_path(root)`, one
     connection handled per thread, tagged with the `root` it serves and an
     `_IdleTracker` every connection's requests feed."""
 
     daemon_threads = True
-    # frob:waive PII012 reason="T-1092: stdlib socketserver.BaseServer's own \
-    # reuse-addr flag (SO_REUSEADDR); no relation to a person's contact address -- a \
-    # name-only false-positive match on 'address'"
     allow_reuse_address = True
 
     def __init__(self, root: Path, sock_path: Path) -> None:

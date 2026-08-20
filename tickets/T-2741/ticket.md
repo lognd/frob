@@ -1,7 +1,7 @@
 ---
 id: T-2741
 title: Fix 2 remaining PII012 waiver-placement gaps T-2712 could not touch
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

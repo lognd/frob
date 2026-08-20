@@ -899,6 +899,7 @@ class TestBoto3NextTierServiceBindingResolution:
         assert "net-mutate" in scan_file_capabilities(path)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
+    # frob:waive PII012 reason="T-2741: 'secretsmanager' below is the AWS Secrets Manager API name (boto3 client), matched via the 'secret' keyword substring -- not a real credential/secret value"  # noqa: E501
     def test_secretsmanager_put_secret_value_reports_net_mutate(
         self, tmp_path: Path
     ) -> None:
