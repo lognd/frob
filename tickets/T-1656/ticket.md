@@ -2,7 +2,7 @@
 id: T-1656
 title: 'LARGE001 remainder: 48 files after T-1651 (3 waived, seams found for 3, 2
   flagged risky, 43 unexamined)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-06'
@@ -18,6 +18,9 @@ scope:
 - design/frob.strata
 - src/frob/app/check_runner.py
 - src/frob/app/sys_runner.py
+- tests/test_arch_gate.py
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +61,43 @@ scope_changes:
     for a future batch'
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: tests/test_arch_gate.py
+  reason: 'T-1656: binds existing test_large_file_fires_large001_warn as evidence
+    for the gate:LARGE mechanism the two waivers this ticket added rely on; citation
+    leases the file per repo convention'
+  actor: logan
+  at: '2026-08-19'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Batch-1 outcome: 2 files disposed (real per-file
+    frob:waive LARGE001
+
+    reasoning added, both comment-only changes -- no runtime behavior
+
+    changed by either). One genuine split seam identified (telemetry.py)
+
+    and filed separately rather than attempted under this pass''s time
+
+    budget. Remaining ~80 files carried forward to a fresh successor ticket
+
+    (T-draft-a90be6dc) rather than left as an indefinitely-open umbrella --
+
+    same closure discipline this repo''s own T-1651/T-1656/T-1661/T-1608-
+
+    style umbrella tickets already use (finite batch, explicit successor for
+
+    the rest). No behavioral delta: both waivers are comments (frob:waive
+
+    directives), gate:LARGE stayed WARN-tier throughout (0 errors before and
+
+    after), and no other file was touched.'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 3312
+  new_length: 4084
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 designated_repro_test: null
 threat: null
 component: null
@@ -123,3 +163,15 @@ auto-writer was removed; `interface=` is now purely hand-declared, no
 CLI command re-runs it); prose separated from its frob:invariant anchor
 needs the anchor (or its waiver) carried forward explicitly as
 carried-forward, not a new claim.
+
+frob:no-behavior-change reason="Batch-1 outcome: 2 files disposed (real per-file frob:waive LARGE001
+reasoning added, both comment-only changes -- no runtime behavior
+changed by either). One genuine split seam identified (telemetry.py)
+and filed separately rather than attempted under this pass's time
+budget. Remaining ~80 files carried forward to a fresh successor ticket
+(T-draft-a90be6dc) rather than left as an indefinitely-open umbrella --
+same closure discipline this repo's own T-1651/T-1656/T-1661/T-1608-
+style umbrella tickets already use (finite batch, explicit successor for
+the rest). No behavioral delta: both waivers are comments (frob:waive
+directives), gate:LARGE stayed WARN-tier throughout (0 errors before and
+after), and no other file was touched."
