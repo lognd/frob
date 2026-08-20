@@ -20,6 +20,8 @@ scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/test_ticket_lifecycle.py
 - src/frob/_cli_parsers/_ticket/_closeout.py
+- docs/modules/tickets-lifecycle.md
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,16 @@ scope_changes:
 - op: add
   glob: src/frob/_cli_parsers/_ticket/_closeout.py
   reason: unblock CLI parser lives alongside block parser in this file
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: 'AFFECT001: touch affects()-closure docs for LEDGER_VERB_STRATEGY and _unblock'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001: touch affects()-closure docs for LEDGER_VERB_STRATEGY and _unblock'
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
