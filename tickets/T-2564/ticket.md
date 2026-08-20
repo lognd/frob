@@ -2,7 +2,7 @@
 id: T-2564
 title: a land killed between stage and commit leaves content in the shared index where
   another land can absorb it
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -29,6 +29,9 @@ scope_changes:
     lands abandoned staged content'
   actor: logan
   at: '2026-08-19'
+evidence:
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_unrelated_land_does_not_absorb_a_killed_lands_staged_content
+- tests/test_ticket_land.py::TestSigkillMidStaging::test_sigkill_mid_squash_leaves_tip_unchanged_and_repairs_on_retry
 designated_repro_test: null
 threat: null
 component: null

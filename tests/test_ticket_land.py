@@ -8204,6 +8204,94 @@ class TestSigkillMidStaging:
         assert after_retry_sha != before_main_sha
         assert _status_ignoring_frob(repo) == ""
 
+    # frob:ticket T-2564
+    def test_unrelated_land_does_not_absorb_a_killed_lands_staged_content(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSigkillMidStaging.test_unrelated_land_does_not_absorb_a_killed_lands_staged_content  # noqa: E501
+        """T-2564: the hazard a bare abandoned-staged-content symptom does
+        NOT by itself prove -- that a DIFFERENT, unrelated ticket's own
+        `land()` call, running against the same `root` shortly after the
+        kill, could sweep the crashed run's still-staged garbage into ITS
+        OWN commit (`_land_repair_marker`'s window is per-`root`, not
+        per-ticket, so this is the real question T-2564 was filed to
+        answer). It does not: `_repair_stale_land_marker` runs at the very
+        start of EVERY `land()` call, before that call's own DirtyMain
+        check or its own staging, so the second ticket's land reconciles
+        the first ticket's leftover marker+staged content (discarding it,
+        per `_reconcile_one_land_repair_marker`) BEFORE it stages anything
+        of its own -- structurally, not by luck."""
+        wt_a = repo.parent / "wt-a"
+        _run(["git", "worktree", "add", "-b", "feature-kill", str(wt_a)], repo)
+        created_a = new_ticket(wt_a, _spec("Add killable", scope=("src/killable.py",)))
+        assert created_a.is_ok
+        tid_a = created_a.danger_ok.id
+        _make_closeable(wt_a, tid_a)
+        (wt_a / "src" / "killable.py").write_text("# new file\n")
+        _commit_all(wt_a, "add killable")
+
+        before_main_sha = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        ready_path = repo.parent / "ready.flag"
+
+        ctx = multiprocessing.get_context("fork")
+        proc = ctx.Process(
+            target=_t0907_child_land, args=(repo, tid_a, wt_a, ready_path)
+        )
+        proc.start()
+        deadline = time.monotonic() + 20
+        while not ready_path.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert ready_path.exists(), "child land() never reached the squash-apply step"
+        assert proc.pid is not None
+        os.kill(proc.pid, signal.SIGKILL)
+        proc.join(timeout=15)
+        assert not proc.is_alive()
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        marker_dir = repo / ".frob" / "land-repair"
+        assert len(list(marker_dir.glob("*.json"))) == 1
+
+        # A SECOND, completely unrelated ticket lands against the SAME
+        # root while T-9999-A's marker+staged garbage still sits there.
+        wt_b = repo.parent / "wt-b"
+        _run(["git", "worktree", "add", "-b", "feature-unrelated", str(wt_b)], repo)
+        created_b = new_ticket(
+            wt_b, _spec("Unrelated feature", scope=("src/unrelated.py",))
+        )
+        assert created_b.is_ok
+        tid_b = created_b.danger_ok.id
+        _make_closeable(wt_b, tid_b)
+        (wt_b / "src" / "unrelated.py").write_text("# unrelated feature\n")
+        _commit_all(wt_b, "add unrelated")
+
+        result_b = land(repo, tid_b, wt_b, dry_run=False)
+        assert result_b.is_ok, result_b.err
+
+        # The killed ticket's marker is gone (reconciled by B's own land,
+        # not B's own concern) and its file never reached main.
+        assert not list(marker_dir.glob("*.json"))
+        assert not (repo / "src" / "killable.py").exists()
+
+        # B's own new commit(s) carry ONLY B's own file -- the killed
+        # run's abandoned staged content was discarded, never absorbed as
+        # a passenger of B's own land (may be more than one commit: the
+        # squash-apply plus a separate ledger record-commit).
+        changed = _run(
+            ["git", "diff", "--name-only", before_main_sha, "HEAD"], repo
+        ).stdout.splitlines()
+        assert "src/unrelated.py" in changed
+        assert "src/killable.py" not in changed
+        assert _status_ignoring_frob(repo) == ""
+
+        # The killed ticket's own retry, afterward, still lands cleanly.
+        wt_tickets = load_all(wt_a).danger_ok
+        final_id_a = next(
+            i for i, t in wt_tickets.items() if t.state == TicketState.DONE
+        )
+        result_a = land(repo, final_id_a, wt_a, dry_run=False)
+        assert result_a.is_ok, result_a.err
+        assert (repo / "src" / "killable.py").exists()
+        assert _status_ignoring_frob(repo) == ""
+
 
 class TestTick005LandRegressions:
     """T-0631: `_tick005_land_regressions` -- the TICK005-backed regression

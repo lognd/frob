@@ -97,6 +97,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
 - T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
 - T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
+- T-2564: a land killed between stage and commit leaves content in the shared index where another land can absorb it
 - T-2565: hook header comment and _OURS_MARKER name a nonexistent 'frob scaffold install-worktree-lease-hook' command
 - T-2569: ticket close reports an UNMEASURABLE evidence batch as evidence no longer passes
 - T-2570: ledger mirror makes main a second writer of per-ticket files: decide the v2 merge strategy
