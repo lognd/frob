@@ -122,14 +122,6 @@ evidence:
 - tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate::test_real_registry_is_behaviorally_clean
 designated_repro_test: null
 acceptance:
-- text: 'MEASUREMENT NOTE, superseded (T-1599 own investigation, this round): ADAPTER_CAPABILITIES/derive_capability_registry
-    (src/frob/lang/_support.py) and LANG004 capability_conformance_gate (src/frob/gates/_lang_conformance.py)
-    were already built under T-2365, before this ticket''s own scoping work started,
-    and LANG004 was already wired into frob check''s job table (T-2411, done). This
-    ticket''s real remaining scope, confirmed against that live state rather than
-    this stale note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
-    degradation story (see criterion [2]).'
-  evidence: []
 - text: 'GIVEN LANG004''s behavioral conformance suite (capability_conformance_gate,
     src/frob/gates/_lang_conformance.py, built under T-2365 -- this criterion''s own
     prior claim that it "does not exist" was already false before this ticket''s work
@@ -295,6 +287,46 @@ acceptance_amendments:
     for all seven capabilities this criterion names, built under T-2365. Not this
     ticket''s own work; found already built during reconnaissance and confirmed by
     direct code reading before writing anything.'
+  new_text: null
+  reason: 'Not testable given/when/then criteria -- both are 2026-08-17
+
+    MEASUREMENT NOTES whose own premises this ticket''s reconnaissance found
+
+    already false before any work started (ADAPTER_CAPABILITIES/
+
+    derive_capability_registry and LANG004/capability_conformance_gate
+
+    were already built under T-2365, not by this ticket). No pytest
+
+    evidence id can honestly "resolve" a negative-existence claim about
+
+    prior work this ticket did not do. The one criterion that IS this
+
+    ticket''s own real, testable, delivered claim (LANG004''s behavioral
+
+    coverage extended 4/7 -> 6/7) is retained as acceptance[2] (now [0]
+
+    after this removal) and bound to real evidence. Superseding text is
+
+    preserved in each removed criterion''s own amendment history (both were
+
+    already amended in place before this removal, recording exactly why
+
+    their premise was stale) plus the ticket body''s own rescope note.
+
+    '
+  actor: logan
+  at: '2026-08-19'
+- op: remove
+  index: 0
+  old_text: 'MEASUREMENT NOTE, superseded (T-1599 own investigation, this round):
+    ADAPTER_CAPABILITIES/derive_capability_registry (src/frob/lang/_support.py) and
+    LANG004 capability_conformance_gate (src/frob/gates/_lang_conformance.py) were
+    already built under T-2365, before this ticket''s own scoping work started, and
+    LANG004 was already wired into frob check''s job table (T-2411, done). This ticket''s
+    real remaining scope, confirmed against that live state rather than this stale
+    note: extend LANG004''s behavioral coverage and write the OPTIONAL-capability
+    degradation story (see criterion [2]).'
   new_text: null
   reason: 'Not testable given/when/then criteria -- both are 2026-08-17
 
