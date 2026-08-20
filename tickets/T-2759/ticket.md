@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0635f16bb1142d6f1c41df7db3f6c403cd72a9c6
 ---
 T-2744's own doc update (docs/modules/tickets-verify-sweep.md, quarantine circuit breaker section) narrates the T-2736 phantom-ticket incident by name, which trips DOC011 (cites a ticket id that does not resolve in tickets.md/tickets-archive.md) since T-2736 genuinely never existed -- that absence is the whole point of the incident being documented. Needs a frob:waive DOC011 (or equivalent) at that citation with a reason explaining it is a deliberate historical reference to a nonexistent id, not a stale/typo citation.
 
