@@ -2,7 +2,7 @@
 id: T-2683
 title: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently
   degrades output
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'

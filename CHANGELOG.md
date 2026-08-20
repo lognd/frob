@@ -180,6 +180,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2678: frob ticket body writes an archived ticket's update to a fresh non-archive copy, causing DuplicateId
 - T-2679: A timed-out land marks the ticket done and records evidence while zero code reaches main
 - T-2682: LANG004: behavioral coverage for test_discovery (the last of 7 capabilities left structural-only)
+- T-2683: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently degrades output
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
 - T-2697: post-land sweep regression from an unattributed source (sweep spawned by T-1549): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)
