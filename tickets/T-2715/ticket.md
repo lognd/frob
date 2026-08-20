@@ -20,6 +20,8 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_check_budget.py
 - tests/unit/test_app_ticket_land.py
+- docs/modules/tickets-verify-sweep.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +55,16 @@ scope_changes:
   glob: tests/unit/test_app_ticket_land.py
   reason: 'T-2715: derive post-land sweep budget from measured stage timing instead
     of a hardcoded ceiling'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-2715: doc targets for touched land-sweep budget functions'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2715: doc targets for touched land-sweep budget functions'
   actor: logan
   at: '2026-08-20'
 body_changes:
