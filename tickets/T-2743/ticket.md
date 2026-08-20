@@ -2,7 +2,7 @@
 id: T-2743
 title: Repo-wide pre-existing debt surfaced by T-2713/T-2715's deferred-verification
   repair (from T-2716 re-triage)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -43,6 +43,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002: this ticket has no single reproducible defect -- it is a grouped
+    debt-cleanup disposition across 10 independent causes, most of which are waivers/docs,
+    not behavior fixes a mutation kill could prove'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 4163
+  new_length: 4721
+evidence:
+- tests/unit/test_main_entry.py::TestGroupedHelpFormatter::test_section_headers_indent_strictly_less_than_entries
+- tests/unit/test_app_runners_batch6.py::TestGraphRunner::test_unknown_command_exits_1
+- tests/test_tickets_organization.py::TestRunsLast::test_set_runs_last_updates_field
 designated_repro_test: null
 threat: null
 component: null
@@ -132,3 +145,5 @@ needs its own subsystem-owner fix. Filed as one tracking ticket rather
 than left to re-appear silently in the next sweep. Scope intentionally
 left broad (matches the files above) for whoever triages next to
 narrow per T-2302's scope_breadth_ack discipline before starting.
+
+frob:waive BUG002 reason="T-2743 is a repo-wide debt-cleanup ticket (29 unattributed pre-existing findings across ARCH/COV/DOC/PERF/RENDER/SEC/SELFAUDIT/TEST/TICK/WIRE), not a single reproducible defect -- most sites are per-site waivers or documentation, not a behavior-changing code fix a mutation test could kill. The one genuine behavior-preserving fix (PERF002 in test_main_entry.py) is itself test-only refactor with no wiring for a repro to reach. designated_repro_test was bound as a representative touched-test spot check, not a bug reproduction."
