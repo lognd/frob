@@ -21,6 +21,7 @@ scope:
 - tests/unit/verify/**
 - tests/unit/test_rapid_sweep.py
 - tests/unit/test_ticket_runner_gate_findings.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_runner_gate_findings.py
   reason: narrow to verify-worker/watermark/baseline path per T-2713 investigation
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: doc target for scoped symbols
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
