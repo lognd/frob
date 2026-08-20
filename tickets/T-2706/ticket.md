@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/repo_meta.py
 - tests/test_lang_conformance_gate.py
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,11 @@ scope_changes:
 - op: add
   glob: tests/test_lang_conformance_gate.py
   reason: behavioral tests for capability_conformance_gate repo-scoping
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'AFFECT001: touch capability_conformance_gate affects()-closure doc'
   actor: logan
   at: '2026-08-20'
 evidence:
