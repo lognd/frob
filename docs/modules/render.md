@@ -147,6 +147,28 @@ making "only frob.render writes stdout" a proven effect, not an assertion.
 Until T-0459 lands this invariant is the TARGET contract, tracked there, not
 yet proven -- do not read it as already-enforced.
 
+RENDER001's scan (`frob.gates._render_lint.render_lint_gate`) covers every
+git-tracked `src/frob/**/*.py` file, plus, as of T-2719,
+`.claude/hooks/**/*.py` and the single file `scripts/fleet_status.py` --
+except the paths in `_EXEMPT_PREFIXES`: `src/frob/render/` itself (the one
+sanctioned home for these calls), and, also as of T-2719,
+`.claude/hooks/` and `scripts/fleet_status.py` themselves. Those two are
+standalone scripts that deliberately never import `frob.*` (Claude Code
+hooks must run before any venv/native-extension build exists; the fleet
+diagnostic script shares that same constraint), so `frob.render.Renderer`
+is structurally unreachable from them, not merely unused -- INV-RENDER-
+SOLE-STDOUT governs `frob`'s own command-runner surface, not every script
+that happens to live in this repository. T-1614's periodic waive audit
+found 11 individually-honest per-line `frob:waive RENDER001 reason="..."`
+directives across those files citing exactly this constraint before this
+directory/file exemption existed; T-2719 replaces that growing per-line
+debt with one structural exemption, scanned-then-exempted (not left
+entirely unscanned) so a future non-exempt file under either path is still
+caught rather than silently invisible to the gate. `scripts/`'s other
+files (e.g. `bump_version.py`, which does import `frob.*`) remain fully
+subject to RENDER001 -- the `scripts/fleet_status.py` exemption is a
+single named file, never a `scripts/` directory prefix.
+
 ## Exemplar: frob doctor
 
 `frob doctor` is one of the two foundation exemplars migrated to the layer.

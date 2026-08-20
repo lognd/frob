@@ -18042,6 +18042,111 @@ class TestRenderLintGate:
         assert len(offender_hits) == 1
         assert offender_hits[0].severity == Severity.ERROR
 
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_claude_hooks_dir_exempt
+    # frob:ticket T-2719
+    def test_claude_hooks_dir_exempt(self, tmp_path: Path) -> None:
+        """A bare `print(...)` under `.claude/hooks/` does NOT fire
+        RENDER001 (T-2719): hook scripts run standalone with no `frob.*`
+        import, so `frob.render.Renderer` is structurally unreachable --
+        this is the false-positive shape T-1614's waive audit found 11
+        individually-honest per-line waivers papering over. Also proves
+        the path is genuinely SCANNED (not merely absent from the tree,
+        which would prove nothing) by nesting one level deep."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        hooks = tmp_path / ".claude" / "hooks" / "sub"
+        hooks.mkdir(parents=True)
+        (hooks / "offender-hook.py").write_text("print('standalone hook output')\n")
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        assert _by_rule(violations, "RENDER001") == []
+
+    # frob:tests tests/test_gates.py::TestRenderLintGate.test_fleet_status_file_exempt
+    # frob:ticket T-2719
+    def test_fleet_status_file_exempt(self, tmp_path: Path) -> None:
+        """A bare `print(...)` in `scripts/fleet_status.py` does NOT fire
+        RENDER001 (T-2719) -- same standalone, no-frob-import constraint
+        as `.claude/hooks/`, named as one file rather than a `scripts/`
+        prefix (see `test_exemption_is_file_scoped_not_dir_scoped` below)."""
+        from frob.gates._render_lint import render_lint_gate
+
+        self._init_repo(tmp_path)
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        scripts = tmp_path / "scripts"
+        scripts.mkdir(parents=True)
+        (scripts / "fleet_status.py").write_text("print('fleet status output')\n")
+        self._commit(tmp_path)
+
+        violations = render_lint_gate(tmp_path)
+
+        assert _by_rule(violations, "RENDER001") == []
+
+    # frob:tests \
+    # tests/test_gates.py::TestRenderLintGate.test_exemption_is_file_scoped_not_dir_sco\
+    # ped
+    # frob:ticket T-2719
+    def test_exemption_is_file_scoped_not_dir_scoped(self) -> None:
+        """Control on the exemption predicate itself: `scripts/
+        fleet_status.py` is exempt as a single NAMED file, not a blanket
+        `scripts/` directory prefix -- a sibling script under `scripts/`
+        (e.g. `bump_version.py`, which genuinely imports `frob.*` and
+        stays fully subject to RENDER001) must NOT read as exempt. Checked
+        directly against `_EXEMPT_PREFIXES` rather than through a full
+        `render_lint_gate` scan, because `scripts/` is deliberately NOT
+        one of the extra scan pathspecs -- `bump_version.py` was never
+        scanned before this ticket and stays unscanned after it (only the
+        one named `fleet_status.py` file was added to the scan), so a
+        gate-level 'still fires' fixture for it would prove nothing new;
+        the risk this control actually guards against is the exemption
+        STRING becoming an accidental directory prefix, e.g. a future
+        edit shortening `"scripts/fleet_status.py"` to `"scripts/"`."""
+        from frob.gates._render_lint import _EXEMPT_PREFIXES
+
+        assert "scripts/fleet_status.py".startswith(_EXEMPT_PREFIXES)
+        assert ".claude/hooks/offender.py".startswith(_EXEMPT_PREFIXES)
+        assert not "scripts/bump_version.py".startswith(_EXEMPT_PREFIXES)
+        assert not "scripts/other_tool.py".startswith(_EXEMPT_PREFIXES)
+
+    # frob:tests \
+    # tests/test_gates.py::TestRenderLintGate.test_scan_now_covers_hooks_and_fleet_stat\
+    # us
+    # frob:ticket T-2719
+    def test_scan_now_covers_hooks_and_fleet_status(self, tmp_path: Path) -> None:
+        """BUG002 repro (T-2719): before this fix, `.claude/hooks/**` and
+        `scripts/fleet_status.py` were NOT scanned by RENDER001 at all --
+        `_tracked_python_files` queried a single hardcoded `src/frob`
+        `git ls-files` pathspec -- so T-1614's 11 `frob:waive RENDER001`
+        directives in those files were suppressing nothing (verified live
+        against this repo: those directives sit on lines the pre-fix gate
+        never even enumerated). This asserts the scan-level fact directly:
+        a `.claude/hooks/` file and `scripts/fleet_status.py` are now
+        enumerated by the gate's own tracked-file helper -- structurally
+        impossible before this ticket, since the old helper only ever
+        queried `src/frob`."""
+        from frob.gates._render_lint import _tracked_python_files
+
+        self._init_repo(tmp_path)
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("")
+        hooks = tmp_path / ".claude" / "hooks"
+        hooks.mkdir(parents=True)
+        (hooks / "some-hook.py").write_text("print('x')\n")
+        scripts = tmp_path / "scripts"
+        scripts.mkdir(parents=True)
+        (scripts / "fleet_status.py").write_text("print('y')\n")
+        self._commit(tmp_path)
+
+        files = _tracked_python_files(tmp_path)
+
+        assert ".claude/hooks/some-hook.py" in files
+        assert "scripts/fleet_status.py" in files
+
 
 # frob:ticket T-0726
 class TestTick006PhantomFiling:

@@ -1,7 +1,7 @@
 ---
 id: T-2719
 title: 'RENDER001: add directory/file exemptions for standalone no-frob-import scripts'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -16,11 +16,29 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_render_lint.py
 - tests/test_gates.py
+- docs/modules/render.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: docs/modules/render.md
+  reason: AFFECT001 requires touching this doc alongside render_lint_gate's changed
+    docstring/exemption-scope description; the doc must be updated to describe the
+    widened scan + exemption prefixes
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestRenderLintGate::test_bare_print_fires
+- tests/test_gates.py::TestRenderLintGate::test_render_package_exempt
+- tests/test_gates.py::TestRenderLintGate::test_stderr_directed_print_is_silent
+- tests/test_gates.py::TestRenderLintGate::test_unparseable_file_fires_parse001
+- tests/test_gates.py::TestRenderLintGate::test_claude_hooks_dir_exempt
+- tests/test_gates.py::TestRenderLintGate::test_fleet_status_file_exempt
+- tests/test_gates.py::TestRenderLintGate::test_exemption_is_file_scoped_not_dir_scoped
+- tests/test_gates.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
+designated_repro_test: tests/test_gates.py::TestRenderLintGate::test_scan_now_covers_hooks_and_fleet_status
 threat: null
 component: null
 anchor: false
