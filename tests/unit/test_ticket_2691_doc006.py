@@ -90,3 +90,61 @@ class TestTicket2691Doc006Regression:
         )
         found = [v for v in violations if v.rule == "DOC006"]
         assert not found
+
+
+class TestTicket2742Doc006Regression:
+    """T-2745: the identical mistake recurred on a DIFFERENT ticket
+    (`tickets/T-2742/ticket.md`) three days after T-2697 fixed T-2691's
+    instance of it -- same two-word hypothetical verb, `frob land
+    status`, backtick-quoted as though it were a real invocation. DOC006
+    correctly flagged it again; the sweep that surfaced it was
+    UNATTRIBUTED because the land it was filed against never touched this
+    file -- the drift was introduced by the ticket's own body edit, not
+    by the blamed land. Same fix as T-2697: stop backtick-quoting the
+    hypothetical verb.
+
+    Uses a synthetic fixture (not a full copy of the live ticket file, as
+    `test_real_ticket_file_not_flagged` above does for T-2691): the real
+    T-2742 body also backtick-references several genuine repo paths
+    (`docs/guides/agent-playbook.md`, `.frob/land.lock`) that resolve
+    fine in the real repo tree but do not exist in an isolated fixture
+    repo, which would make a full-body copy fail here for a reason
+    unrelated to DOC006's CLI-invocation check. The synthetic shape
+    below isolates exactly the recurring mistake."""
+
+    def test_backticked_future_verb_is_flagged(self, tmp_path: Path) -> None:
+        """The pre-fix shape (T-2745's own repro, same as T-2697's): a
+        backtick-quoted phrase reading like a live CLI invocation for a
+        verb that does not exist yet must be flagged."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "tickets/T-2742/ticket.md",
+            "A first-class query -- e.g. `frob land status` or a field.\n",
+        )
+        _git(tmp_path, "add", "-A")
+        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        found = [v for v in violations if v.rule == "DOC006"]
+        assert found
+        assert any("land status" in v.message for v in found)
+
+    def test_prose_description_of_future_verb_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2745's actual fix: describe the future verb in plain prose
+        (no backticks), so DOC006 no longer reads it as a real CLI
+        invocation that must resolve today. Matches the exact wording
+        landed in `tickets/T-2742/ticket.md`."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "tickets/T-2742/ticket.md",
+            'A first-class query -- e.g. a hypothetical "frob land status"'
+            " verb (not a real command; do not run it) or a field.\n",
+        )
+        _git(tmp_path, "add", "-A")
+        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        found = [v for v in violations if v.rule == "DOC006"]
+        assert not found

@@ -77,7 +77,8 @@ bug rather than the fix.
 
 ## What to build
 
-A first-class query -- e.g. `frob land status` or a field on the existing
+A first-class query -- e.g. a hypothetical "frob land status" verb (not a
+real command; do not run it) or a field on the existing
 fleet status -- that answers, authoritatively:
   - how many lands are genuinely in flight
   - which ticket and worktree each belongs to

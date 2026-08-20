@@ -2,7 +2,7 @@
 id: T-2745
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2712):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -39,6 +39,9 @@ body_changes:
   at: '2026-08-20'
   old_length: 1192
   new_length: 1643
+evidence:
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2742Doc006Regression::test_backticked_future_verb_is_flagged
+- tests/unit/test_ticket_2691_doc006.py::TestTicket2742Doc006Regression::test_prose_description_of_future_verb_not_flagged
 designated_repro_test: null
 threat: null
 component: null
