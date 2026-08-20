@@ -2,7 +2,7 @@
 id: T-2750
 title: ARCH103 and DRIFT002 regressions introduced by T-2738's close-promotes-drafts
   fix
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -88,3 +88,6 @@ is a legitimate outcome, but say so with the measurement and fix the rule.
 These were disposed out of quarantine against this ticket so the fleet
 could keep landing. That is bookkeeping and explicitly NOT a judgement
 that they are acceptable.
+
+## Drop reason
+- 2026-08-20: Duplicate-with-a-named-survivor, NOT a false positive: I filed T-2750 for the ARCH103/DRIFT002 pair from T-2738's land moments before the rapid sweep auto-filed the identical pair as T-2749. Same two findings, same blamed commit. T-2749 survives because the quarantine's own cleared_reason references it; T-2750's analysis has been appended to T-2749 verbatim, so nothing is lost. Second time today I have raced the sweep this way -- the lesson is to let the sweep file and then augment, rather than filing in parallel. (absorbed by T-2749)
