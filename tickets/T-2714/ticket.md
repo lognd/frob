@@ -14,10 +14,47 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/tickets/_leases.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/tickets/_land_git_ops.py
+- tests/test_ticket_leases.py
+- tests/test_ticket_leases_dispatch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_leases.py
+  reason: T-2714's own tests for run()'s pre-dispatch reconciliation wiring, if that
+    test module exists as the dispatch-guard test home
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: T-2714's own tests for run()'s pre-dispatch reconciliation wiring, if that
+    test module exists as the dispatch-guard test home
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/tickets/_land_git_ops.py
+  reason: T-2714's own tests for run()'s pre-dispatch reconciliation wiring, if that
+    test module exists as the dispatch-guard test home
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: T-2714's own tests for run()'s pre-dispatch reconciliation wiring, if that
+    test module exists as the dispatch-guard test home
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/test_ticket_leases_dispatch.py
+  reason: T-2714's own tests for run()'s pre-dispatch reconciliation wiring, if that
+    test module exists as the dispatch-guard test home
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
