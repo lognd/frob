@@ -2,7 +2,7 @@
 id: T-2732
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2723):
   137 new (rule, file) identit(ies), 1 finding(s) (ARCH001, ARCH102, ARCH103, E501)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -52,7 +52,6 @@ scope:
 - src/frob/dup/_pipeline/_normalize.py
 - src/frob/dup/_template.py
 - src/frob/fuzz/_signatures.py
-- src/frob/gates/__init__.py
 - src/frob/gates/_coverage.py
 - src/frob/gates/_dead_symbols.py
 - src/frob/gates/_debt_deprecated.py
@@ -131,10 +130,19 @@ scope:
 - tests/unit/strata/test_registry_cross_corpus_totality.py
 - tests/unit/strata/test_registry_cross_refs.py
 - tests/unit/test_extending_guides_complete.py
+evidence_scope:
+- tests/unit/test_executable.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: T-2720 holds a live lease on this file; scope it out of T-2732 to avoid
+    collision
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: carry the coordinator's misattribution measurement and detection-vs-regression
@@ -143,6 +151,8 @@ body_changes:
   at: '2026-08-20'
   old_length: 25424
   new_length: 27829
+evidence:
+- tests/unit/test_executable.py::TestRuffExecutable::test_ruff_finds_errors_in_bad_python
 designated_repro_test: null
 threat: null
 component: null
@@ -493,3 +503,14 @@ that mistake before.
 
 Supersedes T-2731, which I filed for this same finding set moments before the
 rapid sweep auto-filed this one; T-2731 is dropped as a duplicate.
+
+frob:no-behavior-change reason="136 of 137 quarantined (rule, file)
+identities need zero code change -- they are pre-existing debt already
+covered by a frob:waive directive (severity note, non-blocking), newly
+observed only because the T-2713/T-2715 measurement repair ran a
+complete sweep for the first time; nothing about them was introduced by
+this ticket's work. The 1 remaining identity (E501 at _closeout.py:23)
+is a pure line-wrap of an existing docstring -- same text, same
+runtime behavior, only the physical line length changed to satisfy
+ruff's 88-char limit. No caller-visible behavior differs before/after
+either investigation outcome."

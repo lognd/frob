@@ -20,7 +20,8 @@ from pathlib import Path
 # flags are documented in their own --help text and in \
 # frob.app.ticket_runner._attach_backfill's module docstring"
 def _add_ticket_attach_and_lifecycle_end_parsers(ticket_sub) -> list:
-    """Register `attach`/`block`/`unblock`/`close`: the non-evidence closeout subcommands."""
+    """Register `attach`/`block`/`unblock`/`close`: the non-evidence closeout
+    subcommands."""
     ticket_attach_p = ticket_sub.add_parser(
         "attach", help="attach a file or clipboard image to a ticket"
     )
