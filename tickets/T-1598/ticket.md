@@ -11,12 +11,23 @@ parent: T-1597
 tier: story
 sprint: post-1.0
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'coordinator decision: defer live multi-source web research to a dedicated
+    pass, do not attempt from memory'
+  actor: logan
+  at: '2026-08-19'
+  old_length: 1680
+  new_length: 2530
 designated_repro_test: null
 threat: null
 component: null
@@ -39,3 +50,19 @@ Deliverables:
 5. A recommended batch order, with the user's five named languages (C#, Java, CUDA, Zig, Bash) first.
 
 Output goes in docs/ as a durable reference, not just a ticket comment -- later batches read it.
+
+Deliberately NOT attempted this round: this ticket requires live
+multi-source web research (TIOBE, RedMonk, GitHub Octoverse, Stack
+Overflow Developer Survey, IEEE Spectrum), each row citing real,
+current sourcing per the ticket's own deliverable 1. That is a
+distinct, larger unit of work than a normal drain-queue slot, and its
+output (rankings, availability tables) would date quickly regardless.
+
+It must NOT be attempted from model memory -- fabricated ranking
+numbers or citations that merely look plausible would be worse than no
+document at all, and would be effectively undetectable later without
+re-doing the research from scratch. An implementer picking this up
+should budget it as a dedicated research pass with real web access,
+not fold it into a normal ticket dispatch.
+
+Left queued and untouched otherwise; no partial content added.
