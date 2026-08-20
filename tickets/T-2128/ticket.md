@@ -2,7 +2,7 @@
 id: T-2128
 title: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity
   while every other SCOPE002 against this doc is a warning
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-11'
@@ -16,6 +16,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
+- tickets/T-2684/**
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +36,16 @@ scope_changes:
     investigation
   actor: logan
   at: '2026-08-19'
+- op: add
+  glob: tickets/T-2684/**
+  reason: standalone fix for a fabricated symbol citation in T-2684's body (frob.app._check_chunking._run_gate_chunks_stamping_progress
+    does not exist; real symbol is _run_baseline_chunks), found via T-2311's docblocks
+    run and confirmed by coordinator; landing alongside T-2128 rather than filing
+    a one-line-fix ticket
+  actor: logan
+  at: '2026-08-19'
+evidence:
+- tests/test_gates.py::TestScope002ClosureGate::test_silent_on_closed_scope
 designated_repro_test: null
 threat: null
 component: null
