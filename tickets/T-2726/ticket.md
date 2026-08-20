@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d1c9e71471e0f9b45a6cc7f4b5259675a4bd1da5
 ---
 `frob.tickets._reporting.disclosure_shaped_language`'s signal 1 (the
 `_DISCLOSURE_PHRASES` match) is called by
