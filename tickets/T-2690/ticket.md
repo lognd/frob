@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fix_engine.py
 - tests/test_gates.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,6 +35,11 @@ scope_changes:
   reason: 'TICK006 Tier-A phantom-citation recovery lives entirely in _fix_engine.py:
     scope-narrow to ticket_id (already threaded per T-1548), resolve via git rename
     before filing, dedupe against an existing recovery ticket before re-filing'
+  actor: logan
+  at: '2026-08-19'
+- op: add
+  glob: docs/modules/gates.md
+  reason: documenting the fix under the existing TICK006 Tier-A section
   actor: logan
   at: '2026-08-19'
 designated_repro_test: null
