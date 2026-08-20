@@ -2,7 +2,7 @@
 id: T-2711
 title: A passenger ticket's content lands via --allow-cross-ticket while its own ledger
   state stays non-terminal, leaking its scope lease
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -18,6 +18,8 @@ scope:
 - src/frob/tickets/_land.py
 - src/frob/tickets/_land_verify.py
 - docs/modules/tickets-landing.md
+evidence_scope:
+- tests/unit/test_land_already_landed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,7 +44,16 @@ body_changes:
   at: '2026-08-20'
   old_length: 3468
   new_length: 6670
-designated_repro_test: null
+- mode: append
+  reason: cite the genuine follow-up filed while working this series
+  actor: logan
+  at: '2026-08-20'
+  old_length: 6669
+  new_length: 6868
+evidence:
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref
+designated_repro_test: tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain::test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content
 threat: null
 component: null
 anchor: false
@@ -160,3 +171,5 @@ section and genuinely NO follow-up to file has no clean escape from
 this loop today. Either exempt the auto-generated `### Changed` header
 specifically from the disclosure-language heuristic, or teach the
 heuristic to recognize IT'S OWN generator's fixed section names.
+
+Filed: T-draft-4aa75f72 (disclosure_shaped_language signal 1 is unscoped to the Done report section, unlike signal 2 -- found while validating T-2718's fix in this same series; a genuine follow-up)
