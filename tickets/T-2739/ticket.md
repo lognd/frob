@@ -28,6 +28,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a2821e7ec023f3a98f56a6a2322a3434b6d33891
 ---
 T-2720 narrowed COV005's rebind detection: a new private edge under an old public binding's (kind,target) key is only flagged when the old public qualname's OWN edge for that key is gone (genuine displacement), not merely because SOME other symbol reuses the same shared anchor. The 18 frob:waive COV005 sites in .claude/hooks/root-write-guard.py (T-2481) and 4 in src/frob/gates/_coverage_sites.py (T-1943) all cite exactly this anchor-reuse false-positive shape in their reasons. COV005 is diff-hunk-scoped, so it cannot be re-evaluated against already-landed, already-squashed history directly -- verify each site by constructing a synthetic diff/hunk covering it (or reverting-then-reapplying the relevant hunk in a scratch branch) against the narrowed detector, and remove any waiver whose finding no longer reproduces, per this repo's own waiver-removal discipline (a removal must be backed by a measurement, not an assumption).
