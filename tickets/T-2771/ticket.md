@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - tests/test_tickets_lease.py
 - tests/unit/test_new_ticket_over_broad_scope_warning.py
+- docs/modules/tickets.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_new_ticket_over_broad_scope_warning.py
   reason: T-2771's own tests live/were-modified in these files
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: 'AFFECT001: large_glob_warnings/already_landed_markers/over_broad_literal_globs''s
+    own frob:doc target'
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
