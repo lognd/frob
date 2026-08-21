@@ -2,7 +2,7 @@
 id: T-2785
 title: frob ticket set-parent reports success while its auto-commit was refused, leaving
   the shared root dirty and blocking every agent land
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
