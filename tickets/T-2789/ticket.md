@@ -47,7 +47,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: df28a69ece68200380f917357a27f8bf704cde0c
 ---
 Batch 7/N of T-2359: apply ruff-format-only reformat to 13 files
 (vet capability/closedworld modules, WIRE001 test files, strata
