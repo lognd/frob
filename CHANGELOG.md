@@ -36,6 +36,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2244: Repoint trivial Makefile aliases (format/lint/typecheck/test*) at existing frob quality/fmt subcommands
 - T-2245: Rewrite docs + agent-playbook to name frob subcommands first; audit remaining Makefile references in src/frob/**
 - T-2251: frob format subcommand: replace make format/lint-fix/all (ruff fix+format wrapper)
+- T-2301: Relocate two archgate SCOPE002-widening tests out of test_examined_sites.py
 - T-2311: DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent contended family)
 - T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
 - T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles

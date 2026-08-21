@@ -11,10 +11,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
@@ -43,3 +48,4 @@ hatch is test-tree-only).
 
 ## Failure log
 - 2026-08-08 attempt 1: Verified: this is a permanent WIRE001 follow_up anchor (T-1820 precedent, same shape). The three frob:waive WIRE001 follow_up="T-1831" directives in src/frob/__main__.py (lines 184, 202, 216) are already correct as-is -- _GroupedHelpFormatter and its two methods are genuinely wired via argparse's formatter_class mechanism, which the best-effort callgraph cannot trace. There is no code to write; WIRE002 requires a real, still-open ticket id as follow_up (the permanent=true escape hatch is test-tree-only per docs/modules/gates.md#wire001wire002-t-1428), so this ticket must stay open/queued indefinitely as that anchor. Closing it would orphan the waivers and re-trigger WIRE002 on main.
+- 2026-08-20 attempt 2: Re-verified post T-2746: caller lives in argparse stdlib (out-of-repo), not an in-repo shape gap -- still (b), no detector change possible

@@ -179,8 +179,9 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
 
 # frob:doc docs/modules/gates.md#data-models
 # frob:ticket T-1921
-# frob:tests tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites.test_archgate_examined_sites_include_a_real_python_file  # noqa: E501
-# frob:tests tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites.test_archgate_examined_sites_exclude_an_unparseable_file  # noqa: E501
+# frob:ticket T-2301
+# frob:tests tests/test_arch_gate.py::TestArchExaminedSites.test_archgate_examined_sites_include_a_real_python_file  # noqa: E501
+# frob:tests tests/test_arch_gate.py::TestArchExaminedSites.test_archgate_examined_sites_exclude_an_unparseable_file  # noqa: E501
 # frob:waive WIRE001 reason="already called at runtime from \
 # frob.gates._coverage_sites._load_family_reporters, which stores it as a dict value \
 # and invokes it indirectly (reporters[family](root)) -- the exact shape static \

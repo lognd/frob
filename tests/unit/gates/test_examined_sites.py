@@ -94,30 +94,16 @@ class TestAttachExaminedSites:
     """`attach_examined_sites` populates `archgate` for real against a
     fixture tree, and leaves every other family absent -- the acceptance
     property T-1921's brief demanded a regression test for: a partially-
-    examined run's uninstrumented families must never look covered."""
+    examined run's uninstrumented families must never look covered.
 
-    def test_archgate_examined_sites_include_a_real_python_file(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
-        # kind="unit"
-        (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
-        report = attach_examined_sites(_empty_report(), tmp_path)
-        assert site_examined(report.stats, "archgate", "m.py") is True
-
-    def test_archgate_examined_sites_exclude_an_unparseable_file(
-        self, tmp_path: Path
-    ) -> None:
-        # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
-        # kind="unit"
-        # A file with no tree-sitter grammar for its extension (arch.py's
-        # own `_analyze_one_file` early-returns before checks run) must
-        # NOT be reported examined -- proves this substrate reflects
-        # `_analyze_one_file`'s real success/failure outcome, not merely
-        # "was in the walk's candidate list".
-        (tmp_path / "data.bin").write_bytes(b"\x00\x01\x02")
-        report = attach_examined_sites(_empty_report(), tmp_path)
-        assert site_examined(report.stats, "archgate", "data.bin") is False
+    T-2301: the two archgate-specific cases that used to live here
+    (`test_archgate_examined_sites_include_a_real_python_file`,
+    `test_archgate_examined_sites_exclude_an_unparseable_file`) moved to
+    `tests/test_arch_gate.py::TestArchExaminedSites` -- both carried a
+    `frob:tests` edge to `src/frob/gates/_arch.py::arch_examined_sites`,
+    which pulled in `_arch.py`'s own full test surface as SCOPE002
+    warnings whenever this file was in a ticket's scope (T-2012). This
+    class keeps the family-agnostic cases only."""
 
     # frob:ticket T-1943
     def test_families_this_module_does_not_know_about_stay_absent(

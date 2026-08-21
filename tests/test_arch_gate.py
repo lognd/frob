@@ -7,6 +7,17 @@ from pathlib import Path
 
 from frob.arch import analyze_project
 from frob.gates import GateConfig, run_gates
+from frob.gates._coverage_sites import attach_examined_sites, site_examined
+from frob.gates._models import GateReport, GateStats
+
+
+def _empty_report() -> GateReport:
+    """Test helper: a `GateReport` with no violations, just the `stats`
+    shape `site_examined` reads from -- mirrors `tests/unit/gates/
+    test_examined_sites.py::_empty_report` (T-2301: this file gets its
+    own copy rather than importing across the two test modules, same as
+    every other helper here)."""
+    return GateReport(violations=(), waived=(), stats=GateStats(examined_sites={}))
 
 
 def _write(root: Path, rel: str, text: str) -> Path:
@@ -279,3 +290,37 @@ class TestArchGateLargeFile:
         assert [(s.file, s.message) for s in dir_hits] == [
             (s.file, s.message) for s in single_hits
         ]
+
+
+# frob:ticket T-2301
+class TestArchExaminedSites:
+    """`arch_examined_sites` populates `archgate`'s per-site coverage for
+    real against a fixture tree (T-1921). Relocated here from
+    `tests/unit/gates/test_examined_sites.py` (T-2301, residue from
+    T-2028/T-2012): both cases carry a `frob:tests` edge to
+    `src/frob/gates/_arch.py::arch_examined_sites`, which pulls in
+    `_arch.py`'s own full test surface as SCOPE002 warnings whenever
+    `test_examined_sites.py` sits in a ticket's scope -- this file is
+    already scoped alongside `_arch.py` for every other `_arch.py` test,
+    so the edge no longer widens anything."""
+
+    def test_archgate_examined_sites_include_a_real_python_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_arch.py::arch_examined_sites kind="unit"
+        (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, "archgate", "m.py") is True
+
+    def test_archgate_examined_sites_exclude_an_unparseable_file(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/gates/_arch.py::arch_examined_sites kind="unit"
+        # A file with no tree-sitter grammar for its extension (arch.py's
+        # own `_analyze_one_file` early-returns before checks run) must
+        # NOT be reported examined -- proves this substrate reflects
+        # `_analyze_one_file`'s real success/failure outcome, not merely
+        # "was in the walk's candidate list".
+        (tmp_path / "data.bin").write_bytes(b"\x00\x01\x02")
+        report = attach_examined_sites(_empty_report(), tmp_path)
+        assert site_examined(report.stats, "archgate", "data.bin") is False

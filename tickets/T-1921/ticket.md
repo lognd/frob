@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_models.py
 - src/frob/gates/_arch.py
@@ -23,6 +26,8 @@ scope:
 - docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/_fix_engine_sync.py
@@ -132,11 +137,22 @@ evidence:
 - tests/unit/gates/test_examined_sites.py::TestSiteExaminedSoundness::test_instrumented_but_empty_family_still_reports_false_for_any_site
 - tests/unit/gates/test_examined_sites.py::TestIsFamilyInstrumented::test_absent_family_is_not_instrumented
 - tests/unit/gates/test_examined_sites.py::TestIsFamilyInstrumented::test_present_empty_family_is_instrumented
-- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_include_a_real_python_file
-- tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_exclude_an_unparseable_file
+- tests/test_arch_gate.py::TestArchExaminedSites::test_archgate_examined_sites_include_a_real_python_file
+- tests/test_arch_gate.py::TestArchExaminedSites::test_archgate_examined_sites_exclude_an_unparseable_file
 - tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_families_this_module_does_not_know_about_stay_absent
 - tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_preserves_examined_sites_a_prior_caller_already_attached
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_include_a_real_python_file
+  new_node: tests/test_arch_gate.py::TestArchExaminedSites::test_archgate_examined_sites_include_a_real_python_file
+  reason: T-2301 relocated this test to tests/test_arch_gate.py::TestArchExaminedSites
+  actor: logan
+  at: '2026-08-20'
+- old_node: tests/unit/gates/test_examined_sites.py::TestAttachExaminedSites::test_archgate_examined_sites_exclude_an_unparseable_file
+  new_node: tests/test_arch_gate.py::TestArchExaminedSites::test_archgate_examined_sites_exclude_an_unparseable_file
+  reason: T-2301 relocated this test to tests/test_arch_gate.py::TestArchExaminedSites
+  actor: logan
+  at: '2026-08-20'
 threat: null
 component: null
 anchor: false

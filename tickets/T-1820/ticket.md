@@ -11,10 +11,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/_quality.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
@@ -39,3 +44,4 @@ hatch is test-tree-only).
 
 ## Failure log
 - 2026-08-08 attempt 1: Scope (src/frob/_cli_parsers/_quality.py) was, at the time of this attempt, explicitly held by another concurrent agent per this session's dispatch instructions (forbidden glob src/frob/_cli_parsers/**). Coordinator later corrected: this ticket is a permanent-by-design WIRE001 waiver anchor (T-1558 precedent) that must stay open/queued indefinitely -- the three frob:waive WIRE001 follow_up="T-1820" directives in that file are already correct as-is; there is no code to write and this ticket should never be closed.
+- 2026-08-20 attempt 2: Re-verified post T-2746: this is (b) genuinely dead-by-design, not a detector blind spot -- no code/detector change
