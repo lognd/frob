@@ -67,7 +67,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9f7377a6650c8413ed4173a289f2791ffc850880
 ---
 Batch 2 of T-2373's ruff I001 (import-sort) burn-down. Re-measured
 2026-08-21 in a fresh worktree via
