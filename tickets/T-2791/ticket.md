@@ -1,7 +1,7 @@
 ---
 id: T-2791
 title: test_derived_match hardcoded verb set is stale (missing unblock/runs-last-parallel-safe/set-parent)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -27,3 +27,6 @@ anchor_reason: null
 land_commit: null
 ---
 Found while working T-2780: TestVerbStrategy.test_derived_match hardcodes the expected MIRRORED_LEDGER_VERBS/OWN_TRANSACTION_VERBS set literally; it is stale on main (pre-existing, unrelated to T-2780/T-2770/T-2624/T-2681) missing 'unblock', 'runs-last-parallel-safe', and 'set-parent'. Fix: derive the expected set from LEDGER_VERB_STRATEGY the same way test_all_classified does, or update the literal.
+
+## Drop reason
+- 2026-08-21: duplicate of T-2675 (same test test_derived_match, same scope tests/unit/test_ticket_runner_ledger_mirror.py, same defect: hardcoded verb set gone stale). T-2675 is the earlier human-filed original and is the survivor. T-2791's added detail -- the specific missing verbs are unblock, runs-last-parallel-safe and set-parent, confirmed reproducing on main 2026-08-21 -- should be read from this drop reason when working T-2675. Dropped as a duplicate with a named survivor, NOT as a false positive: the defect is real and still open. (absorbed by T-2675)
