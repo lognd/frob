@@ -2,7 +2,7 @@
 id: T-2798
 title: size a content-hash cache for sys's ast-based capability scan (currently fully
   uncached, largest single stage)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability_python.py
+- tests/unit/test_capability_native.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_capability_native.py
+  reason: T-2798 threading-parity regression tests for the candidates-threading fix
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
