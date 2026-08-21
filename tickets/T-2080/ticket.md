@@ -2,7 +2,7 @@
 id: T-2080
 title: 'gate-gap class 4 (non-python doc targets): frob.toml severity + remaining
   config surfaces still unanchored'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -21,7 +21,7 @@ scope:
 - src/frob/check/__init__.py
 - docs/modules/gates.md
 - tests/test_gates.py
-- tickets/T-draft-438763fd/**
+- tickets/T-2766/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,11 +64,16 @@ scope_changes:
   actor: logan
   at: '2026-08-20'
 - op: add
-  glob: tickets/T-draft-438763fd/**
+  glob: tickets/T-2766/**
   reason: filed follow-up ticket for the live arch.md severity-table drift the new
     DOC013 gate found
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
+- tests/test_gates.py::TestDocseverityGate::test_no_override_is_a_noop
+- tests/test_gates.py::TestDocseverityGate::test_ambiguous_doc_word_is_never_flagged
 designated_repro_test: null
 threat: null
 component: null

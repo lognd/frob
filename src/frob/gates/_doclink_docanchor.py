@@ -873,6 +873,142 @@ def docmake_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return violations
 
 
+# ---------------------------------------------------------------------------
+# DOC013: SEVERITY TABLE (gate-gap class 4, T-2080) -- a markdown severity-
+# table row's claimed severity word for a known gate code, checked against
+# an explicit `[gates.severity]` override in this project's own frob.toml.
+# DOC006's kind 3 (CONFIG REFERENCE) only resolves a `[section.key]`
+# pointer's EXISTENCE, never a claimed VALUE against the real one (T-2080's
+# own motivating example: docs/modules/arch.md's severity table called
+# ARCH101 "warning" after T-0977 promoted it to `error` in frob.toml).
+# ---------------------------------------------------------------------------
+
+_SEVERITY_ROW_CODE_RE = re.compile(r"\(([A-Z]{2,10}\d{2,4})[,)]")
+
+#: Doc-prose severity words this repo's own severity tables actually use
+#: that unambiguously mean a specific `frob.toml` `[gates.severity]` value.
+#: Deliberately narrow (T-2703-style closed-set hardening): a softer word
+#: this repo also uses (`suggestion`, `report`) is a gate's class-coded
+#: DEFAULT severity, which this check has no independent registry to
+#: verify -- only the two words that map 1:1 onto a real override value
+#: are compared, so an ambiguous vocabulary word is never flagged.
+_SEVERITY_WORD_TO_TOML = {"error": "error", "warning": "warn", "warn": "warn"}
+
+
+def _doc013_violation(
+    doc_rel: str, line: int, code: str, doc_word: str, toml_value: str
+) -> Violation:
+    """Build one DOC013 violation -- `doc_rel`'s severity table lists
+    `code` as `doc_word`, but this project's own `frob.toml` `[gates.
+    severity]` explicitly overrides `code` to `toml_value`."""
+    return Violation(
+        rule="DOC013",
+        severity=Severity.WARN,
+        file=doc_rel,
+        line=line,
+        message=(
+            f"DOC013: {doc_rel}:{line} lists {code} as `{doc_word}`, but "
+            f'frob.toml [gates.severity] overrides {code} = "{toml_value}" '
+            f"-- update the table or the override"
+        ),
+    )
+
+
+def _gates_severity_overrides(root: Path) -> dict[str, str]:
+    """This project's own `frob.toml` `[gates.severity]` table, or `{}` if
+    absent/unreadable -- fail-open, same posture as `_load_frob_toml`."""
+    path = root / "frob.toml"
+    if not path.exists():
+        return {}
+    try:
+        with path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, tomllib.TOMLDecodeError):
+        return {}
+    except Exception:
+        # Fail-open over a genuinely unresolvable manifest-load surprise
+        # too, not just the two named cases (EXHAUST001, T-1371).
+        return {}
+    severity = data.get("gates", {})
+    severity = severity.get("severity", {}) if isinstance(severity, dict) else {}
+    return severity if isinstance(severity, dict) else {}
+
+
+def _severity_table_violations(
+    root: Path, doc_rel: str, severity_overrides: dict[str, str]
+) -> list[Violation]:
+    """DOC013 violations for every markdown table row shaped like
+    `` | `name` (CODE, ...) | ... | SEVERITY_WORD | `` whose `CODE` has an
+    explicit `frob.toml` `[gates.severity]` override contradicting the
+    row's own claimed word (`_SEVERITY_WORD_TO_TOML`). Splits each
+    candidate line on `|` rather than a single end-to-end regex -- robust
+    to any number of middle cells, same posture as `_config_path_exists`
+    walking structured data instead of pattern-matching prose."""
+    try:
+        text = (root / doc_rel).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    violations: list[Violation] = []
+    for line_no, raw in enumerate(text.splitlines(), start=1):
+        stripped = raw.strip()
+        if not (stripped.startswith("|") and stripped.endswith("|")):
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        code_match = _SEVERITY_ROW_CODE_RE.search(cells[0])
+        if code_match is None:
+            continue
+        code = code_match.group(1)
+        toml_value = severity_overrides.get(code)
+        if toml_value is None:
+            continue
+        doc_word = cells[-1].lower()
+        expected = _SEVERITY_WORD_TO_TOML.get(doc_word)
+        if expected is None or expected == toml_value:
+            continue
+        violations.append(
+            _doc013_violation(doc_rel, line_no, code, doc_word, toml_value)
+        )
+    return violations
+
+
+# frob:doc docs/modules/gates.md#public-api
+# frob:tests tests/test_gates.py::TestDocseverityGate.test_mismatched_severity_row_fires_doc013  # noqa: E501
+# frob:tests tests/test_gates.py::TestDocseverityGate.test_matching_severity_row_passes  # noqa: E501
+# frob:tests tests/test_gates.py::TestDocseverityGate.test_no_override_is_a_noop  # noqa: E501
+# frob:tests tests/test_gates.py::TestDocseverityGate.test_ambiguous_doc_word_is_never_flagged  # noqa: E501
+def docseverity_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
+    """DOC013 (gate-gap class 4, T-2080): a markdown severity-table row's
+    claimed severity word for a gate code must not contradict an explicit
+    `frob.toml` `[gates.severity]` override for that same code -- closes
+    the "ARCH101 is a report, not a gate" class of drift DOC006's kind 3
+    (CONFIG REFERENCE) cannot see, since kind 3 only checks that a
+    `[section.key]` path EXISTS, never a claimed VALUE against the real
+    one. Ships at WARN (new-gate-at-WARN-first precedent, T-0688) pending
+    a burn-down of any live findings, same posture DOC009/DOC012 shipped
+    under before their own later promotion to ERROR."""
+    root = Path(root)
+    severity_overrides = _gates_severity_overrides(root)
+    if not severity_overrides:
+        return ()
+    include, exclude, roots = _doclink_config(root)
+    docs = (
+        _obligated_docs(root, include, exclude)
+        | set(roots)
+        | _linked_from_edges(snapshot)
+    )
+    violations = tuple(
+        v
+        for doc_rel in sorted(docs)
+        for v in _severity_table_violations(root, doc_rel, severity_overrides)
+    )
+    _log.info(
+        "docseverity: %d doc(s) scanned, %d violation(s)", len(docs), len(violations)
+    )
+    return violations
+
+
 __all__ = [
     # frob:ticket T-1170
     # `_doclink_config`/`_obligated_docs`/`_docanchor_check_edge`/
@@ -894,4 +1030,5 @@ __all__ = [
     "doclink_gate",
     "docstatus_gate",
     "docmake_gate",
+    "docseverity_gate",
 ]

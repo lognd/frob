@@ -27,6 +27,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
 - T-1666: Classify and re-waive the 142 OPAQUE001 findings T-1659's symref fix surfaced; sweep PERF/PII/SEC005 for the same shape
 - T-1945: Bulk-reformat the 77 ruff-format + 265 frob-fmt drifted files (deferred from T-1928)
+- T-2080: gate-gap class 4 (non-python doc targets): frob.toml severity + remaining config surfaces still unanchored
 - T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
 - T-2128: SCOPE002 for docs/modules/tickets.md#coalescing-verify-worker-t-1688 is ERROR-severity while every other SCOPE002 against this doc is a warning
 - T-2134: tickets.md monofile looks stale/orphaned since the v2 sharded-ticket migration -- investigate and remove or document

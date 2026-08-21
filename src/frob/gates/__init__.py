@@ -98,6 +98,7 @@ from frob.gates._doclink_docanchor import (
     docanchor_gate,
     doclink_gate,
     docmake_gate,
+    docseverity_gate,
     docstatus_gate,
 )
 from frob.gates._docptr import doc006_gate
@@ -5870,6 +5871,7 @@ _ALL_GATES = frozenset(
         "docanchor",
         "docstatus",
         "docmake",
+        "docseverity",
         "perf",
         "fuzz",
         "release",
@@ -6305,6 +6307,7 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "docanchor",
     "docstatus",
     "docmake",
+    "docseverity",
     "perf",
     "fuzz",
     "release",
@@ -6724,6 +6727,9 @@ def _build_thread_jobs(
         # T-1230: Makefile target citations, repo_root-scoped like
         # docstatus/docanchor above.
         "docmake": lambda: docmake_gate(st.repo_root, st.snapshot),
+        # T-2080: markdown severity-table rows vs. `frob.toml`
+        # `[gates.severity]` overrides, repo_root-scoped like docmake above.
+        "docseverity": lambda: docseverity_gate(st.repo_root, st.snapshot),
         # T-0436: fenced-code-block doc-drift heuristic, repo_root-scoped for
         # the same reason docanchor/refs are -- doc paths are repo-relative
         # text either way, and `git ls-files *.md` must see the whole repo.
@@ -8206,6 +8212,7 @@ __all__ = [
     "docanchor_gate",
     "docstatus_gate",
     "docmake_gate",
+    "docseverity_gate",
     "dup_gate",
     "list_debt",
     "list_deprecated",

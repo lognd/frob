@@ -11716,6 +11716,97 @@ class TestDocmakeGate:
         assert violations == (), violations
 
 
+class TestDocseverityGate:
+    def test_mismatched_severity_row_fires_doc013(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        from frob.gates import docseverity_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.severity]\nARCH101 = "error"\n', encoding="utf-8"
+        )
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n"
+            "| name | detail | severity |\n"
+            "| --- | --- | --- |\n"
+            "| `low-cohesion-class` (ARCH101, T-0616) | LCOM4 | warning |\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        violations = docseverity_gate(root, snap)
+        assert set(_rules(violations)) == {"DOC013"}
+        assert any("ARCH101" in v.message for v in violations)
+
+    def test_matching_severity_row_passes(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        from frob.gates import docseverity_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.severity]\nARCH101 = "error"\n', encoding="utf-8"
+        )
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n"
+            "| name | detail | severity |\n"
+            "| --- | --- | --- |\n"
+            "| `low-cohesion-class` (ARCH101, T-0616) | LCOM4 | error |\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docseverity_gate(root, snap) == ()
+
+    def test_no_override_is_a_noop(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # A code with no [gates.severity] override cannot be checked (no
+        # independent default-severity registry exists), so a doc word
+        # this repo also uses for a class default (`suggestion`) never
+        # fires even though it looks similar to the mismatch shape above.
+        from frob.gates import docseverity_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text("", encoding="utf-8")
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n"
+            "| name | detail | severity |\n"
+            "| --- | --- | --- |\n"
+            "| `mixed-concern-function` (ARCH103, T-0616) | mixed | suggestion |\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docseverity_gate(root, snap) == ()
+
+    def test_ambiguous_doc_word_is_never_flagged(self, tmp_path):
+        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # T-2080's own closed-set hardening: `suggestion`/`report` are this
+        # repo's class-default vocabulary, not one of the two words this
+        # gate can verify against a real [gates.severity] override value
+        # -- even WITH a live override present, an ambiguous word must not
+        # fire (no default-severity registry to compare it against).
+        from frob.gates import docseverity_gate
+        from frob.graph import build_graph
+
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "frob.toml").write_text(
+            '[gates.severity]\nARCH103 = "error"\n', encoding="utf-8"
+        )
+        (root / "docs" / "index.md").write_text(
+            "# Docs\n\n"
+            "| name | detail | severity |\n"
+            "| --- | --- | --- |\n"
+            "| `mixed-concern-function` (ARCH103, T-0616) | mixed | suggestion |\n",
+            encoding="utf-8",
+        )
+        snap = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        assert docseverity_gate(root, snap) == ()
+
+
 class TestDocanchorGate:
     def _snap(self, root: Path):
         from frob.graph import build_graph
