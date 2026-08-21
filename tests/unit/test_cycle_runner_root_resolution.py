@@ -139,9 +139,7 @@ class TestCycleRunnerRootResolution:
 
     # frob:ticket T-2588
     # frob:tests tests/unit/test_cycle_runner_root_resolution.py::TestCycleRunnerRootResolution.test_run_exits_nonzero_error_on_unresolvable_path  # noqa: E501
-    def test_run_exits_nonzero_error_on_unresolvable_path(
-        self, tmp_path: Path
-    ) -> None:
+    def test_run_exits_nonzero_error_on_unresolvable_path(self, tmp_path: Path) -> None:
         # frob:tests src/frob/app/cycle_runner.py::run kind="unit"
         orphan = tmp_path / "no_pyproject_no_git"
         orphan.mkdir()

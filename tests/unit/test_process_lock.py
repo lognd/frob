@@ -615,9 +615,7 @@ class TestSharedIdCounter:
         primary = tmp_path / "primary"
         self._init_repo_on_main(primary)
         detached = tmp_path / "detached"
-        self._git(
-            "worktree", "add", "--detach", str(detached), "main", cwd=primary
-        )
+        self._git("worktree", "add", "--detach", str(detached), "main", cwd=primary)
 
         # Both checkouts' own local ticket state agrees on max=3 -- neither
         # one's view is "wrong" by its own lights, and neither can see the

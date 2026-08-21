@@ -24,6 +24,7 @@ INDEX_MD = REPO_ROOT / "docs" / "index.md"
 
 REQUIRED_MCP_SERVERS = {"serena", "frob", "fetch", "arxiv"}
 
+
 def test_mcp_json_parses_and_declares_required_servers():
     """.mcp.json is valid JSON and pins exactly the servers the loop needs.
 

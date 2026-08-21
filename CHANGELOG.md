@@ -260,6 +260,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2787: Reformat batch 6/N: 13 files pending ruff-format (T-2359 child)
 - T-2788: Burn ruff I001 batch 1: src/frob non-gates files
 - T-2789: Reformat batch 7/N: 13 files pending ruff-format (T-2359 child)
+- T-2792: Reformat batch 8/N: 13 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 

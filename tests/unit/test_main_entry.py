@@ -71,9 +71,7 @@ class TestMainInstallsSigtermReaper:
         def _record_dispatch(argv: list[str]) -> None:
             calls.append("dispatch")
 
-        monkeypatch.setattr(
-            "frob.process.install_sigterm_reaper", _record_install
-        )
+        monkeypatch.setattr("frob.process.install_sigterm_reaper", _record_install)
         monkeypatch.setattr(main_module, "_dispatch", _record_dispatch)
         monkeypatch.setattr("sys.argv", ["frob", "outline", "x.py"])
 
@@ -354,9 +352,7 @@ class TestGroupedHelpFormatter:
                 (i, ln) for i, ln in enumerate(lines) if header in ln
             )
             header_indent = len(line) - len(line.lstrip(" "))
-            entry_line = next(
-                ln for ln in lines[header_idx + 1 :] if ln.strip()
-            )
+            entry_line = next(ln for ln in lines[header_idx + 1 :] if ln.strip())
             entry_indent = len(entry_line) - len(entry_line.lstrip(" "))
             assert header_indent < entry_indent, (
                 f"{header!r} indent ({header_indent}) must be strictly less "
@@ -383,9 +379,9 @@ class TestGroupedHelpFormatter:
             # line was truncated mid-token, not wrapped between tokens) is
             # the original bug's exact signature -- "...doctor/c".
             last_token = stripped.split()[-1] if stripped.split() else ""
-            assert not (
-                len(last_token) == 1 and stripped.endswith("/" + last_token)
-            ), f"line appears to break mid-word: {stripped!r}"
+            assert not (len(last_token) == 1 and stripped.endswith("/" + last_token)), (
+                f"line appears to break mid-word: {stripped!r}"
+            )
 
     def test_nested_subparser_help_is_unaffected(self) -> None:
         """`frob quality --help` keeps the ordinary flat argparse listing
@@ -408,37 +404,25 @@ class TestConcurrentCheckAdvisory:
     """`_report_concurrent_check_advisory_best_effort` (T-2473) -- best-
     effort, advisory-only startup log line; never raises, never blocks."""
 
-    def test_no_other_checks_logs_nothing(
-        self, monkeypatch, caplog
-    ) -> None:
+    def test_no_other_checks_logs_nothing(self, monkeypatch, caplog) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_no_other_checks_logs_nothing  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 0
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 0)
         with caplog.at_level("INFO"):
             main_module._report_concurrent_check_advisory_best_effort()
         assert "other check" not in caplog.text
 
-    def test_other_checks_logs_info_below_four(
-        self, monkeypatch, caplog
-    ) -> None:
+    def test_other_checks_logs_info_below_four(self, monkeypatch, caplog) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_other_checks_logs_info_below_four  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 2
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 2)
         with caplog.at_level("INFO"):
             main_module._report_concurrent_check_advisory_best_effort()
         assert "2 other check(s)" in caplog.text
         info_records = [r for r in caplog.records if "other check" in r.message]
         assert all(r.levelname == "INFO" for r in info_records)
 
-    def test_four_or_more_checks_logs_warning(
-        self, monkeypatch, caplog
-    ) -> None:
+    def test_four_or_more_checks_logs_warning(self, monkeypatch, caplog) -> None:
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_four_or_more_checks_logs_warning  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 4
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 4)
         with caplog.at_level("INFO"):
             main_module._report_concurrent_check_advisory_best_effort()
         warn_records = [r for r in caplog.records if "other check" in r.message]
@@ -462,12 +446,8 @@ class TestConcurrentCheckAdvisory:
         still reach the operator, on stderr, so the advisory is not
         silently dropped instead of merely relocated."""
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_writes_to_stderr_not_stdout  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 1
-        )
-        main_module._report_concurrent_check_advisory_best_effort(
-            force_stderr=True
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 1)
+        main_module._report_concurrent_check_advisory_best_effort(force_stderr=True)
         captured = capsys.readouterr()
         assert captured.out == ""
         assert "1 other check(s)" in captured.err
@@ -482,37 +462,25 @@ class TestConcurrentCheckAdvisory:
         silently drop this exact case. `force_stderr=True` must bypass
         that threshold entirely, not just relocate it."""
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_below_four_still_reaches_stderr  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 2
-        )
-        main_module._report_concurrent_check_advisory_best_effort(
-            force_stderr=True
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 2)
+        main_module._report_concurrent_check_advisory_best_effort(force_stderr=True)
         captured = capsys.readouterr()
         assert captured.out == ""
         assert "2 other check(s)" in captured.err
 
     # frob:ticket T-2484
-    def test_force_stderr_idle_machine_stays_quiet(
-        self, monkeypatch, capsys
-    ) -> None:
+    def test_force_stderr_idle_machine_stays_quiet(self, monkeypatch, capsys) -> None:
         """T-2484 must-stay-quiet: an idle machine (0 other checks) must
         add no noise on either stream, `force_stderr` or not."""
         # frob:tests tests/unit/test_main_entry.py::TestConcurrentCheckAdvisory.test_force_stderr_idle_machine_stays_quiet  # noqa: E501
-        monkeypatch.setattr(
-            "frob.process._reap.count_running_checks", lambda: 0
-        )
-        main_module._report_concurrent_check_advisory_best_effort(
-            force_stderr=True
-        )
+        monkeypatch.setattr("frob.process._reap.count_running_checks", lambda: 0)
+        main_module._report_concurrent_check_advisory_best_effort(force_stderr=True)
         captured = capsys.readouterr()
         assert captured.out == ""
         assert captured.err == ""
 
     # frob:ticket T-2484
-    def test_dispatch_passes_force_stderr_only_for_json(
-        self, monkeypatch
-    ) -> None:
+    def test_dispatch_passes_force_stderr_only_for_json(self, monkeypatch) -> None:
         """`_dispatch` must derive `force_stderr` from the parsed
         `check_json` flag, not from some other proxy -- a plain (non-
         json) `frob check` keeps the old level-routed behavior."""
@@ -532,7 +500,7 @@ class TestConcurrentCheckAdvisory:
         monkeypatch.setattr(
             main_module.AppConfig, "from_external", lambda *a, **kw: object()
         )
-        monkeypatch.setattr(main_module, "App", lambda cfg: (lambda: None))
+        monkeypatch.setattr(main_module, "App", lambda cfg: lambda: None)
         main_module._dispatch(["check", "--json"])
         assert calls == [{"force_stderr": True}]
         calls.clear()

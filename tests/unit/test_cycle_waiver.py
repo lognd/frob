@@ -57,8 +57,7 @@ class TestCycleWaiverPipeline:
         _make_cyclic_fixture(tmp_path, waiver_in=None)
         result = _run_cycle(tmp_path)
         assert len(result.diagnostics) == 1, (
-            f"expected exactly one unwaived CYCLE001 finding; got "
-            f"{result.diagnostics}"
+            f"expected exactly one unwaived CYCLE001 finding; got {result.diagnostics}"
         )
         assert result.diagnostics[0].code == "CYCLE001"
 

@@ -60,9 +60,7 @@ class TestNativeSchemaGate:
     def test_no_schema_declared_is_unresolved_not_empty(self, tmp_path: Path) -> None:
         """No [native_schema] known_keys declared: UNRESOLVED, never a
         silently empty (falsely clean) list."""
-        (tmp_path / "frob.toml").write_text(
-            '[[native]]\nname = "x"\nbuild_cmd = "y"\n'
-        )
+        (tmp_path / "frob.toml").write_text('[[native]]\nname = "x"\nbuild_cmd = "y"\n')
         violations = native_schema_gate(tmp_path)
         assert len(violations) == 1
         assert violations[0].severity == Severity.UNRESOLVED

@@ -246,9 +246,7 @@ class TestCountRunningChecks:
         _write_proc_entry(
             tmp_path, 100, cmdline=b"/home/x/.venv/bin/frob\x00check\x00", ppid=1
         )
-        _write_proc_entry(
-            tmp_path, 101, cmdline=b"frob\x00check\x00--json\x00", ppid=1
-        )
+        _write_proc_entry(tmp_path, 101, cmdline=b"frob\x00check\x00--json\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 2
 
     def test_excludes_self(self, tmp_path: Path) -> None:
@@ -262,9 +260,7 @@ class TestCountRunningChecks:
         _write_proc_entry(tmp_path, 300, cmdline=b"frob\x00ticket\x00land\x00", ppid=1)
         # A path containing "check" as a substring of a longer word, not
         # a whole argv token -- must NOT count either.
-        _write_proc_entry(
-            tmp_path, 301, cmdline=b"frob\x00checkpointer\x00", ppid=1
-        )
+        _write_proc_entry(tmp_path, 301, cmdline=b"frob\x00checkpointer\x00", ppid=1)
         # "check" present but no "frob" token at all.
         _write_proc_entry(tmp_path, 302, cmdline=b"pytest\x00check\x00", ppid=1)
         assert count_running_checks(proc=tmp_path, self_pid=1) == 0

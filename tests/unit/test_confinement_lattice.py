@@ -38,8 +38,8 @@ class TestConfinementLatticePositiveControl:
         silently dropped."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def test_evil():\n'
+            "from pathlib import Path\n"
+            "def test_evil():\n"
             '    p = Path("/tmp/evil.txt")\n'
             '    p.write_text("bad")\n',
         )
@@ -59,7 +59,7 @@ class TestConfinementLatticePositiveControl:
         `ESCAPED` positive."""
         sample = _write_sample(
             tmp_path,
-            'def test_ordinary(tmp_path):\n'
+            "def test_ordinary(tmp_path):\n"
             '    (tmp_path / "file.txt").write_text("ok")\n',
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
@@ -81,8 +81,8 @@ class TestConfinementLatticeUnknown:
         attributing the poison source by symref."""
         sample = _write_sample(
             tmp_path,
-            'def test_calls_unknown_helper(tmp_path):\n'
-            '    result = _external_helper(tmp_path)\n'
+            "def test_calls_unknown_helper(tmp_path):\n"
+            "    result = _external_helper(tmp_path)\n"
             '    result.write_text("who knows")\n',
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
@@ -108,9 +108,9 @@ class TestConfinementLatticeUnknown:
         must resolve `ESCAPED`."""
         sample = _write_sample(
             tmp_path,
-            'import os\n'
-            'from pathlib import Path\n'
-            'def test_env_path():\n'
+            "import os\n"
+            "from pathlib import Path\n"
+            "def test_env_path():\n"
             '    target = Path(os.environ["HOME"]) / "x.txt"\n'
             '    target.write_text("bad")\n',
         )
@@ -135,11 +135,11 @@ class TestConfinementLatticeHelperPropagation:
         propagation the ticket names, not just same-function reasoning."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def _make_path(base: Path) -> Path:\n'
+            "from pathlib import Path\n"
+            "def _make_path(base: Path) -> Path:\n"
             '    return base / "nested" / "file.txt"\n'
-            'def test_uses_helper(tmp_path):\n'
-            '    target = _make_path(tmp_path)\n'
+            "def test_uses_helper(tmp_path):\n"
+            "    target = _make_path(tmp_path)\n"
             '    target.write_text("ok")\n',
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
@@ -168,12 +168,12 @@ class TestParam0Credit:
         ROOTED, not UNKNOWN."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def _write_fixture(tmp: Path):\n'
+            "from pathlib import Path\n"
+            "def _write_fixture(tmp: Path):\n"
             '    target = tmp / "sub" / "file.txt"\n'
             '    target.write_text("hi")\n'
-            'def test_uses_fixture(tmp_path):\n'
-            '    _write_fixture(tmp_path)\n',
+            "def test_uses_fixture(tmp_path):\n"
+            "    _write_fixture(tmp_path)\n",
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
         result = compute_confinement_summaries(facts, list(facts))
@@ -183,9 +183,7 @@ class TestParam0Credit:
         assert site.symref.endswith("::_write_fixture")
         assert site.state is ConfinementState.ROOTED
 
-    def test_helper_that_escapes_its_param_gets_no_credit(
-        self, tmp_path: Path
-    ) -> None:
+    def test_helper_that_escapes_its_param_gets_no_credit(self, tmp_path: Path) -> None:
         """NEGATIVE CONTROL, mandatory both-directions requirement: a
         helper that REASSIGNS its own parameter to an absolute literal
         before writing must NOT receive credit -- it must resolve
@@ -194,12 +192,12 @@ class TestParam0Credit:
         argument."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def _escapes_param(tmp: Path):\n'
+            "from pathlib import Path\n"
+            "def _escapes_param(tmp: Path):\n"
             '    tmp = Path("/etc/evil")\n'
             '    tmp.write_text("bad")\n'
-            'def test_uses_escaping_helper(tmp_path):\n'
-            '    _escapes_param(tmp_path)\n',
+            "def test_uses_escaping_helper(tmp_path):\n"
+            "    _escapes_param(tmp_path)\n",
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
         result = compute_confinement_summaries(facts, list(facts))
@@ -219,12 +217,12 @@ class TestParam0Credit:
         UNKNOWN, never a false ROOTED."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def _mixed_calls(tmp: Path):\n'
+            "from pathlib import Path\n"
+            "def _mixed_calls(tmp: Path):\n"
             '    (tmp / "x.txt").write_text("mixed")\n'
-            'def test_mixed_good(tmp_path):\n'
-            '    _mixed_calls(tmp_path)\n'
-            'def test_mixed_bad():\n'
+            "def test_mixed_good(tmp_path):\n"
+            "    _mixed_calls(tmp_path)\n"
+            "def test_mixed_bad():\n"
             '    _mixed_calls(Path("/tmp/not_rooted"))\n',
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])
@@ -242,8 +240,8 @@ class TestParam0Credit:
         UNKNOWN, same as before T-2519."""
         sample = _write_sample(
             tmp_path,
-            'from pathlib import Path\n'
-            'def _never_called(tmp: Path):\n'
+            "from pathlib import Path\n"
+            "def _never_called(tmp: Path):\n"
             '    (tmp / "x.txt").write_text("orphan")\n',
         )
         facts = scan_confinement_facts(tmp_path, [sample.name])

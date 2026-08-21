@@ -6,7 +6,6 @@ no-silent-fallback rule means these functions themselves already return
 `test_core_unavailable_path_is_err_not_exception` exercises directly.
 """
 
-
 from __future__ import annotations
 
 import pytest

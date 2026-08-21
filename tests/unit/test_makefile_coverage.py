@@ -62,7 +62,9 @@ class TestCoverageRecipeDelegatesToFrobCoverageFull:
         # Drop the `target:` line itself; count only the indented recipe
         # lines that follow it.
         lines = recipe.splitlines()[1:]
-        non_comment = [line for line in lines if line.strip() and not line.strip().startswith("#")]
+        non_comment = [
+            line for line in lines if line.strip() and not line.strip().startswith("#")
+        ]
         assert len(non_comment) <= 2, (
             f"coverage: recipe still carries {len(non_comment)} non-comment "
             f"line(s), expected the T-2240 single-delegation shape:\n{recipe}"

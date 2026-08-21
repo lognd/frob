@@ -60,9 +60,7 @@ class TestGitattributesEolNormalization:
 
     def test_sampled_source_files_are_pinned_to_lf(self) -> None:
         """Every sampled tracked source file resolves `eol=lf` via `.gitattributes`."""
-        not_lf = [
-            path for path in _SAMPLE_PATHS if _check_attr("eol", path) != "lf"
-        ]
+        not_lf = [path for path in _SAMPLE_PATHS if _check_attr("eol", path) != "lf"]
         assert not not_lf, (
             f"these paths do not resolve eol=lf (still exposed to "
             f"core.autocrlf CRLF corruption): {not_lf}"
