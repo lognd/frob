@@ -11,8 +11,120 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- .claude/hooks/diagnosis-nudge.py
+- scripts/fleet_status.py
+- src/frob/app/design_runner.py
+- src/frob/app/profile_runner.py
+- src/frob/app/pyfmt_runner.py
+- src/frob/app/sys_runner.py
+- src/frob/app/telemetry/__init__.py
+- src/frob/app/telemetry/_footguns.py
+- src/frob/app/telemetry/_usage.py
+- src/frob/app/ticket_runner/_attach_backfill.py
+- src/frob/app/ticket_runner/_new.py
+- src/frob/app/ticket_runner/_waive_audit.py
+- src/frob/app/worktree_runner.py
+- src/frob/arch/_abstraction.py
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .claude/hooks/diagnosis-nudge.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: scripts/fleet_status.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/design_runner.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/profile_runner.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/pyfmt_runner.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/telemetry/__init__.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/telemetry/_footguns.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/telemetry/_usage.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_attach_backfill.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_new.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/app/worktree_runner.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/arch/_abstraction.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: batch 1 of ruff-format-only reformat, re-measured 184 files current (ticket
+    filed at stale 138); excludes T-2761/_2764/_2762 in-flight scope
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 acceptance:
 - text: given the repo after this lands, when ruff format --check . runs, then zero
