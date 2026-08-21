@@ -35,6 +35,28 @@ scope:
 - tests/test_telemetry.py
 - tests/test_testing.py
 - tests/test_tick012_gate.py
+- tests/unit/dup/test_type_name_only_regression_t1957.py
+- tests/unit/gates/test_cov007_entrypoint_exemption.py
+- tests/unit/gates/test_examined_sites.py
+- tests/unit/gates/test_lexical_selfcheck.py
+- tests/unit/gates/test_port_selfcheck.py
+- tests/unit/gates/test_refs.py
+- tests/unit/gates/test_sys_selfaudit.py
+- tests/unit/graph/test_dsl_markdown_waive.py
+- tests/unit/graph/test_dsl_mention_escape.py
+- tests/unit/strata/test_conform_eval_needle.py
+- tests/unit/strata/test_effects.py
+- tests/unit/strata/test_export.py
+- tests/unit/strata/test_facts.py
+- tests/unit/strata/test_mutation_audit.py
+- tests/unit/strata/test_native_staleness.py
+- tests/unit/strata/test_parse.py
+- tests/unit/strata/test_waive.py
+- tests/unit/telemetry/test_rule_counts.py
+- tests/unit/test_app_runners.py
+- tests/unit/test_app_runners_batch6.py
+- tests/unit/test_app_runners_batch7.py
+- tests/unit/test_app_runners_t0976_mutation_evidence.py
 evidence_scope:
 - tests/test_app.py
 - tests/test_capability_registry.py
@@ -469,6 +491,116 @@ scope_changes:
   glob: tests/test_tick012_gate.py
   reason: fix earlier quoting bug in --add; re-add clean globs, dropping T-1654-owned
     files
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/dup/test_type_name_only_regression_t1957.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_cov007_entrypoint_exemption.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_examined_sites.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_lexical_selfcheck.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_port_selfcheck.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/gates/test_sys_selfaudit.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_conform_eval_needle.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_effects.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_export.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_facts.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_mutation_audit.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_native_staleness.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_parse.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/strata/test_waive.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/telemetry/test_rule_counts.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_runners.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_runners_t0976_mutation_evidence.py
+  reason: 'batch 2 of the ruff-format reformat: 22 files under tests/unit/**'
   actor: logan
   at: '2026-08-20'
 evidence:
