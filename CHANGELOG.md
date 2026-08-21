@@ -217,6 +217,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2739: verify T-2481/T-1943 COV005 waivers against T-2720's narrowed detector, remove any that no longer reproduce
 - T-2740: waive-audit cannot distinguish a necessary waiver from an inert one: 11 RENDER001 waivers sat on paths the gate never scanned
 - T-2741: Fix 2 remaining PII012 waiver-placement gaps T-2712 could not touch
+- T-2742: No reliable way to detect an in-flight land: every hand-rolled pgrep matches the polling shells themselves
 - T-2743: Repo-wide pre-existing debt surfaced by T-2713/T-2715's deferred-verification repair (from T-2716 re-triage)
 - T-2744: Quarantine was cleared citing an auto-filed ticket that does not exist, releasing findings against a phantom home
 - T-2745: post-land sweep regression from an unattributed source (sweep spawned by T-2712): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)

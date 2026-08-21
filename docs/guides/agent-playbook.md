@@ -128,15 +128,26 @@ WHY and the recovery recipes.
 ## 1. Worktree warm-up (do this FIRST, every time)
 
 0. BEFORE any `git merge main` (warm-up or mid-ticket): check that no
-   coordinator land is in flight -- `ps aux | grep "ticket land" | grep
-   -v grep` must be empty. A land commits onto main and then may REVERT
-   that commit minutes later (post-land sweep refusal, T-1456); a merge
-   taken inside that window permanently carries the reverted content
-   into your branch, and your later land re-introduces it as brand-new
-   errors (2026-08-04 incident: a worktree merged main mid-T-1198-land
-   and inherited its reverted `_multifile.py` plus that file's INV006/
-   TEST001 findings). If a land is running, wait for it to exit and for
-   `git -C <root> log --oneline -1` to be stable across ~30s, then merge.
+   coordinator land is in flight -- `uv run python scripts/fleet_status.py`
+   and read its `LANDS IN FLIGHT: N` line. **Never hand-roll a `ps
+   aux`/`pgrep` check for this** (T-2742): the polling shell's own
+   command text, and every sibling agent's, contains the very pattern it
+   is searching for, so the count can never reliably reach zero while
+   anyone is polling -- measured as 4 pgrep matches for 1 genuine land in
+   one session, and the direct cause of several agents parking on a count
+   that could never settle. `fleet_status.py` identifies a land
+   structurally, not by cmdline text, and is the authoritative answer.
+   Landing (see section 0 step 3 above and section 13) is safe once this
+   reads FEWER THAN 2 lands in flight -- that is not "wait for the fleet
+   to go idle"; 0 or 1 in flight is both fine to land against. A land
+   commits onto main and then may REVERT that commit minutes later
+   (post-land sweep refusal, T-1456); a merge taken inside that window
+   permanently carries the reverted content into your branch, and your
+   later land re-introduces it as brand-new errors (2026-08-04 incident:
+   a worktree merged main mid-T-1198-land and inherited its reverted
+   `_multifile.py` plus that file's INV006/TEST001 findings). If a land
+   is running, wait for it to exit and for `git -C <root> log --oneline
+   -1` to be stable across ~30s, then merge.
 
 1. `git merge main` in the worktree, then verify the tip:
    `git log --oneline -1` must show a commit that is `main`'s current tip
@@ -1197,7 +1208,26 @@ grep -c "frob ticket land"` for concurrency -- it counts the `uv run`
 wrapper, the python process, and every subprocess a land spawns, plus any
 agent's own wait-loop shell whose command string happens to contain the
 same text; a live check during this investigation read ~14 processes for
-2 genuine concurrent lands).** The real concurrency, measured from
+2 genuine concurrent lands).** T-2742: this is not a one-off measurement
+footnote -- EVERY hand-rolled `pgrep`/`ps aux` form for "is a land in
+flight right now" is wrong the same way, including anchored variants that
+look safer, because the polling shell's own command text (and every
+sibling agent's) can itself contain the pattern. `uv run python scripts/
+fleet_status.py` is the first-class, authoritative answer (`LANDS IN
+FLIGHT: N`, plus which ticket/worktree/pid and how long, `ROOT CLEAN/
+DIRTY`, quarantine, and leases in the same invocation) -- it already does
+the `/proc/<pid>/cmdline` argv re-verification this section describes
+below, so reach for it directly instead of re-deriving a probe. Read
+`.frob/land.lock`'s existence for "has this repo ever landed", never for
+"is a land live now" -- its recorded holder pid can be stale/reused; the
+warning is easy to miss the first time and the pgrep-instead-of-
+fleet_status mistake has independently cost multiple agents (and the
+coordinator) a wrong conclusion in one session (T-2742). **The land
+threshold is FEWER THAN 2 in flight, not zero** -- do not read this
+section's "queueing is real but secondary" finding as license to wait for
+an idle fleet; `fleet_status.py` reporting 0 or 1 lands in flight both
+mean it is safe to land now. The real
+concurrency, measured from
 telemetry START/END interval overlap (not `ps`) across all 812 successful
 lands: **83.1% of lands (n=675) had NO other land in flight at all**
 (concurrency=1, i.e. solo), 15.5% overlapped with exactly one other, and

@@ -1399,18 +1399,20 @@ same restriction the bulk sweep already enforces.
 worktree_runner`) is the CLI surface -- same subcommand family as `frob
 worktree sweep`, one new `argparse` subparser, no new dispatch mechanism.
 
-**Gap 4 -- land-lock visibility without `pgrep` (partial).** The only
-way to check "is a land running against root right now" today is
-`.frob/land.lock`'s existence plus whether its `flock` is currently
-held -- `ls -la .frob/land.lock` shows the file exists (the repo has
-landed at least once) but not whether it is CURRENTLY held; a reliable
-answer needs a non-blocking `flock` probe, which
-`frob.tickets._leases.refuse_if_land_in_progress` already performs and
-which any of the guarded verbs above will now report if attempted. A
-dedicated `frob doctor`-style one-line surface for this (so a
-coordinator can check before touching root without a probe command that
-also has other side effects) is not built in this pass -- filed as a
-natural, small follow-up rather than half-built here.
+**Gap 4 -- land-lock visibility without `pgrep` (CLOSED, T-2742).** This
+gap used to read "no dedicated surface exists yet, filed as a follow-up."
+That follow-up shipped as `scripts/fleet_status.py`: `uv run python
+scripts/fleet_status.py` reports `LANDS IN FLIGHT: N` (with the owning
+ticket/worktree/pid/elapsed time for each), `ROOT CLEAN/DIRTY`, and an
+explicit warning not to trust `.frob/land.lock`'s recorded holder pid or
+age -- in one invocation, without the side effects a probe command could
+otherwise have. `.frob/land.lock`'s existence plus whether its `flock` is
+currently held (what `frob.tickets._leases.refuse_if_land_in_progress`
+checks internally, and what any of the guarded verbs above will report if
+attempted) is still the underlying mechanism, but no caller needs to
+reach for it, or for `pgrep`, directly any more -- see
+`docs/guides/agent-playbook.md`'s section 13 correction for the measured
+cost of getting this wrong by hand.
 
 ## Shared land-path liveness authority: `is_effectively_in_progress` (T-1999)
 

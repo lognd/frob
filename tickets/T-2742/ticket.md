@@ -2,7 +2,7 @@
 id: T-2742
 title: 'No reliable way to detect an in-flight land: every hand-rolled pgrep matches
   the polling shells themselves'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -58,6 +58,9 @@ body_changes:
   at: '2026-08-20'
   old_length: 4901
   new_length: 5592
+evidence:
+- cmd:git grep -n fleet_status.py docs/guides/agent-playbook.md docs/modules/tickets-landing.md
+  exit=0 sha256=fd2dfd388eb9
 kind_history:
 - 2026-08-20 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
