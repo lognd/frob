@@ -84,12 +84,29 @@ Returns `(severity_counts, error_rows)` for a parsed report: a
 `(tool, code, file, line, message)` tuples for every `severity == "error"`
 diagnostic.
 
+### `find_test006`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#find_test006 -->
+
+Returns every `TEST006` diagnostic (missing or stale coverage stamp) as a
+list of `(tool, message)` tuples. WHY THIS EXISTS (T-2763): TEST006 is the
+loud counterpart to TEST005's deliberate absent-coverage skip, but a
+single TEST006 line sitting inside dozens of unrelated findings is easy
+to lose -- two agents and the ticket's own filer all read "zero TEST005
+findings" as a clean measurement on the same day the TEST006 ERROR fired.
+`main` prints this list as a distinct leading banner precisely so that
+misreading can no longer happen.
+
 ### check_summary-main
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#check_summary-main -->
 
-CLI entry point: prints `SEVERITY {...}` then `ERRORS N` then one line per
-error row; exits 1 if any error diagnostic was found, 0 otherwise.
+CLI entry point: if any `TEST006` diagnostic is present, prints a leading
+`COVERAGE STALE/MISSING (TEST006)` banner (with each finding) BEFORE the
+severity summary, making clear that any TEST005 findings that follow are
+not a clean measurement. Then prints `SEVERITY {...}`, `ERRORS N`, and one
+line per error row; exits 1 if any error diagnostic was found, 0
+otherwise.
 
 Usage:
 

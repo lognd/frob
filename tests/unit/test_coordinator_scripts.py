@@ -113,6 +113,32 @@ class TestSummarise:
         assert errors[0][2:4] == ("a.py", 3)
 
 
+class TestFindTest006:
+    """`check_summary.find_test006` (T-2763)."""
+
+    def test_finds_test006_diagnostics(self) -> None:
+        """A TEST006 diagnostic is returned with its tool and message."""
+        report = _report(
+            results=[
+                {
+                    "tool": "gate:TEST",
+                    "diagnostics": [
+                        _diag("error", code="TEST006"),
+                        _diag("warning", code="TEST014"),
+                    ],
+                }
+            ]
+        )
+        found = check_summary.find_test006(report)
+        assert len(found) == 1
+        assert found[0][0] == "gate:TEST"
+
+    def test_empty_when_no_test006(self) -> None:
+        """No TEST006 diagnostics anywhere returns an empty list."""
+        report = _report(results=[{"tool": "ruff", "diagnostics": [_diag("error", code="E1")]}])
+        assert check_summary.find_test006(report) == []
+
+
 class TestCheckSummaryMain:
     """`check_summary.main`."""
 
@@ -138,6 +164,31 @@ class TestCheckSummaryMain:
         out = capsys.readouterr().out
         assert "ERRORS   1" in out
         assert "E1" in out
+
+    def test_test006_banner_leads_output_when_present(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """A TEST006 finding prints a leading stale-coverage banner (T-2763)."""
+        report = _report(
+            results=[{"tool": "gate:TEST", "diagnostics": [_diag("error", code="TEST006")]}]
+        )
+        monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(report)))
+        monkeypatch.setattr(sys, "argv", ["check_summary.py"])
+        check_summary.main()
+        out = capsys.readouterr().out
+        assert "COVERAGE STALE/MISSING (TEST006)" in out
+        assert out.index("COVERAGE STALE/MISSING") < out.index("SEVERITY")
+
+    def test_no_banner_when_test006_absent(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """No TEST006 finding means no banner at all."""
+        report = _report(results=[{"tool": "ruff", "diagnostics": [_diag("warning")]}])
+        monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(report)))
+        monkeypatch.setattr(sys, "argv", ["check_summary.py"])
+        check_summary.main()
+        out = capsys.readouterr().out
+        assert "COVERAGE STALE/MISSING" not in out
 
 
 def _completed(stdout: str = "", returncode: int = 0) -> subprocess.CompletedProcess:

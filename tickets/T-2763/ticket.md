@@ -2,7 +2,7 @@
 id: T-2763
 title: Coverage data is 14 days stale because the refresh OOMs in parallel and overruns
   serially, leaving TEST005 silently unmeasurable
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -49,6 +49,11 @@ body_changes:
   at: '2026-08-20'
   old_length: 3577
   new_length: 6221
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestFindTest006::test_finds_test006_diagnostics
+- tests/unit/test_coordinator_scripts.py::TestFindTest006::test_empty_when_no_test006
+- tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain::test_test006_banner_leads_output_when_present
+- tests/unit/test_coordinator_scripts.py::TestCheckSummaryMain::test_no_banner_when_test006_absent
 designated_repro_test: null
 threat: null
 component: null
