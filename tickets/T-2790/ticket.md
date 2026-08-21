@@ -2,8 +2,8 @@
 id: T-2790
 title: 'frob check''s 274s cost is now the only lever on fleet throughput: profile
   the top four whole-program stages and decide what is reducible'
-state: queued
-kind: feature
+state: done
+kind: docs
 origin: agent
 created: '2026-08-21'
 priority: high
@@ -20,6 +20,19 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: This ticket is a measurement/investigation deliverable only (docs/investigations/),
+    no code changes; feature was the wrong initial classification for a profile-and-decide
+    ticket
+  actor: logan
+  at: '2026-08-21'
+evidence:
+- cmd:cat docs/investigations/T-2790-check-stage-profile.md exit=0 sha256=e808f3132967
+kind_history:
+- 2026-08-21 feature->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
