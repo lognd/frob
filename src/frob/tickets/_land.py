@@ -4479,8 +4479,8 @@ def _dirty_ignoring_rapid_debt(worktree: Path) -> Result[bool, LandError]:
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_no_frob_ticket_directive_for_this_id_exists_on_main  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_refuses_when_a_shared_worktree_branch_already_committed_the_scope_file_but_base_ref_now_has_identical_content  # noqa: E501
 # frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_no_op_when_the_branch_committed_real_unlanded_content_differing_from_base_ref  # noqa: E501
-# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_stale_rapid_debt_dirt_does_not_block_already_landed_detection  # noqa: E501
-# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedOnMain.test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_stale_rapid_debt_dirt_does_not_block_already_landed_detection  # noqa: E501
+# frob:tests tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt.test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt  # noqa: E501
 def _check_already_landed(
     worktree: Path, ticket: Ticket, base_ref: str
 ) -> Result[None, LandError]:

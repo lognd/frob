@@ -2,7 +2,7 @@
 id: T-2749
 title: 'post-land sweep regression from T-2738: 2 new (rule, file) identit(ies), 7
   finding(s) (ARCH103, DRIFT002)'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/tickets/_land.py
+evidence_scope:
+- tests/unit/test_close_promote_drafts.py
+- tests/unit/test_land_already_landed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +32,19 @@ body_changes:
   at: '2026-08-20'
   old_length: 1901
   new_length: 4042
+- mode: append
+  reason: T-2749 remedy is shape-only (function split + directive-string fix), BUG002
+    confirmatory-only guard does not apply
+  actor: logan
+  at: '2026-08-20'
+  old_length: 4042
+  new_length: 4812
+evidence:
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_promotes_a_draft_the_ticket_filed
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_with_no_drafts_is_unchanged
+- tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts::test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt::test_stale_rapid_debt_dirt_does_not_block_already_landed_detection
+- tests/unit/test_land_already_landed.py::TestAlreadyLandedStaleRapidDebtDirt::test_genuine_uncommitted_code_change_still_defers_even_with_stale_rapid_debt_dirt
 designated_repro_test: null
 threat: null
 component: null
@@ -103,3 +119,5 @@ the rule.
 Supersedes T-2750, which I filed for this identical finding pair moments
 before the rapid sweep auto-filed this one; T-2750 is dropped as a
 duplicate.
+
+frob:no-behavior-change reason="both remedies here are shape-only: the ARCH103 fix splits _promote_pending_drafts_after_close into three smaller private helpers with identical control flow (measured: all 3 test_close_promote_drafts.py tests pass unchanged before and after), and the DRIFT002 fix corrects two frob:tests directive strings to point at the class the tests actually live in (TestAlreadyLandedStaleRapidDebtDirt, not TestAlreadyLandedOnMain) -- no production code in _land.py changed at all. Neither remedy changes runtime behavior, so BUG002's confirmatory-only guard is expected to fire; verified instead via measured before/after frob check --no-cache reproduction (see Done report) and planted-fixture positive controls for both ARCH103 and DRIFT002."

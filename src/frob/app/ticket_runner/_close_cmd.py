@@ -1332,6 +1332,89 @@ def _close(root: Path, cfg: AppConfig) -> None:
 
 
 # frob:ticket T-2738
+def _pending_draft_ids_after_close(root: Path, closed_ticket_id: str) -> list[str]:
+    """T-2738: the queue-read half of `_promote_pending_drafts_after_close`,
+    split out under ARCH103 -- resolve the closed ticket's queue and
+    return the sorted ids of every still-open `T-draft-*` follow-up it
+    may have filed (`load_queue` returning the merged active+archive
+    view means an already-terminal DONE/DROPPED draft, e.g. one
+    deliberately dropped in a past land, is NOT "pending" and must be
+    excluded here). A queue load failure is logged as a warning (with
+    the hand-recovery command) and degrades to an empty list -- this
+    function never raises, matching the caller's best-effort posture."""
+    from frob.tickets import TicketState, load_queue
+    from frob.tickets._provisional import is_draft_id
+
+    queue_result = load_queue(root)
+    if queue_result.is_err:
+        _log.warning(
+            "ticket close: %s: could not load the queue to check for "
+            "pending draft follow-ups (%s) -- if this ticket filed any "
+            "drafts, they may be stranded; promote by hand with `frob "
+            "ticket promote <draft-id>`",
+            closed_ticket_id,
+            queue_result.danger_err,
+        )
+        return []
+    all_tickets = queue_result.danger_ok.tickets
+    return sorted(
+        tid
+        for tid, t in all_tickets.items()
+        if is_draft_id(tid) and t.state not in (TicketState.DONE, TicketState.DROPPED)
+    )
+
+
+# frob:ticket T-2738
+def _promote_one_pending_draft(
+    root: Path, closed_ticket_id: str, draft_id: str
+) -> bool:
+    """T-2738: promote a single pending draft (the per-draft half of
+    `_promote_pending_drafts_after_close`, split out under ARCH103) via
+    `finalize_draft`, logging the outcome by name either way. Returns
+    True on success, False if `draft_id` is now stranded and must be
+    reported by the caller."""
+    from frob.tickets import finalize_draft
+
+    result = finalize_draft(root, draft_id)
+    if result.is_err:
+        _log.error(
+            "ticket close: %s: failed to promote pending draft %s "
+            "(%s) -- it is stranded; promote it by hand: `frob "
+            "ticket promote %s`",
+            closed_ticket_id,
+            draft_id,
+            result.danger_err,
+            draft_id,
+        )
+        return False
+    final_id = result.danger_ok
+    if final_id != draft_id:
+        _log.info(
+            "ticket close: %s: promoted pending draft %s -> %s",
+            closed_ticket_id,
+            draft_id,
+            final_id,
+        )
+    return True
+
+
+# frob:ticket T-2738
+def _report_stranded_drafts_and_exit(closed_ticket_id: str, failed: list[str]) -> None:
+    """T-2738: the failure-report half of `_promote_pending_drafts_after_close`
+    (split out under ARCH103) -- log the full list of drafts that could
+    not be promoted by name, then exit nonzero so a caller/CI checking
+    the exit code sees a problem instead of a bare "closed" success."""
+    _log.error(
+        "ticket close: %s closed, but %d pending draft(s) could not "
+        "be promoted and remain stranded: %s",
+        closed_ticket_id,
+        len(failed),
+        ", ".join(failed),
+    )
+    sys.exit(1)
+
+
+# frob:ticket T-2738
 # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_promotes_a_draft_the_ticket_filed  # noqa: E501
 # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_with_no_drafts_is_unchanged  # noqa: E501
 # frob:tests tests/unit/test_close_promote_drafts.py::TestClosePromotesPendingDrafts.test_close_reports_and_exits_nonzero_when_a_draft_cannot_be_promoted  # noqa: E501
@@ -1351,75 +1434,24 @@ def _promote_pending_drafts_after_close(root: Path, closed_ticket_id: str) -> No
 
     Runs strictly AFTER `_close`'s own state transition and ledger
     commit -- the ticket is already DONE by the time this executes, so a
-    promotion failure here cannot be undone by refusing; instead it is
-    logged loudly by name (with the exact hand-recovery command) and
-    this process exits nonzero, so a caller/CI checking the exit code
-    still sees a problem instead of a bare "closed" success burying a
-    stranded draft. `root` carrying no draft-id tickets at all (the
-    common case) is a silent no-op -- no new log noise for a ticket that
-    filed no drafts."""
-    from frob.tickets import TicketState, finalize_draft, load_queue
-    from frob.tickets._provisional import is_draft_id
-
-    queue_result = load_queue(root)
-    if queue_result.is_err:
-        _log.warning(
-            "ticket close: %s: could not load the queue to check for "
-            "pending draft follow-ups (%s) -- if this ticket filed any "
-            "drafts, they may be stranded; promote by hand with `frob "
-            "ticket promote <draft-id>`",
-            closed_ticket_id,
-            queue_result.danger_err,
-        )
-        return
-    all_tickets = queue_result.danger_ok.tickets
-    # T-2738: `load_queue` returns the merged active+archive view, so an
-    # already-terminal (DONE/DROPPED) draft -- e.g. one deliberately
-    # dropped in a past land, still sitting archived under its never-
-    # finalized draft id -- is NOT "pending" and must never be attempted
-    # here; only a draft still in an OPEN state is real unfinished work
-    # this close could be stranding.
-    draft_ids = sorted(
-        tid
-        for tid, t in all_tickets.items()
-        if is_draft_id(tid) and t.state not in (TicketState.DONE, TicketState.DROPPED)
-    )
+    promotion failure here cannot be undone by refusing; instead the
+    per-draft outcome is logged loudly by name (with the exact
+    hand-recovery command) via `_promote_one_pending_draft`, and any
+    stranded drafts are reported and this process exits nonzero via
+    `_report_stranded_drafts_and_exit` (both split out under ARCH103).
+    `root` carrying no draft-id tickets at all (the common case) is a
+    silent no-op -- no new log noise for a ticket that filed no drafts."""
+    draft_ids = _pending_draft_ids_after_close(root, closed_ticket_id)
     if not draft_ids:
         return
 
-    failed: list[str] = []
-    for draft_id in draft_ids:
-        result = finalize_draft(root, draft_id)
-        if result.is_err:
-            _log.error(
-                "ticket close: %s: failed to promote pending draft %s "
-                "(%s) -- it is stranded; promote it by hand: `frob "
-                "ticket promote %s`",
-                closed_ticket_id,
-                draft_id,
-                result.danger_err,
-                draft_id,
-            )
-            failed.append(draft_id)
-            continue
-        final_id = result.danger_ok
-        if final_id != draft_id:
-            _log.info(
-                "ticket close: %s: promoted pending draft %s -> %s",
-                closed_ticket_id,
-                draft_id,
-                final_id,
-            )
-
+    failed = [
+        draft_id
+        for draft_id in draft_ids
+        if not _promote_one_pending_draft(root, closed_ticket_id, draft_id)
+    ]
     if failed:
-        _log.error(
-            "ticket close: %s closed, but %d pending draft(s) could not "
-            "be promoted and remain stranded: %s",
-            closed_ticket_id,
-            len(failed),
-            ", ".join(failed),
-        )
-        sys.exit(1)
+        _report_stranded_drafts_and_exit(closed_ticket_id, failed)
 
 
 # frob:ticket T-1005
