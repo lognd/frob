@@ -2,7 +2,7 @@
 id: T-2359
 title: Reformat the 138 files pending ruff-format as one deliberate commit, unblocking
   T-2244/T-2245
-state: in-progress
+state: queued
 kind: feature
 origin: agent
 created: '2026-08-17'
