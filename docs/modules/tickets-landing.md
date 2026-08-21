@@ -2610,6 +2610,57 @@ records a baseline (`WorkerError.Unmeasurable`), and an unmeasurable
 untouched (`RapidSweepError.Unmeasurable`), exactly as a fully-truncated
 run already did before this ticket.
 
+### A pre-gate abort can also hide as a clean, fully-measured run (T-2793)
+
+<!-- frob:describes src/frob/app/ticket_runner/_verify.py::_gates_stage_ran -->
+
+Every check above (T-1703/T-2456/T-2713) recognizes a SPECIFIC way a
+`--budget` run can be partial. `frob check` can also abort entirely
+before the gates stage is ever dispatched: `frob.check._native_
+staleness_result` (NATIVE001, stale native extensions) and `_derived_
+state_integrity_result` (DERIVED001, a corrupt `.frob/` artifact) both
+run synchronously BEFORE `run_check`'s stage dispatch and, on failure,
+return a `CheckResult` containing ONLY their own `ToolResult` -- as does
+`frob.app.check_runner`'s own opt-in `claude-config-drift` (CLAUDE001)
+stage when it runs ahead of `run_check`. None of these produce a
+`"budget"` key at all (this is not a `--budget` truncation), and every
+`ToolResult` they DO produce legitimately fails WITH a real error
+diagnostic attached -- so `_incomplete_tool_results` (T-2521, "failed
+AND silent") finds nothing wrong either. A 2-`ToolResult` abort and a
+genuine 2-error complete run are byte-for-byte indistinguishable to
+every check that came before this one.
+
+MEASURED live incident (2026-08-21, T-2793): the shared root's natives
+were stale, `frob check --json` fast-exited in 14 seconds with exactly
+`[claude-config-drift, native-staleness]` in `results`, and the rapid
+sweep (`_rapid_sweep.py`) recorded those 2 findings as its rolling
+baseline unconditionally -- `frob verify status` reported a healthy,
+current watermark the whole time. A genuine unbudgeted check on the same
+tree, once natives were rebuilt, found 30 error diagnostics across 19
+distinct `(rule, file)` identities: roughly 15x the trusted baseline. The
+next real sweep's diff against that 2-entry baseline would have read
+almost the entire true floor as "new from this land" -- the exact
+mechanism already named and closed for the budget variant by T-2713 (its
+own doc section above), reopened here through a route no `budget`-shaped
+check could see.
+
+`_gates_stage_ran` (`_verify.py`) closes this the way `_check_chunking.
+py`'s own `complete` flag already closes the analogous gap on the budget
+side ("a positive flag so a consumer never has to infer completeness
+from an absence"): rather than adding a sixth named abort case the next
+time a different pre-gate stage is introduced, `_parse_error_findings_
+from_json` now asserts, FIRST and unconditionally, that a `"gate-summary"`
+`ToolResult` is present in `results` at all -- the one thing every
+current and future pre-gate abort shares is that the gates stage itself
+never ran, so it never contributes that entry. No `"gate-summary"` entry
+means `None` (unmeasured), before any of the T-1703/T-2456/T-2713 budget
+checks even run. This is scoped to `_parse_error_findings_from_json`'s
+two genuinely UNSCOPED callers (`_shared_check_spawn_fn`/`_land_cmd.
+_unscoped_error_findings`, neither of which ever passes `--only`) --
+`_find_tool_result`'s own docstring already notes that an `--only`-scoped
+call legitimately has no `"gate-summary"` entry either, so this check
+must never be applied to a scoped payload.
+
 ## `frob check --land-parity` (T-1535)
 
 <!-- frob:describes src/frob/app/ticket_runner/_land_cmd.py::land_parity_findings -->

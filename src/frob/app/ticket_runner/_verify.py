@@ -1107,6 +1107,49 @@ def _find_tool_result(results: list, tool_name: str) -> dict | None:  # noqa: AN
     return None
 
 
+# frob:ticket T-2793
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_n\
+# ative_staleness_abort_yields_none_not_the_abort_findings
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_o\
+# ther_pre_gate_abort_also_yields_none_not_only_native001
+# frob:tests \
+# tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_t\
+# y_and_gate_error_both_appear_in_parsed_set
+def _gates_stage_ran(results: list) -> bool:  # noqa: ANN001
+    """T-2793's positive completeness signal: `True` only when `results`
+    contains a `"gate-summary"` `ToolResult` -- i.e. the gates stage
+    itself actually executed this invocation.
+
+    This is deliberately the inverse of enumerating truncation shapes.
+    `_budget_deferred_stage_groups`/`_budget_skipped_groups_from_payload`/
+    `_incomplete_tool_results` each recognize one SPECIFIC way a run can
+    be partial; a pre-gate fast-exit (`frob.check`'s own `NATIVE001`
+    native-staleness or `DERIVED001` derived-state-integrity aborts, or
+    an opt-in `frob.app.check_runner` stage such as `CLAUDE001` returning
+    before `run_check` is ever reached) matches NONE of them -- it has no
+    `"budget"` key, and every `ToolResult` it does carry legitimately
+    failed WITH a real error diagnostic attached, so `_incomplete_tool_
+    results` sees nothing wrong either. Only a POSITIVE assertion that
+    the gates stage itself ran closes every current and future variant of
+    this gap at once, rather than adding a new named case each time a
+    different pre-gate abort is discovered (T-2793's own root cause: this
+    is exactly the class of bug `_check_chunking.py`'s `complete` flag
+    already exists to prevent on the budget path -- "a consumer never has
+    to infer completeness from an absence").
+
+    Deliberately used only by `_parse_error_findings_from_json`'s two
+    UNSCOPED callers (`_shared_check_spawn_fn`/`_land_cmd._unscoped_
+    error_findings`, neither of which ever passes `--only`) -- an
+    `--only`-scoped invocation that legitimately excludes the gates
+    family would also have no `"gate-summary"` entry
+    (`_find_tool_result`'s own docstring already notes this), so this
+    helper must never be applied to a scoped run's payload without first
+    confirming the caller ran unscoped."""
+    return _find_tool_result(results, "gate-summary") is not None
+
+
 # frob:ticket T-1703
 def _budget_deferred_stage_groups(results: list) -> list[str]:  # noqa: ANN001
     """Every stage-group name a `--budget`-bounded `frob check --json` run
@@ -1244,9 +1287,36 @@ def _parse_error_findings_from_json(
     `None` when the run is UNMEASURED -- not "measured zero", not
     "measured some" (T-1703).
 
-    FOUR independent ways this returns `None`, all closing a real
+    FIVE independent ways this returns `None`, all closing a real
     incident:
 
+    -1. `_gates_stage_ran` finds no `"gate-summary"` tool result in
+       `results` at all (T-2793) -- a positive-assertion check, unlike
+       every other case below: rather than recognizing one more named
+       truncation shape, this asks "did the gates stage itself ever run"
+       and refuses to trust `results` at all when the answer is no. The
+       live incident: `frob check`'s own pre-gate fast-exits
+       (`_native_staleness_result`/`_derived_state_integrity_result` in
+       `frob.check`, plus `frob.app.check_runner`'s own opt-in stages
+       such as CLAUDE001) can each return a `CheckResult` containing only
+       THEIR OWN `ToolResult`(s) before the gates stage is ever reached
+       -- no `"budget"` key, no failed-and-silent tool, nothing the other
+       four checks below can key on, yet `results` is non-empty and every
+       diagnostic in it is a genuine `severity == "error"` finding. Read
+       naively, that is indistinguishable from a genuinely complete run
+       that happened to find exactly those findings and nothing else --
+       which is exactly how a 14-second native-staleness abort became a
+       trusted 2-identity rolling baseline (T-2793's own measured
+       incident) that then made an unrelated commit's real, unmeasured
+       error floor read as "essentially the whole floor is new from this
+       land" against every later diff. Checked FIRST, before any of the
+       cases below: an abort this early in the pipeline can also lack a
+       `"budget"` entry and have every one of its `ToolResult`s exit
+       nonzero WITH real diagnostics (so cases 0-2 below would all
+       silently pass it through) -- only a POSITIVE check for the stage
+       that proves the gates actually ran can catch every current and
+       future pre-gate abort shape, instead of enumerating fast-exit
+       reasons one at a time as they are discovered.
     0. `_incomplete_tool_results` finds a FAILED tool result with zero
        error diagnostics (T-2521) -- see that function's own docstring;
        the live incident it fixes.
@@ -1287,6 +1357,21 @@ def _parse_error_findings_from_json(
     T-2345: `_error_finding_identity` drops a diagnostic with a blank
     identity instead of returning one -- see its own docstring."""
     results = data["results"]
+    if not _gates_stage_ran(results):
+        _log.warning(
+            "ticket %s: `frob check --json` run has no `gate-summary` "
+            "tool result at all -- the gates stage never ran (a pre-gate "
+            "fast-exit such as NATIVE001 native staleness, or another "
+            "opt-in stage aborting the whole run before gates), so "
+            "`results`' %d entr(ies) are whatever ran BEFORE the abort, "
+            "never a real error-finding set; error-finding identities "
+            "are unmeasured, not a partial set (T-2793: absence of a "
+            "gate-summary must never read as \"gates ran and found "
+            "nothing\")",
+            ticket_id,
+            len(results),
+        )
+        return None
     deferred = _budget_deferred_stage_groups(results)
     if deferred:
         _log.warning(

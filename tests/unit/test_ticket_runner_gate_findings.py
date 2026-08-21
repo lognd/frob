@@ -336,6 +336,88 @@ _BUDGET_RESUME_NARROWED_STDOUT = json.dumps(
 )
 
 
+# frob:ticket T-2793
+# T-2793's own reproduced root cause: `frob check`'s NATIVE001
+# native-staleness fast-exit (`frob.check._native_staleness_result`)
+# returns a `CheckResult` containing ONLY its own `ToolResult` plus
+# whichever opt-in `frob.app.check_runner` stages ran before it
+# (`claude-config-drift`'s CLAUDE001) -- the gates stage is never
+# reached, so there is no `"gate-summary"` entry AND no `"budget"` key at
+# all. Both `ToolResult`s failed WITH a real error diagnostic attached,
+# so neither `_budget_deferred_stage_groups` nor `_incomplete_tool_
+# results` can tell this apart from a genuinely complete 2-error run.
+# Must parse as `None` (unmeasured), never as "measured exactly these 2
+# errors".
+_NATIVE_STALENESS_ABORT_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "claude-config-drift",
+                "exit_code": 1,
+                "diagnostics": [
+                    {
+                        "file": ".claude/hooks/sync-claude-config.py",
+                        "line": None,
+                        "col": None,
+                        "severity": "error",
+                        "code": "CLAUDE001",
+                        "message": "managed source missing: x",
+                    }
+                ],
+                "tests": [],
+                "summary": "1 managed Claude-config file(s) drifted or missing",
+            },
+            {
+                "tool": "native-staleness",
+                "exit_code": 1,
+                "diagnostics": [
+                    {
+                        "file": ".",
+                        "line": None,
+                        "col": None,
+                        "severity": "error",
+                        "code": "NATIVE001",
+                        "message": "NATIVE001: natives are stale",
+                    }
+                ],
+                "tests": [],
+                "summary": "native-staleness FAILED: natives are stale",
+            },
+        ],
+    }
+)
+
+# frob:ticket T-2793
+# The second positive control T-2793 requires: a DIFFERENT pre-gate
+# abort (`frob.check._derived_state_integrity_result`'s DERIVED001) must
+# be caught the same way -- the fix must assert on the positive "gates
+# ran" signal, never special-case NATIVE001 specifically.
+_DERIVED_STATE_ABORT_STDOUT = json.dumps(
+    {
+        "path": ".",
+        "results": [
+            {
+                "tool": "derived-state-integrity",
+                "exit_code": 1,
+                "diagnostics": [
+                    {
+                        "file": ".frob/cache.db",
+                        "line": None,
+                        "col": None,
+                        "severity": "error",
+                        "code": "DERIVED001",
+                        "message": "corrupt artifact",
+                    }
+                ],
+                "tests": [],
+                "summary": "1 derived artifact(s) corrupt",
+            }
+        ],
+    }
+)
+
+
 class TestCheckGateFindingsFn:
     """`_check_gate_findings_fn` parsing/filtering behavior -- each method
     below carries its own `frob:tests` edge (T-1055: this class docstring
@@ -694,6 +776,48 @@ class TestParseErrorFindingsFromJson:
             "T-0001", _BUDGET_RESUME_NARROWED_STDOUT, 0
         )
         assert findings is None
+
+    # frob:ticket T-2793
+    def test_native_staleness_abort_yields_none_not_the_abort_findings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_native_staleness_abort_yields_none_not_the_abort_findings  # noqa: E501
+        """T-2793's own measured root cause: a `frob check --json` run
+        that fast-exits on NATIVE001 native staleness before the gates
+        stage is ever reached must parse as `None` (unmeasured), never as
+        "measured exactly the 2 pre-gate findings" -- that misread is
+        precisely what let a 14-second abort become a trusted rolling
+        baseline."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _NATIVE_STALENESS_ABORT_STDOUT, 1
+        )
+        assert findings is None
+
+    # frob:ticket T-2793
+    def test_other_pre_gate_abort_also_yields_none_not_only_native001(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson.test_other_pre_gate_abort_also_yields_none_not_only_native001  # noqa: E501
+        """T-2793's second mandatory positive control: a DIFFERENT
+        pre-gate fast-exit (DERIVED001 derived-state-integrity, never
+        NATIVE001) must be caught the exact same way. The fix asserts on
+        the positive "did the gates stage run" signal, not on any one
+        named abort reason -- a fix that only recognized NATIVE001 by
+        name would leave every other current or future pre-gate abort
+        exploitable the same way T-2793 itself was."""
+        findings = ticket_runner._parse_error_findings_from_stdout(
+            "T-0001", _DERIVED_STATE_ABORT_STDOUT, 1
+        )
+        assert findings is None
+
+    # T-2793: the mandatory control in the OTHER direction -- a genuine,
+    # complete run (a real "gate-summary" entry present) must still parse
+    # its real findings exactly as before, without this fix being
+    # indistinguishable from disabling verification entirely -- is
+    # already covered by `test_ty_and_gate_error_both_appear_in_parsed_set`
+    # above (its `_TY_AND_GATE_ERROR_STDOUT` fixture carries a real
+    # `"gate-summary"` entry); a second, byte-for-byte identical test
+    # here would be DUP001, not a distinct control.
 
 
 class TestBudgetSkippedGroupsFromPayload:
@@ -1105,7 +1229,12 @@ class TestParseErrorFindingsFromJsonDropsBlankIdentity:
                         {"severity": "error"},  # both code and file missing
                         {"severity": "error", "code": "RULE1", "file": "a.py"},
                     ],
-                }
+                },
+                # T-2793: a genuinely complete run has a "gate-summary"
+                # entry -- without one, this fixture would now (correctly)
+                # parse as unmeasured instead of exercising the
+                # blank-identity drop this test targets.
+                {"tool": "gate-summary", "diagnostics": []},
             ]
         }
         with caplog.at_level(logging.WARNING):
@@ -1131,7 +1260,10 @@ class TestParseErrorFindingsFromJsonDropsBlankIdentity:
                 {
                     "tool": "some-crashing-tool",
                     "diagnostics": [{"severity": "error"}],
-                }
+                },
+                # T-2793: see the sibling test above for why this entry
+                # is required now.
+                {"tool": "gate-summary", "diagnostics": []},
             ]
         }
         with caplog.at_level(logging.WARNING):
@@ -1154,7 +1286,10 @@ class TestParseErrorFindingsFromJsonDropsBlankIdentity:
                 {
                     "tool": "some-tool",
                     "diagnostics": [{"severity": "error", "file": "only_file.py"}],
-                }
+                },
+                # T-2793: see the sibling tests above for why this entry
+                # is required now.
+                {"tool": "gate-summary", "diagnostics": []},
             ]
         }
         findings = _parse_error_findings_from_json("T-0001", data)

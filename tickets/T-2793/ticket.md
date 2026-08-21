@@ -3,7 +3,7 @@ id: T-2793
 title: stale natives make frob check fast-exit in 14s, and the rapid sweep records
   that 2-finding abort as the rolling baseline -- verification reports GREEN having
   run zero gates
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -67,7 +67,13 @@ scope_changes:
     home for that contract instead of forking it
   actor: logan
   at: '2026-08-21'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_native_staleness_abort_yields_none_not_the_abort_findings
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_other_pre_gate_abort_also_yields_none_not_only_native001
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_ty_and_gate_error_both_appear_in_parsed_set
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_budget_truncated_run_yields_none_not_a_partial_set
+- tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_resume_narrowed_run_yields_none_not_a_partial_set
+designated_repro_test: tests/unit/test_ticket_runner_gate_findings.py::TestParseErrorFindingsFromJson::test_native_staleness_abort_yields_none_not_the_abort_findings
 threat: null
 component: null
 anchor: false

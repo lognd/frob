@@ -1133,6 +1133,24 @@
       "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
       "reason": "T-2760 added findings=tuple(unfiled_pairs) to the filed TicketSpec; docs/modules/tickets-verify-sweep.md's description of this function's attribution/filing behavior still holds",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-21",
+      "facet": "body",
+      "new_digest": "c6f256f5b112c7a59607f96f8b67aa7abbe2835daf5db6c082c5bdee345a7008",
+      "old_digest": "1b4e3befb99e6974bb16fa02c3a51faf56701fee6055ac754518c7dc41a95c62",
+      "reason": "T-2793: added a fifth None-returning case (_gates_stage_ran) to the body -- every existing dependent doc/comment describing this function's None-vs-measured-set contract remains accurate; the new case is additive to the documented 'unmeasured, not zero' contract, not a change to it",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-21",
+      "facet": "sig",
+      "new_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "old_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "reason": "T-2793: added a fifth None-returning case (_gates_stage_ran) to the body -- every existing dependent doc/comment describing this function's None-vs-measured-set contract remains accurate; the new case is additive to the documented 'unmeasured, not zero' contract, not a change to it",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
     }
   ],
   "entries": [
@@ -1287,7 +1305,7 @@
       "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
     },
     {
-      "digest": "1b4e3befb99e6974bb16fa02c3a51faf56701fee6055ac754518c7dc41a95c62",
+      "digest": "c6f256f5b112c7a59607f96f8b67aa7abbe2835daf5db6c082c5bdee345a7008",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
     },

@@ -264,6 +264,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2789: Reformat batch 7/N: 13 files pending ruff-format (T-2359 child)
 - T-2790: frob check's 274s cost is now the only lever on fleet throughput: profile the top four whole-program stages and decide what is reducible
 - T-2792: Reformat batch 8/N: 13 files pending ruff-format (T-2359 child)
+- T-2793: stale natives make frob check fast-exit in 14s, and the rapid sweep records that 2-finding abort as the rolling baseline -- verification reports GREEN having run zero gates
 - T-2794: Reformat batch 9/N: 13 files pending ruff-format (T-2359 child)
 - T-2795: Reformat batch 10/N: 13 files pending ruff-format (T-2359 child)
 - T-2800: Burn ruff I001 batch 2: tests/ subset
