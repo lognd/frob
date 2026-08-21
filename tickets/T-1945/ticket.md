@@ -11,11 +11,188 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
-- '**/*.py'
-- tests/unit/strata/litmus/**
+- '''tests/conftest.py'''
+- '''tests/test_app.py'''
+- '''tests/test_capability_registry.py'''
+- '''tests/test_check_runner.py'''
+- '''tests/test_coverage_wait_shared.py'''
+- '''tests/test_doc012_promotion.py'''
+- '''tests/test_docenum_gate.py'''
+- '''tests/test_gates.py'''
+- '''tests/test_gates_fix_engine.py'''
+- '''tests/test_gates_suppress.py'''
+- '''tests/test_graph.py'''
+- '''tests/test_graph_imports.py'''
+- '''tests/test_hook_diagnosis_nudge.py'''
+- '''tests/test_land_verify_claims_outcome.py'''
+- '''tests/test_lang_conformance_gate.py'''
+- '''tests/test_pii_structural_gate.py'''
+- '''tests/test_refactor.py'''
+- '''tests/test_release.py'''
+- '''tests/test_scaffold_worktree_lease_hook.py'''
+- '''tests/test_serve_tools_daemon_bypass.py'''
+- '''tests/test_telemetry.py'''
+- '''tests/test_testing.py'''
+- '''tests/test_tick012_gate.py'''
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: '**/*.py'
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  glob: tests/unit/strata/litmus/**
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/conftest.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_app.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_capability_registry.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_check_runner.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_coverage_wait_shared.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_doc012_promotion.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_docenum_gate.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_gates.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_gates_fix_engine.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_gates_suppress.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_graph.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_graph_imports.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_hook_diagnosis_nudge.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_land_verify_claims_outcome.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_lang_conformance_gate.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_pii_structural_gate.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_refactor.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_release.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_scaffold_worktree_lease_hook.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_serve_tools_daemon_bypass.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_telemetry.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_testing.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: '''tests/test_tick012_gate.py'''
+  reason: 'batch 1 of the ruff-format reformat: 23 files under tests/ top-level, excludes
+    T-1606-owned test_gates_fmt_directives.py/test_lang.py'
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
