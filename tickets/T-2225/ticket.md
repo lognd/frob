@@ -13,12 +13,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/test_coordinator_scripts.py::TestTicketReadinessScopeCollision::test_not_dispatchable_when_scope_files_are_held_by_another_live_lease
 - tests/unit/test_coordinator_scripts.py::TestScopeLeaseCollisions::test_glob_scope_collides_with_a_literal_lease_file

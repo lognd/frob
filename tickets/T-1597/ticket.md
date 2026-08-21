@@ -10,6 +10,9 @@ parent: null
 tier: epic
 sprint: post-1.0
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-1597/**
 scope_breadth_ack: false

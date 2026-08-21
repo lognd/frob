@@ -10,10 +10,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_hook_root_write_guard.py::test_agent_write_inside_a_nested_worktree_is_allowed
 designated_repro_test: null

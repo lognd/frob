@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_app_runners_t1738_wave.py
 scope_breadth_ack: false

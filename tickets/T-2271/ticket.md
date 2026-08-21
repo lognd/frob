@@ -12,12 +12,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_evidence.py
 evidence_scope:
 - tests/test_ticket_leases_cross_worktree.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_scope_change_while_queued_then_start_leases_with_post_change_scope
 - tests/test_ticket_leases_cross_worktree.py::TestCrossWorktreeLeaseVisibility::test_local_close_releases_the_lease_before_a_second_worktree_sees_done

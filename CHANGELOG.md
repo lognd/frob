@@ -243,6 +243,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2766: docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning, frob.toml overrides to error
 - T-2772: retarget hardcoded src/frob glob in _new.py's related-check-function suggestion
 - T-2773: Reformat batch 1/N: 15 files pending ruff-format (T-2359 child)
+- T-2775: no shared primitive for 'wait until a land slot is free', so every agent hand-rolls a noisy poll loop that misreads failure as zero
 - T-2776: Reformat batch 2/N: 10 files pending ruff-format (T-2359 child)
 - T-2777: Reformat batch 3 of ruff-format-only reformat (T-2359 child)
 

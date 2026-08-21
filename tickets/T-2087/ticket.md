@@ -11,11 +11,16 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/testing/_coverage_refresh.py
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_summary_line_alone_matches_the_quoted_node_id
 - tests/test_coverage.py::TestWorkerCrashSignatureRealSubprocess::test_os_exit_worker_crash_is_a_real_repro

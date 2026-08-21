@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - /home/logan/projects/frob/scripts/fleet_status.py
 - /home/logan/projects/frob/src/frob/lang/_nodes.py
@@ -20,6 +23,8 @@ evidence_scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: /home/logan/projects/frob/tests/test_ticket_land.py

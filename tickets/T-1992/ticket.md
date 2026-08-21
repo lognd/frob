@@ -11,10 +11,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/frob-version-policy.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - cmd:grep -n 'frob:waive DOC006' docs/guides/frob-version-policy.md exit=0 sha256=48033384818d
 designated_repro_test: null

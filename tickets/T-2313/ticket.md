@@ -11,12 +11,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 evidence_scope:
 - tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_drops_genuinely_empty_identity_pair
 - tests/unit/test_rapid_sweep.py::TestNormalizeIdentities::test_leaves_well_formed_pairs_untouched

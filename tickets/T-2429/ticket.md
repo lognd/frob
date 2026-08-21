@@ -10,6 +10,9 @@ parent: T-2390
 tier: story
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/natives/__init__.py
 - tests/unit/test_native_table_schema.py
@@ -26,6 +29,8 @@ scope:
 - src/frob/gates/_native_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/natives/_native_schema.py

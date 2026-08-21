@@ -11,12 +11,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - docs/guides/coordinator-scripts.md
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/guides/coordinator-scripts.md
@@ -73,8 +78,6 @@ component: tickets
 anchor: false
 anchor_reason: null
 land_commit: e0d5c56f2e1b980d6744cae4cfd8a469d8887be0
-no_scope_declared: false
-no_scope_declared_reason: null
 ---
 A ticket whose blockers have been COMPLETED AND ARCHIVED reads as
 permanently blocked, so it can never be dispatched and the rot detector

@@ -11,6 +11,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/cycle_runner.py
 - src/frob/cycle/graph.py

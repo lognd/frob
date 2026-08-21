@@ -1,6 +1,6 @@
 # Coordinator scripts (`scripts/`)
 
-T-1863. Three small, reusable scripts that replace analyses the coordinator
+T-1863/T-2775. Four small, reusable scripts that replace analyses the coordinator
 loop used to re-derive by hand from inline Python, dozens of times per
 session -- and got wrong twice, on both counts documented below. Each
 script is plain stdlib Python (no `frob` import) and is meant to be
@@ -1525,9 +1525,102 @@ Usage:
 python3 scripts/verify_lands.py <sha-or-ticket-id> [...] [--ref main]
 ```
 
+## `scripts/wait_for_land_slot.py`
+
+Blocks until no `frob ticket land` is in flight (or `--max-in-flight` is
+satisfied), quietly, with a distinct exit code per outcome.
+
+WHY THIS EXISTS (T-2775): every agent in a landing fleet needs to wait for
+a free land slot before landing, and there was no shared primitive for
+it -- every agent hand-rolled the same poll loop, wrong, in ways that cost
+real time: a per-tick `echo` every 30s is a continuous context tax across
+a multi-agent fleet; a loop that reads a count without checking `fleet_
+status.py`'s own exit code treats an empty string from a FAILED probe as
+a genuine zero and starts a second concurrent land -- the repo's dominant
+silent-zero bug class (epic T-2391) reproduced INSIDE the workaround meant
+to prevent it; a loop waiting on a notification instead of polling parks
+forever with committed work stranded; and callers disagreed on their own
+wrapper timeout (`timeout 500` vs `timeout 540` seen live in the same
+fleet minute).
+
+This script REUSES `fleet_status.py`'s own "a land is in flight"
+definition rather than re-deriving it: it shells out to `fleet_status.py`
+(or, for tests/fault-injection, whatever `--fleet-status-cmd` names) and
+parses that command's own `LANDS IN FLIGHT: N` line. Two homes for that
+rule would desync the moment either changed alone.
+
+### `wait_for_land_slot-exit-codes`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#wait_for_land_slot-exit-codes -->
+
+**Exit codes** (the contract a caller depends on):
+
+| Code | Name | Meaning |
+|---|---|---|
+| 0 | `EXIT_SLOT_FREE` | measured `LANDS IN FLIGHT` at or below `--max-in-flight` (default 0); safe to land |
+| 1 | `EXIT_TIMEOUT` | `--timeout` elapsed while a land was genuinely measured to be in flight the whole time -- retry later |
+| 2 | `EXIT_MEASUREMENT_FAILED` | the status probe never once produced a readable measurement during the whole timeout window -- NEVER conflated with 0; an unmeasured fleet state is not a free slot |
+
+### `probe_lands_in_flight`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#probe_lands_in_flight -->
+
+Runs the status-probe `command` (default: `fleet_status.py` itself) and
+returns its own `LANDS IN FLIGHT: N` reading, or `None` when the probe
+could not be trusted -- a nonzero exit, a hung process, or output with no
+parseable count. `None` is UNMEASURED, never zero; this is the ONLY place
+that parses the probe's output.
+
+### `wait_for_slot`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#wait_for_slot -->
+
+The polling state machine: calls `probe_lands_in_flight` on an interval
+until the reading is at or below `max_in_flight`, or `timeout_s` elapses.
+Returns `(exit_code, summary_line)`, never prints anything itself.
+Tracks whether ANY poll ever produced a real reading (`ever_measured`):
+on timeout, a fleet that was measured to have a land in flight the whole
+time gets `EXIT_TIMEOUT`; a fleet that NEVER once produced a readable
+measurement gets `EXIT_MEASUREMENT_FAILED` -- checked every iteration, so
+a probe that measures once and then starts failing still correctly
+reports `EXIT_TIMEOUT` (it learned real fleet state before losing the
+ability to keep reading it), never `EXIT_MEASUREMENT_FAILED`. `sleep`/
+`now` are injectable so tests never sleep for real wall-clock seconds.
+
+### `wait_for_land_slot-cli`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#wait_for_land_slot-cli -->
+
+CLI entry point (`main`) plus its argument parser (`_build_parser`).
+QUIET by default: exactly one summary line to stdout on exit; `--verbose`
+adds one line per poll tick to stderr, never stdout, so a caller scripting
+against this tool's exit code and stdout never has to filter tick noise
+out. `--timeout` defaults to 480s (`DEFAULT_TIMEOUT_S`), deliberately
+below this repo's own 500s/540s wrapper timeouts, so this script declines
+cleanly on its own clock instead of being killed by the wrapper.
+`--max-in-flight` defaults to 0 (genuinely no land in flight); pass 1 to
+match this repo's own "fewer than 2 is fine to land against" convention
+used elsewhere in this fleet. `--fleet-status-cmd` overrides the
+status-probe command (shell-split) -- the fault-injection seam this
+ticket's own mandatory positive control uses (`--fleet-status-cmd false`)
+to prove the script exits `EXIT_MEASUREMENT_FAILED`, never 0, when the
+probe cannot be trusted at all.
+
+Usage:
+
+```
+python3 scripts/wait_for_land_slot.py [--timeout SECONDS]
+    [--poll-interval SECONDS] [--max-in-flight N] [--verbose]
+    [--fleet-status-cmd COMMAND]
+
+# typical pre-land use, in place of a hand-rolled poll loop:
+uv run python scripts/wait_for_land_slot.py --max-in-flight 1 && \
+    uv run frob ticket land T-#### --worktree <path>
+```
+
 ## Design and gate posture
 
-Every `subprocess.run` call in these three scripts (`git`, and `frob check`
+Every `subprocess.run` call in these four scripts (`git`, and `frob check`
 itself) is declared under a `scripts_ops` node in `design/frob.strata` with
 the `exec` capability (SELFAUDIT001 -- a script that shells out with no
 capability declaration is exactly the class of unaudited process-spawn

@@ -11,11 +11,16 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - Makefile
 - tests/test_coverage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_coverage.py::TestMakeDryRunDoesNotExecuteMutatingCommands::test_dry_run_coverage_fast_completes_quickly
 - tests/test_coverage.py::TestMakefileNoCompoundRecursiveMake::test_no_recipe_line_combines_dollar_make_with_other_commands

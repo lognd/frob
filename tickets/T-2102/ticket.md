@@ -11,10 +11,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_parses_and_elaborates
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_every_claim_proves

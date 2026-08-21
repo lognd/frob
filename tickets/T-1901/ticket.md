@@ -12,10 +12,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations
 designated_repro_test: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_sys_gate_zero_violations

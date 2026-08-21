@@ -14,6 +14,9 @@ parent: T-1662
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/callgraph.py
 - src/frob/gates/__init__.py
@@ -23,6 +26,8 @@ scope:
 - tests/test_graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_graph.py::TestBuildCallGraphVerifyImports::test_cross_file_candidate_resolves_when_caller_imports_it
 - tests/test_graph.py::TestBuildCallGraphVerifyImports::test_cross_file_candidate_dropped_when_caller_does_not_import_it

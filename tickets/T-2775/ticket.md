@@ -2,7 +2,7 @@
 id: T-2775
 title: no shared primitive for 'wait until a land slot is free', so every agent hand-rolls
   a noisy poll loop that misreads failure as zero
-state: in-progress
+state: done
 kind: feature
 origin: agent
 created: '2026-08-21'
@@ -28,6 +28,22 @@ scope_changes:
   reason: T-2775's own brief requires positive-control unit tests for the new script
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_reads_a_genuine_count
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_zero_is_a_real_reading_not_none
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_nonzero_exit_is_unmeasured
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_unparseable_output_is_unmeasured
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_probe_timeout_is_unmeasured
+- tests/unit/test_coordinator_scripts.py::TestProbeLandsInFlight::test_probe_oserror_is_unmeasured
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_slot_already_free_returns_immediately
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_land_in_flight_then_free_blocks_then_returns
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_always_in_flight_times_out
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_always_unmeasurable_never_returns_zero
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_measured_then_unmeasurable_is_timeout_not_measurement_failure
+- tests/unit/test_coordinator_scripts.py::TestWaitForSlot::test_verbose_tick_hook_receives_every_reading
+- tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain::test_quiet_by_default_prints_one_summary_line
+- tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain::test_verbose_adds_per_tick_lines_to_stderr
+- tests/unit/test_coordinator_scripts.py::TestWaitForLandSlotMain::test_end_to_end_forced_probe_failure_via_fleet_status_cmd
 designated_repro_test: null
 threat: null
 component: null

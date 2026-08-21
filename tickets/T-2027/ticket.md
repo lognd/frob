@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/serve/_tools.py
 - tests/test_app_daemon_proxy.py
@@ -18,6 +21,8 @@ evidence_scope:
 - tests/test_serve_tools_daemon_bypass.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation::test_resolved_sweep_ticket_is_dropped_before_listing
 - tests/test_serve_tools_daemon_bypass.py::TestFrobDoableTicketsRevalidation::test_still_reproducing_sweep_ticket_stays_listed

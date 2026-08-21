@@ -12,12 +12,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 evidence_scope:
 - tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_collapses_process_fan_out_by_ticket_id
 - tests/unit/test_coordinator_scripts.py::TestLandInvocations::test_rows_with_no_ticket_id_are_dropped_not_reported

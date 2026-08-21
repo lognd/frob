@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - /home/logan/projects/frob/src/frob/gates/_fix_engine_sync.py
 - tickets/T-1872
@@ -25,6 +28,8 @@ scope:
 - tickets/T-1935/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: tickets/archive/T-1872/**

@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 evidence_scope:
 - tests/unit/verify/test_watermark.py
 - tests/unit/verify/test_backpressure.py
@@ -18,6 +21,8 @@ evidence_scope:
 - tests/unit/test_land_cmd_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_counts_raw_git_commits_not_queue_entries
 - tests/unit/verify/test_watermark.py::TestCommitsSinceWatermark::test_zero_at_the_watermark_itself

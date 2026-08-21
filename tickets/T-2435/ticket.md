@@ -11,6 +11,9 @@ parent: T-2390
 tier: story
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_ratchet.py
 - tests/unit/test_gates_table_schema.py

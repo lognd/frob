@@ -11,6 +11,9 @@ parent: T-2303
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/telemetry.py
 - src/frob/app/ticket_runner/_land_cmd.py
@@ -21,6 +24,8 @@ evidence_scope:
 - tests/unit/test_ticket_new_scope_plausibility_t2192.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_land_cmd.py

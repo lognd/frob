@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/test_ticket_leases.py
 - src/frob/app/ticket_runner/_ledger_mirror.py

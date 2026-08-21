@@ -11,6 +11,9 @@ parent: T-2202
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docblocks_refs.py
 - src/frob/gates/_docblocks.py
@@ -29,6 +32,8 @@ evidence_scope:
 - tests/unit/test_gates_lang_graph_cycle_regression.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: docs/modules/gates.md

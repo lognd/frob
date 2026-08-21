@@ -10,6 +10,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
@@ -19,6 +22,8 @@ evidence_scope:
 - tests/system/test_frob_self_model.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: design/frob.strata;docs/design/registry/capability-via-ratchet.lock.json;docs/modules/arch.md;docs/modules/vet.md
@@ -54,8 +59,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: eecd4513ae3de97653bf0343f7b0e547cb90479a
-no_scope_declared: false
-no_scope_declared_reason: null
 ---
 Coordinator-directed error-floor sweep (T-2407 series follow-up):
 frob check --json | scripts/check_summary.py reported 30-87 errors on

@@ -11,11 +11,16 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_reconcile.py
 - tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_live_default_worktree_with_no_lease_is_never_requeued
 - tests/test_ticket_reconcile.py::TestReconcileLiveWorktreeShield::test_still_requeues_a_genuinely_gone_worktree

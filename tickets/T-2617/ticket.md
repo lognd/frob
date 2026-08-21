@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - docs/guides/coordinator-scripts.md#worktree_content_classification

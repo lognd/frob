@@ -11,12 +11,17 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_store.py
 evidence_scope:
 - tests/unit/test_ticket_store.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/test_ticket_store.py::TestV2WriteTicket::test_write_all_v2_keeps_done_report_split_out
 - tests/unit/test_ticket_store.py::TestWriteArchivedTicket::test_v2_write_archived_ticket_keeps_done_report_split_out

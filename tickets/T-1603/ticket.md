@@ -12,6 +12,9 @@ parent: T-1597
 tier: ticket
 sprint: post-1.0
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_walk_zig.py
 - tests/fixtures/lang/**

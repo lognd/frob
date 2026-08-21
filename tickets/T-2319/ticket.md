@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/test_runner.py
 - src/frob/_cli_parsers/_check.py
@@ -19,6 +22,8 @@ scope:
 - tests/unit/test_app_test_runner.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/_cli_parsers/_misc.py

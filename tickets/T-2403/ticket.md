@@ -11,11 +11,16 @@ parent: T-0969
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 evidence_scope:
 - tests/unit/strata/test_sys003_calibration.py
 - tests/unit/test_app_config_meta_branches_t1400.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/strata/test_sys003_calibration.py::TestSys003TestsuiteFlowCalibration::test_must_now_be_silent__testsuite_importing_declared_tested_module
 - tests/unit/strata/test_sys003_calibration.py::TestSys003DeclaredPairDoesNotMaskReverse::test_declared_forward_edge_does_not_permit_the_reverse

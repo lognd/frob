@@ -11,11 +11,16 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_arch.py
 - src/frob/gates/_coverage_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - cmd:bash -c 'n=$(uv run frob check --only gates 2>&1 | grep -c "gate:WIRE\]"); echo
   WIRE001_findings=$n; test "$n" = 0' exit=0 sha256=76944a594555

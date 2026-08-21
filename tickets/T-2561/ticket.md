@@ -12,6 +12,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_leases.py
 - docs/design/registry/check-coverage.yaml
@@ -105,7 +107,6 @@ component: null
 anchor: false
 anchor_reason: null
 land_commit: 5d9dcb17a1db1c45520fe154efe920f8733dc4a4
-milestone: null
 ---
 `_effective_leakage_scope` (T-2547) now voids any ticket's attribution
 claim once its DECLARED scope is empty, closing the misattribution T-2547

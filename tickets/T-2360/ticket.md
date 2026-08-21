@@ -11,6 +11,9 @@ parent: T-1696
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/verify/_backpressure.py
 - src/frob/tickets/_profile.py
@@ -19,6 +22,8 @@ evidence_scope:
 - tests/unit/verify/test_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
 - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
 - tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_standard_matches_current_branch_logic

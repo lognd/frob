@@ -11,6 +11,9 @@ parent: null
 tier: epic
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/design/milestone-sequencing.md
 scope_breadth_ack: false
