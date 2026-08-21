@@ -27,6 +27,8 @@ scope:
 - src/frob/gates/_rule_id_scan.py
 - src/frob/gates/_mutation_evidence.py
 - src/frob/gates/_fix_engine_sync.py
+evidence_scope:
+- tests/test_registry_exhaustiveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +47,15 @@ body_changes:
   at: '2026-08-21'
   old_length: 2881
   new_length: 3271
+- mode: append
+  reason: declare no-behavior-change per BUG002's remedy option 2 -- comment-only
+    diff
+  actor: logan
+  at: '2026-08-21'
+  old_length: 3271
+  new_length: 3568
+evidence:
+- tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_frob_enforces_edge_is_silent
 designated_repro_test: null
 threat: null
 component: null
@@ -108,3 +119,6 @@ that file (fleet_status.py LEASES check), so it is excluded per the
 coordinator's live-file exclusion instruction. This batch fixes 18 of the
 36 REG008 entries, not 19; DOC012 moves to the "remaining" list for a
 future batch once T-2359 lands.
+
+
+frob:no-behavior-change reason="adds 18 missing frob:enforces comment directives above existing violation-emitting functions in gates/perf modules; each function's runtime behavior, return values, and existing tests are unchanged -- this is metadata linking code to registry entries, not logic"
