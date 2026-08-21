@@ -41,6 +41,15 @@ scope_changes:
     must remove it in this ticket''s own scope to close'
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: BUG002 refuses because the fix already landed as a sibling passenger before
+    this ticket's own land; waiving with a measured, cited explanation rather than
+    forcing a fake re-fail/re-pass cycle for a defect already proven fixed
+  actor: logan
+  at: '2026-08-20'
+  old_length: 1234
+  new_length: 1903
 evidence:
 - tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_read_via_attribute_access_is_not_flagged
 - tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_with_no_caller_anywhere_still_flagged_positive_control
@@ -73,3 +82,5 @@ call-token, gated on `record.kind == SymbolKind.METHOD` plus a way to
 tell "this method is decorated `@property`" from the snapshot/AST) so a
 genuine attribute-access caller of a new property counts as reached
 without needing a waiver.
+
+frob:waive BUG002 reason="the designated repro test passes at this land's parent commit because the actual defect fix (_is_property/_PROPERTY_DECORATOR_RE/property_access_pattern in src/frob/gates/_wire.py) already rode onto main as a passenger of a sibling ticket's land before this ticket's own land ran -- confirmed via git log/git show on main, not assumed; this land's own diff is the follow-on cleanup (removing the now-redundant WIRE001 waiver at src/frob/cycle/graph.py, measured directly at that site with the waiver removed: zero WIRE001 findings) needed only to satisfy the LiveTrackerCited close blocker, not a re-fix of the original defect" follow_up=""
