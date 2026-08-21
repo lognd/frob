@@ -2,7 +2,7 @@
 id: T-2778
 title: WIRE001's call-graph walk cannot resolve a symbol wired only as a passed-by-name
   callback argument
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -16,10 +16,28 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
+- tests/unit/test_wire001_callback_keyword_argument.py
+- scripts/wait_for_land_slot.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wire001_callback_keyword_argument.py
+  reason: new WIRE001 regression tests for the keyword-argument-value fix
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: scripts/wait_for_land_slot.py
+  reason: remove now-resolved WIRE001 waiver on _print_tick since the fix rescues
+    it
+  actor: logan
+  at: '2026-08-21'
+evidence:
+- tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument::test_function_passed_as_keyword_argument_value_is_not_flagged
+- tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument::test_function_with_no_caller_anywhere_still_flagged_positive_control
+- tests/unit/test_wire001_callback_keyword_argument.py::TestWire001CallbackKeywordArgument::test_class_passed_as_keyword_argument_value_still_flagged_anchor_control
 designated_repro_test: null
 threat: null
 component: null
