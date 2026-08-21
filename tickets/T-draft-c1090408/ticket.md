@@ -1,7 +1,7 @@
 ---
 id: T-draft-c1090408
 title: Reformat batch 3 of ruff-format-only reformat (T-2359 child)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -42,6 +42,10 @@ scope_changes:
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
+acceptance:
+- text: given the batch-3 files, when ruff format --check runs on them, then zero
+    need reformatting
+  evidence: []
 threat: null
 component: null
 anchor: false
