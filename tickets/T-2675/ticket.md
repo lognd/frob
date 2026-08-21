@@ -65,7 +65,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1756ee549e6c303485ef441f6c40d53ffcee7a3f
 ---
 T-2624 (`feat(tickets): land T-2624 CLI wiring for runs_last_parallel_safe`)
 added "runs-last-parallel-safe" to `LEDGER_VERB_STRATEGY`
