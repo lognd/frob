@@ -31,6 +31,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 28037ee3c8cf111ad9f1d96616c4fb4ad53ee6c4
 ---
 Residue from T-2028/T-2012. Two tests in tests/unit/gates/test_examined_sites.py (TestAttachExaminedSites.test_archgate_examined_sites_include_a_real_python_file, test_archgate_examined_sites_exclude_an_unparseable_file) carry a frob:tests edge to src/frob/gates/_arch.py::arch_examined_sites, which pulls in _arch.py's own full test surface (tests/unit/test_arch_srp.py, src/frob/gates/_waive.py) as SCOPE002 warnings whenever tests/unit/gates/test_examined_sites.py is in a ticket's scope. T-2012's investigation flagged widening scope that far as disproportionate to a coverage-family-extension ticket. Decide relocate-vs-widen: moving those two tests into tests/test_arch_gate.py (already scoped alongside _arch.py, carries other frob:tests edges to it) may be the cleaner fix, but requires updating the two frob:tests directives in src/frob/gates/_arch.py:182-183 to point at the new location -- hence _arch.py itself needs to be in this follow-up's scope, unlike T-2028's own narrower scope.
