@@ -2,7 +2,7 @@
 id: T-2764
 title: frob check does not run check_native_staleness_or_exit; make check does (workflow-parity
   gap)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -16,11 +16,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/**
-- src/frob/check.py
+- src/frob/check/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check.py
+  reason: T-2245-era scope named a stale path; check.py is now check/__init__.py
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: T-2245-era scope named a stale path; check.py is now check/__init__.py
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
