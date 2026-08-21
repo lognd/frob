@@ -112,7 +112,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0fa4bcbcf248f2dd90206dffbbf7c436f160c8f1
 ---
 frob wraps directive comments against ONE project-wide line-length limit, read from [tool.ruff] line-length in pyproject.toml (read_line_length, src/frob/gates/_fmt_directives.py). For Python that is exactly right: ruff owns the limit, ruff is what a "# noqa: E501" silences, and frob correctly steals the value rather than keeping a competing one.
 
