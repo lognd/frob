@@ -1341,6 +1341,7 @@ def _raw_capability_ratchet_lock(lock_path: Path) -> dict:
     return raw
 
 
+# frob:enforces CHK-GATE-SYS111
 def _apply_capability_ratchet_bumps(
     root: Path, current_counts: "dict[str, int]", before_counts: "dict[str, int]"
 ) -> list[FixApplied]:

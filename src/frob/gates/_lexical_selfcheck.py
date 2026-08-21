@@ -228,6 +228,7 @@ def _symref_less_violation_calls(node: ast.AST) -> list[ast.Call]:
     return hits
 
 
+# frob:enforces CHK-GATE-LEXCHECK001
 def _lexcheck001_violation(rel_path: str, func_name: str, lineno: int) -> Violation:
     """The LEXCHECK001 `Violation` for one flagged (module, function)."""
     _log.warning(

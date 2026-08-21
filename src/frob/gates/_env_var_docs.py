@@ -113,6 +113,7 @@ def _docs_corpus(root: Path, tracked: tuple[str, ...]) -> str:
     return "\n".join(chunks)
 
 
+# frob:enforces CHK-GATE-ENV001
 # frob:doc docs/modules/gates.md#env001-t-1782
 def env_var_doc_gate(root: Path) -> tuple[Violation, ...]:
     """ENV001: flag every `<PREFIX>*` string-literal constant assignment

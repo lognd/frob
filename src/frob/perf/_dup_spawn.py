@@ -323,6 +323,7 @@ def _split_clean_runs(
     return runs
 
 
+# frob:enforces CHK-GATE-PERF012
 def _def_violations(
     path: str,
     func_def: Node,

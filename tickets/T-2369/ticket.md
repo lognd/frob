@@ -1,7 +1,7 @@
 ---
 id: T-2369
 title: Burn REF001/REF002 + REG008 WARN gates to zero, then promote to error
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'

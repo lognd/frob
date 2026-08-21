@@ -154,6 +154,7 @@ def _external_reader_declared(root: Path, tracked: tuple[str, ...], name: str) -
     return False
 
 
+# frob:enforces CHK-GATE-ROOT001
 def _root001_unresolved_pkg_violation(root: Path) -> Violation:
     """T-2391 fail-loudly: `root`'s `pyproject.toml` `[project].name`
     could not be read/parsed, so check (a) has no source-root prefix to

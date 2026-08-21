@@ -33,6 +33,7 @@ _log = get_logger(__name__)
 _TERMINAL_STATES = (TicketState.DONE, TicketState.DROPPED)
 
 
+# frob:enforces CHK-GATE-MILE003
 # frob:ticket T-2576
 # frob:tests tests/test_gates_milestone.py::TestMile003.test_fires_on_open_ticket_with_no_resolvable_milestone  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile003.test_silent_once_stamped  # noqa: E501
@@ -101,6 +102,7 @@ def _mile003_unresolved_milestone(
     return tuple(violations)
 
 
+# frob:enforces CHK-GATE-MILE001
 # frob:ticket T-2580
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_later_milestone_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile001.test_blocked_by_earlier_milestone_does_not_fire  # noqa: E501
@@ -206,6 +208,7 @@ def _descendants_of(
     return descendants
 
 
+# frob:enforces CHK-GATE-MILE002
 # frob:ticket T-2580
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_later_milestone_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile002.test_descendant_in_earlier_or_same_milestone_does_not_fire  # noqa: E501
@@ -303,6 +306,7 @@ def _group_runs_last_by_milestone(
     return groups
 
 
+# frob:enforces CHK-GATE-MILE004
 # frob:ticket T-2579
 def _mile004_pair_violation(milestone: str, a: Ticket, b: Ticket) -> Violation | None:
     """One MILE004 `Violation` for the `(a, b)` pair if their order is

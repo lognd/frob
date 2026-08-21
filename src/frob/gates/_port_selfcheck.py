@@ -302,6 +302,7 @@ def _identity_literal_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
     return None
 
 
+# frob:enforces CHK-GATE-PORT001-PATH
 def _port001_path_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     """PORT001-PATH: a `.startswith("src/<pkg>/")`-shaped hardcode --
     BEHAVIORAL (T-2384's coordinator, 2026-08-18): off a repo whose
@@ -338,6 +339,7 @@ def _port001_path_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     )
 
 
+# frob:enforces CHK-GATE-PORT001-IDENT
 def _port001_ident_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     """PORT001-IDENT: a bare package-name literal used as a path segment
     (tuple/list element, or an f-string chunk) -- ADVISORY, deliberately
@@ -388,6 +390,7 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
+# frob:enforces CHK-GATE-PORT001
 def _unresolved_project_name_violation(root: Path) -> Violation:
     """T-2391 fail-loudly: `root`'s `pyproject.toml` `[project].name`
     could not be read/parsed, so PORT001 has no denominator to scan

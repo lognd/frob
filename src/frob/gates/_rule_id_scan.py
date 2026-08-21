@@ -446,6 +446,7 @@ def find_unregistered_rule_ids(
     }
 
 
+# frob:enforces CHK-GATE-GATERULE001
 # frob:ticket T-2448
 # frob:doc docs/modules/gates.md#gaterule001-t-2448
 # frob:tests \

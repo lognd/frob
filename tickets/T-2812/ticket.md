@@ -2,7 +2,7 @@
 id: T-2812
 title: 'REG008 burn-down batch 1/N: 19 missing frob:enforces directives in gates/perf
   modules'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'

@@ -60,6 +60,7 @@ def _design_dir(root: Path) -> str:
     return value if isinstance(value, str) else _DEFAULT_DESIGN_DIR
 
 
+# frob:enforces CHK-GATE-INV051
 # frob:doc docs/strata/policy.md#refinement-monotonicity-inv-051-t-1482
 # frob:ticket T-1843
 # frob:ticket T-1864

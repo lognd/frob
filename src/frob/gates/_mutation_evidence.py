@@ -61,6 +61,7 @@ _ERROR_KINDS = frozenset({TicketKind.SECURITY, TicketKind.BUG})
 # frob:enforces CHK-GATE-TEST016
 # frob:enforces CHK-THEME-EXISTENCE-NOT-PROOF
 # frob:enforces CHK-SUBSYS-TICKETS-TESTING
+# frob:enforces CHK-GATE-TEST018
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_warn_for_feature_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_confirmatory_finding_is_error_for_security_kind  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMutationEvidenceViolations.test_no_findings_no_violations  # noqa: E501
@@ -1177,6 +1178,7 @@ def _must_still_pass_never_passed_message(ticket_id: str, test_id: str) -> str:
 
 
 # frob:ticket T-2193
+# frob:enforces CHK-GATE-BUG003
 # frob:doc docs/modules/tickets-landing.md#mutation-evidence-obligation-test016-t-0755
 # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_no_directive_no_violation  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_passes_at_both_no_violation  # noqa: E501

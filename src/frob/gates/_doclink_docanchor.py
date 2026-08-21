@@ -895,6 +895,7 @@ _SEVERITY_ROW_CODE_RE = re.compile(r"\(([A-Z]{2,10}\d{2,4})[,)]")
 _SEVERITY_WORD_TO_TOML = {"error": "error", "warning": "warn", "warn": "warn"}
 
 
+# frob:enforces CHK-GATE-DOC013
 def _doc013_violation(
     doc_rel: str, line: int, code: str, doc_word: str, toml_value: str
 ) -> Violation:

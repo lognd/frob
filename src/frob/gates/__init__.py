@@ -4930,6 +4930,7 @@ _exclude_filtered_coverage = _coverage_exclude_filtered_coverage
 
 
 # frob:enforces CHK-GATE-TEST006
+# frob:enforces CHK-THEME-GITIGNORED-TRUST
 def _test006_missing() -> tuple[Violation, ...]:
     """The TEST006 violation for a missing coverage stamp."""
     return (
