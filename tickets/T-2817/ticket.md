@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/coordinator-scripts.md
+- scripts/wait_for_land_slot.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/wait_for_land_slot.py
+  reason: clearing the two COV001/AFFECT001 waivers T-2807 took only because this
+    doc was leased by T-2755 at the time; that lease is now released
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
