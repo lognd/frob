@@ -15,8 +15,10 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: rollup epic burning COV006/COV007 to zero then promoting
+  WARN->error; batched per T-2359/T-2373 precedent into child tickets, each with its
+  own real scope
 body_changes:
 - mode: append
   reason: record the measured REAL GAP / HONEST WAIVE / DETECTOR BUG split so the
