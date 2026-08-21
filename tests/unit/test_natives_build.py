@@ -236,6 +236,39 @@ class TestBuildNatives:
         assert result.is_err
         assert result.danger_err is NativesError.ExecDisabled
 
+    # frob:ticket T-2805
+    def test_successful_build_records_a_native_build_attempt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2805: a crate build that exits ZERO must call `record_
+        native_build_attempt` -- the attestation `stale_natives`'s
+        content-digest latch-escape depends on. Without this call site
+        wired up, a genuinely reproducible rebuild has no way to ever
+        distinguish itself from a bare touch."""
+        # frob:tests src/frob/natives/_build.py::build_natives kind="unit"
+        _write_frob_toml(tmp_path, _rust_native_entry("strata_core"))
+        _make_crate_dir(tmp_path, "strata_core")
+        monkeypatch.setattr(
+            native_build_module, "git_common_dir", lambda root: Ok(tmp_path / ".git")
+        )
+        monkeypatch.setattr(
+            native_build_module,
+            "guarded_subprocess_run",
+            lambda args, **kwargs: Ok(_fake_completed(0, stdout="built")),
+        )
+        recorded: list[tuple[Path, str]] = []
+        monkeypatch.setattr(
+            native_build_module,
+            "record_native_build_attempt",
+            lambda root, name: recorded.append((root, name)),
+        )
+
+        result = build_natives(tmp_path)
+        assert result.is_ok
+        assert result.danger_ok.ok
+        assert recorded == [(tmp_path, "strata_core")]
+
+    # frob:ticket T-2805
     def test_failed_crate_build_reports_not_ok(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -250,6 +283,15 @@ class TestBuildNatives:
             "guarded_subprocess_run",
             lambda args, **kwargs: Ok(_fake_completed(1, stderr="compile error")),
         )
+        # T-2805 non-regression control: a FAILED build must never record
+        # a build attempt -- that would let a broken build falsely clear
+        # a real staleness latch.
+        recorded: list[tuple[Path, str]] = []
+        monkeypatch.setattr(
+            native_build_module,
+            "record_native_build_attempt",
+            lambda root, name: recorded.append((root, name)),
+        )
 
         result = build_natives(tmp_path)
         assert result.is_ok
@@ -257,6 +299,7 @@ class TestBuildNatives:
         assert not report.ok
         assert report.results[0].returncode == 1
         assert not report.results[0].ok
+        assert recorded == []
 
     def test_crate_dir_outside_root_falls_back_to_absolute_display(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

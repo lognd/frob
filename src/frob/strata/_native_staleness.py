@@ -43,6 +43,26 @@ prior content to compare against, the same "nothing to compare against
 yet" posture `_newest_mtime`'s `None`-for-missing-directory case already
 takes.
 
+**T-2805: a reproducible rebuild is byte-identical, so the content-digest
+check above was a LATCH.** `maturin --release` is a deterministic build:
+rebuilding unchanged source always reproduces the identical artifact bytes.
+So the content-digest branch's own exit condition -- "the stamp is only
+refreshed once the artifact's bytes actually change" -- could never be
+satisfied by a genuine `frob natives build` after an edit that happened to
+compile to the same output as before; a real rebuild and no rebuild at all
+were indistinguishable to it, and the tool's own documented remediation
+could never clear its own detector. `record_native_build_attempt`
+(called by `frob.natives._build.build_natives` immediately after each
+crate's build exits zero) closes this WITHOUT weakening the touch-attack
+detection T-0513 exists for: it records, per native, the source digest a
+REAL build just ran against, in a file (`_BUILD_ATTEMPT_STAMP_REL`) only
+that call site ever writes. `stale_natives`'s content-digest branch checks
+that record before latching -- if it says a real build ran against
+EXACTLY this source, the stamp is refreshed (genuinely rebuilt, happens to
+be byte-identical); a bare `touch` can never cause that record to exist
+for the edited source, so the touch-without-rebuild case still latches
+exactly as before.
+
 Two call sites (T-0248's plan):
 - `frob.tickets._land.land` warns (does not block) when a just-landed source
   tree outpaces its own built native, so the coordinator sees it immediately
@@ -76,6 +96,21 @@ _log = get_logger(__name__)
 #: persisted -- `.frob/` is this repo's own local-state directory
 #: convention (mirrors `.frob/pytest-collect.json`'s cache, `_collect.py`).
 _STAMP_REL = Path(".frob") / "native-content-stamps.json"
+
+#: T-2805: where `record_native_build_attempt` persists, per native, the
+#: source-tree content digest a REAL (exit-zero) `frob natives build`
+#: crate invocation last ran against -- see that function's own docstring
+#: for why this is the only signal that can break the T-0513 content-
+#: digest latch without weakening what it detects: a reproducible build
+#: (`maturin --release` on unchanged source) makes "genuinely rebuilt, byte-
+#: identical output" and "never rebuilt, mtime faked" indistinguishable at
+#: the filesystem level, so only the build tool ITSELF asserting "I just
+#: ran the compiler against this exact source" can tell them apart.
+#: Deliberately a SEPARATE file from `_STAMP_REL`: the two answer different
+#: questions ("what did we last observe" vs "what did we last actually
+#: build against") and mixing them into one dict/schema would make a
+#: future reader re-derive which fields are which.
+_BUILD_ATTEMPT_STAMP_REL = Path(".frob") / "native-build-attempts.json"
 
 #: Native-crate source roots this repo builds via `make core` (mirrors
 #: T-0333's `[[native]]` entries in frob.toml). A native whose `name`
@@ -234,6 +269,113 @@ def _save_stamps(root: Path, stamps: dict[str, dict[str, str]]) -> None:
         _log.warning("native staleness: could not write stamp file %s: %s", path, exc)
 
 
+def _build_attempt_path(root: Path) -> Path:
+    """T-2805: where `record_native_build_attempt`'s per-native
+    'last real build ran against this source digest' map is persisted
+    under `root`."""
+    return root / _BUILD_ATTEMPT_STAMP_REL
+
+
+def _load_build_attempts(root: Path) -> dict[str, str]:
+    """T-2805: the persisted `{name: source_digest}` map of the LAST
+    source-tree digest a genuine, exit-zero `frob natives build` crate
+    invocation ran against, or `{}` for a missing/malformed file -- same
+    degrade-to-empty posture as `_load_stamps` (a corrupt/absent file
+    means "no known build attempt," never a crash, and simply leaves
+    `stale_natives`'s latch-escape check unable to fire, not broken)."""
+    path = _build_attempt_path(root)
+    try:
+        raw = path.read_text()
+    except OSError:
+        return {}
+    try:
+        loaded = json.loads(raw)
+    except Exception:
+        _log.warning(
+            "native staleness: malformed build-attempt file %s, ignoring", path
+        )
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    return {
+        k: v for k, v in loaded.items() if isinstance(k, str) and isinstance(v, str)
+    }
+
+
+def _save_build_attempts(root: Path, attempts: dict[str, str]) -> None:
+    """T-2805: persist the build-attempt map, creating `.frob/` if
+    needed -- best effort, same posture as `_save_stamps`: a write
+    failure is logged, not raised, since losing this file only means the
+    NEXT `stale_natives` call cannot yet distinguish a reproducible
+    rebuild from a bare touch (it falls back to the pre-T-2805 latch
+    behavior for that one native until the next successful build call),
+    never a crash or a false-clear."""
+    path = _build_attempt_path(root)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(attempts, sort_keys=True, indent=2) + "\n")
+    except OSError as exc:
+        _log.warning(
+            "native staleness: could not write build-attempt file %s: %s", path, exc
+        )
+
+
+# frob:ticket T-2805
+# frob:doc docs/modules/testing.md#public-api
+# frob:tests \
+# tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reproducible_rebuil\
+# d_clears_the_content_digest_latch kind="unit"
+# frob:tests \
+# tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_after_edit_wi\
+# thout_a_build_attempt_still_latches kind="unit"
+# frob:tests \
+# tests/unit/test_natives_build.py::TestBuildNatives.test_successful_build_records_a_na\
+# tive_build_attempt kind="unit"
+def record_native_build_attempt(root: Path, name: str) -> None:
+    """T-2805: called by `frob.natives._build.build_natives` immediately
+    after ONE crate's `maturin develop` exits ZERO -- records the CURRENT
+    source-tree content digest as "a real build just ran against this
+    exact source" for the native `name`, so a LATER `stale_natives`
+    observation that finds the artifact byte-identical to its own last
+    stamp (a reproducible build, `maturin --release` on unchanged source
+    always produces the same bytes) can refresh the T-0513 content-digest
+    stamp instead of re-latching on a rebuild that already, genuinely,
+    happened.
+
+    This is deliberately the ONLY writer of `_BUILD_ATTEMPT_STAMP_REL`:
+    `stale_natives` itself only READS it (see its digest-latch branch) --
+    neither a bare `touch` nor an ordinary `stale_natives` observation can
+    ever cause this file to claim a build happened, which is exactly what
+    keeps T-0513's original touch-without-rebuild detection intact. A
+    `name` this checkout has no matching declared/vendored source
+    directory for (`_source_dir_for` returns `None`) is a silent no-op --
+    `build_natives` calling this for a crate `_native_staleness.py` itself
+    cannot resolve a source directory for has nothing useful to record,
+    matching this module's other best-effort silent-skip conventions
+    (`_source_dir_for`'s own callers).
+
+    MUST only ever be called after a build that genuinely exited zero --
+    a failed build is not evidence anything was rebuilt, and recording one
+    would let a broken build falsely clear a real staleness latch. Callers
+    are responsible for that gate (`CrateBuildResult.ok`); this function
+    takes no return-code parameter to make it impossible to call
+    unconditionally by accident -- there is no argument that would make a
+    caller's own failure-check optional to read at the call site."""
+    loaded = load_natives(root)
+    if loaded.is_err:
+        return
+    spec = next((s for s in loaded.danger_ok if s.name == name), None)
+    if spec is None:
+        return
+    source_dir = _source_dir_for(root, spec)
+    if source_dir is None:
+        return
+    digest = _source_content_digest(root / source_dir)
+    attempts = _load_build_attempts(root)
+    attempts[name] = digest
+    _save_build_attempts(root, attempts)
+
+
 # frob:doc docs/modules/testing.md#public-api
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reports_native_grammar_ahead_of_native  # noqa: E501
 # frob:tests tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_fresh_native_reports_nothing  # noqa: E501
@@ -270,6 +412,12 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
     stale: list[StaleNative] = []
     stamps = _load_stamps(root)
     stamps_changed = False
+    # T-2805: loaded once per call, read-only here -- only
+    # `record_native_build_attempt` (called from `frob.natives._build.
+    # build_natives`, never from here) ever writes this file, so a bare
+    # `touch` or an ordinary `stale_natives` observation can never
+    # populate an entry that would let the latch-escape branch below fire.
+    build_attempts = _load_build_attempts(root)
     for spec in loaded.danger_ok:
         source_dir = _source_dir_for(root, spec)
         if source_dir is None:
@@ -305,6 +453,21 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
         if artifact_digest == prior.get("artifact") and source_digest != prior.get(
             "source"
         ):
+            # T-2805: before latching, check whether a REAL build already
+            # ran against this exact source and reproducibly produced
+            # this exact (unchanged) artifact -- `maturin --release` on
+            # unchanged source is deterministic, so "genuinely rebuilt,
+            # byte-identical output" and "never rebuilt at all" are
+            # otherwise indistinguishable from mtime/bytes alone. Only
+            # `record_native_build_attempt` (a real, exit-zero build) can
+            # ever make this match; a bare touch never does.
+            if build_attempts.get(spec.name) == source_digest:
+                stamps[spec.name] = {
+                    "source": source_digest,
+                    "artifact": artifact_digest,
+                }
+                stamps_changed = True
+                continue
             # the compiled artifact's bytes have NOT changed since the
             # last observation, yet the source tree HAS -- the exact
             # touch-without-rebuild signature this ticket exists to catch.
@@ -319,7 +482,9 @@ def stale_natives(root: Path) -> tuple[StaleNative, ...]:
             )
             # do NOT overwrite the stamp here -- the next run must keep
             # detecting the same unrebuilt edit until a real rebuild
-            # actually changes the artifact bytes.
+            # actually changes the artifact bytes (T-2805: unless the
+            # build-attempt escape above already fired, in which case we
+            # never reach this line).
             continue
         if source_digest != prior.get("source") or artifact_digest != prior.get(
             "artifact"
@@ -483,6 +648,7 @@ __all__ = [
     "StaleNative",
     "check_native_staleness_or_exit",
     "native_unavailable_warning",
+    "record_native_build_attempt",
     "stale_native_warning",
     "stale_natives",
     "unimportable_natives",

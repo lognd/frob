@@ -2,7 +2,7 @@
 id: T-2805
 title: 'native-staleness content-digest check is a permanent latch: a reproducible
   rebuild is byte-identical, so frob natives build can never clear NATIVE001'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -94,7 +94,14 @@ scope_changes:
   reason: retry mirror
   actor: logan
   at: '2026-08-21'
-designated_repro_test: null
+evidence:
+- tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_reproducible_rebuild_clears_the_content_digest_latch
+- tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_touch_after_edit_without_a_build_attempt_still_latches
+- tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_real_rebuild_after_edit_is_not_a_false_positive
+- tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_touch_without_rebuild_is_caught_by_content_digest
+- tests/unit/test_natives_build.py::TestBuildNatives::test_successful_build_records_a_native_build_attempt
+- tests/unit/test_natives_build.py::TestBuildNatives::test_failed_crate_build_reports_not_ok
+designated_repro_test: tests/unit/strata/test_native_staleness.py::TestStaleNatives::test_reproducible_rebuild_clears_the_content_digest_latch
 threat: null
 component: null
 anchor: false

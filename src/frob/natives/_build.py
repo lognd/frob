@@ -31,6 +31,7 @@ from typani.result import Result
 from frob.gitio import git_common_dir
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+from frob.strata._native_staleness import record_native_build_attempt
 from frob.testing._models import NativeSpec
 from frob.testing._runners import load_natives
 
@@ -133,7 +134,17 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]:
     is NOT an `Err` -- it is recorded in the returned `Ok(BuildReport)`,
     whose own `.ok` property is `False` when any attempted crate failed,
     so a caller (e.g. `frob.app.natives_runner.run`) can print each
-    failing crate's captured output before exiting non-zero."""
+    failing crate's captured output before exiting non-zero.
+
+    T-2805: each crate whose build exits ZERO also calls `frob.strata.
+    _native_staleness.record_native_build_attempt` -- see that function's
+    own docstring for why this is the only way `stale_natives`'s T-0513
+    content-digest check can distinguish "genuinely rebuilt, reproducibly
+    byte-identical output" from "never rebuilt at all, mtime faked" (a
+    deterministic `maturin --release` build makes those two cases
+    otherwise indistinguishable, which was T-2805's own root cause: a
+    real rebuild could never clear its own staleness detector). A FAILED
+    crate build never calls it -- only `.ok` triggers the hook."""
     loaded = load_natives(root)
     if loaded.is_err:
         _log.error("build_natives: could not load [[native]] entries under %s", root)
@@ -156,6 +167,13 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]:
             return Err(built.danger_err)
         if built.danger_ok is not None:
             results.append(built.danger_ok)
+            if built.danger_ok.ok:
+                # T-2805: only a genuine exit-zero build counts as
+                # evidence a rebuild happened -- see `record_native_
+                # build_attempt`'s own docstring for why a failed build
+                # must never be recorded here (it would let a broken
+                # build falsely clear a real staleness latch).
+                record_native_build_attempt(root, spec.name)
 
     return Ok(BuildReport(cargo_target_dir=cargo_target_dir, results=results))
 

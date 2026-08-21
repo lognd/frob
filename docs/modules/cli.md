@@ -140,6 +140,26 @@ def build_natives(root: Path) -> Result[BuildReport, NativesError]
 This repo's own `Makefile` `core:` target is now the one-line shim `uv run
 frob natives build` -- no cache logic lives in the Makefile anymore.
 
+**T-2805: each successful crate build attests itself to `stale_natives`.**
+`maturin --release` is a deterministic build -- rebuilding unchanged
+source always reproduces byte-identical output. `frob.strata.
+_native_staleness.stale_natives`'s own T-0513 content-digest check
+(docs/modules/testing.md#public-api) used this fact against itself: once
+its content-digest branch latched (artifact bytes unchanged, source
+digest changed since the last observation), a genuine rebuild could never
+clear it, because "genuinely rebuilt, byte-identical output" and "never
+rebuilt at all" are indistinguishable from mtime/bytes alone -- the tool's
+own documented remediation (`frob natives build`) could not fix what it
+broke. `build_natives` now calls `record_native_build_attempt` immediately
+after each crate's `maturin develop` exits ZERO (never on a failed build),
+which records the source digest that build ran against; `stale_natives`
+checks that record before latching and refreshes its stamp when it
+matches, instead of re-flagging a rebuild that already, genuinely,
+happened. A bare `touch` on the artifact still latches exactly as before
+-- only a real, exit-zero `build_natives` call can ever populate that
+record. See docs/modules/testing.md#public-api for
+`record_native_build_attempt`/`stale_natives`'s own side of this.
+
 ## frob coverage (T-1525)
 
 `frob coverage` is the user-facing CLI verb over

@@ -218,6 +218,128 @@ class TestStaleNatives:
         assert stale_natives(tmp_path) == ()
         assert stale_native_warning(tmp_path) is None
 
+    # frob:ticket T-2805
+    def test_reproducible_rebuild_clears_the_content_digest_latch(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2805's own root-cause repro, inverted: a GENUINE `frob
+        natives build` whose output happens to be byte-identical to the
+        prior artifact (a reproducible build of unchanged source) must
+        CLEAR the T-0513 content-digest latch, not re-trigger it forever.
+        Before the fix, this native would stay `reason="content-digest"`
+        stale indefinitely -- the tool's own documented remediation
+        (`frob natives build`) could never clear its own detector."""
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_reproducibl\
+        # e_rebuild_clears_the_content_digest_latch kind="unit"
+        from frob.strata._native_staleness import record_native_build_attempt
+
+        name = "fake_native_src_repro_rebuild"
+        source_dir = "fake-native-src-repro-rebuild"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._STAMP_REL",
+            Path(".frob") / "native-content-stamps-test-3.json",
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._BUILD_ATTEMPT_STAMP_REL",
+            Path(".frob") / "native-build-attempts-test-3.json",
+        )
+        _write_frob_toml(tmp_path, name)
+        base_time = time.time() - 1000.0
+        _write_source_dir(tmp_path, source_dir, mtime=base_time)
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        assert stale_natives(tmp_path) == ()  # establishes the baseline
+
+        # Edit source, then run a REPRODUCIBLE rebuild -- the compiled
+        # bytes come out IDENTICAL to before (this is the whole point:
+        # `maturin --release` on this crate reproduces byte-for-byte).
+        lib = tmp_path / source_dir / "src" / "lib.rs"
+        lib.write_text("// edited, then genuinely (but reproducibly) rebuilt\n")
+        artifact = tmp_path / name / f"{name}.abi3.so"
+        now = time.time()
+        os.utime(lib, (now, now))
+        artifact.write_bytes(b"\x00compiled-v1")  # byte-identical "rebuild"
+        os.utime(artifact, (now + 50.0, now + 50.0))
+
+        # Without recording the build attempt, this would still latch --
+        # confirm the pre-fix shape is genuinely reproduced first.
+        stale_before = stale_natives(tmp_path)
+        assert len(stale_before) == 1
+        assert stale_before[0].reason == "content-digest"
+
+        # The build tool itself now attests a real build ran against
+        # exactly this (edited) source.
+        record_native_build_attempt(tmp_path, name)
+
+        assert stale_natives(tmp_path) == ()
+        assert stale_native_warning(tmp_path) is None
+
+        # And the latch is genuinely gone, not just skipped once: a
+        # SUBSEQUENT observation (no new build attempt) still reads clean
+        # because the stamp itself was refreshed.
+        assert stale_natives(tmp_path) == ()
+
+    # frob:ticket T-2805
+    def test_touch_after_edit_without_a_build_attempt_still_latches(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2805's mandatory non-regression control: T-0513's original
+        purpose (a bare touch advancing mtime past a genuinely edited,
+        never-rebuilt source) must STILL fire -- the fix must never clear
+        the latch just because SOME build attempt exists for the native;
+        it must match the CURRENT source digest specifically. Without
+        this control, T-2805's fix would be indistinguishable from
+        deleting the content-digest check."""
+        # frob:tests \
+        # tests/unit/strata/test_native_staleness.py::TestStaleNatives.test_touch_after\
+        # _edit_without_a_build_attempt_still_latches kind="unit"
+        from frob.strata._native_staleness import record_native_build_attempt
+
+        name = "fake_native_src_stale_build_attempt"
+        source_dir = "fake-native-src-stale-build-attempt"
+        monkeypatch.setattr(
+            "frob.strata._native_staleness.NATIVE_SOURCE_DIRS", (source_dir,)
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._STAMP_REL",
+            Path(".frob") / "native-content-stamps-test-4.json",
+        )
+        monkeypatch.setattr(
+            "frob.strata._native_staleness._BUILD_ATTEMPT_STAMP_REL",
+            Path(".frob") / "native-build-attempts-test-4.json",
+        )
+        _write_frob_toml(tmp_path, name)
+        base_time = time.time() - 1000.0
+        _write_source_dir(tmp_path, source_dir, mtime=base_time)
+        _fake_native_package(tmp_path, name, b"\x00compiled-v1")
+        monkeypatch.syspath_prepend(str(tmp_path))
+        importlib.invalidate_caches()
+
+        assert stale_natives(tmp_path) == ()  # baseline
+
+        # A build attempt is recorded against the CURRENT (unedited)
+        # source -- e.g. a build that ran before the edit below.
+        record_native_build_attempt(tmp_path, name)
+
+        # NOW edit the source (a DIFFERENT digest than the recorded
+        # attempt) and bare-touch the artifact -- no rebuild at all.
+        lib = tmp_path / source_dir / "src" / "lib.rs"
+        lib.write_text("// edited AFTER the last real build attempt\n")
+        artifact = tmp_path / name / f"{name}.abi3.so"
+        now = time.time()
+        os.utime(lib, (now, now))
+        os.utime(artifact, (now + 50.0, now + 50.0))  # touch, no rebuild
+
+        stale = stale_natives(tmp_path)
+        assert len(stale) == 1
+        assert stale[0].reason == "content-digest"
+
     def test_unbuilt_native_is_not_reported_as_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

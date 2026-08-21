@@ -269,6 +269,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2795: Reformat batch 10/N: 13 files pending ruff-format (T-2359 child)
 - T-2796: a large fraction of the queued backlog is already resolved by landed work, and 'already resolved' was being requeued instead of dropped
 - T-2800: Burn ruff I001 batch 2: tests/ subset
+- T-2805: native-staleness content-digest check is a permanent latch: a reproducible rebuild is byte-identical, so frob natives build can never clear NATIVE001
 - T-2808: Reformat batch 11/N: 13 files pending ruff-format (T-2359 child)
 - T-2810: COV007 burn-down batch 1/N: src/frob/strata/_multifile.py duplicate doc anchors
 - T-2811: Reformat batch 12/N: 13 files pending ruff-format (T-2359 child)

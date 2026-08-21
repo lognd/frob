@@ -1689,6 +1689,14 @@ flow f_mutate_core : mutate -> core { label Internal; attr local; }
 // frob:doc docs/modules/cli.md#frob-natives-build-t-0864
 flow f_natives_core : natives -> core { label Internal; attr local; }
 
+// T-2805: `frob.natives._build.build_natives` calls `frob.strata.
+// _native_staleness.record_native_build_attempt` immediately after each
+// crate's build exits zero -- the attestation `stale_natives`'s T-0513
+// content-digest check needs to distinguish a genuine, reproducible
+// rebuild (byte-identical output) from a bare touch (no rebuild at all).
+// frob:doc docs/modules/cli.md#frob-natives-build-t-0864
+flow f_natives_stratamod : natives -> stratamod { label Internal; attr local; }
+
 // T-0440: `frob.serve._daemon`/`_warm.py` import `frob.gitio.run_argv`
 // (git subprocess reads: `poll_rebase_bot`'s `git merge-tree` simulation)
 // and `frob.testing.collect_python_tests` directly.

@@ -1151,6 +1151,24 @@
       "old_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
       "reason": "T-2793: added a fifth None-returning case (_gates_stage_ran) to the body -- every existing dependent doc/comment describing this function's None-vs-measured-set contract remains accurate; the new case is additive to the documented 'unmeasured, not zero' contract, not a change to it",
       "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-21",
+      "facet": "body",
+      "new_digest": "ecbc6a0ef3fb98159ccc05131ceee6e8801ab1da607c5c472dcd4df080e8347b",
+      "old_digest": "14a05b5f6ce8715b97e9c45ed01040cef8caa51443975bc576c59ded475f7748",
+      "reason": "T-2805: build_natives' body now also calls record_native_build_attempt after each successful crate build; its documented external contract (Err only for infra failure, per-crate failure recorded in Ok(BuildReport)) is unchanged, and the new behavior is described in docs/modules/cli.md#frob-natives-build-t-0864 in this same change",
+      "ref": "src/frob/natives/_build.py::build_natives"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-21",
+      "facet": "sig",
+      "new_digest": "6173f6401a8ba8dc3239b679974d02248543205c1a6bbcc0a3581cfe77454001",
+      "old_digest": "6173f6401a8ba8dc3239b679974d02248543205c1a6bbcc0a3581cfe77454001",
+      "reason": "T-2805: build_natives' body now also calls record_native_build_attempt after each successful crate build; its documented external contract (Err only for infra failure, per-crate failure recorded in Ok(BuildReport)) is unchanged, and the new behavior is described in docs/modules/cli.md#frob-natives-build-t-0864 in this same change",
+      "ref": "src/frob/natives/_build.py::build_natives"
     }
   ],
   "entries": [
@@ -1780,7 +1798,7 @@
       "ref": "src/frob/mutate/__init__.py::run_mutations"
     },
     {
-      "digest": "14a05b5f6ce8715b97e9c45ed01040cef8caa51443975bc576c59ded475f7748",
+      "digest": "ecbc6a0ef3fb98159ccc05131ceee6e8801ab1da607c5c472dcd4df080e8347b",
       "facet": "body",
       "ref": "src/frob/natives/_build.py::build_natives"
     },

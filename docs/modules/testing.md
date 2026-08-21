@@ -306,6 +306,27 @@ still-missing native (name it + `build_cmd`) or the test genuinely does
 not exist in the tree (say so plainly, and drop the cache-deletion
 advice, which is not the remedy for that case).
 
+T-2805: `frob.strata._native_staleness.stale_natives`'s T-0513 content-
+digest check (a bare `touch` on a built native artifact advancing its
+mtime past a genuine, un-rebuilt source edit) was a LATCH -- `maturin
+--release` on unchanged source is a deterministic build, so a genuine
+rebuild after an edit reproduces byte-identical output, and "genuinely
+rebuilt, byte-identical" was indistinguishable from "never rebuilt at
+all" once the digest branch fired. The tool's own documented remediation
+(`frob natives build`) could never clear its own detector. `record_
+native_build_attempt` closes this without weakening the touch-attack
+detection: `frob.natives._build.build_natives` calls it immediately after
+each crate's `maturin develop` exits ZERO (never on a failed build),
+recording the source-tree digest that REAL build ran against in a
+separate, `stale_natives`-read-only file. `stale_natives`'s content-digest
+branch checks that record before latching -- a match (a real build ran
+against exactly this source) refreshes the stamp instead of re-flagging;
+no match (no build attempt recorded for this exact source, e.g. a bare
+touch) still latches exactly as before T-2805.
+
+<!-- frob:describes src/frob/strata/_native_staleness.py::record_native_build_attempt -->
+<!-- frob:describes src/frob/strata/_native_staleness.py::stale_natives -->
+
 <!-- frob:describes src/frob/gitio.py::repo_root -->
 <!-- frob:describes src/frob/gitio.py::working_diff -->
 <!-- frob:describes src/frob/gitio.py::commit_diff -->
