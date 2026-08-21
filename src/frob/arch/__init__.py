@@ -67,7 +67,6 @@ from frob.arch._models import (
 )
 from frob.arch._normalized import (
     LanguageAdapter,
-    caught_type_names,
     NormalizedBranch,
     NormalizedCall,
     NormalizedCallArg,
@@ -86,6 +85,7 @@ from frob.arch._normalized import (
     NormalizedTypeAlias,
     NormalizedVariant,
     NormalizedVariantPayload,
+    caught_type_names,
 )
 from frob.arch._protocol_excuse import (
     DischargeResult,

@@ -1,7 +1,7 @@
 ---
 id: T-2788
 title: 'Burn ruff I001 batch 1: src/frob non-gates files'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -25,6 +25,10 @@ scope:
 - src/frob/vet/_capability.py
 - src/frob/vet/_scan.py
 - tickets/T-2373/ticket.md
+evidence_scope:
+- tests/test_tickets.py
+- tests/unit/verify/test_backpressure.py
+- tests/unit/test_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +40,18 @@ scope_changes:
     in the same worktree commit range
   actor: logan
   at: '2026-08-21'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): pure ruff I001 import-reordering fix, zero
+    runtime symbol changed'
+  actor: logan
+  at: '2026-08-21'
+  old_length: 1232
+  new_length: 1332
+evidence:
+- tests/test_tickets.py::test_tickets_queue_workflow_integration
+- tests/unit/verify/test_backpressure.py::TestBlockUntilWatermarkAdvances::test_not_tripped_returns_immediately_without_draining
+- tests/unit/test_arch.py::test_arch_end_to_end_analyze_then_render
 designated_repro_test: null
 threat: null
 component: null
@@ -72,3 +88,5 @@ requirement -- but ONLY once every sibling batch has also landed (do
 not flip severity from a partial batch; that would make every
 not-yet-fixed file in another batch a new ERROR-tier finding for
 nobody's ticket).
+
+frob:no-behavior-change reason="pure ruff I001 import-reordering fix, zero runtime symbol changed"

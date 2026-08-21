@@ -144,8 +144,8 @@ from ._capability_c import _extra_c_binding_operations
 from ._capability_core import (
     _PATTERNS,
     _SPECIAL_CHECKS,
-    ByteSpan,
     SCANNED_LANGUAGES,
+    ByteSpan,
     _embedded_operations,
     _non_executable_byte_spans,
     _operation_entry_matches,

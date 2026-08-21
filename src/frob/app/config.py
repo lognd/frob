@@ -17,6 +17,8 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 
 from frob.app._config_external import _build_external_config_kwargs
+from frob.gitlog import GranularityLevel
+from frob.logging import get_logger
 from frob.repo_meta import (
     ARCH_DEFAULT_GOD_MODULE_MIN_CLUSTERS,
     ARCH_DEFAULT_GOD_MODULE_MIN_EXPORTS,
@@ -32,8 +34,6 @@ from frob.repo_meta import (
     stale_binary_warning,
     stale_install_warning,
 )
-from frob.gitlog import GranularityLevel
-from frob.logging import get_logger
 from frob.tickets._models import (
     Origin,
     Priority,

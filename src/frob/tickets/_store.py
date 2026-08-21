@@ -58,6 +58,7 @@ from frob.tickets._models import (
     _find_done_report_heading,
     replace_done_report_section,
 )
+
 # frob:ticket T-2695
 # T-2695: migration functions extracted to _store_migrate.py (LARGE001
 # remainder batch 2) -- re-exported here unchanged so every existing

@@ -70,12 +70,6 @@ from frob.strata._atomic import (
     evaluate_saga_contracts,
     generate_fault_injection_cases,
 )
-from frob.strata._capacity import (
-    CAPACITY_PROJECTED_OVER_THRESHOLD,
-    CapacityReport,
-    CapacityViolation,
-    project_capacity,
-)
 from frob.strata._audit import (
     DEFAULT_COMPLIANCE_VIEWS,
     DEFAULT_QUALITY_VIEWS,
@@ -98,6 +92,12 @@ from frob.strata._breach import (
     BlastRadius,
     BreachContractReport,
     evaluate_breach_contracts,
+)
+from frob.strata._capacity import (
+    CAPACITY_PROJECTED_OVER_THRESHOLD,
+    CapacityReport,
+    CapacityViolation,
+    project_capacity,
 )
 from frob.strata._circuit_breaker import (
     CIRCUIT_BREAKER_RULES,
@@ -428,6 +428,7 @@ from frob.strata._secrets import (
     elaborate_secret,
 )
 from frob.strata._selfconform import (
+    SYS110_UNAUDITED_NODES,
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
     SYS_DUPLICATE_INTERFACE,
@@ -437,7 +438,6 @@ from frob.strata._selfconform import (
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
     SYS_VIA_LESS_LARGE_NODE,
-    SYS110_UNAUDITED_NODES,
     SelfConformReport,
     SelfConformViolation,
     check_self_conformance,

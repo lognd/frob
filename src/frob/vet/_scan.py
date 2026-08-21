@@ -26,11 +26,6 @@ from frob.vet._capability import (
 )
 from frob.vet._ecosystem import _npm_non_registry_rule, _python_rules, _rust_rules
 from frob.vet._lifecycle import _scan_lifecycle_scripts
-from frob.vet._obfuscation import _scan_directory_obfuscation
-from frob.vet._osv import _is_available, _run_osv_scan
-from frob.vet._source import _locate_source
-from frob.vet._supplychain import supply_chain_tree_violations
-from frob.vet._typosquat import _find_typosquat
 from frob.vet._lockfile import _find_all_lockfiles, _parse_lockfile
 from frob.vet._models import (
     Dependency,
@@ -39,6 +34,11 @@ from frob.vet._models import (
     VetError,
     VetReport,
 )
+from frob.vet._obfuscation import _scan_directory_obfuscation
+from frob.vet._osv import _is_available, _run_osv_scan
+from frob.vet._source import _locate_source
+from frob.vet._supplychain import supply_chain_tree_violations
+from frob.vet._typosquat import _find_typosquat
 
 _log = get_logger(__name__)
 

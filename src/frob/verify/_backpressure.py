@@ -420,7 +420,9 @@ def block_until_watermark_advances(
     ticket is still named in every log line so the wait is never
     mysterious even when it eventually times out."""
     if drain_fn is None:
-        from frob.verify._worker import run_coalesced_verification as drain_fn  # type: ignore[assignment]  # noqa: E501
+        from frob.verify._worker import (
+            run_coalesced_verification as drain_fn,  # type: ignore[assignment]  # noqa: E501
+        )
 
     status_result = current_status(root, ceilings, now_fn=now_fn)
     if status_result.is_err:

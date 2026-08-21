@@ -22,7 +22,6 @@ from frob.scaffold._managed import (
     apply_managed_blocks,
     scaffold_conformance_status,
 )
-from frob.scaffold._skills_sync import SkillsSyncReport, sync_skills
 from frob.scaffold._pool import (
     PoolEntry,
     PoolError,
@@ -34,6 +33,7 @@ from frob.scaffold._pool import (
     warm_pool,
     warm_worktree,
 )
+from frob.scaffold._skills_sync import SkillsSyncReport, sync_skills
 from frob.scaffold.project import (
     ScaffoldError,
     install_worktree_lease_hook,
