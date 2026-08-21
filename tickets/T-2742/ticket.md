@@ -2,8 +2,8 @@
 id: T-2742
 title: 'No reliable way to detect an in-flight land: every hand-rolled pgrep matches
   the polling shells themselves'
-state: queued
-kind: bug
+state: in-progress
+kind: docs
 origin: human
 created: '2026-08-20'
 priority: high
@@ -14,10 +14,35 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- docs/guides/agent-playbook.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: 'T-2742: discoverability fix -- point playbook and tickets-landing gap-4
+    note at fleet_status.py instead of stale/no guidance'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2742: discoverability fix -- point playbook and tickets-landing gap-4
+    note at fleet_status.py instead of stale/no guidance'
+  actor: logan
+  at: '2026-08-20'
+triage_changes:
+- field: kind
+  old_value: bug
+  new_value: docs
+  reason: 'T-2742''s actual remedy is documentation-only (two doc-file corrections,
+    per the coordinator''s own correction section in the ticket body: no code change,
+    guidance discoverability fix)'
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: 'correct the ticket''s premise: fleet_status already reports LANDS IN FLIGHT,
@@ -33,6 +58,8 @@ body_changes:
   at: '2026-08-20'
   old_length: 4901
   new_length: 5592
+kind_history:
+- 2026-08-20 bug->docs evidence=0 done_report=yes
 designated_repro_test: null
 threat: null
 component: null
