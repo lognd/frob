@@ -444,20 +444,29 @@ _STRANDED_CONTENT_PATHS: tuple[str, ...] = ("src", "tests", "docs", "scripts")
 
 #: T-2599: a worktree directory name that is exactly a lowercased ticket
 #: id (`t-2599`, this repo's `frob ticket work`/`EnterWorktree` naming
-#: convention) resolves to that ticket for the ACTIVE short-circuit; any
-#: other name (`dev-friction`, `gate-internals`, a hand-named series
-#: worktree) has no resolvable ticket and always falls through to the
-#: content test.
+#: convention) resolves to that ticket. T-2755: no longer consulted by
+#: `worktree_content_classification`'s own short-circuit (see
+#: `_worktree_started_ticket_ids`, the structural replacement) -- this
+#: pure naming-convention check is kept only as a directly-tested, low-
+#: level utility; any OTHER name (`dev-friction`, `gate-internals`, a
+#: hand-named series worktree) has no resolvable ticket by this check
+#: alone.
 _TICKET_NAMED_WORKTREE_RE = re.compile(r"^t-(\d+)$")
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_worktree_ticket_id
 # frob:ticket T-2599
+# frob:ticket T-2755
 # frob:tests tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId.test_ticket_named_worktree_resolves  # noqa: E501
 # frob:tests tests/unit/test_coordinator_scripts.py::TestWorktreeTicketId.test_ad_hoc_named_worktree_resolves_to_none  # noqa: E501
 def _worktree_ticket_id(name: str) -> str | None:
     """`"T-2599"` for a worktree directory literally named `t-2599`, else
-    `None` -- see `_TICKET_NAMED_WORKTREE_RE`."""
+    `None` -- see `_TICKET_NAMED_WORKTREE_RE`. T-2755: this pure naming-
+    convention check is no longer used by `worktree_content_
+    classification`'s own dispatch (`_worktree_started_ticket_ids` is,
+    a structural resolver with no naming assumption) -- kept as a
+    directly-tested low-level utility only, not wired to any production
+    call site as of this ticket."""
     m = _TICKET_NAMED_WORKTREE_RE.match(name)
     return f"T-{m.group(1)}" if m else None
 
@@ -487,6 +496,7 @@ _DELETION_DOMINANT_RATIO = 3.0
 
 # frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification
 # frob:ticket T-2599
+# frob:ticket T-2755
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_stranded_new_content_not_on_main  # noqa: E501
 # frob:tests \
@@ -496,46 +506,32 @@ _DELETION_DOMINANT_RATIO = 3.0
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassification.test_active_ticket_never_stranded_or_stale  # noqa: E501
 def worktree_content_classification(
-    path: Path, *, ticket_id: str | None = None
+    path: Path, *, ticket_ids: Sequence[str] = ()
 ) -> tuple[str, list[str]]:
     """Classify one worktree at `path` as `"STRANDED"`, `"STALE"`, or
-    `"ACTIVE"` against `main` (T-2599, refined T-2617), returning
-    `(verdict, samples)` where `samples` is up to 5 example added lines
-    backing a `STRANDED` verdict (empty otherwise). Full rationale,
-    including the three measured-wrong naive tests and T-2617's own
-    real-data false-positive finding, lives at `docs/guides/
-    coordinator-scripts.md#worktree_content_classification` (`frob:doc`
-    below) rather than duplicated here -- summary: `ticket_id` resolves
-    to `"ACTIVE"` for `in-progress`/`planned` (or any other non-terminal,
-    non-`queued` state), and for a `queued` ticket that still holds a
-    live lease (T-2625: `ticket_lease` is non-`None` -- a lease binds
-    only at in-progress per T-0453, so a queued ticket normally has none,
-    but this stays conservative for whatever transient state a lease
-    write outlives a state write by); a `queued` ticket with NO lease
-    record falls through to the ordinary content test below instead of
-    an automatic ACTIVE (T-2625's own fix -- previously ANY non-terminal
-    state read identically, so `t-1599`'s worktree read ACTIVE while
-    T-1599 was merely queued with no live work anywhere, per T-2617's own
-    measured finding). Failing the ticket-state checks entirely, a
-    terminal ticket whose `land_commit` is an ancestor of `main` is
-    `"STALE"` (T-2617's exact fix for a renamed/superseded symbol
-    misreading as stranded); failing both, a deletion-dominant diff
-    (`_is_deletion_dominant`, T-2617's magnitude fallback for a
-    ticketless worktree) is also `"STALE"`; only then does the original
-    per-line presence check (`_lines_absent_from_main`) decide
-    `STRANDED` vs `STALE`, deliberately conservative toward
-    over-reporting `STRANDED` since this is a report-only classifier
-    that never deletes anything itself."""
-    if ticket_id is not None:
-        frontmatter = ticket_frontmatter_on_main(ticket_id)
-        if frontmatter is not None:
-            state = frontmatter.get("state")
-            if state not in _TERMINAL_TICKET_STATES:
-                if state != "queued" or ticket_lease(ticket_id) is not None:
-                    return "ACTIVE", []
-            land_commit = frontmatter.get("land_commit")
-            if land_commit and _is_ancestor_of_main(land_commit, path):
-                return "STALE", []
+    `"ACTIVE"` against `main` (T-2599, refined T-2617, generalized to
+    multiple ids T-2755), returning `(verdict, samples)` where `samples`
+    is up to 5 example added lines backing a `STRANDED` verdict (empty
+    otherwise). Full rationale -- the three measured-wrong naive tests,
+    T-2617's real-data false-positive finding, the T-2625 queued-vs-
+    active distinction, and T-2755's multi-id generalization -- lives at
+    `docs/guides/coordinator-scripts.md#worktree_content_classification`
+    (`frob:doc` below), not duplicated here: `ticket_ids` state resolves
+    to `"ACTIVE"`/`"STALE"`/`None` via `_ticket_ids_state_verdict`
+    (ARCH001 split); `None` falls through to the content-diff test below
+    (a deletion-dominant diff, or the per-line presence check deciding
+    `STRANDED` vs `STALE`, deliberately conservative toward over-
+    reporting `STRANDED` since this never deletes anything itself).
+
+    T-2755: `ticket_ids` (plural) replaces the old single `ticket_id:
+    str | None` -- the old `_worktree_ticket_id` `t-<id>`-name resolver
+    silently returned nothing for a subject-named or series worktree;
+    `_worktree_started_ticket_ids` (structural) is the intended resolver
+    now, and an empty `ticket_ids` behaves identically to the old
+    `ticket_id=None`."""
+    ticket_verdict = _ticket_ids_state_verdict(path, ticket_ids)
+    if ticket_verdict is not None:
+        return ticket_verdict, []
     diff = _git(["diff", "main", "HEAD", "--", *_STRANDED_CONTENT_PATHS], path)
     if not diff.strip():
         return "STALE", []
@@ -548,6 +544,39 @@ def worktree_content_classification(
     if stranded:
         return "STRANDED", stranded[:5]
     return "STALE", []
+
+
+# frob:ticket T-2755
+def _ticket_ids_state_verdict(path: Path, ticket_ids: Sequence[str]) -> str | None:
+    """`worktree_content_classification`'s own ARCH001 split: the
+    `ticket_ids` state-resolution half (`"ACTIVE"`/`"STALE"`/`None` for
+    "no verdict from ticket state, fall through to the content test").
+    Any id whose `main` state is non-terminal (or `queued` with a live
+    lease, T-2625) is `"ACTIVE"` immediately; failing that, `"STALE"`
+    only when EVERY id in `ticket_ids` both resolved on `main` AND has a
+    `land_commit` that is an ancestor of `main` (T-2755: a worktree
+    holding several ids is fully landed only when ALL of them are -- one
+    unresolvable or unlanded id must not let the others' landed status
+    force a false STALE, since that id's own work could still be the
+    genuinely live content this classifier exists to protect); `None`
+    otherwise, including the `ticket_ids == ()` case."""
+    resolved: dict[str, dict] = {}
+    for ticket_id in ticket_ids:
+        frontmatter = ticket_frontmatter_on_main(ticket_id)
+        if frontmatter is None:
+            continue
+        resolved[ticket_id] = frontmatter
+        state = frontmatter.get("state")
+        if state not in _TERMINAL_TICKET_STATES:
+            if state != "queued" or ticket_lease(ticket_id) is not None:
+                return "ACTIVE"
+    if ticket_ids and len(resolved) == len(ticket_ids):
+        if all(
+            fm.get("land_commit") and _is_ancestor_of_main(fm["land_commit"], path)
+            for fm in resolved.values()
+        ):
+            return "STALE"
+    return None
 
 
 # frob:ticket T-2617
@@ -1062,6 +1091,69 @@ def _worktree_started_ticket(path: Path, ticket_id: str) -> bool:
     target = f"chore(tickets): record {ticket_id} start transition"
     subjects = _git(["log", "main..HEAD", "--format=%s"], path).splitlines()
     return any(subject.strip() == target for subject in subjects)
+
+
+#: T-2755: parses `frob.tickets._leases.commit_start_transition`'s exact
+#: commit-subject shape back into a ticket id -- the read-back half of
+#: `_worktree_started_ticket`'s forward check (does THIS specific id's
+#: start-transition commit appear), used by `_worktree_started_ticket_
+#: ids` to enumerate EVERY id a worktree's own history names, with no
+#: candidate id supplied up front.
+_START_TRANSITION_SUBJECT_RE = re.compile(
+    r"^chore\(tickets\): record (T-[A-Za-z0-9-]+) start transition$"
+)
+
+
+# frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket_ids
+# frob:ticket T-2755
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds.test_non_convent\
+# ionally_named_worktree_resolves
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds.test_no_start_tr\
+# ansition_commits_resolves_empty
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds.test_series_work\
+# tree_resolves_every_started_id
+def _worktree_started_ticket_ids(path: Path) -> list[str]:
+    """Every ticket id `path`'s own unlanded history (`main..HEAD`)
+    structurally started (T-2755), in commit order (most recent last is
+    NOT guaranteed -- `git log`'s own default is newest-first; callers
+    that care about recency read the list, not the position), deduped.
+
+    The read-back direction of `_worktree_started_ticket` (T-2747, which
+    answers "did THIS one candidate id start here" for a caller that
+    already knows which id to ask about); this instead answers "which
+    id(s), if any, started here at all" with NO candidate supplied and
+    NO assumption about the worktree's directory NAME -- the same
+    structural signal (`commit_start_transition`'s own commit subject),
+    read back via `_START_TRANSITION_SUBJECT_RE` instead of an exact-
+    string match against one target.
+
+    T-2755's own motivating caller: `worktree_content_classification`'s
+    `ticket_id=_worktree_ticket_id(name)` short-circuit (T-2599) assumed
+    every worktree worth classifying is named `t-<id>` -- true for a
+    single-ticket `frob ticket work`/`EnterWorktree` worktree, false for
+    a subject-named one (`waive-liveness`) or this repo's own grouped-
+    dispatch series convention (`t2763-t2359`, `fa-t2589-t2559`,
+    `t2766-t2764`), which structurally started SEVERAL ticket ids under
+    one name resolving to none of them via the old regex. A worktree
+    with no start-transition commit at all (never ran `frob ticket
+    start`/`work`, or a coordinator-only worktree) returns `[]` rather
+    than guessing -- "no ticket resolvable" must stay a real empty
+    result, never silently matched to something."""
+    subjects = _git(["log", "main..HEAD", "--format=%s"], path).splitlines()
+    ids: list[str] = []
+    seen: set[str] = set()
+    for subject in subjects:
+        match = _START_TRANSITION_SUBJECT_RE.match(subject.strip())
+        if match is None:
+            continue
+        ticket_id = match.group(1)
+        if ticket_id not in seen:
+            seen.add(ticket_id)
+            ids.append(ticket_id)
+    return ids
 
 
 # frob:doc docs/guides/coordinator-scripts.md#worktrees_touching_ticket
@@ -3585,6 +3677,7 @@ def _lease_row(
 
 # frob:doc docs/guides/coordinator-scripts.md#_print_worktrees_section
 # frob:ticket T-2599
+# frob:ticket T-2755
 def _print_worktrees_section(idle_seconds: int) -> None:
     """Print the `WORKTREES (STRANDED: N)` section and one line per
     worktree, each idle-looking one tagged with its
@@ -3599,8 +3692,15 @@ def _print_worktrees_section(idle_seconds: int) -> None:
     verdicts: dict[str, str] = {}
     for name, _age, idle in wt_rows:
         if idle:
+            # T-2755: was `ticket_id=_worktree_ticket_id(name)`, a
+            # `t-<id>` directory-NAME match -- silently resolved to
+            # nothing for most of this fleet's real worktree names
+            # (`fb-t2775`, `t2763-t2359`, `t2766-t2764`, `fa-t2589-
+            # t2559`, subject-named ones), the same naming-convention
+            # assumption T-2747 already replaced for the leases section.
             verdicts[name] = worktree_content_classification(
-                WORKTREES / name, ticket_id=_worktree_ticket_id(name)
+                WORKTREES / name,
+                ticket_ids=_worktree_started_ticket_ids(WORKTREES / name),
             )[0]
     stranded_count = sum(1 for v in verdicts.values() if v == "STRANDED")
     print(f"WORKTREES (STRANDED: {stranded_count})")

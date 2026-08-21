@@ -2,7 +2,7 @@
 id: T-2755
 title: worktree_content_classification's ticket_id resolution keys on t-<id> worktree
   naming, same class as T-2747
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -33,6 +33,12 @@ scope_changes:
   reason: AFFECT001 doc closure plus this ticket's own test additions
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_non_conventionally_named_worktree_resolves
+- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_no_start_transition_commits_resolves_empty
+- tests/unit/test_coordinator_scripts.py::TestWorktreeStartedTicketIds::test_series_worktree_resolves_every_started_id
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_non_conventionally_named_worktree_classifies_active_via_structural_ids
+- tests/unit/test_coordinator_scripts.py::TestWorktreeContentClassificationLiveGit::test_worktree_with_genuinely_no_ticket_is_not_force_matched
 designated_repro_test: null
 threat: null
 component: null

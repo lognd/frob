@@ -542,6 +542,7 @@ class TestWorktrees:
 
 
 # frob:ticket T-2599
+# frob:ticket T-2755
 class TestWorktreeContentClassification:
     """`fleet_status.worktree_content_classification` (T-2599): the
     content-presence test that replaces the three measured-wrong tests
@@ -632,6 +633,7 @@ class TestWorktreeContentClassification:
         assert verdict == "STALE"
         assert samples == []
 
+    # frob:ticket T-2755
     def test_active_ticket_never_stranded_or_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -661,12 +663,13 @@ class TestWorktreeContentClassification:
             lambda ticket_id: {"state": "in-progress"},
         )
         verdict, samples = fleet_status.worktree_content_classification(
-            tmp_path, ticket_id="T-2599"
+            tmp_path, ticket_ids=["T-2599"]
         )
         assert verdict == "ACTIVE"
         assert samples == []
 
     # frob:ticket T-2625
+    # frob:ticket T-2755
     def test_queued_ticket_with_live_lease_still_active(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -701,12 +704,13 @@ class TestWorktreeContentClassification:
             lambda ticket_id: {"ticket_id": ticket_id, "worktree": "/w/t-2625"},
         )
         verdict, samples = fleet_status.worktree_content_classification(
-            tmp_path, ticket_id="T-2625"
+            tmp_path, ticket_ids=["T-2625"]
         )
         assert verdict == "ACTIVE"
         assert samples == []
 
     # frob:ticket T-2625
+    # frob:ticket T-2755
     def test_queued_ticket_with_no_lease_falls_through_to_content_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -724,11 +728,12 @@ class TestWorktreeContentClassification:
         )
         monkeypatch.setattr(fleet_status, "ticket_lease", lambda ticket_id: None)
         verdict, samples = fleet_status.worktree_content_classification(
-            tmp_path, ticket_id="T-1599"
+            tmp_path, ticket_ids=["T-1599"]
         )
         assert verdict == "STALE"
         assert samples == []
 
+    # frob:ticket T-2755
     def test_stale_when_terminal_ticket_land_commit_is_ancestor_of_main(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -767,11 +772,12 @@ class TestWorktreeContentClassification:
             fleet_status, "_is_ancestor_of_main", lambda commit, path: True
         )
         verdict, samples = fleet_status.worktree_content_classification(
-            tmp_path, ticket_id="T-2576"
+            tmp_path, ticket_ids=["T-2576"]
         )
         assert verdict == "STALE"
         assert samples == []
 
+    # frob:ticket T-2755
     def test_stranded_survives_terminal_ticket_with_unlanded_land_commit(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -808,7 +814,7 @@ class TestWorktreeContentClassification:
             fleet_status, "_is_ancestor_of_main", lambda commit, path: False
         )
         verdict, samples = fleet_status.worktree_content_classification(
-            tmp_path, ticket_id="T-2576"
+            tmp_path, ticket_ids=["T-2576"]
         )
         assert verdict == "STRANDED"
         assert any("brand_new" in s for s in samples)
@@ -926,6 +932,132 @@ def _run_git(args: list[str], cwd: Path) -> str:
     return done.stdout.strip()
 
 
+# frob:ticket T-2755
+# frob:waive WIRE001 reason="private test-fixture helper used only by this file's own \
+# tests -- no production caller to wire it to by design" permanent="true"
+def _init_bare_repo(root: Path) -> None:
+    """A bare `git init -b main` plus committer identity for `_run_git`-
+    based live-git fixtures -- module-level, replacing THREE identical
+    private per-class `_init_repo(self, root)` methods
+    (`TestWorktreeContentClassificationLiveGit`, `TestInProgressTicket
+    ScopeLeasesLiveGit`, and this ticket's own new `TestWorktreeStarted
+    TicketIds`) that all carried the exact same 3-line body -- T-2755
+    consolidates them into the one home NO DUPLICATION calls for, rather
+    than adding a fourth copy alongside the other two. `TestResolveRepo
+    Root._init_repo` is NOT one of the three: it also commits a README,
+    a genuinely different fixture shape, so it stays its own method."""
+    _run_git(["init", "-q", "-b", "main"], root)
+    _run_git(["config", "user.email", "test@example.com"], root)
+    _run_git(["config", "user.name", "Test"], root)
+
+
+# frob:ticket T-2755
+class TestWorktreeStartedTicketIds:
+    """T-2755: `_worktree_started_ticket_ids` reads back EVERY ticket id
+    a worktree's own unlanded history (`main..HEAD`) structurally
+    started, with no assumption about the worktree's directory NAME --
+    the reverse direction of T-2747's `_worktree_started_ticket` (which
+    checks one candidate id) and the fix for `worktree_content_
+    classification`'s own naming-convention short-circuit (T-2599's
+    `_worktree_ticket_id`, a `t-<id>`-only match), which silently
+    resolved to `None` for most of this fleet's real worktree names."""
+
+    # frob:ticket T-2755
+    def test_non_conventionally_named_worktree_resolves(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2755 must-now-fire: a worktree named after its SUBJECT
+        (`waive-liveness`, T-2740's own real name per T-2747's docstring)
+        -- `_worktree_ticket_id("waive-liveness")` returns `None` (no
+        `t-<id>` match), but the structural resolver still finds the
+        started id from the worktree's own history.
+        frob:tests scripts/fleet_status.py::_worktree_started_ticket_ids"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        (repo / "x.txt").write_text("x\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1"], repo)
+
+        worktree = tmp_path / "waive-liveness"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo
+        )
+        (worktree / "x.txt").write_text("x\nchanged\n")
+        _run_git(["add", "-A"], worktree)
+        _run_git(
+            ["commit", "-q", "-m", "chore(tickets): record T-2740 start transition"],
+            worktree,
+        )
+
+        assert fleet_status._worktree_started_ticket_ids(worktree) == ["T-2740"]
+        assert fleet_status._worktree_ticket_id("waive-liveness") is None
+
+    # frob:ticket T-2755
+    def test_no_start_transition_commits_resolves_empty(
+        self, tmp_path: Path
+    ) -> None:
+        """Negative control: a worktree with unlanded commits but NONE
+        of them the canonical start-transition subject resolves to `[]`,
+        never force-matched to a ticket id it never structurally started.
+        frob:tests scripts/fleet_status.py::_worktree_started_ticket_ids"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        (repo / "x.txt").write_text("x\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1"], repo)
+
+        worktree = tmp_path / "scratch-experiment"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "scratch-experiment", str(worktree)], repo
+        )
+        (worktree / "x.txt").write_text("x\nchanged\n")
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: unrelated change"], worktree)
+
+        assert fleet_status._worktree_started_ticket_ids(worktree) == []
+
+    # frob:ticket T-2755
+    def test_series_worktree_resolves_every_started_id(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2755 must-now-fire: a grouped-dispatch series worktree
+        (`t2763-t2359`-shaped: named for one ticket, holding several)
+        structurally started TWO ids -- both resolve, not just the one
+        embedded in the directory name.
+        frob:tests scripts/fleet_status.py::_worktree_started_ticket_ids"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        (repo / "x.txt").write_text("x\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1"], repo)
+
+        worktree = tmp_path / "t2763-t2359"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "t2763-t2359", str(worktree)], repo
+        )
+        (worktree / "x.txt").write_text("x\nchanged once\n")
+        _run_git(["add", "-A"], worktree)
+        _run_git(
+            ["commit", "-q", "-m", "chore(tickets): record T-2763 start transition"],
+            worktree,
+        )
+        (worktree / "x.txt").write_text("x\nchanged once\nchanged twice\n")
+        _run_git(["add", "-A"], worktree)
+        _run_git(
+            ["commit", "-q", "-m", "chore(tickets): record T-2359 start transition"],
+            worktree,
+        )
+
+        assert fleet_status._worktree_started_ticket_ids(worktree) == [
+            "T-2359",
+            "T-2763",
+        ]
+
+
+# frob:ticket T-2755
 class TestWorktreeContentClassificationLiveGit:
     """T-2617: `worktree_content_classification` run UNMOCKED against a
     real git repository built from real commits -- `_git` itself is not
@@ -940,11 +1072,7 @@ class TestWorktreeContentClassificationLiveGit:
     `git merge-base` output, not hand-written diff text, closing exactly
     the gap T-2617 found."""
 
-    def _init_repo(self, root: Path) -> None:
-        _run_git(["init", "-q", "-b", "main"], root)
-        _run_git(["config", "user.email", "test@example.com"], root)
-        _run_git(["config", "user.name", "Test"], root)
-
+    # frob:ticket T-2755
     def test_superseded_symbol_with_landed_terminal_ticket_is_stale(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -956,7 +1084,7 @@ class TestWorktreeContentClassificationLiveGit:
         frob:tests scripts/fleet_status.py::worktree_content_classification"""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         (src / "x.py").write_text(
@@ -986,7 +1114,7 @@ class TestWorktreeContentClassificationLiveGit:
 
         monkeypatch.setattr(fleet_status, "REPO", repo)
         verdict, samples = fleet_status.worktree_content_classification(
-            worktree, ticket_id="T-9001"
+            worktree, ticket_ids=["T-9001"]
         )
         assert verdict == "STALE"
         assert samples == []
@@ -1002,7 +1130,7 @@ class TestWorktreeContentClassificationLiveGit:
         STALE. frob:tests scripts/fleet_status.py::worktree_content_classification"""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         (src / "x.py").write_text("def existing():\n    pass\n")
@@ -1033,7 +1161,7 @@ class TestWorktreeContentClassificationLiveGit:
         frob:tests scripts/fleet_status.py::worktree_content_classification"""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         original = "\n".join(f"def fn_{i}():\n    pass\n" for i in range(40))
@@ -1071,6 +1199,7 @@ class TestWorktreeContentClassificationLiveGit:
         assert samples == []
 
     # frob:ticket T-2625
+    # frob:ticket T-2755
     def test_queued_ticket_no_lease_falls_through_to_real_content_test(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1086,7 +1215,7 @@ class TestWorktreeContentClassificationLiveGit:
         shape (queued, no lease, some local diff)."""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         (src / "x.py").write_text("def existing():\n    pass\n")
@@ -1112,10 +1241,102 @@ class TestWorktreeContentClassificationLiveGit:
         # re-derived from the patched REPO above).
         monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "no-leases")
         verdict, samples = fleet_status.worktree_content_classification(
-            worktree, ticket_id="T-1599"
+            worktree, ticket_ids=["T-1599"]
         )
         assert verdict == "STRANDED"
         assert any("never_landed_anywhere" in s for s in samples)
+
+    # frob:ticket T-2755
+    def test_non_conventionally_named_worktree_classifies_active_via_structural_ids(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2755 must-now-fire, end to end: a subject-named worktree
+        (`waive-liveness`-shaped) holding an in-progress ticket must
+        classify ACTIVE when its ids are resolved structurally
+        (`_worktree_started_ticket_ids`) instead of via the old `t-<id>`
+        naming convention (`_worktree_ticket_id("waive-liveness")` is
+        `None`, which is exactly why this used to fall through to the
+        raw content diff and could misreport STRANDED/STALE for
+        genuinely active work).
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "x.py").write_text("def existing():\n    pass\n")
+        tdir = repo / "tickets" / "T-2740"
+        tdir.mkdir(parents=True)
+        (tdir / "ticket.md").write_text("---\nid: T-2740\nstate: in-progress\n---\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() plus in-progress ticket"], repo)
+
+        worktree = tmp_path / "waive-liveness"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo
+        )
+        _run_git(
+            [
+                "commit",
+                "-q",
+                "--allow-empty",
+                "-m",
+                "chore(tickets): record T-2740 start transition",
+            ],
+            worktree,
+        )
+        (worktree / "src" / "x.py").write_text(
+            "def existing():\n    pass\n\n\ndef in_progress_work():\n    return 1\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: work in progress on T-2740"], worktree)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        verdict, samples = fleet_status.worktree_content_classification(
+            worktree,
+            ticket_ids=fleet_status._worktree_started_ticket_ids(worktree),
+        )
+        assert verdict == "ACTIVE"
+        assert samples == []
+
+    # frob:ticket T-2755
+    def test_worktree_with_genuinely_no_ticket_is_not_force_matched(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2755 negative control: a worktree that never ran `frob
+        ticket start`/`work` at all (no start-transition commit anywhere
+        in its history) must resolve `ticket_ids=[]` from the structural
+        scan and fall through to the ordinary content test -- never
+        force-matched to a ticket it never started, and never crashes on
+        an empty id list.
+        frob:tests scripts/fleet_status.py::worktree_content_classification"""
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        _init_bare_repo(repo)
+        src = repo / "src"
+        src.mkdir()
+        (src / "x.py").write_text("def existing():\n    pass\n")
+        _run_git(["add", "-A"], repo)
+        _run_git(["commit", "-q", "-m", "c1: existing() only"], repo)
+
+        worktree = tmp_path / "no-ticket-scratch"
+        _run_git(
+            ["worktree", "add", "-q", "-b", "no-ticket-scratch", str(worktree)], repo
+        )
+        (worktree / "src" / "x.py").write_text(
+            "def existing():\n    pass\n\n\ndef scratch_only():\n    return 1\n"
+        )
+        _run_git(["add", "-A"], worktree)
+        _run_git(["commit", "-q", "-m", "wt: scratch change, no ticket"], worktree)
+
+        monkeypatch.setattr(fleet_status, "REPO", repo)
+        started = fleet_status._worktree_started_ticket_ids(worktree)
+        assert started == []
+        verdict, samples = fleet_status.worktree_content_classification(
+            worktree, ticket_ids=started
+        )
+        assert verdict == "STRANDED"
+        assert any("scratch_only" in s for s in samples)
 
 
 # frob:ticket T-2665
@@ -1132,11 +1353,6 @@ class TestInProgressTicketScopeLeasesLiveGit:
     worktree at all, so they cannot tell a genuine fallback-scan success
     apart from a fixture that merely looks right."""
 
-    def _init_repo(self, root: Path) -> None:
-        _run_git(["init", "-q", "-b", "main"], root)
-        _run_git(["config", "user.email", "test@example.com"], root)
-        _run_git(["config", "user.name", "Test"], root)
-
     def test_live_worktree_with_lease_file_removed_is_not_leaked(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -1151,7 +1367,7 @@ class TestInProgressTicketScopeLeasesLiveGit:
         ticket at all, not even a stale one)."""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         (src / "a.py").write_text("def existing():\n    pass\n")
@@ -1202,7 +1418,7 @@ class TestInProgressTicketScopeLeasesLiveGit:
         never reporting a real leak again."""
         repo = tmp_path / "repo"
         repo.mkdir()
-        self._init_repo(repo)
+        _init_bare_repo(repo)
         src = repo / "src"
         src.mkdir()
         (src / "a.py").write_text("def existing():\n    pass\n")

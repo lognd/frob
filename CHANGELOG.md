@@ -237,6 +237,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2749: post-land sweep regression from T-2738: 2 new (rule, file) identit(ies), 7 finding(s) (ARCH103, DRIFT002)
 - T-2751: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts, spurious failure
 - T-2753: WIRE001 call-graph resolver cannot see pytest fixture consumption via dependency injection
+- T-2755: worktree_content_classification's ticket_id resolution keys on t-<id> worktree naming, same class as T-2747
 - T-2757: post-land sweep regression from an unattributed source (sweep spawned by T-2741): 1 new (rule, file) identit(ies), 1 finding(s) (DOC011)
 - T-2759: DOC011: docs/modules/tickets-verify-sweep.md cites phantom T-2736 without a waiver
 - T-2760: Two tickets can own the same (rule, file) finding: the duplicate check compares titles, not finding identity

@@ -276,6 +276,38 @@ human/coordinator glance, not a removal decision.
 ad-hoc named worktree (`dev-friction`, `gate-internals`, a hand-cut series
 worktree) has no resolvable ticket and always returns `None`.
 
+**T-2755:** no longer wired to `worktree_content_classification`'s own
+dispatch (see `_worktree_started_ticket_ids` below, the structural
+replacement) -- kept only as a directly-tested, low-level naming-
+convention utility, not a production call site as of this ticket.
+
+### `_worktree_started_ticket_ids`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#_worktree_started_ticket_ids -->
+
+T-2755. Every ticket id a worktree's own unlanded history (`main..HEAD`)
+structurally started, read back from `frob.tickets._leases.commit_start_
+transition`'s own commit-subject shape (`chore(tickets): record <id>
+start transition`) via `_START_TRANSITION_SUBJECT_RE` -- the reverse
+direction of T-2747's `_worktree_started_ticket` (which checks ONE
+candidate id against a worktree's history; this instead enumerates every
+id a worktree's history names, with none supplied up front). `[]` for a
+worktree with no start-transition commit at all.
+
+Motivating measurement: `worktree_content_classification`'s own `ticket_
+id=_worktree_ticket_id(name)` short-circuit (T-2599) assumed every
+worktree worth classifying is named `t-<id>` -- verified wrong against
+this repo's OWN live `git worktree list`: most real worktree names do
+not match at all (`fb-t2775`, `t2763-t2359`, `t2766-t2764`, `fa-t2589-
+t2559`, `dev-friction`, `gate-internals`, `rule-bookkeeping`,
+`land-integrity-series`, `reg-enforce`, `t1661-series`, `t1860-series`,
+`t1893-t1908`, `t2747-t2746`), which silently fell through to the raw
+content-diff test regardless of whether the worktree held genuinely
+active work. This is the same structural-history-over-naming-convention
+fix T-2747 already applied to the leases section (`worktrees_touching_
+ticket`'s dispatch), now applied to the WORKTREES section's classifier
+too.
+
 ### `worktree_content_classification`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#worktree_content_classification -->
@@ -358,11 +390,18 @@ check) proves this fallback still fires -- the two checks above narrow
 false positives without collapsing the whole classifier into "always
 STALE".
 
-`ticket_id` (resolved via `_worktree_ticket_id` for a `t-XXXX`-named
-worktree) short-circuits to `"ACTIVE"` whenever that ticket's state on
-`main` is not terminal (`done`/`dropped`/`failed`) -- an active ticket is
-never proposed for removal regardless of what its diff looks like, and
-its content is never even inspected. This is CHECKED but not yet
+Any id in `ticket_ids` (T-2755: plural, resolved via `_worktree_started_
+ticket_ids`'s structural scan -- was a single `ticket_id` resolved via
+`_worktree_ticket_id` for a `t-XXXX`-named worktree only) short-circuits
+to `"ACTIVE"` whenever that ticket's state on `main` is not terminal
+(`done`/`dropped`/`failed`) -- an active ticket is never proposed for
+removal regardless of what its diff looks like, and its content is never
+even inspected. `"STALE"` from ticket state requires EVERY id in
+`ticket_ids` to have BOTH resolved on `main` AND a `land_commit` that is
+an ancestor of `main` -- a worktree holding several ids (this repo's own
+grouped-dispatch series convention) is fully landed only when ALL of
+them are; one unresolvable or unlanded id must not let the others' landed
+status force a false STALE verdict. This is CHECKED but not yet
 CONSULTED beyond terminal-vs-not (T-2617 residue, filed separately): a
 `queued` ticket with no live lease held anywhere still reads `ACTIVE`
 identically to a genuinely in-progress one, since ACTIVE is the
@@ -384,7 +423,9 @@ split, pulled out to keep `_print_fleet_report` itself under the
 long-function threshold): classifies every idle-looking worktree's
 content ONCE via `worktree_content_classification` and reuses that same
 verdict for both the header's `STRANDED` count and its own printed row,
-rather than classifying twice per worktree.
+rather than classifying twice per worktree. T-2755: the `ticket_ids`
+passed in are now `_worktree_started_ticket_ids(path)`'s structural
+result, not `_worktree_ticket_id(name)`'s naming-convention guess.
 
 ### quarantine
 
