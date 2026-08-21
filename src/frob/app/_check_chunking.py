@@ -260,6 +260,30 @@ _BUDGET_TIMING_REL = Path(".frob") / "check-budget-timing.json"
 # frob:ticket T-1195
 _BUDGET_STATE_REL = Path(".frob") / "check-budget-state.json"
 
+# frob:ticket T-2809
+#: Where a bounded per-group window of RAW (uncombined) recent elapsed-time
+#: samples lives (T-2809), distinct from `_BUDGET_TIMING_REL`'s single EMA
+#: value: `_derive_post_land_sweep_budget_s` needs the minimum of several
+#: recent runs (a "did the fleet happen to be busy this one time" question),
+#: which an EMA cannot answer -- an EMA blends every sample together, so one
+#: contended run permanently drags a single blended number upward and it
+#: never comes back down on its own. `_select_budget_chunks`'s greedy
+#: packing keeps using the plain EMA in `_BUDGET_TIMING_REL` unchanged (a
+#: different question: "best single estimate for THIS group", where
+#: smoothing is exactly what is wanted) -- this file is additive, not a
+#: replacement.
+_BUDGET_TIMING_SAMPLES_REL = Path(".frob") / "check-budget-timing-samples.json"
+
+#: How many of the most recent raw samples `_derive_post_land_sweep_budget_s`
+#: keeps per stage group (T-2809). Bounded so contention that persists for a
+#: long stretch eventually ages out of the window once genuinely quiet runs
+#: occur, and so a genuine slowdown (real repo growth) is reflected once
+#: this many consecutive runs -- even quiet ones -- measure the new higher
+#: cost; unbounded history would let one contended run age out of an
+#: EMA-scale bias forever but would also let a truly-ancient tiny repo
+#: measurement suppress today's minimum indefinitely.
+_BUDGET_TIMING_SAMPLE_WINDOW = 5
+
 
 # frob:ticket T-1004
 # frob:ticket T-1195
@@ -311,6 +335,68 @@ def _save_budget_timing(root: Path, timing: dict[str, float]) -> None:
     path = _budget_timing_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(_json.dumps(timing))
+
+
+# frob:ticket T-2809
+def _budget_timing_samples_path(root: Path) -> Path:
+    """Where `_derive_post_land_sweep_budget_s`'s rolling raw-sample window
+    lives (T-2809), separate from `_budget_timing_path`'s single EMA
+    value."""
+    return root / _BUDGET_TIMING_SAMPLES_REL
+
+
+# frob:ticket T-2809
+def _load_budget_timing_samples(root: Path) -> dict[str, list[float]]:
+    """The persisted `{group: [recent raw elapsed seconds, oldest first]}`
+    window (T-2809), or `{}` if none has ever been recorded or the file is
+    corrupt (same disposable-hint posture as `_load_budget_timing`: start
+    over with an empty window rather than crash)."""
+    import json as _json
+
+    path = _budget_timing_samples_path(root)
+    if not path.exists():
+        return {}
+    try:
+        data = _json.loads(path.read_text())
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    result: dict[str, list[float]] = {}
+    for key, value in data.items():
+        if not isinstance(value, list):
+            continue
+        samples = [float(v) for v in value if isinstance(v, (int, float))]
+        if samples:
+            result[str(key)] = samples
+    return result
+
+
+# frob:ticket T-2809
+def _save_budget_timing_samples(root: Path, samples: dict[str, list[float]]) -> None:
+    """Persist `samples` to `_budget_timing_samples_path`, creating
+    `.frob/` if this is the first sample ever recorded in this
+    checkout."""
+    import json as _json
+
+    path = _budget_timing_samples_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(_json.dumps(samples))
+
+
+# frob:ticket T-2809
+# frob:tests tests/unit/test_check_budget.py::TestBudgetTimingSampleWindow.test_appends_and_caps_window  # noqa: E501
+def _record_budget_timing_sample(root: Path, group: str, elapsed_s: float) -> None:
+    """Append one fresh raw `elapsed_s` measurement for `group` to its
+    rolling window (T-2809), capped at `_BUDGET_TIMING_SAMPLE_WINDOW`
+    (oldest dropped first), and persist immediately -- mirrors
+    `_update_budget_timing` + `_save_budget_timing`'s "persist right after
+    each chunk" posture so a mid-run crash still keeps whatever it
+    measured."""
+    samples = _load_budget_timing_samples(root)
+    window = [*samples.get(group, []), elapsed_s][-_BUDGET_TIMING_SAMPLE_WINDOW:]
+    samples[group] = window
+    _save_budget_timing_samples(root, samples)
 
 
 # frob:ticket T-2715
@@ -369,11 +455,40 @@ def _derive_post_land_sweep_budget_s(root: Path, *, default: int = 480) -> int:
     this: since the ceiling now tracks the measurement instead of sitting
     fixed, there is no longer a silent gap between "measured total" and
     "budget" for a check to detect -- the two move together by
-    construction."""
+    construction.
+
+    T-2809: per group, prefer the MINIMUM of `_load_budget_timing_samples`'s
+    recent raw-sample window over the plain EMA in `_load_budget_timing`,
+    falling back to the EMA for any group the sample window has not covered
+    yet (a fresh checkout, or one written before T-2809). This closes the
+    load feedback loop the plain EMA had: every check run -- including ones
+    made under heavy fleet contention -- re-recorded its own (inflated)
+    stage timings into the EMA, which fed straight into this estimate, which
+    fed straight into `_resolve_land_lock_wait_budget_s`'s lock-wait ceiling
+    (`deadline - estimated_work_s`); at load the ceiling went negative and
+    every land declined immediately, adding retries and MORE load, which
+    inflated the next EMA reading further still. Taking the minimum over a
+    bounded recent window (`_BUDGET_TIMING_SAMPLE_WINDOW`) is safe because
+    contention can only ever push a measured wall-clock sample UP, never
+    below the work's true uncontended cost (positive control: a contended
+    sample set must not inflate this estimate past the uncontended value) --
+    while still tracking genuine repo growth, because a real slowdown that
+    holds for `_BUDGET_TIMING_SAMPLE_WINDOW` consecutive runs eventually
+    pushes even the minimum of the window upward once the old, smaller
+    samples age out (positive control: this must not silently recreate
+    T-2715's frozen-forever hardcoded budget)."""
     timing = _load_budget_timing(root)
-    if not timing:
+    samples = _load_budget_timing_samples(root)
+    if not timing and not samples:
         return default
-    measured_total = sum(timing.values())
+    groups = set(timing) | set(samples)
+    measured_total = 0.0
+    for group in groups:
+        window = samples.get(group)
+        if window:
+            measured_total += min(window)
+        else:
+            measured_total += timing[group]
     derived = int(measured_total * _BUDGET_DERIVE_HEADROOM)
     return max(derived, _POST_LAND_SWEEP_BUDGET_FLOOR_S)
 
@@ -795,6 +910,11 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
     (`_budget_timing_path`) are a rolling EMA seeded from real measured
     wall time of each chunk actually run, persisted immediately after
     each chunk so a mid-run crash still keeps whatever it measured.
+    T-2809: each chunk's raw elapsed time is ALSO appended to a separate
+    bounded per-group sample window (`_budget_timing_samples_path`) that
+    `_derive_post_land_sweep_budget_s` reads via `min()` rather than the
+    EMA, so a contention-inflated run cannot pollute the post-land sweep's
+    own budget estimate the way it fed straight into the EMA before.
 
     T-2250: `--only <group> --budget SECONDS` plans over exactly the
     `--only`-named group(s), never the full universe (T-2235's own
@@ -837,6 +957,7 @@ def _run_budgeted_check(root: Path, cfg: AppConfig) -> None:
         all_results.extend(chunk_result.results)
         timing = _update_budget_timing(timing, group, elapsed)
         _save_budget_timing(root, timing)
+        _record_budget_timing_sample(root, group, elapsed)
         if not cfg.check_json:
             _log.info("check --budget: stage group %r done in %.1fs", group, elapsed)
 

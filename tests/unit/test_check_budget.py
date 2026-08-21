@@ -141,6 +141,99 @@ class TestDerivePostLandSweepBudget:
         )
         assert budget == check_chunking_mod._POST_LAND_SWEEP_BUDGET_FLOOR_S
 
+    # frob:ticket T-2809
+    def test_contended_sample_does_not_inflate_the_estimate(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2809 positive control (direction 1): a group with a
+        low-contention history plus ONE contention-inflated reading must
+        derive a budget close to the uncontended value, not the inflated
+        one -- `_derive_post_land_sweep_budget_s` takes the MINIMUM of the
+        recent sample window per group, so a single busy-box run cannot
+        drag the estimate up the way feeding straight into the EMA did
+        (the load feedback loop this ticket fixes)."""
+        quiet_total = 90.0 + 60.0 + 90.0 + 5.0 + 90.0
+        for group, elapsed in {
+            "gates-fast": 90.0,
+            "gates-native": 60.0,
+            "gates-security": 90.0,
+            "lint": 5.0,
+            "static": 90.0,
+        }.items():
+            check_chunking_mod._record_budget_timing_sample(tmp_path, group, elapsed)
+        # One contended run comes in far above every quiet sample recorded
+        # so far -- this must not become the new floor.
+        check_chunking_mod._record_budget_timing_sample(
+            tmp_path, "gates-fast", 400.0
+        )
+        budget = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path)
+        uncontended_budget = int(
+            quiet_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM
+        )
+        assert budget == uncontended_budget
+        assert budget < int(
+            (quiet_total - 90.0 + 400.0) * check_chunking_mod._BUDGET_DERIVE_HEADROOM
+        )
+
+    # frob:ticket T-2809
+    def test_genuine_slowdown_still_raises_the_estimate(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2809 positive control (direction 2, the must-still-pass
+        control): once a group's cost has genuinely grown and stays grown
+        for `_BUDGET_TIMING_SAMPLE_WINDOW` consecutive runs (no quiet
+        low reading left in the window), the derived budget MUST rise to
+        cover it -- a fix that pins the estimate down would silently
+        recreate T-2715's frozen-forever hardcoded budget."""
+        for _ in range(check_chunking_mod._BUDGET_TIMING_SAMPLE_WINDOW):
+            check_chunking_mod._record_budget_timing_sample(
+                tmp_path, "gates-fast", 250.0
+            )
+        before = check_chunking_mod._derive_post_land_sweep_budget_s(
+            tmp_path, default=0
+        )
+        for _ in range(check_chunking_mod._BUDGET_TIMING_SAMPLE_WINDOW):
+            check_chunking_mod._record_budget_timing_sample(
+                tmp_path, "gates-fast", 500.0
+            )
+        after = check_chunking_mod._derive_post_land_sweep_budget_s(
+            tmp_path, default=0
+        )
+        assert after > before
+
+    # frob:ticket T-2809
+    def test_group_with_no_sample_window_falls_back_to_ema(
+        self, tmp_path: Path
+    ) -> None:
+        """A checkout written before T-2809 (an EMA file with no sample
+        window yet) must derive exactly as it did before -- the sample
+        window is additive, not a hard requirement."""
+        check_chunking_mod._save_budget_timing(tmp_path, {"lint": 200.0})
+        budget = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path)
+        assert budget == int(200.0 * check_chunking_mod._BUDGET_DERIVE_HEADROOM)
+
+
+# frob:ticket T-2809
+class TestBudgetTimingSampleWindow:
+    """`_record_budget_timing_sample`'s rolling per-group window."""
+
+    def test_appends_and_caps_window(self, tmp_path: Path) -> None:
+        """More than `_BUDGET_TIMING_SAMPLE_WINDOW` samples for one group
+        keeps only the most recent `_BUDGET_TIMING_SAMPLE_WINDOW`, oldest
+        dropped first."""
+        window = check_chunking_mod._BUDGET_TIMING_SAMPLE_WINDOW
+        for i in range(window + 2):
+            check_chunking_mod._record_budget_timing_sample(
+                tmp_path, "lint", float(i)
+            )
+        samples = check_chunking_mod._load_budget_timing_samples(tmp_path)
+        assert samples["lint"] == [float(i) for i in range(2, window + 2)]
+
+    def test_load_missing_file_returns_empty(self, tmp_path: Path) -> None:
+        """No sample-window file yet (fresh checkout) reads as `{}`, never
+        a crash."""
+        assert check_chunking_mod._load_budget_timing_samples(tmp_path) == {}
+
 
 # frob:ticket T-2235
 # frob:ticket T-2250

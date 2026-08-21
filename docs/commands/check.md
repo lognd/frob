@@ -26,6 +26,21 @@ warning naming every deferred group. Re-running the same command
 continues from the resume state. See `docs/guides/agent-playbook.md`
 section 3b for the full agent recipe.
 
+T-2809: the post-land sweep's own derived budget
+(`_derive_post_land_sweep_budget_s`, which also feeds the land-lock wait
+ceiling `_resolve_land_lock_wait_budget_s` computes) does NOT read the
+plain EMA above directly. It reads a separate bounded per-group window of
+raw recent samples (`.frob/check-budget-timing-samples.json`) and uses the
+MINIMUM of that window per group, falling back to the EMA for any group
+the window has not covered yet. This closes a load feedback loop: the
+plain EMA re-records every run including ones made under heavy fleet
+contention, so a busy box inflated the estimate, which shrank the land
+lock's wait ceiling, which made lands decline and retry, which added more
+load. A per-group minimum cannot be inflated by contention (contention
+only ever pushes a wall-clock sample up), while a genuine, sustained
+slowdown still raises it once enough consecutive runs measure the new
+cost.
+
 T-2235: EVERY `--budget` invocation -- not just one that defers work --
 also reports a `"budget"` JSON key
 (`{"requested_seconds", "executed_groups", "skipped_groups", "complete"}`)

@@ -2,7 +2,7 @@
 id: T-2809
 title: 'land deadline guard has a load feedback loop: contended stage timings inflate
   estimated_work_s until every land declines, exactly when the fleet is busiest'
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -33,6 +33,12 @@ scope_changes:
   reason: evidence tests + doc update for the new sample-window derivation
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_contended_sample_does_not_inflate_the_estimate
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_genuine_slowdown_still_raises_the_estimate
+- tests/unit/test_check_budget.py::TestDerivePostLandSweepBudget::test_group_with_no_sample_window_falls_back_to_ema
+- tests/unit/test_check_budget.py::TestBudgetTimingSampleWindow::test_appends_and_caps_window
+- tests/unit/test_check_budget.py::TestBudgetTimingSampleWindow::test_load_missing_file_returns_empty
 designated_repro_test: null
 threat: null
 component: null
