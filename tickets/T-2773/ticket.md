@@ -140,7 +140,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 021799883e4a52bdf90e2fec6d9006498fa3e96f
 ---
 Batch 1/N of T-2359's ruff-format-only reformat (T-2359 itself has 184
 files currently pending, re-measured -- see T-2359's Done report history).
