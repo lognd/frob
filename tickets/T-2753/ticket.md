@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
 - tests/unit/test_wire001_fixture_parameter_access.py
+- tests/unit/test_app_runners_batch6.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,18 @@ scope_changes:
     rescue'
   actor: logan
   at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: 'T-2753: remove the now-obsolete WIRE001 waiver on _real_console_handlers
+    -- the fixture-parameter rescue this ticket lands makes it unnecessary'
+  actor: logan
+  at: '2026-08-21'
+evidence:
+- tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_fixture_consumed_by_a_test_in_the_same_file_is_not_flagged
+- tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_fixture_consumed_by_a_test_in_a_different_file_is_not_flagged
+- tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_fixture_consumed_only_by_another_fixture_is_not_flagged
+- tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_fixture_with_no_consumer_anywhere_still_flagged_positive_control
+- tests/unit/test_wire001_fixture_parameter_access.py::TestWire001FixtureParameterAccess::test_ordinary_new_function_still_flagged_positive_control
 designated_repro_test: null
 threat: null
 component: null
