@@ -26,7 +26,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 92e6cc708c9c59f2655664d36690d267e85ea6c7
 ---
 T-2790's profile found the SAME structural gap independently in both perf
 (59.63s stage) and dead_symbols (34.08s stage): both call
