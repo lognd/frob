@@ -61,7 +61,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f963516b8ade02f8dfc9d3c8b739dfa2256c2a26
 ---
 Batch 1/N of T-2369 (Burn REF001/REF002 + REG008 WARN gates to zero, then
 promote to error). Batched per the T-2359/T-2373/T-2370 precedent: real
