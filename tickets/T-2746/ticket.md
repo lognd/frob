@@ -59,7 +59,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 25d953dc56092f26fb488306f187d2fae5923d13
 ---
 WIRE001's text-scan reach check (`frob.gates._wire._wire_reach_patterns`)
 only recognizes call-shaped (`short(`) and by-reference (wrapper marker
