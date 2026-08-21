@@ -2,7 +2,7 @@
 id: T-1654
 title: Audit remaining real-repo build_graph tests for T-1433/T-1635 xdist self-scan
   contention
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-06'
@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/test_waive_gate.py
 - tests/test_graph.py
@@ -21,6 +24,8 @@ scope:
 - tests/conftest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: tests/**
@@ -86,6 +91,21 @@ scope_changes:
     a guess, the ticket enumerates its own targets'
   actor: logan
   at: '2026-08-18'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): audit-only ticket; classified all 6 files,
+    found 4 candidate tests sharing T-1635''s shape but could not reproduce actual
+    contention within a sub-agent foreground budget (coordinator-only per playbook
+    3c/6b); filed T-2762 for the reproduction+fix step; no source/test changes made'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 1978
+  new_length: 2302
+evidence:
+- tests/test_waive_gate.py::TestWaive006RealRepo::test_zero_errors_on_real_repo
+- tests/test_waive_gate.py::TestWaive007RealRepo::test_zero_findings_on_real_repo
+- tests/test_gates.py::TestProtocolSummaryGate::test_real_repo_scan_runs_end_to_end_without_crashing
+- tests/test_gates.py::TestOptInGates::test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses
 designated_repro_test: null
 threat: null
 component: null
@@ -133,3 +153,5 @@ evidence):
    wait + clear timeout error (rather than blocking forever) as a
    separate, more general hardening -- out of scope for a test-file-only
    fix, worth its own ticket if picked up.
+
+frob:no-behavior-change reason="audit-only ticket; classified all 6 files, found 4 candidate tests sharing T-1635's shape but could not reproduce actual contention within a sub-agent foreground budget (coordinator-only per playbook 3c/6b); filed T-2762 for the reproduction+fix step; no source/test changes made"

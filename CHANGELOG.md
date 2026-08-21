@@ -23,6 +23,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-1599: Language adapter capability matrix: make the cross-language contract statically enforced
 - T-1606: Per-language line-length: each formatter owns its own width, not ruff's
 - T-1614: RUNS LAST: audit every frob:waive for cop-outs, after all other work is complete
+- T-1654: Audit remaining real-repo build_graph tests for T-1433/T-1635 xdist self-scan contention
 - T-1660: PERF014 remainder: 3 confirmed real per-line finditer nesting sites (cpp_mayraise, ffi, rule_id_scan)
 - T-1666: Classify and re-waive the 142 OPAQUE001 findings T-1659's symref fix surfaced; sweep PERF/PII/SEC005 for the same shape
 - T-2100: TestRevalidateDispatchableSweepTickets: two tests intermittently interfere when run together (pre-existing)
