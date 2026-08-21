@@ -104,7 +104,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a1d1e63f52cc6ee77a6fe307716031fe2c69e4e0
 ---
 Batch 2/N of T-2359's ruff-format-only reformat. This child covers exactly
 the 10 files listed in its scope. Filed as a child rather than landing
