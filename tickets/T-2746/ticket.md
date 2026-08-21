@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
 - tests/unit/test_wire001_property_attribute_access.py
+- src/frob/cycle/graph.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,13 @@ scope_changes:
   glob: tests/unit/test_wire001_property_attribute_access.py
   reason: correct test path to match this repo's actual per-shape WIRE001 test file
     convention (tests/unit/test_wire001_*.py), tests/test_wire.py does not exist
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/cycle/graph.py
+  reason: 'close blocker: LiveTrackerCited on graph.py''s WIRE001 waiver whose follow_up
+    cites this ticket; measurement confirms the waiver is now redundant post-fix,
+    must remove it in this ticket''s own scope to close'
   actor: logan
   at: '2026-08-20'
 evidence:
