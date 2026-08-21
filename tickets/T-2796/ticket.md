@@ -2,7 +2,7 @@
 id: T-2796
 title: a large fraction of the queued backlog is already resolved by landed work,
   and 'already resolved' was being requeued instead of dropped
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-21'
@@ -16,10 +16,14 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/investigations/
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
