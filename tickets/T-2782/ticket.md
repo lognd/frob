@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/investigations/
+- docs/index.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/index.md
+  reason: 'DOC001: link the new investigation doc from docs/index.md so it is not
+    linked from nowhere'
+  actor: logan
+  at: '2026-08-21'
 triage_changes:
 - field: kind
   old_value: feature
@@ -28,6 +36,8 @@ triage_changes:
     no code change
   actor: logan
   at: '2026-08-21'
+evidence:
+- cmd:wc -l docs/investigations/T-2782-land-serialization.md exit=0 sha256=1f01d1b4b0cc
 designated_repro_test: null
 threat: null
 component: null
