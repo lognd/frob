@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2fcd2b9b4ddf89328a47beb5bd45c40e73b7c8f8
 ---
 T-2721 changed `frob.gates._waive_audit_watermark.save_watermark` to commit
 the watermark file (now git-tracked at the repo root, not `.frob/`) and
