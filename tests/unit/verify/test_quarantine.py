@@ -336,9 +336,9 @@ class TestClearQuarantine:
         assert result.is_err
         assert result.danger_err is QuarantineError.FindingsNotDisposed
         assert is_quarantined(tmp_path).danger_ok is True
-        assert any(
-            "PATH SHAPE" in record.message for record in caplog.records
-        ), "a path-shape mismatch must be named as such, not left as a bare refusal"
+        assert any("PATH SHAPE" in record.message for record in caplog.records), (
+            "a path-shape mismatch must be named as such, not left as a bare refusal"
+        )
 
     # frob:ticket T-1693
     def test_green_verification_alone_never_clears(self, tmp_path: Path) -> None:

@@ -54,9 +54,7 @@ class TestAddEvidenceAutoPopulatesEvidenceOnlyScope:
     for a cited node whose file is not already covered."""
 
     # frob:ticket T-1944
-    def test_new_evidence_widens_evidence_scope_not_scope(
-        self, tmp_path: Path
-    ) -> None:
+    def test_new_evidence_widens_evidence_scope_not_scope(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/unit/test_tickets_evidence_only_scope.py::TestAddEvidenceAutoPopulatesE\
         # videnceOnlyScope.test_new_evidence_widens_evidence_scope_not_scope

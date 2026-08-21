@@ -14,7 +14,6 @@ parent". This test proves the fix by checking what ref actually reaches
 merge-base commit (main's tip, the ticket's true starting point), not the
 feature branch's own name/tip (which would equal HEAD)."""
 
-
 from __future__ import annotations
 
 import subprocess

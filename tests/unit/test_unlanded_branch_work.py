@@ -75,11 +75,15 @@ Body text for {tid}.
 """
 
 
-def _write_ticket_md(root: Path, tid: str, *, state: str, archived: bool = False) -> None:
+def _write_ticket_md(
+    root: Path, tid: str, *, state: str, archived: bool = False
+) -> None:
     subdir = "tickets/archive" if archived else "tickets"
     path = root / subdir / tid / "ticket.md"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(_TICKET_MD.format(tid=tid, title=tid, state=state), encoding="utf-8")
+    path.write_text(
+        _TICKET_MD.format(tid=tid, title=tid, state=state), encoding="utf-8"
+    )
 
 
 def _write_done_report(root: Path, tid: str) -> None:
@@ -233,9 +237,7 @@ class TestUnlandedBranchWork:
         assert findings == ()
 
     # frob:ticket T-1955
-    def test_fresh_branch_reports_zero_despite_main_history(
-        self, repo: Path
-    ) -> None:
+    def test_fresh_branch_reports_zero_despite_main_history(self, repo: Path) -> None:
         """T-1955: a branch cut from `main` MINUTES ago, carrying only its
         own unrelated commit, must report ZERO unlanded tickets -- even
         though `main` itself has a large history of finished tickets fully
@@ -406,9 +408,9 @@ class TestUnlandedBranchWork:
         _branch(repo, "touches-fixture-test-file")
         (repo / "tests").mkdir(parents=True, exist_ok=True)
         (repo / "tests" / "test_gates.py").write_text(
-            'def test_something() -> None:\n'
+            "def test_something() -> None:\n"
             '    body = "frob:ticket T-9001 acceptance sample"\n'
-            '    assert body\n',
+            "    assert body\n",
             encoding="utf-8",
         )
         _commit_all(repo, "touch tests/test_gates.py (unrelated real work)")
@@ -468,7 +470,7 @@ class TestUnlandedBranchWork:
         (repo / "src").mkdir(parents=True, exist_ok=True)
         (repo / "src" / "_quoting.py").write_text(
             "def render_example() -> str:\n"
-            '    # this is prose ABOUT the directive, not one:\n'
+            "    # this is prose ABOUT the directive, not one:\n"
             '    return "see frob:ticket T-9402 for context"\n',
             encoding="utf-8",
         )
@@ -618,9 +620,7 @@ class TestBranchOwnChangedFilesConsolidation:
             "instead of keeping a second implementation (T-1966)"
         )
 
-    def test_both_former_call_sites_agree_on_a_real_branch(
-        self, repo: Path
-    ) -> None:
+    def test_both_former_call_sites_agree_on_a_real_branch(self, repo: Path) -> None:
         # frob:tests \
         # tests/unit/test_unlanded_branch_work.py::TestBranchOwnChangedFilesConsolidati\
         # on.test_both_former_call_sites_agree_on_a_real_branch

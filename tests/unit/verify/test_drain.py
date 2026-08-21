@@ -133,9 +133,7 @@ class TestRunDrainAsync:
 
         # A DIFFERENT exclude_pid (a genuinely different land, not this
         # drain's own originating one) still refuses.
-        result_other = run_drain_async(
-            tmp_path, exclude_pid=999, wait_timeout_s=0.0
-        )
+        result_other = run_drain_async(tmp_path, exclude_pid=999, wait_timeout_s=0.0)
         assert result_other.is_err
 
     def test_never_blocks_or_loops_over_the_backlog(

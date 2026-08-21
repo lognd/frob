@@ -163,9 +163,7 @@ class TestDerivePostLandSweepBudget:
             check_chunking_mod._record_budget_timing_sample(tmp_path, group, elapsed)
         # One contended run comes in far above every quiet sample recorded
         # so far -- this must not become the new floor.
-        check_chunking_mod._record_budget_timing_sample(
-            tmp_path, "gates-fast", 400.0
-        )
+        check_chunking_mod._record_budget_timing_sample(tmp_path, "gates-fast", 400.0)
         budget = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path)
         uncontended_budget = int(
             quiet_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM
@@ -176,9 +174,7 @@ class TestDerivePostLandSweepBudget:
         )
 
     # frob:ticket T-2809
-    def test_genuine_slowdown_still_raises_the_estimate(
-        self, tmp_path: Path
-    ) -> None:
+    def test_genuine_slowdown_still_raises_the_estimate(self, tmp_path: Path) -> None:
         """T-2809 positive control (direction 2, the must-still-pass
         control): once a group's cost has genuinely grown and stays grown
         for `_BUDGET_TIMING_SAMPLE_WINDOW` consecutive runs (no quiet
@@ -196,9 +192,7 @@ class TestDerivePostLandSweepBudget:
             check_chunking_mod._record_budget_timing_sample(
                 tmp_path, "gates-fast", 500.0
             )
-        after = check_chunking_mod._derive_post_land_sweep_budget_s(
-            tmp_path, default=0
-        )
+        after = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path, default=0)
         assert after > before
 
     # frob:ticket T-2809
@@ -223,9 +217,7 @@ class TestBudgetTimingSampleWindow:
         dropped first."""
         window = check_chunking_mod._BUDGET_TIMING_SAMPLE_WINDOW
         for i in range(window + 2):
-            check_chunking_mod._record_budget_timing_sample(
-                tmp_path, "lint", float(i)
-            )
+            check_chunking_mod._record_budget_timing_sample(tmp_path, "lint", float(i))
         samples = check_chunking_mod._load_budget_timing_samples(tmp_path)
         assert samples["lint"] == [float(i) for i in range(2, window + 2)]
 

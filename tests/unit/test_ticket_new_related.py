@@ -247,9 +247,7 @@ class TestPossibleEnforcementSymbolsRetargeted:
         )
         subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
         subprocess.run(["git", "add", "-A"], cwd=root, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "base"], cwd=root, check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "base"], cwd=root, check=True)
 
     def test_fires_for_a_differently_named_project(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted.test_fires_for_a_differently_named_project  # noqa: E501

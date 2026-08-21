@@ -192,9 +192,7 @@ class TestLedgerMirrorCarriesNothingElse:
         # The unrelated `scope` mirror must still land.
         assert _visible_on_primary(primary, "src/mine.py")
         # But it must NOT have clobbered main's own done-report.md.
-        shown = _git(
-            "show", "HEAD:tickets/T-0001/done-report.md", cwd=primary
-        )
+        shown = _git("show", "HEAD:tickets/T-0001/done-report.md", cwd=primary)
         assert shown.returncode == 0, shown.stdout + shown.stderr
         assert "error-findings" in shown.stdout
         assert "stale worktree narrative" not in shown.stdout

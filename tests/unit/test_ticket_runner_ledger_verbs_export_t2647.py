@@ -40,8 +40,7 @@ class TestLedgerTransactionalVerbsExportIsDeclared:
             if d.code == "F401" and str(_TARGET) in (d.file or "")
         ]
         assert not f401_diagnostics, (
-            "expected zero F401 findings for "
-            f"{_TARGET}, got: {f401_diagnostics}"
+            f"expected zero F401 findings for {_TARGET}, got: {f401_diagnostics}"
         )
 
     def test_ledger_transactional_verbs_still_importable_from_ticket_runner(

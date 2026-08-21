@@ -182,9 +182,7 @@ class TestMirrorToPrimary:
         _git("config", "user.name", "Test", cwd=wt)
         return wt
 
-    def test_worktree_pass_reaches_primary_without_a_land(
-        self, tmp_path: Path
-    ) -> None:
+    def test_worktree_pass_reaches_primary_without_a_land(self, tmp_path: Path) -> None:
         """T-2721's own required control #1 (paraphrased for the unit
         level -- the real 'not_covered count reduced' behaviour lives in
         `frob.app.ticket_runner._waive_audit`, outside this ticket's
@@ -231,9 +229,7 @@ class TestMirrorToPrimary:
                 commit_sha="pass-a", audited_at=utc_now(), waivers_audited=10
             ),
         )
-        first_primary_count = _git(
-            "rev-list", "--count", "HEAD", cwd=primary
-        ).strip()
+        first_primary_count = _git("rev-list", "--count", "HEAD", cwd=primary).strip()
 
         # wt_b started from the SAME base as wt_a (both cut from the repo's
         # single initial commit) -- it does not see wt_a's mirrored commit
@@ -246,9 +242,7 @@ class TestMirrorToPrimary:
                 commit_sha="pass-b", audited_at=utc_now(), waivers_audited=20
             ),
         )
-        second_primary_count = _git(
-            "rev-list", "--count", "HEAD", cwd=primary
-        ).strip()
+        second_primary_count = _git("rev-list", "--count", "HEAD", cwd=primary).strip()
 
         assert int(second_primary_count) == int(first_primary_count) + 1
         final = load_watermark(primary).danger_ok
@@ -256,9 +250,7 @@ class TestMirrorToPrimary:
         assert final.waivers_audited == 20
         # both commits are real, reachable history -- neither pass was
         # discarded, only the CURRENT marker reflects the later one.
-        log = _git(
-            "log", "--oneline", "--", "waive-audit-watermark.json", cwd=primary
-        )
+        log = _git("log", "--oneline", "--", "waive-audit-watermark.json", cwd=primary)
         assert "pass-a" in log or "10" in log
         assert "pass-b" in log or "20" in log
 
