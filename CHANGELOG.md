@@ -81,6 +81,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2504: confined to: prove path confinement on the existing summary engine, report-only first
 - T-2505: DOC006/COV003/REF001 should not police historical records (117 of 140 findings)
 - T-2507: vet resolves identities then compares them by substring; LEXCHECK001 trigger set misses the in operator
+- T-2508: audit non-node/store/queue strata constructs for a future clearance concept
 - T-2509: frob ticket evidence --check-repro ignores explicit --base-ref, always resolves to a fixed unrelated commit
 - T-2517: fleet_status reports ORPHANED FORKSERVERS 0 while 82 stale pools hold 12GB of swap
 - T-2519: confinement census: give parameter-position credit to close 727 of 740 UNKNOWN sites
