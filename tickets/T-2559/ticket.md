@@ -53,7 +53,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 6220b18824e22846c6121d334699e39ee6b3dbb7
 ---
 Found while working T-2533 (DOC006 CLI-invocation subcommand-chain false
 positive fix). T-2533's fix patches _docblocks_refs.py's _console_trees
