@@ -205,16 +205,11 @@ def _timeout_outcome(
     )
 
 
+# frob:doc docs/guides/coordinator-scripts.md#probe_unattributed_land_process
 # frob:ticket T-2807
 # frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_true_when_a_row_has_no_parseable_ticket_id  # noqa: E501
 # frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_every_row_has_a_ticket_id  # noqa: E501
 # frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_no_rows_at_all  # noqa: E501
-# frob:waive COV001 reason="docs/guides/coordinator-scripts.md was leased by a \
-# concurrent in-progress ticket (T-2755) for this ticket's whole worktree lifetime, so \
-# a real anchor could not be added in this change without a scope-lease conflict; the \
-# module docstring above (T-2807 section) and this function's own docstring both carry \
-# the full WHY -- filed a follow-up to add the real docs/guides/coordinator-scripts.md \
-# anchor once that lease clears"
 def probe_unattributed_land_process(rows: list[dict] | None = None) -> bool:
     """T-2807: `True` iff at least one row `land_process_rows()` returns
     (a live process `fleet_status.py` has already argv-verified as a real
@@ -278,11 +273,6 @@ def probe_unattributed_land_process(rows: list[dict] | None = None) -> bool:
 # le_is_timeout_not_measurement_failure
 # frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_unattributed_land_process_blocks_an_otherwise_free_slot  # noqa: E501
 # frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_no_land_at_all_still_returns_free_promptly  # noqa: E501
-# frob:waive AFFECT001 reason="docs/guides/coordinator-scripts.md was leased by a \
-# concurrent in-progress ticket (T-2755) for this ticket's whole worktree lifetime, so \
-# its wait_for_slot section could not be updated in this change without a scope-lease \
-# conflict; this function's own docstring carries the T-2807 addition in full -- filed \
-# a follow-up to fold it into the real doc once that lease clears"
 def wait_for_slot(
     *,
     command: list[str],

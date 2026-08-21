@@ -1612,6 +1612,54 @@ could not be trusted -- a nonzero exit, a hung process, or output with no
 parseable count. `None` is UNMEASURED, never zero; this is the ONLY place
 that parses the probe's output.
 
+Observed on real input (this doc pass): `fleet_status.py`'s own exit
+code is NOT solely "did the probe run" -- with no `--ticket` given, its
+`main()` returns `1 if (dirt or not ticket_ok) else 0`, where `dirt`
+reflects the shared ROOT's git status, not this worktree's. A dirty
+root from unrelated concurrent fleet activity (verified live: another
+agent's uncommitted files in `/home/logan/projects/frob` during this
+same session) makes `fleet_status.py` exit 1 even while its stdout still
+prints a perfectly readable `LANDS IN FLIGHT: 0` line -- `probe_lands_in_
+flight`'s nonzero-exit check then discards that reading as `None`
+(UNMEASURED), so `wait_for_slot` reports `EXIT_MEASUREMENT_FAILED`
+rather than `EXIT_SLOT_FREE`, even though a slot was genuinely free.
+This is a real, reproduced caveat, not a hypothetical: callers should
+expect occasional `EXIT_MEASUREMENT_FAILED` results purely from shared-
+root dirt elsewhere in the fleet, and should retry (per the exit-code
+contract above) rather than treat it as a sign the probe itself is
+broken.
+
+### `probe_unattributed_land_process`
+
+<!-- frob:doc docs/guides/coordinator-scripts.md#probe_unattributed_land_process -->
+
+T-2807: closes a gap `probe_lands_in_flight`'s own `LANDS IN FLIGHT: N`
+reading cannot see. That count comes from `fleet_status.land_
+invocations()`, which deliberately DROPS any live `frob ticket land`
+process row it cannot parse a `T-####` ticket id from (T-2193's own fix,
+so a polling-loop shell whose argv merely contains the text `ticket
+land` cannot inflate the count forever) -- correct for `LANDS IN
+FLIGHT`'s own purpose, but it means a genuine land process with an
+unparseable ticket id (a `--queue`/`--drain` batch invocation, or one
+sampled before its ticket id argument is resolvable) reads as ZERO rows
+contributing to the count, even though it is real and live. frob's own
+T-1619 belt-and-braces process scan
+(`frob.tickets._leases._scan_for_live_land_process`) has no such
+exclusion -- it refuses a ledger write against ANY live `frob ticket
+land` process, attributed or not -- so, without this probe,
+`wait_for_land_slot.py` could report a free slot in exactly the window
+T-1619's own guard would still refuse.
+
+`probe_unattributed_land_process(rows=None)` returns `True` iff at least
+one row from `fleet_status.land_process_rows()` (the same already-argv-
+verified raw data `land_invocations()` groups from, read one layer
+earlier, never a second/third independent process scan) has no
+parseable `T-####` ticket id in its argv. `wait_for_slot` (below) treats
+a `True` reading as blocking a free-slot verdict unconditionally,
+matching T-1619's own refusal exactly. `rows` is injectable for tests so
+a synthetic unattributed row can be planted without spawning a real
+process.
+
 ### `wait_for_slot`
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#wait_for_slot -->
@@ -1627,6 +1675,14 @@ a probe that measures once and then starts failing still correctly
 reports `EXIT_TIMEOUT` (it learned real fleet state before losing the
 ability to keep reading it), never `EXIT_MEASUREMENT_FAILED`. `sleep`/
 `now` are injectable so tests never sleep for real wall-clock seconds.
+
+T-2807: a free-slot verdict requires BOTH `probe_lands_in_flight`'s
+reading at or below `max_in_flight` AND `unattributed_probe()` (default
+`probe_unattributed_land_process`, see above) reading `False` -- a `True`
+reading blocks `EXIT_SLOT_FREE` unconditionally, on every poll, even when
+the `LANDS IN FLIGHT` count itself reads 0. `unattributed_probe` is
+injectable (parity with `sleep`/`now`) so a test can force the gate
+without a real unparseable land process.
 
 ### `wait_for_land_slot-cli`
 

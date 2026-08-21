@@ -1,7 +1,7 @@
 ---
 id: T-2817
 title: document T-2807's unattributed-land-process probe in coordinator-scripts.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-21'
@@ -27,6 +27,8 @@ scope_changes:
     doc was leased by T-2755 at the time; that lease is now released
   actor: logan
   at: '2026-08-21'
+evidence:
+- cmd:./scripts/.t2817_evidence_check.sh exit=0 sha256=4fa85af22da8
 designated_repro_test: null
 threat: null
 component: null
