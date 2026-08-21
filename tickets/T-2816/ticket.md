@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   glob: tests/test_ticket_land.py
   reason: T-2816 fix needs unit tests bound to test_ticket_land.py covering the near-zero
     in-land wait default and opt-in override
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2816 documents the near-zero default in-land wait and FROB_LAND_INLINE_WAIT_S
+    opt-in in tickets-landing.md
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
