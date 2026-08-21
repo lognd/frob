@@ -2,7 +2,7 @@
 id: T-2245
 title: Rewrite docs + agent-playbook to name frob subcommands first; audit remaining
   Makefile references in src/frob/**
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-16'
@@ -16,6 +16,9 @@ parent: T-1382
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/guides/agent-playbook.md
 - docs/index.md
@@ -24,6 +27,8 @@ scope:
 - docs/commands/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: docs/**
