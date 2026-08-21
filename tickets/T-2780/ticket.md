@@ -1,7 +1,7 @@
 ---
 id: T-2780
 title: add set-parent to tickets-lifecycle.md's verb-strategy table doc
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-21'
@@ -26,6 +26,9 @@ scope_changes:
   reason: removing the AFFECT001 waiver this ticket's own doc fix discharges
   actor: logan
   at: '2026-08-21'
+evidence:
+- cmd:grep -n 'set-parent.*uniform wrapper' docs/modules/tickets-lifecycle.md exit=0
+  sha256=e1dcdda50a2c
 designated_repro_test: null
 threat: null
 component: null

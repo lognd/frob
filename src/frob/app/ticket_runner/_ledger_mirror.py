@@ -123,13 +123,6 @@ class LedgerWriteStrategy(enum.Enum):
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is
 #: exactly one place a verb's classification can be edited or forgotten.
-# frob:waive AFFECT001 reason="T-2770 added the 'set-parent' entry below; its \
-# affects()-closure doc (docs/modules/tickets-lifecycle.md#one-verb-table- \
-# not-two-sets-t-2603) was under a live cross-worktree lease (T-2557) at fix time and \
-# could not be added to T-2770's own scope. Filed T-2780 (renumbers on its own land) \
-# to add the verb to that doc once the lease clears, same disposition as the \
-# config.py::AppConfig AFFECT001 waiver just above this module's own T-1004/T-1029/... \
-# precedent list"
 LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # OWN_TRANSACTION -- owns a complete multi-file transaction; the
     # generic sweep and this module's mirror must never touch it.

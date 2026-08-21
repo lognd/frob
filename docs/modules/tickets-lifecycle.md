@@ -720,6 +720,7 @@ never hand-listed -- a verb the table omits fails
 | `label` | yes | **yes (T-1615)** | uniform wrapper |
 | `accept` (append/`--amend`/`--remove`) | yes | **yes (T-1615)** | uniform wrapper |
 | `tier` | yes | **yes (T-1615)** | uniform wrapper |
+| `set-parent` | yes | **yes (T-1615)** | uniform wrapper (T-2770) |
 | `attach` | yes | **yes (T-1615)** | uniform wrapper |
 | `sprint assign` | yes | **yes (T-1615)** | uniform wrapper |
 | `review` | yes | **yes (T-1615)** | uniform wrapper |
