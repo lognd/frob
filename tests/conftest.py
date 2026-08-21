@@ -72,12 +72,39 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 #: keep these five apart, so several full-repo scans can still land on
 #: different workers at the same moment and queue on that lock (or pay
 #: peak-memory cost concurrently) unless explicitly grouped.
+#: T-2762: `TestWaive006RealRepo.test_zero_errors_on_real_repo`/
+#: `TestWaive007RealRepo.test_zero_findings_on_real_repo`
+#: (`tests/test_waive_gate.py`) and `TestProtocolSummaryGate.
+#: test_real_repo_scan_runs_end_to_end_without_crashing`/`TestOptInGates.
+#: test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses`
+#: (`tests/test_gates.py`) join this list on the IDENTICAL evidence bar
+#: T-1635 set, not speculatively: T-1654's audit read all `build_graph`/
+#: `_load_inputs` call sites in the six files T-1433/T-1635 flagged as
+#: unaudited and found these four are the only OTHER real-repo-root
+#: scans among them (the other two files' calls all target an isolated
+#: `tmp_path` fixture, already safe). A scoped 4-test/2-worker run alone
+#: did not reproduce contention (T-1654's own measurement) -- T-2762
+#: then ran these four TOGETHER with the five names already above (9
+#: heavy real-repo scans, `-n 9`, no grouping override) and reproduced
+#: the exact T-1635 shape directly: 3 workers went down with "node down:
+#: Not properly terminated", and the `PYTHONFAULTHANDLER=1` thread dump
+#: caught `test_zero_errors_on_real_repo` blocked inside `derived_state_
+#: lock`/`derived_state_write_lock` (`src/frob/process/_lock.py`) via
+#: `build_graph` <- `_load_inputs`, the identical call chain the other
+#: five block on. Same fix, same reasoning: group them onto the shared
+#: worker so a real full-suite run cannot schedule more than one of the
+#: whole nine onto different workers at once.
 _SELF_SCAN_HEAVY_NAME_SUBSTRINGS = (
     "test_sys_gate_zero_violations",
     "test_repo_design_and_declarations_are_self_conformant",
     "test_repo_unrestricted_scan_is_clean",
     "test_no_reg008_findings_for_arch_checks_yaml",
     "test_no_reg008_findings_for_system_design_yaml",
+    # frob:ticket T-2762
+    "test_zero_errors_on_real_repo",
+    "test_zero_findings_on_real_repo",
+    "test_real_repo_scan_runs_end_to_end_without_crashing",
+    "test_the_preexisting_rapid_sweep_waiver_now_actually_suppresses",
 )
 
 

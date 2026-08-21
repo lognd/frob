@@ -475,7 +475,9 @@ def _find_finding_duplicate(root: Path, spec: TicketSpec) -> Ticket | None:
 
 
 # frob:ticket T-2760
-def _refuse_finding_duplicate(root: Path, spec: TicketSpec) -> Result[None, TicketError]:
+def _refuse_finding_duplicate(
+    root: Path, spec: TicketSpec
+) -> Result[None, TicketError]:
     """`new_ticket`'s finding-identity refusal step (T-2760), the `spec.
     findings` twin of `_refuse_exact_duplicate`: `Err(TicketError.
     DuplicateFinding)` (logged, naming the existing ticket and the shared

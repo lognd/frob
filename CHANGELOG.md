@@ -235,6 +235,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2759: DOC011: docs/modules/tickets-verify-sweep.md cites phantom T-2736 without a waiver
 - T-2760: Two tickets can own the same (rule, file) finding: the duplicate check compares titles, not finding identity
 - T-2761: Wire frob fmt callers to per-language resolve_line_length (T-1606 follow-up)
+- T-2762: Reproduce/fix xdist contention for 4 real-repo build_graph tests found by T-1654 audit
 - T-2763: Coverage data is 14 days stale because the refresh OOMs in parallel and overruns serially, leaving TEST005 silently unmeasurable
 - T-2764: frob check does not run check_native_staleness_or_exit; make check does (workflow-parity gap)
 - T-2766: docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning, frob.toml overrides to error

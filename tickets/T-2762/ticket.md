@@ -2,7 +2,7 @@
 id: T-2762
 title: Reproduce/fix xdist contention for 4 real-repo build_graph tests found by T-1654
   audit
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
