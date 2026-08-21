@@ -13,12 +13,91 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- docs/design/test005-ratchet-schedule.md
+- docs/index.md
+- docs/investigations/T-2782-land-serialization.md
+- docs/investigations/T-2790-check-stage-profile.md
+- docs/investigations/T-2796-backlog-reproduction.md
+- docs/modules/gates.md
+- docs/modules/tickets-data-storage.md
+- frob.toml
+- src/frob/gates/_refs.py
+- tests/test_refs_gate.py
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: rollup epic burning REF001/REF002/REG008 to zero then promoting
   WARN->error; batched per T-2359/T-2373/T-2370 precedent into child tickets, each
   with its own real scope
+scope_changes:
+- op: add
+  glob: docs/design/test005-ratchet-schedule.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/index.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/investigations/T-2782-land-serialization.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/investigations/T-2790-check-stage-profile.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/investigations/T-2796-backlog-reproduction.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: frob.toml
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_refs.py
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
+    severity promotion
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
