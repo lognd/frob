@@ -17,6 +17,8 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/_doable.py
 - src/frob/tickets/_new_renumber.py
+- tests/test_tickets_lease.py
+- tests/unit/test_new_ticket_over_broad_scope_warning.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +34,16 @@ scope_changes:
   glob: src/frob/tickets/_new_renumber.py
   reason: OVER_BROAD_LITERAL_GLOBS retarget requires updating both call sites that
     check membership against it
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_tickets_lease.py
+  reason: T-2771's own tests live/were-modified in these files
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_new_ticket_over_broad_scope_warning.py
+  reason: T-2771's own tests live/were-modified in these files
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
