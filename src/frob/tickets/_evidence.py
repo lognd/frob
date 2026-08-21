@@ -197,6 +197,54 @@ def _runs_last_start_blockers(
     )
 
 
+# frob:ticket T-2760
+def _warn_if_finding_duplicate_at_start(
+    root: Path, ticket: Ticket, queue: dict[str, Ticket]
+) -> None:
+    """Log a WARNING naming any OTHER open (`_OPEN_STATES`) ticket in
+    `queue` that already declares one of `ticket`'s own `findings` pairs,
+    if any (T-2760) -- the `frob ticket start` twin of `_refuse_finding_
+    duplicate`'s filing-time refusal.
+
+    Deliberately a WARNING here, not a refusal: `frob ticket new`'s check
+    is the cheap, correct place to REFUSE a fresh duplicate outright
+    (nothing is lost by making the filer pick a different finding or
+    reuse the existing ticket); `start` fires on a ticket that may already
+    have real, useful scope/evidence/acceptance criteria attached, filed
+    honestly before the other side's overlapping finding existed or
+    before this check shipped -- refusing to start it outright would
+    strand legitimate work. A loud, named warning gives the operator (or
+    the starting agent) the same information T-2760's own incident shows
+    would have prevented a full duplicate work cycle, without blocking a
+    ticket that may turn out to be the right one to keep."""
+    from frob.tickets import _OPEN_STATES
+    from frob.tickets._new_renumber import _normalize_finding_file
+
+    if not ticket.findings:
+        return
+    wanted = frozenset(
+        (rule, _normalize_finding_file(root, file)) for rule, file in ticket.findings
+    )
+    for other in queue.values():
+        if other.id == ticket.id or other.state not in _OPEN_STATES:
+            continue
+        theirs = frozenset(
+            (rule, _normalize_finding_file(root, file))
+            for rule, file in other.findings
+        )
+        shared = wanted & theirs
+        if shared:
+            _log.warning(
+                "tickets: %s starting while %s already declares the same "
+                "finding(s) %s -- two tickets may be about to double-work "
+                "the same (rule, file) identity (T-2760); confirm they are "
+                "not duplicates before proceeding",
+                ticket.id,
+                other.id,
+                sorted(shared),
+            )
+
+
 # frob:ticket T-0417
 # frob:ticket T-1384
 def _transition_guard(
@@ -214,6 +262,8 @@ def _transition_guard(
 ) -> Result[None, TicketError]:
     """Enforce start-blocker and done-evidence preconditions for `to`."""
     if to == TicketState.IN_PROGRESS:
+        # frob:ticket T-2760
+        _warn_if_finding_duplicate_at_start(root, ticket, queue)
         open_ids = _start_blockers(ticket, queue, root)
         if open_ids:
             _log.warning(

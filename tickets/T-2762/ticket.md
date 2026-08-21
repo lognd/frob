@@ -2,7 +2,7 @@
 id: T-2762
 title: Reproduce/fix xdist contention for 4 real-repo build_graph tests found by T-1654
   audit
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-2762: reproduce/fix xdist contention for 4 real-repo build_graph tests;
+    the only mechanical fix location is _SELF_SCAN_HEAVY_NAME_SUBSTRINGS in tests/conftest.py'
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null

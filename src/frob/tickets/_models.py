@@ -1628,6 +1628,27 @@ class Ticket(BaseModel):
     # enforce for their own bool+reason pair.
     runs_last_parallel_safe_reason: str | None = None
     scope: tuple[str, ...] = ()
+    # frob:ticket T-2760
+    # `(rule_id, file)` pair(s) this ticket declares itself to be ABOUT --
+    # the structured identity `_find_finding_duplicate` (T-2760) checks at
+    # `frob ticket new`/`start` time so two tickets can never silently own
+    # the same finding (title-based dedup, T-1744 above, is blind to this:
+    # a hand-written title and a sweep-generated one share no words even
+    # when both are about the exact same `(rule, file)`). Deliberately a
+    # SEPARATE field from `scope` -- `scope` is a write-lease/coverage
+    # claim over FILES, `findings` is a semantic claim about WHICH GATE
+    # FINDING in those files this ticket exists to resolve; a ticket can
+    # (and often does) have file scope with no declared finding at all
+    # (empty tuple, the default -- never checked, matching every other
+    # optional identity field's absence-means-uninvolved convention).
+    # Sorted, de-duplicated at construction so tuple order/repeats never
+    # affect equality. Settable via `frob ticket new --finding RULE FILE`
+    # (repeatable); `_file_regression_ticket` (rapid sweep auto-filing,
+    # `frob.app.ticket_runner._rapid_sweep`) populates this directly from
+    # its own already-structured `unfiled_pairs`, so the auto-filing path
+    # -- the one T-2760's incident showed diverges most from a hand-
+    # written title -- is covered by construction, not by parsing prose.
+    findings: tuple[tuple[str, str], ...] = ()
     # frob:ticket T-1944
     # paths that cover only PRE-EXISTING evidence this ticket cites --
     # never a write-lease claim, never checked by `_scope_add_conflicts`/
@@ -1922,6 +1943,12 @@ class TicketSpec(BaseModel):
     # frob:ticket T-0411
     priority: Priority = Priority.MEDIUM
     scope: tuple[str, ...] = ()
+    # frob:ticket T-2760
+    # see `Ticket.findings` -- settable at filing time via `frob ticket
+    # new --finding RULE FILE` (repeatable); normalized (sorted, de-duped)
+    # by `_normalize_findings` below so equality/lookup never depends on
+    # argument order or accidental repeats.
+    findings: tuple[tuple[str, str], ...] = ()
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
     # frob:ticket T-0715
@@ -2018,6 +2045,20 @@ class TicketSpec(BaseModel):
         the spec is turned into a `Ticket` -- see `_split_scope_entries`."""
         return _split_scope_entries(value)
 
+    # frob:ticket T-2760
+    @field_validator("findings", mode="before")
+    @classmethod
+    def _normalize_findings(
+        cls, value: Sequence[tuple[str, str] | Sequence[str]]
+    ) -> tuple[tuple[str, str], ...]:
+        """Sort and de-duplicate `findings` (T-2760) so two specs naming
+        the same `(rule, file)` pair(s) in a different order, or with an
+        accidental repeat, compare equal and hash-match the same way
+        `_normalize_scope`'s set-equal `scope` comparison already does --
+        `_find_finding_duplicate`'s overlap check depends on this being a
+        clean, order-independent set of pairs, not a raw argument list."""
+        return tuple(sorted({(str(rule), str(file)) for rule, file in value}))
+
     @field_validator("acceptance", mode="before")
     @classmethod
     def _coerce_acceptance_field(cls, value: Sequence[object]) -> list[dict | object]:
@@ -2089,6 +2130,10 @@ class TicketError(ErrorSet):
     # frob:ticket T-1744
     DuplicateTicket = (
         "an existing ticket already has this exact title and this exact scope"
+    )
+    # frob:ticket T-2760
+    DuplicateFinding = (
+        "an existing open ticket already declares this exact (rule, file) finding"
     )
     MalformedFrontmatter = "Ticket file failed schema validation"
     InvalidTransition = "State change not allowed by the state machine"

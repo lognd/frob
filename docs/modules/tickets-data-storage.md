@@ -94,6 +94,13 @@ class Ticket(BaseModel):
         # arbitrarily. Never blocks on its own at this stage (M1); M2's
         # MILE00x gates give it teeth.
     scope: tuple[str, ...]      # path globs and/or symrefs
+    findings: tuple[tuple[str, str], ...] = ()   # T-2760: (rule, file) gate-finding
+        # identity/ies this ticket exists to resolve -- `--finding RULE:FILE` at
+        # filing time, sorted/de-duped, checked cross-ticket for overlap (never
+        # exact-set equality) so two tickets can never silently own the same
+        # finding; see #symbolic-attribution-t-1690's sibling doc for how the
+        # rapid sweep's auto-filing path populates this directly from its own
+        # already-structured pairs
     evidence: tuple[str, ...]   # pytest node ids or policy rule ids
     kind_history: tuple[str, ...] = ()   # T-1616: `frob ticket kind` changes made
         # AFTER evidence/a Done report already existed, append-only, e.g.
@@ -123,6 +130,7 @@ class TicketSpec(BaseModel):    # input to new_ticket; id/created assigned
     origin: Origin
     priority: Priority = Priority.MEDIUM   # `frob ticket new --priority low|medium|high|critical`
     scope: tuple[str, ...] = ()
+    findings: tuple[tuple[str, str], ...] = ()   # T-2760: `--finding RULE:FILE` (repeatable)
     blocked_by: tuple[str, ...] = ()
     parent: str | None = None
     tier: TicketTier = TicketTier.TICKET   # T-0715

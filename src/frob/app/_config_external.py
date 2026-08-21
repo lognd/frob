@@ -350,6 +350,8 @@ _LIST_FIELDS = (
     "ticket_labels",
     "ticket_label_add",
     "ticket_label_remove",
+    # frob:ticket T-2760
+    "ticket_findings",
     # frob:ticket T-1029
     "ticket_accept_criterion",
     "test_lang",

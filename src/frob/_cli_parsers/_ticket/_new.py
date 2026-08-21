@@ -103,6 +103,18 @@ def _add_ticket_new_graph_args(ticket_new_p) -> None:
         help="freeform organizational tag, orthogonal to --component "
         "(repeatable, T-0454)",
     )
+    # frob:ticket T-2760
+    ticket_new_p.add_argument(
+        "--finding",
+        dest="ticket_findings",
+        action="append",
+        default=[],
+        metavar="RULE:FILE",
+        help="a 'RULE:FILE' gate-finding identity this ticket exists to "
+        "resolve (repeatable, T-2760); a second open ticket declaring the "
+        "SAME (rule, file) pair is refused at filing time and warned "
+        "about at start time, naming this one",
+    )
 
 
 # frob:ticket T-0030

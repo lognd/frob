@@ -391,6 +391,197 @@ class TestNewTicketExactDuplicateRefusal:
         assert result.is_ok
 
 
+# frob:ticket T-2760
+class TestNewTicketFindingDuplicateRefusal:
+    """T-2760: `frob ticket new` refuses a ticket that declares the same
+    `(rule, file)` finding identity as an already-open ticket -- a
+    DIFFERENT identity than `TestNewTicketExactDuplicateRefusal`'s
+    title+scope match, catching the case that check structurally cannot
+    (two tickets about the same finding whose titles share no words at
+    all, the real T-2757/T-2759 incident this ticket closes)."""
+
+    def test_same_finding_is_refused(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_same_finding\
+        # _is_refused
+        from frob.tickets import TicketSpec
+
+        first_spec = TicketSpec(
+            title="post-land sweep regression from an unattributed source",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("DOC011", "docs/modules/tickets-verify-sweep.md"),),
+        )
+        first = new_ticket(tmp_path, first_spec)
+        assert first.is_ok
+
+        second_spec = TicketSpec(
+            title="DOC011: docs/modules/tickets-verify-sweep.md cites "
+            "phantom T-2736 without a waiver",
+            kind=TicketKind.BUG,
+            origin=Origin.HUMAN,
+            findings=(("DOC011", "docs/modules/tickets-verify-sweep.md"),),
+        )
+        second = new_ticket(tmp_path, second_spec)
+        assert second.is_err
+        assert second.danger_err is TicketError.DuplicateFinding
+
+        # The original ticket alone still exists.
+        reloaded = load_queue(tmp_path)
+        assert reloaded.is_ok
+        assert set(reloaded.danger_ok.tickets) == {first.danger_ok.id}
+
+    def test_different_findings_in_the_same_file_are_both_allowed(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_different_fi\
+        # ndings_in_the_same_file_are_both_allowed
+        """File-level matching would be too coarse and would block
+        legitimate parallel work -- only an exact shared (rule, file)
+        pair is a duplicate (T-2760's own explicit positive control)."""
+        from frob.tickets import TicketSpec
+
+        first_spec = TicketSpec(
+            title="fix rule A on shared.py",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("RULEA", "src/shared.py"),),
+        )
+        assert new_ticket(tmp_path, first_spec).is_ok
+
+        second_spec = TicketSpec(
+            title="fix rule B on shared.py",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("RULEB", "src/shared.py"),),
+        )
+        assert new_ticket(tmp_path, second_spec).is_ok
+
+    def test_no_findings_declared_is_never_checked(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_no_findings_\
+        # declared_is_never_checked
+        from frob.tickets import TicketSpec
+
+        first_spec = TicketSpec(
+            title="fix rule A on shared.py",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("RULEA", "src/shared.py"),),
+        )
+        assert new_ticket(tmp_path, first_spec).is_ok
+
+        second_spec = TicketSpec(
+            title="unrelated ticket, no finding declared",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+        )
+        assert new_ticket(tmp_path, second_spec).is_ok
+
+    def test_done_finding_does_not_block_refiling(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_done_finding\
+        # _does_not_block_refiling
+        """A finding whose owning ticket already shipped is not currently
+        owned by anyone -- filing a fresh ticket against a regression of
+        the same (rule, file) must not be refused."""
+        from frob.tickets import TicketSpec
+        from frob.tickets._store import write_ticket
+
+        spec = TicketSpec(
+            title="fix rule A on shared.py",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("RULEA", "src/shared.py"),),
+            scope=("src/shared.py",),
+        )
+        first = new_ticket(tmp_path, spec)
+        assert first.is_ok
+        # Directly mark it DONE (bypassing the full transition guard's
+        # evidence/review machinery -- irrelevant to what this test
+        # verifies, which is purely the finding-duplicate check's
+        # DONE-exclusion behavior).
+        write_ticket(
+            tmp_path, first.danger_ok.model_copy(update={"state": TicketState.DONE})
+        )
+
+        second_spec = spec.model_copy(update={"title": "regression of rule A again"})
+        result = new_ticket(tmp_path, second_spec)
+        assert result.is_ok
+
+    def test_title_duplicate_check_still_works_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal.test_title_duplic\
+        # ate_check_still_works_unchanged
+        """The pre-existing title+scope duplicate check (T-1744) is
+        untouched by this ticket's finding-identity addition."""
+        from frob.tickets import TicketSpec
+
+        spec = TicketSpec(
+            title="Fix the widget",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            scope=("src/widget.py",),
+        )
+        assert new_ticket(tmp_path, spec).is_ok
+        result = new_ticket(tmp_path, spec)
+        assert result.is_err
+        assert result.danger_err is TicketError.DuplicateTicket
+
+
+# frob:ticket T-2760
+class TestTicketStartWarnsOnFindingDuplicate:
+    """T-2760: `frob ticket start` WARNS (does not refuse -- see
+    `_warn_if_finding_duplicate_at_start`'s own docstring for why) when
+    the ticket being started shares a declared finding with another still
+    -open ticket."""
+
+    def test_start_warns_and_names_the_other_ticket(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets.py::TestTicketStartWarnsOnFindingDuplicate.test_start_warn\
+        # s_and_names_the_other_ticket
+        import logging
+
+        from frob.tickets import TicketSpec
+        from frob.tickets._evidence import transition
+
+        first_spec = TicketSpec(
+            title="ticket one",
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            findings=(("RULEA", "src/shared.py"),),
+        )
+        first = new_ticket(tmp_path, first_spec)
+        assert first.is_ok
+
+        # Bypass the filing-time refusal directly against the store, to
+        # simulate two tickets that already both exist (e.g. filed before
+        # this check shipped) sharing a finding.
+        second_spec = first_spec.model_copy(
+            update={"title": "ticket two", "scope": ("src/other.py",)}
+        )
+        from frob.tickets._new_renumber import _allocate_and_write_new_ticket
+
+        second_created = _allocate_and_write_new_ticket(
+            tmp_path, second_spec, validated_evidence=()
+        )
+        assert second_created.is_ok
+        second_id = second_created.danger_ok.id
+
+        planned = transition(tmp_path, second_id, TicketState.PLANNED)
+        assert planned.is_ok
+        with caplog.at_level(logging.WARNING):
+            result = transition(tmp_path, second_id, TicketState.IN_PROGRESS)
+        assert result.is_ok
+        assert any(
+            "T-2760" in record.message and first.danger_ok.id in record.message
+            for record in caplog.records
+        )
+
+
 # frob:ticket T-1706
 class TestEvidenceValidation:
     """T-0102 companion fix: evidence is schema-validated at write time so a

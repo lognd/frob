@@ -1097,6 +1097,42 @@
       "old_digest": "ade4c0a8c6fe0a5bb50a9b55939a935a8627bd321219c2c0ae62671dcb71eb9d",
       "reason": "T-1606: limit param widened to int|None; resolves per-file width via resolve_line_length when caller passes None",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",
+      "old_digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "reason": "T-2760 added --finding RULE:FILE to this parser; docs/guides/agentic-workflow.md's general scope/frob:ticket discipline description is unaffected",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "old_digest": "73a8394b93a3eb650d7b27ee4b8f8e7931e21f3f068f806a7aaf366f386813ea",
+      "reason": "T-2760 added --finding RULE:FILE to this parser; docs/guides/agentic-workflow.md's general scope/frob:ticket discipline description is unaffected",
+      "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "9aa79af00a486c6e8f4c1459ef018735cc474953a9a7d87b2f673c4e7930d2bf",
+      "old_digest": "cdb31b52234867975d256d06b39b505c2290ed25c8a9c7e385f97cc19b8810c4",
+      "reason": "T-2760 added findings=tuple(unfiled_pairs) to the filed TicketSpec; docs/modules/tickets-verify-sweep.md's description of this function's attribution/filing behavior still holds",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "old_digest": "cee84626020dbb6167977ea0e8887e7584bd72fb91ac175a19eb3cd5d6267eb2",
+      "reason": "T-2760 added findings=tuple(unfiled_pairs) to the filed TicketSpec; docs/modules/tickets-verify-sweep.md's description of this function's attribution/filing behavior still holds",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     }
   ],
   "entries": [
@@ -1121,7 +1157,7 @@
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
     },
     {
-      "digest": "b559512bf64ac322e392dc12d12b9785262239ede36e5c00f8d6c0fd720ab73e",
+      "digest": "8b4839e124f77beed2ab03eb17366061cd1c715f584ce248c72d365ddcd492ec",
       "facet": "body",
       "ref": "src/frob/_cli_parsers/_ticket/_new.py::_add_ticket_new_parser"
     },
@@ -1191,7 +1227,7 @@
       "ref": "src/frob/app/ticket_runner/_lifecycle.py::_refuse_on_scope_lease_collision"
     },
     {
-      "digest": "cdb31b52234867975d256d06b39b505c2290ed25c8a9c7e385f97cc19b8810c4",
+      "digest": "9aa79af00a486c6e8f4c1459ef018735cc474953a9a7d87b2f673c4e7930d2bf",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_file_regression_ticket"
     },

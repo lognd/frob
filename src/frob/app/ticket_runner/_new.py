@@ -278,6 +278,36 @@ def _resolve_new_acceptance(cfg: AppConfig) -> list[str]:
     return list(cfg.ticket_acceptance)
 
 
+# frob:ticket T-2760
+def _resolve_new_findings(cfg: AppConfig) -> list[tuple[str, str]]:
+    """Parse `--finding RULE:FILE` (repeatable, `cfg.ticket_findings`)
+    into `(rule, file)` pairs for `TicketSpec.findings` (T-2760). Exits 1
+    naming the malformed entry if any lacks a `:` separator -- a silent
+    drop here would leave the filer believing their finding identity was
+    recorded when it was not, defeating the whole duplicate-detection
+    point of the flag. `FILE` may itself contain `:` (rare but possible
+    on some filesystems/URIs); `split(":", 1)` splits on the FIRST colon
+    only, so only `RULE` is ever assumed colon-free."""
+    pairs: list[tuple[str, str]] = []
+    for entry in cfg.ticket_findings:
+        if ":" not in entry:
+            _log.error(
+                "ticket new: --finding %r is not 'RULE:FILE' shaped "
+                "(missing ':')",
+                entry,
+            )
+            sys.exit(1)
+        rule, _, file = entry.partition(":")
+        if not rule or not file:
+            _log.error(
+                "ticket new: --finding %r has an empty RULE or FILE half",
+                entry,
+            )
+            sys.exit(1)
+        pairs.append((rule, file))
+    return pairs
+
+
 # frob:ticket T-1960
 def _resolve_new_priority(root: Path, cfg: AppConfig) -> Priority:
     """Resolve `frob ticket new`'s priority: an explicit `--priority`
@@ -336,6 +366,8 @@ def _ticket_spec_from_cfg(
         # frob:ticket T-1960
         priority=_resolve_new_priority(root, cfg),
         scope=tuple(cfg.ticket_scope),
+        # frob:ticket T-2760
+        findings=tuple(_resolve_new_findings(cfg)),
         blocked_by=tuple(cfg.ticket_blocked_by),
         parent=cfg.ticket_parent,
         # frob:ticket T-0715

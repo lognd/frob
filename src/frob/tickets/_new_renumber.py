@@ -285,6 +285,8 @@ def _ticket_from_spec(
         # frob:ticket T-2574
         milestone=spec.milestone,
         scope=spec.scope,
+        # frob:ticket T-2760
+        findings=spec.findings,
         evidence=evidence,
         attachments=(),
         acceptance=spec.acceptance,
@@ -396,6 +398,106 @@ def _refuse_exact_duplicate(root: Path, spec: TicketSpec) -> Result[None, Ticket
     return Err(TicketError.DuplicateTicket)
 
 
+# frob:ticket T-2760
+def _normalize_finding_file(root: Path, file: str) -> str:
+    """Collapse `file` to repo-relative POSIX form when it resolves under
+    `root`, unchanged otherwise -- the same normalization T-2036's
+    `frob.app.ticket_runner._rapid_sweep._normalize_identity_file` applies
+    for the identical reason (an absolute-path finding and a repo-relative
+    finding for the SAME file must never be treated as two different
+    `(rule, file)` identities). Duplicated here rather than imported: that
+    function lives in the `app` layer, which `frob.tickets` must not
+    depend on (layering), and the algorithm is a self-contained few lines
+    with no shared state to desync."""
+    path = Path(file)
+    if not path.is_absolute():
+        return path.as_posix()
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+# frob:ticket T-2760
+def _find_finding_duplicate(root: Path, spec: TicketSpec) -> Ticket | None:
+    """The first currently-open (not `done`/`dropped`) ticket that already
+    declares at least one `(rule, file)` pair also present in `spec.
+    findings`, or `None` if `spec.findings` is empty or no such ticket
+    exists (T-2760).
+
+    This is a DIFFERENT identity than `_find_exact_duplicate`'s title+scope
+    match, and catches a case that check structurally cannot: T-2760's own
+    incident had two tickets file and land a fix for the same DOC011
+    finding on the same file, with titles sharing no words at all -- one
+    hand-written, one sweep-generated prose. `_find_exact_duplicate` never
+    fires there (titles differ, always); this checks the STRUCTURED
+    `findings` field instead, which both a human `--finding RULE FILE`
+    flag and the sweep's auto-filing path populate directly from the same
+    `(rule, file)` pair, never from parsing prose.
+
+    Overlap is on ANY shared pair, not exact-set equality (unlike `_find_
+    exact_duplicate`'s `scope`): a ticket declaring findings {A, B} and one
+    declaring {B, C} share ownership of B and must not both be allowed to
+    stand, even though their sets differ. A ticket legitimately owning
+    several DISTINCT findings in the same FILE (different rule ids) is
+    unaffected -- the pairs themselves must match, not just the file, per
+    T-2760's own explicit "different findings in the same file are not
+    duplicates" positive control.
+
+    DONE/DROPPED tickets are excluded, same reasoning as `_find_exact_
+    duplicate`: a finding whose owning ticket already shipped or was
+    dropped is not currently owned by anyone, so filing a fresh ticket
+    against it (e.g. a regression) is legitimate, not a duplicate. Best-
+    effort: an unreadable ledger returns `None`, matching `_find_exact_
+    duplicate`'s own "never block filing on a read failure" posture."""
+    from frob.tickets._store import load_all
+
+    if not spec.findings:
+        return None
+    from frob.tickets._models import TicketState as _TicketState
+
+    loaded = load_all(root)
+    if loaded.is_err:
+        return None
+    wanted = frozenset(
+        (rule, _normalize_finding_file(root, file)) for rule, file in spec.findings
+    )
+    for ticket in loaded.danger_ok.values():
+        if ticket.state in (_TicketState.DONE, _TicketState.DROPPED):
+            continue
+        theirs = frozenset(
+            (rule, _normalize_finding_file(root, file))
+            for rule, file in ticket.findings
+        )
+        if theirs & wanted:
+            return ticket
+    return None
+
+
+# frob:ticket T-2760
+def _refuse_finding_duplicate(root: Path, spec: TicketSpec) -> Result[None, TicketError]:
+    """`new_ticket`'s finding-identity refusal step (T-2760), the `spec.
+    findings` twin of `_refuse_exact_duplicate`: `Err(TicketError.
+    DuplicateFinding)` (logged, naming the existing ticket and the shared
+    pair) when `_find_finding_duplicate` finds a match, `Ok(None)`
+    otherwise (including when `spec.findings` is empty -- a ticket that
+    declares no finding identity is never checked or blocked by this
+    rule)."""
+    duplicate = _find_finding_duplicate(root, spec)
+    if duplicate is None:
+        return Ok(None)
+    shared = sorted(frozenset(spec.findings) & frozenset(duplicate.findings))
+    _log.error(
+        "tickets: refusing to file %r -- %s already declares finding(s) %s "
+        "(drop or reuse %s instead of double-owning the same finding)",
+        spec.title,
+        duplicate.id,
+        shared,
+        duplicate.id,
+    )
+    return Err(TicketError.DuplicateFinding)
+
+
 # frob:ticket T-1813
 def _validate_new_ticket_spec(
     root: Path, spec: TicketSpec, collected: frozenset[str] | None
@@ -446,6 +548,10 @@ def _validate_new_ticket_spec(
     duplicate_check = _refuse_exact_duplicate(root, spec)
     if duplicate_check.is_err:
         return Err(duplicate_check.danger_err)
+    # frob:ticket T-2760
+    finding_check = _refuse_finding_duplicate(root, spec)
+    if finding_check.is_err:
+        return Err(finding_check.danger_err)
     validated = _validate_evidence_list(spec.evidence)
     if validated.is_err:
         return Err(validated.danger_err)

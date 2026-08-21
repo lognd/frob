@@ -900,6 +900,11 @@ class AppConfig(BaseModel):
     ticket_labels: list[str] = []
     ticket_label_add: list[str] = []
     ticket_label_remove: list[str] = []
+    # frob:ticket T-2760
+    # `frob ticket new --finding RULE:FILE` (repeatable) -- each entry a
+    # 'RULE:FILE' string, split into a `(rule, file)` pair by `_new.py`'s
+    # `_ticket_spec_from_cfg` before it reaches `TicketSpec.findings`.
+    ticket_findings: list[str] = []
     # frob:ticket T-1029
     # `frob ticket accept <id> --criterion TEXT... | --criterion-file PATH`
     # -- append acceptance criteria to an EXISTING ticket (only `ticket new

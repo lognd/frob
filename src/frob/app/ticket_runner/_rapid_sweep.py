@@ -2196,6 +2196,17 @@ def _file_regression_ticket(
                 }
             )
         ),
+        # frob:ticket T-2760
+        # populate the structured finding identity directly from the same
+        # `unfiled_pairs` this function already computed -- the T-2760
+        # incident this closes was two tickets filing for the SAME
+        # (rule, file) with titles sharing no words at all, and one of
+        # them was exactly this auto-filing path; a hand-written ticket
+        # filed for the same pair afterward is now caught by `_refuse_
+        # finding_duplicate` at filing time, and a start-time race is
+        # caught by `_warn_if_finding_duplicate_at_start`, without either
+        # check ever having to parse this function's generated prose.
+        findings=tuple(unfiled_pairs),
         body=body,
     )
     # T-1758: new_ticket now auto-commits internally by default -- opt

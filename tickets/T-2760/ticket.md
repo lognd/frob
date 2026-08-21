@@ -2,7 +2,7 @@
 id: T-2760
 title: 'Two tickets can own the same (rule, file) finding: the duplicate check compares
   titles, not finding identity'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -108,6 +108,13 @@ scope_changes:
   reason: T-2760 acks two DRIFT001 digests it moved
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal::test_same_finding_is_refused
+- tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal::test_different_findings_in_the_same_file_are_both_allowed
+- tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal::test_no_findings_declared_is_never_checked
+- tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal::test_done_finding_does_not_block_refiling
+- tests/test_tickets.py::TestNewTicketFindingDuplicateRefusal::test_title_duplicate_check_still_works_unchanged
+- tests/test_tickets.py::TestTicketStartWarnsOnFindingDuplicate::test_start_warns_and_names_the_other_ticket
 designated_repro_test: null
 threat: null
 component: null
