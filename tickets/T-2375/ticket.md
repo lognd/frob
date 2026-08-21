@@ -15,6 +15,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_arch.py
+- tests/unit/test_arch_srp.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
     _arch.py's _ERROR_SEVERITY_CATEGORIES (adding 'large-file'); the actual per-file
     split/waive work is delegated to 8 child batch tickets (--parent T-2375), each
     independently scoped and landed
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_arch_srp.py
+  reason: T-2375's promotion step (large-file -> Severity.ERROR) needs a test asserting
+    the new severity; covers arch_gate's existing test file
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
