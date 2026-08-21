@@ -26,6 +26,7 @@ scope:
 - tests/unit/verify/test_backpressure.py
 - src/frob/gates/_waive.py
 - docs/modules/process.md
+- docs/modules/gates.md
 evidence_scope:
 - tests/unit/test_parse.py
 scope_breadth_ack: false
@@ -92,6 +93,11 @@ scope_changes:
 - op: add
   glob: docs/modules/process.md
   reason: GATERULE001 registry entry + AFFECT001 doc closure for I001 promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: DOCENUM001 member-list update for I001 registry addition
   actor: logan
   at: '2026-08-21'
 evidence:
