@@ -21,6 +21,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: declare no-behavior-change per BUG002's remedy option 2 -- comment-only
+    diff, confirmatory evidence is correct here
+  actor: logan
+  at: '2026-08-21'
+  old_length: 2458
+  new_length: 2787
 evidence:
 - tests/unit/strata/test_fragments.py::TestResolveFragments::test_widens_existing_grant
 designated_repro_test: null
@@ -71,3 +79,5 @@ lands. Each of those needs its own individual read (public-caller-move,
 or a justified per-symbol waiver, on the vet.md precedent) before a fix
 is safe to land -- not attempted here to keep this batch's verification
 real rather than broad.
+
+frob:no-behavior-change reason="removes 7 duplicate frob:doc comments from private helper functions; the same doc anchor already exists on the public resolve_fragments entry point and SealedGrantSet class that these helpers implement, so no documented behavior, doc coverage, or runtime code path changes -- comment-only diff"
