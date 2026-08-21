@@ -465,7 +465,8 @@ class TestResolveMergeTargetKnownIds:
         from frob.tickets._models import TicketError
 
         monkeypatch.setattr(
-            "frob.tickets.load_active", lambda _root: Err(TicketError.MalformedFrontmatter)
+            "frob.tickets.load_active",
+            lambda _root: Err(TicketError.MalformedFrontmatter),
         )
         result = _resolve_merge_target_known_ids(repo)
         assert result.measured is False
@@ -485,7 +486,8 @@ class TestResolveMergeTargetKnownIds:
         from frob.tickets._models import TicketError
 
         monkeypatch.setattr(
-            "frob.tickets._store.load_archive", lambda _root: Err(TicketError.MalformedFrontmatter)
+            "frob.tickets._store.load_archive",
+            lambda _root: Err(TicketError.MalformedFrontmatter),
         )
         result = _resolve_merge_target_known_ids(repo)
         assert result.measured is False
@@ -1193,7 +1195,10 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         )  # must not raise
 
     def test_unmeasurable_diff_reports_skipped_unmeasured_and_lands(
-        self, repo: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+        self,
+        repo: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         # frob:tests tests/test_ticket_work_and_land_finish.py::TestAssertDiffDoesNotAddNewFileLocalErrors.test_unmeasurable_diff_reports_skipped_unmeasured_and_lands  # noqa: E501
         # T-2255's own lesson applied here: a comparison that cannot be
@@ -1218,9 +1223,7 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
             _assert_diff_does_not_add_new_file_local_errors_pre_land(
                 repo, "T-2280", frozenset({"src/printer2.py"})
             )  # must not raise
-        assert any(
-            "SKIPPED-UNMEASURED" in record.message for record in caplog.records
-        )
+        assert any("SKIPPED-UNMEASURED" in record.message for record in caplog.records)
 
 
 # frob:ticket T-2285

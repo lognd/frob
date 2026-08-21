@@ -105,7 +105,9 @@ class TestRunScan:
 
         save_watermark(
             tmp_path,
-            WaiveAuditWatermark(commit_sha=head, audited_at=utc_now(), waivers_audited=1),
+            WaiveAuditWatermark(
+                commit_sha=head, audited_at=utc_now(), waivers_audited=1
+            ),
         )
 
         report = run_scan(tmp_path)
@@ -287,9 +289,7 @@ class TestCollisionSuspects:
             )
         ]
 
-        suspects = find_collision_suspects(
-            [waiver], kept, root=tmp_path
-        )
+        suspects = find_collision_suspects([waiver], kept, root=tmp_path)
 
         assert len(suspects) == 1
         assert suspects[0].rule == "DUP001"
@@ -318,9 +318,7 @@ class TestCollisionSuspects:
             )
         ]
 
-        suspects = find_collision_suspects(
-            [waiver], kept, root=tmp_path
-        )
+        suspects = find_collision_suspects([waiver], kept, root=tmp_path)
 
         assert suspects == ()
 
@@ -341,9 +339,7 @@ class TestCollisionSuspects:
         )
         kept: list[Violation] = []
 
-        suspects = find_collision_suspects(
-            [waiver], kept, root=tmp_path
-        )
+        suspects = find_collision_suspects([waiver], kept, root=tmp_path)
 
         assert suspects == ()
 
@@ -367,9 +363,7 @@ class TestCollisionSuspects:
             )
         ]
 
-        suspects = find_collision_suspects(
-            [waiver], kept, root=tmp_path
-        )
+        suspects = find_collision_suspects([waiver], kept, root=tmp_path)
 
         assert len(suspects) == 1
 
@@ -546,7 +540,17 @@ class TestClassifyWaiverLiveness:
             check=True,
         )
         subprocess.run(
-            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "x"],
+            [
+                "git",
+                "-c",
+                "user.email=t@t",
+                "-c",
+                "user.name=t",
+                "commit",
+                "-q",
+                "-m",
+                "x",
+            ],
             cwd=tmp_path,
             check=True,
         )
@@ -572,7 +576,6 @@ class TestClassifyWaiverLiveness:
             classify_waiver_liveness(waiver, report, tmp_path)
             is WaiverLiveness.NECESSARY
         )
-
 
 
 # frob:ticket T-2740

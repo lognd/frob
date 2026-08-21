@@ -196,7 +196,9 @@ class TestCurrentStatus:
         from frob.verify._watermark import WatermarkError
 
         monkeypatch.setattr(
-            backpressure_mod, "queue_status", lambda root: Err(WatermarkError.StoreCorrupt)
+            backpressure_mod,
+            "queue_status",
+            lambda root: Err(WatermarkError.StoreCorrupt),
         )
         ceilings = BackpressureCeilings(max_depth=1, max_age_s=None)
         result = current_status(tmp_path, ceilings)

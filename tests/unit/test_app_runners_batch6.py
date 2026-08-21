@@ -614,7 +614,11 @@ class TestJsonStdoutStructuralGuard:
 
     # frob:ticket T-2486
     def test_planted_print_inside_json_run_does_not_corrupt_payload(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys,
+        _real_console_handlers,
     ) -> None:
         """must-now-protect (T-2486 acceptance [0]): a deliberately
         planted `print()` inside the `--json` stage-running span must not
@@ -638,7 +642,11 @@ class TestJsonStdoutStructuralGuard:
 
     # frob:ticket T-2486
     def test_planted_print_still_reaches_stderr(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys,
+        _real_console_handlers,
     ) -> None:
         """must-still-inform (T-2486 acceptance [2]): the guard redirects
         the planted write to stderr rather than silently swallowing it --
@@ -661,7 +669,11 @@ class TestJsonStdoutStructuralGuard:
 
     # frob:ticket T-2486
     def test_legitimate_json_payload_is_byte_identical_with_guard_active(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys,
+        _real_console_handlers,
     ) -> None:
         """must-still-emit (T-2486 acceptance [1]): with the guard in
         place but nothing planted, `--json` output is unchanged from the
@@ -691,7 +703,11 @@ class TestJsonStdoutStructuralGuard:
 
     # frob:ticket T-2486
     def test_no_planted_print_no_stderr_noise(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys, _real_console_handlers
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys,
+        _real_console_handlers,
     ) -> None:
         """must-still-emit's idle-machine corollary: with nothing planted,
         the guard itself adds no stderr noise -- only a genuine stray

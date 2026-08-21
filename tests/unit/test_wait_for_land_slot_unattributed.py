@@ -29,18 +29,14 @@ class TestProbeUnattributedLandProcess:
         exactly the row `land_invocations()` silently drops -- must be
         reported as an unattributed land in progress."""
         rows = [_row("uv run frob ticket land --queue --worktree /repo")]
-        assert (
-            wait_for_land_slot.probe_unattributed_land_process(rows) is True
-        )
+        assert wait_for_land_slot.probe_unattributed_land_process(rows) is True
 
     def test_false_when_every_row_has_a_ticket_id(self) -> None:
         """A normal, fully-attributed `frob ticket land T-1234` row must
         not be reported as unattributed -- it is already correctly
         counted by the plain `LANDS IN FLIGHT` reading."""
         rows = [_row("uv run frob ticket land T-1234 --worktree /repo")]
-        assert (
-            wait_for_land_slot.probe_unattributed_land_process(rows) is False
-        )
+        assert wait_for_land_slot.probe_unattributed_land_process(rows) is False
 
     def test_false_when_no_rows_at_all(self) -> None:
         """No live land processes at all: never reported as unattributed

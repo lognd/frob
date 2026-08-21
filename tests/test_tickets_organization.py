@@ -464,7 +464,9 @@ class TestArchiveRefusesLiveWorktrees:
             "# Tickets\n\nCentral ledger managed by `frob ticket` -- one section per ticket.\n",
             encoding="utf-8",
         )
-        write_all(root, {ticket_id: _ticket(ticket_id=ticket_id, state=TicketState.DONE)})
+        write_all(
+            root, {ticket_id: _ticket(ticket_id=ticket_id, state=TicketState.DONE)}
+        )
 
     # frob:ticket T-1750
     def test_refuses_when_another_worktree_exists(self, tmp_path: Path) -> None:
@@ -540,7 +542,9 @@ class TestRunsLast:
         from frob.tickets import set_runs_last
 
         _init_git_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -650,13 +654,17 @@ class TestRunsLast:
         from frob.tickets import doable, load_queue, set_runs_last
 
         _init_git_repo(tmp_path)
-        spec_a = TicketSpec(title="audit a", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec_a = TicketSpec(
+            title="audit a", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created_a = new_ticket(tmp_path, spec_a)
         assert created_a.is_ok
         id_a = created_a.danger_ok.id
         assert set_runs_last(tmp_path, id_a, True).is_ok
 
-        spec_b = TicketSpec(title="audit b", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec_b = TicketSpec(
+            title="audit b", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created_b = new_ticket(tmp_path, spec_b)
         assert created_b.is_ok
         id_b = created_b.danger_ok.id
@@ -664,7 +672,9 @@ class TestRunsLast:
 
         queue = load_queue(tmp_path)
         assert queue.is_ok
-        candidates = {t.id for t in doable(queue.danger_ok, tmp_path, ignore_lease=True)}
+        candidates = {
+            t.id for t in doable(queue.danger_ok, tmp_path, ignore_lease=True)
+        }
         assert id_a in candidates
         assert id_b in candidates
 
@@ -717,7 +727,9 @@ class TestSetRunsLastParallelSafe:
         from frob.tickets import set_runs_last_parallel_safe
 
         _init_git_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -728,9 +740,7 @@ class TestSetRunsLastParallelSafe:
 
         result_blank = set_runs_last_parallel_safe(tmp_path, ticket_id, "   ")
         assert result_blank.is_err
-        assert (
-            result_blank.danger_err is TicketError.RunsLastParallelSafeReasonMissing
-        )
+        assert result_blank.danger_err is TicketError.RunsLastParallelSafeReasonMissing
 
     # frob:ticket T-2624
     def test_ack_sets_both_fields(self, tmp_path: Path) -> None:
@@ -739,7 +749,9 @@ class TestSetRunsLastParallelSafe:
         from frob.tickets import set_runs_last_parallel_safe
 
         _init_git_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -851,7 +863,9 @@ class TestRunsLastParallelSafeCli:
         from frob.tickets import load_queue
 
         _init_git_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -873,7 +887,9 @@ class TestRunsLastParallelSafeCli:
     # frob:ticket T-2624
     def test_cli_reason_missing_exits_nonzero(self, tmp_path: Path) -> None:
         _init_git_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id

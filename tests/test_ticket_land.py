@@ -7553,7 +7553,9 @@ class TestReverifyEvidenceForClose:
             },
         )
         with caplog.at_level("WARNING"):
-            result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+            result = ticket_runner._reverify_evidence_for_close(
+                tmp_path, self._ticket()
+            )
         assert result is False
         assert "evidence no longer passes when re-run" in caplog.text
         assert "could not be measured" not in caplog.text
@@ -7589,7 +7591,9 @@ class TestReverifyEvidenceForClose:
             },
         )
         with caplog.at_level("WARNING"):
-            result = ticket_runner._reverify_evidence_for_close(tmp_path, self._ticket())
+            result = ticket_runner._reverify_evidence_for_close(
+                tmp_path, self._ticket()
+            )
         assert result is False
         assert "could not be measured" in caplog.text
         assert "evidence no longer passes when re-run" not in caplog.text
@@ -8091,9 +8095,9 @@ class TestFinalizeRepairMarker:
             _land_mod._repair_stale_finalize_markers(repo)
 
         error_records = [r for r in caplog.records if r.levelname == "ERROR"]
-        assert any(
-            tid in r.message and str(wt) in r.message for r in error_records
-        ), [r.message for r in error_records]
+        assert any(tid in r.message and str(wt) in r.message for r in error_records), [
+            r.message for r in error_records
+        ]
         marker = _land_mod._finalize_repair_marker_path(repo, tid)
         assert not marker.exists()
 
@@ -8370,7 +8374,9 @@ class TestSigkillMidStaging:
         os.kill(proc.pid, signal.SIGKILL)
         proc.join(timeout=15)
         assert not proc.is_alive()
-        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        assert (
+            _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == before_main_sha
+        )
         marker_dir = repo / ".frob" / "land-repair"
         assert len(list(marker_dir.glob("*.json"))) == 1
 
@@ -8493,9 +8499,9 @@ class TestSigkillMidStaging:
         # brackets, so the reconciliation log (keyed to the marker's own
         # filename) names `tid`, not `final_id`.
         error_records = [r for r in caplog.records if r.levelname == "ERROR"]
-        assert any(
-            tid in r.message for r in error_records
-        ), [r.message for r in error_records]
+        assert any(tid in r.message for r in error_records), [
+            r.message for r in error_records
+        ]
         assert not marker_files[0].exists()
 
         # (3) reaches done on root exactly once, no regression.
@@ -8580,9 +8586,7 @@ class TestSigkillMidStaging:
         ready_path = repo.parent / "ready3.flag"
 
         ctx = multiprocessing.get_context("fork")
-        proc = ctx.Process(
-            target=_t2679b_child_land, args=(repo, tid, wt, ready_path)
-        )
+        proc = ctx.Process(target=_t2679b_child_land, args=(repo, tid, wt, ready_path))
         proc.start()
         deadline = time.monotonic() + 20
         while not ready_path.exists() and time.monotonic() < deadline:

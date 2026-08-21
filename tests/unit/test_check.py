@@ -1,6 +1,5 @@
 """Direct (non-CLI) unit tests for frob.check's public functions and CheckResult."""
 
-
 from __future__ import annotations
 
 import logging
@@ -593,7 +592,9 @@ class TestNativeStalenessResult:
         monkeypatch.setattr(
             "frob.strata.stale_natives", lambda root: ("not-empty-sentinel",)
         )
-        monkeypatch.setattr("frob.gates._native_autorebuild_disabled", lambda root: True)
+        monkeypatch.setattr(
+            "frob.gates._native_autorebuild_disabled", lambda root: True
+        )
         monkeypatch.setattr(
             "frob.strata.stale_native_warning",
             lambda root: "strata_core is stale: rebuild with `frob natives build`",
@@ -609,9 +610,7 @@ class TestNativeStalenessResult:
         assert any(d.code == "NATIVE001" for d in result.diagnostics)
         assert "strata_core" in result.summary
 
-    def test_fresh_native_is_not_a_violation(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_fresh_native_is_not_a_violation(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests src/frob/check/__init__.py::_native_staleness_result kind="unit"
         monkeypatch.setattr("frob.strata.stale_natives", lambda root: ())
 
@@ -769,14 +768,10 @@ class TestParseArtifactCacheWarmedBeforeGraphBuild:
         result = gates_mod.run_gates(cfg)
 
         assert result.is_err
-        expected_cache_path = str(
-            (tmp_path / ".frob" / "parse-artifacts.db").resolve()
-        )
+        expected_cache_path = str((tmp_path / ".frob" / "parse-artifacts.db").resolve())
         assert seen["env_at_load_inputs"] == expected_cache_path
 
-    def test_stamp_is_idempotent_across_both_call_sites(
-        self, tmp_path: Path
-    ) -> None:
+    def test_stamp_is_idempotent_across_both_call_sites(self, tmp_path: Path) -> None:
         # frob:tests \
         # src/frob/gates/__init__.py::_stamp_worker_parse_artifact_cache_env kind="unit"
         from frob.gates import _stamp_worker_parse_artifact_cache_env

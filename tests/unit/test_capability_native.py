@@ -212,7 +212,9 @@ class TestResolvedCandidatesThreading:
         before = scan_file_capabilities(caller)
         assert "exec" not in before
 
-        helper.write_text("import subprocess\n\ndef run(cmd):\n    subprocess.run(cmd)\n")
+        helper.write_text(
+            "import subprocess\n\ndef run(cmd):\n    subprocess.run(cmd)\n"
+        )
 
         after = scan_file_capabilities(caller)
         assert "exec" in after

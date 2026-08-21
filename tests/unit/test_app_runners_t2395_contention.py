@@ -107,7 +107,9 @@ class TestContentionCommand:
         t2 = _new(tmp_path, scope=["src.py"])
 
         out = _run_captured(
-            AppConfig(ticket_command="contention", ticket_path=tmp_path, ticket_json=True)
+            AppConfig(
+                ticket_command="contention", ticket_path=tmp_path, ticket_json=True
+            )
         )
         payload = json.loads(out)
         assert "entries" in payload
@@ -130,7 +132,9 @@ class TestContentionCommand:
         t3 = _new(tmp_path, scope=["b.py"])
 
         out = _run_captured(
-            AppConfig(ticket_command="contention", ticket_path=tmp_path, ticket_json=True)
+            AppConfig(
+                ticket_command="contention", ticket_path=tmp_path, ticket_json=True
+            )
         )
         payload = json.loads(out)
         assert len(payload["batches"]) == 1

@@ -453,9 +453,7 @@ def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
             )
             inline_wait_ceiling_s = _LAND_LOCK_DEFAULT_INLINE_WAIT_S
 
-    wait_budget_s = min(
-        _LAND_LOCK_TIMEOUT_S, inline_wait_ceiling_s, remaining_for_wait
-    )
+    wait_budget_s = min(_LAND_LOCK_TIMEOUT_S, inline_wait_ceiling_s, remaining_for_wait)
     _log.info(
         "land: %s=%.0fs declared -- lock-wait ceiling derived as "
         "min(%.0fs flat cap, %.0fs inline-wait ceiling, %.0fs - %.0fs "

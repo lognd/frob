@@ -1,7 +1,7 @@
 ---
 id: T-2821
 title: 'Reformat batch 16/N: 12 files pending ruff-format (T-2359 child)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -30,6 +30,10 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_tickets_organization.py::TestFieldRoundTrip::test_serialize_parse_round_trip
+- tests/unit/test_capability_native.py::TestScanPythonCapabilitiesParity::test_unparseable_source_returns_empty_not_a_crash
+- tests/unit/verify/test_backpressure.py::TestCeilingsForProfile::test_fortress_is_zero_depth_zero_age
 designated_repro_test: null
 threat: null
 component: null

@@ -224,7 +224,9 @@ class TestTick004QueueRot:
         )
         queue = TicketQueue(tickets={stale.id: stale})
         violations = _tick004_queue_rot(tmp_path, queue)
-        matches = [v for v in violations if v.rule == "TICK004" and "T-1614" in v.message]
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-1614" in v.message
+        ]
         assert len(matches) == 1
         assert "runs_last" in matches[0].message
         assert "RunsLastBlocked" in matches[0].message
@@ -255,7 +257,9 @@ class TestTick004QueueRot:
         )
         queue = TicketQueue(tickets={epic.id: epic, child.id: child})
         violations = _tick004_queue_rot(tmp_path, queue)
-        matches = [v for v in violations if v.rule == "TICK004" and "T-1623" in v.message]
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-1623" in v.message
+        ]
         assert len(matches) == 1
         assert "already decomposed" in matches[0].message
         assert "work it" not in matches[0].message
@@ -275,7 +279,9 @@ class TestTick004QueueRot:
         )
         queue = TicketQueue(tickets={epic.id: epic})
         violations = _tick004_queue_rot(tmp_path, queue)
-        matches = [v for v in violations if v.rule == "TICK004" and "T-3003" in v.message]
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3003" in v.message
+        ]
         assert len(matches) == 1
         assert "work it" in matches[0].message
 
@@ -301,7 +307,9 @@ class TestTick004QueueRot:
         )
         queue = TicketQueue(tickets={epic.id: epic, child.id: child})
         violations = _tick004_queue_rot(tmp_path, queue)
-        matches = [v for v in violations if v.rule == "TICK004" and "T-3004" in v.message]
+        matches = [
+            v for v in violations if v.rule == "TICK004" and "T-3004" in v.message
+        ]
         assert len(matches) == 1
         assert "work it" in matches[0].message
 
@@ -357,9 +365,7 @@ class TestSetPriorityLandInProgressGuard:
             lambda root, **_kw: original(root, wait_timeout_s=0),
         )
         try:
-            result = set_priority(
-                tmp_path, ticket_id, Priority.CRITICAL, reason="test"
-            )
+            result = set_priority(tmp_path, ticket_id, Priority.CRITICAL, reason="test")
             assert result.is_err
             assert result.danger_err == LeaseError.LandInProgress
 
