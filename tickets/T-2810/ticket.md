@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 989c4efa5f96edf1f435b4d48cc5815cb4191953
 ---
 Batch 1/N of T-2370 (Burn COV006/COV007 WARN gates to zero, then promote
 to error). Batched per the T-2359/T-2373 precedent: real narrow scope per
