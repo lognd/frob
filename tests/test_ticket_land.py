@@ -10773,6 +10773,156 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         assert result.danger_ok == _LAND_LOCK_TIMEOUT_S
 
 
+class TestLandLockInlineWaitDefaultsNearZero:
+    """T-2816: waiting OUTSIDE a land (the caller's own
+    `wait_for_land_slot.py` poll loop, run before `frob ticket land` ever
+    starts) is free; waiting INSIDE a land spends the exact work-time
+    budget `FROB_LAND_DEADLINE_S` declared. T-2774's
+    `min(_LAND_LOCK_TIMEOUT_S, deadline - estimated_work_s)` could still
+    burn up to 500s of a 540s deadline queueing -- measured 2026-08-21: a
+    land parked 177s elapsed at 51s CPU (29%) then was SIGKILLed once it
+    finally got the lock. These tests pin the fix: the DEFAULT in-land
+    wait ceiling is now near-zero, with an explicit env opt-in preserved
+    for a caller that cannot poll externally (none exists in this repo
+    today, per the module-level comment's own audit)."""
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_ample_dead\
+    # line_defaults_to_the_near_zero_ceiling_not_the_flat_500s
+    # frob:ticket T-2816
+    def test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control (direction 1): with a generous declared
+        deadline and NO `FROB_LAND_INLINE_WAIT_S` opt-in, the resolved
+        wait budget is the near-zero default -- not `_LAND_LOCK_TIMEOUT_S`
+        -- so the vast majority of the declared deadline is left for the
+        land's own work when it begins, rather than spent queueing."""
+        from frob.tickets._land import (
+            _LAND_LOCK_DEFAULT_INLINE_WAIT_S,
+            _LAND_LOCK_TIMEOUT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.delenv("FROB_LAND_INLINE_WAIT_S", raising=False)
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == _LAND_LOCK_DEFAULT_INLINE_WAIT_S
+        assert result.danger_ok < _LAND_LOCK_TIMEOUT_S
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env\
+    # _restores_a_longer_in_land_wait
+    # frob:ticket T-2816
+    def test_opt_in_env_restores_a_longer_in_land_wait(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A caller that genuinely cannot poll externally is not
+        foreclosed: `FROB_LAND_INLINE_WAIT_S` opts back into a longer
+        in-land wait, still bounded by the flat ceiling and by the
+        remaining budget."""
+        from frob.tickets._land import (
+            _LAND_LOCK_DEFAULT_INLINE_WAIT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+        monkeypatch.setenv("FROB_LAND_INLINE_WAIT_S", "50")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == 50.0
+        assert result.danger_ok > _LAND_LOCK_DEFAULT_INLINE_WAIT_S
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env\
+    # _is_still_capped_by_the_remaining_budget
+    # frob:ticket T-2816
+    def test_opt_in_env_is_still_capped_by_the_remaining_budget(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The opt-in cannot be used to reintroduce T-2774's regression:
+        even an explicit request for a long in-land wait is still capped
+        by whatever budget actually remains after the work estimate, not
+        granted outright."""
+        from frob.app._check_chunking import _derive_post_land_sweep_budget_s
+        from frob.tickets._land import _resolve_land_lock_wait_budget_s
+
+        estimated_work_s = _derive_post_land_sweep_budget_s(tmp_path)
+        tight_deadline_s = estimated_work_s + 5
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", str(tight_deadline_s))
+        monkeypatch.setenv("FROB_LAND_INLINE_WAIT_S", "500")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == pytest.approx(5.0)
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_unparseabl\
+    # e_inline_wait_env_falls_back_to_the_near_zero_default
+    # frob:ticket T-2816
+    def test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A malformed `FROB_LAND_INLINE_WAIT_S` must not brick landing --
+        same posture as `FROB_LAND_DEADLINE_S`'s own unparseable-value
+        handling: log and fall back, never raise."""
+        from frob.tickets._land import (
+            _LAND_LOCK_DEFAULT_INLINE_WAIT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+        monkeypatch.setenv("FROB_LAND_INLINE_WAIT_S", "not-a-number")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == _LAND_LOCK_DEFAULT_INLINE_WAIT_S
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero.test_held_lock_\
+    # released_quickly_leaves_almost_the_whole_deadline_for_work
+    # frob:ticket T-2816
+    def test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End-to-end positive control: plant a HELD lock (a foreign
+        holder), then resolve+acquire exactly as `land()` does, and
+        assert on the wall-clock actually spent waiting -- it must stay
+        near the near-zero ceiling, not balloon toward the deadline, even
+        though a real foreign holder existed and was waited out."""
+        import threading
+        import time as _time
+
+        from frob.tickets._land import _land_lock, _resolve_land_lock_wait_budget_s
+
+        monkeypatch.delenv("FROB_LAND_INLINE_WAIT_S", raising=False)
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+
+        release_after_s = 2.0
+        release_event = threading.Event()
+
+        def _hold_then_release() -> None:
+            with _land_lock(tmp_path):
+                release_event.wait(timeout=release_after_s + 5.0)
+
+        holder_thread = threading.Thread(target=_hold_then_release, daemon=True)
+        holder_thread.start()
+        _time.sleep(0.2)  # let the holder actually acquire first
+
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+
+        started_waiting = _time.monotonic()
+        release_event.set()
+        with _land_lock(tmp_path, timeout=result.danger_ok):
+            elapsed_waiting_s = _time.monotonic() - started_waiting
+        holder_thread.join(timeout=10.0)
+
+        # The wait must complete well inside the near-zero ceiling, not
+        # anywhere near the 100000s deadline -- this is the "budget
+        # actually remaining when work begins" the ticket asks to prove.
+        assert elapsed_waiting_s < 10.0, elapsed_waiting_s
+
+
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:
     """T-1804: `_unscoped_error_findings` -- the shared spawn both
     the deferred post-land sweep and `--land-parity` use -- must exclude

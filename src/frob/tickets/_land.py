@@ -256,11 +256,58 @@ _LAND_LOCK_POLL_S = 1.0
 #: opt-in and behavior does not regress for a caller that never sets it.
 _FROB_LAND_DEADLINE_ENV = "FROB_LAND_DEADLINE_S"
 
+# frob:ticket T-2816
+#: T-2816 root cause: waiting OUTSIDE a land (the caller's own
+#: `scripts/wait_for_land_slot.py` poll loop, run BEFORE `frob ticket
+#: land` even starts) costs the caller nothing -- it does not compete
+#: with `FROB_LAND_DEADLINE_S`. Waiting INSIDE a land (this module's own
+#: lock-acquire wait) is the opposite: every second spent here is a
+#: second `_land_locked`'s own work no longer has, out of the SAME
+#: declared budget. T-2774 bounded that inside-wait by `min(
+#: _LAND_LOCK_TIMEOUT_S, deadline - estimated_work_s)`, which can still
+#: be up to `_LAND_LOCK_TIMEOUT_S` (500s) of a 540s deadline -- measured
+#: 2026-08-21: a land sat 177s elapsed at 51s CPU (29%, parked on the
+#: lock, not computing), then was SIGKILLed mid-work once it finally
+#: acquired the lock with too little budget left.
+#:
+#: The only production caller of `land()` is `frob ticket land`
+#: (`frob.app.ticket_runner._land_cmd._land_core_invoke`), which is
+#: always invoked directly by an agent/coordinator shell per the agent
+#: playbook's recipe: `scripts/wait_for_land_slot.py --max-in-flight 0`
+#: FIRST (free, external, unbounded-by-this-deadline polling), THEN
+#: `timeout 540 frob ticket land`. No hook, CI trigger, or other non-
+#: interactive driver calls `land()` anywhere in this repo (checked
+#: `.claude/hooks/`, `scripts/`, and every production import of
+#: `frob.tickets.land`) -- every real caller already has, and already
+#: uses, a free external queue. So the default in-land wait, once a
+#: deadline IS declared, is now a small near-zero ceiling
+#: (`_LAND_LOCK_DEFAULT_INLINE_WAIT_S`) rather than up to the full
+#: `_LAND_LOCK_TIMEOUT_S`: it still covers the case where a foreign
+#: holder is about to release within a few seconds (avoids refusing a
+#: land that would have succeeded almost immediately), without spending
+#: the bulk of the caller's own work budget parked on a lock the caller
+#: could have waited out for free before ever starting this process.
+#:
+#: A caller that genuinely cannot poll externally (none exists today,
+#: but this must not be foreclosed structurally) can opt back into a
+#: longer in-land wait by setting `FROB_LAND_INLINE_WAIT_S` explicitly;
+#: absent that, and absent `FROB_LAND_DEADLINE_S` entirely, behavior is
+#: unchanged from before this ticket (T-2774's own non-regression
+#: contract: no declared deadline means the flat `_LAND_LOCK_TIMEOUT_S`,
+#: untouched).
+_LAND_LOCK_DEFAULT_INLINE_WAIT_S = 10.0
+# frob:ticket T-2816
+_FROB_LAND_INLINE_WAIT_ENV = "FROB_LAND_INLINE_WAIT_S"
+
 
 # frob:ticket T-2774
+# frob:ticket T-2816
 # frob:doc \
 # docs/modules/tickets-landing.md#declared-land-deadline-bounds-the-lock-wait-not-a-fla\
 # t-constant-t-2774
+# frob:doc \
+# docs/modules/tickets-landing.md#in-land-wait-defaults-near-zero----queueing-belongs-t\
+# o-the-caller-t-2816
 # frob:tests \
 # TestLandLockWaitBudgetFromDeclaredDeadline.test_no_declaration_keeps_the_flat_timeout\
 # _unchanged
@@ -276,6 +323,20 @@ _FROB_LAND_DEADLINE_ENV = "FROB_LAND_DEADLINE_S"
 # frob:tests \
 # TestLandLockWaitBudgetFromDeclaredDeadline.test_unparseable_deadline_falls_back_to_th\
 # e_flat_timeout
+# frob:tests \
+# TestLandLockInlineWaitDefaultsNearZero.test_ample_deadline_defaults_to_the_near_zero_\
+# ceiling_not_the_flat_500s
+# frob:tests \
+# TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env_restores_a_longer_in_land_wait
+# frob:tests \
+# TestLandLockInlineWaitDefaultsNearZero.test_opt_in_env_is_still_capped_by_the_remaini\
+# ng_budget
+# frob:tests \
+# TestLandLockInlineWaitDefaultsNearZero.test_unparseable_inline_wait_env_falls_back_to\
+# _the_near_zero_default
+# frob:tests \
+# TestLandLockInlineWaitDefaultsNearZero.test_held_lock_released_quickly_leaves_almost_\
+# the_whole_deadline_for_work
 def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
     """T-2774 root-cause fix: `_LAND_LOCK_TIMEOUT_S` (500s, a flat constant)
     bounds only the land.lock WAIT, but the caller's own outer wrapper
@@ -288,15 +349,29 @@ def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
 
     Fix: when the caller declares its remaining wall-clock budget via
     `FROB_LAND_DEADLINE_S` (seconds), the lock-wait ceiling passed to
-    `_land_lock` becomes `min(_LAND_LOCK_TIMEOUT_S, deadline -
-    estimated_work_s)` instead of the flat constant -- `estimated_work_s`
-    is `frob.app._check_chunking._derive_post_land_sweep_budget_s`'s own
+    `_land_lock` becomes `min(inline_wait_s, deadline -
+    estimated_work_s)` instead of the flat constant, where
+    `estimated_work_s` is
+    `frob.app._check_chunking._derive_post_land_sweep_budget_s`'s own
     measured-timing derivation (`.frob/check-budget-timing.json`), the
     SAME number `land()`'s own post-land sweep already budgets against
     (T-2715); reusing it rather than hardcoding a second estimate is
     deliberate -- this repo has already been bitten once by
     `_TRUE_COUNT_BUDGET_S` drifting from its twin (see that name's own
     history).
+
+    T-2816: `inline_wait_s` itself defaults to
+    `_LAND_LOCK_DEFAULT_INLINE_WAIT_S` (10s, "near-zero"), not the full
+    `_LAND_LOCK_TIMEOUT_S` (500s) T-2774 originally used here. Waiting
+    for a contended lock INSIDE a land spends the caller's own declared
+    work-time budget; waiting for it OUTSIDE (the caller's own
+    `scripts/wait_for_land_slot.py` poll loop, which every real caller
+    already runs first per the agent playbook) is free. A caller that
+    still needs a longer in-land wait -- e.g. one that genuinely cannot
+    poll externally, though no such caller exists in this repo today --
+    can opt in via `FROB_LAND_INLINE_WAIT_S` (seconds), which replaces
+    the 10s default but is still capped at `_LAND_LOCK_TIMEOUT_S` and at
+    the remaining budget, same as before.
 
     Returns `Ok(wait_budget_s)` -- the ceiling `land()` should pass to
     `_land_lock` as `timeout` -- when there is ANY positive time left to
@@ -362,13 +437,33 @@ def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
         )
         return Err(LandError.LandLockTimeout)
 
-    wait_budget_s = min(_LAND_LOCK_TIMEOUT_S, remaining_for_wait)
+    # frob:ticket T-2816
+    raw_inline_wait = os.environ.get(_FROB_LAND_INLINE_WAIT_ENV)
+    inline_wait_ceiling_s = _LAND_LOCK_DEFAULT_INLINE_WAIT_S
+    if raw_inline_wait is not None:
+        try:
+            inline_wait_ceiling_s = float(raw_inline_wait)
+        except ValueError:
+            _log.warning(
+                "land: %s=%r is not a number -- ignoring, in-land wait "
+                "ceiling stays the %.0fs default (T-2816)",
+                _FROB_LAND_INLINE_WAIT_ENV,
+                raw_inline_wait,
+                _LAND_LOCK_DEFAULT_INLINE_WAIT_S,
+            )
+            inline_wait_ceiling_s = _LAND_LOCK_DEFAULT_INLINE_WAIT_S
+
+    wait_budget_s = min(
+        _LAND_LOCK_TIMEOUT_S, inline_wait_ceiling_s, remaining_for_wait
+    )
     _log.info(
         "land: %s=%.0fs declared -- lock-wait ceiling derived as "
-        "min(%.0fs, %.0fs - %.0fs estimated work) = %.0fs (T-2774)",
+        "min(%.0fs flat cap, %.0fs inline-wait ceiling, %.0fs - %.0fs "
+        "estimated work) = %.0fs (T-2774/T-2816)",
         _FROB_LAND_DEADLINE_ENV,
         deadline_s,
         _LAND_LOCK_TIMEOUT_S,
+        inline_wait_ceiling_s,
         deadline_s,
         estimated_work_s,
         wait_budget_s,

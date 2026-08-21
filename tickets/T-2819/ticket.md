@@ -1,5 +1,5 @@
 ---
-id: T-draft-f239258d
+id: T-2819
 title: REF001/REF002 systematic collapse (glob entrypoints) + promote to error
 state: queued
 kind: bug

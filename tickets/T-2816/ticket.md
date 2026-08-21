@@ -2,7 +2,7 @@
 id: T-2816
 title: land-lock wait budget spends the caller's own work-time budget on queueing,
   not just measuring it
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'

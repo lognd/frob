@@ -1314,8 +1314,12 @@ work itself was fine and only contention killed it.
 Fix: a caller may declare its own remaining wall-clock budget via the
 `FROB_LAND_DEADLINE_S` environment variable (seconds). When set,
 `_resolve_land_lock_wait_budget_s` (`frob.tickets._land`) derives the
-lock-wait ceiling as `min(_LAND_LOCK_TIMEOUT_S, deadline -
-estimated_work_s)` instead of the flat constant. `estimated_work_s` reuses
+lock-wait ceiling as `min(inline_wait_ceiling_s, deadline -
+estimated_work_s)` instead of the flat constant, where
+`inline_wait_ceiling_s` is itself capped at `_LAND_LOCK_TIMEOUT_S` (see
+"In-land wait defaults near-zero" below for what sets it -- T-2816
+changed this from a flat `_LAND_LOCK_TIMEOUT_S` to a small default).
+`estimated_work_s` reuses
 `frob.app._check_chunking._derive_post_land_sweep_budget_s`'s own
 measured-timing derivation (`.frob/check-budget-timing.json`) rather than
 a second hardcoded estimate -- this repo has already been bitten once by
@@ -1350,6 +1354,57 @@ that never opts in), `_resolve_land_lock_wait_budget_s` returns
 `_LAND_LOCK_TIMEOUT_S` unchanged -- no regression for a caller that does
 not declare a deadline. A non-numeric value is logged and treated the same
 as absent, rather than bricking landing on a malformed opt-in.
+
+## In-land wait defaults near-zero -- queueing belongs to the caller (T-2816)
+
+T-2774 (above) fixed the SIGKILL-mid-work case, but left a second, milder
+defect in the same function: `min(_LAND_LOCK_TIMEOUT_S, deadline -
+estimated_work_s)` could still resolve to up to 500s of a caller's
+declared budget spent WAITING for the lock, not working. Measured
+2026-08-21: a land sat 177s elapsed at 51s CPU (29% -- parked on
+`land.lock`, not computing), then was SIGKILLed once it finally acquired
+the lock with too little of its own declared budget left to finish.
+
+The asymmetry driving the fix: waiting OUTSIDE a land -- the caller's own
+`scripts/wait_for_land_slot.py --max-in-flight 0` poll loop, run BEFORE
+`frob ticket land` is even invoked, per the agent playbook's landing
+recipe -- costs the caller nothing; it does not compete with
+`FROB_LAND_DEADLINE_S` at all. Waiting INSIDE a land, in `_land_lock`
+itself, spends exactly the budget the land's own work needs. A bounded
+but still large in-land wait is therefore worse for the caller than not
+starting the land process until the lock is free, unless the wait stays
+short.
+
+Before choosing a fix, every production caller of `land()` was audited
+(`frob.tickets.__init__` re-export, checked against every import site):
+the only one is `frob.app.ticket_runner._land_cmd._land_core_invoke`,
+reached exclusively through the `frob ticket land` CLI command, which the
+agent playbook already always drives as `wait_for_land_slot.py` (free,
+external, unbounded-by-this-deadline polling) followed by `timeout 540
+frob ticket land` (the in-process, budget-competing wait this section is
+about). No hook, CI trigger, or other non-interactive driver calls
+`land()` anywhere in this repo. Every real caller already has, and
+already uses, a free external queue -- so there is currently no caller
+this change would strand.
+
+Fix: `_resolve_land_lock_wait_budget_s` now defaults the in-land wait
+ceiling to `_LAND_LOCK_DEFAULT_INLINE_WAIT_S` (10s, "near-zero" -- long
+enough to catch a foreign holder about to release within a couple of
+poll intervals, short enough that it can never be the majority of a
+540s-class deadline) instead of the full `_LAND_LOCK_TIMEOUT_S`. The
+resolved ceiling becomes `min(_LAND_LOCK_TIMEOUT_S,
+inline_wait_ceiling_s, deadline - estimated_work_s)`. A hypothetical
+future caller that genuinely cannot poll externally is not foreclosed:
+setting `FROB_LAND_INLINE_WAIT_S` (seconds) opts back into a longer
+in-land wait, still capped by both `_LAND_LOCK_TIMEOUT_S` and the
+remaining budget -- it cannot be used to reintroduce T-2774's SIGKILL
+case. A non-numeric value is logged and treated the same as absent,
+matching `FROB_LAND_DEADLINE_S`'s own malformed-value handling.
+
+This changes behavior ONLY when `FROB_LAND_DEADLINE_S` is declared --
+without it, `_resolve_land_lock_wait_budget_s` still returns the flat
+`_LAND_LOCK_TIMEOUT_S` unchanged, per T-2774's own non-regression
+contract, which this fix does not touch.
 
 ## Root checkout write guard (T-1779)
 
