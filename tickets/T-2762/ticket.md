@@ -29,6 +29,14 @@ scope_changes:
     the only mechanical fix location is _SELF_SCAN_HEAVY_NAME_SUBSTRINGS in tests/conftest.py'
   actor: logan
   at: '2026-08-20'
+body_changes:
+- mode: append
+  reason: 'T-2762: waive BUG002 -- cross-process xdist lock contention cannot be asserted
+    by a deterministic unit test'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3276
+  new_length: 4366
 evidence:
 - tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 designated_repro_test: null
@@ -92,3 +100,5 @@ substrings to `_SELF_SCAN_HEAVY_NAME_SUBSTRINGS` in tests/conftest.py
 changes needed) with a comment following the T-1635 precedent. If it
 does NOT reproduce, close this out with that negative result recorded
 instead of adding speculative names.
+
+<!-- frob:waive BUG002 reason="the defect is real cross-process fcntl.flock contention over .frob/derived.lock under pytest-xdist scheduling load -- reproducible only by running many heavy full-repo-scan tests concurrently under real xdist worker processes (verified directly: -n 9 with all nine heavy tests crashed 3 workers, faulthandler trace caught one blocked in derived_state_lock/derived_state_write_lock), not something a deterministic unit test can assert a PASS/FAIL boundary for at a single commit. The existing evidence test (test_self_scan_heavy_tests_share_one_xdist_group) is a real, mechanical regression lock on the GROUPING MECHANISM itself (asserts every name in _SELF_SCAN_HEAVY_NAME_SUBSTRINGS, including the four just added, shares one xdist_group) -- it necessarily passes at both the parent and the fix commit because the mechanism it tests predates this ticket (T-1433); it cannot also encode 'these four names used to be absent'. This is the same class BUG002 itself names as a valid waiver case: a defect that cannot be reproduced in a deterministic test." -->
