@@ -361,15 +361,30 @@ def _wire_reach_patterns(
     re.Pattern[str], re.Pattern[str], re.Pattern[str] | None, re.Pattern[str] | None
 ]:
     """The four "reached" regexes `_is_reached_outside_diff_tests` scans
-    with: a plain call-shaped token, the T-1502/T-1532/T-1684
+    with: a plain call-shaped token, the T-1502/T-1532/T-1684/T-2778
     bare-name-argument shape (decorator/memoization wrapper markers, job-
-    table constructors, PLUS dict-table values -- all three pass the
-    symbol BY REFERENCE, not as a call),
+    table constructors, dict-table values, PLUS -- FUNCTION records only
+    -- a bare keyword-argument value -- all four pass the symbol BY
+    REFERENCE, not as a call),
     (CLASS records only, T-1527) the ErrorSet bare-member-access
     shape, and (T-2746, only when `is_property` is set) a property-
     shaped bare ATTRIBUTE-access alternative -- split out purely to keep
     the scanning function itself under ARCH001's line threshold, no
     behavior change from inlining beyond the new fourth pattern.
+
+    T-2778: `wrapper_pattern`'s keyword-argument-value alternative closes
+    the callback-argument gap the other three by-reference shapes miss --
+    a symbol passed as an ORDINARY call's keyword argument
+    (`on_tick=_print_tick`), not one of a fixed marker-name set, a
+    job-table constructor, or a dict-literal value. Deliberately reuses
+    this same pattern slot rather than adding a fifth sibling helper
+    beside `_is_property`/`_is_pytest_fixture` (T-2746/T-2753's own
+    mechanisms) -- this is the same "passed by reference, not called"
+    question those by-reference alternatives already answer, just one
+    more syntactic shape of it. Restricted to `kind ==
+    SymbolKind.FUNCTION` so it cannot rescue a CLASS passed the identical
+    way (T-1831's `formatter_class=_GroupedHelpFormatter` anchor, which
+    must keep firing WIRE001 on purpose).
 
     T-2746: a `@property`'s ONLY legal Python access shape is attribute
     access with no trailing call parens (`graph.degraded_languages`,
@@ -425,9 +440,31 @@ def _wire_reach_patterns(
     # `_TOOL_DISPATCH` in src/frob/serve/_socketd.py uses this exact
     # shape), so the value alternative also accepts an optional
     # `name.`-prefixed qualifier ahead of `short`, not just a bare name.
+    #
+    # T-2778: a fourth by-reference shape -- a bare-name KEYWORD-ARGUMENT
+    # VALUE (`on_tick=_print_tick`, `scripts/wait_for_land_slot.py`'s own
+    # `_print_tick` passed to `wait_for_slot`'s `on_tick=` parameter) --
+    # is the callback-argument case the wrapper-marker/job-table/dict-
+    # table alternatives above cannot see: none of them names a fixed
+    # marker function, a job-table constructor, or a dict literal, they
+    # are just an ordinary call passing the symbol by name as one of its
+    # OTHER arguments. Restricted to `kind == SymbolKind.FUNCTION` only
+    # (never CLASS, never METHOD) so this cannot rescue T-1831's
+    # `formatter_class=_GroupedHelpFormatter` anchor (a CLASS passed the
+    # identical way) -- that anchor must keep firing on purpose (its own
+    # docstring: "must never be closed"). A METHOD is excluded too since
+    # no evidenced instance of this shape exists for one yet and widening
+    # past the evidenced FUNCTION case would just be guessing.
+    keyword_arg_pattern = (
+        rf"|(?<![A-Za-z0-9_.])[A-Za-z_][A-Za-z0-9_]*\s*=\s*"
+        rf"{re.escape(short)}(?![A-Za-z0-9_])(?!\s*\()"
+        if kind == SymbolKind.FUNCTION
+        else ""
+    )
     wrapper_pattern = re.compile(
         rf"(?<![A-Za-z0-9_.])(?:{marker_names})\s*\(\s*{re.escape(short)}\s*[,)]"
         rf"|:\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?{re.escape(short)}\s*[,}}]"
+        rf"{keyword_arg_pattern}"
     )
     member_access_pattern = None
     if kind == SymbolKind.CLASS:

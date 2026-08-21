@@ -287,13 +287,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 # frob:ticket T-2775
-# frob:waive WIRE001 reason="called only indirectly, passed as the on_tick callback \
-# argument main hands to wait_for_slot -- the static call-graph walk this rule's \
-# detector runs sees a NAME reference, not a call expression, so it cannot resolve \
-# this as wired even though main's own body genuinely passes it as a live callback on \
-# every --verbose invocation; exercised directly by \
-# TestWaitForLandSlotMain::test_verbose_adds_per_tick_lines_to_stderr" \
-# follow_up="T-2778"
+# T-2778: WIRE001's wrapper_pattern now recognizes a bare keyword-argument
+# value (`on_tick=_print_tick` below, in `main`) as a by-reference wiring
+# shape, so the waiver this line used to carry is no longer needed.
 def _print_tick(reading: int | None, elapsed: float) -> None:
     """`--verbose`'s per-tick line, to STDERR (never stdout, so a caller
     scripting against this tool's exit code and stdout output never has

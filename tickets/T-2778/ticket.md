@@ -2,7 +2,7 @@
 id: T-2778
 title: WIRE001's call-graph walk cannot resolve a symbol wired only as a passed-by-name
   callback argument
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
