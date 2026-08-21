@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1baac70c39c519a4360f78b518820e50de5602f0
 ---
 `worktree_content_classification` (`scripts/fleet_status.py`, the
 `WORKTREES` section's STRANDED/STALE/ACTIVE verdict) resolves a worktree's
