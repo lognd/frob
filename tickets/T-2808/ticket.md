@@ -74,6 +74,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 21f1af5ea5af59d5d7d82ec993773daa3c21ed8a
 ---
 Batch 11 of the T-2359 ruff-format-only reformat epic. 13 files re-measured against current main via 'uv run ruff format --check .' (72 files remaining before this batch). Format-only, no semantic changes. Excludes files touched by other in-flight worktrees (T-2373 empty-scope epic rollup, T-2790 docs/investigations, T-2793 rapid_sweep/verify) per fleet_status.py lease check at pick time.
