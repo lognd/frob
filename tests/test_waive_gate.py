@@ -263,9 +263,7 @@ class TestWaive006CommentChannel:
         assert len(violations) == 1
         assert violations[0].rule == "WAIVE006"
 
-    def test_lease_premise_bound_to_open_ticket_is_silent(
-        self, tmp_path: Path
-    ) -> None:
+    def test_lease_premise_bound_to_open_ticket_is_silent(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
             '    # frob:waive COV001 reason="T-1279 holds a concurrent '
@@ -863,9 +861,7 @@ class TestWaive009TicketIdExtraction:
     WAIVE006's binding-phrase-only extraction."""
 
     def test_extracts_bare_mention(self) -> None:
-        assert _reason_ticket_ids("tracked in T-2620, will finish soon") == {
-            "T-2620"
-        }
+        assert _reason_ticket_ids("tracked in T-2620, will finish soon") == {"T-2620"}
 
     def test_extracts_multiple(self) -> None:
         assert _reason_ticket_ids("see T-0001 and T-0002") == {"T-0001", "T-0002"}
@@ -884,7 +880,7 @@ class TestWaive009Violations:
     def test_promise_with_no_ticket_id_errors(self, tmp_path: Path) -> None:
         source = (
             "def helper(x):\n"
-            "    # frob:waive AFFECT001 reason=\"a doc-update follow-up "
+            '    # frob:waive AFFECT001 reason="a doc-update follow-up '
             'ticket updates this once that lease clears"\n'
             "    return x\n"
         )

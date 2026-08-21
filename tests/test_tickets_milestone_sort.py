@@ -77,9 +77,7 @@ class TestEffectiveMilestone:
     def test_inherits_from_parent_story(self) -> None:
         """No own milestone, but the immediate parent (a story) has one:
         inherited, `declared=False`."""
-        story = _ticket(
-            ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0"
-        )
+        story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, milestone="1.1.0")
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
         queue = TicketQueue(tickets={story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("1.1.0", MilestoneSource.INHERITED)
@@ -88,13 +86,9 @@ class TestEffectiveMilestone:
         """Story has no milestone of its own, but the epic above IT does --
         the walk keeps climbing past one milestone-less ancestor."""
         epic = _ticket(ticket_id="T-EPIC", tier=TicketTier.EPIC, milestone="2.0.0")
-        story = _ticket(
-            ticket_id="T-STORY", tier=TicketTier.STORY, parent=epic.id
-        )
+        story = _ticket(ticket_id="T-STORY", tier=TicketTier.STORY, parent=epic.id)
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
-        queue = TicketQueue(
-            tickets={epic.id: epic, story.id: story, leaf.id: leaf}
-        )
+        queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("2.0.0", MilestoneSource.INHERITED)
 
     def test_nearest_ancestor_wins_over_farther_one(self) -> None:
@@ -108,9 +102,7 @@ class TestEffectiveMilestone:
             milestone="3.1.0",
         )
         leaf = _ticket(ticket_id="T-LEAF", parent=story.id)
-        queue = TicketQueue(
-            tickets={epic.id: epic, story.id: story, leaf.id: leaf}
-        )
+        queue = TicketQueue(tickets={epic.id: epic, story.id: story, leaf.id: leaf})
         assert effective_milestone(queue, leaf) == ("3.1.0", MilestoneSource.INHERITED)
 
     def test_no_milestone_anywhere_in_chain_is_none(self) -> None:
@@ -138,9 +130,7 @@ class TestDoableSortKey:
         """A LOW-priority v1.0 ticket must sort before a CRITICAL v1.1
         ticket while 1.0 is still shipping -- the exact scenario T-2577's
         own body names."""
-        low_v1 = _ticket(
-            ticket_id="T-1001", priority=Priority.LOW, milestone="1.0.0"
-        )
+        low_v1 = _ticket(ticket_id="T-1001", priority=Priority.LOW, milestone="1.0.0")
         critical_v1_1 = _ticket(
             ticket_id="T-1002", priority=Priority.CRITICAL, milestone="1.1.0"
         )
@@ -178,7 +168,7 @@ class TestDoableSortKey:
         assert [t.id for t in result] == ["T-4002", "T-4001"]
 
     def test_semver_numeric_not_lexical_ordering(self) -> None:
-        """"1.10.0" must outrank "1.9.0" -- a lexical compare gets this
+        """ "1.10.0" must outrank "1.9.0" -- a lexical compare gets this
         backwards ("1.10.0" < "1.9.0" as strings)."""
         v1_9 = _ticket(ticket_id="T-5001", milestone="1.9.0")
         v1_10 = _ticket(ticket_id="T-5002", milestone="1.10.0")

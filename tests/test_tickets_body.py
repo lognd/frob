@@ -52,7 +52,7 @@ class TestBodyAmend:
         result = set_body(
             tmp_path,
             ticket_id,
-            "frob:no-behavior-change reason=\"structural only\"",
+            'frob:no-behavior-change reason="structural only"',
             mode="append",
             reason="add directive found while working T-2393",
         )
@@ -206,7 +206,7 @@ class TestBodyCli:
             ticket_command="body",
             ticket_id=ticket_id,
             ticket_path=tmp_path,
-            ticket_body_append="frob:no-behavior-change reason=\"doc only\"",
+            ticket_body_append='frob:no-behavior-change reason="doc only"',
             ticket_body_reason="add directive via CLI",
         )
         _body(tmp_path, cfg)

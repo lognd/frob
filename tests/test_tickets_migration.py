@@ -445,7 +445,9 @@ class TestLedgerV1DeprecationGate:
         assert _ledgerv1001_violations(tmp_path) == ()
 
 
-_GOLDEN_LEDGER = Path(__file__).parent / "fixtures" / "tickets" / "golden-monofile-ledger.md"
+_GOLDEN_LEDGER = (
+    Path(__file__).parent / "fixtures" / "tickets" / "golden-monofile-ledger.md"
+)
 _GOLDEN_ARCHIVE = (
     Path(__file__).parent / "fixtures" / "tickets" / "golden-monofile-archive.md"
 )
@@ -605,7 +607,9 @@ class TestMigrateMissingV2:
         # exactly like a real repo that migrated a handful of tickets by
         # hand and then stalled.
         already = _done_ticket()
-        assert _migrate_one_v2(tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")).is_ok
+        assert _migrate_one_v2(
+            tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")
+        ).is_ok
         assert _store_mode(tmp_path) == "v2"
         assert migrate_v1_to_v2(tmp_path).danger_ok == 0  # confirms the gap this closes
 
@@ -631,9 +635,14 @@ class TestMigrateMissingV2:
         # on after being individually migrated, exactly like the 21 real
         # divergent tickets T-2355 must not touch.
         already = _done_ticket()
-        assert _migrate_one_v2(tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")).is_ok
+        assert _migrate_one_v2(
+            tmp_path, already, v2_ticket_dir(tmp_path, "T-0001")
+        ).is_ok
         diverged = already.model_copy(
-            update={"state": TicketState.IN_PROGRESS, "title": "diverged since migration"}
+            update={
+                "state": TicketState.IN_PROGRESS,
+                "title": "diverged since migration",
+            }
         )
         assert atomic_write(
             v2_ticket_dir(tmp_path, "T-0001") / "ticket.md", _serialize_ticket(diverged)

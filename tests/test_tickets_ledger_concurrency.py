@@ -387,9 +387,7 @@ class TestPromoteVsLandFinalizeAllocationRace:
         # fails and it degrades to the identical pure scan this test
         # exercised before -- this race is still proven by `allocator_lock`
         # alone (T-1669), unaffected by T-2122's shared-counter addition.
-        real_next_ticket_id_shared = (
-            frob.tickets._draft_finalize._next_ticket_id_shared
-        )
+        real_next_ticket_id_shared = frob.tickets._draft_finalize._next_ticket_id_shared
 
         def _pausing_next_ticket_id(root: Path, tickets: dict) -> str:
             call_count["n"] += 1
@@ -418,9 +416,7 @@ class TestPromoteVsLandFinalizeAllocationRace:
 
             def _run_land() -> None:
                 nonlocal result_land
-                result_land = finalize_draft_for_land(
-                    worktree, draft_land, main_root
-                )
+                result_land = finalize_draft_for_land(worktree, draft_land, main_root)
 
             thread_promote = threading.Thread(target=_run_promote)
             thread_land = threading.Thread(target=_run_land)

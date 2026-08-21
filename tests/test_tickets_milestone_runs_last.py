@@ -112,7 +112,9 @@ class TestRunsLastMilestoneScoping:
         last-in-the-repo."""
         last = _ticket(ticket_id="T-9101", runs_last=True, milestone="1.0.0")
         other_milestone = _ticket(ticket_id="T-9201", milestone="2.0.0")
-        queue = TicketQueue(tickets={last.id: last, other_milestone.id: other_milestone})
+        queue = TicketQueue(
+            tickets={last.id: last, other_milestone.id: other_milestone}
+        )
         result = doable(queue)
         assert last.id in {t.id for t in result}
 

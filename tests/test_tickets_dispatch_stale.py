@@ -220,11 +220,13 @@ class TestAlreadyLandedMarkers:
         src.mkdir()
         for i in range(5):
             (src / f"mod{i}.py").write_text("def f() -> None:\n    pass\n")
-        (src / "mod0.py").write_text("# frob:ticket T-0001\ndef f() -> None:\n    pass\n")
+        (src / "mod0.py").write_text(
+            "# frob:ticket T-0001\ndef f() -> None:\n    pass\n"
+        )
         ticket = _ticket(ticket_id="T-0001", scope=("src/**",))
         queue = TicketQueue(tickets={ticket.id: ticket})
         # threshold=1 makes "src/**" (matches 5 files) over-broad.
-        hits = already_landed_markers(queue, tmp_path, breadth=(1, tuple(
-            f"src/mod{i}.py" for i in range(5)
-        )))
+        hits = already_landed_markers(
+            queue, tmp_path, breadth=(1, tuple(f"src/mod{i}.py" for i in range(5)))
+        )
         assert hits == ()

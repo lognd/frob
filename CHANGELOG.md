@@ -271,6 +271,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2800: Burn ruff I001 batch 2: tests/ subset
 - T-2808: Reformat batch 11/N: 13 files pending ruff-format (T-2359 child)
 - T-2810: COV007 burn-down batch 1/N: src/frob/strata/_multifile.py duplicate doc anchors
+- T-2811: Reformat batch 12/N: 13 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 

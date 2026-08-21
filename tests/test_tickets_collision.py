@@ -6,7 +6,6 @@ checkouts/branches/worktrees must never merge into the same final id, with
 no human coordination.
 """
 
-
 from __future__ import annotations
 
 import subprocess
@@ -894,15 +893,15 @@ class TestRenumberOneV2:
         import logging
 
         self._v2_ticket(tmp_path, "T-0042")
-        self._v2_ticket(
-            tmp_path, "T-0043", body="## Done report\n\nFiled: T-0042\n"
-        )
+        self._v2_ticket(tmp_path, "T-0043", body="## Done report\n\nFiled: T-0042\n")
 
         with caplog.at_level(logging.WARNING, logger="frob.tickets"):
             result = renumber_one(tmp_path, "T-0042", "T-0099")
         assert result.is_ok, result.err
 
-        surfaced = [rec.message for rec in caplog.records if "NOT rewritten" in rec.message]
+        surfaced = [
+            rec.message for rec in caplog.records if "NOT rewritten" in rec.message
+        ]
         assert surfaced == []
 
 

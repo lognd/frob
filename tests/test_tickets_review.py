@@ -4,7 +4,6 @@
 `frob ticket close --strict` (CLI) (docs/modules/tickets.md#review-record).
 """
 
-
 from __future__ import annotations
 
 import subprocess

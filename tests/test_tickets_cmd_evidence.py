@@ -112,7 +112,9 @@ class TestSilentCmdEvidenceRefused:
         # frob:ticket T-1892
         # the exact T-1892 incident shape: a silent `grep -q` on a real,
         # existing match still produces empty stdout+stderr.
-        result = run_cmd_evidence("grep -q run_cmd_evidence tests/test_tickets_cmd_evidence.py")
+        result = run_cmd_evidence(
+            "grep -q run_cmd_evidence tests/test_tickets_cmd_evidence.py"
+        )
         assert result.is_err
         assert result.danger_err == TicketError.EvidenceCmdSilent
 
@@ -121,7 +123,9 @@ class TestSilentCmdEvidenceRefused:
         # frob:ticket T-1892
         # the sanctioned fix: `grep -c` (chatty, emits the count) over
         # `grep -q` (silent) for the exact same underlying check.
-        result = run_cmd_evidence("grep -c run_cmd_evidence tests/test_tickets_cmd_evidence.py")
+        result = run_cmd_evidence(
+            "grep -c run_cmd_evidence tests/test_tickets_cmd_evidence.py"
+        )
         assert result.is_ok
         assert result.danger_ok.startswith("cmd:grep -c run_cmd_evidence")
 

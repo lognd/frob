@@ -638,8 +638,7 @@ class TestScopeClaimReasonAndGrantOnUse:
         ticket = _make_ticket(tmp_path, scope=("src/frob/other/**",))
         assert ticket.kind is TicketKind.FEATURE
         assert (
-            _scope_claim_reason("src/frob/__main__.py", ticket)
-            == "implicit-cli-wiring"
+            _scope_claim_reason("src/frob/__main__.py", ticket) == "implicit-cli-wiring"
         )
 
     def test_unused_implicit_grant_not_explicitly_used(self, tmp_path: Path) -> None:

@@ -89,7 +89,9 @@ class TestSetParent:
 
         child = new_ticket(
             tmp_path,
-            TicketSpec(title="a leaf ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN),
+            TicketSpec(
+                title="a leaf ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+            ),
         )
         assert child.is_ok
         child_id = child.danger_ok.id
@@ -171,9 +173,7 @@ class TestSetParent:
         assert write_ticket(tmp_path, grandparent_epic).is_ok
         assert write_ticket(tmp_path, child_epic).is_ok
 
-        result = set_parent(
-            tmp_path, "T-0002", "T-0001", reason="nest epic under epic"
-        )
+        result = set_parent(tmp_path, "T-0002", "T-0001", reason="nest epic under epic")
         assert result.is_ok
         assert result.danger_ok.parent == "T-0001"
 
@@ -201,9 +201,7 @@ class TestSetParent:
         assert result.is_err
         assert result.danger_err is TicketError.ParentTicketReasonMissing
 
-    def test_moving_an_existing_parent_drops_the_old_edge(
-        self, tmp_path: Path
-    ) -> None:
+    def test_moving_an_existing_parent_drops_the_old_edge(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
         old_epic = _ticket(ticket_id="T-0001", tier=TicketTier.EPIC)
         new_epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
@@ -259,9 +257,7 @@ class TestSetParentNoOp:
     which is what produced the dirty working tree in the reported
     incident (combined with defect 1 below)."""
 
-    def test_reparenting_to_current_value_is_a_clean_noop(
-        self, tmp_path: Path
-    ) -> None:
+    def test_reparenting_to_current_value_is_a_clean_noop(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_parent.py::TestSetParentNoOp.test_reparenting_to_current_value_is_a_clean_noop  # noqa: E501
         epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
         leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")

@@ -219,7 +219,7 @@ class TestLiveTrackerCitations:
         be."""
         _init_repo(tmp_path)
         (tmp_path / "mod.py").write_text(
-            "# discharged: frob:quote(follow_up=\"T-0605\") is done, safe to "
+            '# discharged: frob:quote(follow_up="T-0605") is done, safe to '
             "remove\nx = 1\n",
             encoding="utf-8",
         )
@@ -235,7 +235,7 @@ class TestLiveTrackerCitations:
         citation elsewhere in the tree must still be found."""
         _init_repo(tmp_path)
         (tmp_path / "docs.md").write_text(
-            "discharged: frob:quote(follow_up=\"T-0605\")\n", encoding="utf-8"
+            'discharged: frob:quote(follow_up="T-0605")\n', encoding="utf-8"
         )
         (tmp_path / "mod.py").write_text(
             '# frob:waive WIRE001 reason="still open" follow_up="T-0605"\nx = 1\n',
@@ -517,7 +517,9 @@ class TestAnchorMarker:
         from frob.tickets._land import set_anchor
         from frob.tickets._models import TicketError
 
-        spec = TicketSpec(title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok, created
         ticket = created.danger_ok
@@ -532,7 +534,9 @@ class TestAnchorMarker:
         from frob.tickets import Origin, TicketKind, TicketSpec, load_queue, new_ticket
         from frob.tickets._land import set_anchor
 
-        spec = TicketSpec(title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="waiver home", kind=TicketKind.DOCS, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok, created
         ticket = created.danger_ok
