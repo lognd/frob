@@ -18,8 +18,7 @@ class TestDisclosureShapedLanguage:
         # T-2726: signal 1 now scopes to the Done-report section, same
         # as signal 2 -- so the phrase must sit under that heading.
         text = (
-            "## Done report\n\n"
-            "Split 1 of 53 files; the other 52 were not attempted.\n"
+            "## Done report\n\nSplit 1 of 53 files; the other 52 were not attempted.\n"
         )
         assert disclosure_shaped_language(text) == "not attempted"
 

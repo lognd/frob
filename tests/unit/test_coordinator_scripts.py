@@ -40,7 +40,13 @@ def _report(*, results: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _diag(severity: str, code: str = "X001", file: str = "a.py", line: int = 1) -> dict:
     """A minimal diagnostic dict, severity nested exactly as frob emits it."""
-    return {"severity": severity, "code": code, "file": file, "line": line, "message": "m"}
+    return {
+        "severity": severity,
+        "code": code,
+        "file": file,
+        "line": line,
+        "message": "m",
+    }
 
 
 class TestLoadReport:
@@ -136,7 +142,9 @@ class TestFindTest006:
 
     def test_empty_when_no_test006(self) -> None:
         """No TEST006 diagnostics anywhere returns an empty list."""
-        report = _report(results=[{"tool": "ruff", "diagnostics": [_diag("error", code="E1")]}])
+        report = _report(
+            results=[{"tool": "ruff", "diagnostics": [_diag("error", code="E1")]}]
+        )
         assert check_summary.find_test006(report) == []
 
 
@@ -158,7 +166,9 @@ class TestCheckSummaryMain:
         self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
     ) -> None:
         """At least one error-severity diagnostic exits 1 and is printed."""
-        report = _report(results=[{"tool": "ty", "diagnostics": [_diag("error", code="E1")]}])
+        report = _report(
+            results=[{"tool": "ty", "diagnostics": [_diag("error", code="E1")]}]
+        )
         monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(report)))
         monkeypatch.setattr(sys, "argv", ["check_summary.py"])
         assert check_summary.main() == 1
@@ -171,7 +181,9 @@ class TestCheckSummaryMain:
     ) -> None:
         """A TEST006 finding prints a leading stale-coverage banner (T-2763)."""
         report = _report(
-            results=[{"tool": "gate:TEST", "diagnostics": [_diag("error", code="TEST006")]}]
+            results=[
+                {"tool": "gate:TEST", "diagnostics": [_diag("error", code="TEST006")]}
+            ]
         )
         monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(report)))
         monkeypatch.setattr(sys, "argv", ["check_summary.py"])
@@ -194,7 +206,9 @@ class TestCheckSummaryMain:
 
 def _completed(stdout: str = "", returncode: int = 0) -> subprocess.CompletedProcess:
     """A `subprocess.CompletedProcess` stub for monkeypatching `subprocess.run`."""
-    return subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr="")
+    return subprocess.CompletedProcess(
+        args=[], returncode=returncode, stdout=stdout, stderr=""
+    )
 
 
 # frob:ticket T-2677
@@ -256,7 +270,9 @@ class TestRootDirt:
         )
         assert fleet_status.root_dirt() == ["M foo.py", " ?? bar.py"]
 
-    def test_phantom_modified_entry_dropped(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_phantom_modified_entry_dropped(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """T-2586: a bare 'M' status whose content-comparing `git diff --stat
         HEAD` comes back empty is a stat-shortcut phantom (CRLF/mtime
         churn with no logical change) and must NOT be reported dirty."""
@@ -287,7 +303,9 @@ class TestRootDirt:
         monkeypatch.setattr(subprocess, "run", _fake_run)
         assert fleet_status.root_dirt() == ["M rapid-debt.jsonl"]
 
-    def test_untracked_entry_never_reverified(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_untracked_entry_never_reverified(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """T-2586: an untracked ('??') path is never a stat-shortcut
         candidate -- it must be reported dirty without ever calling
         `git diff` to confirm it (untracked residue, e.g. from a killed
@@ -311,7 +329,9 @@ class TestRootDirt:
 class TestLeases:
     """`fleet_status.leases`."""
 
-    def test_reads_lease_records(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_reads_lease_records(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Every `*.json` lease file under LEASES is parsed as a record."""
         leases_dir = tmp_path / "leases"
         leases_dir.mkdir()
@@ -321,7 +341,9 @@ class TestLeases:
         monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
         assert fleet_status.leases() == [{"ticket_id": "T-0001", "worktree": "/x"}]
 
-    def test_no_lease_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_lease_dir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A missing leases directory returns an empty list, not an error."""
         monkeypatch.setattr(fleet_status, "LEASES", tmp_path / "does-not-exist")
         assert fleet_status.leases() == []
@@ -451,9 +473,7 @@ class TestBlockedInProgressLeases:
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         entries = fleet_status.blocked_in_progress_leases()
-        assert entries == [
-            {"ticket_id": "T-2377", "open_blockers": ["T-2568"]}
-        ]
+        assert entries == [{"ticket_id": "T-2377", "open_blockers": ["T-2568"]}]
 
     # frob:ticket T-2654
     def test_in_progress_with_no_blockers_not_flagged(
@@ -491,9 +511,7 @@ class TestBlockedInProgressLeases:
         so a queued-and-blocked ticket holds no lease to waste."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(tickets_dir, "T-0013", state="queued")
-        _write_ticket(
-            tickets_dir, "T-0014", state="queued", blocked_by=("T-0013",)
-        )
+        _write_ticket(tickets_dir, "T-0014", state="queued", blocked_by=("T-0013",))
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         assert fleet_status.blocked_in_progress_leases() == []
 
@@ -501,7 +519,9 @@ class TestBlockedInProgressLeases:
 class TestWorktrees:
     """`fleet_status.worktrees`."""
 
-    def test_reports_idle_age(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_reports_idle_age(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A worktree whose last commit is older than idle_seconds is flagged idle."""
         worktrees_dir = tmp_path / "worktrees"
         (worktrees_dir / "one").mkdir(parents=True)
@@ -513,7 +533,9 @@ class TestWorktrees:
         rows = fleet_status.worktrees(idle_seconds=100)
         assert rows == [("one", 9999, True)]
 
-    def test_no_worktree_dir(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_worktree_dir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A missing worktrees directory returns an empty list, not an error."""
         monkeypatch.setattr(fleet_status, "WORKTREES", tmp_path / "does-not-exist")
         assert fleet_status.worktrees(idle_seconds=100) == []
@@ -555,11 +577,15 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        )
         monkeypatch.setattr(
             fleet_status,
             "_git",
-            self._fake_git({diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}),
+            self._fake_git(
+                {diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}
+            ),
         )
         verdict, samples = fleet_status.worktree_content_classification(tmp_path)
         assert verdict == "STRANDED"
@@ -623,7 +649,9 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        )
         monkeypatch.setattr(
             fleet_status, "_git", self._fake_git({diff_args: diff_text}, {})
         )
@@ -656,7 +684,9 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        )
         monkeypatch.setattr(
             fleet_status, "_git", self._fake_git({diff_args: diff_text}, {})
         )
@@ -759,11 +789,15 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def brand_new():\n"
+        )
         monkeypatch.setattr(
             fleet_status,
             "_git",
-            self._fake_git({diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}),
+            self._fake_git(
+                {diff_args: diff_text}, {"main:src/x.py": "def old():\n    pass\n"}
+            ),
         )
         monkeypatch.setattr(
             fleet_status,
@@ -809,7 +843,9 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def renamed_form():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def renamed_form():\n"
+        )
         numstat_text = "10\t100\tsrc/x.py\n"
 
         def fake(args: list[str], cwd: Path) -> str:  # noqa: ARG001, ANN001
@@ -856,7 +892,9 @@ class TestWorktreeContentClassification:
             "docs",
             "scripts",
         )
-        diff_text = "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def never_landed():\n"
+        diff_text = (
+            "diff --git a/src/x.py b/src/x.py\n+++ b/src/x.py\n+def never_landed():\n"
+        )
         numstat_text = "1\t0\tsrc/x.py\n"
 
         def fake(args: list[str], cwd: Path) -> str:  # noqa: ARG001, ANN001
@@ -1004,9 +1042,7 @@ class TestWorktreeContentClassificationLiveGit:
         _run_git(["commit", "-q", "-m", "c1: 40 functions"], repo)
 
         worktree = tmp_path / "gate-internals"
-        _run_git(
-            ["worktree", "add", "-q", "-b", "gate-internals", str(worktree)], repo
-        )
+        _run_git(["worktree", "add", "-q", "-b", "gate-internals", str(worktree)], repo)
         # worktree adds one small tweak of its own and never syncs again
         (worktree / "src" / "x.py").write_text(
             original + "\ndef fn_extra_local():\n    pass\n"
@@ -1018,8 +1054,12 @@ class TestWorktreeContentClassificationLiveGit:
         # untouched -- deletions here come from NEW main-side content the
         # worktree never picked up, the real "far behind" shape, not a
         # rename/rewrite of shared content)
-        grown = original + "\n" + "\n".join(
-            f"def fn_new_{i}():\n    pass\n    pass\n    pass\n" for i in range(60)
+        grown = (
+            original
+            + "\n"
+            + "\n".join(
+                f"def fn_new_{i}():\n    pass\n    pass\n    pass\n" for i in range(60)
+            )
         )
         (src / "x.py").write_text(grown)
         _run_git(["add", "-A"], repo)
@@ -1205,7 +1245,9 @@ class TestWorktreeTicketId:
 class TestTicketLease:
     """`fleet_status.ticket_lease` (T-2133)."""
 
-    def test_reads_a_live_lease(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_reads_a_live_lease(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """The single `<id>.json` lease file is read and parsed directly."""
         leases_dir = tmp_path / "leases"
         leases_dir.mkdir()
@@ -1220,7 +1262,9 @@ class TestTicketLease:
         monkeypatch.setattr(fleet_status, "LEASES", leases_dir)
         assert fleet_status.ticket_lease("T-2114") == record
 
-    def test_no_lease_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_no_lease_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """No lease file for this specific id returns None, not an error."""
         leases_dir = tmp_path / "leases"
         leases_dir.mkdir()
@@ -1303,9 +1347,7 @@ class TestTicketFrontmatterOnMain:
         `tickets/archive/<id>/ticket.md` before giving up -- the exact
         shape a completed-and-archived blocker has. Confirms the SECOND
         `_git` call (not the first) is what supplies the archived text."""
-        archived_text = (
-            "---\nid: T-1692\nstate: done\nland_commit: abc123\nscope:\n- src/a.py\n---\n"
-        )
+        archived_text = "---\nid: T-1692\nstate: done\nland_commit: abc123\nscope:\n- src/a.py\n---\n"
         calls: list[list[str]] = []
 
         def fake_git(args: list[str], cwd) -> str:  # noqa: ANN001
@@ -1333,7 +1375,8 @@ class TestClassifyBlockers:
 
     def test_done_blocker_is_closed(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(
-            fleet_status, "ticket_frontmatter_on_main",
+            fleet_status,
+            "ticket_frontmatter_on_main",
             lambda tid: {"state": "done", "scope": [], "blocked_by": []},
         )
         open_ids, unresolved_ids = fleet_status._classify_blockers(["T-0001"])
@@ -1348,20 +1391,20 @@ class TestClassifyBlockers:
         that internally) must still classify as closed, not unresolved
         and not open."""
         monkeypatch.setattr(
-            fleet_status, "ticket_frontmatter_on_main",
+            fleet_status,
+            "ticket_frontmatter_on_main",
             lambda tid: {"state": "done", "scope": [], "blocked_by": []},
         )
         open_ids, unresolved_ids = fleet_status._classify_blockers(["T-1692", "T-1693"])
         assert open_ids == []
         assert unresolved_ids == []
 
-    def test_in_progress_blocker_is_open(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_in_progress_blocker_is_open(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """MUST-STILL-BLOCK control: a genuinely open blocker still reports
         open -- this fix must never simply stop checking blocked_by."""
         monkeypatch.setattr(
-            fleet_status, "ticket_frontmatter_on_main",
+            fleet_status,
+            "ticket_frontmatter_on_main",
             lambda tid: {"state": "in-progress", "scope": [], "blocked_by": []},
         )
         open_ids, unresolved_ids = fleet_status._classify_blockers(["T-0002"])
@@ -1390,7 +1433,10 @@ class TestClassifyBlockersLocal:
     def test_done_archived_blocker_is_closed(self, tmp_path: Path) -> None:
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir / "archive", "T-1692", state="done", priority="critical",
+            tickets_dir / "archive",
+            "T-1692",
+            state="done",
+            priority="critical",
         )
         open_ids, unresolved_ids = fleet_status._classify_blockers_local(
             ["T-1692"], tickets_dir
@@ -1443,9 +1489,7 @@ class TestWorktreesTouchingTicket:
             return "src/a.py\ntickets/T-2114/ticket.md"
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
-        assert fleet_status.worktrees_touching_ticket(
-            "T-2114", ["src/a.py"]
-        ) == ["one"]
+        assert fleet_status.worktrees_touching_ticket("T-2114", ["src/a.py"]) == ["one"]
 
     # frob:ticket T-2179
     def test_empty_when_nothing_touches_it(
@@ -1583,9 +1627,9 @@ class TestWorktreesTouchingTicket:
             return ""
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
-        assert fleet_status.worktrees_touching_ticket(
-            "T-2740", ["src/a.py"]
-        ) == ["waive-liveness"]
+        assert fleet_status.worktrees_touching_ticket("T-2740", ["src/a.py"]) == [
+            "waive-liveness"
+        ]
 
     # frob:ticket T-2747
     def test_series_worktree_matches_sibling_ticket_via_start_transition(
@@ -1626,9 +1670,9 @@ class TestWorktreesTouchingTicket:
             return ""
 
         monkeypatch.setattr(fleet_status, "_git", fake_git)
-        assert fleet_status.worktrees_touching_ticket(
-            "T-2737", ["src/b.py"]
-        ) == ["t2738-t2737"]
+        assert fleet_status.worktrees_touching_ticket("T-2737", ["src/b.py"]) == [
+            "t2738-t2737"
+        ]
 
     # frob:ticket T-2747
     def test_a_leaked_ticket_with_no_worktree_anywhere_still_reports_empty(
@@ -1707,9 +1751,9 @@ class TestScopeIntersections:
         assert len(collisions) == 1
         assert collisions[0]["a"] == "T-1748"
         assert collisions[0]["b"] == "T-1780"
-        assert ("docs/modules/tickets.md", "docs/modules/tickets.md") in collisions[
-            0
-        ]["overlapping_globs"]
+        assert ("docs/modules/tickets.md", "docs/modules/tickets.md") in collisions[0][
+            "overlapping_globs"
+        ]
 
     def test_no_overlap_reports_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Disjoint declared scopes report no collisions at all."""
@@ -1779,9 +1823,7 @@ class TestLandProcessRows:
             "--ticket T-1234\n"
             "    200      50    00:00 vim some_file.py\n"
         )
-        monkeypatch.setattr(
-            subprocess, "run", lambda *a, **k: _completed(stdout)
-        )
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(stdout))
         rows = fleet_status.land_process_rows(proc)
         assert len(rows) == 1
         assert rows[0]["pid"] == 100
@@ -1814,9 +1856,7 @@ class TestLandProcessRows:
         proc.mkdir()
         watcher = proc / "100"
         watcher.mkdir()
-        (watcher / "cmdline").write_bytes(
-            b"pgrep\x00-f\x00frob ticket land T-2408\x00"
-        )
+        (watcher / "cmdline").write_bytes(b"pgrep\x00-f\x00frob ticket land T-2408\x00")
         real_land = proc / "101"
         real_land.mkdir()
         (real_land / "cmdline").write_bytes(
@@ -1829,9 +1869,7 @@ class TestLandProcessRows:
             "    101     300    00:10 timeout 540 uv run frob ticket land "
             "T-2408 --worktree /w\n"
         )
-        monkeypatch.setattr(
-            subprocess, "run", lambda *a, **k: _completed(stdout)
-        )
+        monkeypatch.setattr(subprocess, "run", lambda *a, **k: _completed(stdout))
         rows = fleet_status.land_process_rows(proc)
         assert [r["pid"] for r in rows] == [101]
 
@@ -1943,7 +1981,7 @@ class TestLandInvocations:
                 "cputime": "00:07",
                 "argv": (
                     "/bin/bash -c until [ \"$(pgrep -f 'frob ticket land T-' "
-                    "| wc -l)\" -eq 0 ]; do sleep 15; done"
+                    '| wc -l)" -eq 0 ]; do sleep 15; done'
                 ),
             },
         ]
@@ -2061,9 +2099,7 @@ class TestPrintLandStatus:
                 }
             ],
         )
-        monkeypatch.setattr(
-            fleet_status, "land_lock_holder_pids", lambda root: [100]
-        )
+        monkeypatch.setattr(fleet_status, "land_lock_holder_pids", lambda root: [100])
         monkeypatch.setattr(fleet_status, "host_load", lambda: (19.5, 10 * 1024 * 1024))
         monkeypatch.setattr(fleet_status, "leases", lambda: [{"ticket_id": "T-1"}])
         monkeypatch.setattr(fleet_status, "live_lease_count", lambda held: 1)
@@ -2115,7 +2151,9 @@ class TestPrintLandStatus:
         assert "cpu=30s (+0s in children)" not in out
 
     def test_prints_no_live_holder_as_normal_resting_state_not_stale(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
         """A lock file that exists but has no live /proc-fd holder --
@@ -2148,7 +2186,9 @@ class TestPrintLandStatus:
         # T-2517: "stale" is now a legitimate word in the (separate,
         # forkserver-specific) STALE FORKSERVERS line -- this test only
         # cares that the LAND LOCK line itself never uses it.
-        land_lock_line = next(line for line in out.splitlines() if line.startswith("LAND LOCK"))
+        land_lock_line = next(
+            line for line in out.splitlines() if line.startswith("LAND LOCK")
+        )
         assert "stale" not in land_lock_line.lower()
         assert "no live holder" in out.lower()
         assert "normal resting state" in out.lower()
@@ -2422,9 +2462,7 @@ class TestOrphanedForkserverCount:
     """`fleet_status.orphaned_forkserver_count` (T-2443)."""
 
     @staticmethod
-    def _write_entry(
-        proc: Path, pid: int, *, cmdline: bytes, ppid: int
-    ) -> None:
+    def _write_entry(proc: Path, pid: int, *, cmdline: bytes, ppid: int) -> None:
         entry = proc / str(pid)
         entry.mkdir(parents=True)
         (entry / "cmdline").write_bytes(cmdline)
@@ -2474,7 +2512,9 @@ class TestStaleForkserverCount:
         proc.joinpath("uptime").write_text(f"{uptime_s} 0.0\n", encoding="utf-8")
 
     @staticmethod
-    def _write_forkserver(proc: Path, pid: int, *, age_s: float, ppid: int = 999) -> None:
+    def _write_forkserver(
+        proc: Path, pid: int, *, age_s: float, ppid: int = 999
+    ) -> None:
         clk_tck = os.sysconf("SC_CLK_TCK")
         uptime_s = float(proc.joinpath("uptime").read_text(encoding="utf-8").split()[0])
         starttime_ticks = int((uptime_s - age_s) * clk_tck)
@@ -2502,7 +2542,9 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=30.0)  # 30s old, still working
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=0) == 0
 
-    def test_never_counts_anything_while_a_check_is_running(self, tmp_path: Path) -> None:
+    def test_never_counts_anything_while_a_check_is_running(
+        self, tmp_path: Path
+    ) -> None:
         """T-2517's own explicit caution: a live-parented forkserver MAY
         belong to a check about to start. `concurrent_checks > 0` must
         zero the count even for a forkserver that is genuinely 2h old --
@@ -2514,7 +2556,9 @@ class TestStaleForkserverCount:
         self._write_forkserver(proc, 4242, age_s=7200.0)
         assert fleet_status.stale_forkserver_count(proc, concurrent_checks=1) == 0
 
-    def test_unknown_concurrent_checks_never_counts_anything(self, tmp_path: Path) -> None:
+    def test_unknown_concurrent_checks_never_counts_anything(
+        self, tmp_path: Path
+    ) -> None:
         """`concurrent_checks is None` (unknown) must degrade to 0, the
         same conservative posture as a positive count -- never treated as
         'assume zero checks running'."""
@@ -2527,7 +2571,9 @@ class TestStaleForkserverCount:
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_coordinator_scripts.py::TestStaleForkserverCount.test_missing_proc_returns_none  # noqa: E501
         assert (
-            fleet_status.stale_forkserver_count(tmp_path / "no-proc", concurrent_checks=0)
+            fleet_status.stale_forkserver_count(
+                tmp_path / "no-proc", concurrent_checks=0
+            )
             is None
         )
 
@@ -2594,7 +2640,9 @@ class TestConcurrentCheckCount:
         proc = tmp_path / "proc"
         proc.mkdir()
         self._write_entry(proc, 100, cmdline=b"frob\x00check\x00")
-        self._write_entry(proc, 101, cmdline=b"/x/.venv/bin/frob\x00check\x00--json\x00")
+        self._write_entry(
+            proc, 101, cmdline=b"/x/.venv/bin/frob\x00check\x00--json\x00"
+        )
         assert fleet_status.concurrent_check_count(proc) == 2
 
     def test_ignores_non_check_processes(self, tmp_path: Path) -> None:
@@ -2934,9 +2982,11 @@ class TestScopeLeaseCollisions:
         monkeypatch.setattr(
             fleet_status,
             "ticket_frontmatter_on_main",
-            lambda tid: {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
-            if tid == "T-2254"
-            else None,
+            lambda tid: (
+                {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
+                if tid == "T-2254"
+                else None
+            ),
         )
         collisions = fleet_status.scope_lease_collisions(
             "T-2220", ["src/frob/**"], [], land_ticket_ids=["T-2254"]
@@ -2959,9 +3009,11 @@ class TestScopeLeaseCollisions:
         monkeypatch.setattr(
             fleet_status,
             "ticket_frontmatter_on_main",
-            lambda tid: {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
-            if tid == "T-2254"
-            else None,
+            lambda tid: (
+                {"state": "in-progress", "scope": ["src/frob/tickets/_land.py"]}
+                if tid == "T-2254"
+                else None
+            ),
         )
         collisions = fleet_status.scope_lease_collisions(
             "T-2220", ["src/frob/app/config.py"], [], land_ticket_ids=["T-2254"]
@@ -3208,9 +3260,7 @@ class TestPrintTicketReadiness:
     T-2172)."""
 
     # frob:ticket T-2172
-    def test_prints_dispatchable_true(
-        self, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_prints_dispatchable_true(self, capsys: pytest.CaptureFixture[str]) -> None:
         """A dispatchable, no-lease readiness dict prints the plain shape
         and returns True."""
         readiness = {
@@ -3302,9 +3352,7 @@ class TestPrintFleetReport:
             "leases",
             lambda: [{"ticket_id": "T-2114", "worktree": "/does/not/exist"}],
         )
-        monkeypatch.setattr(
-            fleet_status, "in_progress_ticket_scope_leases", lambda: []
-        )
+        monkeypatch.setattr(fleet_status, "in_progress_ticket_scope_leases", lambda: [])
         monkeypatch.setattr(fleet_status, "blocked_in_progress_leases", lambda: [])
         monkeypatch.setattr(fleet_status, "worktrees", lambda idle_seconds: [])
         fleet_status._print_fleet_report([], idle_seconds=1200)
@@ -3360,9 +3408,7 @@ class TestPrintFleetReport:
             "leases",
             lambda: [{"ticket_id": "T-2377", "worktree": "/w/t-2377"}],
         )
-        monkeypatch.setattr(
-            fleet_status, "in_progress_ticket_scope_leases", lambda: []
-        )
+        monkeypatch.setattr(fleet_status, "in_progress_ticket_scope_leases", lambda: [])
         monkeypatch.setattr(
             fleet_status,
             "blocked_in_progress_leases",
@@ -3406,9 +3452,7 @@ def _write_ticket(
     ticket_dir.mkdir(parents=True)
     parent_line = f"parent: {parent}\n" if parent is not None else ""
     blocked_by_block = (
-        "blocked_by:\n" + "".join(f"- {b}\n" for b in blocked_by)
-        if blocked_by
-        else ""
+        "blocked_by:\n" + "".join(f"- {b}\n" for b in blocked_by) if blocked_by else ""
     )
     (ticket_dir / "ticket.md").write_text(
         f"---\n"
@@ -3438,12 +3482,16 @@ class TestRottingTickets:
         against current main (rotting_tickets does not exist there)."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0001", state="queued", priority="critical",
+            tickets_dir,
+            "T-0001",
+            state="queued",
+            priority="critical",
             created="2020-01-01",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         monkeypatch.setattr(
-            fleet_status, "_rot_day_thresholds",
+            fleet_status,
+            "_rot_day_thresholds",
             lambda: {"critical": 3, "high": 7, "medium": 30, "low": 90},
         )
         rotting = fleet_status.rotting_tickets()
@@ -3459,7 +3507,10 @@ class TestRottingTickets:
         """A ticket created today never rots, regardless of priority."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0002", state="queued", priority="critical",
+            tickets_dir,
+            "T-0002",
+            state="queued",
+            priority="critical",
             created=date.today().isoformat(),
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
@@ -3473,7 +3524,10 @@ class TestRottingTickets:
         mirrored exactly, not a broader 'any old ticket' sweep."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0003", state="in-progress", priority="critical",
+            tickets_dir,
+            "T-0003",
+            state="in-progress",
+            priority="critical",
             created="2020-01-01",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
@@ -3487,16 +3541,28 @@ class TestRottingTickets:
         split them by required action."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0004", state="queued", priority="critical",
-            created="2020-01-01", tier="ticket",
+            tickets_dir,
+            "T-0004",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            tier="ticket",
         )
         _write_ticket(
-            tickets_dir, "T-0005", state="queued", priority="critical",
-            created="2020-01-01", tier="epic",
+            tickets_dir,
+            "T-0005",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            tier="epic",
         )
         _write_ticket(
-            tickets_dir, "T-0006", state="planned", priority="critical",
-            created="2020-01-01", tier="story",
+            tickets_dir,
+            "T-0006",
+            state="planned",
+            priority="critical",
+            created="2020-01-01",
+            tier="story",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3513,12 +3579,20 @@ class TestRottingTickets:
         ordinary (non-deferred) rotting ticket, and vice versa."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0007", state="queued", priority="critical",
-            created="2020-01-01", runs_last=True,
+            tickets_dir,
+            "T-0007",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            runs_last=True,
         )
         _write_ticket(
-            tickets_dir, "T-0008", state="queued", priority="critical",
-            created="2020-01-01", runs_last=False,
+            tickets_dir,
+            "T-0008",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            runs_last=False,
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3534,12 +3608,20 @@ class TestRottingTickets:
         `True` for the epic -- the child need not itself be rotting."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-1623", state="queued", priority="critical",
-            created="2020-01-01", tier="epic",
+            tickets_dir,
+            "T-1623",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            tier="epic",
         )
         _write_ticket(
-            tickets_dir, "T-2223", state="in-progress", priority="high",
-            created=date.today().isoformat(), parent="T-1623",
+            tickets_dir,
+            "T-2223",
+            state="in-progress",
+            priority="high",
+            created=date.today().isoformat(),
+            parent="T-1623",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3555,8 +3637,12 @@ class TestRottingTickets:
         under the ordinary message."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0009", state="queued", priority="critical",
-            created="2020-01-01", tier="epic",
+            tickets_dir,
+            "T-0009",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            tier="epic",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3572,12 +3658,20 @@ class TestRottingTickets:
         or genuinely stalled again."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir, "T-0010", state="queued", priority="critical",
-            created="2020-01-01", tier="epic",
+            tickets_dir,
+            "T-0010",
+            state="queued",
+            priority="critical",
+            created="2020-01-01",
+            tier="epic",
         )
         _write_ticket(
-            tickets_dir, "T-0011", state="done", priority="high",
-            created=date.today().isoformat(), parent="T-0010",
+            tickets_dir,
+            "T-0011",
+            state="done",
+            priority="high",
+            created=date.today().isoformat(),
+            parent="T-0010",
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3594,14 +3688,24 @@ class TestRottingTickets:
         open): T-1692, T-1693' misdiagnosis."""
         tickets_dir = tmp_path / "tickets"
         _write_ticket(
-            tickets_dir / "archive", "T-1692", state="done", priority="critical",
+            tickets_dir / "archive",
+            "T-1692",
+            state="done",
+            priority="critical",
         )
         _write_ticket(
-            tickets_dir / "archive", "T-1693", state="done", priority="critical",
+            tickets_dir / "archive",
+            "T-1693",
+            state="done",
+            priority="critical",
         )
         _write_ticket(
-            tickets_dir, "T-1696", state="queued", priority="high",
-            created="2020-01-01", blocked_by=("T-1692", "T-1693"),
+            tickets_dir,
+            "T-1696",
+            state="queued",
+            priority="high",
+            created="2020-01-01",
+            blocked_by=("T-1692", "T-1693"),
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3620,8 +3724,12 @@ class TestRottingTickets:
         tickets_dir = tmp_path / "tickets"
         _write_ticket(tickets_dir, "T-5000", state="in-progress", priority="critical")
         _write_ticket(
-            tickets_dir, "T-5001", state="queued", priority="high",
-            created="2020-01-01", blocked_by=("T-5000",),
+            tickets_dir,
+            "T-5001",
+            state="queued",
+            priority="high",
+            created="2020-01-01",
+            blocked_by=("T-5000",),
         )
         monkeypatch.setattr(fleet_status, "TICKETS_DIR", tickets_dir)
         rotting = fleet_status.rotting_tickets()
@@ -3992,7 +4100,9 @@ class TestQuarantineState:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """No quarantine has ever been raised (missing store) is 'clear'."""
-        monkeypatch.setattr(fleet_status, "QUARANTINE", tmp_path / "does-not-exist.json")
+        monkeypatch.setattr(
+            fleet_status, "QUARANTINE", tmp_path / "does-not-exist.json"
+        )
         assert fleet_status.quarantine_state() == ("clear", 0)
 
     def test_unreadable_store_is_unknown_never_clear(
@@ -4099,9 +4209,7 @@ class TestFleetStatusMainVerifyQueue:
         monkeypatch.setattr(fleet_status, "_print_land_status", lambda: None)
         monkeypatch.setattr(fleet_status, "_print_ticket_rot", lambda: None)
         monkeypatch.setattr(fleet_status, "quarantine_state", lambda: ("clear", 0))
-        monkeypatch.setattr(
-            fleet_status, "verify_queue_state", lambda: (3, 1234.0)
-        )
+        monkeypatch.setattr(fleet_status, "verify_queue_state", lambda: (3, 1234.0))
         monkeypatch.setattr(sys, "argv", ["fleet_status.py"])
         fleet_status.main()
         out = capsys.readouterr().out
@@ -4575,9 +4683,7 @@ class TestWaitForLandSlotMain:
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture[str],
     ) -> None:
-        monkeypatch.setattr(
-            wait_for_land_slot, "probe_lands_in_flight", lambda cmd: 0
-        )
+        monkeypatch.setattr(wait_for_land_slot, "probe_lands_in_flight", lambda cmd: 0)
         code = wait_for_land_slot.main(["--timeout", "5"])
         assert code == wait_for_land_slot.EXIT_SLOT_FREE
         out = capsys.readouterr()
@@ -4594,7 +4700,9 @@ class TestWaitForLandSlotMain:
         monkeypatch.setattr(
             wait_for_land_slot, "probe_lands_in_flight", lambda cmd: next(readings)
         )
-        code = wait_for_land_slot.main(["--timeout", "5", "--poll-interval", "1", "--verbose"])
+        code = wait_for_land_slot.main(
+            ["--timeout", "5", "--poll-interval", "1", "--verbose"]
+        )
         assert code == wait_for_land_slot.EXIT_SLOT_FREE
         out = capsys.readouterr()
         assert out.out.strip().count("\n") == 0

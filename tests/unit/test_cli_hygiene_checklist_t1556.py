@@ -43,9 +43,7 @@ def _renumber_subparser():
 class TestRenumberPositionalContractDocumented:
     def test_old_positional_help_names_the_whole_ledger_fallback(self) -> None:
         renumber_p = _renumber_subparser()
-        old_action = next(
-            a for a in renumber_p._actions if a.dest == "ticket_old_id"
-        )
+        old_action = next(a for a in renumber_p._actions if a.dest == "ticket_old_id")
         assert old_action.help, (
             "frob ticket renumber's <old> positional has no --help text "
             "at all -- the zero-args whole-ledger fallback (T-1556's "

@@ -22,7 +22,7 @@ from frob.app.ticket_runner._close_cmd import (
 
 
 class TestDeclaredPyprojectVersion:
-    """"Cannot verify" is `None`, never a version that satisfies."""
+    """ "Cannot verify" is `None`, never a version that satisfies."""
 
     def test_absent_pyproject_is_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_close_rel001_bump.py::TestDeclaredPyprojectVersion.test_absent_pyproject_is_none  # noqa: E501

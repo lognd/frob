@@ -116,7 +116,9 @@ class TestDerivePostLandSweepBudget:
         budget = check_chunking_mod._derive_post_land_sweep_budget_s(tmp_path)
         measured_total = 168.49 + 88.48 + 135.35 + 3.69 + 96.17
         assert budget > measured_total
-        assert budget == int(measured_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM)
+        assert budget == int(
+            measured_total * check_chunking_mod._BUDGET_DERIVE_HEADROOM
+        )
 
     def test_falls_back_to_default_with_no_timing_data(self, tmp_path: Path) -> None:
         """A fresh checkout with no `.frob/check-budget-timing.json` yet

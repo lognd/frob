@@ -3,7 +3,6 @@ table/JSON output and `route`'s manifest-error/success dispatch. `frob.fleet`
 internals are exercised directly in tests/unit/fleet/; this file is purely
 about the CLI dispatch layer around them."""
 
-
 from __future__ import annotations
 
 from pathlib import Path

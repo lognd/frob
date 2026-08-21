@@ -19,7 +19,6 @@ from frob.app.ticket_runner._rapid_sweep import (
     _file_regression_ticket,
     _files_deleted_between,
     _filter_phantom_deleted_findings,
-    _relativize_regression_scope_file,
     _identities_still_reproducing,
     _identity_scoped_state_key,
     _land_ids_between,
@@ -28,6 +27,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _read_baseline_commit,
     _read_revalidation_cache,
     _regression_count_line,
+    _relativize_regression_scope_file,
     _resolve_actual_head,
     _ticket_is_open,
     _tree_state_key,
@@ -51,9 +51,7 @@ def _init_git_repo(root: Path) -> None:
         ["git", "-C", str(root), "config", "user.email", "test@example.com"],
         check=True,
     )
-    subprocess.run(
-        ["git", "-C", str(root), "config", "user.name", "Test"], check=True
-    )
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Test"], check=True)
 
 
 def _git_commit(root: Path, message: str) -> str:
@@ -541,9 +539,7 @@ class TestIdentityScopedStateKey:
     identity set, so a cache HIT survives an unrelated land."""
 
     # frob:ticket T-2165
-    def test_unchanged_files_same_key_across_a_head_move(
-        self, tmp_path: Path
-    ) -> None:
+    def test_unchanged_files_same_key_across_a_head_move(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestIdentityScopedStateKey.test_unchanged_files_same_key_across_a_head_move  # noqa: E501
         """The core fix: two calls against a tree whose HEAD moved (an
         unrelated land happened in between) but whose CANDIDATE files
@@ -562,7 +558,9 @@ class TestIdentityScopedStateKey:
 
         # An unrelated land: a file NOT in `pairs` changes and is
         # committed, moving HEAD -- `_tree_state_key` would change here.
-        (tmp_path / "unrelated.py").write_text("changed by another land\n", encoding="utf-8")
+        (tmp_path / "unrelated.py").write_text(
+            "changed by another land\n", encoding="utf-8"
+        )
         subprocess.run(["git", "-C", str(tmp_path), "add", "-A"], check=True)
         _git_commit(tmp_path, "chore: unrelated land")
 
@@ -829,7 +827,9 @@ class TestDeferredSweepSpawn:
         monkeypatch.setattr(
             "frob.tickets._evidence.record_rapid_debt", lambda root, tid, what: None
         )
-        monkeypatch.setattr(rapid_sweep_mod, "_commit_rapid_debt", lambda root, tid: None)
+        monkeypatch.setattr(
+            rapid_sweep_mod, "_commit_rapid_debt", lambda root, tid: None
+        )
         # A STALE FROB_ROOT in the ambient environment, naming a
         # DIFFERENT tree than `root` -- exactly T-2030's measured shape.
         monkeypatch.setenv("FROB_ROOT", "/some/other/worktree")
@@ -1121,9 +1121,7 @@ class TestCommitRapidDebt:
         # ... but a diagnostic log naming the failure now survives it.
         log_dir = repo / _rapid_sweep._LOG_DIR_REL
         logs = sorted(
-            log_dir.glob(
-                f"{_rapid_sweep._RAPID_DEBT_FAILURE_LOG_PREFIX}-T-2671-*.log"
-            )
+            log_dir.glob(f"{_rapid_sweep._RAPID_DEBT_FAILURE_LOG_PREFIX}-T-2671-*.log")
         )
         assert len(logs) == 1, f"expected exactly one diagnostic log, found {logs}"
         payload = json.loads(logs[0].read_text(encoding="utf-8"))
@@ -1142,8 +1140,9 @@ class TestPersistCommitStepFailure:
 
     def test_writes_proc_result_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_proc_result_diagnostics  # noqa: E501
-        from frob.gitio import ProcResult
         from typani.result import Ok
+
+        from frob.gitio import ProcResult
 
         outcome = Ok(
             ProcResult(
@@ -1172,8 +1171,9 @@ class TestPersistCommitStepFailure:
 
     def test_writes_spawn_error_diagnostics(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_writes_spawn_error_diagnostics  # noqa: E501
-        from frob.gitio import GitError
         from typani.result import Err
+
+        from frob.gitio import GitError
 
         outcome = Err(GitError.GitFailed)
         path = _rapid_sweep._persist_commit_step_failure(
@@ -1193,8 +1193,9 @@ class TestPersistCommitStepFailure:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/test_rapid_sweep.py::TestPersistCommitStepFailure.test_swallows_its_own_write_failure  # noqa: E501
-        from frob.gitio import GitError
         from typani.result import Err
+
+        from frob.gitio import GitError
 
         # A root whose log dir cannot be created (a FILE sits where the
         # directory would go) -- this must return None, not raise, since
@@ -2023,10 +2024,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2067,10 +2065,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2120,10 +2115,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2168,10 +2160,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2184,9 +2173,7 @@ class TestRevalidateDispatchableSweepTickets:
                 '{"results": [{"tool": "gate-summary", "diagnostics": []}]}'
             )
 
-        monkeypatch.setattr(
-            "frob.process._guard.guarded_subprocess_run", _fake_run
-        )
+        monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_run)
         # T-2089's cache is content-keyed on tree state; a non-repo
         # tmp_path makes `_tree_state_key` return None (git spawn fails),
         # so this exercises the uncached spawn path deterministically.
@@ -2233,10 +2220,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2310,10 +2294,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2334,9 +2315,7 @@ class TestRevalidateDispatchableSweepTickets:
             spawn_calls.append(1)
             return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
 
-        monkeypatch.setattr(
-            "frob.process._guard.guarded_subprocess_run", _fake_spawn
-        )
+        monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_spawn)
 
         queue = load_queue(tmp_path)
         assert queue.is_ok
@@ -2373,10 +2352,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2397,9 +2373,7 @@ class TestRevalidateDispatchableSweepTickets:
             spawn_calls.append(1)
             return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
 
-        monkeypatch.setattr(
-            "frob.process._guard.guarded_subprocess_run", _fake_spawn
-        )
+        monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_spawn)
 
         queue = load_queue(tmp_path)
         assert queue.is_ok
@@ -2449,10 +2423,7 @@ class TestRevalidateDispatchableSweepTickets:
             kind=TicketKind.BUG,
             origin=Origin.AGENT,
             scope=("a.py",),
-            body=(
-                f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n"
-                "- COV003  a.py\n"
-            ),
+            body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
         )
         created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
         assert created.is_ok
@@ -2473,9 +2444,7 @@ class TestRevalidateDispatchableSweepTickets:
             spawn_calls.append(1)
             return TestIdentitiesStillReproducing._ok_result(json.dumps(payload))
 
-        monkeypatch.setattr(
-            "frob.process._guard.guarded_subprocess_run", _fake_spawn
-        )
+        monkeypatch.setattr("frob.process._guard.guarded_subprocess_run", _fake_spawn)
 
         queue = load_queue(tmp_path)
         assert queue.is_ok
@@ -2872,9 +2841,9 @@ class TestFileRegressionTicket:
         RAISED and still return `None` -- the T-2312 fix only reroutes
         the DUPLICATE branch to disposal, it must never make an
         ownerless finding's filing failure look disposed."""
-        import frob.tickets as tickets_mod
         from typani import Err
 
+        import frob.tickets as tickets_mod
         from frob.graph import CallGraph, GraphSnapshot
         from frob.tickets._models import TicketError
         from frob.verify import record_intent
@@ -4063,13 +4032,17 @@ class TestDeferredSweepMultiLandAttribution:
 class TestSweepStaleWorktreesAfterLand:
     """`_rapid_sweep.sweep_stale_worktrees_after_land` (T-2261)."""
 
-    def test_never_uses_force(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_never_uses_force(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """T-2261 acceptance [4]: --force is never used by the automatic
         path -- the ONE call to `sweep_worktrees` this function makes
         must always pass `force=False`."""
         captured: dict = {}
 
-        def fake_sweep(root, *, min_age_hours=None, dry_run=False, force=False, now=None):
+        def fake_sweep(
+            root, *, min_age_hours=None, dry_run=False, force=False, now=None
+        ):
             captured["force"] = force
             captured["dry_run"] = dry_run
             captured["min_age_hours"] = min_age_hours
@@ -4077,9 +4050,7 @@ class TestSweepStaleWorktreesAfterLand:
 
             return Ok(())
 
-        monkeypatch.setattr(
-            "frob.tickets._leases.sweep_worktrees", fake_sweep
-        )
+        monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)
         sweep_stale_worktrees_after_land(tmp_path)
         assert captured["force"] is False
         assert captured["dry_run"] is False
@@ -4087,7 +4058,9 @@ class TestSweepStaleWorktreesAfterLand:
 
     # frob:ticket T-2261
     def test_logs_one_line_per_verdict(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """MUST-STILL-PASS: every verdict `sweep_worktrees` computes --
@@ -4114,7 +4087,9 @@ class TestSweepStaleWorktreesAfterLand:
             _FakeVerdict("/w/age", "kept:age"),
         )
 
-        def fake_sweep(root, *, min_age_hours=None, dry_run=False, force=False, now=None):
+        def fake_sweep(
+            root, *, min_age_hours=None, dry_run=False, force=False, now=None
+        ):
             return Ok(verdicts)
 
         monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)
@@ -4128,7 +4103,9 @@ class TestSweepStaleWorktreesAfterLand:
 
     # frob:ticket T-2261
     def test_a_failed_sweep_is_logged_never_raised(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
         """A `sweep_worktrees` Err (e.g. `root` is not a git repo) is
@@ -4138,7 +4115,9 @@ class TestSweepStaleWorktreesAfterLand:
 
         from frob.tickets._leases import _WorktreeSweepError
 
-        def fake_sweep(root, *, min_age_hours=None, dry_run=False, force=False, now=None):
+        def fake_sweep(
+            root, *, min_age_hours=None, dry_run=False, force=False, now=None
+        ):
             return Err(_WorktreeSweepError.NotARepo)
 
         monkeypatch.setattr("frob.tickets._leases.sweep_worktrees", fake_sweep)

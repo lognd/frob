@@ -82,9 +82,7 @@ class TestFmtRunnerReachability:
 
     # frob:ticket T-2761
     # frob:tests tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmtRunnerReachability.test_write_mode_leaves_rust_directive_untouched kind="unit"  # noqa: E501
-    def test_write_mode_leaves_rust_directive_untouched(
-        self, tmp_path: Path
-    ) -> None:
+    def test_write_mode_leaves_rust_directive_untouched(self, tmp_path: Path) -> None:
         """`frob fmt` (write mode) over the fixture leaves `lib.rs`
         byte-for-byte unchanged -- its own rustfmt width has room."""
         from frob.app import fmt_runner
@@ -212,9 +210,7 @@ class TestFmt001GateReachability:
         # now genuinely exceeds its own language's configured width.
         _write(root, "rustfmt.toml", "max_width = 10\n")
         rel = "src/other.rs"
-        _write(
-            root, rel, f'// frob:waive SCOPE001 reason="{_LONG_REASON}"\n'
-        )
+        _write(root, rel, f'// frob:waive SCOPE001 reason="{_LONG_REASON}"\n')
         diff = Diff(base="x", hunks=(Hunk(file=rel, span=(1, 1)),))
         violations = fmt_gate(root, diff)
         hit = next((v for v in violations if v.rule == "FMT001"), None)

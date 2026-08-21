@@ -33,7 +33,9 @@ def _init_git_repo(root: Path) -> None:
     """A minimal git checkout so `load_queue`/`finalize_draft`'s git-
     touching machinery has a real repo to commit against."""
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
     subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
 
 

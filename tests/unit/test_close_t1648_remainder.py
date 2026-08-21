@@ -17,7 +17,9 @@ def _init_git_repo(root: Path) -> None:
     any git-touching machinery this helper's callees rely on has a real
     repo to work against."""
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-    subprocess.run(["git", "config", "user.email", "t@example.com"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+    )
     subprocess.run(["git", "config", "user.name", "t"], cwd=root, check=True)
 
 

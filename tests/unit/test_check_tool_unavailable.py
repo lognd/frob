@@ -5,7 +5,6 @@ traceback and never a silent skip (vacuous-pass doctrine). One monkeypatched
 check confirming the unavailable-tool line is visible.
 """
 
-
 from __future__ import annotations
 
 import subprocess

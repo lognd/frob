@@ -7,7 +7,6 @@ tool, file-read OSError, stdin fallback, json vs text output, and the
 passthrough exit-code branch.
 """
 
-
 from __future__ import annotations
 
 import logging

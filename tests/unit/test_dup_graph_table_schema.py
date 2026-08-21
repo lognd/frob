@@ -18,9 +18,7 @@ from frob.gates._models import Severity
 
 class TestDupGraphSchemaGate:
     # frob:tests src/frob/gates/_dup_graph_schema.py::dup_schema_gate kind="unit"
-    def test_dup_must_now_fire_reports_the_undeclared_key(
-        self, tmp_path: Path
-    ) -> None:
+    def test_dup_must_now_fire_reports_the_undeclared_key(self, tmp_path: Path) -> None:
         """A plausibly misspelled key ("enfore" for "enforce") is
         reported."""
         (tmp_path / "fixture_dup_mod.py").write_text(
