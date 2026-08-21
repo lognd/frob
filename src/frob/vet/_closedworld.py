@@ -133,9 +133,7 @@ def _scan_capabilities_best_effort(
     best-effort like every other closed-world lookup here, never crash
     the whole accounting pass over one deeply nested dependency file."""
     try:
-        capabilities, _decode_to_exec = _scan_directory_capabilities(
-            source_dir
-        )
+        capabilities, _decode_to_exec = _scan_directory_capabilities(source_dir)
         return capabilities
     except RecursionError:
         _log.warning(

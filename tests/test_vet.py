@@ -1,7 +1,6 @@
 """Unit tests for frob.vet: lockfile parsers, allow conformance, quarantine,
 typosquat, and hook-command parsing (docs/modules/vet.md). No real network calls."""
 
-
 from __future__ import annotations
 
 import json
@@ -678,8 +677,8 @@ class TestCapabilityScan:
         # never by matching the helper's name.
         from frob.vet._capability_core import _PATTERNS
         from frob.vet._capability_python import (
-            _python_wrapper_capabilities,
             _build_wrapper_call_graph,
+            _python_wrapper_capabilities,
         )
 
         (tmp_path / "wrapper.py").write_text(
@@ -704,8 +703,8 @@ class TestCapabilityScan:
         # capability -- symbolic resolution, not "any cross-file call".
         from frob.vet._capability_core import _PATTERNS
         from frob.vet._capability_python import (
-            _python_wrapper_capabilities,
             _build_wrapper_call_graph,
+            _python_wrapper_capabilities,
         )
 
         (tmp_path / "helper.py").write_text("def _add(a, b):\n    return a + b\n")
@@ -796,9 +795,7 @@ class TestCapabilityScan:
 
         pkg = tmp_path / "pkg"
         pkg.mkdir()
-        (pkg / "a.py").write_text(
-            "import os\n\n\ndef run(cmd):\n    os.system(cmd)\n"
-        )
+        (pkg / "a.py").write_text("import os\n\n\ndef run(cmd):\n    os.system(cmd)\n")
         (tmp_path / "b.py").write_text(
             "from pkg.a import run\n\n\ndef entry(x):\n    run(x)\n"
         )
@@ -7764,7 +7761,6 @@ class TestNeedleMatchesResolvedTokenBoundary:
 
         assert _needle_matches_resolved("os.system(", "myos.system") is False
         assert _needle_matches_resolved("os.system", "myos.system") is False
-
 
     def test_no_false_positive_on_bare_identifier_substring(self) -> None:
         # frob:tests src/frob/vet/_capability_core.py::_needle_matches_resolved \

@@ -69,12 +69,8 @@ class TestWireGateDottedMethodReach:
             "    return SealedGrantSet.from_root_node(node)\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "from_root_node" in r.symref
-        )
-        diff = Diff(
-            base="x", hunks=(Hunk(file="src/pkg/grants.py", span=record.span),)
-        )
+        record = next(r for r in snap.symbols.values() if "from_root_node" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/pkg/grants.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert _first_rule(violations, "WIRE001") is None
@@ -94,12 +90,8 @@ class TestWireGateDottedMethodReach:
             "        return 1\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "never_called" in r.symref
-        )
-        diff = Diff(
-            base="x", hunks=(Hunk(file="src/pkg/orphan.py", span=record.span),)
-        )
+        record = next(r for r in snap.symbols.values() if "never_called" in r.symref)
+        diff = Diff(base="x", hunks=(Hunk(file="src/pkg/orphan.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert _first_rule(violations, "WIRE001") is not None

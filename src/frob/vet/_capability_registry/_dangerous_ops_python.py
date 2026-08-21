@@ -737,7 +737,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
     _op(
         "python",
         "boto3",
-        "boto3 S3 mutating verb (put/delete/create on client/resource(\"s3\"))",
+        'boto3 S3 mutating verb (put/delete/create on client/resource("s3"))',
         "net-mutate",
         "issues a state-changing AWS S3 API call (put/delete/create an "
         "object, bucket, or ACL/policy) -- may destroy or expose data",
@@ -746,7 +746,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "attacker-controlled bucket/key names unvalidated",
         "high",
         tuple(
-            f'boto3.{factory}(s3).{verb}('
+            f"boto3.{factory}(s3).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "put_object",
@@ -779,7 +779,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "keys/attributes before writing",
         "high",
         tuple(
-            f'boto3.{factory}(dynamodb).{verb}('
+            f"boto3.{factory}(dynamodb).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "put_item",
@@ -807,7 +807,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "review/approval gate before any IAM-mutating call path executes",
         "critical",
         tuple(
-            f'boto3.{factory}(iam).{verb}('
+            f"boto3.{factory}(iam).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "create_user",
@@ -842,7 +842,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
     _op(
         "python",
         "boto3",
-        "boto3 EC2 mutating verb (run/terminate/modify on client/resource(\"ec2\"))",
+        'boto3 EC2 mutating verb (run/terminate/modify on client/resource("ec2"))',
         "net-mutate",
         "issues a state-changing AWS EC2 API call (launch/terminate an "
         "instance, modify a security group, attach/detach a volume) -- "
@@ -852,7 +852,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "attacker-controlled instance/security-group parameters unvalidated",
         "high",
         tuple(
-            f'boto3.{factory}(ec2).{verb}('
+            f"boto3.{factory}(ec2).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "run_instances",
@@ -881,7 +881,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
     _op(
         "python",
         "boto3",
-        "boto3 RDS mutating verb (create/delete/modify on client/resource(\"rds\"))",
+        'boto3 RDS mutating verb (create/delete/modify on client/resource("rds"))',
         "net-mutate",
         "issues a state-changing AWS RDS API call (create/delete a "
         "database instance, take/delete a snapshot) -- may destroy "
@@ -891,7 +891,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "review/approval gate before any delete_db_instance-shaped call",
         "critical",
         tuple(
-            f'boto3.{factory}(rds).{verb}('
+            f"boto3.{factory}(rds).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "create_db_instance",
@@ -923,7 +923,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "before any update_function_code-shaped call reaches production",
         "critical",
         tuple(
-            f'boto3.{factory}(lambda).{verb}('
+            f"boto3.{factory}(lambda).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "create_function",
@@ -953,7 +953,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "content/topic ARNs before publishing",
         "medium",
         tuple(
-            f'boto3.{factory}(sns).{verb}('
+            f"boto3.{factory}(sns).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "publish",
@@ -980,7 +980,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "controlled input",
         "medium",
         tuple(
-            f'boto3.{factory}(sqs).{verb}('
+            f"boto3.{factory}(sqs).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "send_message",
@@ -1009,7 +1009,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "value-shaped call",
         "critical",
         tuple(
-            f'boto3.{factory}(secretsmanager).{verb}('
+            f"boto3.{factory}(secretsmanager).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "create_secret",
@@ -1038,7 +1038,7 @@ _PYTHON_OPERATIONS: tuple[_DangerousOperation, ...] = (
         "call -- this is the single most destructive verb in this table",
         "critical",
         tuple(
-            f'boto3.{factory}(kms).{verb}('
+            f"boto3.{factory}(kms).{verb}("
             for factory in ("client", "resource")
             for verb in (
                 "create_key",

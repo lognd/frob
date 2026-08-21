@@ -3,7 +3,6 @@ source tree (the T-0166 review incident class -- a landed grammar change
 left main's built `strata_core` behind, and `frob check` silently ran the
 OLD parser until a human noticed a confusing SYS004)."""
 
-
 from __future__ import annotations
 
 import importlib

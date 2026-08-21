@@ -766,9 +766,7 @@ def _open_call_mode(text: bytes, call_end: int) -> str:
 
 
 # frob:ticket T-2457
-def _open_call_sites(
-    text: bytes, comment_spans: tuple[ByteSpan, ...]
-) -> list[str]:
+def _open_call_sites(text: bytes, comment_spans: tuple[ByteSpan, ...]) -> list[str]:
     """Every `open(`/`.open(` call site's `_OpenCallMode` classification in
     `text`, outside `comment_spans` (T-2457) -- one entry per occurrence of
     the literal `open(` substring (both the bare builtin and a `Path.
@@ -1059,12 +1057,9 @@ def _needle_matches_resolved(needle: str, resolved: str) -> bool:
         return needle_parts[0] in resolved_parts
     for start in range(resolved_len - needle_len + 1):
         window = resolved_parts[start : start + needle_len]
-        if window[:-1] == needle_parts[:-1] and window[-1].startswith(
-            needle_parts[-1]
-        ):
+        if window[:-1] == needle_parts[:-1] and window[-1].startswith(needle_parts[-1]):
             return True
     return False
-
 
 
 # frob:doc docs/modules/vet.md#public-api

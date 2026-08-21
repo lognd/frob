@@ -66,10 +66,10 @@ class TestWire001PydanticValidatorRescue:
             "from __future__ import annotations\n"
             "from pydantic import BaseModel, model_validator\n\n\n"
             "class Widget(BaseModel):\n"
-            '    model_config = {}\n\n'
+            "    model_config = {}\n\n"
             "    name: str\n\n"
-            "    @model_validator(mode=\"after\")\n"
-            "    def _validate_name_nonempty(self) -> \"Widget\":\n"
+            '    @model_validator(mode="after")\n'
+            '    def _validate_name_nonempty(self) -> "Widget":\n'
             "        if not self.name.strip():\n"
             '            raise ValueError("name must be non-empty")\n'
             "        return self\n",
@@ -99,7 +99,7 @@ class TestWire001PydanticValidatorRescue:
             "from __future__ import annotations\n"
             "from pydantic import BaseModel, field_validator\n\n\n"
             "class Gadget(BaseModel):\n"
-            '    model_config = {}\n\n'
+            "    model_config = {}\n\n"
             "    label: str\n\n"
             '    @field_validator("label")\n'
             "    @classmethod\n"

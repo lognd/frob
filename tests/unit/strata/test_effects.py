@@ -722,7 +722,9 @@ def _write_lock(tmp_path: Path, entries: dict) -> None:
 
     path = tmp_path / CAPABILITY_RATCHET_LOCK_REL
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"schema_version": 1, "entries": entries}), encoding="utf-8")
+    path.write_text(
+        json.dumps({"schema_version": 1, "entries": entries}), encoding="utf-8"
+    )
 
 
 def _grant_model(node_id: str, atom: str, via: tuple[str, ...]) -> KernelModel:
@@ -920,10 +922,10 @@ class TestAmbientCapabilityReason:
         _write(
             tmp_path,
             "x.strata",
-            'node First : trusted {\n'
+            "node First : trusted {\n"
             '    may "exec";\n'
             "}\n"
-            'store Second : trusted {\n'
+            "store Second : trusted {\n"
             '    may "fs.write";\n'
             "}\n",
         )
@@ -938,7 +940,7 @@ class TestAmbientCapabilityReason:
         _write(
             tmp_path,
             "x.strata",
-            'node App : trusted {\n'
+            "node App : trusted {\n"
             '    may "exec";  // because: "the suite runs frob under test"\n'
             "}\n",
         )

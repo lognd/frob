@@ -1101,6 +1101,7 @@ def _rust_body_contains_dangerous_needle(
             return True
     return False
 
+
 # frob:ticket T-1505
 #: a pointer-to-member dereference (`.*`/`->*`/`::*` -- the fixture corpus
 #: uses all three spellings) immediately followed by a call, `(obj.*p)(x)`
@@ -1118,6 +1119,7 @@ _KOTLIN_OPERATOR_INVOKE_CLASS_RE = re.compile(
     re.DOTALL,
 )
 
+
 # frob:ticket T-1505
 #: `val NAME = ClassName(...)` -- `_kotlin_operator_invoke_call_findings`'s
 #: second pass, matched against a class name found by the first pass.
@@ -1128,9 +1130,7 @@ def _kotlin_val_construction_re(class_name: bytes) -> re.Pattern[bytes]:
     pass found is the one the second pass's construction/call chase
     requires, not an arbitrary identifier."""
     return re.compile(
-        rb"\bval\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"
-        + re.escape(class_name)
-        + rb"\s*\("
+        rb"\bval\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*" + re.escape(class_name) + rb"\s*\("
     )
 
 
@@ -1184,9 +1184,7 @@ def _kotlin_operator_invoke_call_lines(raw: bytes) -> list[int]:
     val h = Handler(); h(x)`) -- narrower than general receiver-instance
     points-to (see the `kotlin_operator_invoke_call` registry entry's
     rationale), but closes the taxonomy's own worked example exactly."""
-    class_names = {
-        m.group(1) for m in _KOTLIN_OPERATOR_INVOKE_CLASS_RE.finditer(raw)
-    }
+    class_names = {m.group(1) for m in _KOTLIN_OPERATOR_INVOKE_CLASS_RE.finditer(raw)}
     if not class_names:
         return []
     lines: list[int] = []

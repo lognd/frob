@@ -1,6 +1,5 @@
 """Unit tests for the strata surface parser (docs/strata/surface.md#parser)."""
 
-
 from __future__ import annotations
 
 import sys

@@ -73,7 +73,7 @@ class TestWire001PropertyAttributeAccess:
             "from __future__ import annotations\n\n\n"
             "class Widget:\n"
             "    def __init__(self) -> None:\n"
-            "        self._label = \"x\"\n\n"
+            '        self._label = "x"\n\n'
             "    @property\n"
             "    def label(self) -> str:\n"
             "        return self._label\n\n\n"
@@ -82,9 +82,7 @@ class TestWire001PropertyAttributeAccess:
         )
         snap = _snapshot(tmp_path)
         record = next(
-            r
-            for r in snap.symbols.values()
-            if r.id.qualname.endswith("Widget.label")
+            r for r in snap.symbols.values() if r.id.qualname.endswith("Widget.label")
         )
         diff = Diff(base="x", hunks=(Hunk(file="src/a.py", span=record.span),))
         queue = TicketQueue(tickets={})
@@ -154,6 +152,4 @@ class TestWire001PropertyAttributeAccess:
         diff = Diff(base="x", hunks=(Hunk(file="src/c.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
-        assert any(
-            v.rule == "WIRE001" and "Thing.run" in v.message for v in violations
-        )
+        assert any(v.rule == "WIRE001" and "Thing.run" in v.message for v in violations)

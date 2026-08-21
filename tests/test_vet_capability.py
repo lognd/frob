@@ -258,9 +258,7 @@ class TestSymbolResolvedContainerAndPartialEvasions:
         assert "exec" in scan_file_capabilities(pkg)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
-    def test_functools_partial_called_directly_resolves(
-        self, tmp_path: Path
-    ) -> None:
+    def test_functools_partial_called_directly_resolves(self, tmp_path: Path) -> None:
         pkg = tmp_path / "partial_direct.py"
         pkg.write_text(
             "import functools\n"
@@ -316,7 +314,9 @@ class TestModeAwareOpenCall:
         report `fs-read`, never `fs-write` -- default-mode opens are the
         most common shape and must not regress into a false positive."""
         pkg = tmp_path / "default_mode.py"
-        pkg.write_text("def load(path):\n    with open(path) as f:\n        return f.read()\n")
+        pkg.write_text(
+            "def load(path):\n    with open(path) as f:\n        return f.read()\n"
+        )
         observed = scan_file_capabilities(pkg)
         assert "fs-write" not in observed
         assert "fs-read" in observed
@@ -327,7 +327,9 @@ class TestModeAwareOpenCall:
         `fs-write` -- the false-positive fix must not become a false
         negative."""
         pkg = tmp_path / "write_mode.py"
-        pkg.write_text('def save(path):\n    with open(path, "w") as f:\n        f.write("x")\n')
+        pkg.write_text(
+            'def save(path):\n    with open(path, "w") as f:\n        f.write("x")\n'
+        )
         assert "fs-write" in scan_file_capabilities(pkg)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
@@ -335,7 +337,9 @@ class TestModeAwareOpenCall:
         """Control 2 (must-still-fire): `open(path, "a")` must still report
         `fs-write`."""
         pkg = tmp_path / "append_mode.py"
-        pkg.write_text('def log(path):\n    with open(path, "a") as f:\n        f.write("x")\n')
+        pkg.write_text(
+            'def log(path):\n    with open(path, "a") as f:\n        f.write("x")\n'
+        )
         assert "fs-write" in scan_file_capabilities(pkg)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
@@ -366,12 +370,16 @@ class TestModeAwareOpenCall:
         assert "fs-write" in scan_file_capabilities(pkg)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
-    def test_dynamic_mode_expression_fails_closed_to_write(self, tmp_path: Path) -> None:
+    def test_dynamic_mode_expression_fails_closed_to_write(
+        self, tmp_path: Path
+    ) -> None:
         """A non-literal mode expression (a variable, not a plain string
         literal) is classified OPAQUE and treated as `fs-write`, fail-
         closed -- a security detector's false negative is worse than its
         false positive (ticket body, "the direction that actually hurts
         in a security detector")."""
         pkg = tmp_path / "dynamic_mode.py"
-        pkg.write_text("def load(path, mode):\n    with open(path, mode) as f:\n        return f\n")
+        pkg.write_text(
+            "def load(path, mode):\n    with open(path, mode) as f:\n        return f\n"
+        )
         assert "fs-write" in scan_file_capabilities(pkg)

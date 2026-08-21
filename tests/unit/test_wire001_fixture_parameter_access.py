@@ -79,9 +79,7 @@ class TestWire001FixtureParameterAccess:
             "    assert outside_view is not None\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "outside_view" in r.symref
-        )
+        record = next(r for r in snap.symbols.values() if "outside_view" in r.symref)
         diff = Diff(base="x", hunks=(Hunk(file="tests/test_a.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
@@ -117,10 +115,10 @@ class TestWire001FixtureParameterAccess:
             "    assert shared_view is not None\n",
         )
         snap = _snapshot(tmp_path)
-        record = next(
-            r for r in snap.symbols.values() if "shared_view" in r.symref
+        record = next(r for r in snap.symbols.values() if "shared_view" in r.symref)
+        diff = Diff(
+            base="x", hunks=(Hunk(file="tests/_fixtures.py", span=record.span),)
         )
-        diff = Diff(base="x", hunks=(Hunk(file="tests/_fixtures.py", span=record.span),))
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert not any(
