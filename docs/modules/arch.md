@@ -54,8 +54,8 @@ has no `elif language == "..."` branch for them yet.
 | `lsp-noop-override` (ARCH108, T-0618) | an empty-shell override of a value-returning base method -- written once against the normalized model | warning |
 | `fat-interface` (ARCH109, T-0619) | an ABC/Protocol-family interface whose resolved same-file implementers are mostly stubbed out -- written once against the normalized model | warning |
 | `narrow-client-usage` (ARCH110, T-0619) | a function/method injected with a wide same-file interface that calls only a small fraction of its methods -- written once against the normalized model | suggestion |
-| `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | warning |
-| `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | warning |
+| `low-cohesion-class` (ARCH101, T-0616) | a class's field-using methods split into 2+ disjoint field-usage components (LCOM4) -- written once against the normalized model, fires across languages | error |
+| `god-module` (ARCH102, T-0616) | a module's 10+ top-level exports partition into 3+ disjoint naming/usage clusters -- written once against the normalized model | error |
 | `mixed-concern-function` (ARCH103, T-0616) | one function body mixes an I/O call, a string-formatting call, and 2+ of its own decision points -- written once against the normalized model | suggestion |
 | `pool-inside-pool` (T-0695) | a process-pool construction reachable alongside a thread-pool/thread construction in the same function | warning |
 | `fork-after-threads` (T-0695) | a fork/fork-start-method call reachable after a `Thread(...).start()` on the same function's line order | warning |

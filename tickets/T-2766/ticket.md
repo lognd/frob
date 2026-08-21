@@ -2,7 +2,7 @@
 id: T-2766
 title: 'docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning,
   frob.toml overrides to error'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -16,10 +16,15 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/arch.md
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
 designated_repro_test: null
 threat: null
 component: null

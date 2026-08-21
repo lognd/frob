@@ -233,6 +233,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2757: post-land sweep regression from an unattributed source (sweep spawned by T-2741): 1 new (rule, file) identit(ies), 1 finding(s) (DOC011)
 - T-2759: DOC011: docs/modules/tickets-verify-sweep.md cites phantom T-2736 without a waiver
 - T-2760: Two tickets can own the same (rule, file) finding: the duplicate check compares titles, not finding identity
+- T-2766: docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning, frob.toml overrides to error
 
 ## [0.530.0] - unreleased
 
