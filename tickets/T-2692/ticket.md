@@ -1,7 +1,7 @@
 ---
 id: T-2692
 title: SELFAUDIT001 capability-ratchet debt in design/frob.strata (split from T-2303)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -40,3 +40,6 @@ Re-measure the SELFAUDIT001 finding against current `main` before
 starting this (it may already be affected by T-1656's own land), and
 coordinate scope with whatever ticket holds `design/frob.strata` at
 that time.
+
+## Drop reason
+- 2026-08-21: already resolved, measured 2026-08-21: the ratchet-ceiling half was raised core::fs.write 21->25 by T-2407 (landed 2026-08-19/20) and frob check --ticket T-2692 fires ZERO SYS111 findings; the '2 undeclared capability effects' half is not undeclared -- the only remaining SELFAUDIT001 findings are 2 pre-existing SYS107 WARNings (fs.read/fs.write via-less on the testsuite node) that already carry an explicit because= justification from T-2503's deliberate ambient-grant design, and are WARN not ERROR. gate:SELFAUDIT reports 0 errors, 2 warnings, 0 unresolved, 0 waived. Dropped rather than requeued because 'already resolved' returning to queued makes the ticket a treadmill for the next agent to rediscover. (absorbed by T-2407)
