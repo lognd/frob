@@ -2,7 +2,7 @@
 id: T-2770
 title: frob ticket has no parent setter, so a mis-parented ticket cannot be corrected
   without a forbidden ledger hand-edit
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -17,10 +17,174 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
 - src/frob/_cli_parsers/_ticket/
+- src/frob/app/ticket_runner/_mutate.py
+- src/frob/app/ticket_runner/__init__.py
+- src/frob/app/ticket_runner/_ledger_mirror.py
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
+- docs/modules/tickets.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_mutate.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/__init__.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/config.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: wiring the new parent setter through the CLI dispatch requires the same
+    handler/config-field/mirror-strategy/dispatch-table touches set_tier's T-1069
+    precedent needed; the ticket's original scope (only _setters.py and _cli_parsers/_ticket/)
+    cannot reach the actual command dispatch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/app.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/app.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/app.md
+  reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
+    module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
