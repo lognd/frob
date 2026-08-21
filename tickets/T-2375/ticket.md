@@ -1,7 +1,7 @@
 ---
 id: T-2375
 title: Burn LARGE001 WARN gate to zero, then promote to error
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
