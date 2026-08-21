@@ -2,7 +2,7 @@
 id: T-2753
 title: WIRE001 call-graph resolver cannot see pytest fixture consumption via dependency
   injection
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -16,10 +16,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
+- tests/unit/test_wire001_fixture_parameter_access.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wire001_fixture_parameter_access.py
+  reason: 'T-2753: new reachability-proof test file for the fixture-parameter WIRE001
+    rescue'
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
