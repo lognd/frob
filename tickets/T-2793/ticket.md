@@ -19,6 +19,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/app/ticket_runner/_verify.py
 - tests/unit/test_ticket_runner_gate_findings.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +47,24 @@ scope_changes:
     check inside _rapid_sweep.py, which would violate NO DUPLICATION and could not
     see the raw JSON at all (_land_cmd._unscoped_error_findings only returns the parsed
     frozenset).
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2793's fix adds a new completeness check to _verify.py::_parse_error_findings_from_json;
+    docs/modules/tickets-landing.md already documents that function's T-1703/T-2456/T-2713
+    evolution in a running series of 'how this parser's None contract grew' sections
+    -- adding this ticket's section there (not a new doc file) keeps the one true
+    home for that contract instead of forking it
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2793's fix adds a new completeness check to _verify.py::_parse_error_findings_from_json;
+    docs/modules/tickets-landing.md already documents that function's T-1703/T-2456/T-2713
+    evolution in a running series of 'how this parser's None contract grew' sections
+    -- adding this ticket's section there (not a new doc file) keeps the one true
+    home for that contract instead of forking it
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
