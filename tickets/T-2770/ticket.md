@@ -24,6 +24,7 @@ scope:
 - src/frob/app/_config_external.py
 - docs/modules/tickets.md
 - docs/modules/app.md
+- src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -183,6 +184,13 @@ scope_changes:
   glob: docs/modules/app.md
   reason: new set_parent setter + CLI wiring will add frob:doc edges into these two
     module docs, same pattern set_tier's T-1069 doc edge uses
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/tickets/_models.py
+  reason: TicketError enum + Ticket.parent-adjacent validation lives in _models.py;
+    the new parent setter needs new TicketError variants there, same as every other
+    setter's error variants living in this one enum
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
