@@ -13,7 +13,7 @@ import re
 import tomllib
 from pathlib import Path
 
-from frob.gates._fmt_directives import marker_for, read_line_length
+from frob.gates._fmt_directives import marker_for
 from frob.gates._models import Severity, Violation
 from frob.gitio import Diff, run_argv
 from frob.graph import Edge, EdgeKind, GraphSnapshot
@@ -304,7 +304,7 @@ def _fmt001_touched_lines(diff: Diff, file: str) -> set[int]:
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_untouched_line_not_flagged
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_short_directive_not_flagged
 def _fmt001_file(
-    root: Path, file: str, limit: int, touched: set[int]
+    root: Path, file: str, limit: int | None, touched: set[int]
 ) -> list[Violation]:
     """FMT001 findings for one diff-touched `file`: every physical line of a
     `frob:` directive comment run that both (a) `diff` actually touches and
@@ -320,8 +320,13 @@ def _fmt001_file(
     (non-`frob:`) long comment or a long code line never enters a folded
     `frob:`-prefixed run, so neither is flagged -- only a directive run is
     in scope, matching the ticket's remediation ("run `frob fmt`", which
-    only rewrites directive lines)."""
+    only rewrites directive lines). T-2761: `limit` is now `file`'s OWN
+    per-language width (`resolve_line_length`) rather than one project-
+    wide ruff-derived number for every language -- `None` means `file`'s
+    formatter has no configurable width at all, so it is never flagged."""
     if not touched:
+        return []
+    if limit is None:
         return []
     marker = marker_for(file)
     if marker is None:
@@ -416,16 +421,24 @@ def _fmt001_violations_for_runs(
 # frob:doc docs/modules/gates.md#fmt001-t-0851
 # frob:enforces CHK-GATE-FMT001
 # frob:tests tests/test_gates.py::TestFmt001Gate.test_directive_run_over_limit_flagged
+# frob:ticket T-2761
 def fmt_gate(root: Path, diff: Diff) -> tuple[Violation, ...]:
-    """FMT001 (warn): a diff-touched `frob:` directive comment line over the
-    project's configured line length -- see `_fmt001_file`. Additive only:
-    never suppresses or rewrites the underlying ruff/lint finding on the
-    same line, just names `frob fmt` as the auto-fix."""
-    from frob.gates import _touched_files
+    """FMT001 (warn): a diff-touched `frob:` directive comment line over
+    that file's OWN configured line length -- see `_fmt001_file`.
+    Additive only: never suppresses or rewrites the underlying ruff/lint
+    finding on the same line, just names `frob fmt` as the auto-fix.
 
-    limit = read_line_length(root)
+    T-2761: each touched file resolves its own width via
+    `resolve_line_length` (Rust/TS/JS/C-family via their own tool config,
+    Python via ruff, nearest-config-wins) instead of one project-wide
+    `read_line_length(root)` applied uniformly to every language -- the
+    same unreachable-per-language-resolution gap `frob fmt` itself had."""
+    from frob.gates import _touched_files
+    from frob.gates._fmt_directives import resolve_line_length
+
     violations: list[Violation] = []
     for file in sorted(_touched_files(diff)):
         touched = _fmt001_touched_lines(diff, file)
+        limit = resolve_line_length(root / file, root)
         violations.extend(_fmt001_file(root, file, limit, touched))
     return tuple(violations)

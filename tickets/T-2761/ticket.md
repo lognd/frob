@@ -1,7 +1,7 @@
 ---
 id: T-2761
 title: Wire frob fmt callers to per-language resolve_line_length (T-1606 follow-up)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-20'
@@ -37,6 +37,15 @@ scope_changes:
     are part of the wiring fix'
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmtRunnerReachability::test_check_mode_reports_no_change_for_rust_file_under_its_own_width
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmtRunnerReachability::test_write_mode_leaves_rust_directive_untouched
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestLandFmtStepReachability::test_touched_scoped_step_leaves_rust_file_untouched
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestLandFmtStepReachability::test_whole_tree_fallback_leaves_rust_file_untouched
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestTierAFixHandlerReachability::test_scoped_fix_reports_no_applied_fix_for_rust_file
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestTierAFixHandlerReachability::test_whole_tree_fix_reports_no_applied_fix_for_rust_file
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmt001GateReachability::test_rust_file_over_ruff_width_but_under_rustfmt_width_not_flagged
+- tests/unit/test_fmt_wiring_reachability_t2761.py::TestFmt001GateReachability::test_rust_file_over_its_own_rustfmt_width_still_flagged
 designated_repro_test: null
 threat: null
 component: null

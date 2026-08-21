@@ -54,7 +54,7 @@ declaration).
 | TICK011 | tickets | (warn) a Done report's prose discloses deferred/cut work (a conservative disclosure-phrase scan) with no ticket id resolving nearby and no explicit no-ticket-needed reason -- see "TICK011 (T-1129)" below |
 | TICK012 | tickets | (warn, T-2561) an IN_PROGRESS ticket's live cross-worktree lease (`.git/frob-leases/<id>.json`) records a scope path that no longer `scope_matches` its CURRENT declared scope -- the lease was recorded once at start/scope-mutation time and never re-synced when the declared scope narrowed by some other path, so it silently misleads every OTHER `read_all_leases` consumer (a `doable` collision check, an `--add` conflict refusal). Silent for a ticket with no live lease, or any non-in-progress state. Re-record via a scope-mutating `frob ticket scope` call |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
-| FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds the project's configured line length -- see "FMT001 (T-0851)" below |
+| FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds that file's own configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a missing record (opt-in: a `decisions/` dir must exist) |
 | DEC002 | decisions | an `accepted` decision record has no `frob:decision` code anchor |
 | TEST001 | test | public function/method has no `frob:tests` unit edge |
@@ -6342,8 +6342,15 @@ available standalone (non-zero exit on any non-canonical file) either way.
 
 `frob.gates.fmt_gate` (gate name `fmt`, default-on, WARN severity,
 diff-scoped). The T-0441 follow-up above: fires when a diff-touched
-`frob:` directive comment line exceeds the project's configured line
-length (`frob.gates._fmt_directives.read_line_length`), with a
+`frob:` directive comment line exceeds that file's OWN configured line
+length. T-2761: each touched file resolves its own width via
+`frob.gates._fmt_directives.resolve_line_length` (rustfmt.toml's
+`max_width`, a prettier config's `printWidth`, `.clang-format`'s
+`ColumnLimit`, nearest-config-wins, or `read_line_length`'s ruff-derived
+project limit for Python and any other still-ruff-derived suffix) rather
+than one project-wide `read_line_length(root)` applied uniformly to every
+language -- a file whose own formatter has no configurable width at all
+(`resolve_line_length` returns `None`) is never flagged. Reports a
 remediation hint naming `frob fmt <path>` as the auto-fix -- the same
 self-remedying-message contract as every other gate.
 

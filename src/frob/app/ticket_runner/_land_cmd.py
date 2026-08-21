@@ -226,6 +226,7 @@ def _absorb_pre_land_fixes(
 
 
 # frob:ticket T-1404
+# frob:ticket T-2761
 def _fmt_pre_land_step(
     worktree: Path, ticket_id: str, touched_paths: frozenset[str] | None
 ) -> None:
@@ -238,11 +239,15 @@ def _fmt_pre_land_step(
     the old whole-tree call when the touched set could not be computed
     (`touched_paths is None`) -- degrading to the pre-T-1404 behaviour,
     never silently skipping the fix outright."""
-    from frob.gates._fmt_directives import format_paths, read_line_length
+    # T-2761: no `limit=` override here any more -- letting `format_paths`
+    # resolve each file's own width (T-1606) instead of pre-resolving one
+    # ruff-derived number via `read_line_length` and forcing every
+    # language to wrap against it, which made the per-language resolver
+    # unreachable through land's absorbed fmt step.
+    from frob.gates._fmt_directives import format_paths
 
-    limit = read_line_length(worktree)
     if touched_paths is None:
-        fmt_report = format_paths(worktree, check_only=False, limit=limit)
+        fmt_report = format_paths(worktree, check_only=False)
         fmt_changed = len(fmt_report.changes)
     else:
         fmt_changed = 0
@@ -250,7 +255,7 @@ def _fmt_pre_land_step(
             path = worktree / rel
             if not path.is_file():
                 continue
-            scoped_report = format_paths(path, check_only=False, limit=limit)
+            scoped_report = format_paths(path, check_only=False)
             fmt_changed += len(scoped_report.changes)
     if fmt_changed:
         _log.info(

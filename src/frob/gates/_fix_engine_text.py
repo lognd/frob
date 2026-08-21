@@ -75,8 +75,9 @@ _log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
+# frob:ticket T-2761
 def _fmt001_scoped_fixes(
-    root: Path, limit: int, only_paths: frozenset[str]
+    root: Path, only_paths: frozenset[str]
 ) -> list[FixApplied]:
     """`fix_fmt001_directive_wrap`'s `only_paths` branch: format each
     named path individually (`format_paths` already accepts a single
@@ -95,7 +96,7 @@ def _fmt001_scoped_fixes(
         path = root / rel
         if not path.is_file():
             continue
-        report = format_paths(path, check_only=False, limit=limit)
+        report = format_paths(path, check_only=False)
         applied.extend(
             FixApplied(
                 rule="FMT001",
@@ -110,6 +111,7 @@ def _fmt001_scoped_fixes(
 
 # frob:doc docs/modules/gates.md#--fix-tier-a-deterministic-auto-fix-handlers-t-1138
 # frob:ticket T-1911
+# frob:ticket T-2761
 def fix_fmt001_directive_wrap(
     root: Path,
     *,
@@ -129,12 +131,14 @@ def fix_fmt001_directive_wrap(
     on, re-tripping ty's `invalid-argument-type`) is gone rather than
     merely documented as ignorable; `TIER_A_HANDLERS`' lambda wrapper is
     what absorbs the real dispatch table's uniform 4-arg shape now."""
-    from frob.gates._fmt_directives import format_paths, read_line_length
+    # T-2761: no `limit=` override -- `format_paths` resolves each file's
+    # own width (T-1606) instead of forcing every language to wrap
+    # against one pre-resolved ruff-derived number.
+    from frob.gates._fmt_directives import format_paths
 
-    limit = read_line_length(root)
     if only_paths is not None:
-        return _fmt001_scoped_fixes(root, limit, only_paths)
-    report = format_paths(root, check_only=False, limit=limit)
+        return _fmt001_scoped_fixes(root, only_paths)
+    report = format_paths(root, check_only=False)
     return [
         FixApplied(
             rule="FMT001",

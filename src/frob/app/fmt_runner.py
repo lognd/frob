@@ -16,6 +16,7 @@ _log = get_logger(__name__)
 
 
 # frob:ticket T-2492
+# frob:ticket T-2761
 # frob:doc docs/modules/app.md#runners
 # frob:waive AFFECT001 reason="T-2492: docs/modules/app.md#runners one-line summary is \
 # still accurate -- this change only adds an internal --json stdout-corruption guard, \
@@ -31,7 +32,7 @@ def run(cfg: AppConfig) -> None:
     (confirmed by execution -- corrupted the JSON), so the scan now runs
     under `_guard_json_stdout_writes()` when `--json` is set, matching
     `frob check`'s T-2486 precedent."""
-    from frob.gates._fmt_directives import format_paths, read_line_length
+    from frob.gates._fmt_directives import format_paths
 
     # T-2492: pre-existing bug, fixed incidentally because `ty` (correctly)
     # refuses this ticket's land on it otherwise -- `and` always discarded
@@ -39,21 +40,21 @@ def run(cfg: AppConfig) -> None:
     # crashed on `.resolve()` when `cfg.fmt_path` was `None`; `or` is the
     # intended "explicit path, else cwd" fallback every sibling runner uses.
     root = (cfg.fmt_path or Path(".")).resolve()
-    project_root = root if root.is_dir() else root.parent
     guard_ctx = (
         _guard_json_stdout_writes() if cfg.fmt_json else contextlib.nullcontext()
     )
-    # T-2492: `read_line_length`'s own DEBUG log (an unreadable/missing
-    # pyproject.toml) landed unguarded on stdout ahead of a `--json`
-    # payload -- confirmed by execution once the `cfg.fmt_path or Path(".")`
-    # fix above started honoring a real `fmt_path` again. Moved inside the
-    # same guarded span as `format_paths`.
+    # T-2761: no `limit=` override here any more -- `format_paths`'s own
+    # default (`None`) lets EACH FILE resolve its own width via T-1606's
+    # `resolve_line_length` (rustfmt.toml/prettier config/.clang-format,
+    # nearest-config-wins), instead of pre-resolving one ruff-derived
+    # number via `read_line_length` and forcing every language to wrap
+    # against it. That pre-resolution was exactly what made T-1606's
+    # per-language resolver unreachable through the real `frob fmt`
+    # entrypoint.
     with guard_ctx:
-        limit = read_line_length(project_root)
         report = format_paths(
             root,
             check_only=cfg.fmt_check,
-            limit=limit,
             include_test_corpora=cfg.fmt_include_test_corpora,
         )
     if cfg.fmt_json:
