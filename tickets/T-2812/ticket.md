@@ -2,7 +2,7 @@
 id: T-2812
 title: 'REG008 burn-down batch 1/N: 19 missing frob:enforces directives in gates/perf
   modules'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -38,6 +38,13 @@ scope_changes:
     check, per coordinator instruction to exclude live files
   actor: logan
   at: '2026-08-21'
+body_changes:
+- mode: append
+  reason: correct batch count after excluding a live-leased file
+  actor: logan
+  at: '2026-08-21'
+  old_length: 2881
+  new_length: 3271
 designated_repro_test: null
 threat: null
 component: null
@@ -93,3 +100,11 @@ several are outside the `frob.gates` package's established
 `frob:enforces` placement pattern entirely -- each needs its own
 verification of where a directive belongs before it is safe to add, left
 for the next batch. REF001 (257) and REF002 (6) are untouched.
+
+
+Correction: DOC012 (src/frob/gates/_docblocks.py) was dropped from this
+batch after ticket creation -- T-2359 holds a live in-progress lease on
+that file (fleet_status.py LEASES check), so it is excluded per the
+coordinator's live-file exclusion instruction. This batch fixes 18 of the
+36 REG008 entries, not 19; DOC012 moves to the "remaining" list for a
+future batch once T-2359 lands.
