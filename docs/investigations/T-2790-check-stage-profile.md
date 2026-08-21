@@ -1,3 +1,4 @@
+<!-- frob:waive REF002 reason="T-2369: a point-in-time investigation doc, deliberately singly-anchored from docs/index.md's investigations index -- a second consumer would not be genuine" -->
 # T-2790: profile of the top four `frob check` stages, and what is reducible
 
 Measured in the T-2790 worktree, natives built, real repo (this checkout,

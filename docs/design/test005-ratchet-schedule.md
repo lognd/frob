@@ -1,3 +1,4 @@
+<!-- frob:waive REF002 reason="T-2369: a ratchet-schedule design record, deliberately singly-anchored from docs/index.md's design-doc index -- a second consumer would not be genuine" -->
 # TEST005 floor ratchet-up schedule: 75/70 is a waypoint (T-1315)
 
 `frob.toml`'s `[testing]` table carries the actual, gate-enforced

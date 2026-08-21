@@ -56,7 +56,10 @@ def _write(root: Path, rel: str, text: str) -> Path:
 # frob:ticket T-1665
 class TestResolvedImportChannel:
     """A `.py` target's inbound reference is a REAL AST-resolved import,
-    not a text token that merely LOOKS like one."""
+    not a text token that merely LOOKS like one.
+
+    frob:ticket T-2369
+    """
 
     def test_import_alias_reaches_the_real_target_not_the_alias_name(
         self, tmp_path: Path
@@ -122,14 +125,17 @@ class TestResolvedImportChannel:
             for v in [v for v in violations if v.file == "pkg/sibling.py"]
             if v.rule == "REF001"
         ]
-        assert severities == [Severity.WARN]
+        assert severities == [Severity.ERROR]
 
 
 # frob:ticket T-1665
 class TestUnresolvedSeverity:
     """T-1664's third outcome: a `.py` target this substrate KNOWS it
     cannot determine reports `Severity.UNRESOLVED`, never a silent pass
-    and never a false-certain REF001."""
+    and never a false-certain REF001.
+
+    frob:ticket T-2369
+    """
 
     def test_dynamic_import_call_naming_the_target_reports_unresolved(
         self, tmp_path: Path
@@ -177,7 +183,7 @@ class TestUnresolvedSeverity:
             if v.rule == "REF001"
         ]
         assert len(dead) == 1
-        assert dead[0].severity == Severity.WARN
+        assert dead[0].severity == Severity.ERROR
 
     def test_resolved_import_wins_over_unresolved_when_both_exist(
         self, tmp_path: Path
@@ -203,4 +209,4 @@ class TestUnresolvedSeverity:
 
         matches = [v for v in violations if v.file == "plugins/greet.py"]
         assert [v.rule for v in matches] == ["REF002"]
-        assert matches[0].severity == Severity.WARN
+        assert matches[0].severity == Severity.ERROR

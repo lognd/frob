@@ -1,3 +1,4 @@
+<!-- frob:waive REF002 reason="T-2369: a point-in-time investigation doc, deliberately singly-anchored from docs/index.md's investigations index -- a second consumer would not be genuine" -->
 # T-2782: is landing's ~300s critical section cheapenable?
 
 Measured in a real, natives-built ticket worktree merged onto main tip

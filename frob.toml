@@ -201,6 +201,36 @@ reason = "read by humans/packaging tools, not referenced from source"
 path = "CHANGELOG.md"
 reason = "read by humans/release tooling, not referenced from source"
 
+# T-2369: glob entry point -- `frob.gates._refs._allowlist_covers` also
+# accepts a `*`/`?`/`[`-bearing `path` as a fnmatch pattern, not just a
+# literal file. changelog.d/T-XXXX.md fragments are write-once inputs
+# `frob ticket land`'s release tooling assembles into CHANGELOG.md and
+# then leaves in place for audit history -- one is created per landed
+# ticket FOREVER, so a fixed per-file entry (261 and counting) would need
+# continuous upkeep for a structurally-permanent pattern; a single glob
+# covers the whole class.
+[[refs.entrypoint]]
+path = "changelog.d/*.md"
+reason = "write-once per-ticket fragment assembled into CHANGELOG.md by the land pipeline (T-2445); never referenced by name from other tracked files, and created on every future land"
+
+# T-2369: same write-once-artifact-of-a-closed-ticket shape as
+# changelog.d/*.md above -- an attachment/evidence file is created once
+# under its OWN ticket's directory and read from that ticket's own
+# ticket.md/done-report.md, never from any other tracked file; the
+# per-ticket count grows forever, so a fixed per-file entry does not
+# scale.
+[[refs.entrypoint]]
+path = "tickets/*/attachments/*"
+reason = "write-once ticket attachment, referenced only from its own ticket's ticket.md/done-report.md; created per-ticket forever"
+
+[[refs.entrypoint]]
+path = "tickets/*/evidence/*"
+reason = "write-once ticket evidence artifact, referenced only from its own ticket's ticket.md/done-report.md; created per-ticket forever"
+
+[[refs.entrypoint]]
+path = "tickets/T-2504/census-2026-08-18-raw.json"
+reason = "T-2369: a one-off raw data attachment dropped directly under its ticket's own directory (not under attachments/ or evidence/), referenced only from tickets/T-2504/done-report.md; a literal entry since this shape has not recurred (a future recurrence should generalize this to a glob instead)"
+
 [[refs.entrypoint]]
 path = "pyproject.toml"
 reason = "read by pip/uv/build backends outside this repo's own graph"

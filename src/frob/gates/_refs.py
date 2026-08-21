@@ -106,6 +106,7 @@ a doc was structurally unwaivable. See `_md_waived_rules`.
 
 from __future__ import annotations
 
+import fnmatch
 import re
 import tomllib
 from pathlib import Path, PurePosixPath
@@ -231,6 +232,27 @@ def _load_allowlist(root: Path) -> dict[str, str]:
                 "ref_gate: malformed [[refs.entrypoint]] entry skipped: %r", entry
             )
     return allow
+
+
+def _is_glob_entrypoint(path: str) -> bool:
+    """True if an `[[refs.entrypoint]]` `path` value is a glob pattern
+    (contains `*`, `?`, or `[`) rather than a literal file path (T-2369)."""
+    return any(ch in path for ch in "*?[")
+
+
+def _allowlist_covers(rel_path: str, allowlist: dict[str, str]) -> bool:
+    """True if `rel_path` is exempted by `[[refs.entrypoint]]`, either by
+    an exact literal match or a glob-pattern match (T-2369: a per-ticket
+    `changelog.d/T-XXXX.md` fragment is created on every land forever, so
+    a fixed per-file allowlist entry would need continuous upkeep -- one
+    glob entry (`changelog.d/*.md`) covers the whole write-once,
+    never-referenced-by-name class instead)."""
+    if rel_path in allowlist:
+        return True
+    return any(
+        _is_glob_entrypoint(pattern) and fnmatch.fnmatchcase(rel_path, pattern)
+        for pattern in allowlist
+    )
 
 
 # frob:ticket T-0449
@@ -646,8 +668,11 @@ def _ref001_or_002(
                 ),
             )
         return Violation(
+            # T-2369: promoted WARN -> ERROR once the repo-wide REF001
+            # burn-down reached zero findings -- an advisory-only orphan
+            # check lets new dead files silently reaccumulate.
             rule="REF001",
-            severity=Severity.WARN,
+            severity=Severity.ERROR,
             file=rel_path,
             line=0,
             message=(
@@ -663,8 +688,11 @@ def _ref001_or_002(
     if count == 1:
         (only,) = inbound
         return Violation(
+            # T-2369: promoted WARN -> ERROR once the repo-wide REF002
+            # burn-down reached zero findings -- see REF001's identical
+            # rationale immediately above.
             rule="REF002",
-            severity=Severity.WARN,
+            severity=Severity.ERROR,
             file=rel_path,
             line=0,
             message=(
@@ -803,7 +831,9 @@ def _ref_gate_file_violations(
             )
         )
 
-    if rel_path in allowlist or _is_collectible_test_filename(rel_path):
+    if _allowlist_covers(rel_path, allowlist) or _is_collectible_test_filename(
+        rel_path
+    ):
         return violations
 
     auto = _auto_inbound(rel_path, reach_index)
@@ -852,9 +882,13 @@ def ref_gate(root: Path) -> tuple[Violation, ...]:
     caught). Still subject to REF003 (a test file's own dangling
     `frob:used-by` is still a lie).
 
-    WARN-only (never blocks a build): every orphan must eventually be
-    waived-with-reason or fixed, but this gate itself never fails `frob
-    check`'s exit code."""
+    T-2369: REF001/REF002 are ERROR severity (promoted from WARN once
+    their repo-wide burn-down reached zero findings) -- an unwaived
+    orphan or single-anchor file now fails `frob check`'s exit code; a
+    genuine gap needs `frob:waive REF00[12] reason="..."` or a
+    `[[refs.entrypoint]]` declaration, not silence. REF003 (dangling
+    `frob:used-by`) is unaffected by this promotion; see its own
+    `Severity` at the call site below."""
     tracked = _shared_tracked_files(root, caller="ref_gate")
     if not tracked:
         _log.info("ref_gate: no tracked files found, skipping")

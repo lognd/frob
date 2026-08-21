@@ -202,6 +202,7 @@ that sunset and regrouped all three, plus `frob docs --search`, under
 | `docs/commands/parse.md` | `frob parse` |
 | `docs/commands/gitlog.md` | `frob gitlog` |
 | `docs/commands/check.md` | `frob check` |
+| `docs/commands/format.md` | `frob format` (T-2251) |
 | `docs/commands/sys.md` | `frob sys` (plan T-0084, export T-0086) |
 | `docs/commands/deploy.md` | `frob deploy` (generate T-0257) |
 | `docs/commands/release.md` | `frob release` |
@@ -337,6 +338,8 @@ reference docs, not updated after the fact.
 
 - [docs/investigations/T-2202-mega-cluster.md](investigations/T-2202-mega-cluster.md) -- T-2202: does the 175-file CYCLE001 mega-cluster decompose via a small hub-file removal set? Measured: no.
 - [docs/investigations/T-2782-land-serialization.md](investigations/T-2782-land-serialization.md) -- T-2782: is landing's ~300s critical section cheapenable by moving verification outside the land lock? Measured: no -- check_gates() dominates, ~87% of its cost is genuinely post-merge-dependent whole-program analysis, and main moves between nearly every consecutive land under real contention.
+- [docs/investigations/T-2790-check-stage-profile.md](investigations/T-2790-check-stage-profile.md) -- T-2790: profile of `frob check`'s top four stages (sys/perf/dead_symbols/arch) under cProfile -- which function dominates each, and what fraction is reducible.
+- [docs/investigations/T-2796-backlog-reproduction.md](investigations/T-2796-backlog-reproduction.md) -- T-2796: one full unbudgeted `frob check --json` reproduction as a positive control, reconciling its gate-summary count against the coordinator's separately-measured floor.
 
 ## Planned / tracked work
 

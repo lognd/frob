@@ -147,7 +147,10 @@ class TestUsedByDeclaration:
 
 class TestEntrypointAllowlist:
     """`[[refs.entrypoint]]` frob.toml table exempts declared entry points
-    -- T-0396 acceptance criterion (3)."""
+    -- T-0396 acceptance criterion (3). T-2369 adds glob-pattern entries.
+
+    frob:ticket T-2369
+    """
 
     def test_allowlisted_file_is_exempt(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)
@@ -178,6 +181,47 @@ class TestEntrypointAllowlist:
 
         assert _rule_ids(violations, "README.md") == []
         assert "REF001" in _rule_ids(violations, "also_orphan.md")
+
+    def test_glob_entrypoint_exempts_matching_files(self, tmp_path: Path) -> None:
+        # T-2369: a `path` value carrying `*`/`?`/`[` is a glob pattern,
+        # not a literal file -- covers a whole write-once class
+        # (changelog.d/*.md) without one entry per file.
+        _init_repo(tmp_path)
+        (tmp_path / "changelog.d").mkdir()
+        _write(tmp_path, "changelog.d/T-0001.md", "fragment one\n")
+        _write(tmp_path, "changelog.d/T-0002.md", "fragment two\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[refs.entrypoint]]\npath = "changelog.d/*.md"\n'
+            'reason = "write-once fragments"\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "changelog.d/T-0001.md") == []
+        assert _rule_ids(violations, "changelog.d/T-0002.md") == []
+
+    def test_glob_entrypoint_does_not_exempt_non_matching_files(
+        self, tmp_path: Path
+    ) -> None:
+        _init_repo(tmp_path)
+        (tmp_path / "changelog.d").mkdir()
+        _write(tmp_path, "changelog.d/T-0001.md", "fragment one\n")
+        _write(tmp_path, "also_orphan.txt", "not covered by the glob\n")
+        _write(
+            tmp_path,
+            "frob.toml",
+            '[[refs.entrypoint]]\npath = "changelog.d/*.md"\n'
+            'reason = "write-once fragments"\n',
+        )
+        _git(tmp_path, "add", "-A")
+
+        violations = ref_gate(tmp_path)
+
+        assert _rule_ids(violations, "changelog.d/T-0001.md") == []
+        assert "REF001" in _rule_ids(violations, "also_orphan.txt")
 
 
 class TestNativeStubLinking:
@@ -254,16 +298,25 @@ class TestNativeStubLinking:
 
 
 class TestSeverityAndDegrade:
-    """WARN-only posture and no-tracked-files degrade path."""
+    """ERROR-tier posture (T-2369: promoted from WARN once the repo-wide
+    burn-down reached zero) and no-tracked-files degrade path.
+
+    frob:ticket T-2369
+    """
 
     def test_all_violations_are_warn_severity(self, tmp_path: Path) -> None:
+        # T-2369: REF001/REF002 promoted WARN -> ERROR (name kept for
+        # T-0396/T-0831/T-1653/T-1665 evidence continuity -- see
+        # docs/guides/agent-playbook.md's test-deletion-orphans-evidence
+        # lesson; renaming a cited test silently breaks OTHER tickets'
+        # evidence).
         _init_repo(tmp_path)
         _write(tmp_path, "orphan.yaml", "key: value\n")
         _git(tmp_path, "add", "-A")
 
         violations = ref_gate(tmp_path)
 
-        assert all(v.severity is Severity.WARN for v in violations)
+        assert all(v.severity is Severity.ERROR for v in violations)
 
     def test_no_tracked_files_returns_empty(self, tmp_path: Path) -> None:
         _init_repo(tmp_path)

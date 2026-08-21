@@ -18,6 +18,13 @@ check lives in `frob.app.ticket_runner._attach`, not `frob.tickets.attach`
 -- the library function stays a pure "copy these bytes" primitive; the CLI
 is what decides whether to offer or refuse the clipboard.
 
+`frob ticket attach --backfill-drafts` (T-2254, dispatch in
+`src/frob/app/ticket_runner/_attach_backfill.py`) repairs `Attachment.path`
+fields a pre-T-2199 draft promotion left dangling at a vanished
+`T-draft-<hash>` directory, by re-running `frob.tickets._draft_finalize.
+backfill_stale_draft_attachment_paths` against the real (post-promotion)
+ticket id.
+
 Backend probe order (first available wins):
 
 | Backend | Platform | Probe |

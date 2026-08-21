@@ -3939,16 +3939,25 @@ finding verification and the exact before/after counts).
 
 Tiers, over the deduped set of inbound-referencing files (auto plus
 verified-declared, unioned): **0** -> REF001 (orphan), **1** -> REF002
-(single fragile anchor), **2+** -> pass. All three rules are WARN -- this
-never fails `frob check`'s exit code, but every REF001/REF002 must
-eventually be waived-with-reason (`frob:waive REF001 reason="..."`) or
-fixed, same advisory-but-tracked posture as PERF/FUZZ.
+(single fragile anchor), **2+** -> pass. T-2369: REF001/REF002 are
+ERROR-tier (promoted from WARN once the repo-wide burn-down reached zero
+findings) -- an unwaived orphan or single-anchor file now fails `frob
+check`'s exit code; every REF001/REF002 must be waived-with-reason
+(`frob:waive REF001 reason="..."`), given a genuine second
+consumer/declaration, or fixed. REF003 (dangling `frob:used-by`) is
+unaffected by this promotion and stays advisory-but-tracked, same posture
+as PERF/FUZZ.
 
 `[[refs.entrypoint]]` in `frob.toml` exempts genuinely externally-facing
 files (README.md, LICENSE, pyproject.toml, the CLI `__main__.py`, ...)
 from REF001/REF002 -- each entry is `{ path = "...", reason = "..." }`; a
 malformed entry (missing `path`/`reason`) is skipped and logged, never
-treated as a blanket mute.
+treated as a blanket mute. T-2369: a `path` value containing `*`/`?`/`[`
+is matched as an `fnmatch` glob rather than a literal path (`frob.gates.
+_refs._allowlist_covers`) -- added so a structurally-permanent, ever-
+growing write-once-artifact class (`changelog.d/*.md`, `tickets/*/
+attachments/*`, `tickets/*/evidence/*`) can be covered by one entry
+instead of one new literal entry per file forever.
 
 `used-by` is a reserved marker verb in `frob.graph.dsl`
 (`_RESERVED_MARKER_VERBS`): recognized and silently skipped by the graph's

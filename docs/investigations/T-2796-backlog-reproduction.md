@@ -1,3 +1,4 @@
+<!-- frob:waive REF002 reason="T-2369: a point-in-time investigation doc, deliberately singly-anchored from docs/index.md's investigations index -- a second consumer would not be genuine" -->
 # T-2796: backlog reproduction measurement (2026-08-21)
 
 ## Method

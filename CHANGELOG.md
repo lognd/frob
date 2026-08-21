@@ -285,6 +285,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2815: Reformat batch 15/N: 10 files pending ruff-format (T-2359 child)
 - T-2816: land-lock wait budget spends the caller's own work-time budget on queueing, not just measuring it
 - T-2817: document T-2807's unattributed-land-process probe in coordinator-scripts.md
+- T-2820: REF001/REF002 systematic collapse (glob entrypoints) + promote to error
 
 ## [0.530.0] - unreleased
 
