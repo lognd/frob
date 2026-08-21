@@ -100,6 +100,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c0b92fbd16b15b84fad8765c6879fe1798d01d3a
 ---
 batch 3 of T-2359's ruff-format-only reformat. Format-only, no semantic changes. 12 files: src/frob/gates/_fix_engine_text.py, _inv.py, _lang_conformance.py, _profile_schema.py, _refs.py, _rule_id_scan.py, _sys.py, _sys_selfaudit.py, _testing_schema.py, _tickets_gate.py, _toplevel_scalar_schema.py, _waive.py. Excludes tests/unit/test_ticket_runner_ledger_mirror.py and src/frob/gates/_wire.py out of caution around in-flight T-2770/T-2772 leases.
