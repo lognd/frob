@@ -1,37 +1,36 @@
 ## Done report
 
-This ticket's stated work -- re-point tests/unit/test_land_finish_guard.py:70's
-WIRE001 waiver off the closing T-1743 -- was already done on main by an
-earlier commit (d285b6c5b43ed2deb7fe2e987f157e3d0564fc1d, "chore(tickets):
-re-point T-1743's dangling WIRE001 follow_up citation"): the waiver's
-follow_up already reads T-1778, verified directly against current main.
+Verified independently, no work needed:
 
-That leaves this ticket in the exact T-1856 anchor shape: the waiver now
-cites T-1778 ITSELF as its live tracker, so T-1778 must never reach a
-terminal state (WIRE002 disqualifies a done/dropped follow_up target,
-same T-1490/T-1488 orphan-waiver class T-1856 exists to prevent). Marked
-`anchor=True` via `set_anchor` (T-1856's library-level setter -- no CLI
-yet, see T-1867) with a reason recording why, and requeued to `queued`
-(no further active work) rather than closed/dropped.
+- `tests/unit/test_land_finish_guard.py:69-72`'s WIRE001 waiver on
+  `_add_worktree` cites `follow_up="T-1778"` (confirmed by direct read of
+  the file, not by trusting the ticket body's prior claim).
+- `tickets/T-1778/ticket.md` carries `anchor: true`,
+  `anchor_reason: permanent WIRE001 waiver home for tests/unit/
+  test_land_finish_guard.py:_add_worktree`, and `state: queued` --
+  non-terminal, exactly as an anchor ticket must stay per T-1856 (a
+  citation's own target ticket must never reach a terminal state, or the
+  waiver it anchors loses its live follow_up target).
+- The citation is not dangling: its target exists, is correctly typed as
+  an anchor, and sits in a valid non-terminal state. Nothing to re-home.
 
-Initially attempted a `drop` (the work looked finished at a glance) --
-correctly refused by `_check_live_tracker_citations`/`LiveTrackerCited`
-since T-1778 IS the citation's target. Un-did the drop (git reset in the
-worktree, nothing had landed yet) rather than force through it.
+This ticket's own Failure log (2026-08-08 attempt 1) already recorded
+that its re-point work landed to main and that closing it to DONE is
+categorically wrong for an anchor ticket -- confirmed still true. T-1868/
+T-1874 (`_skip_close_for_anchor_no_close_requested`, landed since that
+failure log entry, and which names this exact ticket in its own
+docstring as the incident that motivated it) now gives `frob ticket land`
+a legal way to publish this ticket's record as-is without forcing a
+`queued -> done` transition. Landing this Done report exercises that path
+rather than repeating the 2026-08-08 fail-attempt workaround.
 
-Docs-kind ticket with no pytest surface of its own -- recording the
-existing CLI-dispatch integration test as evidence per the T-0167
-precedent (agent-playbook.md section 5).
+Changed: none -- no code or doc edit required; scope file
+(`tests/unit/test_land_finish_guard.py`) already correct.
 
-### Changed
-```
- tickets/T-1778/ticket.md | 6 ++++++
- 1 file changed, 6 insertions(+)
-```
+Evidence: tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
+(pre-existing, unchanged).
 
-### Evidence
-- `tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches` (pytest node id, verified passing when recorded)
+Filed: none.
 
-### Captured claims
-- tests: 1 passed (from 1 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
+Gates: no new findings possible from a no-op change; anchor/state
+invariants verified by direct read, not gate output.
