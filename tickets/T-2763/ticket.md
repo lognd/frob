@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'correct two falsified premises: worker count already derives from MemAvailable
+    (the gap is single-snapshot sizing), and TEST005 delegates absent-coverage to
+    TEST006 which already fires at ERROR (the gap is legibility)'
+  actor: logan
+  at: '2026-08-20'
+  old_length: 3577
+  new_length: 6221
 designated_repro_test: null
 threat: null
 component: null
@@ -101,3 +110,63 @@ all -- it is a gate that reports success when it has nothing to check.
 Do not "fix" this by lowering the coverage bar or by making the refresh
 sample fewer tests. The measurement being expensive is not the bug; the
 bug is that failing to measure is indistinguishable from measuring clean.
+
+
+
+
+## CORRECTION (coordinator): TWO premises in this ticket were WRONG
+
+An investigation pass read the code and falsified both. I verified each
+myself before recording this.
+
+### 1. The worker count DOES adapt to memory
+
+I wrote that "the worker count appears not to adapt". It does.
+`_compute_worker_count()` at `src/frob/testing/_coverage_refresh.py:716`
+(landed under T-1672) reads /proc/meminfo's `MemAvailable` and caps at
+`available_mb // _DEFAULT_PER_WORKER_MEM_MB` (1536MB, line 629). It is
+wired into the real `--full` path. Measured live: on this box it computes
+**10** workers, not 12.
+
+So my suggested remedy -- "derive it from memory rather than CPU count"
+-- was proposing something already implemented.
+
+THE REAL GAP IS SHARPER: sizing is a SINGLE SNAPSHOT taken at start, and
+is never re-checked as sibling agent processes grow during a multi-minute
+run. The `-n 12` OOM I quoted almost certainly came from a snapshot taken
+before concurrent fleet load (dozens of agent worktrees and venvs) drove
+memory down mid-run. That is a re-check problem, not a missing heuristic,
+and the fix is different.
+
+### 2. TEST005's skip is BY DESIGN and already has a loud counterpart
+
+I framed the absent-coverage skip as a silent zero. It is not.
+TEST005's own docstring (T-0557) explicitly delegates "file has no
+coverage data at all" to TEST006 as a measurement gap rather than
+evidence the symbol is uncovered. TEST006 (`_test006_missing` /
+`_test006_stale`, `src/frob/gates/__init__.py:4932-4948`) fires at ERROR
+when the stamp is missing or stale -- and it DID fire in both agents'
+runs today. `.frob/coverage-stamp` is dated Aug 6.
+
+So the loud refusal I asked for already exists. I looked at zero TEST005
+findings and concluded silence, without noticing the TEST006 ERROR that
+was the signal.
+
+### What the real defect is
+
+LEGIBILITY, not missing logic. One TEST006 ERROR line inside 54 mixed
+findings is easy to lose, so "zero TEST005 findings" reads exactly like a
+clean measurement even though the warning was present. Two agents and I
+all read it that way today.
+
+Preferred remedy, narrowed: surface TEST006 DISTINCTLY -- e.g. have
+`scripts/check_summary.py` lead with "coverage is N days stale; TEST005
+findings below are NOT a clean measurement" -- rather than adding refusal
+logic to TEST005, which would duplicate a rule that is already correct.
+
+### What still stands
+
+The serial full-coverage cost is genuinely UNMEASURED. One run was killed
+at a 580s watchdog. It needs a deliberate measurement with a longer
+watchdog during a quiet window, not a piecemeal attempt by whichever
+agent hits it. That remains the open question.
