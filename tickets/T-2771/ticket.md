@@ -1,7 +1,7 @@
 ---
 id: T-2771
 title: retarget OVER_BROAD_LITERAL_GLOBS off hardcoded src/frob/ literal in tickets/_models.py
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -15,10 +15,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_models.py
+- src/frob/tickets/_doable.py
+- src/frob/tickets/_new_renumber.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/tickets/_doable.py
+  reason: OVER_BROAD_LITERAL_GLOBS retarget requires updating both call sites that
+    check membership against it
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: OVER_BROAD_LITERAL_GLOBS retarget requires updating both call sites that
+    check membership against it
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
