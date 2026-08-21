@@ -10,11 +10,18 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tests/**
 - src/frob/**
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: genuine coverage burn-down epic spanning app/serve/arch/tickets/scaffold/refactor/testing/gates/strata/vet/dup
+  packages per its own body's breakdown; narrowing would misrepresent the ticket as
+  single-file
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
