@@ -2,7 +2,7 @@
 id: T-2754
 title: ARCH103 _promote_pending_drafts_after_close mixes I/O, string-formatting, and
   6 decision points
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 Surfaced during T-2743's ARCH103 disposition work (found while scoped to a different, named set of ARCH103 sites; out of T-2743's declared scope so not fixed there). _promote_pending_drafts_after_close (src/frob/app/ticket_runner/_close_cmd.py:1338) mixes I/O, string-formatting, and 6 decision points in one body per ARCH103. Needs its own subsystem-owner disposition: either a T-0977-style waiver (if it is genuinely a cohesive orchestration routine, same shape as the many already-waived CLI/IO helpers) or a real decomposition.
+
+## Drop reason
+- 2026-08-21: Verified against current main: _promote_pending_drafts_after_close (src/frob/app/ticket_runner/_close_cmd.py) no longer triggers ARCH103 -- frob check --ticket T-2754 shows zero ARCH103 findings anywhere in this file. T-2738 (the original close-promotes-drafts feature) already split this function into _pending_draft_ids_after_close/_promote_one_pending_draft/_report_stranded_drafts_and_exit, explicitly 'split out under ARCH103' per their own docstrings, and T-2749 fixed a post-land ARCH103 regression in that same split. The function's current body is 9 executable lines with 2 decision points, delegating all I/O and string-formatting to the three helpers -- it does not match the 'mixes I/O, string-formatting, and 6 decision points in one body' premise T-2754 was filed against. Concurrent unrelated lands overtook this ticket's premise before it could be worked; no code change is needed.
