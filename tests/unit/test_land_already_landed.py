@@ -333,9 +333,10 @@ class TestAlreadyLandedOnMain:
         # draft id to the final landed id as part of `land()` -- assert
         # on the body the fix actually cares about, not the directive
         # line's exact id text.
-        assert "def held() -> None:\n    return None\n" in (
-            repo / "src" / "held.py"
-        ).read_text()
+        assert (
+            "def held() -> None:\n    return None\n"
+            in (repo / "src" / "held.py").read_text()
+        )
 
     def test_no_op_for_a_docs_only_ticket_whose_scope_diff_is_empty_but_not_yet_landed(
         self, repo: Path

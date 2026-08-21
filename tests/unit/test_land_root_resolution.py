@@ -123,9 +123,7 @@ class TestRootResolvesToADifferentWorktree:
         assert not (repo / "src" / "fix.py").exists()
         assert not (wt_a / "src" / "fix.py").exists()
 
-    def test_root_equal_to_the_primary_checkout_is_unaffected(
-        self, repo: Path
-    ) -> None:
+    def test_root_equal_to_the_primary_checkout_is_unaffected(self, repo: Path) -> None:
         # frob:tests tests/unit/test_land_root_resolution.py::TestRootResolvesToADifferentWorktree.test_root_equal_to_the_primary_checkout_is_unaffected  # noqa: E501
         # frob:tests src/frob/tickets/_land.py::_refuse_if_root_is_worktree kind="unit"
         # Sanity companion: the ordinary case (root IS the true primary

@@ -105,7 +105,9 @@ class TestApplyBackpressure:
         monkeypatch.setattr(
             verify_mod,
             "block_until_watermark_advances",
-            lambda root, ceilings, ticket_id, **kw: Err(BackpressureError.BlockTimedOut),
+            lambda root, ceilings, ticket_id, **kw: Err(
+                BackpressureError.BlockTimedOut
+            ),
         )
         cfg = AppConfig(ticket_id="T-9000", ticket_dry_run=False)
         # Must not raise -- a timed-out block logs at ERROR and the land
@@ -130,7 +132,9 @@ class TestApplyBackpressure:
         monkeypatch.setattr(
             verify_mod,
             "rapid_soft_warning",
-            lambda root: calls.append("warned") or "rapid profile verification debt is stale",
+            lambda root: (
+                calls.append("warned") or "rapid profile verification debt is stale"
+            ),
         )
         monkeypatch.setattr(
             verify_mod,

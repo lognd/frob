@@ -52,7 +52,9 @@ from frob.tickets._store import (
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(argv, cwd=str(cwd), check=True, capture_output=True, text=True)
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
 
 
 def _git_init(root: Path, *, branch: str = "main") -> None:
@@ -69,7 +71,9 @@ def _commit_all(root: Path, message: str) -> None:
 
 
 def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
-    return TicketSpec(title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope)
+    return TicketSpec(
+        title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope
+    )
 
 
 def _seed_v2_ticket(root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()):

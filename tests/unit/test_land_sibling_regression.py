@@ -15,7 +15,14 @@ from pathlib import Path
 
 import pytest
 
-from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket, transition
+from frob.tickets import (
+    Origin,
+    TicketKind,
+    TicketSpec,
+    TicketState,
+    new_ticket,
+    transition,
+)
 from frob.tickets._land import (
     _assert_no_sibling_state_regression,
     _sibling_ticket_states,
@@ -60,9 +67,7 @@ def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
     )
 
 
-def _seed_v2_ticket(
-    root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()
-):
+def _seed_v2_ticket(root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()):
     """Write a fresh QUEUED ticket directly into v2-mode storage (mirrors
     `tests/test_ticket_land.py::_seed_v2_ticket`)."""
     ticket = _ticket_from_spec(ticket_id, _spec("Seed", scope=scope), ())
@@ -254,7 +259,9 @@ class TestSelfConflictAutoResolve:
         landing_id = created.danger_ok.id
 
         wt = v2_repo.parent / "wt-self-conflict"
-        _run(["git", "worktree", "add", "-b", "feature-self-conflict", str(wt)], v2_repo)
+        _run(
+            ["git", "worktree", "add", "-b", "feature-self-conflict", str(wt)], v2_repo
+        )
 
         # Worktree makes real progress on the LANDING ticket itself:
         # queued -> planned -> in_progress, plus evidence + a Done report.
@@ -299,7 +306,10 @@ class TestSelfConflictAutoResolve:
         _commit_all(v2_repo, "main gains sibling v2 ticket T-3020")
 
         wt = v2_repo.parent / "wt-genuine-sibling"
-        _run(["git", "worktree", "add", "-b", "feature-genuine-sibling", str(wt)], v2_repo)
+        _run(
+            ["git", "worktree", "add", "-b", "feature-genuine-sibling", str(wt)],
+            v2_repo,
+        )
 
         created = new_ticket(wt, _spec("Land M", scope=("src/gadget.py",)))
         assert created.is_ok
@@ -323,7 +333,9 @@ class TestSelfConflictAutoResolve:
         main_sibling = load_all(v2_repo).danger_ok["T-3020"]
         assert write_ticket(
             v2_repo,
-            main_sibling.model_copy(update={"title": "Sibling T-3020 retitled by main"}),
+            main_sibling.model_copy(
+                update={"title": "Sibling T-3020 retitled by main"}
+            ),
         ).is_ok
         _commit_all(v2_repo, "main retitles sibling T-3020")
 

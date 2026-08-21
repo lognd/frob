@@ -22,7 +22,14 @@ from pathlib import Path
 
 import pytest
 
-from frob.tickets import Origin, TicketKind, TicketSpec, TicketState, new_ticket, transition
+from frob.tickets import (
+    Origin,
+    TicketKind,
+    TicketSpec,
+    TicketState,
+    new_ticket,
+    transition,
+)
 from frob.tickets._land import land
 from frob.tickets._land_git_ops import detect_duplicate_ticket_id_collisions
 from frob.tickets._models import LandError
@@ -37,7 +44,9 @@ from frob.tickets._store import (
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(argv, cwd=str(cwd), check=True, capture_output=True, text=True)
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
 
 
 def _git_init(root: Path, *, branch: str = "main") -> None:
@@ -56,7 +65,9 @@ def _commit_all(root: Path, message: str) -> None:
 
 
 def _spec(title: str, *, scope: tuple[str, ...] = ()) -> TicketSpec:
-    return TicketSpec(title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope)
+    return TicketSpec(
+        title=title, kind=TicketKind.FEATURE, origin=Origin.AGENT, scope=scope
+    )
 
 
 def _seed_v2_ticket(root: Path, ticket_id: str, *, scope: tuple[str, ...] = ()):
@@ -241,7 +252,9 @@ class TestLandRefusesOnDuplicateTicketIdCollision:
         # brand-new ticket id T-4100 (e.g. a finalized draft during this
         # same land).
         colliding_a = _seed_v2_ticket(wt, "T-4100", scope=("src/from-worktree.py",))
-        colliding_a = colliding_a.model_copy(update={"title": "Filed from the worktree"})
+        colliding_a = colliding_a.model_copy(
+            update={"title": "Filed from the worktree"}
+        )
         assert write_ticket(wt, colliding_a).is_ok
         _commit_all(wt, "worktree lands L and files T-4100")
 

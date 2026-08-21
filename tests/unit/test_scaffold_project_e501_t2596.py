@@ -15,9 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-_PROJECT_PY = (
-    Path(__file__).resolve().parents[2] / "src/frob/scaffold/project.py"
-)
+_PROJECT_PY = Path(__file__).resolve().parents[2] / "src/frob/scaffold/project.py"
 _MAX_LINE_LEN = 88
 
 

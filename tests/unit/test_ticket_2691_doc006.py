@@ -44,14 +44,14 @@ class TestTicket2691Doc006Regression:
             "a future `frob land status` can read the marker file.\n",
         )
         _git(tmp_path, "add", "-A")
-        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        violations = doc006_gate(
+            tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        )
         found = [v for v in violations if v.rule == "DOC006"]
         assert found
         assert any("land status" in v.message for v in found)
 
-    def test_prose_description_of_future_verb_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
+    def test_prose_description_of_future_verb_not_flagged(self, tmp_path: Path) -> None:
         """T-2697's actual fix: describe the future verb in plain quoted
         prose instead of backticks, so DOC006 no longer reads it as a
         real CLI invocation that must resolve today."""
@@ -64,7 +64,9 @@ class TestTicket2691Doc006Regression:
             " read the marker file.\n",
         )
         _git(tmp_path, "add", "-A")
-        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        violations = doc006_gate(
+            tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        )
         found = [v for v in violations if v.rule == "DOC006"]
         assert not found
 
@@ -124,14 +126,14 @@ class TestTicket2742Doc006Regression:
             "A first-class query -- e.g. `frob land status` or a field.\n",
         )
         _git(tmp_path, "add", "-A")
-        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        violations = doc006_gate(
+            tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        )
         found = [v for v in violations if v.rule == "DOC006"]
         assert found
         assert any("land status" in v.message for v in found)
 
-    def test_prose_description_of_future_verb_not_flagged(
-        self, tmp_path: Path
-    ) -> None:
+    def test_prose_description_of_future_verb_not_flagged(self, tmp_path: Path) -> None:
         """T-2745's actual fix: describe the future verb in plain prose
         (no backticks), so DOC006 no longer reads it as a real CLI
         invocation that must resolve today. Matches the exact wording
@@ -145,6 +147,8 @@ class TestTicket2742Doc006Regression:
             " verb (not a real command; do not run it) or a field.\n",
         )
         _git(tmp_path, "add", "-A")
-        violations = doc006_gate(tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok)
+        violations = doc006_gate(
+            tmp_path, build_graph(tmp_path, tmp_path / ".frob" / "cache.db").danger_ok
+        )
         found = [v for v in violations if v.rule == "DOC006"]
         assert not found

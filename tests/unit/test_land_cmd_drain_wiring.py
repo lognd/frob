@@ -22,7 +22,9 @@ from frob.app.ticket_runner._land_cmd import _land_core_finish_post_land
 from frob.tickets._models import LandReport
 
 
-def _make_report(*, dry_run: bool = False, commit_sha: str | None = "deadbeef") -> LandReport:
+def _make_report(
+    *, dry_run: bool = False, commit_sha: str | None = "deadbeef"
+) -> LandReport:
     return LandReport(
         ticket_id="T-9000",
         final_id="T-9000",

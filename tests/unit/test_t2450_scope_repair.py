@@ -14,6 +14,7 @@ from pathlib import Path, PurePosixPath
 
 import pytest
 
+
 # frob:ticket T-2614
 # frob:tests \
 # tests/unit/test_t2450_scope_repair.py::TestT2450ScopeRepair.test_no_scope_entry_conta\

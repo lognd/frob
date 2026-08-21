@@ -18,9 +18,7 @@ from frob.app.ticket_runner._new import (
 
 
 class TestEmitScopeClosureWarnings:
-    def test_no_warnings_logs_nothing(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
+    def test_no_warnings_logs_nothing(self, caplog: pytest.LogCaptureFixture) -> None:
         with caplog.at_level(logging.WARNING):
             _emit_scope_closure_warnings("ticket new", "T-0001", ())
         assert caplog.records == []

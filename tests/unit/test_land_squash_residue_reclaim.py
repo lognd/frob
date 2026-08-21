@@ -29,7 +29,9 @@ from frob.tickets._leases import LAND_LOCK_REL
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    return subprocess.run(argv, cwd=str(cwd), check=True, capture_output=True, text=True)
+    return subprocess.run(
+        argv, cwd=str(cwd), check=True, capture_output=True, text=True
+    )
 
 
 def _git_init(root: Path, *, branch: str = "main") -> None:

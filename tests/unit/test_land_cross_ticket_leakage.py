@@ -899,10 +899,10 @@ class TestPassengerTickets:
         landing_id = landing.danger_ok.id
         _make_closeable(wt, landing_id)
         (wt / "src" / "fix.py").write_text(
-            'def helper():\n'
+            "def helper():\n"
             '    """Do the thing.\n'
-            f'\n    Historical context: # frob:ticket {prior_id} used to do this\n'
-            '    differently.\n'
+            f"\n    Historical context: # frob:ticket {prior_id} used to do this\n"
+            "    differently.\n"
             '    """\n'
             "    return 1\n"
         )
