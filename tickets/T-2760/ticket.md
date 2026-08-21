@@ -25,6 +25,8 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/test_tickets.py
 - tests/unit/test_rapid_sweep.py
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -88,6 +90,16 @@ scope_changes:
   glob: tests/unit/test_rapid_sweep.py
   reason: 'T-2760: add structured (rule,file) finding-identity duplicate detection
     at filing and start time'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: docs for new finding-identity field/CLI flag
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: docs for new finding-identity field/CLI flag
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
