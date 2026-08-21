@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/fleet_status.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,13 @@ scope_changes:
   glob: tests/unit/test_coordinator_scripts.py
   reason: T-2818 needs new/updated ancestry-walk tests for the forkserver orphan classification
     fix
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: 'AFFECT001: orphaned_forkserver_count/stale_forkserver_count/concurrent_check_count
+    behavior changed (ancestry walk, derived age threshold) and their doc anchors
+    in this file need updating in the same change'
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
