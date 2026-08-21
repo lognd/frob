@@ -649,6 +649,15 @@ Each of these three limits has its own regression test
 merely undocumented -- the same "prove the limit, don't just state it"
 posture as the corpus-verification note above.
 
+**T-2798**: `_python_local_wrapper_capabilities` now accepts an optional
+`candidates` argument (an already-computed `_python_resolved_candidates`
+result). `scan_file_capabilities` computes that tuple once per file and
+passes it to both this function and `_python_binding_capabilities`
+instead of each independently re-running the same import/binding resolve
+pass -- a call-site fix, not a new cache: `candidates=None` (every other
+caller, including this section's own tests) recomputes exactly as
+before, so none of the honest-limit behavior above changes.
+
 ## Closed-world import accounting (T-0180)
 
 T-0158 shipped the single-source `DANGEROUS_OPERATIONS` registry, the

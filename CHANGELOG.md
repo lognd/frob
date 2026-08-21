@@ -270,6 +270,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2794: Reformat batch 9/N: 13 files pending ruff-format (T-2359 child)
 - T-2795: Reformat batch 10/N: 13 files pending ruff-format (T-2359 child)
 - T-2796: a large fraction of the queued backlog is already resolved by landed work, and 'already resolved' was being requeued instead of dropped
+- T-2798: size a content-hash cache for sys's ast-based capability scan (currently fully uncached, largest single stage)
 - T-2800: Burn ruff I001 batch 2: tests/ subset
 - T-2805: native-staleness content-digest check is a permanent latch: a reproducible rebuild is byte-identical, so frob natives build can never clear NATIVE001
 - T-2806: Stamp the parse-artifact cache env before build_graph, not just before the gate process pool

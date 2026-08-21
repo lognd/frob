@@ -14,6 +14,7 @@ import frob_core
 
 from frob.vet import _capability_core as cc
 from frob.vet import _capability_python as cp
+from frob.vet._capability_scan import scan_file_capabilities
 
 
 def _write(source: bytes, tmp_path: Path) -> Path:
@@ -118,3 +119,100 @@ class TestScanPythonCapabilitiesParity:
         candidates, _unresolved, spans = frob_core.scan_python_capabilities(source)
         assert sorted(candidates) == sorted(cp._python_resolved_candidates(path))
         assert tuple(sorted(spans)) == cc._non_executable_byte_spans(path)
+
+
+# frob:ticket T-2798
+class TestResolvedCandidatesThreading:
+    """T-2798: `_python_binding_capabilities`/`_python_local_wrapper_
+    capabilities` accept an already-computed `candidates` tuple so
+    `scan_file_capabilities` can compute `_python_resolved_candidates`
+    ONCE per file and pass it to both, instead of each independently
+    triggering a second, identical resolve pass (profiled: this single
+    recompute was 85% of an isolated `scan_file_capabilities` sweep's own
+    cost). Every test here is a POSITIVE CONTROL both directions: passing
+    the precomputed tuple must return the BYTE-IDENTICAL result an
+    internal recompute would (never a silent behavior change from the
+    call-site rewrite), and the wrapper-resolution path -- the one place
+    a naive content-hash cache would have been unsound, since it reads a
+    SIBLING file -- must still fire on a real cross-file case."""
+
+    def test_binding_capabilities_with_and_without_precomputed_candidates_agree(
+        self, tmp_path: Path
+    ) -> None:
+        source = b"import subprocess as sp\n\ndef g():\n    sp.run(x)\n"
+        path = _write(source, tmp_path)
+        table = cc._PATTERNS["python"]
+        comment_spans = cc._non_executable_byte_spans(path)
+
+        recomputed = cp._python_binding_capabilities(path, table, comment_spans)
+        candidates = cp._python_resolved_candidates(path)
+        threaded = cp._python_binding_capabilities(
+            path, table, comment_spans, candidates=candidates
+        )
+        assert threaded == recomputed
+        assert "exec" in threaded
+
+    def test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree(
+        self, tmp_path: Path
+    ) -> None:
+        # Same-directory sibling wrapper: `caller.py` imports a PUBLIC
+        # `run` from `helper.py`, whose own body execs -- the one-hop
+        # cross-file case `_python_local_wrapper_capabilities` exists for,
+        # and the exact reason a naive path-content-only cache would be
+        # unsound here (this function's result depends on `helper.py`'s
+        # content too, not just `caller.py`'s).
+        (tmp_path / "helper.py").write_text(
+            "import subprocess\n\ndef run(cmd):\n    subprocess.run(cmd)\n"
+        )
+        caller = tmp_path / "caller.py"
+        caller.write_text("from helper import run\n\ndef f(x):\n    run(x)\n")
+        table = cc._PATTERNS["python"]
+
+        recomputed = cp._python_local_wrapper_capabilities(caller, table)
+        candidates = cp._python_resolved_candidates(caller)
+        threaded = cp._python_local_wrapper_capabilities(
+            caller, table, candidates=candidates
+        )
+        assert threaded == recomputed
+        assert "exec" in threaded
+
+    def test_scan_file_capabilities_still_resolves_cross_file_wrapper(
+        self, tmp_path: Path
+    ) -> None:
+        # End-to-end regression lock on the actual T-2798 call-site
+        # rewrite (`scan_file_capabilities` now computes `_python_
+        # resolved_candidates` once and threads it into both binding
+        # passes) -- must still observe the cross-file wrapper exec a
+        # fresh two-independent-call implementation would.
+        (tmp_path / "helper.py").write_text(
+            "import subprocess\n\ndef run(cmd):\n    subprocess.run(cmd)\n"
+        )
+        caller = tmp_path / "caller.py"
+        caller.write_text("from helper import run\n\ndef f(x):\n    run(x)\n")
+
+        found = scan_file_capabilities(caller)
+        assert "exec" in found
+
+    def test_scan_file_capabilities_sees_a_genuine_sibling_change(
+        self, tmp_path: Path
+    ) -> None:
+        # POSITIVE CONTROL (miss direction): a sibling's content change
+        # must be observed on the very next scan -- nothing in this
+        # ticket's call-site rewrite introduces any caching across calls,
+        # so there is no invalidation surface to prove here beyond "the
+        # plain function call still sees the current file content", but
+        # T-2798's hard constraints ask for this explicitly given how
+        # close this path sits to where a content-hash cache was
+        # considered and declined.
+        helper = tmp_path / "helper.py"
+        helper.write_text("def run(cmd):\n    return cmd\n")
+        caller = tmp_path / "caller.py"
+        caller.write_text("from helper import run\n\ndef f(x):\n    run(x)\n")
+
+        before = scan_file_capabilities(caller)
+        assert "exec" not in before
+
+        helper.write_text("import subprocess\n\ndef run(cmd):\n    subprocess.run(cmd)\n")
+
+        after = scan_file_capabilities(caller)
+        assert "exec" in after

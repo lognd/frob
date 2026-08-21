@@ -2,7 +2,7 @@
 id: T-2798
 title: size a content-hash cache for sys's ast-based capability scan (currently fully
   uncached, largest single stage)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -35,6 +35,11 @@ scope_changes:
     doc target needs the corresponding update'
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_capability_native.py::TestResolvedCandidatesThreading::test_binding_capabilities_with_and_without_precomputed_candidates_agree
+- tests/unit/test_capability_native.py::TestResolvedCandidatesThreading::test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree
+- tests/unit/test_capability_native.py::TestResolvedCandidatesThreading::test_scan_file_capabilities_still_resolves_cross_file_wrapper
+- tests/unit/test_capability_native.py::TestResolvedCandidatesThreading::test_scan_file_capabilities_sees_a_genuine_sibling_change
 designated_repro_test: null
 threat: null
 component: null

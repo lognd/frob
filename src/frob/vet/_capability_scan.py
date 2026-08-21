@@ -481,7 +481,10 @@ def _body_reaches_decode_and_exec(body: str) -> bool:
 
 # frob:doc docs/modules/vet.md#public-api
 # frob:ticket T-2358
+# frob:ticket T-2798
 # frob:tests tests/test_vet.py::TestCapabilityScan.test_python_exec_and_net_detected kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_still_resolves_cross_file_wrapper kind="unit"  # noqa: E501
+# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_scan_file_capabilities_sees_a_genuine_sibling_change kind="unit"  # noqa: E501
 def scan_file_capabilities(path: Path) -> frozenset[str]:
     """Capability tokens observed in one source file's raw text (T-0209:
     needle hits fully inside a tree-sitter comment span are excluded --
@@ -517,18 +520,31 @@ def scan_file_capabilities(path: Path) -> frozenset[str]:
     comment_spans = _non_executable_byte_spans(path)
     found = _matched_capabilities(raw, table, language, comment_spans)
     if language == "python":
+        # T-2798: computed ONCE and threaded into both calls below --
+        # `_python_binding_capabilities` and `_python_local_wrapper_
+        # capabilities` each independently called `_python_resolved_
+        # candidates(path)` (the expensive import/binding resolve pass)
+        # before this change, a redundant second recompute of a pure
+        # per-file function that profiled at 85% of this whole scan's own
+        # cost on a real repo sweep. See `_python_resolved_candidates`'s
+        # docstring for the full sizing writeup.
+        python_candidates = _python_resolved_candidates(path)
         # T-0328: import/binding-aware resolution catches aliased/from-
         # import evasions the raw-text needle scan above structurally
         # cannot (`import subprocess as sp; sp.run(x)`), without touching
         # the lexical path's own behavior at all.
-        found |= _python_binding_capabilities(path, table, comment_spans)
+        found |= _python_binding_capabilities(
+            path, table, comment_spans, candidates=python_candidates
+        )
         # T-2223: one-hop cross-file wrapper resolution -- catches a
         # PUBLIC same-directory sibling wrapper (`from a import run;
         # run(x)` where `a.run` itself execs) that T-1752's own call-
         # graph attribution structurally cannot reach (private-callee-
         # only edges) and that neither binding pass above can see (both
         # only ever resolve within THIS file's own text).
-        found |= _python_local_wrapper_capabilities(path, table)
+        found |= _python_local_wrapper_capabilities(
+            path, table, candidates=python_candidates
+        )
         # T-0244: embedded HTML/JS string literals are invisible to the
         # lexical/binding passes above (both scan the file's OWN python
         # grammar text); this always adds `embedded_code` (fail-closed

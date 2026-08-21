@@ -1103,7 +1103,29 @@ def _python_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     (T-0328, extended by T-0337 for local rebinding of a dangerous name).
     Empty for a non-Python file, an unparseable file, or one `frob.lang`
     has no grammar for -- degrades to the pre-existing lexical-only scan,
-    never raises."""
+    never raises.
+
+    T-2798 sizing note: this is a PURE function of `path`'s own tree-
+    sitter parse only -- `raw_tree(path)` is the only I/O, it reads no
+    other file, consults no mutable global, and every helper it calls
+    (`_py_import_table`, `_build_py_alias_table`, `_collect_py_
+    candidates`) closes over nothing but that one parse. `scan_file_
+    capabilities` used to call this TWICE per Python file in one pass
+    (once directly from `_python_binding_capabilities`, once again from
+    `_python_local_wrapper_capabilities`'s cross-file lookup) -- profiled
+    at 2448 calls over 1224 files, 94.25s of a 111.09s isolated `scan_
+    file_capabilities` sweep (85%), purely from being recomputed for no
+    reason. Both callers now accept an already-computed `candidates`
+    argument instead (see their docstrings) so `scan_file_capabilities`
+    computes this once per file and threads the same tuple through both
+    -- a plain call-site fix, not a cache: no new memo/cache layer, no
+    cross-run staleness surface, and (T-2798's other finding) no
+    `vet -> checker` import edge, which would have refuted this repo's
+    own `assume "weakness:CWE-78:checker" noflow registry -> checker`
+    strata claim (design/frob.strata) had `frob.check._memo.
+    memoize_per_run` been reached for from here. See T-2798's Done report
+    for the full sizing writeup, including why a cross-invocation disk
+    cache was sized and declined."""
     parsed = raw_tree(path)
     if parsed.is_err:
         return ()
@@ -1121,10 +1143,13 @@ def _python_resolved_candidates(path: Path) -> tuple[tuple[str, int, int], ...]:
     return tuple(candidates)
 
 
+# frob:ticket T-2798
+# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_binding_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 def _python_binding_capabilities(
     path: Path,
     table: dict[str, tuple[str, ...]],
     comment_spans: tuple[ByteSpan, ...],
+    candidates: tuple[tuple[str, int, int], ...] | None = None,
 ) -> set[str]:
     """Capability kinds observed via import/binding-aware resolution only
     (T-0328) -- the union of every registry needle that matches a resolved
@@ -1140,12 +1165,23 @@ def _python_binding_capabilities(
     in `resolved` is necessarily also found in the longer string; searching
     only the longer string is behavior-identical and halves the substring
     work per needle. Also short-circuits the whole per-candidate loop once
-    every capability with a nonempty needle set has already been found."""
+    every capability with a nonempty needle set has already been found.
+
+    T-2798: `candidates` lets a caller that has ALREADY computed
+    `_python_resolved_candidates(path)` pass it straight through instead
+    of triggering a second, identical recompute -- `scan_file_
+    capabilities` is exactly that caller (see `_python_resolved_
+    candidates`'s own docstring for the profile this closes). `None`
+    (every other/existing caller, including every test in this repo that
+    calls this function directly) preserves the original behavior
+    byte-for-byte: compute it here, same as before."""
     found: set[str] = set()
     patterns = _compiled_capability_patterns(table)
     if not patterns:
         return found
-    for resolved, start, end in _python_resolved_candidates(path):
+    if candidates is None:
+        candidates = _python_resolved_candidates(path)
+    for resolved, start, end in candidates:
         if _fully_in_any_span(start, end, comment_spans):
             continue
         haystack = f"{resolved}("
@@ -1230,9 +1266,13 @@ def _wrapper_function_capabilities(
 
 
 # frob:ticket T-2223
+# frob:ticket T-2798
 # frob:doc docs/modules/vet.md#one-hop-public-cross-file-wrapper-resolution-t-2223
+# frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
 def _python_local_wrapper_capabilities(
-    path: Path, table: dict[str, tuple[str, ...]]
+    path: Path,
+    table: dict[str, tuple[str, ...]],
+    candidates: tuple[tuple[str, int, int], ...] | None = None,
 ) -> set[str]:
     """One-hop cross-file wrapper resolution for capability scanning
     (T-2223): when `path` calls a symbol imported from a SAME-DIRECTORY
@@ -1263,18 +1303,21 @@ def _python_local_wrapper_capabilities(
     that one cannot reach.
 
     HONEST LIMIT (matching this module's T-0209/T-0244 gap-disclosure
-    style): exactly ONE hop, and only a bare top-level import name
-    resolved to a file in the SAME DIRECTORY as `path` (`from a import
-    run` where `a.py` sits next to the importing file) -- never `frob.
-    lang.resolve_local_import`'s full package-root-aware resolution,
-    never a chain of wrappers (B imports from A, A imports from C), and
-    never a dotted/relative import specifier. A wrapper reached through
-    more than one file hop, or via a package-qualified import, is a
-    disclosed remaining gap, same posture as every other honest-limit
-    note in this module -- not something this function claims to catch."""
+    style): exactly ONE hop, only a bare top-level import name resolved
+    to a file in the SAME DIRECTORY as `path` -- never `frob.lang.
+    resolve_local_import`'s full package-root-aware resolution, never a
+    chain of wrappers, never a dotted/relative import specifier. A
+    wrapper reached through more than one file hop, or via a package-
+    qualified import, is a disclosed remaining gap, not something this
+    function claims to catch.
+
+    T-2798: `candidates=None` recomputes as before; a caller with an
+    already-computed tuple skips the redundant resolve pass."""
     found: set[str] = set()
     seen: set[str] = set()
-    for resolved, _start, _end in _python_resolved_candidates(path):
+    if candidates is None:
+        candidates = _python_resolved_candidates(path)
+    for resolved, _start, _end in candidates:
         if resolved in seen or "." not in resolved:
             continue
         seen.add(resolved)
