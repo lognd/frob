@@ -38,6 +38,7 @@ from ._metadata import (
     _add_ticket_runs_last_parser,
     _add_ticket_scope_ack_parser,
     _add_ticket_scope_parser,
+    _add_ticket_set_parent_parser,
     _add_ticket_sprint_parser,
     _add_ticket_tier_parser,
 )
@@ -84,6 +85,7 @@ __all__ = [
     "_add_ticket_review_parser",
     "_add_ticket_scope_ack_parser",
     "_add_ticket_scope_parser",
+    "_add_ticket_set_parent_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
 ]
@@ -121,6 +123,8 @@ def _add_ticket_closeout_parsers(ticket_sub) -> list:
             _add_ticket_sprint_parser(ticket_sub),
             # frob:ticket T-1069
             _add_ticket_tier_parser(ticket_sub),
+            # frob:ticket T-2770
+            _add_ticket_set_parent_parser(ticket_sub),
             # frob:ticket T-1613
             _add_ticket_runs_last_parser(ticket_sub),
             # frob:ticket T-2624

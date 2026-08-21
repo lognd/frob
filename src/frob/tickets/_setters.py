@@ -312,6 +312,151 @@ def set_tier(
     )
 
 
+# frob:ticket T-2770
+#: rank of each `TicketTier` in the epic -> story -> ticket hierarchy
+#: (lower = higher up); `set_parent`'s tier-inversion refusal requires a
+#: parent's rank to be NO GREATER than the child's -- same-tier chaining
+#: (an epic parenting another epic, T-2770's own T-2384->T-1382 positive
+#: control) is allowed, only a LOWER tier parenting a higher one (a
+#: `ticket` parenting an `epic`) is refused.
+_TIER_RANK: dict[TicketTier, int] = {
+    TicketTier.EPIC: 0,
+    TicketTier.STORY: 1,
+    TicketTier.TICKET: 2,
+}
+
+
+# frob:ticket T-2770
+def _parent_creates_cycle(
+    queue: dict[str, Ticket], ticket_id: str, parent_id: str
+) -> bool:
+    """True if walking `parent_id`'s own `parent` chain (any depth) would
+    eventually reach `ticket_id` (T-2770) -- i.e. `ticket_id` is already an
+    ancestor of `parent_id`, so pointing `ticket_id.parent` at `parent_id`
+    would close a ring (the direct `A parent B, B parent A` case and any
+    longer one). Terminates on a `seen` id set the same way `effective_
+    milestone`'s walk does, so a pre-existing malformed/dangling chain
+    cannot loop forever; a dangling `parent` id (not in `queue`) simply
+    stops the walk short of a cycle finding."""
+    seen = {ticket_id}
+    current_id: str | None = parent_id
+    while current_id is not None:
+        if current_id in seen:
+            return True
+        seen.add(current_id)
+        current = queue.get(current_id)
+        current_id = current.parent if current is not None else None
+    return False
+
+
+# frob:ticket T-2770
+def _validate_parent_edge(
+    queue: dict[str, Ticket], ticket: Ticket, parent_id: str
+) -> TicketError | None:
+    """`set_parent`'s real structural validation, split out (ARCH001) so
+    the setter itself stays a thin ledger-locked load/write shell: refuses
+    a `parent_id` not present in `queue` (`ParentNotFound`), one that would
+    close a cycle via `_parent_creates_cycle` (`ParentCycle`), or one whose
+    tier ranks LOWER than `ticket`'s own (`ParentTierInversion`) -- a
+    `ticket` cannot parent an `epic`/`story`, a `story` cannot parent an
+    `epic`, but same-tier chaining (an `epic` parenting another `epic`,
+    T-2770's own T-2384->T-1382 positive control) is allowed. `None` when
+    `parent_id` is a valid target."""
+    parent = queue.get(parent_id)
+    if parent is None:
+        return TicketError.ParentNotFound
+    if _parent_creates_cycle(queue, ticket.id, parent_id):
+        return TicketError.ParentCycle
+    if _TIER_RANK[parent.tier] > _TIER_RANK[ticket.tier]:
+        return TicketError.ParentTierInversion
+    return None
+
+
+# frob:ticket T-2770
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_reparents_leaf_to_epic
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_self_parent_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_nonexistent_parent_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_direct_cycle_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_longer_ring_cycle_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_tier_inversion_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_epic_can_parent_epic
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_story_cannot_parent_epic
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_reason_missing_refuses
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_moving_an_existing_parent_drops_the_old_edge  # noqa: E501
+# frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
+def set_parent(
+    root: Path, ticket_id: str, parent_id: str, *, reason: str
+) -> Result[Ticket, TicketError]:
+    """`frob ticket set-parent <id> <parent-id> --reason TEXT`: the
+    accountable, single-writer way to correct `ticket_id`'s `parent` edge
+    (T-2770) -- `frob ticket new --parent` was the only place this field
+    could previously be set, so a mis-parented ticket had no CLI route to
+    fix, only the forbidden hand edit `set_body`/T-2392 exists to prevent
+    for the body field.
+
+    Refuses (write nothing) for a blank `reason`
+    (`Err(TicketError.ParentTicketReasonMissing)`), `parent_id ==
+    ticket_id` self-parenting (`Err(TicketError.ParentSelfReference)`), or
+    any of `_validate_parent_edge`'s structural checks (nonexistent
+    parent, cycle, tier inversion) -- see that function's docstring for
+    the exact rule set. T-2770's own measured customer: a `tier=epic`
+    ticket whose successor work was filed with `parent: null` reads as
+    "every child terminal, epic closeable" to the rot detector even
+    though the epic's real goal is unmet; re-parenting the successor onto
+    the epic is the fix, and this is the only way to do it without a hand
+    edit.
+
+    Re-parenting a DONE-but-still-active OR archived ticket is allowed
+    (parent is organizational metadata, not a state-machine transition,
+    and the T-2770 customer instance -- T-2386 -- is exactly a `done`
+    ticket needing correction); an archived target routes through
+    `write_archived_ticket` via `_ticket_currently_archived`, the same
+    `set_body`/T-2678 fix, never creating a duplicate active-tree copy.
+    Moving an already-parented ticket simply overwrites the scalar field
+    -- the old edge never lingers."""
+    if not reason.strip():
+        return Err(TicketError.ParentTicketReasonMissing)
+    if parent_id == ticket_id:
+        return Err(TicketError.ParentSelfReference)
+    from frob.tickets import _load_ticket_and_queue
+
+    leased = enforce_worktree_lease(root)
+    if leased.is_err:
+        return Err(leased.danger_err)
+    with ledger_lock(root):
+        loaded = _load_ticket_and_queue(root, ticket_id)
+        if loaded.is_err:
+            return Err(loaded.danger_err)
+        ticket, queue = loaded.danger_ok
+        validation_error = _validate_parent_edge(queue, ticket, parent_id)
+        if validation_error is not None:
+            return Err(validation_error)
+        old_parent = ticket.parent
+        entry = _triage_change_entry("parent", old_parent, parent_id, reason)
+        updated = ticket.model_copy(
+            update={
+                "parent": parent_id,
+                "triage_changes": ticket.triage_changes + (entry,),
+            }
+        )
+        write_result = (
+            write_archived_ticket(root, updated)
+            if _ticket_currently_archived(root, ticket_id)
+            else write_ticket(root, updated)
+        )
+        if write_result.is_err:
+            return Err(write_result.danger_err)
+    _log.info(
+        "tickets: %s parent set to %s (was %s): %s",
+        ticket_id,
+        parent_id,
+        old_parent,
+        reason,
+    )
+    return Ok(updated)
+
+
 # frob:ticket T-2498
 def _validate_body_amend(mode: str, reason: str, text: str) -> TicketError | None:
     """`set_body`'s pre-lock validation, split out to keep `set_body`

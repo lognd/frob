@@ -2,7 +2,7 @@
 id: T-2770
 title: frob ticket has no parent setter, so a mis-parented ticket cannot be corrected
   without a forbidden ledger hand-edit
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-20'
@@ -218,6 +218,18 @@ scope_changes:
     in this diff'
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_tickets_parent.py::TestSetParent::test_reparents_leaf_to_epic
+- tests/test_tickets_parent.py::TestSetParent::test_self_parent_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_nonexistent_parent_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_direct_cycle_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_longer_ring_cycle_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_tier_inversion_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_epic_can_parent_epic
+- tests/test_tickets_parent.py::TestSetParent::test_story_cannot_parent_epic
+- tests/test_tickets_parent.py::TestSetParent::test_reason_missing_refuses
+- tests/test_tickets_parent.py::TestSetParent::test_moving_an_existing_parent_drops_the_old_edge
+- tests/test_tickets_parent.py::TestSetParent::test_archived_ticket_routes_to_archive_path
 designated_repro_test: null
 threat: null
 component: null

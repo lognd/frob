@@ -417,6 +417,31 @@ def _add_ticket_tier_parser(ticket_sub):
     return ticket_tier_p
 
 
+# frob:ticket T-2770
+def _add_ticket_set_parent_parser(ticket_sub):
+    """Register `frob ticket set-parent <id> <parent-id> (--reason TEXT |
+    --reason-file PATH)` -- the mutate-in-place counterpart to `frob ticket
+    new --parent` (T-2770): a ticket filed unparented, or with the wrong
+    parent, previously had no CLI route to correct it, only the forbidden
+    hand edit of `tickets/T-####/ticket.md`. Same shape as `_add_ticket_
+    tier_parser`'s T-1069 precedent -- `--reason`/`--reason-file` required,
+    same as every other single-value triage setter. All structural
+    validation (existence, cycle, tier-inversion, self-parent) happens in
+    `frob.tickets.set_parent` itself, not re-derived here."""
+    ticket_set_parent_p = ticket_sub.add_parser(
+        "set-parent",
+        help="set an existing ticket's parent edge (T-2770); refuses a "
+        "nonexistent parent, a cycle, a tier inversion, or self-parenting",
+    )
+    ticket_set_parent_p.add_argument("ticket_id", metavar="id")
+    ticket_set_parent_p.add_argument(
+        "ticket_parent_id_value", metavar="parent-id"
+    )
+    _add_triage_reason_flags(ticket_set_parent_p)  # frob:ticket T-2353
+    _add_no_commit_flag(ticket_set_parent_p)  # frob:ticket T-1615
+    return ticket_set_parent_p
+
+
 # frob:ticket T-2392
 def _add_ticket_body_parser(ticket_sub):
     """Register `frob ticket body <id> (--append TEXT|--append-file PATH |

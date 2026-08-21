@@ -123,6 +123,13 @@ class LedgerWriteStrategy(enum.Enum):
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is
 #: exactly one place a verb's classification can be edited or forgotten.
+# frob:waive AFFECT001 reason="T-2770 added the 'set-parent' entry below; its \
+# affects()-closure doc (docs/modules/tickets-lifecycle.md#one-verb-table- \
+# not-two-sets-t-2603) was under a live cross-worktree lease (T-2557) at fix time and \
+# could not be added to T-2770's own scope. Filed T-2780 (renumbers on its own land) \
+# to add the verb to that doc once the lease clears, same disposition as the \
+# config.py::AppConfig AFFECT001 waiver just above this module's own T-1004/T-1029/... \
+# precedent list"
 LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # OWN_TRANSACTION -- owns a complete multi-file transaction; the
     # generic sweep and this module's mirror must never touch it.
@@ -151,6 +158,10 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     "runs-last-parallel-safe": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "scope": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "scope-ack": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # frob:ticket T-2770
+    # `set-parent` writes the `parent` field, same fleet-visibility
+    # reasoning as `tier`'s own hierarchy-field mirror.
+    "set-parent": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "sprint": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     "tier": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # frob:ticket T-2681

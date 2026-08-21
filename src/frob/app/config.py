@@ -628,6 +628,11 @@ class AppConfig(BaseModel):
     # shape as `ticket_priority_level`'s T-0411 precedent (`ticket_tier`
     # above is already taken by `frob ticket new --tier`).
     ticket_tier_value: str | None = None
+    # frob:ticket T-2770
+    # `frob ticket set-parent <id> <parent-id>` -- the new parent id, same
+    # shape as `ticket_tier_value`'s T-1069 precedent. Validated (existence,
+    # cycle, tier-inversion, self-parent) by `set_parent` itself, not here.
+    ticket_parent_id_value: str | None = None
     # frob:ticket T-2353
     # `frob ticket priority/kind/component/tier ... (--reason TEXT |
     # --reason-file PATH)` -- ONE shared dest reused across all four

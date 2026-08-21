@@ -929,6 +929,35 @@ def _tier(root: Path, cfg: AppConfig) -> None:
     _log.info("%s: tier now %s", cfg.ticket_id, ticket.tier.value)
 
 
+# frob:ticket T-2770
+def _set_parent(root: Path, cfg: AppConfig) -> None:
+    """`frob ticket set-parent <id> <parent-id> (--reason TEXT |
+    --reason-file PATH)`: the ONLY thing this command does is resolve the
+    reason (`_resolve_triage_reason`, T-2353 precedent) and forward to
+    `frob.tickets.set_parent` -- no structural validation (existence,
+    cycle, tier-inversion, self-parent) is re-derived here, same "thin CLI
+    shell over the real setter" shape `_tier`/T-1069 uses."""
+    from frob.tickets import set_parent
+
+    if cfg.ticket_id is None or cfg.ticket_parent_id_value is None:
+        _log.error("frob ticket set-parent requires <id> <parent-id>")
+        sys.exit(1)
+
+    reason = _resolve_triage_reason(cfg)
+    if not reason:
+        _log.error(
+            "frob ticket set-parent requires --reason TEXT or --reason-file PATH"
+        )
+        sys.exit(1)
+
+    result = set_parent(root, cfg.ticket_id, cfg.ticket_parent_id_value, reason=reason)
+    if result.is_err:
+        _log.error("set-parent failed: %s", result.danger_err)
+        sys.exit(1)
+    ticket = result.danger_ok
+    _log.info("%s: parent now %s", cfg.ticket_id, ticket.parent)
+
+
 # frob:ticket T-1613
 def _runs_last(root: Path, cfg: AppConfig) -> None:
     """`frob ticket runs-last <id> <on|off>`: the ONLY thing this command

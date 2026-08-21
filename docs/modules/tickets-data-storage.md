@@ -889,6 +889,17 @@ class TicketError(ErrorSet):
     EvidenceReplaceReasonMissing = (
         "--replace requires a non-empty --reason or --reason-file (T-1733)"
     )
+    # T-2770: `frob ticket set-parent <id> <parent-id> --reason TEXT`
+    # failure modes -- a hand edit of `parent:` was the only prior route
+    # to correct a mis-parented ticket, forbidden per the T-2392 incident.
+    ParentTicketReasonMissing = "set-parent requires a non-empty --reason"
+    ParentSelfReference = "a ticket cannot be its own parent"
+    ParentNotFound      = "parent id does not resolve to an existing ticket"
+    ParentCycle         = "parent id is a descendant of this ticket -- would create a cycle"
+    ParentTierInversion = (
+        "parent's tier cannot rank lower than the child's in the "
+        "epic -> story -> ticket hierarchy (T-0715)"
+    )
 
 class ClipboardError(ErrorSet):
     NoBackend     = "No clipboard backend available on this platform"

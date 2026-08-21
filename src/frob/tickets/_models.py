@@ -2461,6 +2461,26 @@ class TicketError(ErrorSet):
     EvidenceReplaceReasonMissing = (
         "--replace requires a non-empty --reason or --reason-file (T-1733)"
     )
+    # frob:ticket T-2770
+    #: `frob ticket set-parent <id> <parent-id> --reason TEXT` failure
+    #: modes: a hand edit of `parent:` in `tickets/T-####/ticket.md` is
+    #: forbidden (T-2392's own precedent), so re-parenting needs an
+    #: accountable setter with the same refusal set `blocked_by` would
+    #: need if it were re-derivable here (docs/rework.md keeps cycle
+    #: detection local to this module, not re-derived from `frob.graph`).
+    ParentTicketReasonMissing = "set-parent requires a non-empty --reason"
+    ParentSelfReference = "a ticket cannot be its own parent"
+    ParentNotFound = "parent id does not resolve to an existing ticket"
+    ParentCycle = (
+        "parent id is a descendant of this ticket (directly or transitively); "
+        "setting it would create a parent cycle"
+    )
+    ParentTierInversion = (
+        "parent's tier cannot rank lower than the child's in the "
+        "epic -> story -> ticket hierarchy (T-0715); a ticket cannot "
+        "parent an epic or story, a story cannot parent an epic -- "
+        "same-tier chaining (e.g. epic parenting epic) is allowed"
+    )
 
 
 # frob:ticket T-0176

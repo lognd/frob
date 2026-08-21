@@ -106,6 +106,7 @@ from ._mutate import (
     _runs_last_parallel_safe,
     _scope,
     _scope_ack,
+    _set_parent,
     _sprint,
     _sprint_assign,
     _sprint_show,
@@ -399,6 +400,8 @@ def _ticket_dispatch_table() -> dict:
         "sprint": _sprint,
         # frob:ticket T-1069
         "tier": _tier,
+        # frob:ticket T-2770
+        "set-parent": _set_parent,
         # frob:ticket T-1613
         "runs-last": _runs_last,
         # frob:ticket T-2624

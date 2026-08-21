@@ -137,6 +137,7 @@ attachments:
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_component -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_tier -->
+<!-- frob:describes src/frob/tickets/_setters.py::set_parent -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_runs_last -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_scope_breadth_ack -->
 <!-- frob:describes src/frob/tickets/_reporting.py::mutate_labels -->
@@ -479,6 +480,21 @@ def set_tier(root: Path, ticket_id: str, tier: TicketTier) -> Result[Ticket, Tic
     # but no mutator for an existing ticket). Same single-writer,
     # ledger-locked pattern as set_priority/set_kind/set_component/
     # set_sprint. Does not re-validate or move `parent` links.
+def set_parent(root: Path, ticket_id: str, parent_id: str, *, reason: str) -> Result[Ticket, TicketError]
+    # T-2770: `frob ticket set-parent <id> <parent-id> --reason TEXT` --
+    # `frob ticket new --parent` was the only place `parent` could be set;
+    # this is the mutate-in-place correction path. Refuses (writes
+    # nothing) for: a blank reason, self-parenting, a nonexistent
+    # parent_id, a parent_id that is already a descendant of ticket_id
+    # (would close a cycle), and a parent tier ranked LOWER than the
+    # child's (a ticket cannot parent an epic or story, a story cannot
+    # parent an epic) -- same-tier chaining, including an epic parenting
+    # another epic, is allowed. Re-parenting a done-but-active or archived
+    # ticket is allowed (parent is organizational metadata, not a
+    # state-machine transition); an archived ticket's write routes through
+    # `write_archived_ticket` via `_ticket_currently_archived`, the same
+    # T-2678 fix `set_body` uses, never materializing a fresh active-tree
+    # duplicate.
 def set_runs_last(root: Path, ticket_id: str, runs_last: bool) -> Result[Ticket, TicketError]
     # T-1613: `frob ticket runs-last <id> <on|off>` -- flip the runs-last
     # marker: while True, `doable`/`start` structurally refuse to surface
