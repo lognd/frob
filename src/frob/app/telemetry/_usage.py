@@ -216,5 +216,3 @@ def usage_report(root: Path, *, top_n: int = 10) -> UsageReport:
         fast_exit1_count=fast_exit1_count,
         repeated_failure_streaks=repeated_failure_streaks,
     )
-
-

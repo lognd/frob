@@ -693,8 +693,6 @@ def timed_call(
         )
 
 
-
-
 # T-2694: imported at the BOTTOM, after every event-recording name above is
 # defined -- `_footguns`/`_usage` each do `from . import ...` to reach back
 # into THIS partially-initialized module for `is_disabled`/`_telemetry_path`,

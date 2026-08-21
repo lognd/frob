@@ -35,8 +35,7 @@ def _resolve_downgrade_reason(cfg: AppConfig) -> str | None:
     source silently returns empty)."""
     if cfg.profile_downgrade_reason_file is not None and cfg.profile_downgrade_reason:
         _log.error(
-            "frob profile downgrade: --reason and --reason-file are "
-            "mutually exclusive"
+            "frob profile downgrade: --reason and --reason-file are mutually exclusive"
         )
         sys.exit(1)
     if cfg.profile_downgrade_reason_file is not None:

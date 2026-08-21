@@ -42,7 +42,6 @@ def run(cfg: AppConfig) -> None:
         exports_run(cfg)
     else:
         _log.error(
-            "frob design requires a subcommand: sys, registry, docs, graph, "
-            "or exports"
+            "frob design requires a subcommand: sys, registry, docs, graph, or exports"
         )
         sys.exit(1)

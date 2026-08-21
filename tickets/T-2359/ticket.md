@@ -124,91 +124,91 @@ scope_changes:
   at: '2026-08-20'
 - op: remove
   glob: .claude/hooks/diagnosis-nudge.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: scripts/fleet_status.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/design_runner.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/profile_runner.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/pyfmt_runner.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/sys_runner.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/__init__.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/_footguns.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/_usage.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_attach_backfill.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_new.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_waive_audit.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/worktree_runner.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/arch/_abstraction.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/check/_python.py
-  reason: batch 1 spun off to child T-draft-a8d56c76; T-2359 tracks remaining files
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
     only
   actor: logan
   at: '2026-08-21'

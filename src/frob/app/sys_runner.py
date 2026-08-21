@@ -938,9 +938,7 @@ def _run_audit(cfg: AppConfig) -> None:
 
 
 # frob:ticket T-1480
-def _print_trace_report(
-    paths: dict[str, tuple[str, ...]], *, to: str | None
-) -> bool:
+def _print_trace_report(paths: dict[str, tuple[str, ...]], *, to: str | None) -> bool:
     """Print `frob sys trace`'s witness-path report; returns True iff the
     requested destination (or, with no `to`, the closure itself) is
     non-empty -- callers use this to decide the process exit code, the
@@ -992,9 +990,7 @@ def _run_trace(cfg: AppConfig) -> None:
         _log.error("sys trace: %s is not a known node", src)
         sys.exit(1)
 
-    paths = fact_base.reachable(
-        src, through_barriers=cfg.sys_trace_through_barriers
-    )
+    paths = fact_base.reachable(src, through_barriers=cfg.sys_trace_through_barriers)
     if not _print_trace_report(paths, to=cfg.sys_trace_to):
         sys.exit(1)
 
@@ -1006,9 +1002,7 @@ def _run_trace(cfg: AppConfig) -> None:
 
 # frob:ticket T-1925
 # frob:tests tests/unit/test_app_sys_threats.py::TestSysThreats.test_no_boundary_prints_every_violation  # noqa: E501
-def _print_threats_report(
-    violations: tuple, *, boundary: str | None
-) -> bool:
+def _print_threats_report(violations: tuple, *, boundary: str | None) -> bool:
     """Print `frob sys threats`'s violation list; returns True iff the
     result is empty (vacuous-pass doctrine, same as `_print_audit_report`/
     `_print_trace_report`: nothing found is the SUCCESS case here, since
@@ -1204,7 +1198,5 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "capacity":
         _run_capacity(cfg)
         return
-    _log.error(
-        "usage: frob sys <plan|doc|export|audit|trace|threats|capacity> ..."
-    )
+    _log.error("usage: frob sys <plan|doc|export|audit|trace|threats|capacity> ...")
     sys.exit(1)

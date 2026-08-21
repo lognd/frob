@@ -7,7 +7,6 @@ opportunities` entry point `frob.arch` calls (docs/modules/arch.md's
 Python abstraction-opportunity rule).
 """
 
-
 from __future__ import annotations
 
 import difflib

@@ -402,9 +402,7 @@ def _cycle001_violations(diags: list[Diagnostic]) -> tuple:
     return tuple(
         GateViolation(
             rule=_CYCLE_RULE_ID,
-            severity=GateSeverity.ERROR
-            if d.severity == "error"
-            else GateSeverity.WARN,
+            severity=GateSeverity.ERROR if d.severity == "error" else GateSeverity.WARN,
             file=d.file or "",
             line=d.line or 0,
             message=d.message,
@@ -733,8 +731,8 @@ def _run_arch(root: Path) -> ToolResult:
     to silently fall back to `analyze_project`'s conservative keyword
     defaults, so its suggestion counts could disagree with the ARCH001 gate
     over the same code."""
-    from frob.repo_meta import load_arch_config
     from frob.arch import analyze_project
+    from frob.repo_meta import load_arch_config
 
     scan_root = root if root.is_dir() else root.parent
     result = analyze_project(scan_root, **load_arch_config(scan_root))

@@ -292,8 +292,7 @@ def _resolve_new_findings(cfg: AppConfig) -> list[tuple[str, str]]:
     for entry in cfg.ticket_findings:
         if ":" not in entry:
             _log.error(
-                "ticket new: --finding %r is not 'RULE:FILE' shaped "
-                "(missing ':')",
+                "ticket new: --finding %r is not 'RULE:FILE' shaped (missing ':')",
                 entry,
             )
             sys.exit(1)
@@ -522,7 +521,9 @@ def _scope_plausibility_ticket_words(title: str, body: str) -> frozenset[str]:
 
 
 # frob:ticket T-2322
-def _visit_scope_plausibility_string_nodes(node, source: bytes, words: set[str]) -> None:  # noqa: ANN001, E501
+def _visit_scope_plausibility_string_nodes(
+    node, source: bytes, words: set[str]
+) -> None:  # noqa: ANN001, E501
     """Recursive tree-sitter walk extracted from `_scope_plausibility_
     file_words` (T-2322 ARCH001 split, zero behavior change): for every
     single-line string-literal node under `node`, tokenizes its text
@@ -531,9 +532,7 @@ def _visit_scope_plausibility_string_nodes(node, source: bytes, words: set[str])
     skipped (T-2192: almost always a docstring, not a real short
     subprocess-arg/error-message literal)."""
     if "string" in node.type:
-        text = source[node.start_byte : node.end_byte].decode(
-            "utf-8", errors="replace"
-        )
+        text = source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
         if "\n" in text:
             return  # multi-line literal -- almost always a docstring (T-2192)
         for match in _SCOPE_PLAUSIBILITY_TOKEN_RE.finditer(text):

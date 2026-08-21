@@ -52,6 +52,7 @@ try:
 except ModuleNotFoundError:  # pragma: no cover - python <3.11 on PATH
     tomllib = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
+
 # frob:ticket T-2677
 def _resolve_repo_root(fallback: Path) -> Path:
     """Resolve the SHARED primary checkout root, not wherever this script's

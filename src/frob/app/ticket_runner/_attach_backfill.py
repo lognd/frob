@@ -85,16 +85,13 @@ def _run_backfill_drafts(root: Path, cfg: AppConfig) -> None:
     apply = cfg.ticket_attach_backfill_apply
     result = backfill_stale_draft_attachment_paths(root, dry_run=not apply)
     if result.is_err:
-        _log.error(
-            "ticket attach --backfill-drafts: failed: %s", result.danger_err
-        )
+        _log.error("ticket attach --backfill-drafts: failed: %s", result.danger_err)
         sys.exit(1)
     report = result.danger_ok
 
     verb = "repaired" if apply else "would repair"
     _log.info(
-        "ticket attach --backfill-drafts: %s %d stale draft attachment "
-        "path(s): %s",
+        "ticket attach --backfill-drafts: %s %d stale draft attachment path(s): %s",
         verb,
         len(report.repaired),
         list(report.repaired),

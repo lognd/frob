@@ -56,7 +56,7 @@ from typani import Err, Ok, Result
 from typani.error_set import ErrorSet
 
 from frob.app.config import AppConfig
-from frob.gates._models import GateReport
+from frob.gates._models import GateReport, Violation
 from frob.gates._waive_audit_watermark import (
     WaiveAuditWatermark,
     WaiveAuditWatermarkError,
@@ -64,7 +64,6 @@ from frob.gates._waive_audit_watermark import (
     save_watermark,
     utc_now,
 )
-from frob.gates._models import Violation
 from frob.logging import get_logger
 
 if TYPE_CHECKING:
@@ -602,15 +601,11 @@ def _render_waiver_liveness(root: Path, renderer: Renderer, *, as_json: bool) ->
             gate_result.danger_err,
         )
         if not as_json:
-            renderer.line(
-                f"check-liveness: gate run failed: {gate_result.danger_err}"
-            )
+            renderer.line(f"check-liveness: gate run failed: {gate_result.danger_err}")
         return
     report = gate_result.danger_ok
     waivers = _all_current_waivers(root)
-    classified = [
-        (w, classify_waiver_liveness(w, report, root)) for w in waivers
-    ]
+    classified = [(w, classify_waiver_liveness(w, report, root)) for w in waivers]
     counts: dict[str, int] = {}
     for _w, verdict in classified:
         counts[verdict.value] = counts.get(verdict.value, 0) + 1

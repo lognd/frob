@@ -300,4 +300,3 @@ def render_tips(tips: list[Tip], *, as_json: bool) -> str:
     if as_json:
         return json.dumps([t.model_dump() for t in tips])
     return "\n".join(f"[{t.rule_id}] {t.message}" for t in tips)
-

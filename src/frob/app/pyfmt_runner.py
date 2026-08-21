@@ -64,17 +64,17 @@ def run(cfg: AppConfig) -> None:
     r = Renderer.for_stream(
         sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color
     )
-    r.write.heading('frob format')
+    r.write.heading("frob format")
     r.blank()
     failed = False
     for result in results:
         if result.passed:
-            r.write.good(f'{result.tool}: {result.summary or "ok"}')
+            r.write.good(f"{result.tool}: {result.summary or 'ok'}")
         else:
             failed = True
-            r.write.critical(f'{result.tool}: {result.summary or "failed"}')
+            r.write.critical(f"{result.tool}: {result.summary or 'failed'}")
             for diag in result.diagnostics:
-                r.write.kv('  ', diag.message)
+                r.write.kv("  ", diag.message)
     r.blank()
 
     if failed:

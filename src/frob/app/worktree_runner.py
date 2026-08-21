@@ -286,8 +286,7 @@ def _resolve_force_release_reason(
             return Path(reason_file).read_text(encoding="utf-8")
         except OSError as exc:
             _log.error(
-                "frob worktree release-lease: could not read --reason-file "
-                "%s: %s",
+                "frob worktree release-lease: could not read --reason-file %s: %s",
                 reason_file,
                 exc,
             )

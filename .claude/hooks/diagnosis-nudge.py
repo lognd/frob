@@ -214,7 +214,7 @@ def _should_nudge(
     state[session_id] = now_s
     _save_state(state_path, state)
     return (
-        f"This turn stated a diagnosis but filed no ticket: \"...{excerpt}...\". "
+        f'This turn stated a diagnosis but filed no ticket: "...{excerpt}...". '
         f"If this is a real, actionable finding, run `frob ticket new` for it "
         f"(or `frob ticket new --title ... --kind bug/feature --scope ...`)."
     )
