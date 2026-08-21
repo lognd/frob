@@ -272,6 +272,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2800: Burn ruff I001 batch 2: tests/ subset
 - T-2805: native-staleness content-digest check is a permanent latch: a reproducible rebuild is byte-identical, so frob natives build can never clear NATIVE001
 - T-2806: Stamp the parse-artifact cache env before build_graph, not just before the gate process pool
+- T-2807: wait_for_land_slot reports a free slot during the window where frob's own T-1619 process scan still refuses LandInProgress
 - T-2808: Reformat batch 11/N: 13 files pending ruff-format (T-2359 child)
 - T-2809: land deadline guard has a load feedback loop: contended stage timings inflate estimated_work_s until every land declines, exactly when the fleet is busiest
 - T-2810: COV007 burn-down batch 1/N: src/frob/strata/_multifile.py duplicate doc anchors

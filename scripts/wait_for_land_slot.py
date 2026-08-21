@@ -25,6 +25,21 @@ invocations()`. Two homes for "what counts as a land in flight" would
 desync the moment either one changed alone; this script has zero opinion
 of its own on the question.
 
+T-2807: `land_invocations()`'s ticket-id grouping deliberately drops any
+row it cannot parse a `T-####` id from (T-2193's own fix, so a watcher
+shell whose argv merely contains the text 'ticket land' cannot inflate
+the count forever) -- correct for `LANDS IN FLIGHT`'s own purpose, but it
+meant this script could report a free slot in exactly the window frob's
+own T-1619 belt-and-braces process scan
+(`frob.tickets._leases._scan_for_live_land_process`, unconditional on an
+unattributed row) would still refuse a ledger write against. `wait_for_
+slot` closes this by ALSO calling `probe_unattributed_land_process`
+(this module's own, built on `fleet_status.land_process_rows`'s already-
+argv-verified raw rows -- the same data `land_invocations()` groups from,
+read one layer earlier, never a third independent process scan): a
+`True` reading there blocks a free-slot verdict unconditionally, matching
+T-1619's own refusal exactly.
+
 EXIT CODES (the one thing a caller must never have to guess):
     0   SLOT FREE      -- measured `LANDS IN FLIGHT` at or below
                           `--max-in-flight` (default 0); safe to land.
@@ -103,6 +118,21 @@ _FLEET_STATUS_SCRIPT = Path(__file__).resolve().parent / "fleet_status.py"
 
 _LANDS_IN_FLIGHT_RE = re.compile(r"^LANDS IN FLIGHT:\s*(\d+)\s*$", re.MULTILINE)
 
+# T-2807: sibling-script import, not a subprocess -- `fleet_status.py` is
+# ordinary importable Python (tests/unit/conftest.py's `_load_script`
+# already loads it this way; see that module's own docstring), and this
+# directory is already on `sys.path` (inserted above for
+# `_require_python`). `land_process_rows`/`_parse_land_argv_ticket_id`
+# are the SAME already-argv-verified process scan `land_invocations`
+# (and therefore this script's own text-probe reading) is built from --
+# reusing them directly here is not a second process scan, it is calling
+# the first one's own raw, pre-grouping data one layer earlier than
+# `land_invocations` does.
+from fleet_status import (  # noqa: E402
+    _parse_land_argv_ticket_id,
+    land_process_rows,
+)
+
 
 # frob:doc docs/guides/coordinator-scripts.md#probe_lands_in_flight
 # frob:ticket T-2775
@@ -145,6 +175,90 @@ def probe_lands_in_flight(command: list[str]) -> int | None:
     return int(match.group(1))
 
 
+# frob:ticket T-2807
+def _timeout_outcome(
+    *,
+    ever_measured: bool,
+    last_reading: int | None,
+    max_in_flight: int,
+    elapsed: float,
+) -> tuple[int, str]:
+    """`wait_for_slot`'s own timeout-branch result, split out to keep that
+    function under ARCH001's threshold (T-2023/T-1961's own precedent in
+    `frob.tickets._leases` for the identical reason). See `wait_for_
+    slot`'s docstring for the `ever_measured`/`EXIT_TIMEOUT` vs
+    `EXIT_MEASUREMENT_FAILED` rule this implements verbatim."""
+    if ever_measured:
+        return (
+            EXIT_TIMEOUT,
+            f"timeout after {elapsed:.1f}s: last measured LANDS IN "
+            f"FLIGHT={last_reading}, never <= max-in-flight="
+            f"{max_in_flight} (or an unattributed land process was "
+            f"still present)",
+        )
+    return (
+        EXIT_MEASUREMENT_FAILED,
+        f"measurement failed: no readable LANDS IN FLIGHT count in "
+        f"{elapsed:.1f}s (probe kept exiting nonzero, timing out, or "
+        f"returning unparseable output) -- treating this as UNKNOWN, "
+        f"never as a free slot",
+    )
+
+
+# frob:ticket T-2807
+# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_true_when_a_row_has_no_parseable_ticket_id  # noqa: E501
+# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_every_row_has_a_ticket_id  # noqa: E501
+# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess.test_false_when_no_rows_at_all  # noqa: E501
+# frob:waive COV001 reason="docs/guides/coordinator-scripts.md was leased by a \
+# concurrent in-progress ticket (T-2755) for this ticket's whole worktree lifetime, so \
+# a real anchor could not be added in this change without a scope-lease conflict; the \
+# module docstring above (T-2807 section) and this function's own docstring both carry \
+# the full WHY -- filed a follow-up to add the real docs/guides/coordinator-scripts.md \
+# anchor once that lease clears"
+def probe_unattributed_land_process(rows: list[dict] | None = None) -> bool:
+    """T-2807: `True` iff at least one row `land_process_rows()` returns
+    (a live process `fleet_status.py` has already argv-verified as a real
+    `frob ticket land` invocation, T-2475) has no parseable `T-####`
+    ticket id in its argv.
+
+    THE BUG THIS CLOSES. `fleet_status.py`'s own `LANDS IN FLIGHT` count
+    (what `probe_lands_in_flight` above reads) comes from `land_
+    invocations()`, which deliberately DROPS exactly this kind of row
+    (T-2193's own fix, so a coordinator's polling-loop shell whose argv
+    merely contains the text 'ticket land' cannot inflate the count
+    forever) -- correct for that purpose, but it means a genuine `frob
+    ticket land` process with an unparseable ticket id (e.g. a `--queue`/
+    `--drain` batch invocation, or one sampled before its ticket id
+    argument is otherwise resolvable) reads as ZERO rows contributing to
+    `LANDS IN FLIGHT`, even though it is a real, live land. frob's own
+    T-1619 belt-and-braces process scan
+    (`frob.tickets._leases._scan_for_live_land_process`) has no such
+    exclusion -- it refuses on ANY live `frob ticket land` process
+    against `root`, attributed or not -- so `wait_for_land_slot.py` could
+    report a free slot in exactly the window frob's own ledger-write
+    guard would still refuse (T-2807's own repro).
+
+    WHY THIS, NOT A THIRD PROCESS SCAN. `land_process_rows()` is
+    `fleet_status.py`'s own already-argv-verified (T-2475's structural
+    `/proc/<pid>/cmdline` re-check, not a text pre-filter alone) raw row
+    list -- the exact data `land_invocations()` groups-and-filters before
+    this script ever sees it as `LANDS IN FLIGHT: N` text. Reading those
+    same rows one layer earlier, before the ticket-id grouping drops the
+    unattributed ones, answers the SAME question T-1619's own scan asks
+    ("is a live `frob ticket land` process running, named ticket or not")
+    without re-deriving a second `/proc` walk of its own -- there is
+    still only ONE definition of "what counts as a live land process"
+    (`land_process_rows`'s own argv verification); this only changes
+    which of that definition's rows a caller is allowed to ignore.
+
+    `rows` is injectable for tests (defaults to a fresh `land_process_
+    rows()` call) so a test can plant a synthetic unattributed row
+    without spawning a real process."""
+    if rows is None:
+        rows = land_process_rows()
+    return any(_parse_land_argv_ticket_id(row["argv"]) is None for row in rows)
+
+
 # frob:doc docs/guides/coordinator-scripts.md#wait_for_slot
 # frob:ticket T-2775
 # frob:tests \
@@ -162,6 +276,13 @@ def probe_lands_in_flight(command: list[str]) -> int | None:
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestWaitForSlot.test_measured_then_unmeasurab\
 # le_is_timeout_not_measurement_failure
+# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_unattributed_land_process_blocks_an_otherwise_free_slot  # noqa: E501
+# frob:tests tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate.test_no_land_at_all_still_returns_free_promptly  # noqa: E501
+# frob:waive AFFECT001 reason="docs/guides/coordinator-scripts.md was leased by a \
+# concurrent in-progress ticket (T-2755) for this ticket's whole worktree lifetime, so \
+# its wait_for_slot section could not be updated in this change without a scope-lease \
+# conflict; this function's own docstring carries the T-2807 addition in full -- filed \
+# a follow-up to fold it into the real doc once that lease clears"
 def wait_for_slot(
     *,
     command: list[str],
@@ -171,14 +292,16 @@ def wait_for_slot(
     on_tick=None,
     sleep=time.sleep,
     now=time.monotonic,
+    unattributed_probe=probe_unattributed_land_process,
 ) -> tuple[int, str]:
     """Poll `probe_lands_in_flight(command)` until the reading is at or
-    below `max_in_flight`, or `timeout_s` elapses. Returns `(exit_code,
-    summary_line)` -- never prints anything itself (`on_tick`, when
-    given, is called with each raw reading -- `--verbose`'s hook; the
-    default `None` means the common quiet path emits nothing per tick).
-    `sleep`/`now` are injectable for tests that must not actually sleep
-    for real wall-clock seconds.
+    below `max_in_flight` AND `unattributed_probe()` reads `False`, or
+    `timeout_s` elapses. Returns `(exit_code, summary_line)` -- never
+    prints anything itself (`on_tick`, when given, is called with each
+    raw `LANDS IN FLIGHT` reading -- `--verbose`'s hook; the default
+    `None` means the common quiet path emits nothing per tick). `sleep`/
+    `now` are injectable for tests that must not actually sleep for real
+    wall-clock seconds.
 
     T-2775's central rule lives here: `ever_measured` tracks whether ANY
     poll in this call ever produced a real reading. On timeout, a caller
@@ -189,7 +312,21 @@ def wait_for_slot(
     every iteration, not only at the end, so a probe that measures once
     successfully and then starts failing still correctly reports TIMEOUT
     (it learned real fleet state before losing the ability to keep
-    reading it), not MEASUREMENT_FAILED."""
+    reading it), not MEASUREMENT_FAILED.
+
+    T-2807: `unattributed_probe` (default `probe_unattributed_land_
+    process`) answers a question `command`'s own `LANDS IN FLIGHT` text
+    cannot -- whether a live `frob ticket land` process exists that
+    `land_invocations()`'s ticket-id grouping silently drops (see that
+    function's own docstring). A `True` reading here NEVER counts as a
+    free slot regardless of `max_in_flight`, matching frob's own T-1619
+    belt-and-braces refusal, which is unconditional on exactly this
+    case. `unattributed_probe`'s reading does not affect `ever_measured`
+    -- it rides on the SAME `command` measurement's success/failure for
+    the exit-code contract (a `command` probe failure alone still yields
+    `EXIT_MEASUREMENT_FAILED`, never `EXIT_SLOT_FREE`, whatever
+    `unattributed_probe` says), so a caller cannot use it to bypass the
+    "never treat unmeasured as free" rule."""
     start = now()
     ever_measured = False
     last_reading: int | None = None
@@ -201,26 +338,18 @@ def wait_for_slot(
         if reading is not None:
             ever_measured = True
             last_reading = reading
-            if reading <= max_in_flight:
+            if reading <= max_in_flight and not unattributed_probe():
                 return (
                     EXIT_SLOT_FREE,
                     f"slot free: LANDS IN FLIGHT={reading} <= "
                     f"max-in-flight={max_in_flight} after {elapsed:.1f}s",
                 )
         if elapsed >= timeout_s:
-            if ever_measured:
-                return (
-                    EXIT_TIMEOUT,
-                    f"timeout after {elapsed:.1f}s: last measured LANDS IN "
-                    f"FLIGHT={last_reading}, never <= max-in-flight="
-                    f"{max_in_flight}",
-                )
-            return (
-                EXIT_MEASUREMENT_FAILED,
-                f"measurement failed: no readable LANDS IN FLIGHT count in "
-                f"{elapsed:.1f}s (probe kept exiting nonzero, timing out, or "
-                f"returning unparseable output) -- treating this as UNKNOWN, "
-                f"never as a free slot",
+            return _timeout_outcome(
+                ever_measured=ever_measured,
+                last_reading=last_reading,
+                max_in_flight=max_in_flight,
+                elapsed=elapsed,
             )
         remaining = timeout_s - (now() - start)
         sleep(min(poll_interval_s, max(remaining, 0)))

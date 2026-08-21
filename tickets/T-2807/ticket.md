@@ -2,7 +2,7 @@
 id: T-2807
 title: wait_for_land_slot reports a free slot during the window where frob's own T-1619
   process scan still refuses LandInProgress
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -27,6 +27,12 @@ scope_changes:
   reason: new evidence test file (test_coordinator_scripts.py is leased by T-2755)
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess::test_true_when_a_row_has_no_parseable_ticket_id
+- tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess::test_false_when_every_row_has_a_ticket_id
+- tests/unit/test_wait_for_land_slot_unattributed.py::TestProbeUnattributedLandProcess::test_false_when_no_rows_at_all
+- tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate::test_unattributed_land_process_blocks_an_otherwise_free_slot
+- tests/unit/test_wait_for_land_slot_unattributed.py::TestWaitForSlotUnattributedGate::test_no_land_at_all_still_returns_free_promptly
 designated_repro_test: null
 threat: null
 component: null
