@@ -61,3 +61,6 @@ Hard requirements per T-2790's own constraints:
 
 See docs/investigations/T-2790-check-stage-profile.md for the full
 profile (perf and dead_symbols sections) this ticket is drawn from.
+
+## Failure log
+- 2026-08-21 attempt 1: premise falsified: _parse_file_with_artifact_cache (T-1464) already persists extract()'s full ParsedFile output to disk, tested and confirmed working (27.25s warm vs 42.69s cold dead_symbols); remaining redundancy is a build_graph-runs-before-cache-stamp + concurrent-wave-race issue in src/frob/gates/__init__.py, outside this ticket's lang/__init__.py-only scope -- filed as T-2806
