@@ -74,7 +74,9 @@ _EXPECTED_NODE_IDS = frozenset(
 )
 
 
-def _node_id_diff_message(actual: frozenset[str], expected: frozenset[str]) -> str | None:
+def _node_id_diff_message(
+    actual: frozenset[str], expected: frozenset[str]
+) -> str | None:
     """Compare an actual node-id set against the golden `expected` set (T-2109),
     returning `None` when they match exactly or a message naming every
     symmetric-difference id (both directions) otherwise -- unlike a bare `==`
@@ -517,9 +519,7 @@ class TestFrobSelfModel:
         build_result = build_graph(_REPO_ROOT, tmp_path / "cache.db")
         assert build_result.is_ok, f"graph build failed: {build_result.err}"
         violations = sys_gate(_REPO_ROOT, build_result.danger_ok)
-        fragments_violations = [
-            v for v in violations if "_fragments.py" in v.message
-        ]
+        fragments_violations = [v for v in violations if "_fragments.py" in v.message]
         assert fragments_violations == [], (
             f"_fragments.py should have no undeclared-capability SYS "
             f"violation: {fragments_violations}"

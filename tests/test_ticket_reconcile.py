@@ -219,9 +219,7 @@ class TestReconcileApplyLandInProgressGuard:
             (json.dumps({"pid": _os.getpid(), "ticket_id": "T-8888"}) + "\n").encode(),
         )
         try:
-            status_before = _run(
-                ["git", "status", "--porcelain"], repo
-            ).stdout
+            status_before = _run(["git", "status", "--porcelain"], repo).stdout
             with caplog.at_level("WARNING"):
                 result = reconcile(repo, apply=True, wait_timeout_s=0)
             assert result.is_err

@@ -1110,9 +1110,7 @@ class TestFromImportSubmoduleResolution:
     `TestResolveLocalImportConsumers`'s style just above, rather than
     re-asserting on `_python_import_specifiers` in isolation."""
 
-    def _resolve_all(
-        self, tmp_path: Path, importer: Path
-    ) -> set[str]:
+    def _resolve_all(self, tmp_path: Path, importer: Path) -> set[str]:
         from frob.lang import extract_imports, resolve_local_import
 
         specs = extract_imports(importer).danger_ok
@@ -1141,9 +1139,7 @@ class TestFromImportSubmoduleResolution:
         # and only the bare `frob.arch` specifier was ever extracted.
         _write(tmp_path, "pkg/__init__.py", "")
         _write(tmp_path, "pkg/_python.py", "def check() -> None:\n    pass\n")
-        importer = _write(
-            tmp_path, "pkg_user.py", "from pkg import _python\n"
-        )
+        importer = _write(tmp_path, "pkg_user.py", "from pkg import _python\n")
         assert self._resolve_all(tmp_path, importer) == {
             "pkg/__init__.py",
             "pkg/_python.py",
@@ -1165,9 +1161,7 @@ class TestFromImportSubmoduleResolution:
         _write(tmp_path, "pkg/__init__.py", "")
         _write(tmp_path, "pkg/_python.py", "def a() -> None:\n    pass\n")
         _write(tmp_path, "pkg/_cpp.py", "def b() -> None:\n    pass\n")
-        importer = _write(
-            tmp_path, "pkg_user.py", "from pkg import (_python, _cpp)\n"
-        )
+        importer = _write(tmp_path, "pkg_user.py", "from pkg import (_python, _cpp)\n")
         assert self._resolve_all(tmp_path, importer) == {
             "pkg/__init__.py",
             "pkg/_python.py",
@@ -1245,9 +1239,7 @@ class TestFromImportSubmoduleResolution:
         # other dict-dispatch/decorator-dispatch COV006 precedent waivers (T-2550)"
         # MUST-STILL-PASS control: a third-party `from pytest import
         # fixture` has no local file to resolve to under either reading.
-        importer = _write(
-            tmp_path, "pkg_user.py", "from pytest import fixture\n"
-        )
+        importer = _write(tmp_path, "pkg_user.py", "from pytest import fixture\n")
         assert self._resolve_all(tmp_path, importer) == set()
 
     # frob:ticket T-2550

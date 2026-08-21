@@ -89,7 +89,9 @@ class TestSetKind:
         done = transition(tmp_path, ticket_id, TicketState.DONE, covers_scope=True)
         assert done.is_ok
 
-        priority_result = set_priority(tmp_path, ticket_id, Priority.HIGH, reason="test")
+        priority_result = set_priority(
+            tmp_path, ticket_id, Priority.HIGH, reason="test"
+        )
         kind_result = set_kind(tmp_path, ticket_id, TicketKind.DOCS, reason="test")
         # Whatever priority's own behavior is on a terminal ticket, kind's
         # must match it exactly -- both ok, or both err.

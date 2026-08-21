@@ -94,9 +94,7 @@ class TestPromoteCLI:
         assert loaded_after.is_ok
         assert draft_id not in loaded_after.danger_ok
         finalized = [
-            t
-            for t in loaded_after.danger_ok.values()
-            if t.title == "Filed off-branch"
+            t for t in loaded_after.danger_ok.values() if t.title == "Filed off-branch"
         ]
         assert len(finalized) == 1
         final = finalized[0]
@@ -117,7 +115,14 @@ class TestPromoteCLI:
         _init_repo(repo)
 
         created = run(
-            "ticket", "new", "--title", "Already real", "--kind", "bug", "--path", str(repo)
+            "ticket",
+            "new",
+            "--title",
+            "Already real",
+            "--kind",
+            "bug",
+            "--path",
+            str(repo),
         )
         assert created.returncode == 0, created.stdout + created.stderr
         out = created.stdout + created.stderr

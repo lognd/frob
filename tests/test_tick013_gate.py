@@ -33,7 +33,9 @@ def _ticket(
         created=date(2026, 1, 1),
         scope=scope,
         no_scope_declared=no_scope_declared,
-        no_scope_declared_reason=("epic rollup, no file scope" if no_scope_declared else None),
+        no_scope_declared_reason=(
+            "epic rollup, no file scope" if no_scope_declared else None
+        ),
         body="## Description\nx\n",
     )
 

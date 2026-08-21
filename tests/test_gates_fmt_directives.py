@@ -204,9 +204,7 @@ class TestResolveLineLength:
         # would return from `resolve_line_length`) -- proven at the
         # `canonicalize_text` level, since none of today's `_MARKERS`
         # suffixes reach it via `resolve_line_length` itself yet.
-        text = (
-            "# frob:waive RULE001 reason=\"" + ("x" * 300) + "\"\n"
-        )
+        text = '# frob:waive RULE001 reason="' + ("x" * 300) + '"\n'
         rewritten = canonicalize_text(text, path="a.py", limit=None)
         assert rewritten == text
         assert "\\\n" not in rewritten
@@ -578,8 +576,8 @@ class TestFormatPaths:
         fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
         fixture.parent.mkdir(parents=True)
         fixture_original = (
-            "// frob:waive R reason=\"this reason is also intentionally "
-            "long so it would overflow the line-length limit and wrap\"\n"
+            '// frob:waive R reason="this reason is also intentionally '
+            'long so it would overflow the line-length limit and wrap"\n'
         )
         fixture.write_text(fixture_original)
 
@@ -602,8 +600,8 @@ class TestFormatPaths:
         fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
         fixture.parent.mkdir(parents=True)
         fixture_original = (
-            "// frob:waive R reason=\"this reason is also intentionally "
-            "long so it would overflow the line-length limit and wrap\"\n"
+            '// frob:waive R reason="this reason is also intentionally '
+            'long so it would overflow the line-length limit and wrap"\n'
         )
         fixture.write_text(fixture_original)
 
@@ -628,8 +626,8 @@ class TestFormatPaths:
         fixture = tmp_path / "tests" / "fixtures" / "corpus.strata"
         fixture.parent.mkdir(parents=True)
         fixture_original = (
-            "// frob:waive R reason=\"this reason is also intentionally "
-            "long so it would overflow the line-length limit and wrap\"\n"
+            '// frob:waive R reason="this reason is also intentionally '
+            'long so it would overflow the line-length limit and wrap"\n'
         )
         fixture.write_text(fixture_original)
 

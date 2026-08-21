@@ -269,6 +269,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2795: Reformat batch 10/N: 13 files pending ruff-format (T-2359 child)
 - T-2796: a large fraction of the queued backlog is already resolved by landed work, and 'already resolved' was being requeued instead of dropped
 - T-2800: Burn ruff I001 batch 2: tests/ subset
+- T-2808: Reformat batch 11/N: 13 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 

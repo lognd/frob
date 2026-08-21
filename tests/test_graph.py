@@ -980,7 +980,11 @@ class TestExclude:
         checkouts must still prune (own `.git` dir, covered by the
         preceding test); `.claude/hooks/**` must not."""
         _write(tmp_path, "src/a.py", "def foo() -> None:\n    pass\n")
-        _write(tmp_path, ".claude/hooks/dispatch-telemetry.py", "def hook() -> None:\n    pass\n")
+        _write(
+            tmp_path,
+            ".claude/hooks/dispatch-telemetry.py",
+            "def hook() -> None:\n    pass\n",
+        )
         cache = tmp_path / ".frob" / "cache.db"
         snap = build_graph(tmp_path, cache).danger_ok
         paths = {rec.id.path for rec in snap.symbols.values()}
@@ -2552,9 +2556,15 @@ class TestBuildCallGraphVerifyImports:
 
         # T-2156's own incident shape: two unrelated files each define a
         # same-named private helper, no import between them.
-        _write(tmp_path, "pkg/a.py", "def entry():\n    _run()\n\n\ndef _run():\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            "def entry():\n    _run()\n\n\ndef _run():\n    pass\n",
+        )
         _write(tmp_path, "pkg/b.py", "def _run():\n    pass\n")
-        graph = build_call_graph(tmp_path, ("pkg/a.py", "pkg/b.py"), verify_imports=True)
+        graph = build_call_graph(
+            tmp_path, ("pkg/a.py", "pkg/b.py"), verify_imports=True
+        )
         # Only the SAME-FILE `_run` resolves; `pkg/b.py::_run` never does,
         # because `pkg/a.py` never imports `pkg/b.py`.
         assert graph.calls == {"pkg/a.py::entry": ("pkg/a.py::_run",)}
@@ -2569,7 +2579,11 @@ class TestBuildCallGraphVerifyImports:
         # frob:tests src/frob/graph/callgraph.py::build_call_graph
         from frob.graph.callgraph import build_call_graph
 
-        _write(tmp_path, "pkg/a.py", "def entry():\n    _run()\n\n\ndef _run():\n    pass\n")
+        _write(
+            tmp_path,
+            "pkg/a.py",
+            "def entry():\n    _run()\n\n\ndef _run():\n    pass\n",
+        )
         _write(tmp_path, "pkg/b.py", "def _run():\n    pass\n")
         graph = build_call_graph(tmp_path, ("pkg/a.py", "pkg/b.py"))
         assert graph.calls["pkg/a.py::entry"] == (
@@ -2623,9 +2637,7 @@ class TestVerifyImportsTransitiveReachability:
         )
         assert graph.calls["pkg/caller.py::user"] == ("pkg/leaf.py::_foo",)
 
-    def test_call_graph_resolves_a_two_hop_reexport_chain(
-        self, tmp_path: Path
-    ) -> None:
+    def test_call_graph_resolves_a_two_hop_reexport_chain(self, tmp_path: Path) -> None:
         # frob:tests src/frob/graph/callgraph.py::build_call_graph
         from frob.graph.callgraph import build_call_graph
 
@@ -2678,9 +2690,7 @@ class TestVerifyImportsTransitiveReachability:
         )
         assert graph.calls == {"pkg/caller.py::entry": ("pkg/caller.py::_run",)}
 
-    def test_module_scoped_attribution_stays_single_hop(
-        self, tmp_path: Path
-    ) -> None:
+    def test_module_scoped_attribution_stays_single_hop(self, tmp_path: Path) -> None:
         """MUST-STILL-PASS control: `build_reference_graph_module_scoped`
         (T-2156's attribution-safe consumer) is deliberately UNCHANGED --
         the same two-hop re-export chain the reference-graph tests above
@@ -2973,9 +2983,7 @@ class TestDependencyGraphDegradedLanguages:
 
         with caplog.at_level(logging.WARNING, logger="frob.cycle.graph"):
             find_cycles(graph)
-        assert not [
-            r for r in caplog.records if "import_graph" in r.getMessage()
-        ]
+        assert not [r for r in caplog.records if "import_graph" in r.getMessage()]
 
     def test_known_gap_is_disclosed_on_degraded_languages_and_logged(
         self, monkeypatch, caplog

@@ -1204,9 +1204,9 @@ class TestLedgerCommitRepairMarker:
         with caplog.at_level(logging.WARNING, logger="frob.tickets._leases"):
             _repair_stale_ledger_commit_markers(repo)
 
-        assert any(
-            "SELF-HEALED" in r.message for r in caplog.records
-        ), [r.message for r in caplog.records]
+        assert any("SELF-HEALED" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]
         status = _run(["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo)
         assert status.stdout.strip() == ""
         log = _run(["git", "log", "-1", "--pretty=%s"], repo)
@@ -1307,9 +1307,9 @@ class TestLedgerCommitRepairMarker:
         with caplog.at_level(logging.ERROR, logger="frob.tickets._leases"):
             _repair_stale_ledger_commit_markers(repo)
 
-        assert any(
-            "self-heal FAILED" in r.message for r in caplog.records
-        ), [r.message for r in caplog.records]
+        assert any("self-heal FAILED" in r.message for r in caplog.records), [
+            r.message for r in caplog.records
+        ]
         marker = repo / ".frob" / "ledger-commit-repair" / "T-0001.json"
         # The marker AND the dirty content are both left in place --
         # never silently discarded, never a partial/blind reset.
@@ -1518,9 +1518,7 @@ class TestRefuseIfLandInProgress:
                 holder.wait(timeout=5)
 
     # frob:ticket T-1961
-    def test_waits_then_succeeds_once_the_lock_frees(
-        self, repo: Path, caplog
-    ) -> None:
+    def test_waits_then_succeeds_once_the_lock_frees(self, repo: Path, caplog) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_waits_then_succe\
         # eds_once_the_lock_frees
@@ -1565,9 +1563,7 @@ class TestRefuseIfLandInProgress:
         assert "waiting for in-flight land" in caplog.text
 
     # frob:ticket T-1961
-    def test_wait_times_out_and_still_refuses_loudly(
-        self, repo: Path, caplog
-    ) -> None:
+    def test_wait_times_out_and_still_refuses_loudly(self, repo: Path, caplog) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_wait_times_out_a\
         # nd_still_refuses_loudly
@@ -1902,7 +1898,9 @@ class TestDispatchLandGuard:
         assert _run(["git", "status", "--porcelain"], repo).stdout.strip() == ""
         marker_dir = repo / ".frob" / "land-repair"
         assert not list(marker_dir.glob("*.json"))
-        assert (repo / "src" / "feature.py").read_text() != "# squash-staged residue\n", (
+        assert (
+            repo / "src" / "feature.py"
+        ).read_text() != "# squash-staged residue\n", (
             "the residue survived the pre-dispatch guard -- reclaim was "
             "never invoked (or invoked too late) before dispatch"
         )
@@ -2246,7 +2244,9 @@ class TestReleaseOrphanedLease:
                 ticket_evidence_cmd="echo verified",
             )
         )
-        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
         leases_root = leases_dir(repo).danger_ok
         lease_file = _lease_path(leases_root, "T-0001")
         assert lease_file.exists()
@@ -2274,7 +2274,9 @@ class TestReleaseOrphanedLease:
                 ticket_reason="test: T-2048 terminal-lease repro",
             )
         )
-        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
         leases_root = leases_dir(repo).danger_ok
         lease_file = _lease_path(leases_root, "T-0001")
         assert lease_file.exists()
@@ -2300,7 +2302,9 @@ class TestReleaseOrphanedLease:
         ticket_run(
             AppConfig(ticket_command="start", ticket_path=repo, ticket_id="T-0001")
         )
-        _write_lease(repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat())
+        _write_lease(
+            repo, "T-0001", second_worktree, recorded_at=datetime.now(UTC).isoformat()
+        )
         leases_root = leases_dir(repo).danger_ok
         lease_file = _lease_path(leases_root, "T-0001")
         assert lease_file.exists()
@@ -2618,7 +2622,9 @@ class TestWorktreeReleaseLeaseCli:
             branch="feature-wt",
             recorded_at=datetime.now(UTC).isoformat(),
         )
-        lease_file.write_text(diverged.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        lease_file.write_text(
+            diverged.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
 
         cwd = Path.cwd()
         _os.chdir(repo)
@@ -3592,9 +3598,7 @@ class TestRootLeaseUnreclaimable:
         assert _lease_path(resolved.danger_ok, "T-9011").exists()
 
     # frob:ticket T-2007
-    def test_non_root_worktree_still_records_its_own_lease(
-        self, repo: Path
-    ) -> None:
+    def test_non_root_worktree_still_records_its_own_lease(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_non_root_worktre\
         # e_still_records_its_own_lease
@@ -3613,9 +3617,7 @@ class TestRootLeaseUnreclaimable:
             _run(["git", "worktree", "remove", "--force", str(wt)], repo)
 
     # frob:ticket T-2007
-    def test_pre_existing_root_lease_staleness_is_unchanged(
-        self, repo: Path
-    ) -> None:
+    def test_pre_existing_root_lease_staleness_is_unchanged(self, repo: Path) -> None:
         # frob:tests \
         # tests/test_ticket_leases.py::TestRootLeaseUnreclaimable.test_pre_existing_roo\
         # t_lease_staleness_is_unchanged

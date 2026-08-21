@@ -2912,7 +2912,9 @@ class TestSetMilestone:
         from frob.tickets import set_milestone
 
         self._init_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -2926,7 +2928,9 @@ class TestSetMilestone:
         from frob.tickets import set_milestone
 
         self._init_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         ticket_id = created.danger_ok.id
@@ -2990,7 +2994,9 @@ class TestNewTicketMilestone:
     def test_new_ticket_without_milestone_is_unmilestoned(self, tmp_path: Path) -> None:
         # frob:tests src/frob/tickets/_new_renumber.py::_validate_new_ticket_spec kind="unit"  # noqa: E501
         self._init_repo(tmp_path)
-        spec = TicketSpec(title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN)
+        spec = TicketSpec(
+            title="a ticket", kind=TicketKind.FEATURE, origin=Origin.HUMAN
+        )
         created = new_ticket(tmp_path, spec)
         assert created.is_ok
         assert created.danger_ok.milestone is None

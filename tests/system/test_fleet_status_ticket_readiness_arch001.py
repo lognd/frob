@@ -20,6 +20,5 @@ class TestFleetStatusTicketReadinessArch001:
         result = run("check", "--only", "arch")
         combined = result.stdout + result.stderr
         assert "ticket_readiness" not in combined, (
-            "ticket_readiness reappeared in an ARCH001/ARCH103 finding:\n"
-            f"{combined}"
+            f"ticket_readiness reappeared in an ARCH001/ARCH103 finding:\n{combined}"
         )

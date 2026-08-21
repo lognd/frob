@@ -283,7 +283,14 @@ class TestBulkRenumberCliRemoved:
         # ys_refuses
         _init_repo(tmp_path)
         filed = run(
-            "ticket", "new", "--title", "a", "--kind", "feature", "--path", str(tmp_path)
+            "ticket",
+            "new",
+            "--title",
+            "a",
+            "--kind",
+            "feature",
+            "--path",
+            str(tmp_path),
         )
         assert filed.returncode == 0, filed.stdout + filed.stderr
 
@@ -308,7 +315,14 @@ class TestBulkRenumberCliRemoved:
         # l_previews_read_only
         _init_repo(tmp_path)
         filed = run(
-            "ticket", "new", "--title", "a", "--kind", "feature", "--path", str(tmp_path)
+            "ticket",
+            "new",
+            "--title",
+            "a",
+            "--kind",
+            "feature",
+            "--path",
+            str(tmp_path),
         )
         assert filed.returncode == 0, filed.stdout + filed.stderr
 

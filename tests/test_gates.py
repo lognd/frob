@@ -18294,9 +18294,7 @@ class TestRenderLintGate:
         assert "scripts/fleet_status.py" in files
 
     # frob:ticket T-2740
-    def test_render001_scans_true_for_a_real_scanned_file(
-        self, tmp_path: Path
-    ) -> None:
+    def test_render001_scans_true_for_a_real_scanned_file(self, tmp_path: Path) -> None:
         """`render001_scans` (T-2740): a plain `src/frob/**.py` file is
         genuinely in RENDER001's scan set."""
         from frob.gates._render_lint import render001_scans
@@ -18675,9 +18673,7 @@ class TestTick006PhantomFiling:
 
     # frob:ticket T-2722
     # frob:tests tests/test_gates.py::TestTick006PhantomFiling.test_stale_draft_id_after_renumber_still_fires  # noqa: E501
-    def test_stale_draft_id_after_renumber_still_fires(
-        self, tmp_path: Path
-    ) -> None:
+    def test_stale_draft_id_after_renumber_still_fires(self, tmp_path: Path) -> None:
         """T-2722's own regression, reproduced directly: a Done report
         that STILL names the pre-renumber draft id after the draft was
         renumbered to a real ticket (the real id exists in the queue,
