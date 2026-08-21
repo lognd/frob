@@ -14,6 +14,17 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/_cli_parsers/_misc.py
+- src/frob/_cli_parsers/_reporting.py
+- src/frob/app/fmt_runner.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/dup/_pipeline/_fingerprint.py
+- src/frob/dup/_template.py
+- src/frob/gates/_coverage_sites.py
+- src/frob/gates/_dead_symbols.py
+- src/frob/gates/_docblocks.py
+- src/frob/gates/_fix_engine.py
 evidence_scope:
 - tests/unit/test_app_runners.py
 - tests/unit/test_app_runners_batch7.py
@@ -124,92 +135,127 @@ scope_changes:
   at: '2026-08-20'
 - op: remove
   glob: .claude/hooks/diagnosis-nudge.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: scripts/fleet_status.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/design_runner.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/profile_runner.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/pyfmt_runner.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/sys_runner.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/__init__.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/_footguns.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/telemetry/_usage.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_attach_backfill.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_new.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/ticket_runner/_waive_audit.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/app/worktree_runner.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/arch/_abstraction.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
   actor: logan
   at: '2026-08-21'
 - op: remove
   glob: src/frob/check/_python.py
-  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files
-    only
+  reason: batch 1 spun off to child T-2773; T-2359 tracks remaining files only
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/_cli_parsers/_reporting.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/fmt_runner.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/dup/_pipeline/_fingerprint.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/dup/_template.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_coverage_sites.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_dead_symbols.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: batch 2 of ruff-format-only reformat
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: batch 2 of ruff-format-only reformat
   actor: logan
   at: '2026-08-21'
 evidence:
