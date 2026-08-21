@@ -1,7 +1,7 @@
 ---
 id: T-2675
 title: test_derived_match hardcoded MIRRORED_LEDGER_VERBS set is stale after T-2624
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_ticket_runner_ledger_mirror.py
 - src/frob/app/ticket_runner/_ledger_mirror.py
+- tickets/T-2603/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +28,38 @@ scope_changes:
     method
   actor: logan
   at: '2026-08-21'
+- op: add
+  glob: tickets/T-2603/ticket.md
+  reason: evidence --replace on T-2603 to point its evidence citation at the renamed
+    test method
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tickets/T-2603/ticket.md
+  reason: evidence --replace on T-2603 to point its evidence citation at the renamed
+    test method
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tickets/T-2603/ticket.md
+  reason: evidence --replace on T-2603 to point its evidence citation at the renamed
+    test method
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tickets/T-2603/ticket.md
+  reason: evidence --replace on T-2603 to point its evidence citation at the renamed
+    test method
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tickets/T-2603/ticket.md
+  reason: evidence --replace on T-2603 to point its evidence citation at the renamed
+    test method
+  actor: logan
+  at: '2026-08-21'
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_sets_track_the_live_strategy_table
 designated_repro_test: null
 threat: null
 component: null

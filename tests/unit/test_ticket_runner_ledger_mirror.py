@@ -265,36 +265,48 @@ class TestVerbStrategy:
         assert table_verbs == frozenset(LEDGER_VERB_STRATEGY)
 
     # frob:ticket T-2603
-    def test_derived_match(self) -> None:
-        """Positive control: every verb that was in the OLD
-        `_LEDGER_TRANSACTIONAL_VERBS` (`land`/`merge-driver`/`promote`/
-        `renumber`/`sweep-async`) is still in `OWN_TRANSACTION_VERBS`, and
-        every verb that was in the OLD `MIRRORED_LEDGER_VERBS` -- MINUS
-        `debt`, whose membership there was dead code (its handler never
-        sets `cfg.ticket_id`, so the mirror path was structurally
-        unreachable for it either way) -- is still in the new
-        `MIRRORED_LEDGER_VERBS` alias."""
+    # frob:ticket T-2675
+    def test_derived_sets_track_the_live_strategy_table(self) -> None:
+        """T-2675: this used to be `test_derived_match`, hardcoding
+        T-2603 migration-day's verb membership as two literal frozensets
+        (`OWN_TRANSACTION_VERBS == frozenset({"land", "merge-driver", ...})`,
+        `MIRRORED_LEDGER_VERBS == frozenset({"accept", "anchor", ...})`) --
+        a snapshot valid only at T-2603 landing time, guaranteed to go
+        stale on every later verb addition, and it DID: T-2624 added
+        `"runs-last-parallel-safe"` to `LEDGER_VERB_STRATEGY` and this
+        test silently kept asserting the pre-T-2624 15-verb list, catching
+        nothing, until T-2675 found it.
+
+        `OWN_TRANSACTION_VERBS`/`MIRRORED_LEDGER_VERBS` are already
+        DERIVED filters over `LEDGER_VERB_STRATEGY` (see those constants'
+        own docstrings just above their definitions) -- there was never a
+        reason to also hand-maintain their CURRENT contents as a second
+        literal in this test; that duplication is exactly the "must be
+        hand-updated on every verb addition" failure shape this repo's
+        own doctrine calls a bug waiting to recur (NO DUPLICATION: config/
+        constants included, not just code). This recomputes the identical
+        filter fresh from the LIVE table on every run instead of a frozen
+        list, so it can never desync from a real verb addition/removal
+        again -- it protects the ALIASING invariant (these two exported
+        names really do stay a live filter over `LEDGER_VERB_STRATEGY`,
+        not a name that quietly regresses back to a hand-maintained set,
+        and any future `LedgerWriteStrategy` member missing from the
+        `OWN_TRANSACTION`/`OWN_TRANSACTION_LEDGER_MIRROR` filter tuple
+        below would show up as a mismatch here too), not a fixed verb
+        count."""
         assert OWN_TRANSACTION_VERBS == frozenset(
-            {"land", "merge-driver", "promote", "renumber", "sweep-async"}
+            verb
+            for verb, strategy in LEDGER_VERB_STRATEGY.items()
+            if strategy
+            in (
+                LedgerWriteStrategy.OWN_TRANSACTION,
+                LedgerWriteStrategy.OWN_TRANSACTION_LEDGER_MIRROR,
+            )
         )
         assert MIRRORED_LEDGER_VERBS == frozenset(
-            {
-                "accept",
-                "anchor",
-                "attach",
-                "block",
-                "body",
-                "component",
-                "kind",
-                "label",
-                "priority",
-                "review",
-                "runs-last",
-                "scope",
-                "scope-ack",
-                "sprint",
-                "tier",
-            }
+            verb
+            for verb, strategy in LEDGER_VERB_STRATEGY.items()
+            if strategy is LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED
         )
 
     # frob:ticket T-2603

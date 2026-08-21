@@ -114,11 +114,12 @@ class LedgerWriteStrategy(enum.Enum):
 
 
 # frob:ticket T-2603
+# frob:ticket T-2675
 # frob:doc docs/modules/tickets-lifecycle.md#one-verb-table-not-two-sets-t-2603
 # frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified
 # frob:tests \
-# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_match
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_track_the_live_strategy_table  # noqa: E501
 #: The single source of truth for every `frob ticket` verb's ledger-write
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is

@@ -43,11 +43,19 @@ scope_changes:
   at: '2026-08-19'
 evidence:
 - tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_all_classified
-- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_match
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_sets_track_the_live_strategy_table
 - tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_missing_raises
 - tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_promote_kind
 - tests/unit/test_ticket_runner_ledger_mirror.py::TestPromoteMirror::test_promote_from_worktree_is_visible_on_primary_without_a_land
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_match
+  new_node: tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy::test_derived_sets_track_the_live_strategy_table
+  reason: T-2675 renamed test_derived_match to test_derived_sets_track_the_live_strategy_table
+    -- the hardcoded migration-snapshot assertion was replaced with a live derivation-tracking
+    one that cannot go stale
+  actor: logan
+  at: '2026-08-21'
 threat: null
 component: null
 anchor: false
