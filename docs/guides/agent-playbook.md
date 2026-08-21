@@ -137,9 +137,12 @@ WHY and the recovery recipes.
    one session, and the direct cause of several agents parking on a count
    that could never settle. `fleet_status.py` identifies a land
    structurally, not by cmdline text, and is the authoritative answer.
-   Landing (see section 0 step 3 above and section 13) is safe once this
-   reads FEWER THAN 2 lands in flight -- that is not "wait for the fleet
-   to go idle"; 0 or 1 in flight is both fine to land against. A land
+   Landing (see section 0 step 3 above and section 13) uses
+   `scripts/wait_for_land_slot.py` (T-2775) as the shared primitive rather
+   than reading `fleet_status.py`'s count and comparing it by hand -- see
+   the exact procedure and env var in section 13. Do NOT park on a
+   Monitor waiting for a land slot to open: nothing wakes you, and this
+   has stranded committed work in agents' worktrees for real. A land
    commits onto main and then may REVERT that commit minutes later
    (post-land sweep refusal, T-1456); a merge taken inside that window
    permanently carries the reverted content into your branch, and your
@@ -1228,11 +1231,49 @@ below, so reach for it directly instead of re-deriving a probe. Read
 "is a land live now" -- its recorded holder pid can be stale/reused; the
 warning is easy to miss the first time and the pgrep-instead-of-
 fleet_status mistake has independently cost multiple agents (and the
-coordinator) a wrong conclusion in one session (T-2742). **The land
-threshold is FEWER THAN 2 in flight, not zero** -- do not read this
-section's "queueing is real but secondary" finding as license to wait for
-an idle fleet; `fleet_status.py` reporting 0 or 1 lands in flight both
-mean it is safe to land now. The real
+coordinator) a wrong conclusion in one session (T-2742). **T-2779
+CORRECTION: the "FEWER THAN 2 in flight, not zero" wording that used to
+appear here is retired.** It read two ways and both were wrong: read as
+"wait for the fleet to go idle" it stranded four agents parked on a
+Monitor that never fired (nothing wakes a Monitor waiting on fleet
+state); read literally it permitted a second concurrent land, and before
+T-2774 the loser of that lock race reliably burned its whole `timeout
+540` budget and was SIGKILLed having produced nothing (T-2753, T-2762,
+T-2359 all died this way; T-2762 then succeeded unchanged on a solo
+retry, which is the proof). The CURRENT procedure, using the two things
+that now supersede the old rule -- `scripts/wait_for_land_slot.py`
+(T-2775) and `FROB_LAND_DEADLINE_S` (T-2774, see
+`docs/modules/tickets-landing.md`):
+
+```
+export FROB_LAND_DEADLINE_S=540
+uv run python scripts/wait_for_land_slot.py --max-in-flight 1 --timeout 480
+# land only if that exited 0
+timeout 540 uv run frob ticket land <ticket> --worktree <wt>
+```
+
+- Exit 0 (`EXIT_SLOT_FREE`) means land now. Exit 1 (`EXIT_TIMEOUT`) means
+  a land was genuinely measured in flight the whole window -- retry
+  later. **Exit 2 (`EXIT_MEASUREMENT_FAILED`) is UNMEASURED, never a free
+  slot -- retry, do not proceed as if it were 0.** (`--fleet-status-cmd
+  false` forces exit 2 for verification; all three codes are documented
+  in `docs/guides/coordinator-scripts.md#wait_for_land_slot-exit-codes`.)
+- `FROB_LAND_DEADLINE_S` bounds the LOCK WAIT, not your own work: it
+  derives the wait ceiling as `min(_LAND_LOCK_TIMEOUT_S, deadline -
+  estimated_work_s)` (measured on this repo: estimated_work_s=300, so a
+  declared 540s deadline yields a 240s wait ceiling); absent the env var,
+  behavior is unchanged (flat 500s wait). A land that cannot fit
+  therefore now returns a clean typed `Err(LandError.LandLockTimeout)`
+  ("declined-early ... NOT a died-mid-land timeout") instead of dying
+  mid-work -- that Err is CORRECT, just retry; your worktree work is
+  intact. An oversized diff can still hit the cap on its own work, deadline
+  or no, so batch large changes.
+- Do NOT hand-roll a poll loop (a per-tick echo is a real context cost
+  across a fleet, and a loop that ignores the probe's exit code turns a
+  failed measurement into a fake zero) and do NOT park on a Monitor
+  waiting for a slot -- use the script above and retry synchronously.
+
+The real
 concurrency, measured from
 telemetry START/END interval overlap (not `ps`) across all 812 successful
 lands: **83.1% of lands (n=675) had NO other land in flight at all**

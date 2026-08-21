@@ -2,7 +2,7 @@
 id: T-2779
 title: agent-playbook documents a superseded landing rule that stranded four agents
   and permitted the concurrent-land kill
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-21'
@@ -20,6 +20,8 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- cmd:grep -n wait_for_land_slot.py docs/guides/agent-playbook.md exit=0 sha256=4b77a4fcc956
 designated_repro_test: null
 threat: null
 component: null
