@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9ff93e64fbd0be1217200f46003baf019a473ca8
 ---
 6 CLOSED tickets (T-1397, T-1526, T-1688, T-2344, T-2348, T-2365) each
 carry a COV003 finding right now: their bound evidence test node id no
