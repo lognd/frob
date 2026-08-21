@@ -17,12 +17,9 @@ scope:
 - src/frob/gates/_fix_engine_text.py
 - src/frob/gates/_inv.py
 - src/frob/gates/_lang_conformance.py
-- src/frob/gates/_profile_schema.py
 - src/frob/gates/_refs.py
-- src/frob/gates/_rule_id_scan.py
 - src/frob/gates/_sys.py
 - src/frob/gates/_sys_selfaudit.py
-- src/frob/gates/_testing_schema.py
 - src/frob/gates/_toplevel_scalar_schema.py
 evidence_scope:
 - tests/test_gates_fix_engine.py
@@ -48,6 +45,24 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: T-2557 holds a live cross-worktree lease on this file; excluded to avoid
     collision
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_profile_schema.py
+  reason: AFFECT001 closure doc docs/modules/gates.md is leased live by T-2557; deferring
+    these files to a later batch
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_rule_id_scan.py
+  reason: AFFECT001 closure doc docs/modules/gates.md is leased live by T-2557; deferring
+    these files to a later batch
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_testing_schema.py
+  reason: AFFECT001 closure doc docs/modules/gates.md is leased live by T-2557; deferring
+    these files to a later batch
   actor: logan
   at: '2026-08-21'
 evidence:
