@@ -33,6 +33,11 @@ body_changes:
   old_length: 1545
   new_length: 2167
 designated_repro_test: null
+acceptance:
+- text: given the batch's 6 files, when frob check --json measures LARGE001, then
+    each file reads as severity=note (waived with T-1651-grade reasoning naming why
+    no split seam exists) rather than warning
+  evidence: []
 threat: null
 component: null
 anchor: false
