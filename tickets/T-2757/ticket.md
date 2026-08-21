@@ -2,7 +2,7 @@
 id: T-2757
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2741):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC011)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-20'

@@ -149,3 +149,56 @@ class TestDoc011TicketIdProse:
         violations = docstatus_gate(root)
         doc011 = [v for v in violations if v.rule == "DOC011"]
         assert len(doc011) == 1
+
+    def test_t2757_bare_mention_of_a_deliberately_nonexistent_id_is_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_t2757_bare_mention_of_a_deliberately_nonexistent_id_is_flagged  # noqa: E501
+        """T-2757: docs/modules/tickets-verify-sweep.md documents a real
+        incident where a phantom ticket id (`T-2736`, deliberately never
+        durably written) was cited in a quarantine `cleared_reason`
+        string. The doc correctly wraps that FIRST mention in a code span
+        (illustrating the literal string, same posture as
+        `test_id_inside_inline_code_span_is_not_flagged` above), but a
+        SECOND, later prose mention of the same id -- "the direct fix for
+        the T-2736 mechanism specifically" -- was left bare, so DOC011
+        correctly read it as a live citation needing to resolve. Fixed by
+        backtick-quoting the second mention to match the first's style
+        (same remedy class as the first mention already used); this test
+        pins the pre-fix bare shape so it cannot silently regress."""
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "guide.md").write_text(
+            "# Guide\n\n"
+            "A live incident: `cleared_reason: cited a ticket as\n"
+            "T-2736`, naming an id that never existed. The direct fix\n"
+            "for the T-2736 mechanism specifically is documented below.\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        doc011 = [v for v in violations if v.rule == "DOC011"]
+        # The first mention is inside the multi-line code span (the
+        # backtick opens before "cleared_reason:" and does not close
+        # until after "T-2736" on the following line) and must NOT fire;
+        # the second, bare mention must.
+        assert len(doc011) == 1
+        assert any("T-2736" in v.message for v in doc011)
+
+    def test_t2757_fix_backtick_quoting_the_second_mention_clears_it(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse.test_t2757_fix_backtick_quoting_the_second_mention_clears_it  # noqa: E501
+        """T-2757's actual fix, mirrored as a fixture: backtick-quote the
+        second mention too, exactly as landed in
+        docs/modules/tickets-verify-sweep.md."""
+        root = tmp_path / "repo"
+        (root / "docs").mkdir(parents=True)
+        (root / "docs" / "guide.md").write_text(
+            "# Guide\n\n"
+            "A live incident: `cleared_reason: cited a ticket as\n"
+            "T-2736`, naming an id that never existed. The direct fix\n"
+            "for the `T-2736` mechanism specifically is documented below.\n",
+            encoding="utf-8",
+        )
+        violations = docstatus_gate(root)
+        assert "DOC011" not in _test_rules(violations)
