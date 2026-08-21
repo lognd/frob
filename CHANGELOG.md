@@ -225,6 +225,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2743: Repo-wide pre-existing debt surfaced by T-2713/T-2715's deferred-verification repair (from T-2716 re-triage)
 - T-2744: Quarantine was cleared citing an auto-filed ticket that does not exist, releasing findings against a phantom home
 - T-2745: post-land sweep regression from an unattributed source (sweep spawned by T-2712): 1 new (rule, file) identit(ies), 1 finding(s) (DOC006)
+- T-2746: WIRE001 cannot see a @property's own attribute-access caller (false positive)
 - T-2747: fleet_status reports a live worktree as a leaked lease when the worktree is not named t-<id>
 - T-2749: post-land sweep regression from T-2738: 2 new (rule, file) identit(ies), 7 finding(s) (ARCH103, DRIFT002)
 - T-2751: close draft-promotion scan (T-2738) attempts already-terminal DROPPED drafts, spurious failure

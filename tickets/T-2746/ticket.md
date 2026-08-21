@@ -1,7 +1,7 @@
 ---
 id: T-2746
 title: WIRE001 cannot see a @property's own attribute-access caller (false positive)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'

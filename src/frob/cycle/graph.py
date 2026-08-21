@@ -37,11 +37,6 @@ class DependencyGraph:
     # frob:ticket T-2700
     # frob:doc \
     # docs/modules/graph.md#self-disclosure-of-a-silently-degraded-capability-t-2683
-    # frob:waive WIRE001 reason="already called at runtime from find_cycles in this \
-    # same file (graph.degraded_languages, a few lines below) -- a @property is \
-    # accessed WITHOUT call-parens by design, which is exactly the shape WIRE001's \
-    # syntactic short(...) scan cannot see; genuinely wired, not dead, proven by \
-    # tests/test_graph.py::TestDependencyGraphDegradedLanguages" follow_up="T-2746"
     @property
     def degraded_languages(self) -> tuple[str, ...]:
         """T-2700: `CallGraph.degraded_languages`'s (T-2683) analogue for
