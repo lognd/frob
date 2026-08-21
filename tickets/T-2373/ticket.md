@@ -13,19 +13,28 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+evidence_scope:
+- tests/unit/test_parse.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: epic rollup tracking I001 burn-down child tickets, batched
   per T-2359 precedent; no direct file scope of its own
+evidence:
+- tests/unit/test_parse.py::TestParseRuffText::test_severity_i001_is_error
+- tests/unit/test_parse.py::TestParseRuffJson::test_i001_is_error
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
     remain
-  evidence: []
+  evidence:
+  - tests/unit/test_parse.py::TestParseRuffText::test_severity_i001_is_error
+  - tests/unit/test_parse.py::TestParseRuffJson::test_i001_is_error
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
-  evidence: []
+  evidence:
+  - tests/unit/test_parse.py::TestParseRuffText::test_severity_i001_is_error
+  - tests/unit/test_parse.py::TestParseRuffJson::test_i001_is_error
 threat: null
 component: null
 anchor: false
