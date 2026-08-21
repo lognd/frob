@@ -19,6 +19,9 @@ scope:
 - src/frob/natives/_build.py
 - tests/unit/strata/test_native_staleness.py
 - tests/unit/test_natives_build.py
+- design/frob.strata
+- docs/modules/cli.md
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -55,6 +58,40 @@ scope_changes:
     'a real compiler run just happened against this exact source'. Widening to that
     file (one small hook call after a successful crate build) plus both modules' existing
     test files, same shape as T-2793's scope correction.
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: design/frob.strata
+  reason: the new natives->stratamod cross-import (build_natives calling record_native_build_attempt)
+    needs a declared Flow (SYS003) in design/frob.strata, and both AFFECT001-named
+    docs (cli.md#frob-natives-build-t-0864, testing.md#public-api) need the T-2805
+    behavior change documented in the same change
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/cli.md
+  reason: the new natives->stratamod cross-import (build_natives calling record_native_build_attempt)
+    needs a declared Flow (SYS003) in design/frob.strata, and both AFFECT001-named
+    docs (cli.md#frob-natives-build-t-0864, testing.md#public-api) need the T-2805
+    behavior change documented in the same change
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: the new natives->stratamod cross-import (build_natives calling record_native_build_attempt)
+    needs a declared Flow (SYS003) in design/frob.strata, and both AFFECT001-named
+    docs (cli.md#frob-natives-build-t-0864, testing.md#public-api) need the T-2805
+    behavior change documented in the same change
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'retry: ensure mirror to main after prior timeout'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/testing.md
+  reason: retry mirror
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
