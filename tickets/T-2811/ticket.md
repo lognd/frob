@@ -50,6 +50,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 304f774da62fe53f2eeed23a030160bb36235b5d
 ---
 Batch 12 of the T-2359 ruff-format-only reformat epic. 13 files re-measured against current main via 'uv run ruff format --check .' (58 files remaining before this batch). Format-only, no semantic changes. Excludes files claimed by live in-flight tickets per fleet_status.py + .git/frob-leases/*.json re-checked fresh at pick time: T-2373's empty-scope I001 burn-down epic (historically claiming test_ticket_land.py, test_ticket_work_and_land_finish.py, test_tickets_organization.py, test_tickets_priority.py, unit/test_app_runners_batch6.py, unit/test_app_runners_t2395_contention.py), T-2806 (src/frob/gates/__init__.py, tests/unit/test_check.py), T-2805, T-2755, T-2370.
