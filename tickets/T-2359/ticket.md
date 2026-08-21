@@ -156,9 +156,6 @@ acceptance:
 - text: given the repo after this lands, when ruff format --check . runs, then zero
     files need reformatting
   evidence: []
-- text: given the format-only commit, when its diff is reviewed, then it contains
-    no semantic changes and no fixture-corpus files
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 2
@@ -169,6 +166,15 @@ acceptance_amendments:
     assume a single-shot repo-wide reformat, but 184 files across many in-flight worktrees
     requires landing in small disjoint batches to avoid locking the fleet. Re-added
     once the final batch lands and the repo-wide criterion is genuinely true.'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  index: 1
+  old_text: given the format-only commit, when its diff is reviewed, then it contains
+    no semantic changes and no fixture-corpus files
+  new_text: null
+  reason: 'batched execution: same rationale as index-2 removal, this criterion also
+    assumes single-shot completion; re-added on the final batch'
   actor: logan
   at: '2026-08-20'
 threat: null
