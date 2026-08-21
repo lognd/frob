@@ -18,6 +18,7 @@ scope:
 - src/frob/_cli_parsers/**
 - src/frob/check/__init__.py
 - docs/commands/check.md
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: docs/commands/check.md
   reason: doc note for the new native-staleness pre-check parity fix
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: unit tests for the new _native_staleness_result precheck
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
