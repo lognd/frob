@@ -237,7 +237,6 @@ class SealedGrantSet:
         return True
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _widen_node_grants(
     path: str, extend: ExtendNodeDecl, node_grants: SealedGrantSet
 ) -> list[CrossFileError]:
@@ -265,7 +264,6 @@ def _widen_node_grants(
     return errors
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _group_targeted_roots(
     files: tuple[FileModule, ...], targeted_names: frozenset[str]
 ) -> dict[str, list[tuple[str, Module]]]:
@@ -281,7 +279,6 @@ def _group_targeted_roots(
     return grouped
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _group_fragments_by_name(
     fragments: list[tuple[str, Module, str]],
 ) -> dict[str, list[str]]:
@@ -295,7 +292,6 @@ def _group_fragments_by_name(
     return by_name
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _resolve_unique_roots(
     roots_by_name: dict[str, list[tuple[str, Module]]],
     fragment_paths_by_name: dict[str, list[str]],
@@ -339,7 +335,6 @@ def _resolve_unique_roots(
     return Ok(unique_root_by_name)
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _seed_grants_by_root_node(
     unique_root_by_name: dict[str, tuple[str, Module]],
 ) -> dict[str, dict[str, SealedGrantSet]]:
@@ -354,7 +349,6 @@ def _seed_grants_by_root_node(
     }
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _apply_fragment_extends(
     fragments: list[tuple[str, Module, str]],
     unique_root_by_name: dict[str, tuple[str, Module]],
@@ -386,7 +380,6 @@ def _apply_fragment_extends(
     return tuple(errors)
 
 
-# frob:doc docs/strata/surface.md#fragments-t-2502
 def _rebuild_resolved_files(
     files: tuple[FileModule, ...],
     unique_root_by_name: dict[str, tuple[str, Module]],

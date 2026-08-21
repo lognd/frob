@@ -1,7 +1,7 @@
 ---
-id: T-draft-5b20cab8
+id: T-2810
 title: 'COV007 burn-down batch 1/N: src/frob/strata/_multifile.py duplicate doc anchors'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'
