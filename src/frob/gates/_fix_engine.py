@@ -760,9 +760,7 @@ def _tick006_try_resolve_without_filing(
     excerpt = _tick006_context_excerpt(done_report_text, tid)
     spec = _tick006_refile_ticket_spec(ticket, tid, excerpt)
     existing = _find_exact_duplicate(root, spec)
-    merge_target_root = (
-        merge_target_ids.root if merge_target_ids is not None else None
-    )
+    merge_target_root = merge_target_ids.root if merge_target_ids is not None else None
     if existing is None and merge_target_root is not None and merge_target_root != root:
         existing = _find_exact_duplicate(merge_target_root, spec)
     if existing is not None:

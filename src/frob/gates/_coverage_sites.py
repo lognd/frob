@@ -239,9 +239,7 @@ def _graph_examined_sites(root: Path) -> frozenset[str]:
     cache = root / ".frob" / "cache.db"
     result = build_graph(root, cache)
     if result.is_err:
-        _log.warning(
-            "_graph_examined_sites: build_graph failed: %s", result.danger_err
-        )
+        _log.warning("_graph_examined_sites: build_graph failed: %s", result.danger_err)
         return frozenset()
     return frozenset(result.danger_ok.file_hashes)
 

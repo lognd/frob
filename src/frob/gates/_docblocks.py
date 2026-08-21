@@ -791,9 +791,7 @@ def _doc012_heading_command(heading_text: str) -> tuple[str, str] | None:
 
 
 # T-1783
-def _doc012_documented_commands(
-    root: Path, prog: str
-) -> frozenset[str]:
+def _doc012_documented_commands(root: Path, prog: str) -> frozenset[str]:
     """Every subcommand `prog` has a dedicated `## `-or-deeper heading for,
     anywhere under `docs/commands/**.md` or `docs/modules/**.md` (T-1783) --
     scanned once per gate run, not per subcommand."""

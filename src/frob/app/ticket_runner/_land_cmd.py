@@ -2989,9 +2989,7 @@ def _cross_ticket_carried_paths(
     carried = sorted(
         path
         for path in touched_paths
-        if not scope_matches(
-            path, ticket.scope, kind=ticket.kind, ticket_id=ticket_id
-        )
+        if not scope_matches(path, ticket.scope, kind=ticket.kind, ticket_id=ticket_id)
     )
     return tuple(carried)
 

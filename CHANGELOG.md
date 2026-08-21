@@ -242,6 +242,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2764: frob check does not run check_native_staleness_or_exit; make check does (workflow-parity gap)
 - T-2766: docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning, frob.toml overrides to error
 - T-2773: Reformat batch 1/N: 15 files pending ruff-format (T-2359 child)
+- T-2776: Reformat batch 2/N: 10 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 

@@ -391,9 +391,7 @@ def build_group_template(
     for region, (labels, parents, spans, _fields), source in zip(
         members, trees, sources, strict=True
     ):
-        member_result = anti_unify(
-            running_labels, running_parents, labels, parents
-        )
+        member_result = anti_unify(running_labels, running_parents, labels, parents)
         if member_result.is_err:
             _log.debug(
                 "build_group_template: per-member re-derive refused (%s)",

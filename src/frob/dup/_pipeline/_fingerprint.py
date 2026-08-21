@@ -25,8 +25,8 @@ from frob.dup._core import (
     _exact_regions,
     _r3_canonical_hash,
     _tree_edit_similarity,
-    _wl_hash,
     _winnow_fingerprints,
+    _wl_hash,
     core_available,
 )
 from frob.dup._models import (
@@ -392,9 +392,7 @@ def _r4_reported_sim(
     fallback: float,
 ) -> float:
     """Reported R4 similarity: cached/real APTED, else `fallback`."""
-    cached = get_verdict(
-        state.root, d1, d2, _R4_APTED_VERDICT_METHOD, _CORPUS_EPOCH
-    )
+    cached = get_verdict(state.root, d1, d2, _R4_APTED_VERDICT_METHOD, _CORPUS_EPOCH)
     if cached is not None:
         state.cache_hits += 1
         return cast(float, cached[0])
@@ -604,9 +602,7 @@ def _region_groups(
     if len(refs) < 2:
         return []
     normalized_docs = tuple(_r2_normalize(state.body_tokens_by_ref[r]) for r in refs)
-    result = _exact_regions(
-        normalized_docs, cfg.region_min_tokens, cfg.region_run_cap
-    )
+    result = _exact_regions(normalized_docs, cfg.region_min_tokens, cfg.region_run_cap)
     if result.is_err:
         _log.debug("find_clones: r1.5 exact-region kernel unavailable")
         return []

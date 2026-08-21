@@ -771,8 +771,7 @@ def _add_sys_trace_parser(sys_sub) -> None:
     (target)")."""
     sys_trace_p = sys_sub.add_parser(
         "trace",
-        help="print the influence-closure witness path from one node "
-        "(T-1480)",
+        help="print the influence-closure witness path from one node (T-1480)",
     )
     sys_trace_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
     sys_trace_p.add_argument("sys_trace_from", metavar="from")

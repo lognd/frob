@@ -296,9 +296,7 @@ def _populate_profile_actions(profile_sub) -> None:
         help="explicitly clear a persisted rapid->standard auto-ratchet "
         "(T-1575: the ONLY way back -- never automatic)",
     )
-    downgrade_p.add_argument(
-        "--path", dest="profile_path", metavar="DIR", default="."
-    )
+    downgrade_p.add_argument("--path", dest="profile_path", metavar="DIR", default=".")
     downgrade_p.add_argument(
         "--reason", dest="profile_downgrade_reason", metavar="TEXT"
     )

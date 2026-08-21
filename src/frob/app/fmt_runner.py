@@ -63,15 +63,15 @@ def run(cfg: AppConfig) -> None:
         r = Renderer.for_stream(
             sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color
         )
-        r.write.heading('frob fmt')
+        r.write.heading("frob fmt")
         r.blank()
         if not report.changes:
-            r.write.good('all frob: directive lines already canonical')
+            r.write.good("all frob: directive lines already canonical")
         for change in report.changes:
-            verb = 'would rewrite' if cfg.fmt_check else 'rewrote'
-            r.write.kv(f'  {verb}', change.path)
+            verb = "would rewrite" if cfg.fmt_check else "rewrote"
+            r.write.kv(f"  {verb}", change.path)
         r.blank()
-        verb = 'would change' if cfg.fmt_check else 'changed'
-        r.line(f'{len(report.changes)} file(s) {verb}')
+        verb = "would change" if cfg.fmt_check else "changed"
+        r.line(f"{len(report.changes)} file(s) {verb}")
     if cfg.fmt_check and report.changes:
         sys.exit(1)

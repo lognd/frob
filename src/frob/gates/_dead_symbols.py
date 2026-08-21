@@ -336,8 +336,10 @@ def _folded_bool(
         producer, literal = right, left.value
     else:
         return None
-    if isinstance(producer, ast.Call) and isinstance(producer.func, ast.Name) and (
-        producer.func.id in const_funcs
+    if (
+        isinstance(producer, ast.Call)
+        and isinstance(producer.func, ast.Name)
+        and (producer.func.id in const_funcs)
     ):
         # Whatever arguments this call passes are irrelevant: every
         # `return` in the callee's own body already proved to fold to the
@@ -685,9 +687,7 @@ def _dead_only_names(root: Path, files: tuple[str, ...]) -> frozenset[str]:
     `_dead_candidate_names`/`_transitive_dead_names`; this function only
     sequences them -- see those four docstrings for the T-1881
     reasoning behind each step."""
-    trees, def_spans_by_name, const_funcs = _collect_trees_and_const_funcs(
-        root, files
-    )
+    trees, def_spans_by_name, const_funcs = _collect_trees_and_const_funcs(root, files)
     if not const_funcs:
         return frozenset()
 
