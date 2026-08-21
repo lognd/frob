@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3d9e449ece3bbb58e71fab8b1aac3febaa5acdb3
 ---
 Batch 6/N of T-2359: apply ruff-format-only reformat to 13 files.
 Includes 5 files freed by T-2557 (_waive.py, _profile_schema.py,
