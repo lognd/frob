@@ -4,7 +4,6 @@ function named `_mutation_for_eval`) -- only a genuine bare `eval(`/`exec(`
 builtin call site should fire (docs/strata/selfconform.md#the-three-rules).
 """
 
-
 from __future__ import annotations
 
 from pathlib import Path

@@ -85,8 +85,7 @@ class TestSelfauditSeverity:
             "[strata]\nrequire_may_scope = true\n", encoding="utf-8"
         )
         assert (
-            _selfaudit_severity("SYS107", tmp_path, capability="net")
-            == Severity.ERROR
+            _selfaudit_severity("SYS107", tmp_path, capability="net") == Severity.ERROR
         )
 
     # frob:ticket T-2224
@@ -98,9 +97,7 @@ class TestSelfauditSeverity:
         EXACTLY as before -- never silently promoted to ERROR just
         because the fail-closed check could not run."""
         assert _selfaudit_severity("SYS107", tmp_path) == Severity.WARN
-        assert (
-            _selfaudit_severity("SYS107", tmp_path, capability=None) == Severity.WARN
-        )
+        assert _selfaudit_severity("SYS107", tmp_path, capability=None) == Severity.WARN
 
     # frob:ticket T-2224
     # frob:tests src/frob/gates/_sys_selfaudit.py::_selfaudit_violation kind="unit"

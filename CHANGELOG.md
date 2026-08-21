@@ -252,6 +252,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2778: WIRE001's call-graph walk cannot resolve a symbol wired only as a passed-by-name callback argument
 - T-2779: agent-playbook documents a superseded landing rule that stranded four agents and permitted the concurrent-land kill
 - T-2783: Reformat batch 4/N: 10 files pending ruff-format (T-2359 child)
+- T-2786: Reformat batch 5/N: 13 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 

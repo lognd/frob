@@ -254,16 +254,16 @@ class TestLexcheck001:
         from frob.gates._detector_scope import DETECTOR_PACKAGE_ROOTS
 
         _init_repo(tmp_path)
-        _write_gate_module(
-            tmp_path, "_noop.py", "def _harmless():\n    return None\n"
-        )
+        _write_gate_module(tmp_path, "_noop.py", "def _harmless():\n    return None\n")
         _commit(tmp_path)
 
         with caplog.at_level(logging.WARNING):
             lexical_selfcheck_gate(tmp_path)
 
         [scope_line] = [
-            r.message for r in caplog.records if "lexical_selfcheck_gate: scanned" in r.message
+            r.message
+            for r in caplog.records
+            if "lexical_selfcheck_gate: scanned" in r.message
         ]
         assert "ONLY" in scope_line
         for root_prefix in DETECTOR_PACKAGE_ROOTS:

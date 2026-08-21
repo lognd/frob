@@ -64,7 +64,7 @@ class TestParseDirectivesMentionEscape:
         # of follow_up="T-####" must not be parsed as a directive at all.
         src = (
             "def foo() -> None:\n"
-            "    # discharged: frob:quote(frob:waive WIRE001 reason=\"x\" "
+            '    # discharged: frob:quote(frob:waive WIRE001 reason="x" '
             'follow_up="T-1956") is no longer needed\n'
             "    pass\n"
         )

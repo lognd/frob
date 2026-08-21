@@ -16,16 +16,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from frob.gates import coverage_gate
-from frob.graph import build_graph
-from frob.tickets import TicketQueue
 from frob.gitio import Diff
+from frob.graph import build_graph
 from frob.testing import CollectedTests
+from frob.tickets import TicketQueue
 
 _PRIVATE_HELPER_WITH_ANCHOR = (
-    "def _helper(x):\n"
-    '    """helper"""\n'
-    "    # frob:doc docs/x.md#helper\n"
-    "    return x\n"
+    'def _helper(x):\n    """helper"""\n    # frob:doc docs/x.md#helper\n    return x\n'
 )
 
 

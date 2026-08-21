@@ -154,11 +154,7 @@ class TestMarkdownDirectiveMentionVsUse:
         # The other code-span shape: a fenced ``` block showing a
         # directive as sample text (e.g. a "how to write a waiver"
         # snippet) must not be parsed as live either.
-        text = (
-            "```\n"
-            '<!-- frob:waive SCOPE001 reason="example" -->\n'
-            "```\n"
-        )
+        text = '```\n<!-- frob:waive SCOPE001 reason="example" -->\n```\n'
         _edges, malformed = markdown_anchors("doc.md", text)
         assert malformed == ()
 

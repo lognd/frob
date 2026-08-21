@@ -7,7 +7,11 @@ import json
 from pathlib import Path
 
 from frob.gates._models import GateReport, GateStats, Severity, Violation
-from frob.telemetry import RULE_COUNTS_KIND, record_rule_firing_counts, rule_firing_counts
+from frob.telemetry import (
+    RULE_COUNTS_KIND,
+    record_rule_firing_counts,
+    rule_firing_counts,
+)
 
 
 def _violation(rule: str, file: str = "a.py") -> Violation:
@@ -28,7 +32,11 @@ class TestRuleFiringCounts:
     # frob:tests src/frob/telemetry/__init__.py::rule_firing_counts kind="unit"
     def test_counts_kept_violations(self) -> None:
         report = GateReport(
-            violations=(_violation("DEAD001"), _violation("DEAD001"), _violation("WIRE001")),
+            violations=(
+                _violation("DEAD001"),
+                _violation("DEAD001"),
+                _violation("WIRE001"),
+            ),
             waived=(),
             stats=GateStats(),
         )
@@ -75,9 +83,11 @@ class TestRecordRuleFiringCounts:
             stats=GateStats(),
         )
         record_rule_firing_counts(tmp_path, report)
-        lines = (tmp_path / ".frob" / "telemetry.jsonl").read_text(
-            encoding="utf-8"
-        ).splitlines()
+        lines = (
+            (tmp_path / ".frob" / "telemetry.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        )
         assert len(lines) == 1
         record = json.loads(lines[0])
         assert record["kind"] == RULE_COUNTS_KIND
@@ -91,18 +101,18 @@ class TestRecordRuleFiringCounts:
         # kind="unit"
         report = GateReport(violations=(), waived=(), stats=GateStats())
         record_rule_firing_counts(tmp_path, report)
-        lines = (tmp_path / ".frob" / "telemetry.jsonl").read_text(
-            encoding="utf-8"
-        ).splitlines()
+        lines = (
+            (tmp_path / ".frob" / "telemetry.jsonl")
+            .read_text(encoding="utf-8")
+            .splitlines()
+        )
         assert len(lines) == 1
         record = json.loads(lines[0])
         assert record["rule_counts"] == {}
         assert record["distinct_rules_fired"] == 0
 
     # frob:ticket T-1939
-    def test_respects_no_telemetry_opt_out(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_respects_no_telemetry_opt_out(self, tmp_path: Path, monkeypatch) -> None:
         # frob:tests src/frob/telemetry/__init__.py::record_rule_firing_counts \
         # kind="unit"
         monkeypatch.setenv("FROB_NO_TELEMETRY", "1")

@@ -2,7 +2,6 @@
 T-0086): k8s NetworkPolicy, seccomp profile skeletons, IAM policy skeletons.
 """
 
-
 from __future__ import annotations
 
 import json

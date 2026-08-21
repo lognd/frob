@@ -166,12 +166,8 @@ class TestPort001:
 
         violations = port_selfcheck_gate(tmp_path)
 
-        path_hits = {
-            v.file for v in violations if v.rule == "PORT001-PATH"
-        }
-        ident_hits = {
-            v.file for v in violations if v.rule == "PORT001-IDENT"
-        }
+        path_hits = {v.file for v in violations if v.rule == "PORT001-PATH"}
+        ident_hits = {v.file for v in violations if v.rule == "PORT001-IDENT"}
         assert "src/frob/strata/_offender.py" in path_hits
         assert "src/frob/vet/_offender.py" in ident_hits
 

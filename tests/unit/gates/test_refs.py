@@ -53,7 +53,6 @@ def _write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
-
 # frob:ticket T-1665
 class TestResolvedImportChannel:
     """A `.py` target's inbound reference is a REAL AST-resolved import,

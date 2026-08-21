@@ -1,6 +1,5 @@
 """Unit tests for the strata fact base and closure engine (docs/strata/kernel.md)."""
 
-
 from __future__ import annotations
 
 import sys

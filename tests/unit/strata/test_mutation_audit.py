@@ -157,7 +157,7 @@ class TestNodeAllowedAppCapabilities:
             "fetch_url",
         ):
             assert kind in APP_DETECTABLE_KINDS
-            node = _node("n", may=(f'{kind}:target',) if ":" not in kind else (kind,))
+            node = _node("n", may=(f"{kind}:target",) if ":" not in kind else (kind,))
             allowed = node_allowed_app_capabilities(node)
             assert allowed, f"{kind} produced no manifest entries"
 

@@ -120,9 +120,7 @@ class TestAttachExaminedSites:
         (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
         report = attach_examined_sites(_empty_report(), tmp_path)
         assert is_family_instrumented(report.stats, "totally_unknown_family") is False
-        assert (
-            site_examined(report.stats, "totally_unknown_family", "m.py") is False
-        )
+        assert site_examined(report.stats, "totally_unknown_family", "m.py") is False
 
     def test_preserves_examined_sites_a_prior_caller_already_attached(
         self, tmp_path: Path
@@ -172,9 +170,7 @@ class TestPerfGraphVetExaminedSitesShareOneFixtureShape:
         assert site_examined(report.stats, family, "data.bin") is False
 
     # frob:ticket T-1943
-    def test_graph_reports_false_for_a_file_never_written(
-        self, tmp_path: Path
-    ) -> None:
+    def test_graph_reports_false_for_a_file_never_written(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_coverage_sites.py::attach_examined_sites \
         # kind="unit"
         (tmp_path / "m.py").write_text("def f():\n    return 1\n", encoding="utf-8")
@@ -196,10 +192,10 @@ class TestStrataExaminedSites:
         design = tmp_path / "design"
         design.mkdir()
         (design / "m.strata").write_text(
-            'module m\n'
-            'node client : foreign { clearance Public; }\n'
-            'node api : authenticated { clearance Internal; }\n'
-            'flow f_login : client -> api\n',
+            "module m\n"
+            "node client : foreign { clearance Public; }\n"
+            "node api : authenticated { clearance Internal; }\n"
+            "flow f_login : client -> api\n",
             encoding="utf-8",
         )
         report = attach_examined_sites(_empty_report(), tmp_path)
@@ -211,6 +207,8 @@ class TestStrataExaminedSites:
         # kind="unit"
         design = tmp_path / "design"
         design.mkdir()
-        (design / "bad.strata").write_text("this is not valid strata {{{", encoding="utf-8")
+        (design / "bad.strata").write_text(
+            "this is not valid strata {{{", encoding="utf-8"
+        )
         report = attach_examined_sites(_empty_report(), tmp_path)
         assert site_examined(report.stats, "strata", "design/bad.strata") is False
