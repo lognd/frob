@@ -36,7 +36,7 @@ def _seed_sweep_ticket(tmp_path: Path) -> str:
         kind=TicketKind.BUG,
         origin=Origin.AGENT,
         scope=("a.py",),
-        body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n" "- COV003  a.py\n"),
+        body=(f"{_rapid_sweep._REGRESSION_IDENTITY_HEADING}\n\n- COV003  a.py\n"),
     )
     created = new_ticket(tmp_path, spec, no_commit=True, warn_if_dirty=False)
     assert created.is_ok

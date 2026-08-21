@@ -123,8 +123,8 @@ def test_recently_filed_ticket_suppresses_nudge(tmp_path: Path):
     telemetry.parent.mkdir(parents=True)
     from datetime import UTC, datetime
 
-    now_iso = datetime.now(UTC).isoformat(timespec="milliseconds").replace(
-        "+00:00", "Z"
+    now_iso = (
+        datetime.now(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
     )
     telemetry.write_text(
         json.dumps(
@@ -178,9 +178,7 @@ def test_probe_removed_from_tracked_repo(tmp_path: Path):
     )
     stop_hooks = settings.get("hooks", {}).get("Stop", [])
     commands = [
-        h.get("command", "")
-        for entry in stop_hooks
-        for h in entry.get("hooks", [])
+        h.get("command", "") for entry in stop_hooks for h in entry.get("hooks", [])
     ]
     assert not any("_stop-probe" in cmd for cmd in commands), (
         "no Stop hook may still reference the retired probe script"

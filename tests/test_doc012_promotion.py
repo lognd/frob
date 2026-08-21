@@ -66,13 +66,19 @@ class TestDoc012PromotedToError:
         promotion actually changed severity, not just prose."""
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_PROMOTION_FAKE_CONFIG)
-        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        _write(
+            tmp_path,
+            "docs/commands/widget.md",
+            "# acme widget\n\nDoes widget things.\n",
+        )
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
 
         violations = doc012_gate(tmp_path)
 
         gadget = [v for v in violations if v.rule == "DOC012" and "gadget" in v.message]
-        assert gadget, "expected a DOC012 finding naming the undocumented `gadget` subcommand"
+        assert gadget, (
+            "expected a DOC012 finding naming the undocumented `gadget` subcommand"
+        )
         assert gadget[0].severity == Severity.ERROR
 
     def test_documented_subcommand_still_passes(self, tmp_path: Path) -> None:
@@ -80,7 +86,11 @@ class TestDoc012PromotedToError:
         subcommand still reports zero DOC012 findings, same as before."""
         _git_init(tmp_path)
         _write(tmp_path, "frob.toml", _DOC012_PROMOTION_FAKE_CONFIG)
-        _write(tmp_path, "docs/commands/widget.md", "# acme widget\n\nDoes widget things.\n")
+        _write(
+            tmp_path,
+            "docs/commands/widget.md",
+            "# acme widget\n\nDoes widget things.\n",
+        )
         _write(
             tmp_path,
             "docs/modules/gadget.md",

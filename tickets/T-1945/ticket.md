@@ -2,7 +2,7 @@
 id: T-1945
 title: Bulk-reformat the 77 ruff-format + 265 frob-fmt drifted files (deferred from
   T-1928)
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-09'

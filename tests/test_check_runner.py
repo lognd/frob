@@ -357,9 +357,8 @@ class TestClaudeConfigDriftStage:
         dest = Path.home() / ".claude" / "hooks" / "widget.py"
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(
-            "# GENERATED COPY -- DO NOT EDIT.\n" + (root / ".claude" / "hooks" / "widget.py").read_text(
-                encoding="utf-8"
-            ),
+            "# GENERATED COPY -- DO NOT EDIT.\n"
+            + (root / ".claude" / "hooks" / "widget.py").read_text(encoding="utf-8"),
             encoding="utf-8",
         )
         result = _claude_config_drift_result(root)

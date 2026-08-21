@@ -637,9 +637,7 @@ class TestSnapshotParameterDroppedStaticallyEnforced:
         'fix_e501_merge_introduced(Path("x"), _SNAP)\n'
     )
 
-    def test_two_positional_args_are_statically_refused(
-        self, tmp_path: Path
-    ) -> None:
+    def test_two_positional_args_are_statically_refused(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_gates_fix_engine.py::TestSnapshotParameterDroppedStaticallyEnforce\
         # d.test_two_positional_args_are_statically_refused kind="unit"

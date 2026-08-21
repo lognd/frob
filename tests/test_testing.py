@@ -837,9 +837,7 @@ class TestCollectPythonTests:
         # collect failure).
         spec = NativeSpec(name="frob_no_such_native_xyz", build_cmd="make core")
         monkeypatch.setattr(collect_mod, "_load_natives_or_empty", lambda root: (spec,))
-        monkeypatch.setattr(
-            "frob.gates._maybe_autorebuild_natives", lambda root: None
-        )
+        monkeypatch.setattr("frob.gates._maybe_autorebuild_natives", lambda root: None)
         result2 = collect_mod.collect_python_tests(tmp_path)
         assert result2.is_ok
         assert [s.name for s in python_collection_missing_natives()] == [
@@ -2491,7 +2489,9 @@ class TestCollectKotlinTests:
     "read what already exists, never build here" structure."""
 
     # frob:ticket T-2409
-    def _write_project(self, root: Path, *, build_filename: str = "build.gradle.kts") -> None:
+    def _write_project(
+        self, root: Path, *, build_filename: str = "build.gradle.kts"
+    ) -> None:
         contents = (
             'plugins {\n    kotlin("jvm") version "1.9.0"\n}\n'
             if build_filename.endswith(".kts")
@@ -2506,11 +2506,11 @@ class TestCollectKotlinTests:
         _write(
             root,
             "app/build/test-results/test/TEST-com.example.FooTest.xml",
-            '''<?xml version="1.0" encoding="UTF-8"?>
+            """<?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="com.example.FooTest" tests="1">
   <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
 </testsuite>
-''',
+""",
         )
 
     # frob:ticket T-2409
@@ -2586,11 +2586,11 @@ class TestCollectKotlinTests:
         _write(
             tmp_path,
             "app/build/test-results/test/TEST-com.example.FooTest.xml",
-            '''<?xml version="1.0" encoding="UTF-8"?>
+            """<?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="com.example.FooTest" tests="1">
   <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
 </testsuite>
-''',
+""",
         )
         result = collect_kotlin_tests(tmp_path)
         assert result.is_ok
@@ -2620,15 +2620,15 @@ class TestCollectKotlinTests:
         # frob:tests src/frob/testing/_collect_kotlin.py::collect_kotlin_tests
         from frob.testing._collect import collect_kotlin_tests
 
-        _write(tmp_path, "app/build.gradle.kts", 'plugins {\n    java\n}\n')
+        _write(tmp_path, "app/build.gradle.kts", "plugins {\n    java\n}\n")
         _write(
             tmp_path,
             "app/build/test-results/test/TEST-com.example.FooTest.xml",
-            '''<?xml version="1.0" encoding="UTF-8"?>
+            """<?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="com.example.FooTest" tests="1">
   <testcase classname="com.example.FooTest" name="testBar" time="0.01"/>
 </testsuite>
-''',
+""",
         )
         result = collect_kotlin_tests(tmp_path)
         assert result.is_ok

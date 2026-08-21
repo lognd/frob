@@ -6,7 +6,6 @@ proving representative patterned entries actually fire through
 (T-0145 drift-lock style: a pattern with zero firing evidence is as good
 as absent)."""
 
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -674,7 +673,9 @@ class TestNetMutateVerbSplit:
         `net-mutate` signal and the pre-existing `net-connect` signal --
         additive, never a replacement."""
         path = tmp_path / "m.py"
-        path.write_text("import requests\n\ndef f():\n    requests.post('http://x', json={})\n")
+        path.write_text(
+            "import requests\n\ndef f():\n    requests.post('http://x', json={})\n"
+        )
         observed = scan_file_capabilities(path)
         assert "net-mutate" in observed
         assert "net-connect" in observed
@@ -688,9 +689,7 @@ class TestNetMutateVerbSplit:
         assert "net-mutate" in scan_file_capabilities(path)
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
-    def test_requests_get_only_does_not_report_net_mutate(
-        self, tmp_path: Path
-    ) -> None:
+    def test_requests_get_only_does_not_report_net_mutate(self, tmp_path: Path) -> None:
         """Acceptance [1]: a read-only GET call does NOT report
         `net-mutate` -- the split does not over-fire on read-only usage,
         proving this is a real distinction, not a vacuous one."""
@@ -757,9 +756,7 @@ class TestBoto3ServiceBindingResolution:
         assert "net-connect" in observed
 
     # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities kind="unit"
-    def test_s3_resource_delete_object_reports_net_mutate(
-        self, tmp_path: Path
-    ) -> None:
+    def test_s3_resource_delete_object_reports_net_mutate(self, tmp_path: Path) -> None:
         """Same resolution through the `boto3.resource(...)` factory, not
         just `boto3.client(...)`."""
         path = tmp_path / "m.py"

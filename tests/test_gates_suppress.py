@@ -5,7 +5,6 @@ their output -- the whole point of this gate is real, observed
 diagnostics, and both tools are dev dependencies already required to run
 this suite (T-1339's oracle mechanism)."""
 
-
 from __future__ import annotations
 
 from pathlib import Path

@@ -524,7 +524,9 @@ class TestChangelogFragments:
         assert write_ticket(tmp_path, dropped).is_ok
         assert write_ticket(tmp_path, done).is_ok
 
-        write_changelog_fragment(tmp_path, "T-9003", "minor", "T-9003: dropped as obsolete")
+        write_changelog_fragment(
+            tmp_path, "T-9003", "minor", "T-9003: dropped as obsolete"
+        )
         write_changelog_fragment(tmp_path, "T-9004", "patch", "T-9004: a real fix")
 
         (tmp_path / "CHANGELOG.md").write_text("# Changelog\n")
@@ -995,6 +997,5 @@ class TestNoStrayFragmentForNonDoneTicket:
                 offenders.append(f"{fragment.name} (ticket state={ticket.state.value})")
 
         assert not offenders, (
-            "stray changelog.d fragment(s) for non-DONE ticket(s): "
-            f"{offenders}"
+            f"stray changelog.d fragment(s) for non-DONE ticket(s): {offenders}"
         )

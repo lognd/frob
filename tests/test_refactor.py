@@ -722,9 +722,7 @@ class TestRunRefactor:
         source = SymbolRef(module="pkg.mod", qualname="Greeter.greet")
         destination = SymbolRef(module="pkg.mod", qualname="Greeter.salute")
         plan = build_plan(root, RefactorKind.RENAME, source, destination).danger_ok
-        ledger_op = next(
-            op for op in plan.reference_ops if old_node_id in op.old_text
-        )
+        ledger_op = next(op for op in plan.reference_ops if old_node_id in op.old_text)
         assert ledger_op in plan.reference_ops
 
         routed = _route_evidence_rebinds_through_replace_evidence(
@@ -788,9 +786,7 @@ class TestRunRefactor:
         source = SymbolRef(module="pkg.mod", qualname="Greeter.greet")
         destination = SymbolRef(module="pkg.mod", qualname="Greeter.salute")
         plan = build_plan(root, RefactorKind.RENAME, source, destination).danger_ok
-        ledger_op = next(
-            op for op in plan.reference_ops if old_node_id in op.old_text
-        )
+        ledger_op = next(op for op in plan.reference_ops if old_node_id in op.old_text)
 
         routed = _route_evidence_rebinds_through_replace_evidence(
             root, plan, destination
@@ -1530,9 +1526,7 @@ class TestRepointer:
         # tests/test_refactor.py::TestRepointer.test_ticket_id_from_ledger_path_active
         from frob.refactor._repointer import _ticket_id_from_ledger_path
 
-        assert (
-            _ticket_id_from_ledger_path("/repo/tickets/T-0042/ticket.md") == "T-0042"
-        )
+        assert _ticket_id_from_ledger_path("/repo/tickets/T-0042/ticket.md") == "T-0042"
 
     # frob:ticket T-1854
     def test_ticket_id_from_ledger_path_archived(self):

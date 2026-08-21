@@ -661,9 +661,7 @@ class TestExternalPathArgHash:
 
     # frob:ticket T-2204
     # frob:tests tests/test_telemetry.py::TestExternalPathArgHash.test_still_flags_when_the_external_fixture_is_unchanged  # noqa: E501
-    def test_still_flags_when_the_external_fixture_is_unchanged(
-        self, tmp_path: Path
-    ):
+    def test_still_flags_when_the_external_fixture_is_unchanged(self, tmp_path: Path):
         # The positive case: when the named external path's own state
         # genuinely has not moved, REDUNDANT_RERUN must still fire -- the
         # fix must not blunt the detector into never firing at all.
@@ -697,7 +695,11 @@ class TestExternalPathArgHash:
         # (e.g. plain "check") must not be affected by this digest --
         # the redundant-rerun behavior for that case is unchanged.
         record_cli_event(
-            tmp_path, subcommand="check", args_head="check", duration_ms=500, exit_code=0
+            tmp_path,
+            subcommand="check",
+            args_head="check",
+            duration_ms=500,
+            exit_code=0,
         )
         tips = detect_footguns(
             tmp_path,

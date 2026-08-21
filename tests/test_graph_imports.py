@@ -113,9 +113,7 @@ class TestBuildImportGraph:
         # 2+-referenced CLI parser modules into false REF002s.
         _write(tmp_path, "pkg/__init__.py", "from ._sub import thing\n")
         _write(tmp_path, "pkg/_sub.py", "thing = 1\n")
-        graph = build_import_graph(
-            tmp_path, ["pkg/__init__.py", "pkg/_sub.py"]
-        )
+        graph = build_import_graph(tmp_path, ["pkg/__init__.py", "pkg/_sub.py"])
         assert graph.edges["pkg/__init__.py"] == ("pkg/_sub.py",)
 
     def test_unreadable_file_is_reported_unresolved_not_silently_skipped(

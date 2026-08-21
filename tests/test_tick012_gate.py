@@ -125,7 +125,9 @@ class TestTick012LeaseScopeDrift:
         """A QUEUED ticket (no live lease, nothing in-progress to drift)
         never fires TICK012, even with a broad declared scope."""
         _run(["git", "init", "-q", "-b", "main"], tmp_path)
-        ticket = _ticket(ticket_id="T-2602", state=TicketState.QUEUED, scope=("src/**",))
+        ticket = _ticket(
+            ticket_id="T-2602", state=TicketState.QUEUED, scope=("src/**",)
+        )
         violations = tickets_gate(tmp_path, self._queue(ticket))
         assert not any(v.rule == "TICK012" for v in violations)
 

@@ -7,7 +7,6 @@ independently paying for its own -- while two worktrees whose content
 DIFFERS never contend with (or leak a result to) each other at all.
 """
 
-
 from __future__ import annotations
 
 import threading

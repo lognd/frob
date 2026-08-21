@@ -83,9 +83,7 @@ class TestClaimsReverifyOutcomeDistinguishesSkipFromPass:
         fully-silent skip before this fix -- no log line at all, and a
         bare `Ok(None)` indistinguishable from a real pass. Must now
         return a distinguishable SKIPPED_UNMEASURED outcome."""
-        result = _reverify_done_report_claims_post_merge(
-            tmp_path, "T-9999", None, None
-        )
+        result = _reverify_done_report_claims_post_merge(tmp_path, "T-9999", None, None)
         assert result.is_ok
         assert result.danger_ok is _ClaimsReverifyOutcome.SKIPPED_UNMEASURED
 

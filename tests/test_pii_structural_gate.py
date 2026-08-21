@@ -858,10 +858,7 @@ class TestSymrefPopulation:
         to the enclosing class (T-0348 family 2's own PII010 shape) --
         proves `_scan_orm_columns`' own call site threads symref too, not
         just `_scan_class_fields`'s direct-field path."""
-        src = (
-            "class User(Base):\n"
-            "    ssn = Column('ssn', String)\n"
-        )
+        src = "class User(Base):\n    ssn = Column('ssn', String)\n"
         tree = ast.parse(src)
         from frob.gates._pii_structural._node_index import _build_node_index
         from frob.gates._pii_structural._python_fields import _scan_orm_columns
@@ -922,7 +919,7 @@ class TestSymrefPopulation:
             enclosing_qualname,
         )
 
-        src = "class Outer:\n" "    def method(self):\n" "        x = 1\n"
+        src = "class Outer:\n    def method(self):\n        x = 1\n"
         tree = ast.parse(src)
         index = _build_node_index(tree)
         # Line 3 (`x = 1`) is inside `method`, which is inside `Outer`.
@@ -1126,9 +1123,7 @@ class TestWrappedFakeEmailMarker:
         # frob:tests src/frob/gates/_pii_structural/_emails.py::_line_marks_fake_email
         src = (
             "def f():\n"
-            "    email = "
-            + repr("a" + "@" + "real-shaped.example.invalid")
-            + "\n"
+            "    email = " + repr("a" + "@" + "real-shaped.example.invalid") + "\n"
             "    return email\n"
         )
         tree = ast.parse(src)

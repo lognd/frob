@@ -225,8 +225,9 @@ class TestBehavioralCapabilityCheck:
             status = support.capabilities.get("directive_parse")
             if status is None or status.state is not FacetState.IMPLEMENTED:
                 continue
-            assert language == "strata" or "\\\n" in module._CAPABILITY_FIXTURE_SOURCES.get(
-                language, ""
+            assert (
+                language == "strata"
+                or "\\\n" in module._CAPABILITY_FIXTURE_SOURCES.get(language, "")
             ), f"{language}'s fixture has no continuation"
             ok, detail = _behavioral_capability_check(
                 language, "directive_parse", tmp_path
@@ -258,9 +259,7 @@ class TestBehavioralCapabilityCheck:
             "    return 2\n"
         )
         monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "python", broken_source)
-        ok, detail = _behavioral_capability_check(
-            "python", "directive_parse", tmp_path
-        )
+        ok, detail = _behavioral_capability_check("python", "directive_parse", tmp_path)
         assert not ok, f"broken fixture was wrongly reported as passing: {detail}"
 
     # frob:ticket T-2365
@@ -315,8 +314,7 @@ class TestBehavioralCapabilityCheck:
             language
             for language, support in registry.items()
             if language not in ("python", "rust")
-            and support.capabilities["test_discovery"].state
-            is FacetState.IMPLEMENTED
+            and support.capabilities["test_discovery"].state is FacetState.IMPLEMENTED
         }
         # A real, non-vacuous set: at least typescript/kotlin/c/cpp are
         # IMPLEMENTED today (T-2499's own live derivation).
@@ -426,8 +424,7 @@ class TestCapabilityConformanceGate:
         assert all(v.rule == "LANG004" for v in violations)
         assert all(v.severity is Severity.ERROR for v in violations)
         assert any(
-            "python" in v.message and "directive_parse" in v.message
-            for v in violations
+            "python" in v.message and "directive_parse" in v.message for v in violations
         )
 
     # frob:ticket T-2706
@@ -500,10 +497,9 @@ class TestCapabilityConformanceWiring:
         import subprocess
         from datetime import date
 
+        import frob.gates._lang_conformance as module
         from frob.gates import GateConfig, run_gates
         from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
-
-        import frob.gates._lang_conformance as module
 
         broken_source = (
             '"""Capability fixture module docstring."""\n\n\n'
@@ -550,9 +546,7 @@ class TestCapabilityConformanceWiring:
 
         write_ticket(tmp_path, ticket)
         subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
-        subprocess.run(
-            ["git", "commit", "-q", "-m", "base"], cwd=tmp_path, check=True
-        )
+        subprocess.run(["git", "commit", "-q", "-m", "base"], cwd=tmp_path, check=True)
 
         cfg = GateConfig(root=str(tmp_path), base="main")
         result = run_gates(cfg)

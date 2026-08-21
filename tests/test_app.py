@@ -5,7 +5,6 @@ sub-agent can never receive (docs/guides/agent-playbook.md section 6b);
 and for the flake-quarantine stability wiring into `frob test`'s own run
 path (T-0635)."""
 
-
 from __future__ import annotations
 
 from pathlib import Path

@@ -679,7 +679,9 @@ class TestFrobAgentGuardIsLocationAware:
         worktree must not commit into a sibling agent's checkout."""
         leased, root = _setup_repo_with_worktree(tmp_path)
         other = tmp_path / "other-worktree"
-        added = _git("worktree", "add", "-b", "other-branch", str(other), "main", cwd=root)
+        added = _git(
+            "worktree", "add", "-b", "other-branch", str(other), "main", cwd=root
+        )
         assert added.returncode == 0, added.stdout + added.stderr
 
         (other / "trespass.py").write_text("w = 5\n")
@@ -806,7 +808,10 @@ class TestOursMarkerMigration:
         """End to end: a hook carrying the OLD marker is still ours, so
         it is reported as stale (updatable) rather than left alone
         forever as somebody else's file."""
-        from frob.scaffold._managed import _LEGACY_OURS_MARKERS, scaffold_conformance_status
+        from frob.scaffold._managed import (
+            _LEGACY_OURS_MARKERS,
+            scaffold_conformance_status,
+        )
 
         _init_repo(tmp_path)
         # scaffold_conformance_status skips a tree with no frob.toml.
@@ -817,7 +822,9 @@ class TestOursMarkerMigration:
         hook.write_text(f"#!/bin/sh\n{_LEGACY_OURS_MARKERS[0]}\nexit 0\n")
 
         statuses = [
-            s for s in scaffold_conformance_status(tmp_path) if s.block_id == "hook-pre-commit"
+            s
+            for s in scaffold_conformance_status(tmp_path)
+            if s.block_id == "hook-pre-commit"
         ]
         assert statuses, "pre-commit hook status not reported"
         assert statuses[0].present
