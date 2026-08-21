@@ -21,6 +21,7 @@ scope:
 - tests/test_tick013_gate.py
 - design/frob.strata
 - docs/modules/tickets-lifecycle.md
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -56,6 +57,11 @@ scope_changes:
   glob: docs/modules/tickets-lifecycle.md
   reason: SELFAUDIT001 exec-capability declaration for new test file, AFFECT001 doc-closure
     for tickets_gate change
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 exec-capability ratchet bump for the new test file's subprocess use
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
