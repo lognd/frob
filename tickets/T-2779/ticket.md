@@ -2,7 +2,7 @@
 id: T-2779
 title: agent-playbook documents a superseded landing rule that stranded four agents
   and permitted the concurrent-land kill
-state: queued
+state: in-progress
 kind: docs
 origin: agent
 created: '2026-08-21'
