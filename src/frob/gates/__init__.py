@@ -46,6 +46,7 @@ from typani.result import Result
 
 from frob.excludes import is_test_file
 from frob.gates._arch import arch_gate
+from frob.gates._arch_schema import arch_schema_gate
 from frob.gates._baseline import (
     delta_violations,
     is_baseline_stale,
@@ -81,18 +82,8 @@ from frob.gates._debt_deprecated import (
 from frob.gates._decisions_compliance import compliance_gate, decisions_gate
 from frob.gates._design_invariants import inv007_violations, inv008_violations
 from frob.gates._docblocks import doc004_gate, doc005_gate, doc012_gate
-from frob.gates._docenum import docenum001_gate
-from frob.gates._flag_coverage import flag_coverage_gate
-from frob.gates._refs_schema import refs_schema_gate
-from frob.gates._native_schema import native_schema_gate
-from frob.gates._profile_schema import profile_schema_gate
-from frob.gates._toplevel_scalar_schema import toplevel_scalar_schema_gate
-from frob.gates._testing_schema import testing_schema_gate
-from frob.gates._arch_schema import arch_schema_gate
 from frob.gates._docblocks_schema import docblocks_schema_gate
-from frob.gates._gates_schema import gates_schema_gate
-from frob.gates._test_runner_schema import test_runner_schema_gate
-from frob.gates._dup_graph_schema import dup_schema_gate, graph_schema_gate
+from frob.gates._docenum import docenum001_gate
 from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
@@ -103,6 +94,7 @@ from frob.gates._doclink_docanchor import (
 )
 from frob.gates._docptr import doc006_gate
 from frob.gates._dup import dup_gate
+from frob.gates._dup_graph_schema import dup_schema_gate, graph_schema_gate
 from frob.gates._env_var_docs import env_var_doc_gate
 from frob.gates._exclude_hazard import exclude_hazard_gate
 from frob.gates._exhaustive_handling import exhaustive_handling_gate
@@ -119,6 +111,7 @@ from frob.gates._fixability_scan import (  # noqa: F401 -- T-1264's public gener
     FixabilityConflict,
     generated_fixability,
 )  # frob:ticket T-1264
+from frob.gates._flag_coverage import flag_coverage_gate
 from frob.gates._fmt_directives import (
     FmtChange,
     FmtReport,
@@ -133,6 +126,7 @@ from frob.gates._gate_cache import (
     store_root_gate_cache,
 )
 from frob.gates._gate_cache import invalidate as invalidate_gate_cache
+from frob.gates._gates_schema import gates_schema_gate
 from frob.gates._inv import (
     inv003_gate,
     inv004_gate,
@@ -169,12 +163,14 @@ from frob.gates._mutation_evidence import (
     must_still_pass_violations,
     mutation_evidence_violations,
 )
+from frob.gates._native_schema import native_schema_gate
 from frob.gates._negexist import negexist001_gate
 from frob.gates._opaque import opaque_gate
 from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
+from frob.gates._profile_schema import profile_schema_gate
 from frob.gates._protocol_summary import protocol_summary_gate
 from frob.gates._ratchet import (
     RatchetEntry,
@@ -184,6 +180,7 @@ from frob.gates._ratchet import (
     snapshot_ratchet,
 )
 from frob.gates._refs import ref_gate
+from frob.gates._refs_schema import refs_schema_gate
 from frob.gates._registry_exhaustiveness import registry_gate
 from frob.gates._render_lint import render_lint_gate
 from frob.gates._root_asset_dirs import root_asset_dir_gate
@@ -201,11 +198,14 @@ from frob.gates._sys import (  # noqa: F401 -- _DEFAULT_DESIGN_DIR/_claims_marke
     sys_gate,
 )
 from frob.gates._taint_gate import taint_gate
+from frob.gates._test_runner_schema import test_runner_schema_gate
+from frob.gates._testing_schema import testing_schema_gate
 from frob.gates._tickets_gate import (  # noqa: F401 -- _tick004_queue_rot re-exported for tests/test_tickets_priority.py's direct import
     _tick004_queue_rot,
     tickets_gate,
 )
 from frob.gates._todo_fmt import _todo001, _todo003_long_deferred, fmt_gate
+from frob.gates._toplevel_scalar_schema import toplevel_scalar_schema_gate
 from frob.gates._waive import (
     _KNOWN_GATE_RULES,
     _UNWAIVABLE_RULES,
@@ -220,8 +220,8 @@ from frob.gates._waive import (
     _waive004_violations,
     _waive005_violations,
     _waive008_violations,
-    waive009_violations,
     known_gate_rule_ids,
+    waive009_violations,
 )
 from frob.gates._waive_comments import (
     _place001,

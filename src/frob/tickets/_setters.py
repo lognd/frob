@@ -33,6 +33,7 @@ from pathlib import Path
 from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
+from frob.tickets._leases import LeaseError, refuse_if_land_in_progress
 from frob.tickets._models import (
     DONE_REPORT_HEADING,
     DROP_REASON_HEADING,
@@ -67,7 +68,6 @@ from frob.tickets._store import (
     write_archived_ticket,
     write_ticket,
 )
-from frob.tickets._leases import LeaseError, refuse_if_land_in_progress
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)

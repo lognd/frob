@@ -1119,6 +1119,11 @@ _KNOWN_GATE_RULES = frozenset(
         # gate family, but a legitimately emitted rule literal the T-1010
         # scan picks up and this registry must therefore cover).
         "E501",
+        # T-2373: I001 (ruff import-sort) promoted from warning to error
+        # in src/frob/process/parsers/ruff.py's `_is_ruff_error_code` once
+        # its burn-down reached zero findings repo-wide; same registry
+        # obligation as E501 immediately above.
+        "I001",
         # T-1937: eight ids `scan_emitted_rule_ids`'s own disclosed gaps
         # (out-of-SCANNED_BASES, plus two previously-undisclosed
         # construction shapes -- a bare positional arg and a typed const

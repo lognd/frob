@@ -341,6 +341,10 @@ RUFF_TEXT_WARNING = """\
 src/foo.py:1:1: W291 trailing whitespace
 """
 
+RUFF_TEXT_I001 = """\
+src/foo.py:1:1: I001 Import block is un-sorted or un-formatted
+"""
+
 RUFF_TEXT_CLEAN_EMPTY = ""
 RUFF_TEXT_NO_ISSUES = "All checks passed!"
 
@@ -387,6 +391,21 @@ RUFF_JSON_W_ONLY = json.dumps(
         }
     ]
 )
+RUFF_JSON_I001 = json.dumps(
+    [
+        {
+            "cell": None,
+            "code": "I001",
+            "end_location": {"column": 5, "row": 1},
+            "filename": "src/foo.py",
+            "fix": None,
+            "location": {"column": 1, "row": 1},
+            "message": "Import block is un-sorted or un-formatted",
+            "noqa_row": 1,
+            "url": "x",
+        }
+    ]
+)
 
 
 class TestParseRuffText:
@@ -414,6 +433,13 @@ class TestParseRuffText:
     def test_severity_w_is_warning(self):
         r = parse_ruff_text(RUFF_TEXT_WARNING, exit_code=1)
         assert r.diagnostics[0].severity == "warning"
+
+    def test_severity_i001_is_error(self):
+        # frob:tests src/frob/process/parsers/ruff.py::parse_ruff_text kind="unit"
+        # T-2373: I001 (import-sort) promoted from warning to error once
+        # its burn-down reached zero findings repo-wide.
+        r = parse_ruff_text(RUFF_TEXT_I001, exit_code=1)
+        assert r.diagnostics[0].severity == "error"
 
     def test_line_number(self):
         r = parse_ruff_text(RUFF_TEXT_TWO, exit_code=1)
@@ -454,6 +480,13 @@ class TestParseRuffJson:
     def test_warning_only(self):
         r = parse_ruff_json(RUFF_JSON_W_ONLY, exit_code=1)
         assert r.diagnostics[0].severity == "warning"
+
+    def test_i001_is_error(self):
+        # T-2373: I001 (import-sort) promoted from warning to error once
+        # its burn-down reached zero findings repo-wide.
+        r = parse_ruff_json(RUFF_JSON_I001, exit_code=1)
+        assert r.diagnostics[0].severity == "error"
+        assert r.diagnostics[0].code == "I001"
 
     def test_malformed_json(self):
         r = parse_ruff_json("not json", exit_code=1)

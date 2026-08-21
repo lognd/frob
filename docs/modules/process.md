@@ -88,9 +88,12 @@ def parse_junit_xml(content: str, tool: str = "junit") -> ToolResult
 def parse_pytest(stdout: str, exit_code: int = 0) -> ToolResult
     # pytest terminal output (no plugins required) into a ToolResult.
 def parse_ruff_json(stdout: str, exit_code: int = 0) -> ToolResult
-    # `ruff check --output-format json` output into a ToolResult.
+    # `ruff check --output-format json` output into a ToolResult. E/F codes and I001
+    # (import-sort, T-2373: promoted from warning once its burn-down hit zero) render
+    # as errors; every other ruff code renders as a warning.
 def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult
-    # Default `ruff check` text output into a ToolResult.
+    # Default `ruff check` text output into a ToolResult. Same E/F/I001 -> error,
+    # else -> warning severity mapping as `parse_ruff_json` above.
 def parse_ruff(stdout: str, exit_code: int = 0) -> ToolResult
     # Auto-detects JSON vs text ruff output and dispatches to the right parser.
 def parse_valgrind(stdout: str, exit_code: int = 0) -> ToolResult

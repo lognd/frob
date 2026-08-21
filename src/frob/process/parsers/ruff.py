@@ -21,15 +21,26 @@ _TEXT_LINE = re.compile(r"^(.*?):(\d+):(\d+):\s+([A-Z]\d+)\s+(.*)$")
 
 
 # frob:ticket T-0045
+# frob:ticket T-2373
+def _is_ruff_error_code(code: str) -> bool:
+    """True for a ruff `code` that must render as an error diagnostic:
+    E/F codes always were; T-2373 promotes I001 (import-sort) from
+    warning to error now that its burn-down is at zero findings
+    repo-wide -- leaving it advisory would let the debt silently
+    reaccumulate."""
+    return code.startswith(("E", "F")) or code == "I001"
+
+
 def _ruff_json_diagnostic(item: dict) -> Diagnostic:
-    """One ruff JSON item into a Diagnostic (E/F codes are errors)."""
+    """One ruff JSON item into a Diagnostic (E/F codes, plus I001, are
+    errors -- see `_is_ruff_error_code`)."""
     loc = item.get("location", {})
     code = item.get("code", "")
     return Diagnostic(
         file=item.get("filename"),
         line=loc.get("row"),
         col=loc.get("column"),
-        severity="error" if code.startswith(("E", "F")) else "warning",
+        severity="error" if _is_ruff_error_code(code) else "warning",
         code=code,
         message=item.get("message", ""),
     )
@@ -67,7 +78,7 @@ def parse_ruff_text(stdout: str, exit_code: int = 0) -> ToolResult:
         m = _TEXT_LINE.match(line.strip())
         if m:
             file, row, col, code, msg = m.groups()
-            severity = "error" if code.startswith(("E", "F")) else "warning"
+            severity = "error" if _is_ruff_error_code(code) else "warning"
             diagnostics.append(
                 Diagnostic(
                     file=file,

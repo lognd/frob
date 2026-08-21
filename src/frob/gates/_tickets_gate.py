@@ -32,8 +32,8 @@ from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _dir_glob as _tickets_dir_glob
 from frob.tickets._store import _parse_ledger as _tickets_parse_ledger
 from frob.tickets._store import _store_mode as _tickets_store_mode
-from frob.tickets._store import ledger_path as _tickets_ledger_path
 from frob.tickets._store import archive_path as _tickets_archive_path
+from frob.tickets._store import ledger_path as _tickets_ledger_path
 from frob.tickets._store import load_all as _tickets_load_all
 from frob.tickets._store import load_archive as _tickets_load_archive
 

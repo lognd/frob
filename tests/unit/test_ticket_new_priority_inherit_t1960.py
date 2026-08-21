@@ -15,7 +15,14 @@ from pathlib import Path
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _new
-from frob.tickets import Origin, Priority, TicketKind, TicketSpec, load_queue, new_ticket
+from frob.tickets import (
+    Origin,
+    Priority,
+    TicketKind,
+    TicketSpec,
+    load_queue,
+    new_ticket,
+)
 
 
 def _seed_ticket(tmp_path: Path, *, priority: Priority) -> str:

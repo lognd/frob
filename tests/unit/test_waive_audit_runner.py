@@ -97,7 +97,11 @@ class TestRunScan:
             check=True,
         ).stdout.strip()
 
-        from frob.gates._waive_audit_watermark import WaiveAuditWatermark, save_watermark, utc_now
+        from frob.gates._waive_audit_watermark import (
+            WaiveAuditWatermark,
+            save_watermark,
+            utc_now,
+        )
 
         save_watermark(
             tmp_path,

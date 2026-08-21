@@ -58,8 +58,11 @@ class TestAttributionDoesNotCrossFileOnSameNamedHelper:
         unattributed), never to B's commit through a fabricated cross-
         file `_run` edge -- exactly the shape both `frob verify explain`
         reproductions in this ticket's investigation hit."""
-        from frob.verify._attribution import attribute_batch, build_ad_hoc_batch
-        from frob.verify._attribution import load_attribution_context
+        from frob.verify._attribution import (
+            attribute_batch,
+            build_ad_hoc_batch,
+            load_attribution_context,
+        )
 
         repo = tmp_path / "repo"
         _init_repo(repo)

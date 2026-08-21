@@ -190,9 +190,10 @@ class TestCurrentStatus:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestCurrentStatus.test_queue_unreadable_is_an_error  # noqa: E501
+        from typani.result import Err
+
         import frob.verify._backpressure as backpressure_mod
         from frob.verify._watermark import WatermarkError
-        from typani.result import Err
 
         monkeypatch.setattr(
             backpressure_mod, "queue_status", lambda root: Err(WatermarkError.StoreCorrupt)
