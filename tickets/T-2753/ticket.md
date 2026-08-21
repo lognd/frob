@@ -46,6 +46,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 84942d95a60f2cbaff30f0949fe294a4e604c84b
 ---
 WIRE001's static call-graph resolver flags a pytest fixture (test_app_runners_batch6.py's outside_view fixture, T-2486) as apparently-dead because fixture consumption happens via pytest's dependency-injection mechanism (declared as a test method parameter name), which the resolver cannot see as a call site. Currently worked around with a per-site frob:waive WIRE001 (this same site now carries a required follow_up= pointing here, T-2743's SC004 disposition). A proper fix would teach the resolver to recognize a symbol used as a fixture (any test function parameter matching a @pytest.fixture-decorated function's name in the same or an imported module) as wired, closing this blind spot for the whole test suite rather than one waiver at a time.
