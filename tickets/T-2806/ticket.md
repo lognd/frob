@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f51368e297bdcb913f819b1c34e034955331fed8
 ---
 Found while working T-2797 (parent T-2790). T-2797 assumed frob.lang's
 persistent parse-artifact cache (T-1464) only stores the raw tree-sitter
