@@ -71,9 +71,7 @@ def _names(pairs) -> set[frozenset[str]]:
 
 
 class TestTypeNameOnlyCloneMissedByDefault:
-    def test_default_config_does_not_catch_the_function_pair(
-        self, snapshot
-    ) -> None:
+    def test_default_config_does_not_catch_the_function_pair(self, snapshot) -> None:
         # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
         """This repo's actual `frob.toml` shape: `native_rungs_enabled=
         False` (R3/R4/R5 off for perf, T-0974), `region_kernel_enabled`
@@ -122,8 +120,14 @@ class TestRegionKernelAloneCatchesTypeNameOnlyClone:
         matched = [
             (a, b, p)
             for a, b, p in _pairs(report, rung="r1.5")
-            if ("check_backpressure_obligations" in a and "check_fallback_obligations" in b)
-            or ("check_backpressure_obligations" in b and "check_fallback_obligations" in a)
+            if (
+                "check_backpressure_obligations" in a
+                and "check_fallback_obligations" in b
+            )
+            or (
+                "check_backpressure_obligations" in b
+                and "check_fallback_obligations" in a
+            )
         ]
         assert matched, (
             f"expected an r1.5 match for the function pair, got rungs: "

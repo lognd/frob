@@ -259,10 +259,7 @@ def test_extract_imports_typescript_rust_kotlin(tmp_path: Path):
     # T-2408: typescript/rust/kotlin previously had no `_IMPORT_WALKERS`
     # entry at all -- extract_imports silently returned () for them.
     ts_path = tmp_path / "sample.ts"
-    ts_path.write_text(
-        "import foo from 'bar';\n"
-        "export { x } from './reexport';\n"
-    )
+    ts_path.write_text("import foo from 'bar';\nexport { x } from './reexport';\n")
     ts_tree, _src, ts_lang = raw_tree(ts_path).danger_ok
     ts_specs = extract_imports_tree(ts_tree, ts_lang)
     assert "bar" in ts_specs

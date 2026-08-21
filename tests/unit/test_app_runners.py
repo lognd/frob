@@ -568,7 +568,9 @@ class TestQualityRunner:
     @pytest.mark.parametrize(
         "quality_command", ["check", "test", "dup", "cycle", "perf"]
     )
-    def test_subcommand_delegates_to_matching_runner(self, monkeypatch, quality_command):
+    def test_subcommand_delegates_to_matching_runner(
+        self, monkeypatch, quality_command
+    ):
         """Each simple pass-through subcommand calls its own standalone
         runner's `run(cfg)` with the SAME cfg instance -- one parametrized
         case per member instead of five near-identical bodies (T-1567,

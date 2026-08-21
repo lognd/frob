@@ -60,7 +60,9 @@ class TestRenderAlreadyLandedMarkers:
             ids = ticket_runner._render_already_landed_markers(tmp_path, queue)
         assert ids == frozenset({"T-9102"})
         summary_records = [
-            r for r in caplog.records if "already carry their own landed marker" in r.getMessage()
+            r
+            for r in caplog.records
+            if "already carry their own landed marker" in r.getMessage()
         ]
         assert len(summary_records) == 1
         assert "T-9102" in summary_records[0].getMessage()

@@ -40,9 +40,7 @@ class TestSysThreats:
     optionally scoped to one boundary's protected zone via T-1925's
     node-to-boundary join."""
 
-    def test_no_boundary_prints_every_violation(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_no_boundary_prints_every_violation(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _BOUNDARY_MODEL)
         cfg = AppConfig(sys_command="threats", sys_path=repo)
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
@@ -51,9 +49,7 @@ class TestSysThreats:
         assert "node=api" in caplog.text
         assert "node=other" in caplog.text
 
-    def test_boundary_scopes_to_its_own_zone_only(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_boundary_scopes_to_its_own_zone_only(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _BOUNDARY_MODEL)
         cfg = AppConfig(sys_command="threats", sys_path=repo, sys_threats_boundary="b1")
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:

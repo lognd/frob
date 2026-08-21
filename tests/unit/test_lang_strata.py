@@ -6,7 +6,6 @@ path and the tree-sitter-escape-hatch functions that stay unsupported for
 `.strata`.
 """
 
-
 from __future__ import annotations
 
 import sys
@@ -267,7 +266,7 @@ class TestGrammarAuthoritativeSymbols:
         # against current main (the symbol is simply missing there).
         src = (
             "module m\n"
-            'node registry : trusted { clearance Internal; }\n'
+            "node registry : trusted { clearance Internal; }\n"
             'assume "weakness:CWE-78:claude_hooks" noflow registry -> claude_hooks '
             'owner logan review "2026-10-15"\n'
         )
@@ -297,7 +296,9 @@ class TestGrammarAuthoritativeSymbols:
         path.write_text(src)
         pf = parse_file(path).danger_ok
         names = {s.qualname for s in pf.symbols}
-        assert "m.shared_lock" in names, f"resource symbol missing, got: {sorted(names)}"
+        assert "m.shared_lock" in names, (
+            f"resource symbol missing, got: {sorted(names)}"
+        )
         resource_sym = _symbol(pf, "m.shared_lock")
         assert resource_sym.kind == SymbolKind.CLASS
         start, end = resource_sym.span

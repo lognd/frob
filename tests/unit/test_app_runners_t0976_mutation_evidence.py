@@ -14,7 +14,6 @@ under the specific mutation named -- see this module's own docstring
 comments per test for exactly which mutant each kills.
 """
 
-
 from __future__ import annotations
 
 from datetime import date

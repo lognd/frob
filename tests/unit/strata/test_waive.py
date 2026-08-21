@@ -73,9 +73,7 @@ class TestStaleRelwaiveViolations:
     # frob:tests src/frob/strata/_waive.py::stale_relwaive_violations kind="unit"
     def test_factory_lambda_can_add_extra_fields(self):
         match = WaiverMatch(node="n1", rule="REL260", reason="pending T-3")
-        made = stale_relwaive_violations(
-            (match,), lambda **kw: _DummyViolation(**kw)
-        )
+        made = stale_relwaive_violations((match,), lambda **kw: _DummyViolation(**kw))
         assert made[0].rule == "RELWAIVE002"
 
 

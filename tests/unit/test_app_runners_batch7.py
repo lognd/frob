@@ -358,9 +358,7 @@ class TestTicketMigrate:
 
 class TestTicketRenumber:
     # frob:ticket T-2633
-    def test_dry_run_without_old_new_exits_1(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_dry_run_without_old_new_exits_1(self, tmp_path: Path, caplog) -> None:
         """T-1882 (real incident: bare `frob ticket renumber` used to
         perform the whole-ledger bulk rewrite and renumbered all 273
         tickets in one shot) made `--dry-run` with no `<old> <new>` the
@@ -377,9 +375,7 @@ class TestTicketRenumber:
         assert "already contiguous" in caplog.text
 
     # frob:ticket T-2633
-    def test_whole_ledger_already_contiguous(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_whole_ledger_already_contiguous(self, tmp_path: Path, caplog) -> None:
         """T-1882 removed the CLI's ability to reach the whole-ledger bulk
         renumber for real (it had no legitimate caller and one real
         incident): `frob ticket renumber` with neither `<old> <new>` nor

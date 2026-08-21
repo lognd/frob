@@ -278,7 +278,9 @@ class TestNonRelativeScopeDoesNotCrash:
             scope=["scripts/fleet_status.py"],
         )
         _new(tmp_path, corrupt_cfg)
-        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        corrupt_id = next(
+            p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir()
+        )
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         corrupt_ticket = loaded.danger_ok[corrupt_id]
@@ -325,7 +327,9 @@ class TestNonRelativeScopeDoesNotCrash:
             scope=["scripts/fleet_status.py"],
         )
         _new(tmp_path, corrupt_cfg)
-        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        corrupt_id = next(
+            p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir()
+        )
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         corrupt_ticket = loaded.danger_ok[corrupt_id]
@@ -372,7 +376,9 @@ class TestNonRelativeScopeDoesNotCrash:
             scope=["scripts/fleet_status.py"],
         )
         _new(tmp_path, corrupt_cfg)
-        corrupt_id = next(p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir())
+        corrupt_id = next(
+            p.name for p in (tmp_path / "tickets").iterdir() if p.is_dir()
+        )
         loaded = load_all(tmp_path)
         assert loaded.is_ok
         corrupt_ticket = loaded.danger_ok[corrupt_id]

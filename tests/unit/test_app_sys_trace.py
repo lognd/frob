@@ -35,7 +35,10 @@ class TestSysTrace:
     ) -> None:
         repo = _init_design_repo(tmp_path, _CLEAN_MODEL)
         cfg = AppConfig(
-            sys_command="trace", sys_path=repo, sys_trace_from="evil", sys_trace_to="api"
+            sys_command="trace",
+            sys_path=repo,
+            sys_trace_from="evil",
+            sys_trace_to="api",
         )
         with caplog.at_level("INFO"):
             sys_run(cfg)
@@ -61,7 +64,10 @@ class TestSysTrace:
     def test_unreachable_destination_exits_1(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _CLEAN_MODEL)
         cfg = AppConfig(
-            sys_command="trace", sys_path=repo, sys_trace_from="api", sys_trace_to="evil"
+            sys_command="trace",
+            sys_path=repo,
+            sys_trace_from="api",
+            sys_trace_to="evil",
         )
         with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
             sys_run(cfg)

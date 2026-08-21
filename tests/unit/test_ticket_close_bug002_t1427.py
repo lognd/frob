@@ -17,7 +17,6 @@ test, mirroring T-1410's own precedent
 `guarded_subprocess_run` monkeypatch) of stubbing the external-process
 seam while still exercising the real wiring path."""
 
-
 from __future__ import annotations
 
 from datetime import date

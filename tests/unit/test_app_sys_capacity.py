@@ -83,9 +83,7 @@ class TestSysCapacity:
             sys_run(cfg)
         assert "no violations" in caplog.text
 
-    def test_population_with_no_baseline_exits_1(
-        self, tmp_path: Path, caplog
-    ) -> None:
+    def test_population_with_no_baseline_exits_1(self, tmp_path: Path, caplog) -> None:
         repo = _init_design_repo(tmp_path, _NO_BASELINE_MODEL)
         cfg = AppConfig(
             sys_command="capacity", sys_path=repo, sys_capacity_population=1000.0
