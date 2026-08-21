@@ -70,18 +70,36 @@ scope_changes:
   reason: 'REG009/REG010: register CHK-GATE-TICK013 entry'
   actor: logan
   at: '2026-08-21'
-designated_repro_test: null
+evidence:
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_in_progress_empty_scope_fires
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_planned_empty_scope_fires
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_queued_empty_scope_is_silent
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_nonempty_scope_is_silent
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_declared_no_scope_is_silent
+- tests/test_tick013_gate.py::TestTick013EmptyScope::test_terminal_state_empty_scope_is_silent
+designated_repro_test: tests/test_tick013_gate.py::TestTick013EmptyScope::test_in_progress_empty_scope_fires
 acceptance:
 - text: given a ticket in state in-progress or planned whose scope is empty and which
     has not declared --declare-no-scope, when the tickets gate runs, then a finding
     names that ticket id
-  evidence: []
+  evidence:
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_in_progress_empty_scope_fires
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_planned_empty_scope_fires
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_nonempty_scope_is_silent
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_queued_empty_scope_is_silent
 - text: given a ticket that has declared --declare-no-scope, when the tickets gate
     runs, then no such finding is produced for it
-  evidence: []
+  evidence:
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_in_progress_empty_scope_fires
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_planned_empty_scope_fires
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_queued_empty_scope_is_silent
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_nonempty_scope_is_silent
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_declared_no_scope_is_silent
 - text: given a ticket in a terminal state (done, dropped, failed) with an empty scope,
     when the tickets gate runs, then no such finding is produced for it
-  evidence: []
+  evidence:
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_declared_no_scope_is_silent
+  - tests/test_tick013_gate.py::TestTick013EmptyScope::test_terminal_state_empty_scope_is_silent
 threat: null
 component: null
 anchor: false
