@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,13 @@ scope_changes:
   glob: tests/test_ticket_land.py
   reason: T-2774 fix needs unit tests bound to test_ticket_land.py covering the new
     deadline-aware lock-wait budget
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2774 documents the new deadline-aware lock-wait budget in tickets-landing.md,
+    and closes the scope-closure warning that existing _land.py symbols already frob:doc
+    into that file
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
