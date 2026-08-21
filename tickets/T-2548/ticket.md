@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2763b40134572826d0e35d7f2db13680cb551825
 ---
 Found while working T-2366: frob ticket body T-1397 --append "..." --reason
 "..." (T-1397 is archived, state=done, lives under tickets/archive/T-1397/)
