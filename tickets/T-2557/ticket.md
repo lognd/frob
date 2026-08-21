@@ -22,6 +22,7 @@ scope:
 - design/frob.strata
 - docs/modules/tickets-lifecycle.md
 - docs/design/registry/capability-via-ratchet.lock.json
+- docs/design/registry/check-coverage.yaml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,11 @@ scope_changes:
 - op: add
   glob: docs/design/registry/capability-via-ratchet.lock.json
   reason: SYS111 exec-capability ratchet bump for the new test file's subprocess use
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: 'REG009/REG010: register CHK-GATE-TICK013 entry'
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
