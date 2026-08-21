@@ -235,7 +235,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4b197c10b9e800685d198999fb04833e2e833d40
 ---
 `frob ticket` exposes setters for priority, kind, component, tier, runs-last,
 and milestone, but NOT for `parent`. A ticket's parent can therefore only be
