@@ -15,7 +15,6 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/app/_check_chunking.py
 - src/frob/app/_config_external.py
 - src/frob/app/ticket_runner/__init__.py
 - src/frob/app/ticket_runner/_close_cmd.py
@@ -25,6 +24,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/app/_check_chunking.py
+  reason: T-2369 (in-progress) holds an active lease on _check_chunking.py; deferring
+    this file, will file follow-up if needed after T-2369 lands
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
