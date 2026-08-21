@@ -71,7 +71,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cdc048d2a1522ecd3627bf050f2932c393a1d415
 ---
 Batch 4/N of T-2359: apply ruff-format-only reformat to 10 files.
 Excludes src/frob/gates/_tickets_gate.py, _waive.py, _profile_schema.py,
