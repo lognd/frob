@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/wait_for_land_slot.py
+- tests/unit/test_wait_for_land_slot_unattributed.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_wait_for_land_slot_unattributed.py
+  reason: new evidence test file (test_coordinator_scripts.py is leased by T-2755)
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
