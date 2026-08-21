@@ -1,7 +1,7 @@
 ---
 id: T-2799
 title: wire frob_core.py_function_metrics into archgate's per-function metrics walk
-state: in-progress
+state: queued
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -61,3 +61,6 @@ identically through the native path before wiring it as the default.
 
 See docs/investigations/T-2790-check-stage-profile.md for the full
 profile this ticket is drawn from.
+
+## Failure log
+- 2026-08-21 attempt 1: MEASURED NET SLOWDOWN, do not re-attempt as scoped. Wiring frob_core.py_function_metrics (T-1222) into _py_build_function/_py_build_module makes archgate 30-70 percent SLOWER: native-ON averaged 27-45s vs native-OFF 21-30s, alternating order, 6+ trials per side, controlled for fleet-load noise (2026-08-21). Root cause: the native kernel's catches/subscripts output is narrower than NormalizedCatch.exception_types and NormalizedSubscript.is_slice require (T-2539), both feeding real may-raise resolution, so a compensating _py_collect_catches_and_subscripts walk is mandatory -- that walk plus PyO3 marshalling of every event into fresh Python objects costs more than the Rust walk saves. Correctness was NOT the problem: byte-identical NormalizedModule output verified across 4 corpora, and T-1222's parity tests pass unmodified. Changes were fully reverted to byte-identical pre-ticket state. BLOCKED ON: extending the Rust kernel itself to carry exception_types/is_slice so the compensating walk can be dropped (follow-up filed under parent T-2790). Any future attempt must re-measure with the same A/B methodology rather than assume the fix wins.
