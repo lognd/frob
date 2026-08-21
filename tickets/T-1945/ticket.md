@@ -499,7 +499,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2c3a7620d274b71aefefa7ff728d6953b222ff29
 ---
 T-1928 measured, on a clean main tree (2026-08-10), three genuinely
 different things all named "fmt" that answer different questions:
