@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/_cli_parsers/**
 - src/frob/check/__init__.py
+- docs/commands/check.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,11 @@ scope_changes:
 - op: add
   glob: src/frob/check/__init__.py
   reason: T-2245-era scope named a stale path; check.py is now check/__init__.py
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/commands/check.md
+  reason: doc note for the new native-staleness pre-check parity fix
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
