@@ -493,9 +493,7 @@ def _commit_promote_rename(
                 root,
             )
         return False
-    _log.info(
-        "tickets: promote %s -> %s committed in %s", draft_id, final_id, root
-    )
+    _log.info("tickets: promote %s -> %s committed in %s", draft_id, final_id, root)
     return True
 
 

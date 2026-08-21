@@ -18,7 +18,6 @@ ticket already in a terminal (DONE/DROPPED) state -- amending after close
 is exactly the "quietly move the goalposts after the fact" case this
 ticket exists to make impossible."""
 
-
 from __future__ import annotations
 
 import getpass

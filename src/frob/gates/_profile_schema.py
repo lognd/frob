@@ -177,6 +177,4 @@ def profile_schema_gate(root: Path) -> tuple[Violation, ...]:
     if table is None:
         return ()
 
-    return tuple(
-        _unknown_key_violation(key) for key in table if key not in known
-    )
+    return tuple(_unknown_key_violation(key) for key in table if key not in known)

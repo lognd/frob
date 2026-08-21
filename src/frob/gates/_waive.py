@@ -1817,9 +1817,7 @@ def waive009_violations(
         if attr_ticket:
             ticket_ids.add(attr_ticket)
         resolvable = {
-            t
-            for t in ticket_ids
-            if t in queue.tickets or t.startswith("T-draft-")
+            t for t in ticket_ids if t in queue.tickets or t.startswith("T-draft-")
         }
         if resolvable:
             continue

@@ -229,8 +229,7 @@ def _warn_if_finding_duplicate_at_start(
         if other.id == ticket.id or other.state not in _OPEN_STATES:
             continue
         theirs = frozenset(
-            (rule, _normalize_finding_file(root, file))
-            for rule, file in other.findings
+            (rule, _normalize_finding_file(root, file)) for rule, file in other.findings
         )
         shared = wanted & theirs
         if shared:

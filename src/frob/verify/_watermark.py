@@ -479,8 +479,7 @@ def commits_since_watermark(root: Path, watermark_commit: str) -> int | None:
         return int(result.stdout.strip())
     except ValueError:
         _log.warning(
-            "watermark: commits_since_watermark: unparseable git rev-list "
-            "output %r",
+            "watermark: commits_since_watermark: unparseable git rev-list output %r",
             result.stdout,
         )
         return None

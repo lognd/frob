@@ -345,8 +345,7 @@ def _is_fixture_consumed_as_parameter(
                 continue
             args = node.args
             names = {
-                arg.arg
-                for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs)
+                arg.arg for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs)
             }
             if short in names:
                 return True

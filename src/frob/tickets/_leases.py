@@ -222,6 +222,7 @@ def _land_lock_started_at(root: Path) -> datetime | None:
     except ValueError:
         return None
 
+
 # frob:ticket T-0782
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # Default staleness horizon for a LIVE-path lease's `recorded_at` (T-0476
@@ -1065,9 +1066,7 @@ def enforce_ticket_ownership(root: Path, ticket_id: str) -> Result[None, TicketE
       check before refusing, and this guard must agree with it rather
       than re-refusing what that check already decided was safe to
       proceed past."""
-    record = next(
-        (r for r in read_all_leases(root) if r.ticket_id == ticket_id), None
-    )
+    record = next((r for r in read_all_leases(root) if r.ticket_id == ticket_id), None)
     if record is None or is_lease_ttl_expired(record):
         return Ok(None)
     holder = record.worktree
@@ -2430,7 +2429,7 @@ def _finish_ledger_commit_marker(
         _log.error(
             "tickets: %s's T-2714 self-heal FAILED -- %s is still "
             "dirty for %s. This needs a human: `git -C %s add %s && "
-            "git -C %s commit -m \"%s\" -- %s`, or discard by hand if "
+            'git -C %s commit -m "%s" -- %s`, or discard by hand if '
             "the content is no longer wanted",
             marker_ticket_id,
             root,

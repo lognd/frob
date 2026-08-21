@@ -381,9 +381,7 @@ def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
                 continue
             code_part = _INLINE_COMMENT_STRIP.sub("", line)
             for m in _CANDIDATE_RULE_ID_PATTERN.finditer(code_part):
-                found.setdefault(
-                    m.group(1), f"{path.relative_to(repo_root)}:{lineno}"
-                )
+                found.setdefault(m.group(1), f"{path.relative_to(repo_root)}:{lineno}")
     return found
 
 
@@ -514,10 +512,7 @@ def gate_rule_registry_violations(root: Path) -> tuple[Violation, ...]:
                 severity=Severity.UNRESOLVED,
                 file=str(root),
                 line=1,
-                message=(
-                    "GATERULE001: scan crashed, coverage unknown -- "
-                    f"{exc!r}"
-                ),
+                message=(f"GATERULE001: scan crashed, coverage unknown -- {exc!r}"),
             ),
         )
     return tuple(

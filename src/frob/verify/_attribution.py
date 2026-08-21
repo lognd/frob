@@ -156,6 +156,7 @@ def _symbols_in_file(snapshot, file: str) -> frozenset[str]:  # noqa: ANN001
         ref for ref, record in snapshot.symbols.items() if record.id.path == file
     )
 
+
 def _reaches(
     calls: Mapping[str, tuple[str, ...]],
     start: str,
@@ -589,6 +590,7 @@ def _attribute_one(
         candidate_commits=candidate_shas,
         reason=reason,
     )
+
 
 __all__ = [
     "Attribution",

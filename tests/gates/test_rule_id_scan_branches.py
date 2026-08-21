@@ -137,8 +137,7 @@ class TestScanCandidateRuleIdLiterals:
         strata_dir = tmp_path / "src" / "frob" / "strata"
         strata_dir.mkdir(parents=True)
         (strata_dir / "_synthetic.py").write_text(
-            "class SyntheticViolation(BaseModel):\n"
-            '    rule: str = "ZZZTEST021"\n'
+            'class SyntheticViolation(BaseModel):\n    rule: str = "ZZZTEST021"\n'
         )
 
         found = scan_candidate_rule_id_literals(tmp_path)
@@ -213,13 +212,11 @@ class TestFindUnregisteredRuleIds:
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
         (gates_dir / "_synthetic.py").write_text(
-            'def synthetic_gate():\n'
+            "def synthetic_gate():\n"
             '    return _selfaudit_violation("ZZZTEST026", node, detail)\n'
         )
 
-        missing = find_unregistered_rule_ids(
-            tmp_path, known=frozenset({"ZZZTEST026"})
-        )
+        missing = find_unregistered_rule_ids(tmp_path, known=frozenset({"ZZZTEST026"}))
 
         assert missing == {}
 
@@ -236,8 +233,7 @@ class TestFindUnregisteredRuleIds:
         perf_dir = tmp_path / "src" / "frob" / "perf"
         perf_dir.mkdir(parents=True)
         (perf_dir / "_synthetic.py").write_text(
-            "def synthetic_perf_check():\n"
-            '    return Diagnostic(code="ZZZTEST027")\n'
+            'def synthetic_perf_check():\n    return Diagnostic(code="ZZZTEST027")\n'
         )
 
         missing = find_unregistered_rule_ids(tmp_path, known=frozenset())
@@ -255,9 +251,7 @@ class TestFindUnregisteredRuleIds:
         # than absent from `known` by accident.
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
-        (gates_dir / "_synthetic.py").write_text(
-            'RULE = "ZZZTEST028"\n'
-        )
+        (gates_dir / "_synthetic.py").write_text('RULE = "ZZZTEST028"\n')
 
         missing = find_unregistered_rule_ids(
             tmp_path, known=frozenset(), retired=frozenset({"ZZZTEST028"})
@@ -304,7 +298,9 @@ class TestFindUnregisteredRuleIds:
         gates_dir.mkdir(parents=True)
         (gates_dir / "_new_synthetic_gate.py").write_text(
             "def new_synthetic_violation():\n"
-            "    return Violation(" + "rule" + '="ZZZTEST031", severity=Severity.ERROR)\n'
+            "    return Violation("
+            + "rule"
+            + '="ZZZTEST031", severity=Severity.ERROR)\n'
         )
 
         missing = find_unregistered_rule_ids(tmp_path, known=frozenset())
@@ -357,9 +353,7 @@ class TestGateRuleRegistryGate:
         # gistered_id_reported_as_error
         gates_dir = tmp_path / "src" / "frob" / "gates"
         gates_dir.mkdir(parents=True)
-        (gates_dir / "_synthetic.py").write_text(
-            'RULE = "ZZZTEST030"\n'
-        )
+        (gates_dir / "_synthetic.py").write_text('RULE = "ZZZTEST030"\n')
         violations = gate_rule_registry_violations(tmp_path)
         matches = [v for v in violations if v.rule == "GATERULE001"]
         # ZZZTEST030 is not a real known_gate_rule_ids() member, so it
@@ -398,9 +392,7 @@ class TestGateRuleRegistryGate:
 
         import frob.gates._rule_id_scan as rule_id_scan_module
 
-        monkeypatch.setattr(
-            rule_id_scan_module, "find_unregistered_rule_ids", _boom
-        )
+        monkeypatch.setattr(rule_id_scan_module, "find_unregistered_rule_ids", _boom)
         violations = gate_rule_registry_violations(tmp_path)
         assert len(violations) == 1
         assert violations[0].severity == Severity.UNRESOLVED

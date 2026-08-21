@@ -251,9 +251,7 @@ def record_drain_refusal(root: Path, *, ticket_id: str) -> None:
             )
             write_json_records(_refused_path(root), (record,))
     except OSError as exc:
-        _log.warning(
-            "verify drain: %s failed to record drain refusal: %s", root, exc
-        )
+        _log.warning("verify drain: %s failed to record drain refusal: %s", root, exc)
         return
     _log.info(
         "verify drain: %s refusal recorded (refused_since_watermark=%d) -- "

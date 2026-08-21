@@ -1,5 +1,5 @@
 ---
-id: T-draft-fdd012cc
+id: T-2788
 title: 'Burn ruff I001 batch 1: src/frob non-gates files'
 state: in-progress
 kind: bug
