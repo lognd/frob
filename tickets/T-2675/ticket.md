@@ -1,7 +1,7 @@
 ---
 id: T-2675
 title: test_derived_match hardcoded MIRRORED_LEDGER_VERBS set is stale after T-2624
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- src/frob/app/ticket_runner/_ledger_mirror.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_ledger_mirror.py
+  reason: the frob:tests directive on LEDGER_VERB_STRATEGY names the renamed test
+    method
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
