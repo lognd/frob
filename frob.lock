@@ -1043,6 +1043,60 @@
       "old_digest": "116652356addd9e2150b10fe77bc515e58fa8e51d423d5687e330a91a0ae2ac8",
       "reason": "T-2747: dispatch condition switched from directory-name (_worktree_ticket_id) to structural start-transition-commit correlation (_worktree_started_ticket); scope-only/dual-correlation split unchanged",
       "ref": "scripts/fleet_status.py::worktrees_touching_ticket"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "a565d165612233a7cdae533438a787a8ca2fcbb2f9a8901c7c7aca1fcc63883f",
+      "old_digest": "e9c6d77e51b27f1e04bf858bf4e4f39fb1b72fae71de3ad485419ff38bceb375",
+      "reason": "T-1606: limit param widened to int|None to support no-width-limit languages; docs/modules/gates.md's frob-fmt-directive-canonicalization-t-0441 section updated to describe the new contract",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "58634b7a33e074283e97ca1f5c7e172cfd89366c57083eb1334b0dd964545869",
+      "old_digest": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
+      "reason": "T-1606: limit param widened to int|None to support no-width-limit languages; docs/modules/gates.md's frob-fmt-directive-canonicalization-t-0441 section updated to describe the new contract",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "a565d165612233a7cdae533438a787a8ca2fcbb2f9a8901c7c7aca1fcc63883f",
+      "old_digest": "a565d165612233a7cdae533438a787a8ca2fcbb2f9a8901c7c7aca1fcc63883f",
+      "reason": "T-1606: added effective_limit conversion (None -> _EFFECTIVELY_UNLIMITED) for no-width-limit languages; doc updated",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "58634b7a33e074283e97ca1f5c7e172cfd89366c57083eb1334b0dd964545869",
+      "old_digest": "58634b7a33e074283e97ca1f5c7e172cfd89366c57083eb1334b0dd964545869",
+      "reason": "T-1606: added effective_limit conversion (None -> _EFFECTIVELY_UNLIMITED) for no-width-limit languages; doc updated",
+      "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "body",
+      "new_digest": "444ec3954b469b6aedc39366be38ff525f9383d00eccec3d7e9073b2c2025ed8",
+      "old_digest": "833b3acbaf0d86549654da85b96ca37a68a1e6572f631cfea597a9331b66df2b",
+      "reason": "T-1606: limit param widened to int|None; resolves per-file width via resolve_line_length when caller passes None",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-20",
+      "facet": "sig",
+      "new_digest": "af81e669da6f97b650b786d9078463cff0ba76a68ee670a899a0cef46119f6df",
+      "old_digest": "ade4c0a8c6fe0a5bb50a9b55939a935a8627bd321219c2c0ae62671dcb71eb9d",
+      "reason": "T-1606: limit param widened to int|None; resolves per-file width via resolve_line_length when caller passes None",
+      "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     }
   ],
   "entries": [
@@ -1402,22 +1456,22 @@
       "ref": "src/frob/gates/_fix_engine_sync.py::_WAIVE004_PROPORTIONAL_MIN_LIVE_COUNT"
     },
     {
-      "digest": "833b3acbaf0d86549654da85b96ca37a68a1e6572f631cfea597a9331b66df2b",
+      "digest": "444ec3954b469b6aedc39366be38ff525f9383d00eccec3d7e9073b2c2025ed8",
       "facet": "body",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     },
     {
-      "digest": "ade4c0a8c6fe0a5bb50a9b55939a935a8627bd321219c2c0ae62671dcb71eb9d",
+      "digest": "af81e669da6f97b650b786d9078463cff0ba76a68ee670a899a0cef46119f6df",
       "facet": "sig",
       "ref": "src/frob/gates/_fmt_directives.py::_format_one_path"
     },
     {
-      "digest": "e9c6d77e51b27f1e04bf858bf4e4f39fb1b72fae71de3ad485419ff38bceb375",
+      "digest": "a565d165612233a7cdae533438a787a8ca2fcbb2f9a8901c7c7aca1fcc63883f",
       "facet": "body",
       "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
     },
     {
-      "digest": "0c5ce61829cec8198bf968017b0e94cc2891613708c533f93413b0ed6ef9c127",
+      "digest": "58634b7a33e074283e97ca1f5c7e172cfd89366c57083eb1334b0dd964545869",
       "facet": "sig",
       "ref": "src/frob/gates/_fmt_directives.py::canonicalize_text"
     },

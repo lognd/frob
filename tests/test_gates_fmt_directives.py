@@ -26,6 +26,7 @@ from frob.gates._fmt_directives import (
     format_paths,
     marker_for,
     read_line_length,
+    resolve_line_length,
 )
 from frob.graph.dsl import fold_comment_runs
 
@@ -111,6 +112,104 @@ class TestReadLineLength:
         # ion_defaults_to_88
         (tmp_path / "pyproject.toml").write_text("[tool.other]\nx = 1\n")
         assert read_line_length(tmp_path) == 88
+
+
+class TestResolveLineLength:
+    """T-1606: each supported non-Python language resolves its OWN
+    formatter's width from that formatter's own config, never ruff's."""
+
+    def test_python_uses_ruff_config(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_python_uses_ru\
+        # ff_config
+        (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+        assert resolve_line_length(tmp_path / "m.py", tmp_path) == 100
+
+    def test_rust_uses_rustfmt_toml(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_uses_rust\
+        # fmt_toml
+        (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+        (tmp_path / "rustfmt.toml").write_text("max_width = 120\n")
+        assert resolve_line_length(tmp_path / "src" / "lib.rs", tmp_path) == 120
+
+    def test_rust_falls_back_to_tool_default(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_falls_bac\
+        # k_to_tool_default
+        assert resolve_line_length(tmp_path / "lib.rs", tmp_path) == 100
+
+    def test_prettier_uses_prettierrc(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_\
+        # prettierrc
+        (tmp_path / ".prettierrc").write_text('{"printWidth": 120}')
+        assert resolve_line_length(tmp_path / "a.ts", tmp_path) == 120
+
+    def test_prettier_uses_package_json_key(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_\
+        # package_json_key
+        (tmp_path / "package.json").write_text(
+            '{"name": "x", "prettier": {"printWidth": 110}}'
+        )
+        assert resolve_line_length(tmp_path / "a.js", tmp_path) == 110
+
+    def test_prettier_falls_back_to_tool_default(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_falls\
+        # _back_to_tool_default
+        assert resolve_line_length(tmp_path / "a.tsx", tmp_path) == 80
+
+    def test_clang_format_uses_config(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_u\
+        # ses_config
+        (tmp_path / ".clang-format").write_text("ColumnLimit: 120\n")
+        assert resolve_line_length(tmp_path / "a.cpp", tmp_path) == 120
+
+    def test_clang_format_falls_back_to_tool_default(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_f\
+        # alls_back_to_tool_default
+        assert resolve_line_length(tmp_path / "a.c", tmp_path) == 80
+
+    def test_nearest_config_wins_over_root_config(self, tmp_path) -> None:  # noqa: ANN001
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_nearest_config\
+        # _wins_over_root_config
+        (tmp_path / "rustfmt.toml").write_text("max_width = 100\n")
+        pkg = tmp_path / "crates" / "sub"
+        pkg.mkdir(parents=True)
+        (pkg / "rustfmt.toml").write_text("max_width = 60\n")
+        assert resolve_line_length(pkg / "lib.rs", tmp_path) == 60
+
+    def test_unregistered_suffix_falls_back_to_ruff_derived_default(
+        self, tmp_path
+    ) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_unregistered_s\
+        # uffix_falls_back_to_ruff_derived_default
+        # `.strata` has no dedicated formatter of its own (T-1606 design
+        # decision) -- it keeps the pre-T-1606 ruff-derived behavior.
+        (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+        assert resolve_line_length(tmp_path / "a.strata", tmp_path) == 100
+
+    def test_no_limit_language_never_wraps(self) -> None:
+        # frob:tests \
+        # tests/test_gates_fmt_directives.py::TestResolveLineLength.test_no_limit_langu\
+        # age_never_wraps
+        # T-1606: `limit=None` is the first-class "this formatter has no
+        # width concept" answer (the contract a future Go/Zig/Bash adapter
+        # would return from `resolve_line_length`) -- proven at the
+        # `canonicalize_text` level, since none of today's `_MARKERS`
+        # suffixes reach it via `resolve_line_length` itself yet.
+        text = (
+            "# frob:waive RULE001 reason=\"" + ("x" * 300) + "\"\n"
+        )
+        rewritten = canonicalize_text(text, path="a.py", limit=None)
+        assert rewritten == text
+        assert "\\\n" not in rewritten
 
 
 class TestCanonicalLinesRoundTrip:

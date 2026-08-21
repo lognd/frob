@@ -1,7 +1,7 @@
 ---
 id: T-1606
 title: 'Per-language line-length: each formatter owns its own width, not ruff''s'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -12,12 +12,17 @@ parent: T-1597
 tier: ticket
 sprint: post-1.0
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_fmt_directives.py
 - src/frob/lang/_common.py
 - src/frob/lang/_models.py
 - tests/test_gates_fmt_directives.py
 - tests/test_lang.py
+- docs/modules/gates.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -77,6 +82,31 @@ scope_changes:
     fmt-directive test suite this ticket extends (confirmed via ls tests/)'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-1606''s own doc: AFFECT001 requires updating docs/modules/gates.md''s
+    frob-fmt-directive-canonicalization-t-0441 section for the new per-language resolve_line_length
+    surface and the canonicalize_text/format_paths signature changes it introduces'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: frob.lock
+  reason: 'T-1606: frob ack writes digest state to frob.lock for the two functions
+    this ticket changed (canonicalize_text, _format_one_path)'
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_python_uses_ruff_config
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_rust_uses_rustfmt_toml
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_rust_falls_back_to_tool_default
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_prettier_uses_prettierrc
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_prettier_uses_package_json_key
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_prettier_falls_back_to_tool_default
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_clang_format_uses_config
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_clang_format_falls_back_to_tool_default
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_nearest_config_wins_over_root_config
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_unregistered_suffix_falls_back_to_ruff_derived_default
+- tests/test_gates_fmt_directives.py::TestResolveLineLength::test_no_limit_language_never_wraps
 designated_repro_test: null
 threat: null
 component: null

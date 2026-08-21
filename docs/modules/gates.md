@@ -6217,25 +6217,64 @@ Public API (`src/frob/gates/_fmt_directives.py`):
   is `#`/`//` line comments only; a directive written inside a `/* */`
   block comment is left untouched.
 - `read_line_length(root) -> int` -- reads `[tool.ruff] line-length` from
-  `root/pyproject.toml`, falling back to ruff's own default (88). Known
-  limitation: this is ONE project-wide limit sourced from ruff's config; a
-  genuinely per-language limit (`rustfmt.toml`'s `max_width`, a
-  `.prettierrc`'s `printWidth`, clang-format's `ColumnLimit`) is not wired
-  up -- every supported language wraps against this single limit today.
+  `root/pyproject.toml`, falling back to ruff's own default (88). This is
+  Python's OWN width source (see `resolve_line_length` below) -- ruff
+  stays the sole owner of Python's limit, unchanged by T-1606.
+- `resolve_line_length(path, root) -> int | None` (T-1606) -- the width
+  `path`'s OWN formatter would enforce, replacing the pre-T-1606 design
+  where every supported language wrapped against ruff's single
+  project-wide number. Per language:
+  - Python (`.py`/`.pyi`): `read_line_length(root)`, unchanged.
+  - Rust (`.rs`): the nearest `rustfmt.toml`/`.rustfmt.toml`'s
+    `max_width`, walking upward from `path` to `root` (nearest wins, like
+    rustfmt's own resolution in a monorepo); falls back to rustfmt's
+    documented default (100) if none is found or the key is absent.
+  - TS/JS (`.ts`/`.tsx`/`.js`/`.jsx`/`.mjs`): the nearest prettier config
+    (`.prettierrc[.json|.yaml|.yml|.toml]`, or a `package.json`'s
+    `prettier` key -- both walked for together, nearest wins) `printWidth`,
+    falling back to prettier's documented default (80). A `.prettierrc.js`/
+    `.cjs`/`.mjs`/`prettier.config.*` module is deliberately not parsed
+    (would mean executing arbitrary JS) and falls back to the default the
+    same as having no config at all.
+  - C-family (`.c`/`.h`/`.cc`/`.cpp`/`.hpp`/`.hh`): the nearest
+    `.clang-format`'s `ColumnLimit`, falling back to clang-format's
+    documented default (80).
+  - Every other registered suffix (currently only `.strata`, which has no
+    formatter of its own): falls back to `read_line_length(root)`, the
+    same ruff-derived value it used before T-1606 -- a deliberate,
+    documented default rather than an unstated policy call (see the
+    function's own T-1606 design-decision comment in
+    `src/frob/gates/_fmt_directives.py`).
+  - `None` is a first-class return value meaning "this language's
+    formatter has no configurable width at all" (gofmt, `zig fmt`,
+    `shfmt` are the motivating examples -- none of them are registered
+    `_MARKERS` languages yet, so this branch is proven at the
+    `canonicalize_text`/`_canonical_lines` level today, not reached
+    through `resolve_line_length` itself until such an adapter lands).
+    Callers must skip width-wrapping entirely on `None`, never substitute
+    a default.
 - `canonicalize_text(text, *, path, limit) -> str` -- rewrites every
   `frob:` directive run in `text` to canonical form; non-directive
-  comments and all code are untouched byte-for-byte. T-0985: a run whose
-  logical text ends in a `# noqa`/`# noqa: CODE` pragma is a deliberate
-  escape hatch (content is one unbreakable token, e.g. a long dotted
-  pytest node id with no space to wrap at) and is left byte-identical
-  rather than force-wrapped -- previously the pragma comment was treated
-  as ordinary directive text and force-wrapped anyway, defeating its
-  purpose.
+  comments and all code are untouched byte-for-byte. `limit: int | None`
+  (T-1606): `None` means `path`'s language has no width concept -- every
+  directive run is folded to one logical line and never wrapped.
+  T-0985: a run whose logical text ends in a `# noqa`/`# noqa: CODE`
+  pragma is a deliberate escape hatch (content is one unbreakable token,
+  e.g. a long dotted pytest node id with no space to wrap at) and is left
+  byte-identical rather than force-wrapped -- previously the pragma
+  comment was treated as ordinary directive text and force-wrapped
+  anyway, defeating its purpose.
 - `format_paths(root, *, check_only, limit=None) -> FmtReport` -- walks
   `root` (via `frob.excludes.iter_files`, so the usual excluded/pruned dirs
   are skipped) and canonicalizes every supported file; `check_only=True`
   reports without writing (`frob fmt --check`, CI-friendly, exits 1 if
-  anything is non-canonical).
+  anything is non-canonical). T-1606: `limit=None` (the default) resolves
+  EACH FILE'S OWN width via `resolve_line_length` -- a single walk over a
+  mixed-language tree wraps Rust against rustfmt's config, TS/JS against
+  prettier's, C-family against clang-format's, and Python against ruff's,
+  all in the same run. Passing an explicit `limit` overrides this
+  per-file resolution uniformly for the whole walk (used by tests, and by
+  any caller that genuinely wants one number everywhere).
 
 **T-0985: repo-wide recompaction was deliberately deferred, then unblocked
 by T-0987.** A large slice of this repo's own `frob:` directive comments

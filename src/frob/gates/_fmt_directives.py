@@ -20,16 +20,20 @@ line -- this module's only new logic is CHOOSING the physical-line layout
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import tempfile
 import tomllib
+from collections.abc import Sequence
 from pathlib import Path
 
+import yaml
 from pydantic import BaseModel
 
 from frob.graph import fold_comment_runs
 from frob.logging import get_logger
+from frob.yaml_io import fast_yaml_loader
 
 _log = get_logger(__name__)
 
@@ -58,6 +62,13 @@ class FmtReport(BaseModel):
 
 _DEFAULT_LIMIT = 88
 """Ruff's own default line length, used when `pyproject.toml` has none."""
+
+_EFFECTIVELY_UNLIMITED = 10**9
+"""T-1606: internal stand-in for "this language's formatter has no width
+concept" (`resolve_line_length` returning `None`) -- large enough that
+`_canonical_lines`' `len(prefix) + len(text) <= limit` check always takes
+the single-line branch, so a no-width-limit directive is never wrapped,
+without threading `int | None` through the wrap-math internals."""
 
 _NOQA_SUFFIX_RE = re.compile(r"#\s*noqa(:\s*[A-Z0-9]+(\s*,\s*[A-Z0-9]+)*)?\s*$")
 """Matches a trailing `# noqa` / `# noqa: E501[,CODE...]` pragma at the end
@@ -148,6 +159,247 @@ def read_line_length(root: Path) -> int:
     if isinstance(value, int) and not isinstance(value, bool):
         return value
     return _DEFAULT_LIMIT
+
+
+# T-1606 DESIGN DECISION (recorded here, not left implicit): before this
+# ticket, `format_paths`/`_fix_engine_text`/`_land_cmd`/`_todo_fmt` all
+# called `read_line_length(root)` exactly ONCE per run and passed that
+# single ruff-derived int to every file regardless of language -- correct
+# for Python (ruff owns Python's width, and `# noqa: E501` is what a
+# directive wrap is standing in for there) but wrong for every other
+# language `frob fmt` wraps (Rust/TS/JS/C-family), which each have their
+# OWN formatter and their own width knob. `resolve_line_length` below is
+# the per-FILE replacement: each supported language gets its own width
+# resolved from that language's own toolchain config (walking upward from
+# the file, nearest-wins, matching how the real tools resolve a monorepo),
+# falling back to that tool's own documented default when the config is
+# absent -- never to ruff's number. `None` is a first-class answer here:
+# a formatter with no configurable width (T-1606's own examples: gofmt,
+# `zig fmt`, `shfmt`) must never be wrapped on width at all, or `frob fmt`
+# would keep reformatting such a file every run for no reason. Go/Zig/
+# Bash are not yet entries in `_MARKERS` (no adapter registers `.go`/
+# `.zig`/`.sh` here today) -- when one is added, its `_LANGUAGE_WIDTH_
+# SOURCES` entry should be `None` outright (no config lookup at all),
+# exercising the exact same "no width limit" contract
+# `TestResolveLineLength.test_no_limit_language_never_wraps` proves at the
+# `canonicalize_text`/`_canonical_lines` level today. `.strata` (frob's
+# own DSL, no external formatter) is deliberately left OUT of this table
+# and keeps falling through to the `_DEFAULT_WIDTH_SOURCE` (ruff-derived)
+# branch below -- unlike Go/Zig/Bash it has no formatter of its own to
+# defer to, so preserving T-0441's original repo-wide behavior for it is
+# the least-surprising default rather than an unstated policy call.
+_RUST_CONFIG_FILES: tuple[str, ...] = ("rustfmt.toml", ".rustfmt.toml")
+"""rustfmt's own config filenames, most-specific first (rustfmt itself
+accepts either name; `_find_nearest_config` tries both at each directory
+level before walking up, so a directory with only `.rustfmt.toml` still
+resolves)."""
+
+_RUST_DEFAULT_WIDTH = 100
+"""rustfmt's documented default `max_width` when no config overrides it."""
+
+_PRETTIER_CONFIG_FILES: tuple[str, ...] = (
+    ".prettierrc",
+    ".prettierrc.json",
+    ".prettierrc.yaml",
+    ".prettierrc.yml",
+    ".prettierrc.toml",
+)
+"""Prettier config filenames this resolver can parse without executing
+JS -- `.prettierrc.js`/`.cjs`/`.mjs` and a `prettier.config.*` module are
+deliberately not in this list (parsing them would mean running arbitrary
+JavaScript); a project using one of those falls back to `_PRETTIER_
+DEFAULT_WIDTH` here, same as having no prettier config at all."""
+
+_PRETTIER_DEFAULT_WIDTH = 80
+"""Prettier's documented default `printWidth` when no config overrides it."""
+
+_CLANG_FORMAT_CONFIG_FILES: tuple[str, ...] = (".clang-format",)
+"""clang-format's own config filename (YAML)."""
+
+_CLANG_FORMAT_DEFAULT_WIDTH = 80
+"""clang-format's documented default `ColumnLimit` when no `.clang-format`
+overrides it (clang-format's built-in styles, e.g. LLVM/Google, all ship
+80 as their own default)."""
+
+_PY_SUFFIXES = frozenset({".py", ".pyi"})
+_RUST_SUFFIXES = frozenset({".rs"})
+_PRETTIER_SUFFIXES = frozenset({".ts", ".tsx", ".js", ".jsx", ".mjs"})
+_CLANG_FORMAT_SUFFIXES = frozenset({".c", ".h", ".cc", ".cpp", ".hpp", ".hh"})
+
+
+def _find_nearest_config(
+    start_dir: Path, root: Path, filenames: Sequence[str]
+) -> Path | None:
+    """The nearest ancestor of `start_dir` (searched from `start_dir` up to
+    and including `root`, then stopping) containing one of `filenames` --
+    "nearest config wins", matching how rustfmt/prettier/clang-format
+    themselves resolve a config file in a monorepo with a package-local
+    override. Returns `None` if none of `filenames` exists anywhere in
+    that range. `filenames` is short (at most 6 entries, `_PRETTIER_
+    CONFIG_FILES` plus `package.json`) and checked once per directory
+    level on a shallow ancestor chain, so the nested loop here is a fixed,
+    small constant -- not the growing-with-input shape PERF003 flags.
+    """
+    try:
+        current = start_dir.resolve()
+        root_resolved = root.resolve()
+    except OSError:
+        return None
+    # frob:waive PERF003 reason="a directory-ancestor walk (bounded by filesystem \
+    # depth) over a fixed, short filenames tuple (<=6 entries) per level -- not a \
+    # scale-sensitive cross join over two growing-with-input collections"
+    while True:
+        for name in filenames:
+            candidate = current / name
+            if candidate.is_file():
+                return candidate
+        if current == root_resolved or current.parent == current:
+            return None
+        current = current.parent
+
+
+def _read_toml_key(config: Path, key: str) -> object | None:
+    """`config`'s top-level `key`, or `None` if the file is unreadable,
+    unparseable, or the key is absent -- callers treat `None` as "use the
+    tool's own default", never as an error."""
+    try:
+        data = tomllib.loads(config.read_text())
+    except (OSError, tomllib.TOMLDecodeError) as exc:
+        _log.debug("_read_toml_key: %s unreadable (%s)", config, exc)
+        return None
+    return data.get(key)
+
+
+def _read_yaml_or_json_key(config: Path, key: str) -> object | None:
+    """`config`'s top-level `key` from a YAML (or JSON, a YAML subset)
+    file, or `None` if unreadable/unparseable/absent -- same "use the
+    tool's own default" contract as `_read_toml_key`."""
+    try:
+        data = yaml.load(config.read_text(), Loader=fast_yaml_loader())
+    except (OSError, yaml.YAMLError) as exc:
+        _log.debug("_read_yaml_or_json_key: %s unreadable (%s)", config, exc)
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data.get(key)
+
+
+def _as_int(value: object) -> int | None:
+    """`value` as a plain `int`, or `None` if it is missing, a `bool`
+    (pydantic/JSON's own `bool`-is-an-`int` trap), or any other non-int
+    type -- shared validation for every config-derived width below."""
+    if isinstance(value, int) and not isinstance(value, bool):
+        return value
+    return None
+
+
+def _resolve_rust_width(path: Path, root: Path) -> int:
+    """rustfmt's `max_width` for `path`: the nearest `rustfmt.toml`/
+    `.rustfmt.toml` walking upward from `path`'s directory to `root`, or
+    `_RUST_DEFAULT_WIDTH` if none is found or the key is absent/invalid."""
+    config = _find_nearest_config(path.parent, root, _RUST_CONFIG_FILES)
+    if config is None:
+        return _RUST_DEFAULT_WIDTH
+    value = _as_int(_read_toml_key(config, "max_width"))
+    return value if value is not None else _RUST_DEFAULT_WIDTH
+
+
+def _resolve_prettier_width(path: Path, root: Path) -> int:
+    """Prettier's `printWidth` for `path`: the nearest prettier config
+    (`_PRETTIER_CONFIG_FILES`, or a `package.json` carrying a `prettier`
+    object -- both walked for together so the nearer of the two wins) from
+    `path`'s directory up to `root`, or `_PRETTIER_DEFAULT_WIDTH` if
+    neither is found or the key is absent/invalid.
+    """
+    config = _find_nearest_config(
+        path.parent, root, (*_PRETTIER_CONFIG_FILES, "package.json")
+    )
+    if config is None:
+        return _PRETTIER_DEFAULT_WIDTH
+    if config.name == "package.json":
+        try:
+            data = json.loads(config.read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            _log.debug("_resolve_prettier_width: %s unreadable (%s)", config, exc)
+            data = {}
+        prettier_key = data.get("prettier") if isinstance(data, dict) else None
+        value = (
+            _as_int(prettier_key.get("printWidth"))
+            if isinstance(prettier_key, dict)
+            else None
+        )
+    elif config.suffix == ".toml":
+        value = _as_int(_read_toml_key(config, "printWidth"))
+    else:
+        value = _as_int(_read_yaml_or_json_key(config, "printWidth"))
+    return value if value is not None else _PRETTIER_DEFAULT_WIDTH
+
+
+def _resolve_clang_format_width(path: Path, root: Path) -> int:
+    """clang-format's `ColumnLimit` for `path`: the nearest `.clang-format`
+    walking upward from `path`'s directory to `root`, or `_CLANG_FORMAT_
+    DEFAULT_WIDTH` if none is found or the key is absent/invalid."""
+    config = _find_nearest_config(path.parent, root, _CLANG_FORMAT_CONFIG_FILES)
+    if config is None:
+        return _CLANG_FORMAT_DEFAULT_WIDTH
+    value = _as_int(_read_yaml_or_json_key(config, "ColumnLimit"))
+    return value if value is not None else _CLANG_FORMAT_DEFAULT_WIDTH
+
+
+# frob:doc docs/modules/gates.md#frob-fmt-directive-canonicalization-t-0441
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_python_uses_ruff_config
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_uses_rustfmt_toml
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_rust_falls_back_to_too\
+# l_default
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_prettier\
+# rc
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_uses_package_\
+# json_key
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_prettier_falls_back_to\
+# _tool_default
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_uses_conf\
+# ig
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_clang_format_falls_bac\
+# k_to_tool_default
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_nearest_config_wins_ov\
+# er_root_config
+# frob:tests \
+# tests/test_gates_fmt_directives.py::TestResolveLineLength.test_unregistered_suffix_fa\
+# lls_back_to_ruff_derived_default
+def resolve_line_length(path: Path, root: Path) -> int | None:
+    """The width `path`'s OWN formatter would enforce -- Rust's rustfmt,
+    TS/JS's prettier, or C-family's clang-format, each read from that
+    tool's own config (nearest ancestor wins, `_find_nearest_config`),
+    falling back to that tool's documented default when no config exists.
+    Python (`.py`/`.pyi`) is unchanged from `read_line_length`: ruff stays
+    the sole owner of Python's width. Every other registered suffix
+    (currently only `.strata`) falls back to the same ruff-derived value
+    for want of a language-specific formatter of its own -- see this
+    function's own T-1606 design-decision comment, directly above.
+
+    Returns `None` for a language whose formatter has no configurable
+    width at all (not yet reachable through `_MARKERS` today -- see the
+    T-1606 design-decision comment) -- callers must treat `None` as "never
+    wrap this file's directives on width", not as "use some default".
+    """
+    suffix = path.suffix
+    if suffix in _RUST_SUFFIXES:
+        return _resolve_rust_width(path, root)
+    if suffix in _PRETTIER_SUFFIXES:
+        return _resolve_prettier_width(path, root)
+    if suffix in _CLANG_FORMAT_SUFFIXES:
+        return _resolve_clang_format_width(path, root)
+    # Python and every other still-ruff-derived suffix (.strata today).
+    return read_line_length(root)
 
 
 # frob:ticket T-0991
@@ -390,7 +642,7 @@ def _rewrite_lines_via_runs(
 # frob:ticket T-0972
 # frob:ticket T-0985
 # frob:ticket T-1987
-def canonicalize_text(text: str, *, path: str, limit: int) -> str:
+def canonicalize_text(text: str, *, path: str, limit: int | None) -> str:
     """Rewrite every `frob:` directive comment run in `text` (source for
     `path`, consulted only to pick the line-comment marker via
     `marker_for`) into T-0441 canonical form: the fewest physical lines
@@ -403,6 +655,12 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     canonical text returns it unchanged, in both the wrap and un-wrap
     direction.
 
+    T-1606: `limit=None` means `path`'s language has no configurable width
+    at all (`resolve_line_length` returning `None`) -- every directive run
+    is folded to its single logical line unconditionally and never wrapped
+    on width, via `_EFFECTIVELY_UNLIMITED` so the existing int-only wrap
+    math in `_canonical_lines` needs no Optional handling of its own.
+
     T-0985: a directive run whose logical text ends in a `# noqa`/`# noqa:
     CODE` pragma (`_NOQA_SUFFIX_RE`) is a deliberate escape hatch for
     content that cannot be wrapped without breaking a single unbreakable
@@ -412,6 +670,7 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
     marker = marker_for(path)
     if marker is None:
         return text
+    effective_limit = _EFFECTIVELY_UNLIMITED if limit is None else limit
 
     # T-0441 CRLF fix (reviewer CRITICAL): `text` must be split on "\n" only,
     # never on "\r\n"/"\r" -- doing so on a CRLF file would strip the "\r"
@@ -430,7 +689,9 @@ def canonicalize_text(text: str, *, path: str, limit: int) -> str:
 
     indents, entries = _fmt_marker_entries_with_indents(lines, marker)
     runs = fold_comment_runs(entries)
-    out = _rewrite_lines_via_runs(lines, runs, indents, marker=marker, limit=limit)
+    out = _rewrite_lines_via_runs(
+        lines, runs, indents, marker=marker, limit=effective_limit
+    )
 
     result = "\n".join(out)
     if had_trailing_newline:
@@ -542,7 +803,7 @@ def _format_one_path(
     path: Path,
     root: Path,
     *,
-    limit: int,
+    limit: int | None,
     check_only: bool,
     include_test_corpora: bool,
 ) -> "FmtChange | None":
@@ -552,7 +813,14 @@ def _format_one_path(
     `_is_test_corpus_path`, T-2298), returning its `FmtChange` if it is not
     already canonical, and -- unless `check_only` -- rewriting it in place.
     See `format_paths`'s own docstring for the CRLF-preserving `newline=""`
-    rationale this shares."""
+    rationale this shares.
+
+    T-1606: `limit=None` means "resolve `path`'s own language-specific
+    width via `resolve_line_length`" -- `format_paths` passes `None`
+    through per file precisely so each file gets ITS OWN language's width,
+    never a single value pinned for the whole walk; a caller wanting the
+    pre-T-1606 uniform behavior still can by resolving its own limit and
+    passing an int here."""
     if not include_test_corpora and _is_test_corpus_path(
         _relpath_for_change(path, root)
     ):
@@ -561,7 +829,8 @@ def _format_one_path(
     original = _read_source_for_format(path)
     if original is None:
         return None
-    rewritten = canonicalize_text(original, path=str(path), limit=limit)
+    resolved_limit = limit if limit is not None else resolve_line_length(path, root)
+    rewritten = canonicalize_text(original, path=str(path), limit=resolved_limit)
     if rewritten == original:
         return None
     if not check_only:
@@ -589,8 +858,17 @@ def format_paths(
     In `check_only` mode, nothing is written -- `FmtReport.changes` lists
     every file that is NOT already canonical (this is what `frob check`'s
     remediation hint is built from). Otherwise, each non-canonical file is
-    rewritten in place. `limit` overrides `read_line_length`'s
-    pyproject-derived default, mainly for tests.
+    rewritten in place.
+
+    T-1606: `limit` defaults to `None`, which means EACH FILE resolves its
+    OWN width via `resolve_line_length` (Rust's rustfmt config, TS/JS's
+    prettier config, C-family's clang-format config, or `None` outright
+    for a formatter with no width concept) -- a single walk over `root`
+    can span several languages, each wrapped against its own tool's limit
+    rather than one pinned-for-the-whole-walk number. Passing an explicit
+    `limit` overrides this per-file resolution uniformly for every file in
+    the walk (the pre-T-1606 behavior, still used by tests and by
+    anything that genuinely wants one number everywhere).
 
     T-2298: `include_test_corpora=False` (the default) skips any file
     `_is_test_corpus_path` flags -- a `.strata` file under `tests/`. A real
@@ -622,7 +900,6 @@ def format_paths(
     """
     from frob.excludes import iter_files
 
-    resolved_limit = limit if limit is not None else read_line_length(root)
     # T-2298: a single FILE named explicitly as `root` is a deliberate,
     # scoped target -- the corpus exclusion only applies to a BROAD path's
     # expanded walk (`iter_files`), never to "the caller asked for exactly
@@ -634,7 +911,7 @@ def format_paths(
         change = _format_one_path(
             path,
             root,
-            limit=resolved_limit,
+            limit=limit,
             check_only=check_only,
             include_test_corpora=include_test_corpora or explicit_single_file,
         )
@@ -656,4 +933,5 @@ __all__ = [
     "format_paths",
     "marker_for",
     "read_line_length",
+    "resolve_line_length",
 ]
