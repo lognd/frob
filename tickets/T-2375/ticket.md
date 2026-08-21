@@ -13,10 +13,21 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_arch.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: T-2375's own scope is narrowed to the WARN->ERROR severity promotion in
+    _arch.py's _ERROR_SEVERITY_CATEGORIES (adding 'large-file'); the actual per-file
+    split/waive work is delegated to 8 child batch tickets (--parent T-2375), each
+    independently scoped and landed
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
