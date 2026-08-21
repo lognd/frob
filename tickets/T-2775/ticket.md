@@ -2,7 +2,7 @@
 id: T-2775
 title: no shared primitive for 'wait until a land slot is free', so every agent hand-rolls
   a noisy poll loop that misreads failure as zero
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-21'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/
 - docs/guides/coordinator-scripts.md
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: T-2775's own brief requires positive-control unit tests for the new script
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
