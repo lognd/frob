@@ -2,7 +2,7 @@
 id: T-2548
 title: frob ticket body <id> silently resurrects a full duplicate active-tree copy
   for an archived id
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,6 +11,9 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
 scope_breadth_ack: false
@@ -48,3 +51,9 @@ naming the missing --archived flag, the same shape evidence --replace
 already has -- never silently materialize a duplicate active-tree copy.
 Also worth a regression test proving id resolution for `body` treats
 active-vs-archived the same way `evidence --replace` does.
+
+## Failure log
+- 2026-08-21 attempt 1: already fixed by T-2678: set_body routes archived-ticket writes through write_archived_ticket; positive-control tests TestSetBodyArchivedTicketRouting pass on this tip; no code change needed in scope
+
+## Drop reason
+- 2026-08-21: already fixed by T-2678: set_body routes archived-ticket writes through write_archived_ticket; TestSetBodyArchivedTicketRouting positive-control tests pass on this tip; no code change needed in scope (absorbed by T-2678)
