@@ -39,6 +39,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 52e7664b63b979c31f1821cac6dc978ce522c6ee
 ---
 Batch 14 of the T-2359 ruff-format-only reformat epic. 13 files re-measured against current main via ruff format --check (32 files remaining before this batch). Format-only, no semantic changes. Excludes T-2373 historically-claimed test_ticket_land.py test_ticket_work_and_land_finish.py test_tickets_organization.py test_tickets_priority.py unit/test_app_runners_batch6.py unit/test_app_runners_t2395_contention.py; T-2373 live-dirty test_ticket_new_priority_inherit_t1960.py test_waive_audit_runner.py verify/test_backpressure.py (checked its worktree git status fresh, genuinely dirty right now); T-2806 tests/unit/test_check.py
