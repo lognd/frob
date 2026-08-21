@@ -13,6 +13,17 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/process/parsers/ruff.py
+- tests/unit/test_parse.py
+- src/frob/gates/__init__.py
+- src/frob/gates/_arch.py
+- src/frob/gates/_tickets_gate.py
+- src/frob/tickets/_setters.py
+- tests/unit/test_ticket_new_priority_inherit_t1960.py
+- tests/unit/test_waive_audit_runner.py
+- tests/unit/verify/test_attribution_module_scope.py
+- tests/unit/verify/test_backpressure.py
 evidence_scope:
 - tests/unit/test_parse.py
 scope_breadth_ack: false
@@ -20,6 +31,57 @@ scope_breadth_ack_reason: null
 no_scope_declared: true
 no_scope_declared_reason: epic rollup tracking I001 burn-down child tickets, batched
   per T-2359 precedent; no direct file scope of its own
+scope_changes:
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_parse.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_arch.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/tickets/_setters.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_ticket_new_priority_inherit_t1960.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_waive_audit_runner.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/verify/test_attribution_module_scope.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/verify/test_backpressure.py
+  reason: 'final batch: 9 remaining I001 findings + severity promotion'
+  actor: logan
+  at: '2026-08-21'
 evidence:
 - tests/unit/test_parse.py::TestParseRuffText::test_severity_i001_is_error
 - tests/unit/test_parse.py::TestParseRuffJson::test_i001_is_error
