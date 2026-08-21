@@ -67,9 +67,37 @@ from frob.tickets._store import (
     write_archived_ticket,
     write_ticket,
 )
+from frob.tickets._leases import LeaseError, refuse_if_land_in_progress
 from frob.tickets._worktree_guard import enforce_worktree_lease
 
 _log = get_logger(__name__)
+
+
+# frob:ticket T-2785
+def _refuse_write_if_land_in_progress(root: Path) -> Result[None, LeaseError]:
+    """This module's own pre-write land guard (T-2785), mirroring
+    `frob.tickets._reconcile._refuse_apply_if_land_in_progress` (T-2291,
+    the SAME incident shape): checked BEFORE any lease/lock/write below,
+    so a refusal leaves the working tree untouched instead of the pre-
+    T-2785 shape -- write first, discover the ledger auto-commit was
+    refused only later at the CLI's post-dispatch commit step (out of
+    this module's scope), stranding the write uncommitted and DirtyMain-
+    blocking every other agent's land. `refuse_if_land_in_progress`
+    (T-1619/T-1961) is reused directly, including its own bounded wait --
+    a land that finishes within that window is never refused, so a
+    genuinely free repository behaves exactly as before this ticket.
+    `Ok(None)` when no land is in progress (or the wait resolved before
+    timing out); `Err(LeaseError.LandInProgress)`, no write attempted,
+    otherwise."""
+    land_check = refuse_if_land_in_progress(root)
+    if land_check.is_err:
+        _log.warning(
+            "tickets: %s setter refused (land in progress) -- no ledger "
+            "write attempted",
+            root,
+        )
+        return land_check
+    return Ok(None)
 
 
 def _field_str(value: object) -> str | None:
@@ -113,7 +141,7 @@ def _set_ticket_field(
     *,
     log_value: object,
     reason: str | None = None,
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """Set one `field` on `ticket_id` to `value` (extracted T-0861): the
     ONE lease-check + ledger-locked-load + `model_copy(update=...)` +
     write + log shape `set_priority`/`set_kind`/`set_sprint`/
@@ -135,6 +163,9 @@ def _set_ticket_field(
     swallowed; only a truly unreasoned caller (library-internal, no
     `reason`) skips the audit trail entirely, same as before this
     ticket."""
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     from frob.tickets import _load_ticket_and_queue
 
     leased = enforce_worktree_lease(root)
@@ -173,7 +204,7 @@ def _set_ticket_field(
 # ntry
 def set_priority(
     root: Path, ticket_id: str, priority: Priority, *, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """Set `ticket_id`'s `priority` field (T-0411) -- the accountable,
     single-writer way to reprioritize a ticket instead of hand-editing
     `tickets.md` frontmatter. Held under `ledger_lock` (same discipline as
@@ -203,7 +234,7 @@ def set_priority(
 # frob:tests tests/test_ticket_evidence.py::TestSetKind.test_reason_missing_refuses
 def set_kind(
     root: Path, ticket_id: str, kind: TicketKind, *, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """Set `ticket_id`'s `kind` field (T-0834) -- the accountable,
     single-writer way to correct a mis-filed kind instead of hand-editing
     `tickets.md` frontmatter, same ledger-locked, no-terminal-state-check
@@ -289,7 +320,7 @@ def _kind_history_entry(ticket: Ticket, kind: TicketKind) -> str | None:
 # frob:tests tests/test_tickets_tiers.py::TestSetTier.test_reason_missing_refuses
 def set_tier(
     root: Path, ticket_id: str, tier: TicketTier, *, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket tier <id> <epic|story|ticket>`: set `ticket_id`'s `tier`
     field (T-1069) -- the accountable, single-writer way to reclassify an
     already-created ticket's place in the epic -> story -> ticket hierarchy
@@ -387,7 +418,7 @@ def _validate_parent_edge(
 # frob:tests tests/test_tickets_parent.py::TestSetParent.test_archived_ticket_routes_to_archive_path  # noqa: E501
 def set_parent(
     root: Path, ticket_id: str, parent_id: str, *, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket set-parent <id> <parent-id> --reason TEXT`: the
     accountable, single-writer way to correct `ticket_id`'s `parent` edge
     (T-2770) -- `frob ticket new --parent` was the only place this field
@@ -397,15 +428,17 @@ def set_parent(
 
     Refuses (write nothing) for a blank `reason`
     (`Err(TicketError.ParentTicketReasonMissing)`), `parent_id ==
-    ticket_id` self-parenting (`Err(TicketError.ParentSelfReference)`), or
-    any of `_validate_parent_edge`'s structural checks (nonexistent
-    parent, cycle, tier inversion) -- see that function's docstring for
-    the exact rule set. T-2770's own measured customer: a `tier=epic`
-    ticket whose successor work was filed with `parent: null` reads as
-    "every child terminal, epic closeable" to the rot detector even
-    though the epic's real goal is unmet; re-parenting the successor onto
-    the epic is the fix, and this is the only way to do it without a hand
-    edit.
+    ticket_id` self-parenting (`Err(TicketError.ParentSelfReference)`), a
+    land genuinely in progress against `root`
+    (`Err(LeaseError.LandInProgress)`, T-2785 -- see
+    `_refuse_write_if_land_in_progress`), or any of
+    `_validate_parent_edge`'s structural checks (nonexistent parent,
+    cycle, tier inversion) -- see that function's docstring for the exact
+    rule set. T-2770's own measured customer: a `tier=epic` ticket whose
+    successor work was filed with `parent: null` reads as "every child
+    terminal, epic closeable" to the rot detector even though the epic's
+    real goal is unmet; re-parenting the successor onto the epic is the
+    fix, and this is the only way to do it without a hand edit.
 
     Re-parenting a DONE-but-still-active OR archived ticket is allowed
     (parent is organizational metadata, not a state-machine transition,
@@ -414,11 +447,26 @@ def set_parent(
     `write_archived_ticket` via `_ticket_currently_archived`, the same
     `set_body`/T-2678 fix, never creating a duplicate active-tree copy.
     Moving an already-parented ticket simply overwrites the scalar field
-    -- the old edge never lingers."""
+    -- the old edge never lingers.
+
+    T-2785: setting `parent_id` to the value `ticket_id` ALREADY carries
+    is a clean no-op -- no `TriageChangeEntry` is appended and no write
+    is attempted at all (`updated` is returned byte-identical to the
+    loaded ticket), the same "no audit event for a non-change" posture
+    `_redesignation_entry` already gives `set_designated_repro_test`. The
+    measured incident this closes: a `set-parent` call that re-asserted
+    an already-current parent (an earlier caller had already performed
+    the real move) still appended `old_value == new_value` triage noise
+    and, combined with the pre-T-2785 land-in-progress race, was exactly
+    what produced the dirty working tree that DirtyMain-blocked the
+    fleet."""
     if not reason.strip():
         return Err(TicketError.ParentTicketReasonMissing)
     if parent_id == ticket_id:
         return Err(TicketError.ParentSelfReference)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     from frob.tickets import _load_ticket_and_queue
 
     leased = enforce_worktree_lease(root)
@@ -429,27 +477,52 @@ def set_parent(
         if loaded.is_err:
             return Err(loaded.danger_err)
         ticket, queue = loaded.danger_ok
-        validation_error = _validate_parent_edge(queue, ticket, parent_id)
-        if validation_error is not None:
-            return Err(validation_error)
-        old_parent = ticket.parent
-        entry = _triage_change_entry("parent", old_parent, parent_id, reason)
-        updated = ticket.model_copy(
-            update={
-                "parent": parent_id,
-                "triage_changes": ticket.triage_changes + (entry,),
-            }
-        )
-        write_result = (
-            write_archived_ticket(root, updated)
-            if _ticket_currently_archived(root, ticket_id)
-            else write_ticket(root, updated)
-        )
-        if write_result.is_err:
-            return Err(write_result.danger_err)
+        if ticket.parent == parent_id:
+            _log.info(
+                "tickets: %s parent already %s -- no-op, nothing written",
+                ticket_id,
+                parent_id,
+            )
+            return Ok(ticket)
+        return _write_parent_change(root, ticket, queue, parent_id, reason)
+
+
+# frob:ticket T-2785
+def _write_parent_change(
+    root: Path,
+    ticket: Ticket,
+    queue: dict[str, Ticket],
+    parent_id: str,
+    reason: str,
+) -> Result[Ticket, TicketError | LeaseError]:
+    """`set_parent`'s validate-then-write half, split out to keep that
+    function under ARCH001's line threshold (T-2785): runs
+    `_validate_parent_edge`'s structural checks, then appends the
+    `TriageChangeEntry` and writes -- called ONLY for a genuine change
+    (`set_parent` already returned early for a no-op); must be called
+    from inside the SAME `ledger_lock` hold `set_parent` already took, so
+    this never re-acquires it itself."""
+    old_parent = ticket.parent
+    validation_error = _validate_parent_edge(queue, ticket, parent_id)
+    if validation_error is not None:
+        return Err(validation_error)
+    entry = _triage_change_entry("parent", old_parent, parent_id, reason)
+    updated = ticket.model_copy(
+        update={
+            "parent": parent_id,
+            "triage_changes": ticket.triage_changes + (entry,),
+        }
+    )
+    write_result = (
+        write_archived_ticket(root, updated)
+        if _ticket_currently_archived(root, ticket.id)
+        else write_ticket(root, updated)
+    )
+    if write_result.is_err:
+        return Err(write_result.danger_err)
     _log.info(
         "tickets: %s parent set to %s (was %s): %s",
-        ticket_id,
+        ticket.id,
         parent_id,
         old_parent,
         reason,
@@ -543,7 +616,7 @@ def set_body(
     *,
     mode: str,
     reason: str,
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket body <id> (--append TEXT|--append-file PATH | --set
     TEXT|--set-file PATH) --reason TEXT`: amend `ticket_id`'s free-text
     `body` (T-2392) -- the accountable, single-writer front door this
@@ -594,10 +667,17 @@ def set_body(
     could again be silently reinterpreted as (or swallow) a different
     section on the next write -- so this refuses loudly
     (`Err(TicketError.BodyTextAmbiguousSection)`) instead of writing
-    anything."""
+    anything. T-2785: also refuses (write nothing) when a land is
+    genuinely in progress against `root`
+    (`Err(LeaseError.LandInProgress)`), the same pre-write guard
+    `set_parent`/`_set_ticket_field` now share -- see
+    `_refuse_write_if_land_in_progress`."""
     validation_error = _validate_body_amend(mode, reason, text)
     if validation_error is not None:
         return Err(validation_error)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     from frob.tickets import _load_ticket_and_queue
 
     leased = enforce_worktree_lease(root)
@@ -652,7 +732,7 @@ def set_body(
 # tests/test_tickets_organization.py::TestRunsLast.test_set_runs_last_updates_field
 def set_runs_last(
     root: Path, ticket_id: str, runs_last: bool
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket runs-last <id> <on|off>`: set `ticket_id`'s `runs_last`
     marker (T-1613) -- the accountable, single-writer way to flag/unflag a
     ticket that must stay structurally undoable while any other
@@ -677,7 +757,7 @@ def set_runs_last(
 # elds
 def set_runs_last_parallel_safe(
     root: Path, ticket_id: str, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket runs-last-parallel-safe <id> --reason TEXT`: the
     retroactive setter T-2579 (M4b) left unbuilt -- declares `ticket_id`
     safe to run in parallel with another `runs_last` ticket in the same
@@ -688,9 +768,14 @@ def set_runs_last_parallel_safe(
     `reason` requirement as `set_scope_breadth_ack`'s T-1484 precedent --
     a declaration with no stated justification is exactly the ambiguity
     MILE004 exists to catch, so it is refused here rather than silently
-    accepted."""
+    accepted. T-2785: also refuses (write nothing) while a land is
+    genuinely in progress against `root` -- see
+    `_refuse_write_if_land_in_progress`."""
     if not reason.strip():
         return Err(TicketError.RunsLastParallelSafeReasonMissing)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -724,7 +809,7 @@ def set_runs_last_parallel_safe(
 # frob:tests tests/test_tickets.py::TestSetMilestone.test_invalid_semver_refused
 def set_milestone(
     root: Path, ticket_id: str, milestone: str | None
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket milestone <id> <value>`: set `ticket_id`'s `milestone`
     field (T-2574 M1) -- the accountable, single-writer way to assign a
     ticket to a shippable milestone, same ledger-locked `_set_ticket_
@@ -750,16 +835,21 @@ def set_milestone(
 # tests/test_tickets_scope_mutation.py::TestSetScopeBreadthAck.test_ack_sets_both_fields
 def set_scope_breadth_ack(
     root: Path, ticket_id: str, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket scope-ack <id> --reason TEXT`: acknowledge a
     genuinely-broad scope (WAVE14-B) -- sets `scope_breadth_ack=True` and
     records `reason` in `scope_breadth_ack_reason` in one ledger-locked
     write, the honest TICK009 waive channel that did not exist before this.
     A blank/whitespace-only `reason` is rejected (`Err`) the same way
     `WAIVE001` rejects a reasonless `frob:waive` -- an acknowledgement with
-    no stated justification is indistinguishable from ignoring the nudge."""
+    no stated justification is indistinguishable from ignoring the nudge.
+    T-2785: also refuses (write nothing) while a land is genuinely in
+    progress against `root` -- see `_refuse_write_if_land_in_progress`."""
     if not reason.strip():
         return Err(TicketError.ScopeBreadthAckReasonMissing)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -793,7 +883,7 @@ def set_scope_breadth_ack(
 # tests/test_tickets_no_scope.py::TestSetNoScopeDeclared.test_reason_missing_refuses
 def set_no_scope_declared(
     root: Path, ticket_id: str, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket scope <id> --declare-no-scope --reason TEXT` (T-2394):
     declare that `ticket_id` LEGITIMATELY has no file scope (a tier=epic
     rollup, a pure decision record) -- sets `no_scope_declared=True` and
@@ -806,9 +896,14 @@ def set_no_scope_declared(
     the fail-loudly doctrine (T-2391) applied here: an empty scope must
     be DECLARED, never merely inferred from silence. A blank/whitespace-
     only `reason` is rejected (`Err`), the same "no stated justification"
-    refusal `set_scope_breadth_ack` already enforces."""
+    refusal `set_scope_breadth_ack` already enforces. T-2785: also
+    refuses (write nothing) while a land is genuinely in progress
+    against `root` -- see `_refuse_write_if_land_in_progress`."""
     if not reason.strip():
         return Err(TicketError.NoScopeDeclaredReasonMissing)
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -894,7 +989,7 @@ def _redesignation_entry(
 # _id_appends_no_audit_entry
 def set_designated_repro_test(
     root: Path, ticket_id: str, node_id: str, *, reason: str | None = None
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket evidence <id> --designate-repro NODE-ID` (T-1670): mark
     `node_id` as the explicit BUG002 repro test, regardless of bind order
     -- `_designated_repro_test` (`frob.gates._mutation_evidence`) reads
@@ -919,7 +1014,12 @@ def set_designated_repro_test(
     `--replace`'s `EvidenceReplaceReasonMissing` refusal) is deliberately
     NOT added here -- it needs `src/frob/_cli_parsers/**`/`src/frob/app/
     config.py` wiring outside this ticket's declared scope; see the Done
-    report for the follow-up ticket."""
+    report for the follow-up ticket. T-2785: also refuses (write nothing)
+    while a land is genuinely in progress against `root` -- see
+    `_refuse_write_if_land_in_progress`."""
+    land_check = _refuse_write_if_land_in_progress(root)
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     leased = enforce_worktree_lease(root)
     if leased.is_err:
         return Err(leased.danger_err)
@@ -966,7 +1066,7 @@ def set_designated_repro_test(
 # frob:tests tests/test_tickets_tiers.py::TestSprintAssign.test_updates_sprint_field
 def set_sprint(
     root: Path, ticket_id: str, sprint: str | None
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """`frob ticket sprint assign <id> <label>`: set `ticket_id`'s `sprint`
     field (T-0715) -- the same single-writer, ledger-locked pattern
     `set_component` uses. `sprint=None` clears it back to uncommitted/
@@ -1457,7 +1557,7 @@ def _median_cycle_days(all_tickets: dict, first_done: dict[str, date]) -> float 
 # tests/test_tickets_organization.py::TestSetComponent.test_reason_missing_refuses
 def set_component(
     root: Path, ticket_id: str, component: str | None, *, reason: str
-) -> Result[Ticket, TicketError]:
+) -> Result[Ticket, TicketError | LeaseError]:
     """Set `ticket_id`'s `component` field (T-0454) -- which module/area this
     ticket belongs to, the same single-writer, ledger-locked pattern
     `set_priority` uses. `component=None` clears it back to uncategorized.

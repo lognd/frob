@@ -2,7 +2,7 @@
 id: T-2785
 title: frob ticket set-parent reports success while its auto-commit was refused, leaving
   the shared root dirty and blocking every agent land
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -35,6 +35,12 @@ scope_changes:
     and the set-parent no-op fix
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_tickets_parent.py::TestSetParentNoOp::test_reparenting_to_current_value_is_a_clean_noop
+- tests/test_tickets_parent.py::TestSetParentNoOp::test_reparenting_to_a_new_value_still_writes_exactly_one_entry
+- tests/test_tickets_parent.py::TestSetParentLandInProgressGuard::test_refuses_and_writes_nothing_while_land_lock_held
+- tests/test_tickets_parent.py::TestSetParentLandInProgressGuard::test_succeeds_normally_once_no_land_is_in_progress
+- tests/test_tickets_priority.py::TestSetPriorityLandInProgressGuard::test_refuses_and_writes_nothing_while_land_lock_held
 designated_repro_test: null
 threat: null
 component: null

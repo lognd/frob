@@ -305,3 +305,68 @@ class TestTick004QueueRot:
         matches = [v for v in violations if v.rule == "TICK004" and "T-3004" in v.message]
         assert len(matches) == 1
         assert "work it" in matches[0].message
+
+
+class TestSetPriorityLandInProgressGuard:
+    """T-2785: `_set_ticket_field` (the shared home `set_priority`/
+    `set_kind`/`set_tier`/`set_component`/`set_runs_last`/`set_milestone`/
+    `set_sprint` all funnel through) must refuse BEFORE writing anything
+    while a `frob ticket land` holds `.frob/land.lock` -- fixing this ONE
+    shared function closes the same partial-write hazard
+    `TestSetParentLandInProgressGuard` closes for `set_parent`'s own
+    (necessarily separate, since it has its own inline write) code path,
+    for every sibling setter that funnels through here at once."""
+
+    def test_refuses_and_writes_nothing_while_land_lock_held(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_tickets_priority.py::TestSetPriorityLandInProgressGuard.test_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
+        import fcntl
+        import json
+        import os as _os
+        import subprocess
+
+        from frob.tickets import Origin as _Origin
+        from frob.tickets import TicketKind as _TicketKind
+        from frob.tickets import TicketSpec, new_ticket
+        from frob.tickets import _setters as setters_mod
+        from frob.tickets._leases import LAND_LOCK_REL, LeaseError
+        from frob.tickets._store import load_all
+
+        subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
+        )
+        spec = TicketSpec(title="a ticket", kind=_TicketKind.BUG, origin=_Origin.HUMAN)
+        created = new_ticket(tmp_path, spec)
+        assert created.is_ok
+        ticket_id = created.danger_ok.id
+        assert created.danger_ok.priority == Priority.MEDIUM
+
+        lock_path = tmp_path / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = _os.open(str(lock_path), _os.O_CREAT | _os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _os.write(
+            holder_fd,
+            (json.dumps({"pid": _os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+        original = setters_mod.refuse_if_land_in_progress
+        monkeypatch.setattr(
+            setters_mod,
+            "refuse_if_land_in_progress",
+            lambda root, **_kw: original(root, wait_timeout_s=0),
+        )
+        try:
+            result = set_priority(
+                tmp_path, ticket_id, Priority.CRITICAL, reason="test"
+            )
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+
+            loaded = load_all(tmp_path)
+            assert loaded.is_ok
+            assert loaded.danger_ok[ticket_id].priority == Priority.MEDIUM
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            _os.close(holder_fd)

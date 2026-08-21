@@ -248,3 +248,138 @@ class TestSetParent:
         archived = load_archive(tmp_path)
         assert archived.is_ok
         assert archived.danger_ok["T-1688"].parent == "T-0002"
+
+
+class TestSetParentNoOp:
+    """T-2785: setting `parent` to the value it already carries must be a
+    clean no-op -- no `TriageChangeEntry`, no write at all (the file stays
+    byte-identical on disk). The measured incident: an earlier caller had
+    already performed the real re-parent, and a second call re-asserting
+    the same value still appended `old_value == new_value` triage noise,
+    which is what produced the dirty working tree in the reported
+    incident (combined with defect 1 below)."""
+
+    def test_reparenting_to_current_value_is_a_clean_noop(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentNoOp.test_reparenting_to_current_value_is_a_clean_noop  # noqa: E501
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        ticket_path = v2_ticket_dir(tmp_path, "T-0001") / "ticket.md"
+        before_bytes = ticket_path.read_bytes()
+
+        result = set_parent(tmp_path, "T-0001", "T-0002", reason="reasserting")
+        assert result.is_ok
+        assert result.danger_ok.parent == "T-0002"
+        assert result.danger_ok.triage_changes == ()
+
+        after_bytes = ticket_path.read_bytes()
+        assert after_bytes == before_bytes
+
+    def test_reparenting_to_a_new_value_still_writes_exactly_one_entry(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentNoOp.test_reparenting_to_a_new_value_still_writes_exactly_one_entry  # noqa: E501
+        old_epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        new_epic = _ticket(ticket_id="T-0003", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET, parent="T-0002")
+        assert write_ticket(tmp_path, old_epic).is_ok
+        assert write_ticket(tmp_path, new_epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", "T-0003", reason="re-file")
+        assert result.is_ok
+        assert len(result.danger_ok.triage_changes) == 1
+        entry = result.danger_ok.triage_changes[0]
+        assert entry.field == "parent"
+        assert entry.old_value == "T-0002"
+        assert entry.new_value == "T-0003"
+
+
+class TestSetParentLandInProgressGuard:
+    """T-2785: `set_parent` must refuse BEFORE writing anything while a
+    `frob ticket land` holds `.frob/land.lock` -- previously the
+    equivalent guard only ever fired later, at the CLI's post-dispatch
+    ledger auto-commit step (outside this module), so the write already
+    landed on disk and was then stranded uncommitted the moment the
+    commit was refused (the real reported incident: `git status` came
+    back dirty after a reported success). Mirrors `frob.tickets.
+    _reconcile`'s T-2291 guard test shape (`TestReconcileApplyLandInProgressGuard`)
+    -- a must-now-refuse and a must-still-pass case are both required so
+    the guard cannot regress into over-refusing."""
+
+    def test_refuses_and_writes_nothing_while_land_lock_held(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentLandInProgressGuard.test_refuses_and_writes_nothing_while_land_lock_held  # noqa: E501
+        import fcntl
+        import json
+        import os as _os
+
+        from frob.tickets import _setters as setters_mod
+        from frob.tickets._leases import LAND_LOCK_REL, LeaseError
+
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET)
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        ticket_path = v2_ticket_dir(tmp_path, "T-0001") / "ticket.md"
+        before_bytes = ticket_path.read_bytes()
+
+        lock_path = tmp_path / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = _os.open(str(lock_path), _os.O_CREAT | _os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _os.write(
+            holder_fd,
+            (json.dumps({"pid": _os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+        original = setters_mod.refuse_if_land_in_progress
+        # T-2785 test seam: force wait_timeout_s=0 so this test never
+        # actually waits out `refuse_if_land_in_progress`'s real bounded
+        # wait -- the guard's own default budget is calibrated for a real
+        # fleet, not a unit test.
+        monkeypatch.setattr(
+            setters_mod,
+            "refuse_if_land_in_progress",
+            lambda root, **_kw: original(root, wait_timeout_s=0),
+        )
+        try:
+            result = set_parent(tmp_path, "T-0001", "T-0002", reason="test")
+            assert result.is_err
+            assert result.danger_err == LeaseError.LandInProgress
+
+            # The write did not happen at all: file byte-identical, and
+            # the loaded ticket's parent is still unset.
+            after_bytes = ticket_path.read_bytes()
+            assert after_bytes == before_bytes
+            loaded = load_all(tmp_path)
+            assert loaded.is_ok
+            assert loaded.danger_ok["T-0001"].parent is None
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            _os.close(holder_fd)
+
+    def test_succeeds_normally_once_no_land_is_in_progress(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_tickets_parent.py::TestSetParentLandInProgressGuard.test_succeeds_normally_once_no_land_is_in_progress  # noqa: E501
+        # Must-still-pass control: with no land.lock at all, set_parent
+        # works exactly as before this ticket -- the guard must never
+        # over-refuse a genuinely free repository.
+        epic = _ticket(ticket_id="T-0002", tier=TicketTier.EPIC)
+        leaf = _ticket(ticket_id="T-0001", tier=TicketTier.TICKET)
+        assert write_ticket(tmp_path, epic).is_ok
+        assert write_ticket(tmp_path, leaf).is_ok
+
+        result = set_parent(tmp_path, "T-0001", "T-0002", reason="test")
+        assert result.is_ok
+        assert result.danger_ok.parent == "T-0002"
+
+        loaded = load_all(tmp_path)
+        assert loaded.is_ok
+        assert loaded.danger_ok["T-0001"].parent == "T-0002"
