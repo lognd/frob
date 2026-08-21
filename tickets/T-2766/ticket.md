@@ -30,7 +30,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cb30f3c705c2e20fc8dabe2a5db62936750b9d01
 ---
 Found by the new DOC013 gate (T-2080): docs/modules/arch.md's severity
 table (lines 57-58) lists ARCH101 and ARCH102 as `warning`, but
