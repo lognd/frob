@@ -1,7 +1,7 @@
 ---
 id: T-2772
 title: retarget hardcoded src/frob glob in _new.py's related-check-function suggestion
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -26,6 +26,9 @@ scope_changes:
   reason: positive/negative control tests for the source-prefix retarget
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted::test_fires_for_a_differently_named_project
+- tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted::test_still_fires_for_this_repos_own_src_frob
 designated_repro_test: null
 threat: null
 component: null

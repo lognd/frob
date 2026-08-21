@@ -218,6 +218,85 @@ class TestPossibleEnforcementSymbolsCue:
         assert symbols == ()
 
 
+# frob:ticket T-2772
+class TestPossibleEnforcementSymbolsRetargeted:
+    """T-2772: `_possible_enforcement_symbols` used to hardcode the git
+    grep pathspec `src/frob/**/*.py`, so it silently returned `()` in
+    every sibling repo whose package is not `frob` -- indistinguishable
+    from a genuine "found nothing" result. Retargeted onto `frob.lang.
+    declared_source_prefixes` (T-2195/T-2389's promoted resolver)."""
+
+    @staticmethod
+    def _pyproject(tmp_path: Path, name: str) -> None:
+        """`pyproject.toml` declaring `[project].name = name` plus a
+        src-layout `[tool.setuptools]` block, matching this repo's own
+        real pyproject.toml -- the denominator `declared_source_prefixes`
+        needs to resolve `src/<pkg>/` as a scanned source root."""
+        (tmp_path / "pyproject.toml").write_text(
+            f'[project]\nname = "{name}"\n\n'
+            f'[tool.setuptools]\npackages = {{ find = {{ where = ["src"] }} }}\n'
+        )
+
+    @staticmethod
+    def _git_init(root: Path) -> None:
+        import subprocess
+
+        subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "t@example.com"], cwd=root, check=True
+        )
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+        subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", "base"], cwd=root, check=True
+        )
+
+    def test_fires_for_a_differently_named_project(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted.test_fires_for_a_differently_named_project  # noqa: E501
+        """T-2772 must-now-fire: a `lograder`-named project's OWN
+        `_refuse_bogus_widget` symbol is surfaced when a new ticket's
+        body claims "nothing refuses a bogus widget" -- BEFORE this
+        retarget, the hardcoded `src/frob/**/*.py` pathspec made this
+        silently invisible (an empty tuple indistinguishable from a real
+        no-match search). `src/frob/...` is deliberately absent from this
+        fixture to prove the scan is not silently falling back to it."""
+        from frob.app.ticket_runner._new import _possible_enforcement_symbols
+
+        self._pyproject(tmp_path, name="lograder")
+        # nested one level under src/lograder/ -- git's "**/*.py" pathspec
+        # glob (verified directly against this git version) requires at
+        # least one intermediate directory component to match, matching
+        # how the original hardcoded "src/frob/**/*.py" literal was
+        # already exercised against this repo's own nested package tree.
+        src = tmp_path / "src" / "lograder" / "sub"
+        src.mkdir(parents=True)
+        (src / "x.py").write_text("def _refuse_bogus_widget():\n    pass\n")
+        self._git_init(tmp_path)
+
+        symbols = _possible_enforcement_symbols(
+            tmp_path,
+            "nothing refuses a bogus widget",
+            "nothing refuses a bogus widget at creation time",
+        )
+        assert any("_refuse_bogus_widget" in sym for sym in symbols)
+
+    def test_still_fires_for_this_repos_own_src_frob(self) -> None:
+        # frob:tests tests/unit/test_ticket_new_related.py::TestPossibleEnforcementSymbolsRetargeted.test_still_fires_for_this_repos_own_src_frob  # noqa: E501
+        """T-2772 must-still-pass control: this repo's own retarget must
+        not have loosened or blinded the original T-1995 fixture -- same
+        title/body, same real repo root, same expected symbol, run again
+        after the pathspec is now derived rather than hardcoded."""
+        from frob.app.ticket_runner._new import _possible_enforcement_symbols
+
+        repo_root = Path(__file__).resolve().parents[2]
+        symbols = _possible_enforcement_symbols(
+            repo_root,
+            "nothing refuses an over-broad scope at start",
+            "nothing refuses an over-broad declared scope when a ticket starts",
+        )
+        assert any("_refuse_over_broad_scope_on_start" in sym for sym in symbols)
+
+
 # frob:ticket T-1995
 class TestAckRelatedFlagReachesConfigThroughRealParsing:
     """T-1995 follow-up (TEST001 fix's own discovery): every other test in

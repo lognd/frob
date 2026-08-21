@@ -697,6 +697,7 @@ def related_tickets(root: Path, title: str) -> tuple[tuple[str, str, str, float]
 
 
 # frob:ticket T-1995
+# frob:ticket T-2772
 def _possible_enforcement_symbols(root: Path, title: str, body: str) -> tuple[str, ...]:
     """`file:symbol` candidates (capped at 5) that MIGHT already implement
     the enforcement `title`/`body` claims is missing (T-1995's second
@@ -704,7 +705,12 @@ def _possible_enforcement_symbols(root: Path, title: str, body: str) -> tuple[st
     grep at all when the body actually asserts a missing enforcement
     (`_MISSING_ENFORCEMENT_CUES`) -- a ticket with no such claim gets no
     grep and no surfaced symbols, so this never fires on an unrelated
-    feature/docs ticket. Best-effort: any git/grep failure returns `()`,
+    feature/docs ticket. T-2772: the grep pathspec is derived from
+    `frob.lang.declared_source_prefixes` (was hardcoded `src/frob/**/*.py`,
+    silently matching nothing in any sibling repo whose package is not
+    `frob`); an UNRESOLVED source prefix is logged distinctly from a
+    genuine empty grep result rather than collapsing into the same silent
+    `()`. Best-effort otherwise: any git/grep failure also returns `()`,
     never blocks ticket creation on its own (this is a hint, not a gate --
     only `related_tickets`'s title-similarity match ever requires `--ack-
     related`)."""
@@ -715,6 +721,27 @@ def _possible_enforcement_symbols(root: Path, title: str, body: str) -> tuple[st
     if not words:
         return ()
     from frob.gitio import run_argv
+    from frob.lang import declared_source_prefixes
+
+    # T-2772: was hardcoded "src/frob/**/*.py" -- silently matched
+    # nothing in any sibling repo whose package is not src/frob/, the
+    # exact silent-pass shape T-2384/T-2391 name. `declared_source_
+    # prefixes` returns `()` when this project's own package name
+    # cannot be resolved from pyproject.toml at all; that is a
+    # DIFFERENT claim than "grepped and found nothing", so it is logged
+    # distinctly rather than falling through to the same empty return
+    # a genuine no-match grep produces.
+    prefixes = declared_source_prefixes(root)
+    if not prefixes:
+        _log.warning(
+            "possible_enforcement_symbols: %s's own source prefix could "
+            "not be resolved from pyproject.toml [project].name -- no "
+            "pathspec to grep, returning UNRESOLVED (empty for a "
+            "different reason than a real search finding nothing)",
+            root,
+        )
+        return ()
+    pathspecs = [f"{prefix}**/*.py" for prefix in prefixes]
 
     pattern = "|".join(re.escape(w) for w in words)
     grepped = run_argv(
@@ -726,7 +753,7 @@ def _possible_enforcement_symbols(root: Path, title: str, body: str) -> tuple[st
             "-niE",
             f"^\\s*def _(refuse|check)_[a-z_0-9]*({pattern})",
             "--",
-            "src/frob/**/*.py",
+            *pathspecs,
         ]
     )
     if grepped.is_err or grepped.danger_ok.returncode not in (0, 1):
