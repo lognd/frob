@@ -2,7 +2,7 @@
 id: T-2805
 title: 'native-staleness content-digest check is a permanent latch: a reproducible
   rebuild is byte-identical, so frob natives build can never clear NATIVE001'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -16,10 +16,47 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_native_staleness.py
+- src/frob/natives/_build.py
+- tests/unit/strata/test_native_staleness.py
+- tests/unit/test_natives_build.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/natives/_build.py
+  reason: T-2805's fix needs a genuine-rebuild ATTESTATION distinguishable from a
+    bare touch, which by construction cannot come from anything _native_staleness.py
+    alone can observe (mtime/bytes are exactly what the touch attack fakes) -- only
+    the actual build tool invocation (frob.natives._build.build_natives) can assert
+    'a real compiler run just happened against this exact source'. Widening to that
+    file (one small hook call after a successful crate build) plus both modules' existing
+    test files, same shape as T-2793's scope correction.
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/strata/test_native_staleness.py
+  reason: T-2805's fix needs a genuine-rebuild ATTESTATION distinguishable from a
+    bare touch, which by construction cannot come from anything _native_staleness.py
+    alone can observe (mtime/bytes are exactly what the touch attack fakes) -- only
+    the actual build tool invocation (frob.natives._build.build_natives) can assert
+    'a real compiler run just happened against this exact source'. Widening to that
+    file (one small hook call after a successful crate build) plus both modules' existing
+    test files, same shape as T-2793's scope correction.
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_natives_build.py
+  reason: T-2805's fix needs a genuine-rebuild ATTESTATION distinguishable from a
+    bare touch, which by construction cannot come from anything _native_staleness.py
+    alone can observe (mtime/bytes are exactly what the touch attack fakes) -- only
+    the actual build tool invocation (frob.natives._build.build_natives) can assert
+    'a real compiler run just happened against this exact source'. Widening to that
+    file (one small hook call after a successful crate build) plus both modules' existing
+    test files, same shape as T-2793's scope correction.
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
