@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/_sys.py
 - src/frob/gates/_sys_selfaudit.py
 - src/frob/gates/_toplevel_scalar_schema.py
+- docs/modules/lang.md
 evidence_scope:
 - tests/test_gates_fix_engine.py
 - tests/test_lang_conformance_gate.py
@@ -63,6 +64,12 @@ scope_changes:
   glob: src/frob/gates/_testing_schema.py
   reason: AFFECT001 closure doc docs/modules/gates.md is leased live by T-2557; deferring
     these files to a later batch
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/lang.md
+  reason: 'AFFECT001: format-only digest move on capability_conformance_gate requires
+    acking its affects()-closure doc'
   actor: logan
   at: '2026-08-21'
 evidence:
