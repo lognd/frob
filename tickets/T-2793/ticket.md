@@ -3,7 +3,7 @@ id: T-2793
 title: stale natives make frob check fast-exit in 14s, and the rapid sweep records
   that 2-finding abort as the rolling baseline -- verification reports GREEN having
   run zero gates
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -17,10 +17,37 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
+- src/frob/app/ticket_runner/_verify.py
+- tests/unit/test_ticket_runner_gate_findings.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: T-2793's root cause (a fast-exit abort produces no gate-summary tool result,
+    and _parse_error_findings_from_json has no positive check for that absence) lives
+    in _verify.py's shared parser, not in _rapid_sweep.py itself; _rapid_sweep.py
+    only consumes the frozenset that parser already decided was measured. Widening
+    to the true fix location plus its existing test file rather than duplicating the
+    check inside _rapid_sweep.py, which would violate NO DUPLICATION and could not
+    see the raw JSON at all (_land_cmd._unscoped_error_findings only returns the parsed
+    frozenset).
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/unit/test_ticket_runner_gate_findings.py
+  reason: T-2793's root cause (a fast-exit abort produces no gate-summary tool result,
+    and _parse_error_findings_from_json has no positive check for that absence) lives
+    in _verify.py's shared parser, not in _rapid_sweep.py itself; _rapid_sweep.py
+    only consumes the frozenset that parser already decided was measured. Widening
+    to the true fix location plus its existing test file rather than duplicating the
+    check inside _rapid_sweep.py, which would violate NO DUPLICATION and could not
+    see the raw JSON at all (_land_cmd._unscoped_error_findings only returns the parsed
+    frozenset).
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
