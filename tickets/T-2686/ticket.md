@@ -2,7 +2,7 @@
 id: T-2686
 title: 'COV003 on 6 closed tickets: deleted/renamed test node ids, six materially
   different dispositions needed'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -21,10 +21,25 @@ scope:
 - tickets/T-2344
 - tickets/T-2348
 - tickets/T-2365
+evidence_scope:
+- tests/unit/verify/test_worker.py
+- tests/test_lang_support.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: BUG002 close-time guard requires this directive for a kind=bug ticket whose
+    fix is a pure ledger data correction with no code behavior to reproduce a defect
+    against
+  actor: logan
+  at: '2026-08-21'
+  old_length: 4161
+  new_length: 4785
+evidence:
+- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_clean_run_advances_watermark_and_compacts_queue
+- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_real_registry_has_no_conformance_violations
 designated_repro_test: null
 threat: null
 component: null
@@ -106,3 +121,5 @@ reading the ORIGINAL ticket body/claim:
 
 Do NOT touch evidence on any of these 6 closed tickets mechanically.
 Each disposition needs the original ticket read first.
+
+frob:no-behavior-change reason="This ticket's fix is a ticket-ledger data correction (removing two stale evidence node ids from tickets/archive/T-1688 and tickets/T-2365), not a change to any executable code path -- there is no production behavior for a test to exercise at the parent commit versus after the fix. BUG002's designated-repro test necessarily PASSES at both commits because the code it exercises (verify worker watermark advance / lang capability registry conformance) is untouched by this diff; it demonstrates the two ticket citations remain honest evidence for the SURROUNDING claim, not a defect repro."
