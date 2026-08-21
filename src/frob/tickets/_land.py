@@ -247,6 +247,134 @@ _LAND_LOCK_TIMEOUT_S = 500.0
 # frob:ticket T-1495
 _LAND_LOCK_POLL_S = 1.0
 
+# frob:ticket T-2774
+#: Env var a caller (the agent-playbook's `timeout 540` foreground wrapper,
+#: or any other wall-clock-bounded driver) may set to declare ITS OWN
+#: remaining wall-clock budget in seconds for this `land()` call. Absent
+#: (the default, and every caller before T-2774), `_land_lock` keeps using
+#: the flat `_LAND_LOCK_TIMEOUT_S` exactly as before -- declaring this is
+#: opt-in and behavior does not regress for a caller that never sets it.
+_FROB_LAND_DEADLINE_ENV = "FROB_LAND_DEADLINE_S"
+
+
+# frob:ticket T-2774
+# frob:doc \
+# docs/modules/tickets-landing.md#declared-land-deadline-bounds-the-lock-wait-not-a-fla\
+# t-constant-t-2774
+# frob:tests \
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_no_declaration_keeps_the_flat_timeout\
+# _unchanged
+# frob:tests \
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_ample_deadline_derives_a_wait_budget_\
+# and_proceeds
+# frob:tests \
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_insufficient_deadline_refuses_immedia\
+# tely_with_no_lock_attempt
+# frob:tests \
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_short_wait_then_acquire_still_complet\
+# es
+# frob:tests \
+# TestLandLockWaitBudgetFromDeclaredDeadline.test_unparseable_deadline_falls_back_to_th\
+# e_flat_timeout
+def _resolve_land_lock_wait_budget_s(root: Path) -> Result[float, LandError]:
+    """T-2774 root-cause fix: `_LAND_LOCK_TIMEOUT_S` (500s, a flat constant)
+    bounds only the land.lock WAIT, but the caller's own outer wrapper
+    (`timeout 540`, agent-playbook.md section 0 item 3) bounds WAIT + WORK
+    together -- a land that waits 300s for the lock then spends ~274s on
+    its own `frob check` blows the outer cap even though neither half
+    alone ever trips 500s. `_LAND_LOCK_TIMEOUT_S` reasoned correctly about
+    the wait in isolation and wrongly about the total (see that
+    constant's own comment).
+
+    Fix: when the caller declares its remaining wall-clock budget via
+    `FROB_LAND_DEADLINE_S` (seconds), the lock-wait ceiling passed to
+    `_land_lock` becomes `min(_LAND_LOCK_TIMEOUT_S, deadline -
+    estimated_work_s)` instead of the flat constant -- `estimated_work_s`
+    is `frob.app._check_chunking._derive_post_land_sweep_budget_s`'s own
+    measured-timing derivation (`.frob/check-budget-timing.json`), the
+    SAME number `land()`'s own post-land sweep already budgets against
+    (T-2715); reusing it rather than hardcoding a second estimate is
+    deliberate -- this repo has already been bitten once by
+    `_TRUE_COUNT_BUDGET_S` drifting from its twin (see that name's own
+    history).
+
+    Returns `Ok(wait_budget_s)` -- the ceiling `land()` should pass to
+    `_land_lock` as `timeout` -- when there is ANY positive time left to
+    even attempt waiting for the lock. Returns
+    `Err(LandError.LandLockTimeout)` immediately, BEFORE `land()` ever
+    attempts the lock acquire, when the declared deadline cannot cover the
+    estimated work even with a zero-second wait -- reusing this member
+    rather than minting a new one is deliberate (the ticket's own text
+    allows it: "return Err(LandError.LandLockTimeout) (or a new, distinct
+    variant)"), and `_models.py` (where `LandError` lives) sits outside
+    this bugfix ticket's declared scope and was, at the time of this fix,
+    leased by an unrelated in-progress ticket -- adding a member there
+    would have forced a scope fight this fix does not need. This is still
+    the "declined, retry later" half of T-2774's required distinction: no
+    lock attempt, no ticket-state mutation, just an immediate typed `Err`
+    (never the bare, undiagnosable exit-143 the 2026-08-21 incident
+    produced) whose log line explicitly names the deadline and the
+    estimate -- distinguishable from the "genuinely waited out a foreign
+    holder" case by that log line and by firing with zero elapsed wait.
+    When `FROB_LAND_DEADLINE_S` is absent or unparseable, returns
+    `Ok(_LAND_LOCK_TIMEOUT_S)` unchanged -- the pre-T-2774 behavior, for
+    every caller that never opts in."""
+    raw_deadline = os.environ.get(_FROB_LAND_DEADLINE_ENV)
+    if raw_deadline is None:
+        return Ok(_LAND_LOCK_TIMEOUT_S)
+    try:
+        deadline_s = float(raw_deadline)
+    except ValueError:
+        _log.warning(
+            "land: %s=%r is not a number -- ignoring, lock-wait ceiling "
+            "stays the flat %.0fs (T-2774 opt-in requires a valid float)",
+            _FROB_LAND_DEADLINE_ENV,
+            raw_deadline,
+            _LAND_LOCK_TIMEOUT_S,
+        )
+        return Ok(_LAND_LOCK_TIMEOUT_S)
+
+    # frob:waive SYS003 reason="T-2774: the ticket's own required shape mandates \
+    # reusing _derive_post_land_sweep_budget_s's timing-file derivation rather than a \
+    # second hardcoded work-time estimate (this repo has already been bitten once by \
+    # _TRUE_COUNT_BUDGET_S drifting from its twin) -- moving that derivation's \
+    # canonical home to a layer both tickets_ledger and cli can import from is a real \
+    # architecture change (frob.app._check_chunking has its own callers in \
+    # _rapid_sweep.py/_land_cmd.py) out of this bugfix ticket's declared scope \
+    # (src/frob/tickets/_land.py only); a lazy, function-local import (never at module \
+    # load, only when a caller opts in via FROB_LAND_DEADLINE_S) is the narrowest fix \
+    # that avoids a second number to desync"
+    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
+
+    estimated_work_s = float(_derive_post_land_sweep_budget_s(root))
+    remaining_for_wait = deadline_s - estimated_work_s
+    if remaining_for_wait <= 0:
+        _log.error(
+            "land: refused (declined-early, no lock attempted, no holder "
+            "involved -- NOT a died-mid-land timeout) -- declared %s=%.0fs "
+            "does not cover the estimated work time alone (%.0fs, derived "
+            "from %s's own recorded check-budget-timing.json); retry once "
+            "the deadline is bigger or the estimate has come down (T-2774)",
+            _FROB_LAND_DEADLINE_ENV,
+            deadline_s,
+            estimated_work_s,
+            root,
+        )
+        return Err(LandError.LandLockTimeout)
+
+    wait_budget_s = min(_LAND_LOCK_TIMEOUT_S, remaining_for_wait)
+    _log.info(
+        "land: %s=%.0fs declared -- lock-wait ceiling derived as "
+        "min(%.0fs, %.0fs - %.0fs estimated work) = %.0fs (T-2774)",
+        _FROB_LAND_DEADLINE_ENV,
+        deadline_s,
+        _LAND_LOCK_TIMEOUT_S,
+        deadline_s,
+        estimated_work_s,
+        wait_budget_s,
+    )
+    return Ok(wait_budget_s)
+
 
 # frob:doc docs/guides/install.md#live-land-process-report-t-1515
 # frob:ticket T-1495
@@ -1269,8 +1397,17 @@ def land(
         )
         return Err(reclaim.danger_err)
 
+    # T-2774: resolve the lock-wait ceiling from the caller's declared
+    # FROB_LAND_DEADLINE_S (if any) BEFORE attempting the lock at all --
+    # an insufficient deadline refuses right here, with no lock attempt
+    # and no ticket-state mutation, distinct from a LandLockTimeout that
+    # fires only after actually waiting on a foreign holder.
+    wait_budget = _resolve_land_lock_wait_budget_s(root)
+    if wait_budget.is_err:
+        return Err(wait_budget.danger_err)
+
     try:
-        with _land_lock(root, ticket_id):
+        with _land_lock(root, ticket_id, timeout=wait_budget.danger_ok):
             return _land_locked(
                 root,
                 ticket_id,

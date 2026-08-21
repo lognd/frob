@@ -2,7 +2,7 @@
 id: T-2774
 title: a contended land is SIGKILLed mid-work because the 500s lock-wait guard bounds
   only the wait, not wait+work against the caller's cap
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -36,7 +36,13 @@ scope_changes:
     into that file
   actor: logan
   at: '2026-08-21'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged
+- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_ample_deadline_derives_a_wait_budget_and_proceeds
+- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_insufficient_deadline_refuses_immediately_with_no_lock_attempt
+- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_short_wait_then_acquire_still_completes
+- tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_unparseable_deadline_falls_back_to_the_flat_timeout
+designated_repro_test: tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline::test_no_declaration_keeps_the_flat_timeout_unchanged
 threat: null
 component: null
 anchor: false

@@ -10641,6 +10641,138 @@ class TestLandLockHolderMetadataAndTimeout:
         )
 
 
+# frob:ticket T-2774
+class TestLandLockWaitBudgetFromDeclaredDeadline:
+    """T-2774: `_resolve_land_lock_wait_budget_s` bounds the land.lock
+    WAIT by the caller's declared `FROB_LAND_DEADLINE_S` minus the
+    measured work-time estimate, instead of the flat
+    `_LAND_LOCK_TIMEOUT_S` -- so a land no longer starts work it provably
+    cannot finish before its outer wrapper kills it. Positive controls in
+    both directions per the ticket: insufficient budget refuses
+    immediately with a distinct typed error and no side effect; ample
+    budget (or no declaration at all) behaves exactly as before."""
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_no_dec\
+    # laration_keeps_the_flat_timeout_unchanged
+    # frob:ticket T-2774
+    def test_no_declaration_keeps_the_flat_timeout_unchanged(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """No `FROB_LAND_DEADLINE_S` set (every caller before T-2774) must
+        resolve to exactly `_LAND_LOCK_TIMEOUT_S`, unchanged -- the
+        ticket's explicit 'absent a caller-declared budget, behavior must
+        not regress' requirement."""
+        from frob.tickets._land import (
+            _LAND_LOCK_TIMEOUT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.delenv("FROB_LAND_DEADLINE_S", raising=False)
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == _LAND_LOCK_TIMEOUT_S
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_ample_\
+    # deadline_derives_a_wait_budget_and_proceeds
+    # frob:ticket T-2774
+    def test_ample_deadline_derives_a_wait_budget_and_proceeds(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control (direction 2, ticket's own required shape): a
+        generous declared deadline still yields a usable, positive wait
+        budget bounded above by `_LAND_LOCK_TIMEOUT_S` -- a land with
+        ample budget and a free lock proceeds exactly as today, it is
+        NOT turned into a refusal just because it opted in."""
+        from frob.tickets._land import (
+            _LAND_LOCK_TIMEOUT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert 0 < result.danger_ok <= _LAND_LOCK_TIMEOUT_S
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_insuff\
+    # icient_deadline_refuses_immediately_with_no_lock_attempt
+    # frob:ticket T-2774
+    def test_insufficient_deadline_refuses_immediately_with_no_lock_attempt(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Positive control (direction 1): a deadline too small to cover
+        even the estimated work alone refuses IMMEDIATELY with a typed
+        `Err(LandError.LandLockTimeout)` -- the ticket's own text allows
+        reusing this member rather than minting a new one ("or a new,
+        distinct variant") -- and the log line explicitly marks this a
+        declined-early refusal, never a died-mid-land timeout, which is
+        the caller-visible distinction T-2774 requires: a live `Err`
+        object either way, never the bare undiagnosable exit-143 the
+        2026-08-21 incident produced."""
+        import logging
+
+        from frob.tickets._land import _resolve_land_lock_wait_budget_s
+        from frob.tickets._models import LandError
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "1")
+        with caplog.at_level(logging.ERROR, logger="frob.tickets._land"):
+            result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_err, result.ok
+        assert result.danger_err is LandError.LandLockTimeout
+        assert any(
+            "declined-early" in r.message and "NOT a died-mid-land" in r.message
+            for r in caplog.records
+        ), caplog.text
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_short_\
+    # wait_then_acquire_still_completes
+    # frob:ticket T-2774
+    def test_short_wait_then_acquire_still_completes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Positive control (direction 3): a land that would only need to
+        wait BRIEFLY for the lock, with budget to spare after that wait,
+        still resolves to a positive wait budget -- a declared deadline
+        must not turn every contended land into a refusal, only the ones
+        that genuinely cannot fit."""
+        from frob.tickets._land import (
+            _resolve_land_lock_wait_budget_s,
+            _land_lock,
+        )
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        with _land_lock(tmp_path, timeout=result.danger_ok):
+            pass
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockWaitBudgetFromDeclaredDeadline.test_unpars\
+    # eable_deadline_falls_back_to_the_flat_timeout
+    # frob:ticket T-2774
+    def test_unparseable_deadline_falls_back_to_the_flat_timeout(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A non-numeric `FROB_LAND_DEADLINE_S` is treated the same as
+        absent, not as a hard error -- a malformed opt-in must not brick
+        landing."""
+        from frob.tickets._land import (
+            _LAND_LOCK_TIMEOUT_S,
+            _resolve_land_lock_wait_budget_s,
+        )
+
+        monkeypatch.setenv("FROB_LAND_DEADLINE_S", "not-a-number")
+        result = _resolve_land_lock_wait_budget_s(tmp_path)
+        assert result.is_ok, result.err
+        assert result.danger_ok == _LAND_LOCK_TIMEOUT_S
+
+
 class TestUnscopedErrorFindingsExcludesNoTicketNoise:
     """T-1804: `_unscoped_error_findings` -- the shared spawn both
     the deferred post-land sweep and `--land-parity` use -- must exclude

@@ -1294,6 +1294,63 @@ The base timeout itself is configurable per repo via `frob.toml`'s
 int) -- a repo whose real land time regularly exceeds the built-in
 default no longer has to patch source to raise it.
 
+## Declared land deadline bounds the lock wait, not a flat constant (T-2774)
+
+`_LAND_LOCK_TIMEOUT_S` (500s, "Land hardening" above / T-2065) bounds only
+how long `_land_lock` waits for a foreign holder before refusing -- it
+says nothing about the WORK a land does after it acquires the lock (its
+own `frob check`, merge, and finalize, ~274s unbudgeted, measured). A
+caller's outer wrapper (the agent-playbook's `timeout 540` foreground
+guard) bounds wait-plus-work together, so a land that waited 300s for the
+lock and then ran its own ~300s of work could be SIGKILLed 240s into work
+it had every right to start, per the flat constant, but could never
+finish inside the caller's real remaining budget. Measured 2026-08-21:
+T-2753's land ran the full 540s and was SIGKILLed with no commit, the
+ticket stranded at `state: in-progress` holding its scope lease, and NO
+diagnostic beyond exit 143 -- T-2762 and T-2359 died the same way the same
+hour, and T-2762 then succeeded UNCHANGED on a solo retry, proving the
+work itself was fine and only contention killed it.
+
+Fix: a caller may declare its own remaining wall-clock budget via the
+`FROB_LAND_DEADLINE_S` environment variable (seconds). When set,
+`_resolve_land_lock_wait_budget_s` (`frob.tickets._land`) derives the
+lock-wait ceiling as `min(_LAND_LOCK_TIMEOUT_S, deadline -
+estimated_work_s)` instead of the flat constant. `estimated_work_s` reuses
+`frob.app._check_chunking._derive_post_land_sweep_budget_s`'s own
+measured-timing derivation (`.frob/check-budget-timing.json`) rather than
+a second hardcoded estimate -- this repo has already been bitten once by
+two homes for the same number drifting apart (`_TRUE_COUNT_BUDGET_S`).
+
+Two outcomes:
+
+- If `deadline - estimated_work_s <= 0` -- the declared budget cannot
+  cover the work even with a zero-second wait -- `land()` returns
+  `Err(LandError.LandLockTimeout)` IMMEDIATELY, before ever attempting the
+  lock acquire or touching the ticket's state. This reuses the existing
+  member rather than minting a new one -- the ticket's own required shape
+  explicitly allows it ("return Err(LandError.LandLockTimeout) (or a new,
+  distinct variant)"), and `_models.py` (where `LandError` lives) sits
+  outside this fix's declared scope. The caller-visible distinction
+  T-2774 actually requires -- "declined, retry when the deadline is
+  bigger or the queue is calmer" apart from "died mid-land with no
+  diagnostic" -- still holds: this path returns a live typed `Err` with a
+  log line explicitly saying "declined-early ... NOT a died-mid-land
+  timeout" and naming the deadline and the estimate, which is already a
+  world apart from the bare, undiagnosable exit-143 the 2026-08-21
+  incident produced. It fires with zero elapsed wait and no holder
+  probed, unlike the "genuinely waited out a foreign holder" case this
+  same member already covers.
+- Otherwise the derived, positive ceiling is passed to `_land_lock` as its
+  `timeout`, and everything downstream is unchanged -- a short wait
+  followed by a lock acquire with budget to spare still completes exactly
+  as before; this is not a blanket "refuse every contended land".
+
+Absent `FROB_LAND_DEADLINE_S` (every caller before T-2774, and any caller
+that never opts in), `_resolve_land_lock_wait_budget_s` returns
+`_LAND_LOCK_TIMEOUT_S` unchanged -- no regression for a caller that does
+not declare a deadline. A non-numeric value is logged and treated the same
+as absent, rather than bricking landing on a malformed opt-in.
+
 ## Root checkout write guard (T-1779)
 
 T-1619 (above) closed the ledger-COMMIT race between `land()` and every
