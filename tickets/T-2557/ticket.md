@@ -104,7 +104,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9b6c83d0a74cf3e638b6cf71dfe9e700960c12ce
 ---
 Found by walking into the state, not by reading code: T-2377 sat
 `state: in-progress` with `scope: []` for roughly an hour, holding a
