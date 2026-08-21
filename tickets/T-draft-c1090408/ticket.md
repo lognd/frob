@@ -24,7 +24,6 @@ scope:
 - src/frob/gates/_sys_selfaudit.py
 - src/frob/gates/_testing_schema.py
 - src/frob/gates/_toplevel_scalar_schema.py
-- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +31,12 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: src/frob/gates/_tickets_gate.py
+  reason: T-2557 holds a live cross-worktree lease on this file; excluded to avoid
+    collision
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_waive.py
   reason: T-2557 holds a live cross-worktree lease on this file; excluded to avoid
     collision
   actor: logan
