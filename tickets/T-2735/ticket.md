@@ -1,7 +1,7 @@
 ---
 id: T-2735
 title: Document T-2721's git-tracked/mirrored waive-audit watermark in docs/modules/app.md
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-20'
@@ -17,10 +17,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/app.md
+- src/frob/gates/_waive_audit_watermark.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_waive_audit_watermark.py
+  reason: closing T-2735 requires re-pointing the AFFECT001 waiver that cites it as
+    a live tracker (registry LiveTrackerCited refusal)
+  actor: logan
+  at: '2026-08-20'
+evidence:
+- cmd:python3 -c "import sys,pathlib;t=pathlib.Path('docs/modules/app.md').read_text();ok='waive-audit-watermark.json'
+  in t and 'GIT-TRACKED' in t.upper();print('watermark section documents git-tracked
+  location:', ok);sys.exit(0 if ok else 1)" exit=0 sha256=3ce2ada25ec3
 designated_repro_test: null
 threat: null
 component: null

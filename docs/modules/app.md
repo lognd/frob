@@ -454,13 +454,52 @@ ticket inflow. T-2467 reshaped it into a periodic, watermark-scoped pass:
 
 - `frob.gates._waive_audit_watermark` -- persisted progress marker.
   `WaiveAuditWatermark` (`commit_sha`, `audited_at`, `waivers_audited`,
-  `catchup_remaining`, `catchup_covered`) round-trips through `.frob/
-  waive-audit-watermark.json` via `load_watermark`/`save_watermark`, both
-  returning a typani `Result` keyed on `WaiveAuditWatermarkError`
+  `catchup_remaining`, `catchup_covered`) round-trips through
+  `waive-audit-watermark.json` via `load_watermark`/`save_watermark`,
+  both returning a typani `Result` keyed on `WaiveAuditWatermarkError`
   (`NotFound` vs `Malformed` vs `WriteFailed` -- kept distinct so a
   genuinely unreadable watermark is never treated as "never audited").
   `watermark_path`/`utc_now` are the two small seams (path resolution,
-  injectable clock) the rest of the module builds on. T-2485:
+  injectable clock) the rest of the module builds on.
+  **T-2721: this file is GIT-TRACKED, deliberately, not `.frob/`
+  scratch.** It used to live at `.frob/waive-audit-watermark.json` --
+  since `.frob/` is repo-gitignored, that state was per-checkout only,
+  and agents run this audit from DISPOSABLE worktrees
+  (`.claude/worktrees/<id>`) that get deleted on cleanup. This was
+  caught live, not theoretically: T-1614's own first pass classified 100
+  waiver directives inside a worktree; the primary checkout's own copy
+  of the watermark was simply ABSENT, `waive-audit scan` from the
+  primary reported `not_covered=967` before the worktree's file was
+  copied across by hand and `not_covered=867` after -- proof the 100
+  classifications were genuinely gone from everywhere the fleet actually
+  looks, and silently so (nothing warned that progress was about to be
+  discarded; the next scan would simply have re-reported the old
+  denominator). A periodic, incremental audit over a large backlog only
+  works if progress accumulates ACROSS passes -- a gitignored,
+  per-checkout watermark defeated that on every single agent-run pass.
+  The fix moved the watermark to a plain file at the repo ROOT
+  (`waive-audit-watermark.json`, `.gitignore`'s `!`-negated the same way
+  `rapid-debt.jsonl` already is) and made `save_watermark` commit it --
+  in `root` itself, and, when `root` is a worktree, ALSO mirror-and-
+  commit it onto the primary checkout immediately (reusing `frob.
+  tickets._land._resolve_primary_checkout`/`frob.tickets._leases.
+  refuse_if_land_in_progress`, the same primitives `frob.app.
+  ticket_runner._ledger_mirror`'s T-2563 worktree-ledger-mirror shape
+  already established for exactly this "a worktree edit must be visible
+  fleet-wide immediately, not only once its ticket lands" need).
+  `waive-audit` is `NOT_TICKET_SCOPED` in `LEDGER_VERB_STRATEGY`, so
+  without this mirror a worktree's watermark commit would never reach
+  `main` on its own at all, even after that worktree's ticket eventually
+  lands. Both halves (commit in `root`, mirror onto `primary`) are
+  best-effort and never raise: a git/lock failure degrades to a loud
+  `_log.error` (matching `_ledger_mirror._log_mirror_unavailable`'s
+  posture) rather than failing the audit pass -- the watermark write to
+  disk already succeeded by that point, and refusing the call would
+  throw away real, already-computed audit progress over a git plumbing
+  hiccup. **Do not "clean this up" back into `.frob/` or `.gitignore`**
+  -- that reintroduces exactly the silent-loss failure mode this section
+  documents; if the root-level file feels like clutter, the fix is a
+  better location for tracked state, never an untracked one. T-2485:
   `catchup_covered` is the set of `"file:line:rule"` waiver identities
   (`_waiver_identity` in the runner module) a BANKED PARTIAL catch-up
   pass has already reviewed -- it lets the next bounded scan's window
