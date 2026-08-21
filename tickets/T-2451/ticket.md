@@ -46,7 +46,7 @@ anchor_reason: 'Permanent WIRE001 follow_up anchor for frob.process._reap._sigte
   it would orphan the citation (LiveTrackerCited, T-1853''s precedent).
 
   '
-land_commit: null
+land_commit: 09cbeb11b07e54d60cd6e3976a63bb96cfa053d6
 ---
 `frob.process._reap._sigterm_handler` is genuinely wired -- passed as the
 handler argument to `signal.signal(sigterm, _sigterm_handler)` in
