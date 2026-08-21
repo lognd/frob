@@ -1,7 +1,7 @@
 ---
 id: T-2799
 title: wire frob_core.py_function_metrics into archgate's per-function metrics walk
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -18,10 +18,19 @@ scope:
 - tests/unit/test_arch_python_native.py
 - tests/unit/test_arch.py
 - docs/audits/perf.md
+- docs/modules/arch.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/arch.md
+  reason: 'AFFECT001: T-2799''s new symbols (_native_metrics_available/_native_metrics_by_span/_py_collect_catches_and_subscripts/_events_from_native)
+    fall in NormalizedModule''s affects-closure; documenting the native dispatch there
+    closes the finding'
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
