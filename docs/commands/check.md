@@ -99,6 +99,20 @@ def available_stages() -> list[str]
 
 ## Python mode
 
+Before any stage runs, two synchronous fail-closed prechecks run once (not
+concurrently with any stage): a `DERIVED001` corrupt-derived-artifact check,
+and a `NATIVE001` native-staleness check (T-2764) -- `frob.check.
+_native_staleness_result` reuses the SAME rebuild-then-recheck logic
+`frob.gates.run_gates`'s own gates-stage self-heal already uses (T-1213):
+a stale native is rebuilt in place and reported only if it is STILL stale
+afterward (no toolchain, auto-rebuild disabled via `FROB_NO_NATIVE_
+AUTOREBUILD`/`natives_auto_rebuild = false`, or a genuine build failure).
+This closes a real workflow-parity gap with `make check`'s separate
+`check_native_staleness_or_exit` pre-step: previously, a `--skip-gates`
+run or an `--only` selection that never reached the `gates` stage had NO
+staleness guard at all, since the self-heal only ever ran from inside
+that one stage.
+
 Runs in order:
 1. `ruff check` -- lint errors
 2. `ruff format --check` -- format violations

@@ -571,6 +571,54 @@ class TestDerivedStateIntegrityGate:
         assert _derived_state_integrity_result(tmp_path) is None
 
 
+class TestNativeStalenessResult:
+    """T-2764: `frob check` on its own (no Makefile) must not silently run
+    a stage against a stale native -- `make check` has always guarded this
+    via a separate `check_native_staleness_or_exit` pre-step, but the
+    frob-native `check` entrypoint had no equivalent outside the gates
+    stage's own self-heal, which never runs at all for a `--skip-gates`/
+    `--only` selection that never reaches it.
+
+    Both directions of the positive control live here: a stale native
+    that a rebuild cannot fix must fail closed (`code == "NATIVE001"`);
+    a native that was never stale to begin with must not be treated as a
+    violation at all -- a guard that always fires is as useless as one
+    that never does."""
+
+    def test_stale_native_fails_closed_when_rebuild_cannot_fix_it(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_native_staleness_result kind="unit"
+        monkeypatch.setattr(
+            "frob.strata.stale_natives", lambda root: ("not-empty-sentinel",)
+        )
+        monkeypatch.setattr("frob.gates._native_autorebuild_disabled", lambda root: True)
+        monkeypatch.setattr(
+            "frob.strata.stale_native_warning",
+            lambda root: "strata_core is stale: rebuild with `frob natives build`",
+        )
+
+        from frob.check import _native_staleness_result
+
+        result = _native_staleness_result(tmp_path)
+
+        assert result is not None
+        assert result.tool == "native-staleness"
+        assert result.exit_code != 0
+        assert any(d.code == "NATIVE001" for d in result.diagnostics)
+        assert "strata_core" in result.summary
+
+    def test_fresh_native_is_not_a_violation(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/check/__init__.py::_native_staleness_result kind="unit"
+        monkeypatch.setattr("frob.strata.stale_natives", lambda root: ())
+
+        from frob.check import _native_staleness_result
+
+        assert _native_staleness_result(tmp_path) is None
+
+
 class TestRunGatesDelta:
     """T-0095: --delta filters to violations new since .frob/baseline."""
 

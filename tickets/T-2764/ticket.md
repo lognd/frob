@@ -2,7 +2,7 @@
 id: T-2764
 title: frob check does not run check_native_staleness_or_exit; make check does (workflow-parity
   gap)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -44,6 +44,9 @@ scope_changes:
   reason: unit tests for the new _native_staleness_result precheck
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_check.py::TestNativeStalenessResult::test_stale_native_fails_closed_when_rebuild_cannot_fix_it
+- tests/unit/test_check.py::TestNativeStalenessResult::test_fresh_native_is_not_a_violation
 designated_repro_test: null
 threat: null
 component: null

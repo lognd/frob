@@ -62,6 +62,61 @@ _TOOL_STAGES = frozenset(
 )
 
 
+# frob:ticket T-2764
+# frob:tests tests/unit/test_check.py::TestNativeStalenessResult.test_stale_native_fails_closed_when_rebuild_cannot_fix_it  # noqa: E501
+# frob:tests tests/unit/test_check.py::TestNativeStalenessResult.test_fresh_native_is_not_a_violation  # noqa: E501
+def _native_staleness_result(root: Path) -> ToolResult | None:
+    """T-2764: `uv run frob check` used to have NO equivalent of `make
+    check`'s separate `check_native_staleness_or_exit` pre-step (T-0248) --
+    the gates stage self-heals a stale native in place
+    (`frob.gates._maybe_autorebuild_natives`, T-1213), but that self-heal
+    only runs when the `gates` stage itself is selected; a `--skip-gates`
+    run, or an `--only` selection that never reaches `gates`, silently ran
+    ruff/ty/etc. against a stale native with no warning at all -- a real
+    workflow-parity gap between the two entry points, not merely a naming
+    one (found while working T-2245, filed as T-2764).
+
+    Decision (T-2764): `frob check` SHOULD enforce this, unconditionally,
+    the same way `make check` does -- but without regressing T-1213's
+    self-heal improvement. This reuses the EXACT SAME rebuild-then-recheck
+    machinery the gates stage already uses (`frob.gates.
+    _native_autorebuild_disabled` + `frob.natives._build.build_natives`,
+    not reimplemented here) so a stale-but-rebuildable native is fixed
+    silently regardless of which stages are selected, and only reports a
+    hard failure -- mirroring `make check`'s fail-closed posture -- when
+    staleness remains after that attempt (auto-rebuild disabled, no
+    toolchain, or a genuine build failure). `None` when nothing is stale
+    to begin with, matching `_derived_state_integrity_result`'s own
+    fail-open-when-healthy contract just above."""
+    from frob.gates import _native_autorebuild_disabled
+    from frob.strata import stale_native_warning, stale_natives
+
+    if not stale_natives(root):
+        return None
+    if not _native_autorebuild_disabled(root):
+        from frob.natives._build import build_natives
+
+        built = build_natives(root)
+        if built.is_ok and built.danger_ok.ok and not stale_natives(root):
+            return None
+    warning = stale_native_warning(root)
+    if warning is None:
+        return None
+    return ToolResult(
+        tool="native-staleness",
+        exit_code=1,
+        diagnostics=[
+            Diagnostic(
+                file=str(root),
+                severity="error",
+                code="NATIVE001",
+                message=f"NATIVE001: {warning}",
+            )
+        ],
+        summary=f"native-staleness FAILED: {warning}",
+    )
+
+
 # frob:ticket T-0603
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
@@ -690,6 +745,14 @@ def _run_check_with_skips(
         integrity_failure = _derived_state_integrity_result(root)
         if integrity_failure is not None:
             return CheckResult(path=str(root), results=[integrity_failure])
+
+        # T-2764: same posture as the integrity precheck just above --
+        # run once, synchronously, before any stage (including a
+        # `--skip-gates`/`--only` selection that never reaches the gates
+        # stage's own self-heal) can silently run against a stale native.
+        staleness_failure = _native_staleness_result(root)
+        if staleness_failure is not None:
+            return CheckResult(path=str(root), results=[staleness_failure])
 
         # T-0414: fresh parse-cache instrumentation per invocation (see
         # `frob.lang.reset_parse_cache`'s docstring) -- correctness never
