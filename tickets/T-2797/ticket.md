@@ -2,7 +2,7 @@
 id: T-2797
 title: extend the parse-artifact disk cache to persist extract()'s output, not just
   the raw parse
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -64,3 +64,6 @@ profile (perf and dead_symbols sections) this ticket is drawn from.
 
 ## Failure log
 - 2026-08-21 attempt 1: premise falsified: _parse_file_with_artifact_cache (T-1464) already persists extract()'s full ParsedFile output to disk, tested and confirmed working (27.25s warm vs 42.69s cold dead_symbols); remaining redundancy is a build_graph-runs-before-cache-stamp + concurrent-wave-race issue in src/frob/gates/__init__.py, outside this ticket's lang/__init__.py-only scope -- filed as T-2806
+
+## Drop reason
+- 2026-08-21: premise already satisfied by T-1464 (archived done): _parse_file_with_artifact_cache in src/frob/lang/__init__.py already persists the full ParsedFile -- symbols and comments, i.e. extract()'s complete output -- to .frob/parse-artifacts.db keyed on (content_hash, fingerprint), and tests/unit/test_lang_artifact_cache.py::TestParseFileArtifactCache::test_hit_skips_extract already proves a hit never reaches extract(). Measured 2026-08-21 (unbudgeted, FROB_NO_GATE_CACHE=1): dead_symbols cold 42.69s vs warm 27.25s, a 36 percent cut, confirming the mechanism works when not racing. The REAL remaining redundancy is out of this ticket's scope: build_graph runs in _load_inputs BEFORE _stamp_worker_parse_artifact_cache_env sets FROB_PARSE_ARTIFACT_CACHE, so it never warms the shared cache, and perf/dead_symbols then race in the same pool wave. That is filed as T-2806. Dropped rather than requeued because an already-satisfied premise returning to queued makes the ticket a treadmill. (absorbed by T-1464)
