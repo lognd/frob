@@ -39,6 +39,7 @@ from frob.tickets._models import (
     TicketQueue,
     TicketState,
     TicketTier,
+    over_broad_literal_globs,
     scope_overlap,
     scope_overlap_globs,
 )
@@ -464,19 +465,31 @@ def _entry_to_glob(entry: str) -> str:
 # already carries the same docs/modules/tickets.md#public-api anchor
 # (COV007).
 def _over_broad_scope_entries(
-    scope: Sequence[str], threshold: int, files: Sequence[str]
+    scope: Sequence[str],
+    threshold: int,
+    files: Sequence[str],
+    literal_globs: frozenset[str] = OVER_BROAD_LITERAL_GLOBS,
 ) -> tuple[str, ...]:
     """Declared scope entries of `scope` that are over-broad (T-0453): a
-    named chronically-broad glob (`OVER_BROAD_LITERAL_GLOBS`) unconditionally,
-    or one matching more of `files` than `threshold`. `LEDGER_PATH` is never
+    named chronically-broad glob (`literal_globs`) unconditionally, or one
+    matching more of `files` than `threshold`. `LEDGER_PATH` is never
     flagged (every ticket implicitly leases it).
+
+    T-2771: `literal_globs` defaults to the repo-convention-only
+    `OVER_BROAD_LITERAL_GLOBS` for backward compatibility, but every real
+    caller in this module passes `over_broad_literal_globs(root)` instead
+    (repo-convention literals UNIONED with `root`'s own package-prefix
+    globs) so the chronically-broad nudge also fires on a sibling repo's
+    own package prefix, not just this repo's `src/frob/**`.
 
     Takes a PRECOMPUTED `(threshold, files)` pair (`scope_breadth_context`)
     rather than a `root` to walk -- this is the hot inner loop callers run
     once per candidate x holder pair, and re-deriving `files` (a `git
     ls-files`/tree-walk) on every call is exactly the T-0453 perf bug
     (`frob ticket doable` taking minutes on this repo's real worktree
-    count) this signature avoids.
+    count) this signature avoids. `literal_globs` itself is still cheap
+    to derive once per call site (one `pyproject.toml` read), unlike
+    `files`.
 
     THE single breadth criterion both `large_glob_warnings` (nudge the
     ticket author to narrow it) and `leased_by` (an over-broad in-progress
@@ -491,7 +504,7 @@ def _over_broad_scope_entries(
     for entry in scope:
         if entry == LEDGER_PATH:
             continue
-        if entry in OVER_BROAD_LITERAL_GLOBS:
+        if entry in literal_globs:
             broad.append(entry)
             continue
         # fnmatch.filter translates the glob ONCE and matches all files in
@@ -531,9 +544,12 @@ def large_glob_warnings(
     per-file collisions under those trees.
     """
     threshold, files = breadth if breadth is not None else scope_breadth_context(root)
+    literal_globs = over_broad_literal_globs(root)
     warnings: list[str] = []
-    for entry in _over_broad_scope_entries(ticket.scope, threshold, files):
-        if entry in OVER_BROAD_LITERAL_GLOBS:
+    for entry in _over_broad_scope_entries(
+        ticket.scope, threshold, files, literal_globs
+    ):
+        if entry in literal_globs:
             warnings.append(
                 f"{ticket.id} scope {entry!r} is a chronically over-broad "
                 "glob -- narrow it to the specific files this ticket "
@@ -640,7 +656,14 @@ def _leased_by_one_holder(
     effective_scope = holder_scope
     if breadth is not None:
         threshold, files = breadth
-        broad = frozenset(_over_broad_scope_entries(holder_scope, threshold, files))
+        literal_globs = (
+            over_broad_literal_globs(root)
+            if root is not None
+            else OVER_BROAD_LITERAL_GLOBS
+        )
+        broad = frozenset(
+            _over_broad_scope_entries(holder_scope, threshold, files, literal_globs)
+        )
         effective_scope = tuple(s for s in holder_scope if s not in broad)
         if not effective_scope:
             return None
@@ -1169,7 +1192,7 @@ def _ticket_directive_marker(ticket_id: str) -> str:
 
 # frob:ticket T-1744
 def _narrow_scope_files(
-    ticket: Ticket, threshold: int, files: tuple[str, ...]
+    ticket: Ticket, root: Path, threshold: int, files: tuple[str, ...]
 ) -> tuple[str, ...]:
     """Files under `ticket`'s declared scope, EXCLUDING any glob entry
     `_over_broad_scope_entries` flags (T-1744): `already_landed_markers`
@@ -1177,12 +1200,14 @@ def _narrow_scope_files(
     `src/**`-shaped over-broad glob matches for one ticket's marker would
     be noise, not signal -- the same T-0453 design-correction discipline
     `leased_by`'s over-broad demotion already applies, reused here rather
-    than duplicated."""
+    than duplicated. T-2771: `root` is now required (was just `ticket`/
+    `threshold`/`files`) to derive `over_broad_literal_globs(root)`."""
+    literal_globs = over_broad_literal_globs(root)
     kept: list[str] = []
     for entry in ticket.scope:
         if entry == LEDGER_PATH:
             continue
-        if _over_broad_scope_entries([entry], threshold, files):
+        if _over_broad_scope_entries([entry], threshold, files, literal_globs):
             continue
         kept.extend(fnmatch.filter(files, _entry_to_glob(entry)))
     return tuple(kept)
@@ -1238,7 +1263,7 @@ def already_landed_markers(
     hits: list[Ticket] = []
     for ticket in _doable_candidates(queue, root):
         needle = _ticket_directive_marker(ticket.id)
-        for rel in _narrow_scope_files(ticket, threshold, files):
+        for rel in _narrow_scope_files(ticket, root, threshold, files):
             path = root / rel
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")

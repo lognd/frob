@@ -96,6 +96,19 @@ attachments:
 
 ## Public API
 
+T-2771: `_models.OVER_BROAD_LITERAL_GLOBS` no longer hardcodes this repo's
+own `src/frob/**`/`src/frob/` package-prefix globs -- it holds only the
+repo-CONVENTION literals (`tests/**`/`docs/`). `large_glob_warnings` and
+`already_landed_markers` (via `_over_broad_scope_entries`) now call
+`_models.over_broad_literal_globs(root)` instead, which UNIONS those
+convention literals with `root`'s own package-prefix globs derived from
+`frob.lang.declared_source_prefixes` -- so the chronically-over-broad
+nudge fires on a sibling repo's OWN package (e.g. `src/lograder/**`), not
+just this repo's. A `root` whose package name cannot be resolved from
+`pyproject.toml` falls back to the convention-literals-only set
+(UNRESOLVED, logged distinctly, never silently "this project has none").
+
+<!-- frob:describes src/frob/tickets/_models.py::over_broad_literal_globs -->
 <!-- frob:describes src/frob/tickets/_archive.py::load_queue -->
 <!-- frob:describes src/frob/tickets/_new_renumber.py::new_ticket -->
 <!-- frob:describes src/frob/tickets/_doable.py::doable -->

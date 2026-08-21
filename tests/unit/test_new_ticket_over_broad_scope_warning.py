@@ -27,7 +27,23 @@ from frob.tickets import load_queue
 from frob.tickets._models import TicketState
 
 
+# frob:ticket T-2771
+def _write_frob_pyproject(tmp_path: Path) -> None:
+    """`pyproject.toml` declaring `tmp_path` as (a copy of) the `frob`
+    project with a src-layout `[tool.setuptools]` block -- T-2771:
+    `src/frob/**` is no longer a repo-agnostic hardcoded literal in
+    `OVER_BROAD_LITERAL_GLOBS`, it is derived per-project from
+    `frob.lang.declared_source_prefixes`, so any fixture exercising that
+    literal against a bare `tmp_path` needs this declared first."""
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "frob"\n\n'
+        '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
+        encoding="utf-8",
+    )
+
+
 # frob:ticket T-2123
+# frob:ticket T-2771
 class TestWarnOverBroadScopeOnNew:
     """Acceptance: a mega-glob scope warns loudly at `frob ticket new`
     filing time, an acknowledged one stays silent, and a precisely-scoped
@@ -36,6 +52,7 @@ class TestWarnOverBroadScopeOnNew:
     instead of start time."""
 
     # frob:ticket T-2123
+    # frob:ticket T-2771
     def test_over_broad_scope_warns_at_filing_time(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -43,7 +60,14 @@ class TestWarnOverBroadScopeOnNew:
         """(MUST FAIL FIRST on main): filing a ticket with a chronically
         over-broad literal scope glob (`src/frob/**`) must warn at FILING
         time -- fails today: `frob ticket new` accepts it with no such
-        warning."""
+        warning.
+
+        T-2771: `src/frob/**` is no longer a repo-agnostic hardcoded
+        literal -- it is derived from `root`'s OWN declared package, so
+        `tmp_path` needs a pyproject.toml declaring itself as (a copy of)
+        the `frob` project for this fixture to still exercise the same
+        scenario."""
+        _write_frob_pyproject(tmp_path)
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,
@@ -122,6 +146,7 @@ class TestWarnOverBroadScopeOnNew:
         assert "CATASTROPHICALLY" not in caplog.text
 
     # frob:ticket T-2123
+    # frob:ticket T-2771
     def test_severity_scales_with_a_catastrophic_match_count(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
@@ -131,7 +156,11 @@ class TestWarnOverBroadScopeOnNew:
         chronically-broad glob, an automatic full-repo match) logs at
         ERROR with an explicit 'CATASTROPHICALLY' summary line, not just
         an ordinary WARNING indistinguishable from a merely-a-bit-broad
-        one."""
+        one.
+
+        T-2771: see `test_over_broad_scope_warns_at_filing_time` -- same
+        pyproject.toml fixture requirement."""
+        _write_frob_pyproject(tmp_path)
         cfg = AppConfig(
             ticket_command="new",
             ticket_path=tmp_path,

@@ -1,7 +1,7 @@
 ---
 id: T-2771
 title: retarget OVER_BROAD_LITERAL_GLOBS off hardcoded src/frob/ literal in tickets/_models.py
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -53,6 +53,13 @@ scope_changes:
     own frob:doc target'
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_derives_package_prefix_for_a_differently_named_project
+- tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_this_repos_own_src_frob_globs_are_unchanged
+- tests/test_tickets_lease.py::TestOverBroadLiteralGlobs::test_unresolved_package_name_falls_back_to_repo_convention_literals
+- tests/test_tickets_lease.py::TestLeasedBy::test_over_broad_lease_demotes_to_warn_only
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_over_broad_scope_warns_at_filing_time
+- tests/unit/test_new_ticket_over_broad_scope_warning.py::TestWarnOverBroadScopeOnNew::test_severity_scales_with_a_catastrophic_match_count
 designated_repro_test: null
 threat: null
 component: null

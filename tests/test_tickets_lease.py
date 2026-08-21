@@ -94,6 +94,7 @@ class TestScopeOverlap:
         assert scope_overlap(scope_a, scope_b) is False
 
 
+# frob:ticket T-2771
 class TestLeasedBy:
     def test_precise_in_progress_does_not_hide_disjoint(self) -> None:
         # frob:tests \
@@ -134,6 +135,7 @@ class TestLeasedBy:
         assert hits
         assert hits[0][0] == "T-1000"
 
+    # frob:ticket T-2771
     def test_over_broad_lease_demotes_to_warn_only(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_tickets_lease.py::TestLeasedBy.test_over_broad_lease_demotes_to_wa\
@@ -151,6 +153,17 @@ class TestLeasedBy:
         # sound, undemoted check (no root): the over-broad lease really
         # does overlap -- this must stay a real collision.
         assert leased_by(queue, candidate) != ()
+        # T-2771: "src/frob/**" is no longer a repo-agnostic literal --
+        # the demotion now derives from `root`'s OWN declared package
+        # prefix, so `tmp_path` needs a pyproject.toml declaring it is
+        # (a copy of) the `frob` project for this fixture to still
+        # exercise the same scenario the hardcoded literal used to cover
+        # unconditionally.
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\n\n'
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
+            encoding="utf-8",
+        )
         # with a repo root, the named-over-broad lease demotes to
         # warn-only rather than hard-blocking the whole queue.
         assert leased_by(queue, candidate, tmp_path) == ()
@@ -312,6 +325,64 @@ class TestLargeGlobWarnings:
         warnings = large_glob_warnings(ticket, tmp_path)
         assert warnings
         assert "matches 2 files" in warnings[0]
+
+
+# frob:ticket T-2771
+class TestOverBroadLiteralGlobs:
+    """T-2771: `OVER_BROAD_LITERAL_GLOBS` used to hardcode `src/frob/**`/
+    `src/frob/` -- silently inert in any sibling repo whose own package
+    is not named `frob`. `over_broad_literal_globs(root)` derives the
+    package-prefix entries per-project instead."""
+
+    def test_derives_package_prefix_for_a_differently_named_project(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_p\
+        # refix_for_a_differently_named_project
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "lograder"\n\n'
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "src" / "lograder").mkdir(parents=True)
+        (tmp_path / "src" / "lograder" / "__init__.py").write_text("", encoding="utf-8")
+        ticket = _ticket(ticket_id="T-2005", scope=("src/lograder/**",))
+        # Before T-2771 this glob was never in OVER_BROAD_LITERAL_GLOBS and
+        # was far too small to trip the file-count threshold, so it was a
+        # true silent pass -- must NOW fire.
+        warnings = large_glob_warnings(ticket, tmp_path)
+        assert warnings
+        assert "chronically over-broad" in warnings[0]
+
+    def test_this_repos_own_src_frob_globs_are_unchanged(self, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_sr\
+        # c_frob_globs_are_unchanged
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "frob"\n\n'
+            '[tool.setuptools]\npackages = { find = { where = ["src"] } }\n',
+            encoding="utf-8",
+        )
+        (tmp_path / "src" / "frob").mkdir(parents=True)
+        (tmp_path / "src" / "frob" / "__init__.py").write_text("", encoding="utf-8")
+        ticket = _ticket(ticket_id="T-2006", scope=("src/frob/**",))
+        warnings = large_glob_warnings(ticket, tmp_path)
+        assert warnings
+        assert "chronically over-broad" in warnings[0]
+
+    def test_unresolved_package_name_falls_back_to_repo_convention_literals(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_unresolved_packag\
+        # e_name_falls_back_to_repo_convention_literals
+        from frob.tickets._models import OVER_BROAD_LITERAL_GLOBS, over_broad_literal_globs
+
+        # No pyproject.toml at all -- UNRESOLVED, not "this project has
+        # none": falls back to the repo-convention-only literals rather
+        # than silently matching nothing.
+        assert over_broad_literal_globs(tmp_path) == OVER_BROAD_LITERAL_GLOBS
 
 
 # frob:ticket T-0803

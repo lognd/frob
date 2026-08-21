@@ -549,16 +549,60 @@ def scope_overlap(scope_a: Sequence[str], scope_b: Sequence[str]) -> bool:
 # declares `tests/**` and/or `docs/`) -- flagged unconditionally by
 # `large_glob_warnings`, before the file-count threshold is even
 # consulted, as a nudge to narrow to the precise files a ticket touches.
+#
+# T-2771: the package-prefix entries used to be hardcoded here as
+# `"src/frob/**"`/`"src/frob/"` -- correct for THIS repo, but silently
+# inert for any sibling repo whose own package is not named `frob` (the
+# exact silent-pass shape T-2384 names): a ticket declaring
+# `src/lograder/**` there never got this nudge. This frozenset now holds
+# only the repo-CONVENTION literals (`tests/**`/`docs/` are directory
+# names, not project identity); the package-prefix entries are derived
+# per-`root` by `over_broad_literal_globs` below instead, via the shared
+# `frob.lang.declared_source_prefixes` resolver (T-2195/T-2389) -- do not
+# hand-roll a second one.
 OVER_BROAD_LITERAL_GLOBS = frozenset(
     {
         "tests/**",
         "tests/",
-        "src/frob/**",
-        "src/frob/",
         "docs/",
         "docs/**",
     }
 )
+
+
+# frob:ticket T-2771
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_derives_package_prefix_for_a_differently_named_project  # noqa: E501
+# frob:tests tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_this_repos_own_src_frob_globs_are_unchanged  # noqa: E501
+def over_broad_literal_globs(root: Path) -> frozenset[str]:
+    """`OVER_BROAD_LITERAL_GLOBS` (the repo-convention literals) UNIONED
+    with `root`'s own package-prefix globs (`"<prefix>**"`/`"<prefix>"`
+    for every `frob.lang.declared_source_prefixes(root)` entry) -- the
+    T-2771 fix that lets `large_glob_warnings`/`_over_broad_scope_entries`
+    flag a chronically-broad scope glob over a sibling repo's OWN package
+    (e.g. `src/lograder/**`), not just this repo's `src/frob/**`.
+
+    `declared_source_prefixes` returning `()` (package name unresolved
+    from `pyproject.toml`) is logged distinctly at WARNING rather than
+    silently collapsing into "no package-prefix globs to add" looking
+    identical to a project that genuinely has none -- an UNRESOLVED
+    denominator is a different claim than a real empty result (T-2391
+    fail-loudly doctrine, same discipline T-2772 used for this exact
+    resolver)."""
+    from frob.lang import declared_source_prefixes
+
+    prefixes = declared_source_prefixes(root)
+    if not prefixes:
+        _log.warning(
+            "over_broad_literal_globs: %s's own source prefix could not "
+            "be resolved from pyproject.toml [project].name -- no "
+            "package-prefix globs added (UNRESOLVED, not 'this project "
+            "has none')",
+            root,
+        )
+        return OVER_BROAD_LITERAL_GLOBS
+    package_globs = {f"{prefix}**" for prefix in prefixes} | set(prefixes)
+    return OVER_BROAD_LITERAL_GLOBS | package_globs
 
 
 # frob:ticket T-0398

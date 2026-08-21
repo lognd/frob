@@ -876,7 +876,7 @@ def _warn_over_broad_scope_on_new(root: Path, ticket: Ticket) -> None:
     warnings = large_glob_warnings(ticket, root, breadth=(threshold, files))
     if not warnings:
         return
-    worst_multiple = _worst_over_broad_multiple(ticket, threshold, files)
+    worst_multiple = _worst_over_broad_multiple(ticket, root, threshold, files)
     catastrophic = (
         worst_multiple is not None and worst_multiple >= _CATASTROPHIC_SCOPE_MULTIPLE
     )
@@ -912,22 +912,26 @@ _CATASTROPHIC_SCOPE_MULTIPLE = 10
 
 # frob:ticket T-2123
 def _worst_over_broad_multiple(
-    ticket: Ticket, threshold: int, files: tuple[str, ...]
+    ticket: Ticket, root: Path, threshold: int, files: tuple[str, ...]
 ) -> float | None:
     """The largest `matched / threshold` ratio across `ticket`'s over-broad
     scope entries (`_over_broad_scope_entries`), or `None` if none are
     over-broad -- `_warn_over_broad_scope_on_new`'s severity-scaling input.
-    A chronically-broad LITERAL glob (`OVER_BROAD_LITERAL_GLOBS`) counts as
-    its own full match set size, matching `large_glob_warnings`'s own
-    per-entry match-count computation for that case."""
+    A chronically-broad LITERAL glob (`over_broad_literal_globs(root)`,
+    T-2771: was the repo-agnostic `OVER_BROAD_LITERAL_GLOBS` constant)
+    counts as its own full match set size, matching `large_glob_warnings`'s
+    own per-entry match-count computation for that case."""
     import fnmatch
 
     from frob.tickets._doable import _entry_to_glob, _over_broad_scope_entries
-    from frob.tickets._models import OVER_BROAD_LITERAL_GLOBS
+    from frob.tickets._models import over_broad_literal_globs
 
+    literal_globs = over_broad_literal_globs(root)
     worst = 0.0
-    for entry in _over_broad_scope_entries(ticket.scope, threshold, files):
-        if entry in OVER_BROAD_LITERAL_GLOBS:
+    for entry in _over_broad_scope_entries(
+        ticket.scope, threshold, files, literal_globs
+    ):
+        if entry in literal_globs:
             # Chronically over-broad by definition (T-0453 DESIGN
             # CORRECTION), regardless of the CURRENT repo's file count --
             # a genuinely empty/tiny fixture repo must not read as "not

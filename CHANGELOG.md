@@ -243,6 +243,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2764: frob check does not run check_native_staleness_or_exit; make check does (workflow-parity gap)
 - T-2766: docs/modules/arch.md severity table stale: ARCH101/ARCH102 listed as warning, frob.toml overrides to error
 - T-2770: frob ticket has no parent setter, so a mis-parented ticket cannot be corrected without a forbidden ledger hand-edit
+- T-2771: retarget OVER_BROAD_LITERAL_GLOBS off hardcoded src/frob/ literal in tickets/_models.py
 - T-2772: retarget hardcoded src/frob glob in _new.py's related-check-function suggestion
 - T-2773: Reformat batch 1/N: 15 files pending ruff-format (T-2359 child)
 - T-2774: a contended land is SIGKILLed mid-work because the 500s lock-wait guard bounds only the wait, not wait+work against the caller's cap
