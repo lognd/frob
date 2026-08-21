@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c9b391f8fcd440711f41aed72694bc300153ad30
 ---
 T-2770 added "set-parent" to LEDGER_VERB_STRATEGY
 (src/frob/app/ticket_runner/_ledger_mirror.py) as GENERIC_COMMIT_MIRRORED,
