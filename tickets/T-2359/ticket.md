@@ -152,10 +152,6 @@ evidence:
 - tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch::test_finds_an_archived_close_title_match
 - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
 designated_repro_test: null
-acceptance:
-- text: given the repo after this lands, when ruff format --check . runs, then zero
-    files need reformatting
-  evidence: []
 acceptance_amendments:
 - op: remove
   index: 2
@@ -175,6 +171,15 @@ acceptance_amendments:
   new_text: null
   reason: 'batched execution: same rationale as index-2 removal, this criterion also
     assumes single-shot completion; re-added on the final batch'
+  actor: logan
+  at: '2026-08-20'
+- op: remove
+  index: 0
+  old_text: given the repo after this lands, when ruff format --check . runs, then
+    zero files need reformatting
+  new_text: null
+  reason: 'batched execution: same rationale; final-batch land will re-add a criterion
+    bound to a genuine repo-wide ruff-format-clean measurement'
   actor: logan
   at: '2026-08-20'
 threat: null
