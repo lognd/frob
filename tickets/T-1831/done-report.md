@@ -1,49 +1,46 @@
 ## Done report
 
-Same shape as T-1820: this is a WIRE001 follow_up anchor ticket (T-1856
-precedent), not a normal bug/feature fix. `_GroupedHelpFormatter` and its
-two callback methods (`_format_action`, `_format_grouped_subparsers`) in
-src/frob/__main__.py are genuinely wired -- passed as
-`formatter_class=_GroupedHelpFormatter` to the root argparse parser and
-invoked internally by argparse's own help-rendering machinery -- but the
-best-effort callgraph cannot trace a class-constructor-kwarg-then-
-internal-callback chain, so WIRE001 flags them as unreachable. There is
-no code to write; the code is already covered by
-tests/unit/test_main_entry.py::TestGroupedHelpFormatter.
+Re-verified this WIRE001 follow_up anchor after T-2746 (WIRE001's new
+property/attribute-access tracing, `_is_property`/`_PROPERTY_DECORATOR_
+RE`/`property_access_pattern` in src/frob/gates/_wire.py). That extension
+covers an `@property`-decorated method read via attribute syntax; it does
+not touch how the callgraph traces a class passed as a `formatter_class=`
+constructor kwarg and invoked internally by argparse's own help-rendering
+machinery, which lives entirely in the argparse stdlib, out of repo, and
+out of reach of the best-effort callgraph regardless of this extension.
+Disposition unchanged: (b) genuine blind spot, not detector-fixable.
 
-Work done:
-1. Added a short in-code note next to each of the three existing
-   `frob:waive WIRE001 follow_up="T-1831"` directives in
-   src/frob/__main__.py, pointing future readers at the anchor marker
-   and stating explicitly that this ticket must never reach a terminal
-   state.
-2. Set `Ticket.anchor=True` on T-1831 itself (`set_anchor`, T-1856).
-3. Requeued (in-progress -> queued), releasing the T-0473 cross-worktree
-   lease, same T-1778-documented workflow as T-1820.
+The three waivers in src/frob/__main__.py (lines 244, 264, 281) already
+state the mechanism, not just the rule name: `_GroupedHelpFormatter` is
+passed as `formatter_class=_GroupedHelpFormatter` to the root argparse
+parser, and its `_format_action`/`_format_grouped_subparsers` methods are
+invoked internally by argparse's own formatter protocol during help
+rendering -- never called directly by name from this repo's own code.
 
-Gate consumption: WIRE002 (`frob.gates._wire._wire002_violations`)
-mechanically requires T-1831 to resolve to a real ticket in
-`_OPEN_STATES` -- keeping it queued (never done/dropped) is what keeps
-the existing WIRE001 waivers passing WIRE002, not the prose alone. Lands
-via T-1874's anchor skip-close path (this ticket's own failure log,
-recorded in a prior attempt, is what the T-1818 legitimate-fail skip
-path already recognizes and publishes as-is).
+Positive control, both directions, measured directly:
+1. `frob check --only gates --no-cache` over the whole repo: zero WIRE001
+   findings in src/frob/__main__.py -- the existing waivers hold.
+2. Planted `_t1831_planted_dead_control` (a genuinely dead function, no
+   caller anywhere) at the end of src/frob/__main__.py, re-ran the same
+   check: WIRE001 fired on it immediately (`src/frob/__main__.py:771
+   WIRE001: ... is new in this diff and has no caller`). Confirms the
+   gate is not blinded on this file -- removed the plant before landing,
+   tree is clean.
 
-No code fix was made to "wire" anything -- it is already correctly
-wired; the callgraph's blind spot is the thing being documented, not a
-defect to patch.
+No code change: the waivers and anchor metadata are already correct on
+main. This ticket stays anchor=True/queued forever (T-1856): WIRE002
+requires a real, non-terminal ticket id as follow_up, and closing this
+ticket would orphan the three citations in src/frob/__main__.py.
 
-NOTE per the coordinator's caution: src/frob/__main__.py overlapped with
-T-1822's in-progress CLI-wiring grant (worktree runner-wiring). Merged
-main immediately before starting this ticket's edits (T-1822 had already
-landed by then) and again immediately before landing; no conflicting
-lines were encountered.
+Filed: none.
 
 ### Changed
 ```
- tickets/T-1831/ticket.md           |  9 +++++++--
- tickets/T-1884/ticket.md | 41 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 48 insertions(+), 2 deletions(-)
+ rapid-debt.jsonl              |  1 +
+ tickets/T-1831/ticket.md      |  2 +-
+ tickets/T-2451/done-report.md | 52 +++++++++++++++++++++++++++++++++++++++++++
+ tickets/T-2451/ticket.md      |  9 +++++++-
+ 4 files changed, 62 insertions(+), 2 deletions(-)
 ```
 
 ### Evidence
@@ -51,4 +48,5 @@ lines were encountered.
 
 ### Captured claims
 - tests: 1 passed (from 1 evidence id(s))
-- gates: unmeasured (no parsable gate-summary from a fresh check)
+- gates: 18 error(s), 837 warning(s), 708 waived
+- error-findings: CLAUDE001@.claude/hooks/sync-claude-config.py, COV001@src/frob/graph/callgraph.py, COV003@tickets/T-1688, COV003@tickets/T-2365, CYCLE001@src/frob/__init__.py, DOC001@docs/investigations/T-2202-mega-cluster.md, DOC006@docs/audits/test005-zero-classification-t1418.md, DRIFT001@src/frob/app/ticket_runner/_verify.py, DRIFT001@src/frob/tickets/__init__.py, DRIFT002@docs/modules/tickets-data-storage.md, PERF004@src/frob/tickets/_evidence.py, SEC110@src/frob/app/ticket_runner/_verify.py, SEC110@src/frob/app/verify_runner.py, SEC110@tests/test_release.py, SYS003@src/frob/check/__init__.py, TEST001@src/frob/strata/_multifile.py, TICK003@tickets.md, TICK004@tickets.md
