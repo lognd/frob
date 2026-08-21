@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 9211e4cf062b7899fe86521b1e6739ab3437fefe
 ---
 T-1654 audited the six files T-1433/T-1635 flagged as unaudited for the
 `build_graph(real repo root, ...)` xdist self-scan contention shape
