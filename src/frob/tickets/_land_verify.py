@@ -619,9 +619,7 @@ def _reverify_gate_findings_by_identity(
     # never narrowed to just the new shape, since a stale claim captured
     # before this fix must still be recognized as the same sentinel.
     sentinel_findings = [
-        (rule, file)
-        for rule, file in fresh_findings
-        if not rule or rule == "QUEUE001"
+        (rule, file) for rule, file in fresh_findings if not rule or rule == "QUEUE001"
     ]
     if sentinel_findings:
         _log.warning(

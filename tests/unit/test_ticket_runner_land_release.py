@@ -5,7 +5,6 @@ the real end-to-end path is covered by tests/test_ticket_land.py's
 `TestReleaseBump`/`TestRebuildNatives` against the library's injected
 callables)."""
 
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -51,9 +50,7 @@ class TestWriteReleaseBump:
     ) -> None:
         # frob:tests tests/unit/test_ticket_runner_land_release.py::TestWriteReleaseBump.test_rewrites_version_and_prepends_changelog_entry  # noqa: E501
         _write_repo_files(tmp_path)
-        monkeypatch.setattr(
-            "frob.gitio.run_argv", lambda argv, **kw: Ok(_FakeProc(0))
-        )
+        monkeypatch.setattr("frob.gitio.run_argv", lambda argv, **kw: Ok(_FakeProc(0)))
 
         result = ticket_runner._write_release_bump(
             tmp_path, _FakeTicket(), "T-0001", "0.2.0", "0.1.0"

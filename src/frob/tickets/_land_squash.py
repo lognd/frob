@@ -597,9 +597,7 @@ def _assert_land_complete(
     # `_apply_release_bump` writes the correct values afterwards.
     from frob.tickets._land_release import _LAND_OWNED_RELEASE_FILES
 
-    missing = (expected.danger_ok - staged.danger_ok) - set(
-        _LAND_OWNED_RELEASE_FILES
-    )
+    missing = (expected.danger_ok - staged.danger_ok) - set(_LAND_OWNED_RELEASE_FILES)
     if missing:
         unwound = _verified_reset_root(root, pre_land_tip, ticket_id)
         if unwound.is_err:

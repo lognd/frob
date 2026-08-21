@@ -827,9 +827,7 @@ def _repair_stale_finalize_markers(root: Path) -> None:
             continue
 
         on_root = _load_one(root, marker_ticket_id)
-        already_landed = (
-            on_root.is_ok and on_root.danger_ok.state is TicketState.DONE
-        )
+        already_landed = on_root.is_ok and on_root.danger_ok.state is TicketState.DONE
         if not already_landed:
             _log.error(
                 "land: %s's terminal state was written to worktree %s by a "
@@ -3430,9 +3428,10 @@ def _mutation_evidence_sync_decision(
     # rapid is the negation (an unreadable profile keeps the stricter
     # "required" behaviour, matching the prior is-ProfileName.RAPID
     # short-circuit on Err).
-    rapid = profile.is_ok and not settings_for_profile(
-        profile.danger_ok
-    ).mutation_evidence_required
+    rapid = (
+        profile.is_ok
+        and not settings_for_profile(profile.danger_ok).mutation_evidence_required
+    )
     if rapid:
         _log.info(
             "land: %s TEST016 skipped entirely (mutation subprocess AND "

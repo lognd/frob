@@ -435,9 +435,7 @@ class TestCrossTicketCarriedPathsDisclosure:
         assert carried == ()
 
     # frob:tests tests/unit/test_ticket_runner_land_cmd_flags.py::TestCrossTicketCarriedPathsDisclosure.test_none_touched_paths_is_unmeasurable_not_empty  # noqa: E501
-    def test_none_touched_paths_is_unmeasurable_not_empty(
-        self, tmp_path: Path
-    ) -> None:
+    def test_none_touched_paths_is_unmeasurable_not_empty(self, tmp_path: Path) -> None:
         """`None` in must mean `None` out -- an unmeasurable diff must
         never be reported as "nothing was carried" (a silent-zero, per
         this repo's own standing doctrine)."""

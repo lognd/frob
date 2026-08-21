@@ -365,5 +365,3 @@ def _migrate_missing_ids(
             return Err(result.danger_err)
         written += 1
     return Ok(written)
-
-

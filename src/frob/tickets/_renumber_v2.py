@@ -395,9 +395,7 @@ def renumber_one_v2(
         # own posture. See `_refuse_if_other_worktree_holds_live_lease_
         # for_id`'s docstring for why the bulk-path guard is too broad for
         # a single-id rename (draft promotion in particular).
-        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(
-            root, old_id
-        )
+        lease_conflict = _refuse_if_other_worktree_holds_live_lease_for_id(root, old_id)
         if lease_conflict.is_err:
             return Err(lease_conflict.danger_err)
 

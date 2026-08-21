@@ -1,7 +1,7 @@
 ---
-id: T-draft-c2d4c697
+id: T-2813
 title: 'Reformat batch 13/N: 13 files pending ruff-format (T-2359 child)'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'

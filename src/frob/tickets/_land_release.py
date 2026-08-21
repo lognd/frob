@@ -362,9 +362,7 @@ def _read_working_uv_lock_version(root: Path) -> str | None:
         text = lock.read_text(encoding="utf-8")
     except OSError:
         return None
-    match = re.search(
-        r'\[\[package\]\]\nname = "frob"\nversion = "([^"]+)"', text
-    )
+    match = re.search(r'\[\[package\]\]\nname = "frob"\nversion = "([^"]+)"', text)
     return match.group(1) if match else None
 
 

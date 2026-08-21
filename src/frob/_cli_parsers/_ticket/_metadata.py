@@ -434,9 +434,7 @@ def _add_ticket_set_parent_parser(ticket_sub):
         "nonexistent parent, a cycle, a tier inversion, or self-parenting",
     )
     ticket_set_parent_p.add_argument("ticket_id", metavar="id")
-    ticket_set_parent_p.add_argument(
-        "ticket_parent_id_value", metavar="parent-id"
-    )
+    ticket_set_parent_p.add_argument("ticket_parent_id_value", metavar="parent-id")
     _add_triage_reason_flags(ticket_set_parent_p)  # frob:ticket T-2353
     _add_no_commit_flag(ticket_set_parent_p)  # frob:ticket T-1615
     return ticket_set_parent_p

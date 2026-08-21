@@ -514,9 +514,7 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
         if parsed_result.is_err:
             return None
         edges, _malformed = parse_directives(parsed_result.danger_ok)
-    return frozenset(
-        edge.target for edge in edges if edge.kind is EdgeKind.TICKET
-    )
+    return frozenset(edge.target for edge in edges if edge.kind is EdgeKind.TICKET)
 
 
 # frob:ticket T-1948

@@ -1366,8 +1366,8 @@ def _parse_error_findings_from_json(
             "`results`' %d entr(ies) are whatever ran BEFORE the abort, "
             "never a real error-finding set; error-finding identities "
             "are unmeasured, not a partial set (T-2793: absence of a "
-            "gate-summary must never read as \"gates ran and found "
-            "nothing\")",
+            'gate-summary must never read as "gates ran and found '
+            'nothing")',
             ticket_id,
             len(results),
         )

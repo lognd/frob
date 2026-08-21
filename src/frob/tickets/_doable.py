@@ -1050,9 +1050,7 @@ def wave(
 
     groups = tuple(
         WaveGroup(
-            tickets=tuple(
-                sorted(members, key=lambda t: _doable_sort_key(t, queue))
-            ),
+            tickets=tuple(sorted(members, key=lambda t: _doable_sort_key(t, queue))),
             scope=tuple(scope),
         )
         for members, scope in zip(group_tickets, group_scope, strict=True)

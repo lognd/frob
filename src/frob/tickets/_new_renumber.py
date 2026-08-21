@@ -533,9 +533,10 @@ def _validate_new_ticket_spec(
         return Err(TicketError.ScopeBreadthAckReasonMissing)
 
     # frob:ticket T-2624
-    if spec.runs_last_parallel_safe and not (
-        spec.runs_last_parallel_safe_reason or ""
-    ).strip():
+    if (
+        spec.runs_last_parallel_safe
+        and not (spec.runs_last_parallel_safe_reason or "").strip()
+    ):
         return Err(TicketError.RunsLastParallelSafeReasonMissing)
 
     # frob:ticket T-2574
