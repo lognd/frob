@@ -51,7 +51,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 39b91d228affb465fb80b8265edc98a4b521f8ed
 ---
 T-1606 built `resolve_line_length(path, root) -> int | None` (per-language
 width resolution: rustfmt.toml/max_width, prettier config/printWidth,
