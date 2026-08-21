@@ -25,6 +25,7 @@ scope:
 - docs/rework.md
 - docs/commands/sync-skills.md
 - docs/commands/release.md
+- tickets/T-draft-104c5db0/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -84,6 +85,12 @@ scope_changes:
     not a doc edit
   actor: logan
   at: '2026-08-16'
+- op: add
+  glob: tickets/T-draft-104c5db0/**
+  reason: filed follow-up ticket for native-staleness/frob-check workflow-parity gap
+    found while auditing
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 acceptance:
 - text: GIVEN docs/ and docs/guides/agent-playbook.md WHEN a migrated workflow (coverage,
