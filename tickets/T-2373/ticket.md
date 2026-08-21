@@ -119,7 +119,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 97f3018b27970d9da42befed650c562bd86d493a
 ---
 Measured via `uv run frob check --json --budget 500` (full gate-summary coverage,
 no BUDGET001 deferral) piped through `scripts/check_summary.py`, 2026-08-18.
