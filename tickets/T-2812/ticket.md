@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_root_asset_dirs.py
 - src/frob/gates/_env_var_docs.py
-- src/frob/gates/_docblocks.py
 - src/frob/gates/_lexical_selfcheck.py
 - src/frob/gates/_port_selfcheck.py
 - src/frob/gates/_doclink_docanchor.py
@@ -32,6 +31,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_docblocks.py
+  reason: T-2359 holds a live lease on this file; excluded per fleet-status LEASES
+    check, per coordinator instruction to exclude live files
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
