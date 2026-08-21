@@ -2,7 +2,7 @@
 id: T-2234
 title: Map the tickets/app/serve/verify/testing/strata/gates/... mega-cluster (180+
   files) into sub-SCCs before any mechanical fix leaf can be scoped
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-16'
@@ -11,10 +11,19 @@ parent: T-2202
 tier: story
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - docs/investigations/T-2202-mega-cluster.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+evidence:
+- cmd:bash -c "wc -l docs/investigations/T-2202-mega-cluster.md && grep -n 'does not
+  decompose' docs/investigations/T-2202-mega-cluster.md && grep -n 'Answer:' docs/investigations/T-2202-mega-cluster.md"
+  exit=0 sha256=3ce4bc59a52b
 designated_repro_test: null
 acceptance:
 - text: 'Given current main, when ''uv run frob check --only cycle'' runs, then the
@@ -31,7 +40,10 @@ acceptance:
     that follow-on leaf tickets (each narrow-scoped like T-2231/T-2232/T-2233) can
     be filed against the sub-groups. Acceptance for THIS ticket is the doc existing
     with that breakdown, not a code fix -- do not touch src/ under this ticket.'
-  evidence: []
+  evidence:
+  - cmd:bash -c "wc -l docs/investigations/T-2202-mega-cluster.md && grep -n 'does
+    not decompose' docs/investigations/T-2202-mega-cluster.md && grep -n 'Answer:'
+    docs/investigations/T-2202-mega-cluster.md" exit=0 sha256=3ce4bc59a52b
 - text: 'OPEN QUESTION for the design doc to answer: this cluster did not exist in
     T-2202''s original filing (which described a tickets/-only, 4-file cluster: _accept.py,
     _setters.py, _land_finalize.py, _land_verify.py). It has grown to ~180 files across
@@ -41,7 +53,10 @@ acceptance:
     of real, pre-existing debt (the T-2202 framing) or whether the growth rate itself
     is a signal worth its own finding -- do not assume without checking a sample of
     the newly-included edges.'
-  evidence: []
+  evidence:
+  - cmd:bash -c "wc -l docs/investigations/T-2202-mega-cluster.md && grep -n 'does
+    not decompose' docs/investigations/T-2202-mega-cluster.md && grep -n 'Answer:'
+    docs/investigations/T-2202-mega-cluster.md" exit=0 sha256=3ce4bc59a52b
 threat: null
 component: null
 anchor: false

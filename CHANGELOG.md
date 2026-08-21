@@ -33,6 +33,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2134: tickets.md monofile looks stale/orphaned since the v2 sharded-ticket migration -- investigate and remove or document
 - T-2141: --allow-cross-ticket carries an undeclared set: the operator cannot state which tickets they expect to carry, so a legitimate sibling batch and an accidental foreign carry look identical
 - T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
+- T-2234: Map the tickets/app/serve/verify/testing/strata/gates/... mega-cluster (180+ files) into sub-SCCs before any mechanical fix leaf can be scoped
 - T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
 - T-2244: Repoint trivial Makefile aliases (format/lint/typecheck/test*) at existing frob quality/fmt subcommands
 - T-2245: Rewrite docs + agent-playbook to name frob subcommands first; audit remaining Makefile references in src/frob/**

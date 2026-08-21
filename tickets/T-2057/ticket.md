@@ -11,10 +11,15 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_coverage_sites.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 designated_repro_test: null
 threat: null
 component: null
@@ -64,3 +69,6 @@ or (b) a reporter is rebuilt to track the actual site space its family's
 real rule already uses (e.g. a vet reporter over
 `_opaque_indirection_findings`' own candidate set, matching what
 OPAQUE001 truly consumes, instead of `scan_file_capabilities`'s).
+
+## Failure log
+- 2026-08-20 attempt 1: Blocker re-verified still real, unchanged since T-2011: SYS001 code-site/SYS002 synthetic-string/SYS003 code-import-site/SELFAUDIT001 design_dir-constant sites still do not correspond to _strata_examined_sites' .strata-file identity; graph still has no owning rule family; OPAQUE001 still calls _opaque_indirection_findings not scan_file_capabilities (confirmed post-T-2056 docstring fix). No new rule or reporter has appeared since T-2011 landed (dd0cbf95b) through current main to close the identity gap. Not actionable as wire-it; requeuing rather than forcing scope.
