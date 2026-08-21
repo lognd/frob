@@ -26,6 +26,7 @@ scope:
 - docs/modules/app.md
 - src/frob/tickets/_models.py
 - src/frob/tickets/__init__.py
+- tests/test_tickets_parent.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -198,6 +199,16 @@ scope_changes:
   glob: src/frob/tickets/__init__.py
   reason: set_parent needs re-exporting from frob.tickets.__init__, same as every
     sibling setter (set_tier/set_kind/...)
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_tickets_parent.py
+  reason: new test file for the set_parent setter
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_tickets_parent.py
+  reason: new test file for the set_parent setter
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
