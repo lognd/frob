@@ -25,6 +25,7 @@ scope:
 - docs/modules/tickets.md
 - docs/modules/app.md
 - src/frob/tickets/_models.py
+- src/frob/tickets/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -191,6 +192,12 @@ scope_changes:
   reason: TicketError enum + Ticket.parent-adjacent validation lives in _models.py;
     the new parent setter needs new TicketError variants there, same as every other
     setter's error variants living in this one enum
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/tickets/__init__.py
+  reason: set_parent needs re-exporting from frob.tickets.__init__, same as every
+    sibling setter (set_tier/set_kind/...)
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
