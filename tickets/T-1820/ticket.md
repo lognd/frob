@@ -31,7 +31,7 @@ anchor: true
 anchor_reason: permanent WIRE001 follow_up anchor -- frob quality bind CLI dests are
   unwired by design (T-1567), never any code to write; must never reach a terminal
   state or WIRE002 orphans
-land_commit: null
+land_commit: 1c8145a657c6ac01133d40d779f85841beb788c5
 ---
 T-1567's frob quality bind subparser registers --list-bindings/--list-sources/--json
 purely for --help discovery -- frob.__main__._dispatch special-cases
