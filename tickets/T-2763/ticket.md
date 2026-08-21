@@ -14,10 +14,26 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- scripts/check_summary.py
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: scripts/check_summary.py
+  reason: 'legibility fix: surface TEST006 stale/missing coverage stamp distinctly
+    in check_summary output'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_coordinator_scripts.py
+  reason: 'legibility fix: surface TEST006 stale/missing coverage stamp distinctly
+    in check_summary output'
+  actor: logan
+  at: '2026-08-20'
 body_changes:
 - mode: append
   reason: 'correct two falsified premises: worker count already derives from MemAvailable
