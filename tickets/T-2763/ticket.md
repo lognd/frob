@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - scripts/check_summary.py
 - tests/unit/test_coordinator_scripts.py
+- docs/guides/coordinator-scripts.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +33,11 @@ scope_changes:
   glob: tests/unit/test_coordinator_scripts.py
   reason: 'legibility fix: surface TEST006 stale/missing coverage stamp distinctly
     in check_summary output'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/guides/coordinator-scripts.md
+  reason: doc target for check_summary.py symbols touched
   actor: logan
   at: '2026-08-20'
 body_changes:
