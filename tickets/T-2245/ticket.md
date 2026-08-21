@@ -2,7 +2,7 @@
 id: T-2245
 title: Rewrite docs + agent-playbook to name frob subcommands first; audit remaining
   Makefile references in src/frob/**
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-16'
@@ -25,7 +25,7 @@ scope:
 - docs/rework.md
 - docs/commands/sync-skills.md
 - docs/commands/release.md
-- tickets/T-draft-104c5db0/**
+- tickets/T-2764/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -86,18 +86,21 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 - op: add
-  glob: tickets/T-draft-104c5db0/**
+  glob: tickets/T-2764/**
   reason: filed follow-up ticket for native-staleness/frob-check workflow-parity gap
     found while auditing
   actor: logan
   at: '2026-08-20'
+evidence:
+- cmd:python3 /tmp/t2245_evidence_check.py exit=0 sha256=3a1cae7afd4b
 designated_repro_test: null
 acceptance:
 - text: GIVEN docs/ and docs/guides/agent-playbook.md WHEN a migrated workflow (coverage,
     sync-skills, release publish, format/lint/typecheck/test) is described THEN it
     names the frob subcommand first, with 'make <target>' documented only as an optional
     thin alias
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/t2245_evidence_check.py exit=0 sha256=3a1cae7afd4b
 - text: GIVEN every 'Makefile' reference still present in src/frob/** after T-2240/T-2241/T-2242/T-2244
     land THEN each is classified as either (a) a scaffold template constant generating
     a Makefile for a SCAFFOLDED downstream project (out of scope for this repo's own
@@ -105,12 +108,14 @@ acceptance:
     target (DOC010 etc, also out of scope), or (c) a genuine leftover this epic should
     have closed but did not -- and any (c) finding gets its own follow-up ticket,
     not silently dropped
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/t2245_evidence_check.py exit=0 sha256=3a1cae7afd4b
 - text: GIVEN T-1382's three acceptance criteria (no-Makefile workflow parity; Windows-shape
     coverage workflow; docs naming frob first) THEN this leaf's Done report states,
     with evidence, whether each is now met, partially met, or still open, and closes
     or narrows T-1382 accordingly
-  evidence: []
+  evidence:
+  - cmd:python3 /tmp/t2245_evidence_check.py exit=0 sha256=3a1cae7afd4b
 threat: null
 component: null
 anchor: false

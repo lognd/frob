@@ -34,6 +34,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2197: frob ticket promote inside a worktree produces an id invisible to the whole fleet until that worktree's branch lands
 - T-2237: T-2226 residue: 2 DOC011 dangling T-draft-* prose citations, mappings resolved via git archaeology, blocked by live leases on the target docs
 - T-2244: Repoint trivial Makefile aliases (format/lint/typecheck/test*) at existing frob quality/fmt subcommands
+- T-2245: Rewrite docs + agent-playbook to name frob subcommands first; audit remaining Makefile references in src/frob/**
 - T-2251: frob format subcommand: replace make format/lint-fix/all (ruff fix+format wrapper)
 - T-2311: DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent contended family)
 - T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert

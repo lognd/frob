@@ -191,13 +191,15 @@ WHY and the recovery recipes.
    Until one of those lands, step 1's `git merge main` + tip verification
    above is the ONLY reliable per-worktree fix -- treat it as mandatory,
    every single time, not just when something looks wrong.
-2. `make core` to build the native extensions (`frob-core`, `strata-core`)
+2. `uv run frob natives build` (aliased as `make core`, where `make` is
+   available) to build the native extensions (`frob-core`, `strata-core`)
    into the worktree's own `.venv`. Fresh worktrees do not inherit a
    sibling worktree's build -- `strata_core`/`frob_core` come up missing
    and `pytest --collect-only` hard-fails repo-wide (T-0144) until this
    runs. A collection failure with `ModuleNotFoundError: strata_core` or
    `frob_core` in a fresh worktree is an environment artifact, not a
-   regression -- run `make core` before concluding otherwise.
+   regression -- run `uv run frob natives build` before concluding
+   otherwise.
    - T-0732 landed a shared, git-common-dir-keyed `CARGO_TARGET_DIR`
      (`Makefile:197`, `frob natives build`'s own cache mechanism) so a
      second/third worktree's `make core` reuses the first worktree's
@@ -697,15 +699,18 @@ separate CLI calls as needed; results accumulate in
 `.frob/baseline-chunks.json` until every gate is covered, then the real
 stamp is written once).
 
-## 6b. Do NOT run `make coverage` as a dispatched sub-agent -- you cannot wait on it
+## 6b. Do NOT run the full-suite coverage refresh as a dispatched sub-agent -- you cannot wait on it
 
-`make coverage` runs the full suite and exceeds the 120s foreground cap, so
-the harness auto-backgrounds it and your turn ends. As a DISPATCHED SUB-AGENT
-you fundamentally CANNOT observe its completion: the completion notification
-is routed to the coordinator, not to you. Backgrounding it (even with a
-`Monitor` or an `until`-loop "wait") just makes you yield and loop "waiting
-for make coverage" forever until the coordinator nudges you -- a wasted
-resume cycle every time. Do not do it.
+The full-suite coverage refresh -- `uv run frob ticket reconcile --apply &&
+uv run frob doctor && uv run frob coverage --full`, aliased as `make
+coverage` where `make` is available -- runs the full suite and exceeds the
+120s foreground cap, so the harness auto-backgrounds it and your turn
+ends. As a DISPATCHED SUB-AGENT you fundamentally CANNOT observe its
+completion: the completion notification is routed to the coordinator, not
+to you. Backgrounding it (even with a `Monitor` or an `until`-loop "wait")
+just makes you yield and loop "waiting for the coverage refresh" forever
+until the coordinator nudges you -- a wasted resume cycle every time. Do
+not do it.
 
 Instead, verify your change the FAST way and let the coordinator stamp
 coverage at land:
@@ -717,16 +722,17 @@ coverage at land:
   for gate verification, and `uv run frob check --delta` for new-violation
   triage.
 - Record evidence, write the Done report, and COMMIT -- without ever running
-  `make coverage`.
-- The COORDINATOR runs `make coverage` + `frob check --stamp-coverage` once,
-  at land, against the merged result. That is the only place the full-suite
-  coverage stamp belongs.
+  `frob coverage --full` (`make coverage`).
+- The COORDINATOR runs `frob coverage --full` (`make coverage`) +
+  `frob check --stamp-coverage` once, at land, against the merged result.
+  That is the only place the full-suite coverage stamp belongs.
 
 (If you hit `NativeExtensionUnavailable`, that's a missing native, not a
-coverage problem: `make core` then `frob test --collect`, and re-run your
-targeted tests.)
+coverage problem: `uv run frob natives build` (`make core`) then
+`frob test --collect`, and re-run your targeted tests.)
 
-The coordinator, running at the top level, CAN wait on `make coverage`
+The coordinator, running at the top level, CAN wait on the full-suite
+coverage refresh
 (background + a Monitor/until-loop) because completion notifications come
 back to it -- so the full-suite stamp is a coordinator responsibility, not a
 sub-agent one.
@@ -774,9 +780,9 @@ directly, or read `gate:scope-note`'s disclosure on a scoped run and
 confirm none of the families it lists as "not run"/"repo-wide, not
 filtered" are ones your claim depends on.
 
-## 6d. TEST005 reads `coverage.xml`, and `make coverage` DELETES it
+## 6d. TEST005 reads `coverage.xml`, and the full-suite coverage refresh DELETES it
 
-`make coverage`'s recipe ends with `frob clean -y`, which removes
+`frob coverage --full` (`make coverage`)'s recipe ends with `frob clean -y`, which removes
 `coverage.xml` from the repo root. So the moment a coverage run finishes,
 the artifact the TEST005 gate reads is gone. Any `frob check` afterwards
 evaluates coverage against whatever is (or is not) on disk, which is why a
