@@ -39,6 +39,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8ada2fb973815e5da793256bec696da18e924836
 ---
 Batch 16 of the T-2359 ruff-format-only reformat epic. Fresh uv run ruff format --check . measured 13 files pending (up from the 10 batch-15 assumed, since new content landed since: T-2807/T-2817/T-2818/T-2800 work). Excludes tests/unit/test_coordinator_scripts.py, currently live-claimed by T-2818 (in-progress). Format-only, no semantic changes, no fixture-corpus files.
