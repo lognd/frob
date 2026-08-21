@@ -24,6 +24,15 @@ scope:
 - src/frob/gates/_sys_selfaudit.py
 - src/frob/gates/_testing_schema.py
 - src/frob/gates/_toplevel_scalar_schema.py
+evidence_scope:
+- tests/test_gates_fix_engine.py
+- tests/test_lang_conformance_gate.py
+- tests/test_refs_gate.py
+- tests/gates/test_rule_id_scan_branches.py
+- tests/test_gates.py
+- tests/unit/test_profile_table_schema.py
+- tests/unit/test_testing_table_schema.py
+- tests/unit/test_toplevel_scalar_schema.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -41,11 +50,30 @@ scope_changes:
     collision
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies
+- tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
+- tests/test_refs_gate.py::TestTiers::test_two_refs_passes
+- tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
+- tests/test_gates.py::TestSysGate::test_sys001_valid
+- tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+- tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_now_fire_reports_the_undeclared_key
+- tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_testing_known_keys_reads_test_policy_model_fields
+- tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_now_fire_reports_the_undeclared_key
 designated_repro_test: null
 acceptance:
 - text: given the batch-3 files, when ruff format --check runs on them, then zero
     need reformatting
-  evidence: []
+  evidence:
+  - tests/test_gates_fix_engine.py::TestFixE501MergeIntroduced::test_e501_merge_introduced_targeted_format_applies
+  - tests/test_lang_conformance_gate.py::TestLangConformanceGate::test_real_registry_is_clean
+  - tests/test_refs_gate.py::TestTiers::test_two_refs_passes
+  - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_commented_out_rule_literal_is_skipped
+  - tests/test_gates.py::TestSysGate::test_sys001_valid
+  - tests/test_gates.py::TestSelfAuditGate::test_selfaudit001_compliance_clean_model_no_violations
+  - tests/unit/test_profile_table_schema.py::TestProfileSchemaGate::test_must_now_fire_reports_the_undeclared_key
+  - tests/unit/test_testing_table_schema.py::TestTestingSchemaGate::test_testing_known_keys_reads_test_policy_model_fields
+  - tests/unit/test_toplevel_scalar_schema.py::TestTopLevelScalarSchemaGate::test_must_now_fire_reports_the_undeclared_key
 threat: null
 component: null
 anchor: false
