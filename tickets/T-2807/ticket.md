@@ -2,7 +2,7 @@
 id: T-2807
 title: wait_for_land_slot reports a free slot during the window where frob's own T-1619
   process scan still refuses LandInProgress
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
