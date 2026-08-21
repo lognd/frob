@@ -47,6 +47,6 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3e19aaf5f85dc630f8f3d34420001cf89f8f1c84
 ---
 Child of T-2369: REF001 (275->0) and REF002 (6->0) both fully burned down and promoted WARN->ERROR. REG008 (18 remaining) stays on the parent T-2369 for a separate batch.
