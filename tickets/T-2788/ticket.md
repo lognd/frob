@@ -57,7 +57,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e058c109633f4c2249b868e54b99b8ad7bd2f495
 ---
 Batch 1 of T-2373's ruff I001 (import-sort) burn-down: the src/frob/**
 (non-gates) files carrying an I001 finding, measured via
