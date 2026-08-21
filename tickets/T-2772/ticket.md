@@ -1,7 +1,7 @@
 ---
 id: T-2772
 title: retarget hardcoded src/frob glob in _new.py's related-check-function suggestion
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -15,10 +15,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_new.py
+- tests/unit/test_ticket_new_related.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_ticket_new_related.py
+  reason: positive/negative control tests for the source-prefix retarget
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
