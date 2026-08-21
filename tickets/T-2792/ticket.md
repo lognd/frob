@@ -50,7 +50,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2ab0c4522fb6e3f6f23b99d6aecdcf60ccdf3631
 ---
 Batch 8/N of T-2359: apply ruff-format-only reformat to 13
 independent unit test files. No semantic changes; format-only diff.
