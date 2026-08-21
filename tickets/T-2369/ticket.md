@@ -98,14 +98,24 @@ scope_changes:
     severity promotion
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_exempts_matching_files
+- tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_does_not_exempt_non_matching_files
+- tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
     remain
-  evidence: []
+  evidence:
+  - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_exempts_matching_files
+  - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_does_not_exempt_non_matching_files
+  - tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
-  evidence: []
+  evidence:
+  - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_exempts_matching_files
+  - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_does_not_exempt_non_matching_files
+  - tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity
 threat: null
 component: null
 anchor: false
