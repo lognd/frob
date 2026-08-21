@@ -79,7 +79,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 803f66c38d53738a1ca5b3ee49c18c835a1ab325
 ---
 Split from T-1226 (measured 2026-08-10). Gate-gap class 4 (NON-PYTHON
 TARGETS, docs/audits/docs-staleness-2026-07-29.md) is only partially
