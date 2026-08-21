@@ -1,7 +1,7 @@
 ---
 id: T-2373
 title: Burn ruff I001 (import-sort) warnings to zero, keep enforced
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'

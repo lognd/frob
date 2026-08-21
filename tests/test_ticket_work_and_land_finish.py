@@ -1199,11 +1199,12 @@ class TestAssertDiffDoesNotAddNewFileLocalErrors:
         # T-2255's own lesson applied here: a comparison that cannot be
         # made must SURFACE the skip loudly and let the land proceed,
         # never hard-fail silently or loudly.
+        from typani.result import Err
+
         from frob.app.ticket_runner._land_cmd import (
             _assert_diff_does_not_add_new_file_local_errors_pre_land,
         )
         from frob.gitio import GitError
-        from typani.result import Err
 
         new_file = repo / "src" / "printer2.py"
         new_file.write_text("def run() -> None:\n    print('hello')\n")

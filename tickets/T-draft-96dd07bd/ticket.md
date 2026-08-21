@@ -34,7 +34,7 @@ no_scope_declared_reason: null
 scope_changes:
 - op: remove
   glob: tests/conftest.py
-  reason: collides with T-draft-8e8177c3's live lease (T-2373 child worktree) -- swapping
+  reason: collides with T-2800's live lease (T-2373 child worktree) -- swapping
     to the next unclaimed file in the remaining-72 list
   actor: logan
   at: '2026-08-21'
@@ -46,7 +46,7 @@ scope_changes:
   at: '2026-08-21'
 - op: remove
   glob: tests/test_ticket_land.py
-  reason: collides with T-draft-8e8177c3's live lease (T-2373 child) -- swap for the
+  reason: collides with T-2800's live lease (T-2373 child) -- swap for the
     next unclaimed file
   actor: logan
   at: '2026-08-21'

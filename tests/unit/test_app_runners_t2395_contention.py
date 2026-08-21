@@ -16,7 +16,6 @@ from pathlib import Path
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import run as ticket_run
 
-
 _TITLE_COUNTER = {"n": 0}
 
 

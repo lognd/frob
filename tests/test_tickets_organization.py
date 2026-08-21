@@ -396,14 +396,13 @@ class TestForceOverrideAudit:
         that would not have fired anyway."""
         from typani import Ok
 
-        from frob.app.ticket_runner._archive import _archive
-
         # `_archive` imports `archive`/`read_all_leases`/
         # `commit_full_ledger_change` lazily from their own source modules
         # inside its own body -- patch there, not on the runner module, so
         # the lazy import picks up the patch.
         import frob.tickets as tickets_mod
         import frob.tickets._leases as leases_mod
+        from frob.app.ticket_runner._archive import _archive
 
         monkeypatch.setattr(tickets_mod, "archive", lambda root, *, force: Ok(0))
         monkeypatch.setattr(leases_mod, "read_all_leases", lambda root: [])
@@ -420,8 +419,8 @@ class TestForceOverrideAudit:
         # frob:tests src/frob/app/ticket_runner/_archive.py::_archive
         import pytest
 
-        from frob.app.ticket_runner._archive import _archive
         import frob.tickets._leases as leases_mod
+        from frob.app.ticket_runner._archive import _archive
 
         class _FakeLease:
             ticket_id = "T-0001"

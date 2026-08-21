@@ -377,7 +377,10 @@ class TestOverBroadLiteralGlobs:
         # frob:tests \
         # tests/test_tickets_lease.py::TestOverBroadLiteralGlobs.test_unresolved_packag\
         # e_name_falls_back_to_repo_convention_literals
-        from frob.tickets._models import OVER_BROAD_LITERAL_GLOBS, over_broad_literal_globs
+        from frob.tickets._models import (
+            OVER_BROAD_LITERAL_GLOBS,
+            over_broad_literal_globs,
+        )
 
         # No pyproject.toml at all -- UNRESOLVED, not "this project has
         # none": falls back to the repo-convention-only literals rather

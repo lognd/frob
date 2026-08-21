@@ -133,9 +133,8 @@ class TestSetPriority:
         import subprocess
 
         from frob.tickets import Origin as _Origin
-        from frob.tickets import TicketError
+        from frob.tickets import TicketError, TicketSpec, new_ticket
         from frob.tickets import TicketKind as _TicketKind
-        from frob.tickets import TicketSpec, new_ticket
 
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(

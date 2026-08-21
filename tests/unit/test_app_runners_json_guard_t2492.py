@@ -128,8 +128,9 @@ class TestCleanRunnerJsonGuard:
     ) -> None:
         """A stray `print()` inside `clean` must land on stderr, never
         corrupt the JSON payload on stdout."""
-        import frob.app.clean_runner as mod
         from typani import Ok
+
+        import frob.app.clean_runner as mod
 
         def fake_clean(*_a, **_kw):  # noqa: ANN002, ANN003
             print("LEAK-T2492")

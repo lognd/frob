@@ -6,7 +6,9 @@ import frob.lang as lang_mod
 from frob.lang import PARSE_ARTIFACT_CACHE_ENV, reset_parse_cache
 from frob.mutate import restore_stale_journals
 from frob.testing._stackdump import STACKDUMP_ENV as _STACKDUMP_ENV  # noqa: F401
-from frob.testing._stackdump import install_stackdump_handler as _install_stackdump_handler
+from frob.testing._stackdump import (
+    install_stackdump_handler as _install_stackdump_handler,
+)
 
 """T-1433/T-1466: the SIGUSR1 stack-dump handler itself now lives in
 `frob.testing._stackdump` (any frob process can opt in, not just pytest --

@@ -10742,8 +10742,8 @@ class TestLandLockWaitBudgetFromDeclaredDeadline:
         must not turn every contended land into a refusal, only the ones
         that genuinely cannot fit."""
         from frob.tickets._land import (
-            _resolve_land_lock_wait_budget_s,
             _land_lock,
+            _resolve_land_lock_wait_budget_s,
         )
 
         monkeypatch.setenv("FROB_LAND_DEADLINE_S", "100000")

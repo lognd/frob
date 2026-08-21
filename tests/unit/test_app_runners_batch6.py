@@ -1031,7 +1031,7 @@ class TestCheckRunner:
 
         import frob.gates as gates_mod
         from frob.check import _STAGE_GROUPS
-        from frob.gates import GateReport, Severity, Violation, _ALL_GATES
+        from frob.gates import _ALL_GATES, GateReport, Severity, Violation
         from frob.gates._models import GateStats
 
         prior = Violation(

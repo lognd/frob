@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from frob.strata import (
+    SYS110_UNAUDITED_NODES,
     SYS_BINDING_TOTALITY,
     SYS_COVERAGE_TOTALITY,
     SYS_DUPLICATE_INTERFACE,
@@ -23,7 +24,6 @@ from frob.strata import (
     SYS_UNDECLARED_INTENDED_SURFACE,
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
-    SYS110_UNAUDITED_NODES,
     KernelModel,
     MayGrant,
     Node,

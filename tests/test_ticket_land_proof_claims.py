@@ -18,8 +18,11 @@ from types import SimpleNamespace
 import pytest
 
 from frob.app.ticket_runner import _land_cmd
-from frob.tickets._land import _LAST_CLAIMS_OUTCOME, _LAST_ORPHAN_EVIDENCE_OUTCOME
-from frob.tickets._land import _OrphanEvidenceCheckOutcome
+from frob.tickets._land import (
+    _LAST_CLAIMS_OUTCOME,
+    _LAST_ORPHAN_EVIDENCE_OUTCOME,
+    _OrphanEvidenceCheckOutcome,
+)
 from frob.tickets._land_verify import _ClaimsReverifyOutcome
 
 

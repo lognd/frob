@@ -758,8 +758,7 @@ class TestAcceptanceAmendmentsSurfaced:
         all `show` prints, so a coordinator running `scope --remove`
         cannot see it holds more than it declared."""
         from frob.app.ticket_runner._query import _render_implicit_scope
-        from frob.tickets import TicketKind
-        from frob.tickets import Origin, TicketSpec, new_ticket
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
 
         spec = TicketSpec(
             title="new subcommand",
@@ -782,8 +781,7 @@ class TestAcceptanceAmendmentsSurfaced:
         """No `implicit_scope:` line for a non-FEATURE ticket -- matches
         every sibling `_render_*` helper's "nothing to add" posture."""
         from frob.app.ticket_runner._query import _render_implicit_scope
-        from frob.tickets import TicketKind
-        from frob.tickets import Origin, TicketSpec, new_ticket
+        from frob.tickets import Origin, TicketKind, TicketSpec, new_ticket
 
         spec = TicketSpec(
             title="a bug fix",
