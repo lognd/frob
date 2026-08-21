@@ -1263,6 +1263,86 @@ def _tick012_lease_scope_drift(root: Path, queue: TicketQueue) -> tuple[Violatio
     return tuple(violations)
 
 
+# frob:ticket T-2557
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_in_progress_empty_scope_fires  # noqa: E501
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_planned_empty_scope_fires  # noqa: E501
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_declared_no_scope_is_silent  # noqa: E501
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_nonempty_scope_is_silent  # noqa: E501
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_terminal_state_empty_scope_is_silent  # noqa: E501
+# frob:tests tests/test_tick013_gate.py::TestTick013EmptyScope.test_queued_empty_scope_is_silent  # noqa: E501
+# frob:enforces CHK-GATE-TICK013
+def _tick013_empty_scope_without_declaration(
+    queue: TicketQueue,
+) -> tuple[Violation, ...]:
+    """TICK013 (T-2557): ERROR per IN_PROGRESS/PLANNED ticket whose declared
+    scope is empty and which has not opted out via `no_scope_declared`
+    (`frob ticket scope <id> --declare-no-scope --reason TEXT`, T-2394).
+
+    SCOPE001 (`frob.gates.scope_gate`) is diff-driven: it iterates the
+    touched files in a worktree's diff, so a ticket whose worktree is
+    clean -- everything already landed, or work not yet started -- never
+    runs that loop body at all, and the riskiest ticket state in the
+    ledger (an IN_PROGRESS ticket holding a real cross-worktree lease
+    while declaring NO scope) reads as clean. TICK009 already runs the
+    ledger-wide IN_PROGRESS/PLANNED scan this needs, but only asks
+    whether a scope is too BROAD; the symmetric and strictly more
+    dangerous case -- a scope that is EMPTY -- was not asked about at
+    all before this rule. `frob ticket start` already refuses this exact
+    state at write time (T-2394's `_refuse_empty_scope_on_start`), which
+    is exactly why the state looks impossible and was previously
+    unmonitored -- but `frob ticket scope --remove` can empty a scope
+    AFTER a clean start, and that is how T-2377 reached it: `state:
+    in-progress` with `scope: []` for roughly an hour, holding a
+    worktree lease, with nothing firing on it.
+
+    ERROR, not WARN: scope is simultaneously the evidence-coverage
+    declaration and the write lease (T-2394's own framing) -- an
+    undeclared empty scope means the ticket can edit ANYTHING while the
+    fleet believes those files are free, and no other check (SCOPE001,
+    cross-ticket leakage at land) has anything to test against it. This
+    mirrors `_refuse_empty_scope_on_start`'s own severity for the
+    identical condition, just caught later via the ledger scan instead
+    of at the `start` transition.
+
+    Exemption, matching `_refuse_empty_scope_on_start` exactly so the
+    two checks never disagree about what counts as legitimate: a ticket
+    with `no_scope_declared=True` (a tier=epic rollup, a pure decision
+    record) is silent regardless of how empty its scope is -- the
+    declaration IS the disclosure, and it already carries a required
+    non-blank `no_scope_declared_reason` (`set_no_scope_declared`). Also
+    silent for any ticket with a non-empty scope, any QUEUED ticket
+    (T-1645's own reasoning for TICK009 applies here too -- a queued
+    ticket's scope is a pre-work prediction, not yet a live lease), and
+    any terminal-state ticket (done/dropped/failed hold no lease at
+    all)."""
+    from frob.tickets import TicketState
+
+    violations: list[Violation] = []
+    for t in sorted(queue.tickets.values(), key=lambda t: t.id):
+        if t.state not in (TicketState.IN_PROGRESS, TicketState.PLANNED):
+            continue
+        if t.scope or t.no_scope_declared:
+            continue
+        violations.append(
+            Violation(
+                rule="TICK013",
+                severity=Severity.ERROR,
+                file="tickets.md",
+                line=0,
+                message=(
+                    f"TICK013: {t.id} is {t.state.value} with an EMPTY "
+                    f"scope and has not declared `no_scope_declared` -- "
+                    f"it holds no write lease while able to edit anything; "
+                    f"either add scope (`frob ticket scope {t.id} --add "
+                    f"'<glob>' --reason '...'`) or, if this ticket "
+                    f"legitimately has no file scope, `frob ticket scope "
+                    f"{t.id} --declare-no-scope --reason '...'`"
+                ),
+            )
+        )
+    return tuple(violations)
+
+
 # frob:ticket T-1259
 # T-1259: the sunset date this repo has recorded for ledger v1 (monofile
 # tickets.md/tickets-archive.md) in docs/modules/tickets.md's ledger-v2
@@ -1284,6 +1364,12 @@ _LEDGERV1_SUNSET = "2027-02-02"
 # individually frob:describes this private helper by name (T-0529) -- a deliberate \
 # architecture doc, not accidental drift onto a private helper, same precedent as \
 # _store_mode/_split_done_report/_migrate_one_v2 above"
+# frob:waive AFFECT001 reason="T-2557's own land: this function's body was reflowed by \
+# the land path's Tier-A auto-fix (ruff format, mechanical line-wrap only, no \
+# behavioral change -- verify with git diff main -- the actual T-2557 change is the \
+# new TICK013 rule and its wiring into tickets_gate, not this function) -- nothing \
+# about its documented LEDGERV1001 behavior changed, so there is nothing for the cited \
+# affects()-closure docs to update"
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_warns_before_sunset  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_monofile_mode_errors_past_sunset  # noqa: E501
 # frob:tests tests/test_tickets_migration.py::TestLedgerV1DeprecationGate.test_v2_mode_repo_is_silent  # noqa: E501
@@ -1318,15 +1404,13 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
     period here the way there is for a repo that has not started
     migrating at all)."""
     mode = _tickets_store_mode(root)
-    monofile_exists = _tickets_ledger_path(root).exists() or _tickets_archive_path(
-        root
-    ).exists()
+    monofile_exists = (
+        _tickets_ledger_path(root).exists() or _tickets_archive_path(root).exists()
+    )
     if mode == "v2":
         if not monofile_exists:
             return ()
-        _log.debug(
-            "LEDGERV1001: v2-mode repo with a lingering monofile still on disk"
-        )
+        _log.debug("LEDGERV1001: v2-mode repo with a lingering monofile still on disk")
         return (
             Violation(
                 rule="LEDGERV1001",
@@ -1375,15 +1459,16 @@ def _ledgerv1001_violations(root: Path) -> tuple[Violation, ...]:
 # frob:doc docs/modules/tickets-lifecycle.md#decision-record-t-0162
 def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
     """TICK001/TICK002/TICK003/TICK004/TICK005/TICK006/TICK007/TICK008/
-    TICK009/TICK010/TICK011/TICK012: the T-0162 ticket-id collision
-    invariant gate, plus the T-0409 ledger-hygiene check, the T-0411
-    priority-rot check, the T-0537 post-merge terminal-state-regression
-    lint, the T-0726 phantom-filing-claim check, the T-0820/T-0752
-    undispatched-stale-CRITICAL/HIGH alarm, the T-0842 unknown-ledger-
-    field check, the T-0714 scope-breadth-nudge/stale-lease reports
-    (relocated out of `frob ticket doable`'s own per-invocation
-    diagnostics), the T-1129 disclosed-cut-without-ticket check, and the
-    T-2561 in-progress-lease-vs-declared-scope drift check.
+    TICK009/TICK010/TICK011/TICK012/TICK013: the T-0162 ticket-id
+    collision invariant gate, plus the T-0409 ledger-hygiene check, the
+    T-0411 priority-rot check, the T-0537 post-merge terminal-state-
+    regression lint, the T-0726 phantom-filing-claim check, the T-0820/
+    T-0752 undispatched-stale-CRITICAL/HIGH alarm, the T-0842 unknown-
+    ledger-field check, the T-0714 scope-breadth-nudge/stale-lease
+    reports (relocated out of `frob ticket doable`'s own per-invocation
+    diagnostics), the T-1129 disclosed-cut-without-ticket check, the
+    T-2561 in-progress-lease-vs-declared-scope drift check, and the
+    T-2557 in-progress/planned-empty-scope-without-declaration check.
 
     T-0929 (docs/audits/check-performance.md row 10, `tickets` gate): the
     full `tickets.md`/`tickets-archive.md` ledger text is now loaded ONCE
@@ -1415,6 +1500,7 @@ def tickets_gate(root: Path, queue: TicketQueue) -> tuple[Violation, ...]:
         + _tick008_unknown_ledger_fields(queue)
         + _tick009_scope_breadth_nudges(root, queue)
         + _tick012_lease_scope_drift(root, queue)
+        + _tick013_empty_scope_without_declaration(queue)
         + stale_leases
         + _ledgerv1001_violations(root)
     )

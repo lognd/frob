@@ -2,7 +2,7 @@
 id: T-2557
 title: 'no gate catches an in-progress ticket with an EMPTY scope: SCOPE001 is diff-driven,
   TICK009 only checks breadth'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'

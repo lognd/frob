@@ -516,6 +516,14 @@ _KNOWN_GATE_RULES = frozenset(
         # read site; this rule closes the write-time drift generally, for
         # every `read_all_leases` consumer.
         "TICK012",
+        # T-2557: TICK013 (frob.gates._tickets_gate's
+        # _tick013_empty_scope_without_declaration) -- ERROR per
+        # IN_PROGRESS/PLANNED ticket with an empty declared scope and no
+        # `no_scope_declared` opt-out. TICK009 only warns on scope too
+        # BROAD; this is the symmetric, strictly more dangerous, empty
+        # case: an undeclared empty scope holds a write lease while
+        # testing nothing against it.
+        "TICK013",
         # T-2580: MILE001 (frob.gates._milestone.milestone_gate) -- an
         # OPEN ticket `blocked_by` an OPEN ticket in a LATER effective
         # milestone -- a provable release deadlock.

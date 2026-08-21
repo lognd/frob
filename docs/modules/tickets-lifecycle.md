@@ -1798,6 +1798,21 @@ write-time lease-drift gap T-2547's `_effective_leakage_scope`
 empty-scope short-circuit only ever covered for the CrossTicketLeakage
 read site specifically. See `docs/modules/gates.md#rule-catalog` for
 TICK012's own entry.
+
+**T-2557 (`tickets_gate` grew another sibling check, no change to this
+decision).** `tickets_gate` now also runs TICK013 (`frob.gates.
+_tickets_gate._tick013_empty_scope_without_declaration`): one ERROR per
+IN_PROGRESS/PLANNED ticket whose declared `scope` is empty and which has
+not opted out via `no_scope_declared` -- unrelated to the id-collision
+invariant this section documents. TICK009 already scans this same
+IN_PROGRESS/PLANNED population but only ever asks whether a scope is too
+BROAD; TICK013 closes the symmetric, strictly more dangerous case (a
+scope so empty it holds a real write lease while testing nothing against
+it), found by walking into a live T-2377 incident where `frob ticket
+scope --remove` emptied a scope after a clean `start`. See
+`docs/modules/gates.md#tick013-t-2557` for TICK013's own entry and its
+exemption rules.
+
 TICK002 (a `T-draft-*` id surviving onto the default branch) is the rule
 that actually matters: it means the finalize step was skipped, failed, or
 forgotten, which is precisely the "collision-proofing silently did not

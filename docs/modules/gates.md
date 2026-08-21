@@ -10,7 +10,7 @@ declaration).
 
 ## Rule catalog
 
-<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PORT001,PORT001-IDENT,PORT001-PATH,PRE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WALK001,WIRE001,WIRE002,WIRE003" -->
+<!-- frob:enumerates src/frob/gates/_waive.py::_KNOWN_GATE_RULES members="AFFECT001,AFFECT002,ARCH001,ARCH101,ARCH102,ARCH103,ARCHSCHEMA001,BUDGET001,BUG002,BUG003,CACHE001,CAP001,CHECK001,CLAUDE001,COMPLIANCE001,COMPLIANCE002,COMPLIANCE003,COMPLIANCE004,COMPLIANCE005,COMPLIANCE006,COMPLIANCE007,COV001,COV002,COV003,COV004,COV005,COV006,COV007,CPPTHROW001,CVEFP001,CYCLE001,DEAD001,DEBT001,DEBT002,DEBT003,DEC000,DEC001,DEC002,DEC003,DEPLOY001,DEPLOY002,DEPLOY003,DEPR001,DEPR002,DEPR003,DEPR004,DEPR005,DERIVED001,DOC001,DOC002,DOC003,DOC004,DOC005,DOC006,DOC007,DOC008,DOC009,DOC010,DOC011,DOC012,DOCBLOCKSSCHEMA001,DOCENUM001,DRIFT001,DRIFT002,DSL001,DUP001,DUP002,DUP003,DUPSCHEMA001,E501,ENV001,EXCL001,EXHAUST001,EXHAUST002,EXHAUST003,EXHAUST004,FFI001,FFI002,FLAGCOV001,FMT001,FUZZ001,FUZZ002,FUZZ003,GATERULE001,GATESSCHEMA001,GRAPHSCHEMA001,HOST-BLAST,HOST001,HOST002,INV001,INV002,INV003,INV004,INV005,INV007,INV008,INV051,KRB001,KRB002,KRB003,KRB004,LANG001,LANG002,LANG003,LANG004,LARGE001,LEDGERV1001,LEXCHECK001,LINT001,LINT002,LINT003,LINT004,LINT005,MILE001,MILE002,MILE003,MILE004,NATIVE001,NATIVESCHEMA001,NEGEXIST001,OPAQUE001,PARSE001,PARSE002,PERF001,PERF002,PERF003,PERF004,PERF005,PERF006,PERF007,PERF008,PERF009,PERF010,PERF011,PERF012,PERF013,PERF014,PII001,PII002,PII003,PII004,PII010,PII011,PII012,PLACE001,PORT001,PORT001-IDENT,PORT001-PATH,PRE001,PROFILESCHEMA001,PROTO001,PROTO002,PROTO003,PROTO004,PROTO005,QUEUE001,REF001,REF002,REF003,REFSCHEMA001,REG001,REG002,REG003,REG004,REG005,REG006,REG007,REG008,REG009,REG010,REG011,REG012,REL001,REL002,REL200,REL201,REL210,REL211,REL220,REL221,REL222,REL230,REL231,REL240,REL241,REL250,REL260,REL261,REL270,REL271,REL272,REL280,REL281,REL290,REL291,REL300,REL301,REL310,REL311,REL320,REL321,REL330,REL331,REL340,REL350,REL351,REL360,REL370,REL371,REL372,REL380,REL381,REL382,REL383,REL390,REL391,REL392,REL393,REL394,REL395,REL396,REL397,RELWAIVE002,RENDER001,ROOT001,SCOPE001,SCOPE002,SEC-CVE-FINGERPRINT-001,SEC001,SEC002,SEC003,SEC004,SEC005,SEC110,SELFAUDIT001,SUPPRESS001,SYS001,SYS002,SYS003,SYS004,SYS100,SYS101,SYS102,SYS103,SYS105,SYS106,SYS107,SYS108,SYS109,SYS110,SYS111,SYS112,SYS200,SYS201,SYS202,SYS203,SYS204,SYS205,SYSWAIVE002,SYSWAIVE003,TEST001,TEST002,TEST003,TEST004,TEST005,TEST006,TEST007,TEST008,TEST009,TEST010,TEST011,TEST012,TEST013,TEST014,TEST015,TEST016,TEST017,TEST018,TEST019,TESTINGSCHEMA001,TESTRUNNERSCHEMA001,THREAT001,THREAT002,THREAT003,THREAT004,THREAT005,THREAT006,TICK001,TICK002,TICK003,TICK004,TICK005,TICK006,TICK007,TICK008,TICK009,TICK010,TICK011,TICK012,TICK013,TODO001,TODO002,TODO003,TOPSCALARSCHEMA001,VET-JS,VET-JS003,VET-JS004,VET-PY001,VET-PY002,VET-PY003,VET-RS001,VET-RS002,VET-SOURCE-UNAVAILABLE,VET-TIMEOUT,VET001,VET002,VET003,VET004,VET005,VET006,VET007,VET008,VET009,VET010,VET011,WAIVE001,WAIVE002,WAIVE003,WAIVE004,WAIVE005,WAIVE006,WAIVE007,WAIVE008,WAIVE009,WALK001,WIRE001,WIRE002,WIRE003" -->
 
 | Rule | Gate | Fails when |
 |---|---|---|
@@ -53,6 +53,7 @@ declaration).
 | TICK010 | tickets | (warn) a cross-worktree lease file (`.git/frob-leases/*.json`) whose recorded worktree path no longer exists on disk -- names the lease file and the remedy; see "TICK009/TICK010 (T-0714)" below |
 | TICK011 | tickets | (warn) a Done report's prose discloses deferred/cut work (a conservative disclosure-phrase scan) with no ticket id resolving nearby and no explicit no-ticket-needed reason -- see "TICK011 (T-1129)" below |
 | TICK012 | tickets | (warn, T-2561) an IN_PROGRESS ticket's live cross-worktree lease (`.git/frob-leases/<id>.json`) records a scope path that no longer `scope_matches` its CURRENT declared scope -- the lease was recorded once at start/scope-mutation time and never re-synced when the declared scope narrowed by some other path, so it silently misleads every OTHER `read_all_leases` consumer (a `doable` collision check, an `--add` conflict refusal). Silent for a ticket with no live lease, or any non-in-progress state. Re-record via a scope-mutating `frob ticket scope` call |
+| TICK013 | tickets | (error, T-2557) an IN_PROGRESS/PLANNED ticket's declared scope is EMPTY and it has not declared `no_scope_declared` -- the symmetric, strictly more dangerous case TICK009 (over-broad) does not cover, since an undeclared empty scope holds a write lease that tests nothing against it. Silent for a ticket with `no_scope_declared=True` (the T-2394 opt-out for a legitimately scope-free epic/decision-record ticket), any non-empty scope, any QUEUED ticket, or any terminal state; see "TICK013 (T-2557)" below |
 | COMPLIANCE005 | compliance | a `docs/design/registry/compliance.yaml` `CMPL_REGISTRY_UNIT_IDS` member carries a `deferred`/undispositioned disposition instead of `handled_by`/`out_of_scope` -- see "COMPLIANCE005 (T-0788)" below |
 | FMT001 | fmt | (warn) a diff-touched `frob:` directive comment line exceeds that file's own configured line length -- see "FMT001 (T-0851)" below |
 | DEC001 | decisions | a `frob:decision AD-###` edge points at a missing record (opt-in: a `decisions/` dir must exist) |
@@ -1924,6 +1925,51 @@ set `FROB_TICK011_INCLUDE_HISTORY` (any non-empty value) to scan the full
 ledger anyway for a deliberate history audit. This is a narrowing of
 AIM, not of coverage: any report written from now on is always inside
 the window the moment it lands.
+
+### TICK013 (T-2557)
+
+Found by walking into the live ledger state, not by reading code: T-2377
+sat `state: in-progress` with `scope: []` for roughly an hour, holding a
+worktree lease, and not one existing gate fired on it.
+
+Two candidate detectors each miss for a different structural reason.
+SCOPE001 (`frob.gates.scope_gate`) is diff-driven -- it iterates the
+touched files in a worktree's diff, so a ticket whose worktree is clean
+(everything already landed, or work not yet started) never runs that
+loop body, and the riskiest ticket state in the ledger reads as clean.
+TICK009 already runs the ledger-wide IN_PROGRESS/PLANNED scan this needs
+but only ever asks whether a declared scope is too BROAD
+(`large_glob_warnings`); the symmetric, strictly more dangerous case -- a
+scope that is EMPTY -- was not asked about at all.
+
+TICK013 (`frob.gates._tickets_gate._tick013_empty_scope_without_
+declaration`) closes that gap: one ERROR per IN_PROGRESS/PLANNED ticket
+whose `scope` is empty and whose `no_scope_declared` field is not set.
+ERROR, not WARN, because scope is simultaneously the evidence-coverage
+declaration and the write lease (T-2394's own framing) -- an undeclared
+empty scope means the ticket can edit anything while the fleet believes
+those files are free, and no other check has anything to test against
+it.
+
+**What it exempts.** A ticket with `no_scope_declared=True` -- the T-2394
+opt-out, set via `frob ticket scope <id> --declare-no-scope --reason
+TEXT` and requiring a non-blank `no_scope_declared_reason`
+(`set_no_scope_declared`) -- is silent regardless of how empty its scope
+is: the declaration IS the disclosure, for a legitimately scope-free
+tier=epic rollup or pure decision record. Also silent for any ticket
+with a non-empty scope, any QUEUED ticket (mirroring TICK009's own
+T-1645 reasoning: a queued ticket's scope is a pre-work prediction, not
+yet a live lease, so demanding a declaration that early produces the
+same noise TICK009 was narrowed to avoid), and any terminal-state
+ticket (done/dropped/failed hold no lease at all). This exemption
+deliberately matches `frob.app.ticket_runner._lifecycle._refuse_empty_
+scope_on_start`'s own `ticket.scope or ticket.no_scope_declared` check
+exactly, so `start`-time refusal and this ledger-scan gate never
+disagree about what counts as a legitimate empty scope. `frob ticket
+start` already refuses this exact state at write time, which is why the
+state looks impossible and was previously unmonitored -- but `frob
+ticket scope --remove` can empty a scope AFTER a clean start, and that
+is how T-2377 reached it.
 
 ### COMPLIANCE005 (T-0788)
 
