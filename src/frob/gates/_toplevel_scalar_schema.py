@@ -110,7 +110,7 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
             "no [toplevel_scalar_schema] known_keys declared in "
             "frob.toml -- TOPSCALARSCHEMA001 cannot determine this "
             "project's top-level scalar known-key set at all; this is an "
-            'UNMEASURED project, not a clean pass. Declare known_keys = '
+            "UNMEASURED project, not a clean pass. Declare known_keys = "
             '"module:symbol" (a frozenset[str], or a zero-arg callable '
             "returning one) to enable this check"
         )
@@ -160,6 +160,7 @@ def _toplevel_scalar_keys(root: Path) -> list[str] | None:
             doc = tomllib.load(handle)
     except (OSError, tomllib.TOMLDecodeError):
         return None
+
     def _is_table_shaped(value: object) -> bool:
         """`True` for a `[table]` (`dict`) or an `[[array-of-tables]]`
         (a `list` whose elements are themselves `dict`, including the

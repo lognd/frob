@@ -1,7 +1,7 @@
 ---
-id: T-draft-c1090408
+id: T-2777
 title: Reformat batch 3 of ruff-format-only reformat (T-2359 child)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'

@@ -762,6 +762,10 @@ def project_lang_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
 # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_real_registry_is_behaviorally_clean  # noqa: E501
 # frob:tests tests/test_lang_conformance_gate.py::TestCapabilityConformanceGate.test_wrong_implemented_claim_fails  # noqa: E501
 # frob:enforces CHK-GATE-LANG004
+# frob:waive AFFECT001 reason="T-2359 batch 3: ruff-format-only reformat moved   this \
+# function's digest with no semantic change; \
+# docs/modules/lang.md#behavioral-conformance-lang004-t-2365   remains accurate, \
+# re-verified by hand"
 def capability_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
     """LANG004 (T-2365): the BEHAVIORAL half of the adapter-capability axis.
 
@@ -806,9 +810,7 @@ def capability_conformance_gate(repo_root: Path) -> tuple[Violation, ...]:
         tmp_path = Path(tmp)
         for language, support in sorted(registry.items()):
             for capability, status in sorted(support.capabilities.items()):
-                violation = _lang004_check_cell(
-                    language, capability, status, tmp_path
-                )
+                violation = _lang004_check_cell(language, capability, status, tmp_path)
                 if violation is not None:
                     violations.append(violation)
     _log.info(

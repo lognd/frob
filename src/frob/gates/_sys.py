@@ -188,11 +188,7 @@ def _sys004(design_ids, root: Path) -> list[Violation]:
                 f"merged across all design files and a missing sibling's ids "
                 f"cannot be told apart from a genuinely dangling reference"
                 f"{native_hint}"
-                + (
-                    f" -- actual import error: {error.detail}"
-                    if error.detail
-                    else ""
-                )
+                + (f" -- actual import error: {error.detail}" if error.detail else "")
             ),
         )
         for error in design_ids.errors

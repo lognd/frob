@@ -641,7 +641,7 @@ def _ref001_or_002(
                     f"elsewhere in the repo plausibly names it -- cannot "
                     f"determine whether it is genuinely dead or reached "
                     f"only dynamically; verify by hand, or add a "
-                    f'`frob:used-by <consumer>` declaration once you know '
+                    f"`frob:used-by <consumer>` declaration once you know "
                     f"which caller reaches it"
                 ),
             )
@@ -819,9 +819,7 @@ def _ref_gate_file_violations(
     native_manifest = native_stub_pairs.get(rel_path)
     if native_manifest is not None:
         inbound = inbound | {native_manifest}
-    unresolved = not inbound and _unresolved_python_target(
-        rel_path, unresolved_imports
-    )
+    unresolved = not inbound and _unresolved_python_target(rel_path, unresolved_imports)
     tier_violation = _ref001_or_002(rel_path, inbound, unresolved=unresolved)
     if tier_violation is not None and tier_violation.rule not in _md_waived_rules(
         rel_path, text

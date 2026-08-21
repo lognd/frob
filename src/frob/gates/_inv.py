@@ -532,4 +532,3 @@ def inv004_gate(root: Path) -> tuple[Violation, ...]:
             continue
         violations.extend(file_violations)
     return tuple(violations)
-

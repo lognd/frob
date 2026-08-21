@@ -76,9 +76,7 @@ _log = logging.getLogger(__name__)
 
 
 # frob:ticket T-2761
-def _fmt001_scoped_fixes(
-    root: Path, only_paths: frozenset[str]
-) -> list[FixApplied]:
+def _fmt001_scoped_fixes(root: Path, only_paths: frozenset[str]) -> list[FixApplied]:
     """`fix_fmt001_directive_wrap`'s `only_paths` branch: format each
     named path individually (`format_paths` already accepts a single
     file as its `root` argument) instead of walking the whole tree. A

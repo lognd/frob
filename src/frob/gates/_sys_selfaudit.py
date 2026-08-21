@@ -278,16 +278,14 @@ def _selfaudit_violations(
     # SYS111, needs no `bind_code` binding and runs unconditionally.
     from frob.excludes import load_exclude_globs
 
-    strata_paths = _strata_files(
-        root, root / design_dir, load_exclude_globs(root)
-    )
+    strata_paths = _strata_files(root, root / design_dir, load_exclude_globs(root))
     ambient_reasons = check_ambient_capability_reasons(tuple(strata_paths))
     violations.extend(
         _selfaudit_violation(
             "SYS112",
             v.node,
             f"ambient (via-less) may {v.atom!r} at {v.file}:{v.line} has no "
-            "// because: \"...\" justification",
+            '// because: "..." justification',
             design_dir,
             root,
         )
