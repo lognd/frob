@@ -28,7 +28,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a6ccabe06fbfc7754b01a98c2f8e645826f48b79
 ---
 T-2410 gave `.strata` real publicness derived from `clearance`, but only
 node/store/queue carry a `clearance` clause in strata-core's grammar
