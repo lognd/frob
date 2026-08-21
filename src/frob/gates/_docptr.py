@@ -82,6 +82,10 @@ from frob.gates._docblocks import (
     _resolve_command_chain,
     _tracked_md_files,
 )
+from frob.gates._docblocks_refs import (
+    _BYPASS_SUBTREE_PATCHES,
+    _load_parser_factory,
+)
 from frob.gates._markdown_scan import strip_code_spans as _strip_code_spans
 from frob.gates._models import Severity, Violation
 from frob.gitio import run_argv
@@ -470,15 +474,50 @@ _CLI_TOKEN_RE = re.compile(
 )
 
 
-def _leaf_parser(parser, chain: list[str]):
+# frob:ticket T-2559
+def _leaf_parser(parser, chain: list[str], parser_dotted: str | None = None):
     """Walk `chain` through `parser`'s `add_subparsers` tree, returning the
     parser object reached (or the deepest one reached if `chain` runs past
     a leaf) -- lets flag resolution check the CORRECT subcommand's own
-    `--flag` registry rather than only the top-level one."""
+    `--flag` registry rather than only the top-level one.
+
+    T-2559: at each hop, before consulting `parser`'s own (possibly
+    decorative, `_build_parser()`-mirror) subparsers tree, check
+    `_BYPASS_SUBTREE_PATCHES` (T-2533, `frob.gates._docblocks_refs`) for
+    that exact `(parser_dotted, word)` pair -- the SAME table
+    `_console_trees`' tree-shape walk already consults for kind-2's
+    subcommand-CHAIN resolution. A hit means this verb is
+    `_dispatch_*`-bypassed and `_build_parser()`'s own registration for it
+    is a decorative mirror that can under-report real flags (T-2559: `frob
+    worktree sweep --force` -- `--force` is real on the dispatch-time
+    parser but absent from the mirror). Reuses T-2533's own bypass table
+    rather than a second one, so the two DOC006 resolution paths (chain
+    shape here, flags there) can never drift out of sync with each other
+    again. `parser_dotted` is `None` for a caller that has not resolved
+    which top-level console source `parser` came from (defensive default,
+    same fail-open posture as the rest of this walk) -- no bypass check
+    is possible without it, so the walk falls back to `parser`'s own tree
+    for every hop, same as before this ticket."""
     import argparse
 
     node = parser
     for word in chain:
+        if parser_dotted is not None:
+            bypass_dotted = _BYPASS_SUBTREE_PATCHES.get((parser_dotted, word))
+            if bypass_dotted is not None:
+                factory = _load_parser_factory(bypass_dotted)
+                if factory is not None:
+                    try:
+                        node = factory()
+                        continue
+                    except Exception as exc:  # noqa: BLE001 -- fail open, never crash the gate
+                        _log.warning(
+                            "doc006: bypass leaf-parser patch %r for verb %r "
+                            "raised: %s",
+                            bypass_dotted,
+                            word,
+                            exc,
+                        )
         subparsers_group = getattr(node, "_subparsers", None)
         actions = (
             subparsers_group._group_actions if subparsers_group is not None else ()
@@ -540,7 +579,7 @@ def _cli_violations(
             continue
         if not flags:
             continue
-        leaf = _leaf_parser(parser, chain)
+        leaf = _leaf_parser(parser, chain, parser_dotted=source.parser)
         known_flags = set(getattr(leaf, "_option_string_actions", {}).keys())
         for flag in flags:
             if flag not in known_flags:

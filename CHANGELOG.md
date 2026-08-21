@@ -113,6 +113,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2551: COV007 is mis-scoped for files with no public surface: 78 findings in scripts/ and .claude/hooks/
 - T-2552: builtin-raiser table attributes impossible raises: int/float TypeError, getattr/next default-arg overloads
 - T-2556: worktree-lease pre-commit hook refuses agent commits inside the leased worktree, and its error message advises a remedy that does not work
+- T-2559: DOC006 flag resolution has the same _build_parser()-mirror-drift false positive T-2533 fixed for subcommand chains
 - T-2561: Stale live lease scope drifts from an in-progress ticket's declared scope, undetected
 - T-2563: ledger-only ticket edits from a worktree strand on the branch and never reach main
 - T-2564: a land killed between stage and commit leaves content in the shared index where another land can absorb it

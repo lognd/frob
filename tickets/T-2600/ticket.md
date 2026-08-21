@@ -11,6 +11,8 @@ tier: ticket
 sprint: null
 runs_last: false
 milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-2450/**
 scope_breadth_ack: false
@@ -58,3 +60,6 @@ Two things worth checking together:
 2. T-2450's own scope should be split into two proper entries once
    someone picks it up (do not bulk-fix this from outside T-2450's own
    scope -- same over-broad-claim problem T-2593 was about).
+
+## Failure log
+- 2026-08-20 attempt 1: Premise already resolved: T-2450's scope was already split into two proper entries (src/frob/verify/**, src/frob/app/ticket_runner/**) by a prior fix, T-2614, recorded in T-2450's own scope_changes on 2026-08-19 -- the semicolon-joined single-string form this ticket describes no longer exists on current main. Verified by reading tickets/T-2450/ticket.md directly. Nothing to fix; requeuing rather than forcing scope. The open sub-question (should frob ticket scope/new --scope validate/reject a semicolon at write time) remains unaddressed and is worth a separate ticket if not already tracked, but is outside this ticket's declared scope (tickets/T-2450/**).

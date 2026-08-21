@@ -2,7 +2,7 @@
 id: T-2559
 title: DOC006 flag resolution has the same _build_parser()-mirror-drift false positive
   T-2533 fixed for subcommand chains
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -11,12 +11,32 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_docptr.py
+- tests/test_docptr_gate.py
+- docs/modules/tickets-landing.md
+evidence_scope:
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_docptr_gate.py
+  reason: T-2559's own brief requires positive-control tests plus removing the one
+    waiver it added
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: T-2559's own brief requires positive-control tests plus removing the one
+    waiver it added
+  actor: logan
+  at: '2026-08-21'
 body_changes:
 - mode: set
   reason: avoid backtick-wrapped bogus/gap CLI invocations tripping DOC006 on the
@@ -25,6 +45,9 @@ body_changes:
   at: '2026-08-18'
   old_length: 1686
   new_length: 1665
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Cli::test_dispatch_bypassed_worktree_sweep_force_flag_not_flagged
+- tests/test_docptr_gate.py::TestDoc006Cli::test_worktree_sweep_nonexistent_flag_still_flagged
 designated_repro_test: null
 threat: null
 component: null

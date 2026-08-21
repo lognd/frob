@@ -131,6 +131,7 @@ class TestDoc006DocAnchor:
         assert not _by_rule(violations, "docs/guide.md")
 
 
+# frob:ticket T-2559
 class TestDoc006Cli:
     """Kind 2: CLI INVOCATION -- `<prog> <subcommand>` / `--flag` checked
     against the live argparse registry (same [[docblocks.commands]] config
@@ -261,6 +262,58 @@ class TestDoc006Cli:
         found = _by_rule(violations, "docs/guide.md")
         assert found
         assert any("nonexistent-subcommand" in v.message for v in found)
+
+    # frob:ticket T-2559
+    # frob:waive DUP001 reason="structurally identical to the sibling T-2533 \
+    # subcommand-chain positive-fixture tests (same _init_repo/_write/_add_all/ \
+    # doc006_gate shape with different literal doc text) -- these are deliberate, \
+    # cheap, single-purpose regression fixtures per case, not accidental copy-paste \
+    # logic worth extracting into a shared helper that would make each case's own doc \
+    # text (the actual thing under test) harder to read at the call site"
+    def test_dispatch_bypassed_worktree_sweep_force_flag_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2559: `_build_parser()`'s decorative `--help`-only mirror of
+        `worktree sweep` (`frob._cli_parsers._core._add_worktree_parser`)
+        never registered `--force`, even though the real dispatch-time
+        parser (`frob.app.worktree_runner._build_worktree_parser`, the
+        SAME `_BYPASS_SUBTREE_PATCHES` target T-2533 wired for the
+        subcommand-chain check) genuinely has it (T-1739). This is the
+        FLAG-resolution false positive T-2533 left unfixed -- a doc citing
+        the real `frob worktree sweep --force` must not be flagged."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob worktree sweep --force` to override the liveness gate.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        assert not _by_rule(violations, "docs/guide.md")
+
+    # frob:ticket T-2559
+    def test_worktree_sweep_nonexistent_flag_still_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        """POSITIVE CONTROL (T-2559): the bypass-parser patch used for
+        flag resolution must not become a rubber stamp that waves through
+        EVERY flag under `worktree sweep` -- a genuinely nonexistent flag
+        on the REAL bypassed parser still fires. Without this control the
+        fix above would be indistinguishable from blinding DOC006 for the
+        whole `worktree sweep` leaf."""
+        _init_repo(tmp_path)
+        _write(tmp_path, "frob.toml", _CLI_CONFIG)
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "Run `frob worktree sweep --nonexistent-flag` first.\n",
+        )
+        _add_all(tmp_path)
+        violations = doc006_gate(tmp_path, _snapshot(tmp_path))
+        found = _by_rule(violations, "docs/guide.md")
+        assert found
+        assert any("--nonexistent-flag" in v.message for v in found)
 
 
 class TestDoc006Config:

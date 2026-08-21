@@ -1635,7 +1635,7 @@ produces a new `kept:live` verdict naming the pid
 (`kept:live(pid <N>) <path>`) -- unconditionally, regardless of whether
 the worktree is clean, leased, or old, which is exactly the property the
 2026-08-07 incident needed and the old three-gate design did not have.
-<!-- frob:waive DOC006 reason="T-2533 fixed the SUBCOMMAND-chain false positive for dispatch-bypassed verbs (worktree/release-publish), but --force is a genuinely real flag on frob worktree sweep (_add_worktree_parser's own --help mirror in src/frob/_cli_parsers/_core.py never registered it, a separate flag-level gap in the SAME decorative-mirror class DOC006's CLI walker reads flags from -- tracked as a follow-up, not fixed by T-2533" -->`frob worktree sweep --force` overrides the `kept:live` gate specifically
+`frob worktree sweep --force` overrides the `kept:live` gate specifically
 (dirty/age are unaffected by `--force`); refuse-by-default is the point
 of the flag existing at all, so reach for it narrowly, worktree by
 worktree, not as a blanket unblock for a whole sweep.
