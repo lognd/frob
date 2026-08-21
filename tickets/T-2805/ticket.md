@@ -106,7 +106,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4454e5cae01cf0261ec5972383141831f48f22b4
 ---
 ## Measured 2026-08-21 on the shared root
 
