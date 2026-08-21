@@ -52,7 +52,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a9ccca86a0a1f52e4af58cb76414bd0430593935
 ---
 Found while working T-2245 (docs-only scope, could not fix in place).
 `make check`'s recipe runs `check_native_staleness_or_exit`
