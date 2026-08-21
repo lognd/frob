@@ -2,7 +2,7 @@
 id: T-2557
 title: 'no gate catches an in-progress ticket with an EMPTY scope: SCOPE001 is diff-driven,
   TICK009 only checks breadth'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-18'
@@ -19,6 +19,8 @@ scope:
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
 - tests/test_tick013_gate.py
+- design/frob.strata
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +44,18 @@ scope_changes:
 - op: add
   glob: tests/test_tick013_gate.py
   reason: declare real scope for TICK013 empty-scope gate implementation
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: design/frob.strata
+  reason: SELFAUDIT001 exec-capability declaration for new test file, AFFECT001 doc-closure
+    for tickets_gate change
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: SELFAUDIT001 exec-capability declaration for new test file, AFFECT001 doc-closure
+    for tickets_gate change
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
