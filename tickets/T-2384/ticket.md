@@ -7,12 +7,25 @@ kind: bug
 origin: human
 created: '2026-08-17'
 priority: high
-parent: null
+parent: T-1382
 tier: epic
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-1382
+  reason: 'T-2770: T-2384 continues T-1382''s decomposition (item 4, path/shell portability
+    sweep); re-parenting so the epic reads its true unmet goal instead of NEEDS CLOSE'
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 acceptance:
 - text: Given a src-layout project whose package is NOT named frob, when every gate
