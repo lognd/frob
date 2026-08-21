@@ -226,6 +226,133 @@ def _is_property(root: Path, record) -> bool:
     return any(_PROPERTY_DECORATOR_RE.match(line) for line in snippet.splitlines())
 
 
+# frob:ticket T-2753
+_FIXTURE_DECORATOR_RE = re.compile(r"@(?:pytest\.fixture|pytest_asyncio\.fixture)\b")
+
+
+# frob:ticket T-2753
+def _is_pytest_fixture(root: Path, record) -> bool:
+    """True if `record`'s span opens with a bare `@pytest.fixture`/
+    `@pytest_asyncio.fixture` decorator (with or without call parens or
+    an `autouse=`/`scope=`/`name=` argument) -- deliberately WIDER than
+    `frob.gates._dead_symbols._is_autouse_pytest_fixture`, which only
+    matches the `autouse=True` case (its own callers already treat a
+    non-autouse fixture as ordinarily reachable-by-call, which is wrong:
+    a fixture is never called, autouse or not -- it is INJECTED, either
+    implicitly for every test in scope (autouse) or explicitly via a
+    test/fixture function's own PARAMETER LIST naming it (this function's
+    case). `_wire001_unwired_symbol_violations`'s `_new_callable_records`
+    filter already excludes the autouse case outright via the narrower
+    check; this one instead feeds `_is_reached_outside_diff_tests`'s
+    fixture-consumption reach check (`_is_fixture_consumed_as_parameter`)
+    for every OTHER (non-autouse) fixture, since a non-autouse fixture's
+    reachability genuinely depends on whether some test/fixture actually
+    names it -- an unwired non-autouse fixture (declared but never
+    requested by any test) is a real WIRE001 case, not one to blanket-
+    exempt like autouse."""
+    try:
+        lines = (root / record.id.path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return False
+    start, end = record.span
+    snippet = "\n".join(lines[start - 1 : end])
+    return any(
+        _FIXTURE_DECORATOR_RE.match(line.strip()) for line in snippet.splitlines()
+    )
+
+
+# frob:ticket T-2753
+def _fixture_param_names(root: Path, path: str) -> frozenset[str]:
+    """Every bare parameter name (excluding `self`/`cls`) across every
+    `def`/`async def` in `path`, parsed via `ast` -- the same
+    simpler-and-more-precise-than-text-scan approach `_kwonly_param_names`
+    already uses for a narrower question. This is deliberately whole-
+    function-set, not "does this ONE symbol's def line contain the
+    name" (a text scan cannot see a multi-line parameter list reliably,
+    and pytest's dependency-injection consumption is a NAME match against
+    ANY function's signature, same-file OR imported from elsewhere --
+    `frob.gates._wire`'s own `_is_reached_outside_diff_tests` already
+    walks every `.py` file in the snapshot, so this is called once per
+    candidate file from that same loop). Returns an empty frozenset (never
+    raises) for an unreadable or unparseable file -- this gate's standing
+    fail-closed-on-io/fail-open-on-recall bias, same as every other
+    resolver in this module."""
+    try:
+        source = (root / path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return frozenset()
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return frozenset()
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        args = node.args
+        for arg in (
+            *args.posonlyargs,
+            *args.args,
+            *args.kwonlyargs,
+        ):
+            if arg.arg not in ("self", "cls"):
+                names.add(arg.arg)
+    return frozenset(names)
+
+
+# frob:ticket T-2753
+def _is_fixture_consumed_as_parameter(
+    root: Path, snapshot: GraphSnapshot, record, short: str
+) -> bool:
+    """True if `short` (a pytest fixture's own name, `_is_pytest_fixture`
+    already confirmed) appears as a bare parameter name in ANY function
+    signature anywhere in `snapshot` OTHER than the fixture's own
+    definition -- pytest's dependency-injection consumption shape
+    (`def test_x(self, outside_view):`), which no call-shaped text scan
+    (`_wire_reach_patterns`) can ever see, since a consumed fixture is
+    never followed by a call token. Closes the WIRE001 blind spot T-2743
+    disclosed (a fixture consumed only via this shape false-positived as
+    dead, worked around with a per-site `frob:waive WIRE001` until this
+    ticket): a fixture named as a parameter in its OWN file, a sibling
+    test file, or a file that imports it directly (T-2492's own
+    cross-module fixture-import precedent) all resolve to the identical
+    "some function's signature names this fixture" question this checks,
+    with no need to separately trace the import."""
+    own_path = record.id.path
+    own_start, own_end = record.span
+    for path in snapshot.file_hashes:
+        if not path.endswith(".py"):
+            continue
+        if short not in _fixture_param_names(root, path):
+            continue
+        if path != own_path:
+            return True
+        # Same-file: a genuine consumer's `def` line sits outside the
+        # fixture's own definition span (a fixture never names itself
+        # as its own parameter) -- but `_fixture_param_names` only
+        # returns names, not locations, so re-parse to check for a
+        # SECOND def (any function) naming `short`, ignoring the
+        # fixture's own signature.
+        try:
+            source = (root / path).read_text(encoding="utf-8")
+            tree = ast.parse(source)
+        except (OSError, UnicodeDecodeError, SyntaxError):
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if own_start <= node.lineno <= own_end:
+                continue
+            args = node.args
+            names = {
+                arg.arg
+                for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs)
+            }
+            if short in names:
+                return True
+    return False
+
+
 # frob:ticket T-1502
 # frob:ticket T-2746
 def _wire_reach_patterns(
@@ -399,8 +526,28 @@ def _enclosing_def_is_test_function(lines: list[str], lineno: int) -> bool:
     return False
 
 
+# frob:ticket T-2753
+def _fixture_reach_short_circuit(
+    root: Path, snapshot: GraphSnapshot, record, short: str
+) -> bool | None:
+    """`_is_reached_outside_diff_tests`'s T-2753 short-circuit, split out
+    to keep that function under ARCH001's line threshold (same reasoning
+    as `_wire_scan_decision`'s own T-1746 split): `None` when `record` is
+    not a confirmed non-autouse pytest fixture (`_is_pytest_fixture`),
+    telling the caller to fall through to the ordinary call-shaped scan
+    unchanged; otherwise the fixture-consumption verdict itself
+    (`_is_fixture_consumed_as_parameter`) -- dependency injection is
+    never a call token, so a confirmed fixture skips the scan below
+    entirely rather than running it and finding nothing, which loses no
+    recall (a fixture is never legitimately called directly)."""
+    if record.kind not in _CALLABLE_KINDS or not _is_pytest_fixture(root, record):
+        return None
+    return _is_fixture_consumed_as_parameter(root, snapshot, record, short)
+
+
 # frob:ticket T-1502
 # frob:ticket T-1746
+# frob:ticket T-2753
 def _is_reached_outside_diff_tests(
     root: Path, snapshot: GraphSnapshot, record, def_lines: frozenset[int]
 ) -> bool:
@@ -441,8 +588,15 @@ def _is_reached_outside_diff_tests(
     a property-shaped bare-attribute-access alternative
     (`property_access_pattern`, `_wire_reach_patterns`) -- its only
     legal Python access shape, which none of the call-shaped/wrapper/
-    member-access patterns above can see."""
+    member-access patterns above can see.
+
+    T-2753: a non-autouse pytest fixture is reached via dependency
+    injection (a parameter name, never a call token) -- see
+    `_fixture_reach_short_circuit`, checked first."""
     short = _short_name(record.id.qualname)
+    fixture_reach = _fixture_reach_short_circuit(root, snapshot, record, short)
+    if fixture_reach is not None:
+        return fixture_reach
     is_property = record.kind == SymbolKind.METHOD and _is_property(root, record)
     call_pattern, wrapper_pattern, member_access_pattern, property_access_pattern = (
         _wire_reach_patterns(short, record.kind, is_property=is_property)

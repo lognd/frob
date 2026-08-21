@@ -2,7 +2,7 @@
 id: T-2753
 title: WIRE001 call-graph resolver cannot see pytest fixture consumption via dependency
   injection
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-20'
