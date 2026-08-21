@@ -1,7 +1,7 @@
 ---
 id: T-2761
 title: Wire frob fmt callers to per-language resolve_line_length (T-1606 follow-up)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-20'
@@ -18,10 +18,25 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/gates/_fix_engine_text.py
 - src/frob/gates/_todo_fmt.py
+- docs/modules/gates.md
+- tests/unit/test_fmt_wiring_reachability_t2761.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'T-2761: doc updates to gates.md''s FMT001 section + reachability test file
+    are part of the wiring fix'
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/unit/test_fmt_wiring_reachability_t2761.py
+  reason: 'T-2761: doc updates to gates.md''s FMT001 section + reachability test file
+    are part of the wiring fix'
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
