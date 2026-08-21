@@ -6,16 +6,29 @@ kind: bug
 origin: human
 created: '2026-08-17'
 priority: medium
-parent: null
+parent: T-2384
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/scaffold/_skills_sync.py
 - tests/unit/test_skills_sync.py
 - docs/commands/sync-skills.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2384
+  reason: 'T-2770: T-2386 is T-2384''s sync-skills successor work, filed unparented;
+    re-parenting so the epic''s rot-detector reads accurately'
+  actor: logan
+  at: '2026-08-21'
 evidence:
 - tests/unit/test_skills_sync.py::TestSyncSkills::test_syncs_new_repo_entries
 - tests/unit/test_skills_sync.py::TestSyncSkills::test_updates_existing_entry_in_place
