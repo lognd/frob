@@ -25,7 +25,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 329a1197f73005334a703c940e89ff1ccb365c7a
 ---
 Surfaced during T-2743's ARCH103 disposition work (found while scoped to a different, named set of ARCH103 sites; out of T-2743's declared scope so not fixed there). _promote_pending_drafts_after_close (src/frob/app/ticket_runner/_close_cmd.py:1338) mixes I/O, string-formatting, and 6 decision points in one body per ARCH103. Needs its own subsystem-owner disposition: either a T-0977-style waiver (if it is genuinely a cohesive orchestration routine, same shape as the many already-waived CLI/IO helpers) or a real decomposition.
 
