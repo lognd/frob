@@ -26,6 +26,7 @@ scope:
 - tests/test_ticket_evidence.py
 - tests/test_ticket_land.py
 - tests/test_ticket_leases.py
+- tests/test_ticket_reconcile.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +36,12 @@ scope_changes:
   glob: tests/conftest.py
   reason: collides with T-draft-8e8177c3's live lease (T-2373 child worktree) -- swapping
     to the next unclaimed file in the remaining-72 list
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_ticket_reconcile.py
+  reason: swap-in for tests/conftest.py, removed for a lease collision -- keeps batch
+    11 at 13 files
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
