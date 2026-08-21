@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -729,6 +730,73 @@ class TestRunGatesCacheWiring:
         monkeypatch.setattr("frob.gates.run_gates", fake_run_gates)
         _run_gates(tmp_path, no_cache=True)
         assert seen["use_cache"] is False
+
+
+# frob:ticket T-2806
+class TestParseArtifactCacheWarmedBeforeGraphBuild:
+    """T-2806: `frob.gates._run_gates_bounded` must stamp
+    `PARSE_ARTIFACT_CACHE_ENV` (`_stamp_worker_parse_artifact_cache_env`)
+    BEFORE `_load_inputs` builds the graph -- not only later, right
+    before `_open_process_pool` spawns gate workers (T-1464's original
+    placement) -- so `build_graph`'s own `frob.lang.parse_file` calls
+    warm the shared persistent parse-artifact cache instead of leaving
+    every process-pool gate worker (perf/dead_symbols/archgate/sys/
+    clones) to independently pay a cold first-touch extract() cost, or
+    race a sibling worker for one (T-2790/T-2797's measured redundancy).
+    """
+
+    def test_env_var_set_before_load_inputs_builds_graph(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # frob:tests src/frob/gates/__init__.py::_run_gates_bounded kind="unit"
+        import frob.gates as gates_mod
+        from frob.lang import PARSE_ARTIFACT_CACHE_ENV
+
+        seen: dict[str, object] = {}
+
+        def spy_load_inputs(cfg):  # noqa: ANN001
+            from typani import Err
+
+            # frob:waive SEC110 reason="reads back the FROB_PARSE_ARTIFACT_CACHE \
+            # filesystem-path marker this same test just caused to be stamped; not a \
+            # secret, matches production's own frob:waive on the same read pattern"
+            seen["env_at_load_inputs"] = os.environ.get(PARSE_ARTIFACT_CACHE_ENV)
+            return Err(gates_mod.GateError.GraphUnavailable)
+
+        monkeypatch.setattr(gates_mod, "_load_inputs", spy_load_inputs)
+
+        cfg = gates_mod.GateConfig(root=str(tmp_path))
+        result = gates_mod.run_gates(cfg)
+
+        assert result.is_err
+        expected_cache_path = str(
+            (tmp_path / ".frob" / "parse-artifacts.db").resolve()
+        )
+        assert seen["env_at_load_inputs"] == expected_cache_path
+
+    def test_stamp_is_idempotent_across_both_call_sites(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # src/frob/gates/__init__.py::_stamp_worker_parse_artifact_cache_env kind="unit"
+        from frob.gates import _stamp_worker_parse_artifact_cache_env
+        from frob.lang import PARSE_ARTIFACT_CACHE_ENV
+
+        _stamp_worker_parse_artifact_cache_env(tmp_path)
+        # frob:waive SEC110 reason="reads back the FROB_PARSE_ARTIFACT_CACHE \
+        # filesystem-path marker this same test just caused to be stamped; not a \
+        # secret, matches production's own frob:waive on the same read pattern"
+        first = os.environ.get(PARSE_ARTIFACT_CACHE_ENV)
+        # Calling it again (the later, pre-existing call site inside
+        # `_open_process_pool`) must be a harmless repeat, not a second,
+        # divergent path.
+        _stamp_worker_parse_artifact_cache_env(tmp_path)
+        # frob:waive SEC110 reason="reads back the FROB_PARSE_ARTIFACT_CACHE \
+        # filesystem-path marker this same test just caused to be stamped; not a \
+        # secret, matches production's own frob:waive on the same read pattern"
+        second = os.environ.get(PARSE_ARTIFACT_CACHE_ENV)
+        assert first == second
+        assert first is not None
 
 
 class TestSummarySeverityHonesty:

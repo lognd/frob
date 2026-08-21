@@ -2,7 +2,7 @@
 id: T-2806
 title: Stamp the parse-artifact cache env before build_graph, not just before the
   gate process pool
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -17,10 +17,16 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/__init__.py
 - tests/unit/test_check.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_check.py::TestParseArtifactCacheWarmedBeforeGraphBuild::test_env_var_set_before_load_inputs_builds_graph
+- tests/unit/test_check.py::TestParseArtifactCacheWarmedBeforeGraphBuild::test_stamp_is_idempotent_across_both_call_sites
+- tests/test_gates.py::test_gates_run_gates_integration
 designated_repro_test: null
 threat: null
 component: null

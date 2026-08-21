@@ -7415,6 +7415,7 @@ def _stamp_worker_lock_keys_env() -> None:
 
 
 # frob:ticket T-1464
+# frob:ticket T-2806
 def _stamp_worker_parse_artifact_cache_env(root: Path) -> None:
     """Stamp `frob.lang.PARSE_ARTIFACT_CACHE_ENV` with `root`'s resolved
     `.frob/parse-artifacts.db` path (`_parse_artifact_cache_path`), BEFORE
@@ -7427,6 +7428,18 @@ def _stamp_worker_parse_artifact_cache_env(root: Path) -> None:
     dead_symbols/arch/sys/pii, T-1217's root-cause finding) become visible
     to every sibling worker instead of each independently re-parsing +
     re-extracting the whole repo (T-1464).
+
+    T-2806: also called a SECOND time, earlier, from `_run_gates_bounded`
+    itself -- before `_load_inputs`/`build_graph` rather than only right
+    before `_open_process_pool` -- so `build_graph`'s own parse/extract
+    pass over every file (which runs in THIS process, not a pool worker)
+    warms the same persistent cache instead of leaving it cold for every
+    process-pool gate worker to race over. Idempotent by construction
+    (re-connects to the same already-valid db file and re-stamps the
+    same path onto `os.environ`), so calling it twice per `run_gates`
+    invocation is a harmless, cheap (single sqlite open/close) repeat,
+    not a correctness concern -- see `_run_gates_bounded`'s own
+    docstring for the full incident this second call site closes.
 
     Also creates/migrates the db file HERE, once, in the parent, via
     `frob.graph.cache.connect()` -- NOT lazily inside each worker's first
@@ -7934,6 +7947,7 @@ def run_gates(
 
 # frob:ticket T-1501
 # frob:ticket T-1445
+# frob:ticket T-2806
 def _run_gates_bounded(
     cfg: GateConfig, *, use_cache: bool = False, max_process_workers: int | None = None
 ) -> Result[GateReport, GateError]:
@@ -7969,7 +7983,37 @@ def _run_gates_bounded(
     of reporting NATIVE001, closing the worktree-natives false-failure
     class this ticket's Description names. NATIVE001 itself still fires,
     fail-closed, whenever the rebuild could not happen (no toolchain) or
-    failed outright."""
+    failed outright.
+
+    T-2806: `_stamp_worker_parse_artifact_cache_env` is now also called
+    HERE, before `_load_inputs` (and therefore before the `build_graph`
+    call `_load_inputs` makes) -- not just later, inside
+    `_open_process_pool`, right before the `ProcessPoolExecutor` for
+    `process_jobs` spawns (T-1464's original placement). `_load_inputs`'s
+    own `build_graph` call parses and extracts EVERY file to build the
+    symbol graph, via the same `frob.lang.parse_file` every process-pool
+    gate worker (perf/dead_symbols/archgate/sys/clones) also calls -- but
+    until this ticket, it did so with `PARSE_ARTIFACT_CACHE_ENV` still
+    unset (the stamp had not happened yet), so none of that work ever
+    reached the persistent disk cache `_parse_file_with_artifact_cache`
+    (T-1464) writes to. Every process-pool gate worker then started from
+    a COLD cache and, dispatched into the same `ProcessPoolExecutor` wave
+    as its siblings, largely raced them for it too (T-2790/T-2797/T-2806
+    measured perf and dead_symbols each independently paying close to
+    their full cold extract() cost even when run together). Stamping
+    here means `build_graph`'s own parse/extract pass -- which already
+    has to touch every file once, unconditionally -- warms the shared
+    disk cache for free before any gate worker exists at all; workers
+    then read an already-populated cache instead of racing to fill one.
+    `_stamp_worker_parse_artifact_cache_env` is idempotent (re-opens the
+    same already-valid db file and re-stamps the same path), so the
+    later call inside `_open_process_pool` -- kept unchanged, as a
+    safety net for any future caller that reaches process-pool dispatch
+    by a path that skips this one -- is a harmless no-op repeat, not a
+    correctness risk. Uses `_repo_root_for_natives` (identical to
+    `st.repo_root`, computed the same way from the same `cfg.root`, see
+    `_assemble_gate_inputs`) so both stamps agree on the same cache
+    path."""
     start_all = time.monotonic()
     selected = cfg.gates or _ALL_GATES
     _log.info(
@@ -7985,6 +8029,12 @@ def _run_gates_bounded(
     native_report = _native_unavailable_report(_repo_root_for_natives)
     if native_report is not None:
         return Ok(native_report)
+
+    # T-2806: stamp BEFORE `_load_inputs` (and the `build_graph` call it
+    # makes) so the owner process's own parse_file calls during graph
+    # construction warm the shared persistent parse-artifact cache --
+    # see this function's own docstring for the full incident/rationale.
+    _stamp_worker_parse_artifact_cache_env(_repo_root_for_natives)
 
     inputs_result = _load_inputs(cfg)
     if inputs_result.is_err:
