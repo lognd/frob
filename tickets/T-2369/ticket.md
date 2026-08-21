@@ -25,6 +25,18 @@ scope:
 - src/frob/gates/_refs.py
 - tests/test_refs_gate.py
 - tests/unit/gates/test_refs.py
+- src/frob/app/_check_chunking.py
+- src/frob/app/check_runner.py
+- src/frob/check/__init__.py
+- src/frob/check/_python.py
+- src/frob/deploy/_conform.py
+- src/frob/gates/_exhaustive_handling.py
+- src/frob/gates/_registry_exhaustiveness.py
+- src/frob/gates/_sys_selfaudit.py
+- src/frob/strata/_capacity.py
+- src/frob/strata/_cve_fingerprint.py
+- src/frob/strata/_selfconform.py
+- tests/test_registry_exhaustiveness.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -96,6 +108,90 @@ scope_changes:
   glob: tests/unit/gates/test_refs.py
   reason: REF001/REF002 systematic-cause collapse (glob entrypoints + doc fixes) +
     severity promotion
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/_check_chunking.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/deploy/_conform.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_exhaustive_handling.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_sys_selfaudit.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/strata/_capacity.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/strata/_cve_fingerprint.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/strata/_selfconform.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: 'REG008 burn-down (T-2369 remaining): add missing frob:enforces directive
+    at each entry''s real violation-emitting function; DOC012''s site (src/frob/gates/_docblocks.py)
+    excluded, live-leased by in-progress T-2359'
   actor: logan
   at: '2026-08-21'
 evidence:
