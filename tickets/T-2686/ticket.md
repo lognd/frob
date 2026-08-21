@@ -2,7 +2,7 @@
 id: T-2686
 title: 'COV003 on 6 closed tickets: deleted/renamed test node ids, six materially
   different dispositions needed'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

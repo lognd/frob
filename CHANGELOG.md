@@ -194,6 +194,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2682: LANG004: behavioral coverage for test_discovery (the last of 7 capabilities left structural-only)
 - T-2683: Consumer-side self-disclosure when an OPTIONAL adapter capability gap silently degrades output
 - T-2685: Persistent unfixed repo-debt tracking (continuation of T-2674): 35 identit(ies) remaining
+- T-2686: COV003 on 6 closed tickets: deleted/renamed test node ids, six materially different dispositions needed
 - T-2690: TICK006 phantom-filing auto-recovery is 92% false-positive and its refusal blocks unrelated lands
 - T-2694: Split src/frob/app/telemetry.py: 3 real seams (event/footgun/usage), T-1656 successor
 - T-2695: LARGE001 remainder batch 2: ~80 files after T-1656's batch-1 (2 waived, 1 seam filed)

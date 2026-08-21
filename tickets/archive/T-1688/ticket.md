@@ -154,7 +154,6 @@ evidence:
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_empty_queue_is_a_noop
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_first_run_establishes_baseline_without_advancing
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_five_queued_entries_call_verify_exactly_once
-- tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_new_findings_file_a_ticket_and_do_not_advance
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_queue_unreadable_is_an_error
 - tests/unit/verify/test_worker.py::TestRunCoalescedVerification::test_unmeasurable_never_advances_watermark
 designated_repro_test: null

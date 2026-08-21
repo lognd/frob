@@ -70,7 +70,6 @@ evidence:
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_every_language_declares_every_capability
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_real_registry_has_no_conformance_violations
 - tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_strata_call_graph_is_not_applicable
-- tests/test_lang_support.py::TestDeriveCapabilityRegistry::test_typescript_import_graph_is_a_reasoned_known_gap
 - tests/test_lang_support.py::TestCapabilityConformanceViolations::test_missing_capability_fails
 - tests/test_lang_support.py::TestCapabilityConformanceViolations::test_fully_registered_language_passes
 - tests/test_lang_support.py::TestCapabilityConformanceViolations::test_unreasoned_known_gap_fails
