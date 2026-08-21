@@ -16,10 +16,25 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
+- tests/test_tickets_parent.py
+- tests/test_tickets_priority.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_tickets_parent.py
+  reason: T-2785's fix needs new tests exercising the pre-write land-in-progress guard
+    and the set-parent no-op fix
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_tickets_priority.py
+  reason: T-2785's fix needs new tests exercising the pre-write land-in-progress guard
+    and the set-parent no-op fix
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
