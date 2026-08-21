@@ -16,6 +16,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/conftest.py
+evidence_scope:
+- tests/unit/test_conftest_stackdump.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +29,8 @@ scope_changes:
     the only mechanical fix location is _SELF_SCAN_HEAVY_NAME_SUBSTRINGS in tests/conftest.py'
   actor: logan
   at: '2026-08-20'
+evidence:
+- tests/unit/test_conftest_stackdump.py::TestSelfScanHeavyGrouping::test_self_scan_heavy_tests_share_one_xdist_group
 designated_repro_test: null
 threat: null
 component: null
