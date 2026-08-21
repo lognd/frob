@@ -411,7 +411,7 @@ _AMBIENT_MAY_RE = re.compile(
 #: match -- fail SOFT on the label only, never on the finding itself, since
 #: the reason-missing violation is real regardless of whether its owning
 #: node could be named.
-_NODE_HEADER_RE = re.compile(r'^\s*(?:node|store)\s+(?P<node>[A-Za-z_][\w.]*)\s*:')
+_NODE_HEADER_RE = re.compile(r"^\s*(?:node|store)\s+(?P<node>[A-Za-z_][\w.]*)\s*:")
 
 
 # frob:doc docs/strata/surface.md#may-scope

@@ -34,8 +34,7 @@ def add_release_publish_parser(sub: argparse._SubParsersAction) -> None:
     than through that package (see this module's own docstring for why)."""
     release_p = sub.add_parser(
         "release",
-        help="frob release publish -- version bump + commit + push + build + "
-        "publish",
+        help="frob release publish -- version bump + commit + push + build + publish",
     )
     release_sub = release_p.add_subparsers(dest="release_subcommand", required=True)
     publish_p = release_sub.add_parser(

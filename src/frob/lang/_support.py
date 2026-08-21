@@ -831,8 +831,7 @@ def _capability_test_discovery_status(language: str) -> CapabilityStatus:
         if getattr(_testing_mod, attr_name, None) is not None:
             return _cap_implemented(
                 CapabilityRequirement.REQUIRED,
-                f"{qualname} (frob.lang._support._TEST_DISCOVERY_"
-                "COLLECTORS entry)",
+                f"{qualname} (frob.lang._support._TEST_DISCOVERY_COLLECTORS entry)",
             )
         return _cap_known_gap(
             CapabilityRequirement.REQUIRED,

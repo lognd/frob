@@ -1,7 +1,7 @@
 ---
-id: T-draft-03fd43db
-title: 'Reformat batch 4/N: 10 files pending ruff-format (T-2359 child)'
-state: queued
+id: T-2784
+title: 'Reformat batch 4/N: 13 files pending ruff-format (T-2359 child)'
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -14,6 +14,10 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
+- src/frob/gates/_profile_schema.py
+- src/frob/gates/_rule_id_scan.py
+- src/frob/gates/_testing_schema.py
+- src/frob/gates/_wire.py
 - src/frob/lang/__init__.py
 - src/frob/lang/_extract.py
 - src/frob/lang/_support.py
@@ -27,12 +31,6 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-scope_changes:
-- op: remove
-  glob: src/frob/gates/_wire.py
-  reason: T-2778 holds a live lease on this file
-  actor: logan
-  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
@@ -40,7 +38,9 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-Batch 4/N of T-2359: apply ruff-format-only reformat to 10 files.
-Excludes src/frob/gates/_tickets_gate.py, _waive.py, _profile_schema.py,
-_rule_id_scan.py, _testing_schema.py (live T-2557 lease). No semantic
-changes; format-only diff.
+Batch 4/N of T-2359: apply ruff-format-only reformat to 13 files.
+Excludes src/frob/gates/_tickets_gate.py and src/frob/gates/_waive.py
+(live T-2557 lease). No semantic changes; format-only diff.
+
+## Drop reason
+- 2026-08-21: refiling with narrower scope: T-2557 lease also covers _profile_schema.py, _rule_id_scan.py, _testing_schema.py per coordinator, not just _tickets_gate.py/_waive.py as the ticket file's declared scope currently shows

@@ -792,8 +792,7 @@ def boundary_scope_nodes(
     flow = facts.flows.get(boundary.flow_id)
     if flow is None:  # pragma: no cover - `build_facts` guarantees this join
         _log.error(
-            "threat: boundary %r names flow_id %r with no matching flow "
-            "in this model",
+            "threat: boundary %r names flow_id %r with no matching flow in this model",
             boundary_id,
             boundary.flow_id,
         )

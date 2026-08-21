@@ -238,8 +238,10 @@ def _parse_one_design_file(
             if parsed.danger_err is StrataError.NativeExtensionUnavailable
             else None
         )
-        return rel, None, DesignLoadError(
-            path=rel, error=parsed.danger_err, detail=detail
+        return (
+            rel,
+            None,
+            DesignLoadError(path=rel, error=parsed.danger_err, detail=detail),
         )
     return rel, parsed.danger_ok, None
 

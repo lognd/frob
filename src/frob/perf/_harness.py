@@ -26,7 +26,6 @@ threads/processes -- see that module's docstring for why cProfile/
 StackSampler cannot see pool-dispatched work otherwise.
 """
 
-
 from __future__ import annotations
 
 import cProfile

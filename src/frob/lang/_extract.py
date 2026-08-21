@@ -346,11 +346,7 @@ def _imports_rust(root: Node) -> tuple[str, ...]:
     def visit(n: Node) -> None:
         if n.type == "use_declaration":
             path_node = next(
-                (
-                    c
-                    for c in n.named_children
-                    if c.type not in ("visibility_modifier",)
-                ),
+                (c for c in n.named_children if c.type not in ("visibility_modifier",)),
                 None,
             )
             if path_node is not None:

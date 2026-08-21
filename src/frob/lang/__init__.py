@@ -619,9 +619,7 @@ def _parse_uncached_and_store(
     parser = get_parser(grammar_name)  # type: ignore[arg-type]
     tree_result = _run_parse_with_timeout(lambda: parser.parse(source), path)
     if tree_result.is_err:
-        result: Result[tuple[Tree, bytes, str], LangError] = Err(
-            tree_result.danger_err
-        )
+        result: Result[tuple[Tree, bytes, str], LangError] = Err(tree_result.danger_err)
         with _parse_cache_lock:
             _parse_cache[cache_key] = result
         return result
@@ -987,9 +985,7 @@ def _parse_file_uncached(
     return Ok(_build_parsed_file(path, language_label, symbols, comments, source))
 
 
-_parse_file_memoized: (
-    Callable[..., Result[ParsedFile, LangError]] | None
-) = None
+_parse_file_memoized: Callable[..., Result[ParsedFile, LangError]] | None = None
 
 
 # frob:doc docs/modules/graph.md#public-api

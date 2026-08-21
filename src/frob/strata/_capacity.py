@@ -106,8 +106,7 @@ def _node_capacity_per_second(node: Node) -> float | None:
     base = node.capacity.service_rate.base_value()
     if base.is_err:
         _log.warning(
-            "capacity: node %s capacity.service_rate unresolvable (%s), "
-            "skipping",
+            "capacity: node %s capacity.service_rate unresolvable (%s), skipping",
             node.id,
             base.danger_err,
         )
@@ -183,9 +182,7 @@ def project_capacity(
         aggregate = facts.aggregate_demand(node.id)
         projected_demand = aggregate.value * scale
         if projected_demand > capacity:
-            violations.append(
-                _capacity_violation(node.id, projected_demand, capacity)
-            )
+            violations.append(_capacity_violation(node.id, projected_demand, capacity))
 
     return Ok(
         CapacityReport(

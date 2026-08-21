@@ -248,6 +248,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2775: no shared primitive for 'wait until a land slot is free', so every agent hand-rolls a noisy poll loop that misreads failure as zero
 - T-2776: Reformat batch 2/N: 10 files pending ruff-format (T-2359 child)
 - T-2777: Reformat batch 3 of ruff-format-only reformat (T-2359 child)
+- T-2783: Reformat batch 4/N: 10 files pending ruff-format (T-2359 child)
 
 ## [0.530.0] - unreleased
 
