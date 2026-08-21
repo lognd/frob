@@ -2,7 +2,7 @@
 id: T-2080
 title: 'gate-gap class 4 (non-python doc targets): frob.toml severity + remaining
   config surfaces still unanchored'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-10'
@@ -11,11 +11,64 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/**
 - docs/audits/docs-staleness-2026-07-29.md
+- src/frob/gates/_doclink_docanchor.py
+- src/frob/gates/__init__.py
+- src/frob/check/__init__.py
+- docs/modules/gates.md
+- tests/test_gates.py
+- tickets/T-draft-438763fd/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/**
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tests/test_gates.py
+  reason: narrow package glob to the specific files docseverity_gate (DOC013) actually
+    touches
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: tickets/T-draft-438763fd/**
+  reason: filed follow-up ticket for the live arch.md severity-table drift the new
+    DOC013 gate found
+  actor: logan
+  at: '2026-08-20'
 designated_repro_test: null
 threat: null
 component: null
