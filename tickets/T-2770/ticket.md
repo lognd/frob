@@ -27,6 +27,7 @@ scope:
 - src/frob/tickets/_models.py
 - src/frob/tickets/__init__.py
 - tests/test_tickets_parent.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -209,6 +210,12 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_parent.py
   reason: new test file for the set_parent setter
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: 'AFFECT001: TicketError changed and needs its affects()-closure doc touched
+    in this diff'
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
