@@ -2,8 +2,8 @@
 id: T-2782
 title: landing is serialized on a ~300s critical section, capping fleet throughput
   at ~1 ticket/5-6min regardless of agent count
-state: queued
-kind: feature
+state: in-progress
+kind: docs
 origin: agent
 created: '2026-08-21'
 priority: high
@@ -20,6 +20,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: kind
+  old_value: feature
+  new_value: docs
+  reason: measurement/investigation deliverable, docs/investigations/ scope only,
+    no code change
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
