@@ -2,7 +2,7 @@
 id: T-2782
 title: landing is serialized on a ~300s critical section, capping fleet throughput
   at ~1 ticket/5-6min regardless of agent count
-state: in-progress
+state: done
 kind: docs
 origin: agent
 created: '2026-08-21'

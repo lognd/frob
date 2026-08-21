@@ -329,6 +329,15 @@ Full-repo pessimistic capability audit (2026-07-20): every way a green
 - [docs/audits/check-performance.md](audits/check-performance.md) -- T-0928 end-to-end `frob check` profile: `frob.perf`'s own collectors are blind to thread-pool/process-pool gate dispatch; ranked wall-clock hot-path table anchored on `gate-summary` brackets instead; four follow-up tickets filed.
 - [docs/audits/test005-zero-classification-t1418.md](audits/test005-zero-classification-t1418.md) -- T-1418: all 306 symbol-level TEST005 findings at exactly 0.0% branch coverage classified as coverage-combine attribution artifacts, not genuine gaps.
 
+## Investigations (`docs/investigations/`)
+
+Point-in-time measurement docs answering one specific question with real
+data, cited from the ticket they were dispatched for -- not living
+reference docs, not updated after the fact.
+
+- [docs/investigations/T-2202-mega-cluster.md](investigations/T-2202-mega-cluster.md) -- T-2202: does the 175-file CYCLE001 mega-cluster decompose via a small hub-file removal set? Measured: no.
+- [docs/investigations/T-2782-land-serialization.md](investigations/T-2782-land-serialization.md) -- T-2782: is landing's ~300s critical section cheapenable by moving verification outside the land lock? Measured: no -- check_gates() dominates, ~87% of its cost is genuinely post-merge-dependent whole-program analysis, and main moves between nearly every consecutive land under real contention.
+
 ## Planned / tracked work
 
 - `tickets.md` -- the dispatchable queue (`frob ticket doable`): open work,
