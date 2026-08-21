@@ -35,6 +35,12 @@ scope_changes:
     opt-in in tickets-landing.md
   actor: logan
   at: '2026-08-21'
+evidence:
+- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_ample_deadline_defaults_to_the_near_zero_ceiling_not_the_flat_500s
+- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_restores_a_longer_in_land_wait
+- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_opt_in_env_is_still_capped_by_the_remaining_budget
+- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_unparseable_inline_wait_env_falls_back_to_the_near_zero_default
+- tests/test_ticket_land.py::TestLandLockInlineWaitDefaultsNearZero::test_held_lock_released_quickly_leaves_almost_the_whole_deadline_for_work
 designated_repro_test: null
 threat: null
 component: null
