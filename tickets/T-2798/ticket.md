@@ -18,6 +18,7 @@ scope:
 - src/frob/vet/_capability_scan.py
 - src/frob/vet/_capability_python.py
 - tests/unit/test_capability_native.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_capability_native.py
   reason: T-2798 threading-parity regression tests for the candidates-threading fix
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'AFFECT001: _python_local_wrapper_capabilities signature changed, its affects()-closure
+    doc target needs the corresponding update'
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
