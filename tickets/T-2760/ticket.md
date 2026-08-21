@@ -2,7 +2,7 @@
 id: T-2760
 title: 'Two tickets can own the same (rule, file) finding: the duplicate check compares
   titles, not finding identity'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-20'
@@ -27,6 +27,7 @@ scope:
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-data-storage.md
 - docs/modules/tickets-verify-sweep.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -100,6 +101,11 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-verify-sweep.md
   reason: docs for new finding-identity field/CLI flag
+  actor: logan
+  at: '2026-08-20'
+- op: add
+  glob: frob.lock
+  reason: T-2760 acks two DRIFT001 digests it moved
   actor: logan
   at: '2026-08-20'
 designated_repro_test: null
