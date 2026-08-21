@@ -11,10 +11,39 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_tickets_gate.py
+- src/frob/gates/_waive.py
+- docs/modules/gates.md
+- tests/test_tick013_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_tickets_gate.py
+  reason: declare real scope for TICK013 empty-scope gate implementation
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: declare real scope for TICK013 empty-scope gate implementation
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: declare real scope for TICK013 empty-scope gate implementation
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_tick013_gate.py
+  reason: declare real scope for TICK013 empty-scope gate implementation
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 acceptance:
 - text: given a ticket in state in-progress or planned whose scope is empty and which
