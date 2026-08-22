@@ -30,6 +30,7 @@ scope:
 - src/frob/tickets/_evidence.py
 - tests/test_release.py
 - tickets.md
+- src/frob/process/parsers/ruff.py
 findings:
 - - COV001
   - src/frob/graph/callgraph.py
@@ -74,6 +75,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/process/parsers/ruff.py
+  reason: land's own Tier-A REG010 auto-fix added a CHK-GATE-I001 registry entry as
+    a side effect of this ticket's DOC013 fix, which then failed REG008 (no frob:enforces
+    edge existed for the pre-existing live I001 rule); added the missing edge at its
+    real enforcement site rather than reverting the auto-fix
+  actor: logan
+  at: '2026-08-22'
 body_changes:
 - mode: append
   reason: 'BUG002 escape hatch: this ticket''s fixes are doc/registry/design-declaration
