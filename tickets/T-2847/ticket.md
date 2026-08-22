@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d3846ce67c7339ae197531d02c588c37db7db31f
 ---
 T-2822 waived LARGE001 on src/frob/tickets/_setters.py with T-1651-grade reasoning. T-2834 (the follow-up filed by T-2822 to split its sprint/flow analytics family into _flow.py) landed and removed that waiver along with the split code, but the file is STILL 1111 lines (over the 800-line threshold) and now has no frob:waive LARGE001 directive at all -- confirmed via direct frob.gates._arch.arch_gate() + frob.gates._waive._apply_waivers() re-measurement against a live build_graph snapshot post-T-2834-land. Needs a fresh disposition: either a new T-1651-grade waiver (if the post-split remainder is genuinely cohesive) or a further split. Found while doing the final unscoped re-measurement for the T-2823/T-2824 series, out of scope for both of those tickets.
 
