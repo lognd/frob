@@ -25,7 +25,6 @@ scope:
 - src/frob/gates/_sys_selfaudit.py
 - src/frob/strata/_capacity.py
 - src/frob/strata/_cve_fingerprint.py
-- src/frob/strata/_selfconform.py
 - tests/test_registry_exhaustiveness.py
 - docs/modules/gates.md
 scope_breadth_ack: false
@@ -108,6 +107,13 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: REG008 registry-table row wording update for the batch-2 fix set
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/strata/_selfconform.py
+  reason: 'CrossTicketLeakage: T-2729 (queued) declares this file in its own scope;
+    reverted the 2 frob:enforces directives, leaving CHK-GATE-SYS108/SYS110/SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE
+    unresolved on parent T-2369'
   actor: logan
   at: '2026-08-21'
 body_changes:
