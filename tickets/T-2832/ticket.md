@@ -27,6 +27,7 @@ scope:
 - src/frob/strata/_cve_fingerprint.py
 - src/frob/strata/_selfconform.py
 - tests/test_registry_exhaustiveness.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -102,6 +103,11 @@ scope_changes:
   glob: tests/test_registry_exhaustiveness.py
   reason: 'REG008 burn-down batch 2/N: add missing frob:enforces directive at each
     entry''s real violation-emitting function'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: REG008 registry-table row wording update for the batch-2 fix set
   actor: logan
   at: '2026-08-21'
 body_changes:
