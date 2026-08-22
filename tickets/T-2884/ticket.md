@@ -2,7 +2,7 @@
 id: T-2884
 title: Daemon version-skew self-heal is version-string-based, blind to source-only
   changes with no version bump
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
