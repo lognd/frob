@@ -1,7 +1,7 @@
 ---
 id: T-2827
 title: 'LARGE001: split or waive oversized frob.gates modules, batch 2 of 2'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -23,7 +23,7 @@ scope:
 - src/frob/gates/_registry_exhaustiveness.py
 - src/frob/gates/_tickets_gate.py
 - src/frob/gates/_wire.py
-- tickets/T-draft-85a71cb2/ticket.md
+- tickets/T-2851/ticket.md
 evidence_scope:
 - tests/test_gates.py
 - tests/test_gates_mutation_evidence.py
@@ -33,7 +33,7 @@ no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: tickets/T-draft-85a71cb2/ticket.md
+  glob: tickets/T-2851/ticket.md
   reason: filed a follow-up draft ticket from within this ticket's own worktree; SCOPE001
     requires it in scope
   actor: logan

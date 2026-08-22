@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-1651-grade: PROTO001-005 (T-0744/T-0745/T-0746/ \
+# T-0747) share one repo scan -- build_call_graph plus compute_protocol_summaries, run \
+# ONCE per package (protocol_summary_gate's own docstring: 'one pass, three findings, \
+# never three separate repo walks') -- and one reachability primitive \
+# (_protocol_initial_states / the established-state closure) that PROTO002 and \
+# PROTO003 both call directly. Splitting by rule id would either duplicate that \
+# scan-and-closure machinery per rule or force every split file to import back the \
+# single pass the parent docstring explicitly designed to avoid tripling -- the same \
+# 'cut a real edge, not a real boundary' T-1651 already ruled out."
 """PROTO001-005: live verification over the T-0744/T-0745 protocol/typestate
 machinery (docs/modules/gates.md#proto001-t-0813,
 docs/modules/gates.md#proto002proto003-t-0746,

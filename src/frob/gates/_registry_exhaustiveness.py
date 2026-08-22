@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-1651-grade: REG001-011 (T-0343/T-0407) are one family \
+# -- the disposition-grammar verifier over docs/design/registry/*.yaml, all built on \
+# the SAME _classify/_classify_all_entries dispatch and the SAME loaded- \
+# registry/TicketQueue/known_rules cross-check inputs registry_gate assembles once per \
+# run. Every _regNNN_* helper is a distinct disposition-kind check over that one \
+# classified-entries pass; splitting by rule id would duplicate the classification \
+# pass or force a fresh import edge back into whichever file kept _classify_all_ \
+# entries -- not a real external consumer-set boundary."
 """REG001-REG007: the exhaustiveness drift-lock over docs/design/registry/
 *.yaml (docs/design/registry/EXHAUSTIVENESS-GATE.md, T-0343, unified onto
 `frob.registry`'s typed model by T-0407).

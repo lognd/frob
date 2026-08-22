@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-1651-grade: this module is one mechanism -- T-0602's \
+# per-obligation dependency-tracked partial re-evaluation cache -- not a rule-id \
+# family. TrackedSnapshot/_TrackedMapping/_TrackedSequence (touched-file recording), \
+# the fingerprint/membership-key builders, and the sqlite read/write cache layer are \
+# stages of ONE pipeline (record what a gate touched, fingerprint it, persist/ \
+# invalidate against that fingerprint); splitting would separate the recording wrapper \
+# from the fingerprint it exists to feed, or the fingerprint from the cache entry it \
+# keys, the same 'cut a real edge, not a real boundary' outcome T-1651 already ruled \
+# out for this repo's other single-mechanism files."
 """T-0602: per-obligation dependency-tracked partial re-evaluation.
 
 `run_gates` (this package's `__init__.py`) evaluates every selected gate in

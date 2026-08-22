@@ -1,3 +1,13 @@
+# frob:waive LARGE001 reason="T-1651-grade: WIRE001/WIRE002/WIRE003 (T-1420/T-1725) \
+# are one family dispatched from the single wire_gate() entrypoint frob.gates.__init__ \
+# imports, matching this repo's established rule-id-family basis (LANG/REF/ \
+# REG/PROTO/TICK all waived identically). WIRE001's own reachability-scan machinery \
+# (_wire_reach_patterns/_is_reached_outside_diff_tests/_wire_scan_decision) is the \
+# larger share of this file's lines because unwired-symbol detection genuinely needs \
+# more machinery than WIRE002's queue-lookup or WIRE003's stale-verb-token scan, not \
+# because unrelated concerns were bundled in -- all three still answer the same \
+# question (does this diff add something nothing outside it can reach) over the same \
+# diff/snapshot/queue inputs wire_gate assembles once."
 """WIRE001/WIRE002: a newly-added symbol nothing outside its own tests can
 reach, and a ticket that claims a rule id no gate actually enforces
 (T-1420, split out of `frob.gates._dead_symbols`).

@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-1651-grade: TICK001-013 plus LEDGERV1001 are one \
+# family -- ledger-hygiene/invariant checks over the same TicketQueue this module's \
+# own docstring names, dispatched from the single tickets_gate() entrypoint \
+# frob.gates.__init__ imports. Each _tickN_* helper is an independent rule against the \
+# same loaded queue/ledger text, matching this repo's own established pattern for a \
+# rule-id family sharing one entrypoint (LANG/REF/REG/PROTO all waived on the \
+# identical basis) -- splitting by rule id here would be the same line-count-driven \
+# cut with no distinct consumer set."
 """frob.gates._tickets_gate -- TICK00x ledger-hygiene/invariant family (T-1140).
 
 Split out of `frob.gates.__init__` (T-1115/T-1140 residue, one-family-per-

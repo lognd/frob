@@ -1,3 +1,17 @@
+# frob:waive LARGE001 reason="T-2827: this file bundles two genuinely separate \
+# concerns -- TEST016/TEST018 (lines ~72-260, plus the shared quoted-range helpers \
+# reused by frob.gates._tickets_gate) and the entire BUG002/must-still-pass repro- \
+# classification family (lines ~463-1267, roughly 800 of this file's 1267 lines: \
+# worktree checkout, subprocess spawn/classify, bug_repro_outcome_at_ref, \
+# bug_repro_violations, must_still_pass_violations). This IS a real consumer-set seam, \
+# not a forced line-count cut -- but bug_repro_outcome_at_ref is a load- bearing, \
+# land-critical shared entrypoint (frob.tickets._land's pre-land check and \
+# frob.app.ticket_runner's close-time CLI path both call it directly), so the split is \
+# deferred to its own reviewed pass rather than folded into this LARGE001 batch, the \
+# same waived-rather-than-force-split-in-this-diff precedent T-2833 used for \
+# src/frob/tickets/_land_git_ops.py. Follow-up filed: T-2851 (renumbers at \
+# land) -- extract the BUG002/must-still-pass family into a new \
+# src/frob/gates/_bug_repro.py."
 """TEST016 (T-0755): the diff-scoped adversarial evidence obligation as a
 `Violation`-producing gate.
 

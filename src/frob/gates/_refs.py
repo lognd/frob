@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-1651-grade: REF001/REF002/REF003 (T-0396/T-1665) are \
+# one family -- the anti-orphan file-reference gate's three-layered detector \
+# (resolved-import, auto-scan token-reach, directive-declared-consumer) that all feed \
+# the SAME _build_ref_gate_indexes/_ref_gate_file_violations pipeline ref_gate runs \
+# once per repo walk. The three layers are stages of one detection sequence (each \
+# layer's negative result falls through to the next), not independently callable \
+# concerns with their own consumer set -- splitting would scatter one per-file \
+# classification decision across files for no external caller."
 """REF001/REF002/REF003: anti-orphan gate over every git-tracked file
 (docs/modules/gates.md#anti-orphan-file-reference-gate, T-0396).
 

@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-1651-grade: this module is one mechanism -- canonical \
+# two-directional line-wrap/unwrap of frob: directive comments (T-0441) -- not a \
+# rule-id family. Folding relies on frob.graph.dsl.fold_comment_runs; this module's \
+# own new logic is choosing the physical-line layout (_canonical_lines) and driving it \
+# over every directive kind (frob:waive/frob:debt/frob:ticket/etc) uniformly, which is \
+# exactly why it is one file: a per-directive-kind split would duplicate the same \
+# fold/unfold/rewrap pipeline once per directive kind for no distinct consumer -- \
+# every caller goes through the same frob fmt entrypoint."
 """`frob fmt`: canonical-form line-wrap/unwrap normalizer for `frob:`
 directive comment lines (T-0441, docs/modules/gates.md#frob-fmt-directive-
 canonicalization-t-0441).

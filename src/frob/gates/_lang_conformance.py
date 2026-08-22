@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-1651-grade: LANG001/LANG002/LANG003/LANG004 (T-0405/ \
+# T-0406) are one family -- language-extension conformance, checked three ways \
+# (registered-language facet completeness, unregistered-extension detection, \
+# claimed-known-gap verification) plus LANG004's per-notebook-cell variant, all built \
+# over the SAME derive_language_registry live-state scan and the SAME ticket-reference \
+# verification helper (_verify_known_gap_ticket) LANG003 and LANG004 share. Splitting \
+# by rule id would duplicate derive_language_registry's scan or force LANG004 to \
+# import back into whichever file kept _verify_known_gap_ticket -- not a real external \
+# consumer-set boundary."
 """LANG001-LANG003: language-extension conformance, shipped per-project (T-0405/T-0406).
 
 LANG001 (`lang_conformance_gate`, T-0405) turns `frob.lang._support.
