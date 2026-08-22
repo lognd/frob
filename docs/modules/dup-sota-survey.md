@@ -11,7 +11,7 @@ kernels in `frob-core/src/lib.rs`. Ground truth as of this pass, which
 corrects two things the ticket's "known debt" summary gets stale on:
 
 - **R4 verification is REAL Zhang-Shasha APTED now, not Levenshtein.**
-  `frob-core/src/lib.rs::apted_similarity` (line 355) implements true
+  `frob-core/src/r4.rs::apted_similarity` (line 330) implements true
   postorder Zhang-Shasha tree edit distance over parent-index arrays
   (`build_postorder`, `keyroots`, `zhang_shasha_distance`). It is wired in
   `_pipeline/_callgraph.py::_apted_similarity_for_pair` via

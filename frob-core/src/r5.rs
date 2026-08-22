@@ -29,6 +29,7 @@ fn children_lists(parents: &[i64]) -> (Vec<Vec<usize>>, usize) {
 /// today (item 17/T-0194's ADOPT clause) -- a template that is mostly holes
 /// carries no real generalization value, so the caller should fall back to
 /// treating the pair as a plain (non-generalized) clone match.
+// frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum AntiUnifyErr {
     /// Generalized template is >50% `$hole_N` placeholders by node count.
@@ -39,6 +40,7 @@ pub(crate) enum AntiUnifyErr {
 /// `$hole_N` placeholders at each divergence) and, per hole, the pair of
 /// concrete subtree roots it generalizes -- one index into `parents_a`'s
 /// node space, one into `parents_b`'s.
+// frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
 #[derive(Debug)]
 pub(crate) struct Template {
     pub(crate) labels: Vec<String>,
@@ -111,6 +113,7 @@ fn anti_unify_walk(
 /// Both-empty inputs generalize to an empty template with zero holes;
 /// exactly-one-empty is a maximal-divergence case (nothing shared) and
 /// always exceeds the hole ceiling below.
+// frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
 pub(crate) fn anti_unify_core(
     labels_a: &[String],
     parents_a: &[i64],

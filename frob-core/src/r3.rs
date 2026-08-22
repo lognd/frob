@@ -10,6 +10,7 @@ use pyo3::prelude::*;
 /// alone rather than risk collapsing two DIFFERENT non-literal tokens
 /// into the same placeholder (T-0447).
 pub(crate) fn is_numeric_literal(tok: &str) -> bool {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let body = tok.strip_prefix('-').unwrap_or(tok);
     if body.is_empty() {
         return false;
@@ -35,6 +36,7 @@ pub(crate) fn is_numeric_literal(tok: &str) -> bool {
 /// same quote character, `'` or `"`, and is at least two characters --
 /// i.e. the quotes are not the same single character counted twice).
 pub(crate) fn is_string_literal(tok: &str) -> bool {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut chars = tok.chars();
     let Some(first) = chars.next() else {
         return false;

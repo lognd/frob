@@ -185,6 +185,7 @@ pub fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize
 /// statement changes the tree structure and is caught here, where the
 /// flat statement-sequence Levenshtein could not see it.
 pub(crate) fn build_postorder(parents: &[i64]) -> (Vec<usize>, Vec<usize>, usize) {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let n = parents.len();
     let mut children: Vec<Vec<usize>> = vec![Vec::new(); n];
     let mut root = 0usize;
@@ -257,6 +258,7 @@ pub(crate) fn zhang_shasha_distance(
     postorder_b: &[usize],
     lmd_b: &[usize],
 ) -> usize {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let n = postorder_a.len();
     let m = postorder_b.len();
     if n == 0 && m == 0 {

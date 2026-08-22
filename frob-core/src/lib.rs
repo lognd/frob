@@ -70,6 +70,7 @@ use std::collections::HashMap;
 /// Deterministic 64-bit hash of one token (std `DefaultHasher` is
 /// unkeyed/deterministic across runs, unlike `HashMap`'s `RandomState`).
 pub(crate) fn hash_str(s: &str) -> u64 {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let mut h = DefaultHasher::new();
     s.hash(&mut h);
     h.finish()
@@ -81,7 +82,8 @@ mod tests {
 
     #[test]
     fn canonical_hash_is_deterministic_and_shape_sensitive() {
-        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/lib.rs::hash_str kind="unit"
         let a = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let b = vec!["def".into(), "_v0".into(), "return".into(), "_v0".into()];
         let c = vec!["def".into(), "_v0".into(), "return".into(), "_N_".into()];
@@ -91,7 +93,7 @@ mod tests {
 
     #[test]
     fn r3_literal_abstraction_collapses_differing_constants() {
-        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
         let a = vec![
             "def".into(),
             "_v0".into(),
@@ -113,7 +115,7 @@ mod tests {
 
     #[test]
     fn r3_literal_abstraction_does_not_collapse_different_operators() {
-        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
         let plus = vec![
             "def".into(),
             "_v0".into(),
@@ -135,7 +137,7 @@ mod tests {
 
     #[test]
     fn r3_elif_desugar_matches_manually_nested_if_else() {
-        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
         let with_elif = vec![
             "if".into(),
             "_v0".into(),
@@ -175,7 +177,7 @@ mod tests {
 
     #[test]
     fn r3_elif_desugar_does_not_collapse_different_conditions() {
-        // frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        // frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
         let a = vec![
             "if".into(),
             "_v0".into(),
@@ -205,7 +207,7 @@ mod tests {
 
     #[test]
     fn is_numeric_literal_rejects_identifiers_and_keywords() {
-        // frob:tests frob-core/src/lib.rs::is_numeric_literal kind="unit"
+        // frob:tests frob-core/src/r3.rs::is_numeric_literal kind="unit"
         assert!(is_numeric_literal("1"));
         assert!(is_numeric_literal("-3"));
         assert!(is_numeric_literal("2.5"));
@@ -217,7 +219,7 @@ mod tests {
 
     #[test]
     fn is_string_literal_requires_matching_quotes() {
-        // frob:tests frob-core/src/lib.rs::is_string_literal kind="unit"
+        // frob:tests frob-core/src/r3.rs::is_string_literal kind="unit"
         assert!(is_string_literal("\"hi\""));
         assert!(is_string_literal("'hi'"));
         assert!(!is_string_literal("hi"));
@@ -240,7 +242,7 @@ mod tests {
 
     #[test]
     fn candidate_pairs_never_emits_a_self_pair() {
-        // frob:tests frob-core/src/lib.rs::candidate_pairs kind="unit"
+        // frob:tests frob-core/src/r4.rs::candidate_pairs kind="unit"
         // Regression for T-0268: a region whose own fingerprint set
         // contains a duplicate value indexes itself twice into the same
         // bucket, which previously produced a self-pair (i, i) once that
@@ -273,7 +275,7 @@ mod tests {
 
     #[test]
     fn wl_hash_isomorphic_relabeled_graphs_collide() {
-        // frob:tests frob-core/src/lib.rs::wl_hash kind="unit"
+        // frob:tests frob-core/src/r5.rs::wl_hash kind="unit"
         // Triangle a-b-c with labels ["def", "use", "use"], vs the same
         // triangle with nodes renumbered -- 1-WL must be invariant to that.
         let labels_a = vec!["def".to_string(), "use".to_string(), "use".to_string()];
@@ -302,7 +304,9 @@ mod tests {
 
     #[test]
     fn apted_identical_trees_is_similarity_one() {
-        // frob:tests frob-core/src/lib.rs::apted_similarity kind="unit"
+        // frob:tests frob-core/src/r4.rs::apted_similarity kind="unit"
+        // frob:tests frob-core/src/r4.rs::build_postorder kind="unit"
+        // frob:tests frob-core/src/r4.rs::zhang_shasha_distance kind="unit"
         // def -> [return, name]  (a 3-node tree: root + 2 leaf children)
         let labels = vec!["def".into(), "return".into(), "name".into()];
         let parents = vec![-1i64, 0, 0];
@@ -367,7 +371,7 @@ mod tests {
 
     #[test]
     fn anti_unify_identical_trees_has_zero_holes() {
-        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // frob:tests frob-core/src/r5.rs::anti_unify_core kind="unit"
         let labels = vec!["def".into(), "return".into(), "name".into()];
         let parents = vec![-1i64, 0, 0];
         let tpl = anti_unify_core(&labels, &parents, &labels, &parents).unwrap();
@@ -379,7 +383,7 @@ mod tests {
 
     #[test]
     fn anti_unify_single_leaf_divergence_binds_one_hole() {
-        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // frob:tests frob-core/src/r5.rs::anti_unify_core kind="unit"
         // Tree A: def -> [return, x]   Tree B: def -> [return, y]
         // Two near-identical trees differing in one leaf: the shared
         // "def"/"return" shape is kept, the leaf becomes $hole_0 bound
@@ -397,7 +401,7 @@ mod tests {
 
     #[test]
     fn anti_unify_arity_mismatch_becomes_a_hole_not_a_crash() {
-        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // frob:tests frob-core/src/r5.rs::anti_unify_core kind="unit"
         // Tree A: root -> [shared, mid -> [a]]
         // Tree B: root -> [shared, mid -> [a, b]]
         // root and the leading "shared" child match; "mid"'s child count
@@ -421,7 +425,7 @@ mod tests {
 
     #[test]
     fn anti_unify_wildly_different_trees_exceeds_hole_ceiling() {
-        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // frob:tests frob-core/src/r5.rs::anti_unify_core kind="unit"
         // HOLE-CEILING sanity: two trees sharing nothing generalize to a
         // single root-level hole, which is 100% holes -- Err, not a
         // useless one-hole "template".
@@ -442,7 +446,7 @@ mod tests {
 
     #[test]
     fn anti_unify_deterministic_hole_numbering() {
-        // frob:tests frob-core/src/lib.rs::anti_unify_core kind="unit"
+        // frob:tests frob-core/src/r5.rs::anti_unify_core kind="unit"
         // Same input run twice must number holes identically -- left-to-
         // right, top-down (preorder emission order), so the template is
         // stable/testable across runs.
@@ -495,7 +499,9 @@ mod tests {
 
     #[test]
     fn exact_regions_finds_shared_block_inside_different_functions() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::build_suffix_array kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::kasai_lcp kind="unit"
         // Two otherwise-different token streams sharing one 6-token block
         // in the middle -- the exact shape R1/R2 (whole-body hashing)
         // cannot see, since neither whole body is identical or an alpha-
@@ -595,7 +601,7 @@ mod tests {
 
     #[test]
     fn exact_regions_three_identical_documents_reports_all_three_pairs() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         // Regression for the reviewer-caught bug (T-0193 round 2): only
         // SA-adjacent suffix pairs were compared, so a block repeated in
         // 3+ documents silently dropped non-adjacent occurrence pairs --
@@ -611,7 +617,7 @@ mod tests {
 
     #[test]
     fn exact_regions_four_way_shared_block_reports_every_pair() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         let block: Vec<String> = (0..6).map(|i| format!("w{i}")).collect();
         let docs = vec![block.clone(), block.clone(), block.clone(), block.clone()];
         let (regions, _) = run_exact_regions(docs, 3, 10_000);
@@ -624,7 +630,7 @@ mod tests {
 
     #[test]
     fn exact_regions_mixed_case_two_nested_shared_regions() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         // Three documents share region A ("p q r s"); only two of those
         // three (doc0, doc1) additionally share a second region B
         // ("m n o", immediately following A) that doc2 does not have at
@@ -664,7 +670,7 @@ mod tests {
 
     #[test]
     fn exact_regions_run_size_guard_bounds_pair_emission_on_a_large_run() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         // T-0273: reviewer finding on T-0193 -- 2000 identical documents
         // sharing a block produced 1,999,000 unbounded pairs. With the
         // default cap (200) a 500-document run must emit at most
@@ -687,7 +693,7 @@ mod tests {
 
     #[test]
     fn exact_regions_run_size_guard_does_not_trip_below_the_cap() {
-        // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        // frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         // A run at or below max_run_size is unaffected: no truncation
         // signal, and every pair among the (small) run is still reported.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
@@ -710,7 +716,7 @@ mod tests {
         assert_eq!(lcp, vec![0, 1, 3, 0, 0, 2]);
     }
 
-    // frob:tests frob-core/src/lib.rs::resolve_call_edges kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::resolve_call_edges kind="unit"
     #[test]
     fn resolve_call_edges_matches_private_callee_and_skips_self_and_public() {
         let by_name: HashMap<String, Vec<(String, String, bool)>> = HashMap::from([
@@ -791,7 +797,7 @@ mod tests {
         assert!(exempted.is_empty());
     }
 
-    // frob:tests frob-core/src/lib.rs::called_names kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::called_names kind="unit"
     #[test]
     fn called_names_rescues_wrapper_marker_argument() {
         let tokens: Vec<String> = ["memoize_per_run", "(", "_target", ")"]
@@ -846,7 +852,7 @@ mod tests {
         assert_eq!(exempt, vec!["_bar".to_string()]);
     }
 
-    // frob:tests frob-core/src/lib.rs::arch_sim_ratio kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::arch_sim_ratio kind="unit"
     #[test]
     fn arch_sim_ratio_matches_difflib_golden_values() {
         // Expected values captured directly from
@@ -873,7 +879,7 @@ mod tests {
         }
     }
 
-    // frob:tests frob-core/src/lib.rs::arch_sim_ratio kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::arch_sim_ratio kind="unit"
     #[test]
     fn arch_sim_ratio_autojunk_matches_difflib() {
         // len(b) >= 200 triggers difflib's autojunk heuristic (chars
@@ -892,7 +898,7 @@ mod tests {
         );
     }
 
-    // frob:tests frob-core/src/lib.rs::near_duplicate_indices kind="unit"
+    // frob:tests frob-core/src/callgraph.rs::near_duplicate_indices kind="unit"
     #[test]
     fn near_duplicate_indices_matches_python_reference_cluster() {
         // Same fixture, threshold, and expected cluster as

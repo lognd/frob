@@ -2,7 +2,7 @@
 id: T-2855
 title: 'post-land sweep regression from T-2846: 22 new (rule, file) identit(ies),
   172 finding(s) (COV001, DOC006, DRIFT002, REF001)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-22'

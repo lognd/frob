@@ -362,6 +362,7 @@ fn arch_sim_matching_blocks(
 /// `len(a) + len(b)` (1.0 when both are empty, matching CPython's
 /// `_calculate_ratio`'s zero-length special case).
 pub(crate) fn arch_sim_ratio(a: &[char], b: &[char]) -> f64 {
+    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
     let (b2j, bjunk) = arch_sim_build_b2j(b);
     let blocks = arch_sim_matching_blocks(a, b, &b2j, &bjunk);
     let matches: usize = blocks.iter().map(|&(_, _, k)| k).sum();

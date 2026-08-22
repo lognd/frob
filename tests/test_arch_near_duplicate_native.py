@@ -40,7 +40,7 @@ def _python_reference_indices(bodies: list[str], threshold: float) -> list[int]:
 
 
 def test_native_kernel_matches_difflib_on_synthetic_archgate_fixture():
-    # frob:tests frob-core/src/lib.rs::near_duplicate_indices
+    # frob:tests frob-core/src/callgraph.rs::near_duplicate_indices
     # Mirrors the shape of tests/unit/test_arch.py's
     # test_accidental_same_signature_still_flagged fixture: two genuine
     # near-duplicate bodies (validate-then-transform, differing only in
@@ -81,7 +81,7 @@ def test_near_duplicate_cluster_dispatches_to_native_and_matches_reference():
 
 # frob:ticket T-0972
 def test_native_kernel_matches_difflib_over_this_repos_own_arch_tree():
-    # frob:tests frob-core/src/lib.rs::near_duplicate_indices
+    # frob:tests frob-core/src/callgraph.rs::near_duplicate_indices
     # Real-data parity sweep: every same-signature group this repo's own
     # archgate run over src/frob/arch actually produces, native vs the
     # pure-Python `difflib` reference, must agree exactly.

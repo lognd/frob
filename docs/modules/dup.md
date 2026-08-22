@@ -383,20 +383,20 @@ rules:
 
 ### frob-core kernels (the PyO3-exported surface)
 
-<!-- frob:describes frob-core/src/lib.rs::r3_canonical_hash -->
-<!-- frob:describes frob-core/src/lib.rs::winnow_fingerprints -->
-<!-- frob:describes frob-core/src/lib.rs::candidate_pairs -->
-<!-- frob:describes frob-core/src/lib.rs::tree_edit_similarity -->
-<!-- frob:describes frob-core/src/lib.rs::apted_similarity -->
-<!-- frob:describes frob-core/src/lib.rs::anti_unify -->
-<!-- frob:describes frob-core/src/lib.rs::wl_hash -->
-<!-- frob:describes frob-core/src/lib.rs::exact_regions -->
-<!-- frob:describes frob-core/src/lib.rs::resolve_call_edges -->
-<!-- frob:describes frob-core/src/lib.rs::called_names -->
-<!-- frob:describes frob-core/src/lib.rs::ordered_called_names -->
-<!-- frob:describes frob-core/src/lib.rs::referenced_names -->
-<!-- frob:describes frob-core/src/lib.rs::unresolved_exempt_names -->
-<!-- frob:describes frob-core/src/lib.rs::near_duplicate_indices -->
+<!-- frob:describes frob-core/src/r3.rs::r3_canonical_hash -->
+<!-- frob:describes frob-core/src/r4.rs::winnow_fingerprints -->
+<!-- frob:describes frob-core/src/r4.rs::candidate_pairs -->
+<!-- frob:describes frob-core/src/r4.rs::tree_edit_similarity -->
+<!-- frob:describes frob-core/src/r4.rs::apted_similarity -->
+<!-- frob:describes frob-core/src/r5.rs::anti_unify -->
+<!-- frob:describes frob-core/src/r5.rs::wl_hash -->
+<!-- frob:describes frob-core/src/exact_regions.rs::exact_regions -->
+<!-- frob:describes frob-core/src/callgraph.rs::resolve_call_edges -->
+<!-- frob:describes frob-core/src/callgraph.rs::called_names -->
+<!-- frob:describes frob-core/src/callgraph.rs::ordered_called_names -->
+<!-- frob:describes frob-core/src/callgraph.rs::referenced_names -->
+<!-- frob:describes frob-core/src/callgraph.rs::unresolved_exempt_names -->
+<!-- frob:describes frob-core/src/callgraph.rs::near_duplicate_indices -->
 <!-- frob:describes frob-core/src/lib.rs::frob_core -->
 
 Every `#[pyfunction]`/`#[pymodule]` item is the crate's Python-facing public
@@ -676,7 +676,7 @@ open):
   `frob.dup._pipeline._fingerprint._fingerprint_symbol` feeds `r3_canonical_hash` the
   same `_r2_normalize` output R2 hashes -- no literal abstraction, no
   commutative-operand ordering, no for/while control-flow desugaring is
-  implemented, despite `frob-core/src/lib.rs::r3_canonical_hash`'s
+  implemented, despite `frob-core/src/r3.rs::r3_canonical_hash`'s
   docstring assuming the caller already did that work. Verified directly:
   a for-loop/while-loop pair computing the same accumulation produces
   different r2-normalized token streams, so R3 never independently fires.

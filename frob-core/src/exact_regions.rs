@@ -45,6 +45,7 @@ fn flatten_documents(documents: &[Vec<String>]) -> (Vec<i64>, Vec<Option<usize>>
 /// each round rather than assuming a bounded alphabet, so the negative
 /// sentinel ids from `flatten_documents` work unmodified.
 pub(crate) fn build_suffix_array(s: &[i64]) -> Vec<usize> {
+    // frob:doc docs/modules/dup.md#rung-r1-5
     let n = s.len();
     if n == 0 {
         return Vec::new();
@@ -79,6 +80,7 @@ pub(crate) fn build_suffix_array(s: &[i64]) -> Vec<usize> {
 /// longest common prefix between the suffixes at `sa[i]` and `sa[i-1]`
 /// (`lcp[0]` is unused/`0`, there is no predecessor).
 pub(crate) fn kasai_lcp(s: &[i64], sa: &[usize]) -> Vec<usize> {
+    // frob:doc docs/modules/dup.md#rung-r1-5
     let n = s.len();
     if n == 0 {
         return Vec::new();

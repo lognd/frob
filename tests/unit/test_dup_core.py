@@ -50,7 +50,7 @@ def test_frob_core_module_registers_exported_kernels():
 class TestR3CanonicalHash:
     def test_identical_token_streams_hash_equal(self):
         # frob:tests src/frob/dup/_core.py::_r3_canonical_hash kind="unit"
-        # frob:tests frob-core/src/lib.rs::r3_canonical_hash kind="unit"
+        # frob:tests frob-core/src/r3.rs::r3_canonical_hash kind="unit"
         tokens = ("def", "_v0", "return", "_v0")
         a = _core._r3_canonical_hash(tokens)
         b = _core._r3_canonical_hash(tokens)
@@ -79,7 +79,7 @@ def test_candidate_pairs_finds_shared_bucket():
     assert result.danger_ok == ((0, 1),)
 
 
-# frob:tests frob-core/src/lib.rs::candidate_pairs kind="unit"
+# frob:tests frob-core/src/r4.rs::candidate_pairs kind="unit"
 def test_candidate_pairs_never_returns_a_self_pair():
     # Regression for T-0268: a region whose own fingerprint set contains a
     # duplicate value indexes itself twice into one bucket, which previously
@@ -104,7 +104,7 @@ def test_tree_edit_similarity_identical_sequences_is_one():
 class TestAptedSimilarity:
     def test_identical_trees_similarity_one(self):
         # frob:tests src/frob/dup/_core.py::_apted_similarity kind="unit"
-        # frob:tests frob-core/src/lib.rs::apted_similarity kind="unit"
+        # frob:tests frob-core/src/r4.rs::apted_similarity kind="unit"
         labels = ("def", "return", "name")
         parents = (-1, 0, 0)
         result = _core._apted_similarity(labels, parents, labels, parents)
@@ -120,7 +120,7 @@ class TestAptedSimilarity:
 class TestAntiUnify:
     def test_identical_trees_zero_holes(self):
         # frob:tests src/frob/dup/_core.py::anti_unify kind="unit"
-        # frob:tests frob-core/src/lib.rs::anti_unify kind="unit"
+        # frob:tests frob-core/src/r5.rs::anti_unify kind="unit"
         labels = ("def", "return", "name")
         parents = (-1, 0, 0)
         result = _core.anti_unify(labels, parents, labels, parents)
@@ -182,7 +182,7 @@ class TestAntiUnify:
 class TestWlHash:
     def test_relabeled_isomorphic_graphs_collide(self):
         # frob:tests src/frob/dup/_core.py::_wl_hash kind="unit"
-        # frob:tests frob-core/src/lib.rs::wl_hash kind="unit"
+        # frob:tests frob-core/src/r5.rs::wl_hash kind="unit"
         labels_a = ("def", "use", "use")
         adj_a = ((0, 1), (1, 2), (2, 0))
         labels_b = ("use", "def", "use")
@@ -201,7 +201,7 @@ class TestWlHash:
 class TestExactRegions:
     def test_finds_shared_block_inside_different_documents(self):
         # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
-        # frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        # frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         shared = ("if", "x", ">", "0", "return", "x")
         doc_a = ("def", "foo", "(", *shared, "else", "return", "0")
         doc_b = ("def", "bar", "(", "y", ")", *shared, "print", "y")
@@ -232,7 +232,7 @@ class TestExactRegions:
 
     def test_run_size_guard_bounds_pair_emission_and_signals_truncation(self):
         # frob:tests src/frob/dup/_core.py::_exact_regions kind="unit"
-        # frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
+        # frob:tests frob-core/src/exact_regions.rs::exact_regions kind="unit"
         # T-0273: a run of 500 identical documents must not emit the
         # unbounded C(500, 2) = 124,750 pairs -- with a cap of 50 it must
         # emit at most C(50, 2) = 1,225 and report truncated=True.
