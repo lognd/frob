@@ -11458,7 +11458,7 @@ class TestDoclinkGate:
 
 class TestDocstatusGate:
     def test_missing_status_header_fires_doc009(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         from frob.gates import docstatus_gate
 
         root = tmp_path / "repo"
@@ -11472,7 +11472,7 @@ class TestDocstatusGate:
         assert any("no_header.md" in v.file for v in violations)
 
     def test_dated_status_header_passes(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         from frob.gates import docstatus_gate
 
         root = tmp_path / "repo"
@@ -11483,7 +11483,7 @@ class TestDocstatusGate:
         assert docstatus_gate(root) == ()
 
     def test_superseded_header_with_missing_target_fires_doc009(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         from frob.gates import docstatus_gate
 
         root = tmp_path / "repo"
@@ -11497,7 +11497,7 @@ class TestDocstatusGate:
         assert any("missing.md" in v.message for v in violations)
 
     def test_superseded_header_with_real_target_passes(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         from frob.gates import docstatus_gate
 
         root = tmp_path / "repo"
@@ -11513,7 +11513,7 @@ class TestDocstatusGate:
 
     # frob:ticket T-1641
     def test_unresolvable_ticket_mention_fires_doc011(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         # T-draft-8c110736: a prose T-####/T-draft-<hex> mention that resolves against
         # neither tickets.md nor tickets-archive.md (no ledger present at
         # all here, so nothing is known) fires DOC011.
@@ -11532,7 +11532,7 @@ class TestDocstatusGate:
     def test_ticket_mention_inside_line_wrapped_inline_code_does_not_fire_doc011(
         self, tmp_path
     ):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         # T-draft-8c110736: an inline `` `code` `` span that an editor hard-wrapped
         # across a line break (a single embedded newline, no blank line) is
         # still ONE token under commonmark -- the T-1228 precedent
@@ -11555,7 +11555,7 @@ class TestDocstatusGate:
 
     # frob:ticket T-1641
     def test_ticket_mention_across_blank_line_still_fires_doc011(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docstatus_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docstatus_gate kind="unit"
         # T-draft-8c110736: a genuine PARAGRAPH break (blank line) between two stray
         # backticks is NOT a wrapped code span -- it must still be treated
         # as ordinary prose and fire DOC011, matching the T-1228 precedent's
@@ -11575,7 +11575,7 @@ class TestDocstatusGate:
 
 class TestDocmakeGate:
     def test_bogus_make_target_fires_doc010(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         from frob.gates import docmake_gate
         from frob.graph import build_graph
 
@@ -11591,7 +11591,7 @@ class TestDocmakeGate:
         assert any("nonexistent-target" in v.message for v in violations)
 
     def test_real_make_target_passes(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         from frob.gates import docmake_gate
         from frob.graph import build_graph
 
@@ -11607,7 +11607,7 @@ class TestDocmakeGate:
         assert docmake_gate(root, snap) == ()
 
     def test_no_makefile_is_a_noop(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         from frob.gates import docmake_gate
         from frob.graph import build_graph
 
@@ -11620,7 +11620,7 @@ class TestDocmakeGate:
         assert docmake_gate(root, snap) == ()
 
     def test_nested_project_target_resolves_against_nested_makefile(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         # T-2705: a nested sub-project's own docs citing ITS OWN Makefile's
         # target (not present in the root Makefile) must resolve, not fire.
         from frob.gates import docmake_gate
@@ -11644,7 +11644,7 @@ class TestDocmakeGate:
         assert violations == (), violations
 
     def test_nested_project_bogus_target_still_fires(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         # T-2705 control: a target absent from BOTH the nearest and the
         # root Makefile must still fire, even inside a nested project.
         from frob.gates import docmake_gate
@@ -11670,7 +11670,7 @@ class TestDocmakeGate:
         assert any("nonexistent-nested-target" in v.message for v in violations)
 
     def test_root_level_doc_still_resolves_against_root_makefile(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         # T-2705 control: no regression for the single-Makefile case -- a
         # doc at repo root still resolves against the root Makefile.
         from frob.gates import docmake_gate
@@ -11688,7 +11688,7 @@ class TestDocmakeGate:
         assert docmake_gate(root, snap) == ()
 
     def test_nested_doc_falls_back_to_root_target_when_absent_nested(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docmake_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docmake_gate kind="unit"
         # T-2705 control: a nested Makefile EXISTS but does not contain the
         # cited target, while the root Makefile does -- must resolve via
         # the root fallback rather than firing.
@@ -11718,7 +11718,7 @@ class TestDocmakeGate:
 
 class TestDocseverityGate:
     def test_mismatched_severity_row_fires_doc013(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docseverity_gate kind="unit"
         from frob.gates import docseverity_gate
         from frob.graph import build_graph
 
@@ -11740,7 +11740,7 @@ class TestDocseverityGate:
         assert any("ARCH101" in v.message for v in violations)
 
     def test_matching_severity_row_passes(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docseverity_gate kind="unit"
         from frob.gates import docseverity_gate
         from frob.graph import build_graph
 
@@ -11760,7 +11760,7 @@ class TestDocseverityGate:
         assert docseverity_gate(root, snap) == ()
 
     def test_no_override_is_a_noop(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docseverity_gate kind="unit"
         # A code with no [gates.severity] override cannot be checked (no
         # independent default-severity registry exists), so a doc word
         # this repo also uses for a class default (`suggestion`) never
@@ -11782,7 +11782,7 @@ class TestDocseverityGate:
         assert docseverity_gate(root, snap) == ()
 
     def test_ambiguous_doc_word_is_never_flagged(self, tmp_path):
-        # frob:tests src/frob/gates/_doclink_docanchor.py::docseverity_gate kind="unit"
+        # frob:tests src/frob/gates/_docstatus.py::docseverity_gate kind="unit"
         # T-2080's own closed-set hardening: `suggestion`/`report` are this
         # repo's class-default vocabulary, not one of the two words this
         # gate can verify against a real [gates.severity] override value

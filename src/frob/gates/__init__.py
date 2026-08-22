@@ -99,11 +99,9 @@ from frob.gates._doclink_docanchor import (
     _docanchor_check_edge,
     docanchor_gate,
     doclink_gate,
-    docmake_gate,
-    docseverity_gate,
-    docstatus_gate,
 )
 from frob.gates._docptr import doc006_gate
+from frob.gates._docstatus import docmake_gate, docseverity_gate, docstatus_gate
 from frob.gates._dup import dup_gate
 from frob.gates._dup_graph_schema import dup_schema_gate, graph_schema_gate
 from frob.gates._env_var_docs import env_var_doc_gate

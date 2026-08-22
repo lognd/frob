@@ -2,7 +2,7 @@
 id: T-2843
 title: Split frob.gates._doclink_docanchor's later-bolted docstatus/docmake/docseverity
   gates out
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'

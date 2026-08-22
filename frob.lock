@@ -1385,6 +1385,60 @@
       "old_digest": null,
       "reason": "T-2729: LARGE001 split of _selfconform.py by SYS1xx rule family -- verbatim function/constant move to a sibling module, no behavior or doc-relevant content change; re-verified the cited doc anchor still matches this symbol's (unchanged) behavior",
       "ref": "src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_violations"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "body",
+      "new_digest": "0e201ab9b1def7a492c601b56052da64c8e5577080d9f46087be14090133d784",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docstatus_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "sig",
+      "new_digest": "1ad1ac75d3b19ac4be7554d2f04e92a637356908f064a1c0a3d284bf3ae54fba",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docstatus_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "body",
+      "new_digest": "b5d199c5b5954781f1a6168ce16dd4b1e38b6a3e1e4281058046676461bf7193",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docmake_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "sig",
+      "new_digest": "bd74198164448eae2201bbee4c5e1240a34521f632b22aaf55a2c649de9a876c",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docmake_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "body",
+      "new_digest": "29ff6fe53bc969f8615fca79fb6c693e16395fa6de5e41e32b6abde1723ea97e",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docseverity_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "sig",
+      "new_digest": "b6f4b9322e2984bfafafbd0a48821adc7dc441d691e478393ad1b007387969e7",
+      "old_digest": null,
+      "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
+      "ref": "src/frob/gates/_docstatus.py::docseverity_gate"
     }
   ],
   "entries": [
@@ -1687,6 +1741,36 @@
       "digest": "1d23d48e9b2d1997a44f70a3c0e802e9267f42931b80f10b6fe0b99e96fb777a",
       "facet": "sig",
       "ref": "src/frob/gates/_coverage.py::stamp_coverage"
+    },
+    {
+      "digest": "b5d199c5b5954781f1a6168ce16dd4b1e38b6a3e1e4281058046676461bf7193",
+      "facet": "body",
+      "ref": "src/frob/gates/_docstatus.py::docmake_gate"
+    },
+    {
+      "digest": "bd74198164448eae2201bbee4c5e1240a34521f632b22aaf55a2c649de9a876c",
+      "facet": "sig",
+      "ref": "src/frob/gates/_docstatus.py::docmake_gate"
+    },
+    {
+      "digest": "29ff6fe53bc969f8615fca79fb6c693e16395fa6de5e41e32b6abde1723ea97e",
+      "facet": "body",
+      "ref": "src/frob/gates/_docstatus.py::docseverity_gate"
+    },
+    {
+      "digest": "b6f4b9322e2984bfafafbd0a48821adc7dc441d691e478393ad1b007387969e7",
+      "facet": "sig",
+      "ref": "src/frob/gates/_docstatus.py::docseverity_gate"
+    },
+    {
+      "digest": "0e201ab9b1def7a492c601b56052da64c8e5577080d9f46087be14090133d784",
+      "facet": "body",
+      "ref": "src/frob/gates/_docstatus.py::docstatus_gate"
+    },
+    {
+      "digest": "1ad1ac75d3b19ac4be7554d2f04e92a637356908f064a1c0a3d284bf3ae54fba",
+      "facet": "sig",
+      "ref": "src/frob/gates/_docstatus.py::docstatus_gate"
     },
     {
       "digest": "d59a39817374281ae6bfd07345c685e3fd515be22974e2d6ff4d77767dc91ae4",
