@@ -44,7 +44,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 01c3fc507233445be01072a75207d5cda45a0fe1
 ---
 T-2857 mode 2 (unquoted `reason=` value silently not recognized by the
 land-time BUG002 check) has a different root cause than modes 1/3/4, and it
