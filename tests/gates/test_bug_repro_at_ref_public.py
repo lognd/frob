@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from frob.gates import BugReproOutcome, bug_repro_outcome_at_ref, designated_repro_test
-from frob.gates._mutation_evidence import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
+from frob.gates._bug_repro import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
 from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
 
 
@@ -45,7 +45,7 @@ class TestBugReproOutcomeAtRefPublic:
     def test_wraps_the_private_classifier(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_wraps_the_private_classifier  # noqa: E501
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.FAILED_AT_PARENT,
         ) as mocked:
             outcome = bug_repro_outcome_at_ref(
@@ -64,7 +64,7 @@ class TestBugReproOutcomeAtRefPublic:
     def test_default_base_ref_is_main(self, tmp_path: Path) -> None:
         # frob:tests tests/gates/test_bug_repro_at_ref_public.py::TestBugReproOutcomeAtRefPublic.test_default_base_ref_is_main  # noqa: E501
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.NO_VERDICT,
         ) as mocked:
             bug_repro_outcome_at_ref(tmp_path, "tests/test_x.py::test_x")

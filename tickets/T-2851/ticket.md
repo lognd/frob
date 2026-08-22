@@ -1,7 +1,7 @@
 ---
 id: T-2851
 title: Split BUG002/must-still-pass repro-classification family out of frob.gates._mutation_evidence
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'

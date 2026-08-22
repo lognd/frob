@@ -16,7 +16,7 @@ import pytest
 from frob.__main__ import _build_parser
 from frob.app.config import AppConfig
 from frob.app.ticket_runner._close_cmd import _apply_no_behavior_change_directive
-from frob.gates._mutation_evidence import (
+from frob.gates._bug_repro import (
     _BugReproOutcome,
     _no_behavior_change_reason,
     bug_repro_violations,
@@ -173,7 +173,7 @@ class TestGateNotWeakened:
         # its body -- the ordinary case BUG002 must keep catching
         ticket = _bug_ticket(body="## Description\nordinary bug fix\n")
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.PASSED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -193,12 +193,12 @@ class TestGateNotWeakened:
         )
         ticket = _bug_ticket(body=body)
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.PASSED_AT_PARENT,
         ):
             assert bug_repro_violations(tmp_path, ticket, "main") == ()
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.FAILED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")

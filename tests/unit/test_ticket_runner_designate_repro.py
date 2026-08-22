@@ -26,7 +26,7 @@ from typani import Ok
 
 from frob.app.config import AppConfig
 from frob.app.ticket_runner import _evidence, _new
-from frob.gates._mutation_evidence import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
+from frob.gates._bug_repro import _BUG_REPRO_TIMEOUT_S, _BugReproOutcome
 from frob.testing._models import CollectedTests
 from frob.tickets import load_queue
 
@@ -96,7 +96,7 @@ class TestValidateDesignateReproAtParent:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
         ):
@@ -125,7 +125,7 @@ class TestValidateDesignateReproAtParent:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.NO_VERDICT,
             ),
         ):
@@ -152,7 +152,7 @@ class TestValidateDesignateReproAtParent:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ),
         ):
@@ -177,7 +177,7 @@ class TestValidateDesignateReproAtParent:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
         ):
@@ -207,7 +207,7 @@ class TestValidateDesignateReproAtParent:
             ticket_evidence_ids=[node_id],
         )
         _new(tmp_path, new_cfg)
-        with patch("frob.gates._mutation_evidence._bug_repro_outcome_at_ref") as mocked:
+        with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
             designate_cfg = AppConfig(
                 ticket_command="evidence",
                 ticket_id="T-0001",
@@ -240,7 +240,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ) as mocked,
         ):
@@ -273,7 +273,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.TIMEOUT,
             ),
             pytest.raises(SystemExit) as exc,
@@ -309,7 +309,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ),
         ):
@@ -336,7 +336,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
         ):
@@ -361,7 +361,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.NO_VERDICT,
             ),
         ):
@@ -395,7 +395,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.TEST_ABSENT_AT_PARENT,
             ),
         ):
@@ -423,7 +423,7 @@ class TestEvidenceCheckRepro:
                 return_value=Ok("deadbeef"),
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ) as mocked,
         ):

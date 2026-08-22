@@ -13,7 +13,7 @@ from unittest.mock import patch
 from typani import Ok
 
 from frob.gates import mutation_evidence_violations
-from frob.gates._mutation_evidence import (
+from frob.gates._bug_repro import (
     _bug002_waiver_reason,
     _bug_repro_outcome_at_ref,
     _BugReproOutcome,
@@ -379,7 +379,7 @@ class TestNoBehaviorChange:
 
     def test_reason_present_recognized(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_reason_present_recognized  # noqa: E501
-        from frob.gates._mutation_evidence import _no_behavior_change_reason
+        from frob.gates._bug_repro import _no_behavior_change_reason
 
         body = (
             "## Description\npure extraction, same call order\n"
@@ -391,20 +391,20 @@ class TestNoBehaviorChange:
 
     def test_bare_directive_without_reason_not_recognized(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_bare_directive_without_reason_not_recognized  # noqa: E501
-        from frob.gates._mutation_evidence import _no_behavior_change_reason
+        from frob.gates._bug_repro import _no_behavior_change_reason
 
         body = "## Description\nfrob:no-behavior-change\n"
         assert _no_behavior_change_reason(_bug_ticket(body=body)) is None
 
     def test_no_directive_at_all(self) -> None:
-        from frob.gates._mutation_evidence import _no_behavior_change_reason
+        from frob.gates._bug_repro import _no_behavior_change_reason
 
         assert _no_behavior_change_reason(_bug_ticket()) is None
 
     # frob:ticket T-2218
     def test_directive_inside_inline_code_span_does_not_recognize(self) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_directive_inside_inline_code_span_does_not_recognize  # noqa: E501
-        from frob.gates._mutation_evidence import _no_behavior_change_reason
+        from frob.gates._bug_repro import _no_behavior_change_reason
 
         body = (
             "## Description\nThe escape hatch here is "
@@ -417,7 +417,7 @@ class TestNoBehaviorChange:
         # frob:tests tests/test_gates_mutation_evidence.py::TestNoBehaviorChange.test_genuine_declared_directive_still_recognized  # noqa: E501
         """MUST-STILL-PASS control: a real declaration alongside quoted
         prose discussing the mechanism must still be honored."""
-        from frob.gates._mutation_evidence import _no_behavior_change_reason
+        from frob.gates._bug_repro import _no_behavior_change_reason
 
         body = (
             "## Description\nThe escape hatch here is "
@@ -442,7 +442,7 @@ class TestBugReproViolationsNoBehaviorChange:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_passed_at_parent_no_violation  # noqa: E501
         ticket = _bug_ticket(body=self._BODY)
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.PASSED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -452,7 +452,7 @@ class TestBugReproViolationsNoBehaviorChange:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_failed_at_parent_is_error_violation  # noqa: E501
         ticket = _bug_ticket(body=self._BODY)
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.FAILED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -465,7 +465,7 @@ class TestBugReproViolationsNoBehaviorChange:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolationsNoBehaviorChange.test_no_verdict_no_violation  # noqa: E501
         ticket = _bug_ticket(body=self._BODY)
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.NO_VERDICT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -679,7 +679,7 @@ class TestBugReproViolations:
     def test_non_bug_kind_never_checked(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_non_bug_kind_never_checked  # noqa: E501
         ticket = _bug_ticket(kind=TicketKind.FEATURE)
-        with patch("frob.gates._mutation_evidence._bug_repro_outcome_at_ref") as mocked:
+        with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
             violations = bug_repro_violations(tmp_path, ticket, "main")
         mocked.assert_not_called()
         assert violations == ()
@@ -696,7 +696,7 @@ class TestBugReproViolations:
             '## Description\nfrob:waive BUG002 reason="doc correction filed as bug"\n'  # noqa: E501
         )
         ticket = _bug_ticket(body=body)
-        with patch("frob.gates._mutation_evidence._bug_repro_outcome_at_ref") as mocked:
+        with patch("frob.gates._bug_repro._bug_repro_outcome_at_ref") as mocked:
             violations = bug_repro_violations(tmp_path, ticket, "main")
         mocked.assert_not_called()
         assert violations == ()
@@ -705,7 +705,7 @@ class TestBugReproViolations:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_passed_at_parent_is_error_violation  # noqa: E501
         ticket = _bug_ticket()
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.PASSED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -717,7 +717,7 @@ class TestBugReproViolations:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_failed_at_parent_no_violation  # noqa: E501
         ticket = _bug_ticket()
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.FAILED_AT_PARENT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -727,7 +727,7 @@ class TestBugReproViolations:
         # frob:tests tests/test_gates_mutation_evidence.py::TestBugReproViolations.test_no_verdict_no_violation  # noqa: E501
         ticket = _bug_ticket()
         with patch(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             return_value=_BugReproOutcome.NO_VERDICT,
         ):
             violations = bug_repro_violations(tmp_path, ticket, "main")
@@ -874,7 +874,7 @@ class TestBugRepro:
         # collecting it AT ALL, let alone importing the right copy, is
         # only possible if the PYTHONPATH override genuinely reached the
         # spawned subprocess.
-        from frob.gates._mutation_evidence import _BugReproOutcome, _run_designated_test
+        from frob.gates._bug_repro import _BugReproOutcome, _run_designated_test
 
         repo = tmp_path / "repo"
         _init_repo(repo)
@@ -972,7 +972,7 @@ class TestMustStillPassViolations:
     def test_no_directive_no_violation(self, tmp_path: Path) -> None:
         # frob:tests tests/test_gates_mutation_evidence.py::TestMustStillPassViolations.test_no_directive_no_violation  # noqa: E501
         ticket = _bug_ticket()
-        with patch("frob.gates._mutation_evidence._run_designated_test") as mocked:
+        with patch("frob.gates._bug_repro._run_designated_test") as mocked:
             violations = must_still_pass_violations(tmp_path, ticket, "main")
         mocked.assert_not_called()
         assert violations == ()
@@ -982,11 +982,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=self._BODY)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
         ):
@@ -1000,11 +1000,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=self._BODY)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
             ) as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")
@@ -1021,11 +1021,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=self._BODY)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ),
         ):
@@ -1040,11 +1040,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=self._BODY)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.PASSED_AT_PARENT,
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref",
                 return_value=_BugReproOutcome.NO_VERDICT,
             ),
         ):
@@ -1056,11 +1056,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=self._BODY)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.NO_VERDICT,
             ),
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
             ) as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")
@@ -1077,11 +1077,11 @@ class TestMustStillPassViolations:
         ticket = _bug_ticket(body=body)
         with (
             patch(
-                "frob.gates._mutation_evidence._run_designated_test",
+                "frob.gates._bug_repro._run_designated_test",
                 return_value=_BugReproOutcome.FAILED_AT_PARENT,
             ) as fix_mock,
             patch(
-                "frob.gates._mutation_evidence._bug_repro_outcome_at_ref"
+                "frob.gates._bug_repro._bug_repro_outcome_at_ref"
             ) as parent_mock,
         ):
             violations = must_still_pass_violations(tmp_path, ticket, "main")

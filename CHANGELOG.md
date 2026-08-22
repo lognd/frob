@@ -311,6 +311,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2845: Split scripts/fleet_status.py into readiness/procscan/rot submodules
 - T-2846: Split frob-core/src/lib.rs's clone-detection rungs into sibling modules
 - T-2847: LARGE001: src/frob/tickets/_setters.py unwaived after T-2834's split (1111 lines)
+- T-2851: Split BUG002/must-still-pass repro-classification family out of frob.gates._mutation_evidence
 - T-2853: LARGE001: src/frob/tickets/_leases.py unwaived after T-2833's split (3182 lines)
 
 ## [0.530.0] - unreleased

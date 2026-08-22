@@ -113,14 +113,14 @@ class TestCloseRefusesBug002ShapeEndToEnd:
         # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_refuses_when_evidence_passes_at_parent  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
-        from frob.gates._mutation_evidence import _BugReproOutcome
+        from frob.gates._bug_repro import _BugReproOutcome
         from frob.tickets import TicketState, load_all
 
         _init_repo(tmp_path)
         _bypass_other_close_guards(monkeypatch, ticket_runner)
         _no_mutation_findings(monkeypatch)
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             lambda root, test_id, base_ref: _BugReproOutcome.PASSED_AT_PARENT,
         )
         cfg = AppConfig(ticket_id="T-0901")
@@ -136,14 +136,14 @@ class TestCloseRefusesBug002ShapeEndToEnd:
         # frob:tests tests/unit/test_ticket_close_bug002_t1427.py::TestCloseRefusesBug002ShapeEndToEnd.test_close_succeeds_when_evidence_fails_at_parent  # noqa: E501
         from frob.app import ticket_runner
         from frob.app.config import AppConfig
-        from frob.gates._mutation_evidence import _BugReproOutcome
+        from frob.gates._bug_repro import _BugReproOutcome
         from frob.tickets import TicketState, load_all
 
         _init_repo(tmp_path)
         _bypass_other_close_guards(monkeypatch, ticket_runner)
         _no_mutation_findings(monkeypatch)
         monkeypatch.setattr(
-            "frob.gates._mutation_evidence._bug_repro_outcome_at_ref",
+            "frob.gates._bug_repro._bug_repro_outcome_at_ref",
             lambda root, test_id, base_ref: _BugReproOutcome.FAILED_AT_PARENT,
         )
         cfg = AppConfig(ticket_id="T-0901")
