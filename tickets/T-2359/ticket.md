@@ -348,6 +348,9 @@ acceptance:
   evidence: []
 - text: given the test suite, when it runs after the reformat, then it passes unchanged
   evidence: []
+- text: given the repo after this lands, when ruff format --check . runs, then zero
+    files need reformatting
+  evidence: []
 acceptance_amendments:
 - op: remove
   index: 2
