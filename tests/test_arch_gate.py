@@ -235,14 +235,17 @@ def _big_python_source(n_lines: int) -> str:
 # T-1102: frob.arch._check_large_file's language-agnostic large-file
 # category (previously advisory-only) channeled into a real LARGE001
 # Violation by the same frob.gates._arch.arch_gate as ARCH001/ARCH1xx/
-# CPPTHROW001 -- WARN first-turn-on, and single-file-mode parity with the
-# directory walk (frob.arch.analyze_project).
+# CPPTHROW001. T-2831 promotes it from WARN to ERROR once the T-2375
+# epic's 9 split/waive children were all terminal and re-measurement
+# showed zero unwaived findings -- single-file-mode parity with the
+# directory walk (frob.arch.analyze_project) is unaffected by severity.
 class TestArchGateLargeFile:
     # frob:tests \
-    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn
-    def test_large_file_fires_large001_warn(self, tmp_path: Path) -> None:
+    # tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_err\
+    # or
+    def test_large_file_fires_large001_error(self, tmp_path: Path) -> None:
         """A production python file over max_file_lines fires LARGE001 at
-        Severity.WARN (first-turn-on posture, matching ARCH001/ARCH1xx)."""
+        Severity.ERROR (T-2831 promotion, post T-2375 epic burn-down)."""
         from frob.gates._arch import arch_gate
         from frob.gates._models import Severity
 
@@ -250,7 +253,7 @@ class TestArchGateLargeFile:
         violations = arch_gate(tmp_path)
         hits = [v for v in violations if v.rule == "LARGE001"]
         assert hits
-        assert all(v.severity == Severity.WARN for v in hits)
+        assert all(v.severity == Severity.ERROR for v in hits)
         assert any(v.file == "big.py" for v in hits)
 
     # frob:tests \

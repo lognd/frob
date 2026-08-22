@@ -301,6 +301,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2828: LARGE001: split or waive oversized frob.gates modules, batch 1 of 2
 - T-2829: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 2 of 2
 - T-2830: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 1 of 2
+- T-2831: LARGE001: promote large-file from WARN to ERROR in _arch.py (T-2375 successor)
 - T-2832: REG008 burn-down batch 2/N: 17 missing frob:enforces directives across gates/app/strata/check modules
 - T-2833: Split frob.tickets._leases's worktree-sweep family into _worktree_sweep.py
 - T-2834: Split frob.tickets._setters's sprint/flow analytics family into _flow.py

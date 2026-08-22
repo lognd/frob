@@ -81,8 +81,10 @@ _ARCH_CATEGORY_TO_RULE = {
     "cpp-noexcept-throws": "CPPTHROW001",
     # T-1102: large-file (frob.arch._check_large_file) -- language-
     # agnostic file-size check, already computed by `analyze_project` for
-    # every walk but previously advisory-only. WARN first-turn-on (see
-    # this module's own docstring for the disclosed turn-on count).
+    # every walk. WARN first-turn-on (see this module's own docstring for
+    # the disclosed turn-on count); T-2831 promoted it to ERROR once the
+    # T-2375 epic's split/waive children were all terminal at zero
+    # unwaived findings -- see _ERROR_SEVERITY_CATEGORIES above.
     "large-file": "LARGE001",
 }
 
@@ -91,8 +93,16 @@ _ARCH_CATEGORY_TO_RULE = {
 #: -- a `noexcept` hard-boundary violation is std::terminate at runtime,
 #: not deferrable debt. Read as an allowlist (not the reverse) so a future
 #: category added to `_ARCH_CATEGORY_TO_RULE` defaults to the existing
-#: WARN precedent unless explicitly opted into ERROR here.
-_ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
+#: WARN precedent unless explicitly opted into ERROR here. T-2831
+#: promotes large-file to this set: T-2375's 9 child splits/waivers
+#: (T-2822..T-2830) are all terminal and re-measurement against a live
+#: build_graph snapshot confirmed zero unwaived LARGE001 findings before
+#: this flip -- see this file's docstring history and the ticket's Done
+#: report for the exact count. Any newly-created oversized file now reds
+#: main immediately at LARGE001 instead of warning; a future split must
+#: land its `frob:waive LARGE001` alongside the new file in the same
+#: change, not after.
+_ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws", "large-file"})
 
 
 # frob:doc docs/modules/gates.md#rule-catalog
@@ -119,7 +129,7 @@ _ERROR_SEVERITY_CATEGORIES = frozenset({"cpp-noexcept-throws"})
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_may_throw_fires_cppthrow001_error  # noqa: E501
 # frob:tests tests/test_arch_gate.py::TestArchGateCppThrow.test_noexcept_with_catch_all_does_not_fire_cppthrow001  # noqa: E501
 # frob:tests \
-# tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_warn
+# tests/test_arch_gate.py::TestArchGateLargeFile.test_large_file_fires_large001_error
 # frob:tests \
 # tests/test_arch_gate.py::TestArchGateLargeFile.test_test_file_exempt_from_large001
 # frob:tests tests/test_arch_gate.py::TestArchGateLargeFile.test_single_file_mode_matches_directory_walk  # noqa: E501
@@ -135,9 +145,11 @@ def arch_gate(root: Path) -> tuple[Violation, ...]:
     `frob.arch._cpp_mayraise`) -- see this module's own docstring for why
     THIS rule channels at `Severity.ERROR`, every other rule here at
     `Severity.WARN`. T-1102 adds LARGE001 (`large-file`,
-    `frob.arch._check_large_file`) at `Severity.WARN`, same posture as
-    ARCH001/ARCH1xx -- a file-level finding has no function/class symbol
-    to bind a `symref` to, so its `Violation.symref` stays `None` and a
+    `frob.arch._check_large_file`), WARN at first turn-on, promoted to
+    `Severity.ERROR` by T-2831 once the T-2375 epic's split/waive
+    children reached zero unwaived findings -- a file-level finding has
+    no function/class symbol to bind a `symref` to, so its
+    `Violation.symref` stays `None` and a
     `frob:waive LARGE001 reason="..."` binds by file/line like any other
     unsymref'd rule. Every rule's `symref`/`metric` carried through so
     `frob.gates._match_waiver` can bind a `frob:waive ARCHxxx
