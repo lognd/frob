@@ -2,7 +2,7 @@
 id: T-2870
 title: BUG002 ticket-body waiver regex silently ignores an unquoted/malformed reason=
   value
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
