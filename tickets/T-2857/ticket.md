@@ -2,7 +2,7 @@
 id: T-2857
 title: 'the frob comment DSL drops malformed directives SILENTLY: four distinct failure
   modes measured in one session, each leaving a finding unsuppressed with no diagnostic'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -16,11 +16,51 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
+- docs/modules/graph.md
+- tests/unit/graph/test_dsl_markdown_waive.py
+- tickets/T-draft-40cab320/ticket.md
+- tickets/T-draft-54b05cf2/ticket.md
+evidence_scope:
+- tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: docs/modules/graph.md
+  reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
+    this ticket filed
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tests/unit/graph/test_dsl_markdown_waive.py
+  reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
+    this ticket filed
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tickets/T-draft-40cab320/ticket.md
+  reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
+    this ticket filed
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tickets/T-draft-54b05cf2/ticket.md
+  reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
+    this ticket filed
+  actor: logan
+  at: '2026-08-22'
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_unescaped_internal_quote_is_reported_not_silently_accepted
+- tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_escaped_internal_quote_still_parses_cleanly
+- tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_well_formed_waiver_of_an_honored_rule_still_suppresses
+- tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_reason_continuing_onto_a_later_physical_line_is_not_flagged
+- tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud::test_describes_with_a_broken_symref_is_reported_not_silently_dropped
+- tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud::test_enumerates_missing_required_members_attr_is_reported
+- tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud::test_well_formed_describes_still_parses_cleanly
+- tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud::test_well_formed_ticket_and_until_still_parse_cleanly
+designated_repro_test: tests/unit/graph/test_dsl_markdown_waive.py::TestWaiveReasonUnescapedQuoteIsLoud::test_unescaped_internal_quote_is_reported_not_silently_accepted
 threat: null
 component: null
 anchor: false
