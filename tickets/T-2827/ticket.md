@@ -23,6 +23,7 @@ scope:
 - src/frob/gates/_registry_exhaustiveness.py
 - src/frob/gates/_tickets_gate.py
 - src/frob/gates/_wire.py
+- tickets/T-draft-85a71cb2/ticket.md
 evidence_scope:
 - tests/test_gates.py
 - tests/test_gates_mutation_evidence.py
@@ -30,6 +31,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-draft-85a71cb2/ticket.md
+  reason: filed a follow-up draft ticket from within this ticket's own worktree; SCOPE001
+    requires it in scope
+  actor: logan
+  at: '2026-08-22'
 body_changes:
 - mode: append
   reason: add no-behavior-change directive before landing
