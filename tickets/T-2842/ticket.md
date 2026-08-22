@@ -2,7 +2,7 @@
 id: T-2842
 title: Malformed frob:waive LARGE001 directive in _patterns.py (embedded escaped quotes
   break the parser)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -28,3 +28,6 @@ anchor_reason: null
 land_commit: null
 ---
 T-2359 landed a frob:waive LARGE001 directive on src/frob/arch/_patterns.py:129 whose reason text contains an embedded escaped double-quote (severity=\"suggestion\"), which the waiver-directive parser cannot handle -- "frob check" logs a WARNING malformed directive: bad attribute syntax for it on every run, and the LARGE001 waiver on this file is therefore NOT being applied via this mechanism (need to verify whether it still resolves some other way). Fix: rephrase the reason text to avoid embedded double quotes (or single-quote/otherwise escape per this repo convention), matching how other multi-clause waiver reasons in this repo avoid the same trap. Found while working T-2841 (I001 fix) -- frob check --json surfaced this WARNING repeatedly, unrelated to that scope.
+
+## Drop reason
+- 2026-08-21: duplicate of T-2839, which landed the fix (fd0ded5fdb44ca773a0986ebeda6b0ecd5e08fb9): rephrased the frob:waive LARGE001 reason on src/frob/arch/_patterns.py to remove the embedded escaped double-quote that broke the comment-DSL parser
