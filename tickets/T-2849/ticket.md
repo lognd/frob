@@ -84,6 +84,27 @@ scope_changes:
     scope, not filed separately
   actor: logan
   at: '2026-08-22'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: unit tests for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
+    / the leak-regression stdout-contamination controls belong in this ticket's own
+    scope, not filed separately
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: unit tests for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
+    / the leak-regression stdout-contamination controls belong in this ticket's own
+    scope, not filed separately
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: unit tests for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
+    / the leak-regression stdout-contamination controls belong in this ticket's own
+    scope, not filed separately
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
