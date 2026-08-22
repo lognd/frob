@@ -2,7 +2,7 @@
 id: T-2818
 title: 'fleet_status reports 0 orphaned forkservers while 90 leaked ones hold 13GB:
   the orphan check tests only the immediate parent, not the ancestry root'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -36,7 +36,23 @@ scope_changes:
     in this file need updating in the same change'
   actor: logan
   at: '2026-08-21'
-designated_repro_test: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_two_level_chain_with_dead_root_is_orphaned
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_deep_chain_under_a_live_check_is_not_orphaned
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_zero_forkservers_reports_zero
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_counts_forkserver_reparented_to_init
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_ignores_forkserver_with_live_parent
+- tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_missing_proc_returns_none
+- tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS::test_derives_from_recorded_samples_with_headroom
+- tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS::test_missing_samples_file_falls_back
+- tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS::test_malformed_samples_file_falls_back
+- tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS::test_thin_samples_never_derive_below_the_floor
+- tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine::test_fires_on_zero_zero_high_swap
+- tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine::test_silent_when_swap_below_pressure_floor
+- tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine::test_silent_when_orphaned_or_stale_nonzero
+- tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine::test_silent_on_any_unknown_input
+- tests/unit/test_coordinator_scripts.py::TestConcurrentCheckCount::test_counts_check_processes
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount::test_two_level_chain_with_dead_root_is_orphaned
 threat: null
 component: null
 anchor: false

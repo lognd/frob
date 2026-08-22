@@ -1018,17 +1018,27 @@ only ever claimed from a real reading.
 
 <!-- frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count -->
 
-T-2443. How many live `multiprocessing.forkserver` helper processes on
-this host are reparented to init (`ppid == 1`, i.e. their creating
-process is dead) -- the exact process-table signature of the ticket's own
-incident: `frob check` killed by this fleet's routine `timeout 540 ...`
-wrapper used to leave its process-pool workers, and therefore the
-forkserver helper they keep alive, running forever, 94 of them measured
-reparented to `/init` at once, holding 17.3GB of swap. Mirrors
-`frob.process._reap`'s own cmdline+ppid detection in plain form (this
-script's "no `frob` import" contract), read directly from `/proc` (no
-subprocess), matching `host_load`/`swap_pressure`'s own contract exactly.
-Returns `None` (never a fabricated zero) when `/proc` is unreadable. See
+T-2443, ancestry-walk fix T-2818. How many live `multiprocessing.
+forkserver` helper processes on this host do NOT have a live `frob check`
+ANYWHERE in their ancestry -- read from `/proc` (no subprocess), matching
+`host_load`/`swap_pressure`'s own contract exactly. Returns `None` (never
+a fabricated zero) when `/proc`, the ancestry map (`_all_process_ppids`),
+or the live-check-pid set (`_live_check_pids`) is unreadable.
+
+T-2818 ROOT CAUSE this replaced: the original version counted only
+`ppid == 1` (reparented directly to init) -- one hop. A leaked forkserver
+reparented to ANOTHER, already-orphaned forkserver has a live PARENT
+(itself), so the one-hop test called it healthy even though its own
+originating check died hours earlier; walking one more hop would have
+reached init. Measured incident: 92 leaked forkservers, mostly chained
+through each other, read `ORPHANED FORKSERVERS: 0` while holding 13.9GB
+of swap for 45 minutes -- the operator believed the pressure was genuine
+concurrent-check working set. `_forkserver_root_is_live_check` now walks
+the FULL chain (bounded by `_FORKSERVER_ANCESTRY_MAX_HOPS`) and calls a
+forkserver healthy only if a live `frob check` pid is found anywhere in
+it, at any depth -- the required positive control: a genuinely running
+check's worker pool must never read as orphaned regardless of chain
+depth, since reaping it would kill live work mid-check. See
 `docs/modules/process.md#forkserver-reaping-t-2443` for the fix this
 number makes actionable -- the fix itself lives in `frob.process._reap`,
 not here; this function only reports.
@@ -1054,20 +1064,34 @@ unreadable.
 T-2517. Motivating incident: `ORPHANED FORKSERVERS: 0` read as "nothing
 wrong" while 82 of 148 live `multiprocessing.forkserver` helpers were
 older than an hour and held essentially all of the host's 12GB of
-in-use swap between them -- invisible to `orphaned_forkserver_count`
-because every one of them still had a LIVE parent (an agent shell that
-had finished its check but had not exited). `orphaned_forkserver_count`'s
-signal is ancestry (`ppid == 1`); this function's signal is idleness +
-age, independent of ancestry: a forkserver older than `stale_after_s`
-(default 1 hour) counts as stale ONLY when the caller's own
-`concurrent_check_count` reading is exactly `0` -- passed in, not
-re-measured, so both numbers come from the same instant. Any positive
-count or `None` (unknown) makes this return `0`, per the ticket's own
-explicit caution: a forkserver with a live parent may belong to a check
-about to start, so a wrong precondition here would read a live pool as
-reclaimable. This function performs no reclamation of any kind -- it
-only reports the count; automated reclamation was explicitly deferred to
-a future, separately-designed ticket, never bundled in here.
+in-use swap between them. This function's signal is idleness + age,
+independent of ancestry: a forkserver older than `stale_after_s` counts
+as stale ONLY when the caller's own `concurrent_check_count` reading is
+exactly `0` -- passed in, not re-measured, so both numbers come from the
+same instant. Any positive count or `None` (unknown) makes this return
+`0`, per the ticket's own explicit caution: a forkserver with a live
+parent may belong to a check about to start, so a wrong precondition
+here would read a live pool as reclaimable. This function performs no
+reclamation of any kind -- it only reports the count; automated
+reclamation was explicitly deferred to a future, separately-designed
+ticket, never bundled in here.
+
+T-2818: `stale_after_s` now DEFAULTS to `_derive_forkserver_stale_after_s`
+-- this repo's own recorded `frob check` stage timings
+(`.frob/check-budget-timing-samples.json`, T-2809's rolling per-group raw
+sample window), not a frozen constant. It sums each stage group's own
+MAXIMUM observed sample (an upper bound on the slowest full check yet
+seen) and applies a headroom multiplier
+(`_FORKSERVER_STALE_AFTER_HEADROOM`, 3x), floored at
+`_FORKSERVER_STALE_AFTER_FLOOR_S` so a thin/early sample window cannot
+derive an unrealistically small threshold. Falls back to the original
+T-2517 constant (`_FORKSERVER_STALE_AFTER_S_FALLBACK`, 1 hour) only when
+no samples file exists yet (a fresh checkout). This replaces a hardcoded
+threshold per the ticket's own explicit requirement -- this repo has
+already been bitten twice by a constant that never tracked repo growth
+(T-2715 and its previously-desynced twin `_TRUE_COUNT_BUDGET_S`); a third
+one here would repeat that mistake as the gate/test suite grows past what
+1 hour's worth of margin assumed.
 
 ### `forkserver_swap_held_kb`
 
@@ -1102,6 +1126,11 @@ refuses anything; see `docs/modules/process.md#concurrent-check-advisory-t-2473`
 for `frob check`'s own companion advisory log line (a separate, self-
 excluding counter used from inside a running check). Returns `None`
 (never a fabricated zero) when `/proc` is unreadable.
+
+T-2818: now `len(_live_check_pids(proc))` -- `_live_check_pids` is the
+same cmdline scan split out so `orphaned_forkserver_count`'s ancestry
+walk can test ancestor-pid membership without a second `/proc` scan
+(DUP001); behavior is unchanged, the scan is shared.
 
 ### `_land_status_lines`
 
@@ -1151,6 +1180,15 @@ real-zero contract as the forkserver line above, and, unlike that line,
 never itself a leak signature: any positive count here is ordinary,
 legitimate concurrent demand, the number this ticket exists to make
 visible rather than derived by hand.
+
+T-2818: `_forkserver_contradiction_line` runs FIRST and, when it fires,
+prepends a `CONTRADICTION: ...` line before the four numbers above --
+`orphaned == 0` and `stale == 0` both reading clean next to
+multi-gigabyte forkserver swap cannot all be honest at once (the exact
+readings that hid a 92-forkserver leak for 45 minutes: an operator read
+`0`/`0` as "nothing to reap" while the box degraded to 1.6GB available).
+Never fires when any of the three inputs is `None` (unknown) -- a
+contradiction claim needs all three readings to be real.
 
 ### `_print_land_status`
 

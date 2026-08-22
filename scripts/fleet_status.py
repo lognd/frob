@@ -2173,16 +2173,99 @@ def swap_pressure(proc: Path = Path("/proc")) -> tuple[int, int] | None:
 _FORKSERVER_CMDLINE_RE = re.compile(r"multiprocessing\.forkserver")
 
 
-#: T-2517: how old (wall-clock seconds) a forkserver must be before it is
-#: reported STALE. 1 hour -- well past any real check's own runtime (the
-#: heaviest measured `frob check` stage total is ~209s, playbook section
-#: 13), so a forkserver still alive past this age is not mid-service, and
-#: well above the "reused within the next check" window a coordinator's
-#: own dispatch cadence would otherwise false-positive on. Matches the
-#: measured incident this ticket was filed from: 82 of 148 forkservers
-#: were older than 1 hour, holding essentially all of the host's 12GB of
-#: in-use swap between them.
-_FORKSERVER_STALE_AFTER_S = 3600.0
+#: T-2517's original fixed value (1 hour), kept ONLY as the last-resort
+#: fallback `_derive_forkserver_stale_after_s` (T-2818) returns when no
+#: real timing data exists yet (a fresh checkout with no `.frob/check-
+#: budget-timing-samples.json`) -- never used directly as the age
+#: threshold otherwise. T-2818 replaced the direct hardcode: this repo has
+#: already been bitten twice by a constant that never tracked repo growth
+#: (T-2715's `_POST_LAND_SWEEP_BUDGET_FLOOR_S` derivation and its
+#: previously-desynced twin `_TRUE_COUNT_BUDGET_S`) -- a THIRD one here
+#: would repeat exactly that mistake as this repo's gate/test suite grows
+#: and real `frob check` runs take longer than 1 hour's worth of margin
+#: assumes today.
+_FORKSERVER_STALE_AFTER_S_FALLBACK = 3600.0
+
+#: Safety multiplier `_derive_forkserver_stale_after_s` applies over the
+#: longest MEASURED stage-group sample (T-2818) -- generous headroom so a
+#: single slow/contended run never sits right at the boundary (this
+#: mirrors, but does not share, `_check_chunking._BUDGET_DERIVE_HEADROOM`
+#: (1.5x): that headroom answers "how long might a busy repeat of this
+#: SAME stage take", a smaller question than "how old can a forkserver be
+#: and still plausibly belong to a check in progress", which must clear
+#: EVERY stage's own worst measured time, not just one -- so this uses a
+#: larger, separately-reasoned multiplier rather than importing that
+#: constant and reusing it for a question it was not sized for).
+_FORKSERVER_STALE_AFTER_HEADROOM = 3.0
+
+#: Floor (seconds) `_derive_forkserver_stale_after_s` will not derive
+#: below, even from real samples (T-2818) -- guards a thin/early sample
+#: window (a repo with only a couple of tiny recorded runs) from deriving
+#: an unrealistically small threshold that would flag an in-progress
+#: check's own forkservers as stale. Mirrors `_check_chunking.
+#: _POST_LAND_SWEEP_BUDGET_FLOOR_S`'s same defensive shape (a derived
+#: value is trusted only once it clears a floor), independently valued
+#: for this question.
+_FORKSERVER_STALE_AFTER_FLOOR_S = 900.0
+
+#: Where T-2809's rolling per-stage-group raw timing samples live --
+#: duplicated here in plain path form (this script's own "no `frob`
+#: import" contract) rather than importing `frob.app._check_chunking.
+#: _BUDGET_TIMING_SAMPLES_REL`.
+_CHECK_BUDGET_TIMING_SAMPLES_REL = Path(".frob") / "check-budget-timing-samples.json"
+
+
+# frob:ticket T-2818
+def _derive_forkserver_stale_after_s(root: Path = REPO) -> float:
+    """How old (wall-clock seconds) a forkserver must be before `stale_
+    forkserver_count` calls it STALE, DERIVED from this repo's own
+    recorded `frob check` timings (T-2818) rather than a hardcoded
+    constant -- the ticket's own explicit requirement, citing T-2715 and
+    its previously-desynced twin `_TRUE_COUNT_BUDGET_S` as the precedent
+    for why a frozen number silently stops tracking repo growth.
+
+    Reads `.frob/check-budget-timing-samples.json` (T-2809's rolling
+    per-stage-group raw-sample window, `{group: [elapsed_s, ...]}`) and
+    sums each group's own MAXIMUM observed sample -- an upper bound on how
+    long a single full, unbudgeted check's slowest-yet-seen run through
+    every stage group could plausibly take -- then multiplies by
+    `_FORKSERVER_STALE_AFTER_HEADROOM` for margin. Summing per-group
+    maxima (not averaging, not taking one group's max alone) is
+    deliberate: stage groups can run sequentially within one `frob check`
+    invocation, so the worst-case total is the sum of each group's own
+    worst case, not any single group's.
+
+    Falls back to `_FORKSERVER_STALE_AFTER_S_FALLBACK` (unchanged from
+    T-2517) when the samples file is missing, unreadable, malformed, or
+    empty -- a fresh checkout with no recorded history yet. The derived
+    value is never trusted below `_FORKSERVER_STALE_AFTER_FLOOR_S`
+    regardless of what the samples say, guarding against a thin early
+    sample window deriving an unrealistically small threshold."""
+    path = root / _CHECK_BUDGET_TIMING_SAMPLES_REL
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return _FORKSERVER_STALE_AFTER_S_FALLBACK
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        return _FORKSERVER_STALE_AFTER_S_FALLBACK
+    if not isinstance(data, dict) or not data:
+        return _FORKSERVER_STALE_AFTER_S_FALLBACK
+    total = 0.0
+    saw_any = False
+    for samples in data.values():
+        if not isinstance(samples, list):
+            continue
+        numeric = [s for s in samples if isinstance(s, (int, float))]
+        if not numeric:
+            continue
+        total += max(numeric)
+        saw_any = True
+    if not saw_any:
+        return _FORKSERVER_STALE_AFTER_S_FALLBACK
+    derived = total * _FORKSERVER_STALE_AFTER_HEADROOM
+    return max(derived, _FORKSERVER_STALE_AFTER_FLOOR_S)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_forkserver_snapshot
@@ -2219,6 +2302,45 @@ def _forkserver_vmswap_kb(entry: Path) -> int:
     return 0
 
 
+# frob:ticket T-2818
+def _stat_fields_after_comm(stat_text: str) -> list[str] | None:
+    """`/proc/<pid>/stat`'s own fields AFTER the `") "` that closes the
+    `(comm)` field (a process name can itself contain spaces/parens, which
+    is why every reader here splits on the LAST `")"` rather than counting
+    space-separated tokens from the start) -- `fields[1]` is ppid,
+    `fields[19]` is starttime (field 22 overall). Shared by `_parse_
+    forkserver_entry` and `_read_ppid_from_stat` (T-2818, DUP001: both
+    used to re-derive this same split independently). Returns `None` if
+    `stat_text` has no `")"` at all (unparseable/truncated read)."""
+    close_paren = stat_text.rfind(")")
+    if close_paren == -1:
+        return None
+    return stat_text[close_paren + 2 :].split()
+
+
+# frob:ticket T-2818
+def _read_ppid_from_stat(entry: Path) -> int | None:
+    """`ppid` (field 2 of `/proc/<pid>/stat`, i.e. `fields[1]` after
+    `_stat_fields_after_comm`'s split) for the process at `entry`, or
+    `None` if the file is missing/unreadable/unparseable -- degrades this
+    ONE process's contribution to the ancestry map (T-2818), never raises.
+    Used by `_all_process_ppids` to build the ppid map `_forkserver_root_
+    is_live_check` walks; NOT used by `_parse_forkserver_entry`, which
+    still needs the full `fields` list for `_forkserver_age_s` and reads
+    `stat` itself rather than paying for two reads of the same file."""
+    try:
+        stat_text = (entry / "stat").read_text(encoding="utf-8")
+    except OSError:
+        return None
+    fields = _stat_fields_after_comm(stat_text)
+    if fields is None or len(fields) < 2:
+        return None
+    try:
+        return int(fields[1])
+    except ValueError:
+        return None
+
+
 def _parse_forkserver_entry(
     entry: Path, uptime_s: float | None, clk_tck: int
 ) -> dict[str, int | float | None] | None:
@@ -2240,13 +2362,8 @@ def _parse_forkserver_entry(
         stat_text = (entry / "stat").read_text(encoding="utf-8")
     except OSError:
         return None
-    close_paren = stat_text.rfind(")")
-    if close_paren == -1:
-        return None
-    # Fields after ")": [state, ppid, pgrp, ..., starttime, ...] -- ppid
-    # is fields[1], starttime (field 22 overall) is fields[19].
-    fields = stat_text[close_paren + 2 :].split()
-    if len(fields) < 2:
+    fields = _stat_fields_after_comm(stat_text)
+    if fields is None or len(fields) < 2:
         return None
     try:
         ppid = int(fields[1])
@@ -2300,8 +2417,124 @@ def _forkserver_snapshot(
     return procs
 
 
+# frob:ticket T-2818
+def _all_process_ppids(proc: Path = Path("/proc")) -> dict[int, int] | None:
+    """`{pid: ppid}` for every LIVE process on the host, read directly from
+    each `/proc/<pid>/stat` via `_read_ppid_from_stat` (T-2818) -- the
+    ancestry substrate `_forkserver_root_is_live_check` walks. Unlike
+    `_forkserver_snapshot` (forkservers only), this covers every process
+    so an ancestry walk can pass through non-forkserver hops (a `frob
+    check` process itself, or any intermediate wrapper). A single
+    unreadable/unparseable `<pid>/stat` degrades that ONE entry (omitted
+    from the map, matching `_forkserver_snapshot`'s own per-entry
+    resilience contract) -- the missing entry then reads, correctly, as
+    'this ancestor is not currently alive' to a caller walking through
+    it. Returns `None` only when `/proc` itself is unreadable, matching
+    every other best-effort `/proc`-scanning function in this module."""
+    if not proc.is_dir():
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    ppids: dict[int, int] = {}
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        ppid = _read_ppid_from_stat(entry)
+        if ppid is None:
+            continue
+        ppids[int(entry.name)] = ppid
+    return ppids
+
+
+# frob:ticket T-2818
+def _live_check_pids(proc: Path = Path("/proc")) -> set[int] | None:
+    """pids of every live `frob check` process on the host (T-2818): the
+    same cmdline classification `concurrent_check_count` reports as a
+    count, split out so `_forkserver_root_is_live_check`'s ancestry walk
+    can test ancestor-pid MEMBERSHIP without re-scanning `/proc` a second
+    time (DUP001 -- `concurrent_check_count` below is now `len(_live_
+    check_pids(proc) or ())`, same behavior, one shared scan). Matches
+    `_FROB_CHECK_TOKEN_RE`/`_CHECK_TOKEN_RE` as separate cmdline tokens,
+    never a substring. Returns `None` only when `/proc` is unreadable,
+    matching every other best-effort function in this module."""
+    if not proc.is_dir():
+        return None
+    try:
+        entries = list(proc.iterdir())
+    except OSError:
+        return None
+    pids: set[int] = set()
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw.endswith(b"\x00"):
+            raw += b"\x00"
+        if _FROB_CHECK_TOKEN_RE.search(raw) and _CHECK_TOKEN_RE.search(raw):
+            pids.add(int(entry.name))
+    return pids
+
+
+#: Max ancestry hops `_forkserver_root_is_live_check` walks before
+#: concluding the chain does not reach a live check (T-2818) -- a
+#: defensive bound against a malformed/cyclic ppid snapshot (a live
+#: process tree on this host has never been observed past single-digit
+#: depth), never expected to bind for a real forkserver chain. Exceeding
+#: it is treated the same as reaching init: "does not reach a live
+#: check", i.e. orphaned -- the safe direction, since the alternative
+#: (treating an unbounded walk as 'assume live') risks never reclaiming a
+#: chain this deep.
+_FORKSERVER_ANCESTRY_MAX_HOPS = 64
+
+
+# frob:ticket T-2818
+def _forkserver_root_is_live_check(
+    pid: int, ppid_map: dict[int, int], live_check_pids: set[int]
+) -> bool:
+    """Walk `pid`'s ancestry through `ppid_map`, returning whether ANY
+    ancestor is a live `frob check` pid (T-2818's root-cause fix): the
+    one-level `ppid == 1` test this replaced could not see a forkserver
+    reparented to ANOTHER, already-orphaned forkserver -- that forkserver
+    has a live parent (itself), so the one-level test called it healthy,
+    even though walking one more hop reaches init because ITS originating
+    check died. This walks to the root instead of stopping at hop one.
+
+    Returns `True` the instant any ancestor is a live check pid, at ANY
+    depth -- the ticket's own positive control: a forkserver several hops
+    below a genuinely running check must never read as orphaned, since
+    reaping it would kill live work mid-check.
+
+    Returns `False` (orphaned) when the chain reaches init (ppid 1), an
+    ancestor that is no longer in `ppid_map` (that ancestor has already
+    exited -- the map is built from one live `/proc` snapshot, so a
+    missing entry means dead, not merely unlisted), a cycle (defensive
+    only), or `_FORKSERVER_ANCESTRY_MAX_HOPS` is exceeded. This is the
+    ticket's other positive control: a forkserver parented to a forkserver
+    whose own originating check is dead must be reported orphaned even
+    though its own immediate parent is alive."""
+    seen = {pid}
+    current = pid
+    for _ in range(_FORKSERVER_ANCESTRY_MAX_HOPS):
+        parent = ppid_map.get(current)
+        if parent is None or parent == current or parent in seen:
+            return False
+        if parent in live_check_pids:
+            return True
+        if parent == 1:
+            return False
+        seen.add(parent)
+        current = parent
+    return False
+
+
 # frob:doc docs/guides/coordinator-scripts.md#orphaned_forkserver_count
 # frob:ticket T-2443
+# frob:ticket T-2818
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_counts_forks\
 # erver_reparented_to_init
@@ -2314,34 +2547,58 @@ def _forkserver_snapshot(
 # frob:tests \
 # tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_missing_proc\
 # _returns_none
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_two_level_ch\
+# ain_with_dead_root_is_orphaned
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_deep_chain_u\
+# nder_a_live_check_is_not_orphaned
+# frob:tests \
+# tests/unit/test_coordinator_scripts.py::TestOrphanedForkserverCount.test_zero_forkser\
+# vers_reports_zero
 def orphaned_forkserver_count(proc: Path = Path("/proc")) -> int | None:
     """How many live `multiprocessing.forkserver` helper processes on this
-    host are reparented to init (ppid == 1, i.e. their creating process is
-    dead) -- the exact, process-table-measured signature of T-2443's own
-    incident: `frob check` killed by this fleet's routine `timeout 540
-    ...` wrapper used to leave its process-pool workers (and therefore the
-    forkserver helper they keep alive) running forever, 94 of them
-    reparented to `/init` at measurement time, holding 17.3GB of swap. Read
-    directly from `/proc` (no `frob` import, no subprocess -- matching
-    `host_load`/`swap_pressure`'s own contract exactly) so an operator
-    staring at `_swap_guidance`'s '1 agent (SWAP ...)' clause can see
-    WHETHER this specific, actionable leak is the cause, rather than
-    guessing. Returns `None` if `/proc` is missing/unreadable (a non-Linux
+    host do NOT have a live `frob check` anywhere in their ancestry (T-2443,
+    fixed by T-2818 to walk the whole chain rather than the immediate
+    parent alone). Read directly from `/proc` (no `frob` import, no
+    subprocess -- matching `host_load`/`swap_pressure`'s own contract
+    exactly) so an operator staring at `_swap_guidance`'s '1 agent (SWAP
+    ...)' clause can see WHETHER this specific, actionable leak is the
+    cause, rather than guessing. Returns `None` if `/proc`, the ancestry
+    map, or the live-check-pid set is missing/unreadable (a non-Linux
     host, a sandboxed container) -- the caller must treat that as
     'unknown', never '0 orphans', mirroring every other best-effort
     `/proc`-scanning function in this module.
 
-    T-2517 CAUTION this function's own name invites: "orphaned" here means
-    ONLY init-reparented (ppid == 1). A forkserver whose parent is still
-    alive but idle for an hour is NOT counted here -- see `stale_
-    forkserver_count` for that (deliberately separate) signal; T-2517's
-    own incident is exactly a reader collapsing the two and reading
-    `ORPHANED FORKSERVERS: 0` as "nothing to reclaim" while 12GB of swap
-    sat in live-parented pools this function structurally cannot see."""
+    T-2818 ROOT CAUSE this replaced: T-2443's original version counted
+    only `ppid == 1` (reparented directly to init). A forkserver reparented
+    to ANOTHER forkserver -- itself orphaned, ppid 1 one hop further up --
+    read as 'live-parented', healthy, because the check stopped at hop
+    one. The measured incident: 92 leaked forkservers, most parented to
+    each other in short chains rooted at init, read as `ORPHANED
+    FORKSERVERS: 0` while holding 13.9GB of swap for over 45 minutes. This
+    version walks the FULL ancestry chain (`_forkserver_root_is_live_
+    check`) and only calls a forkserver healthy if a live `frob check` pid
+    is found somewhere in it -- at any depth, per the ticket's own
+    positive control that a genuinely running check's worker pool must
+    never read as orphaned regardless of chain depth."""
     snapshot = _forkserver_snapshot(proc)
     if snapshot is None:
         return None
-    return sum(1 for p in snapshot if p["ppid"] == 1)
+    if not snapshot:
+        return 0
+    ppid_map = _all_process_ppids(proc)
+    live_check_pids = _live_check_pids(proc)
+    if ppid_map is None or live_check_pids is None:
+        return None
+    orphaned = 0
+    for p in snapshot:
+        pid_value = p["pid"]
+        if not isinstance(pid_value, int):
+            continue
+        if not _forkserver_root_is_live_check(pid_value, ppid_map, live_check_pids):
+            orphaned += 1
+    return orphaned
 
 
 # frob:doc docs/guides/coordinator-scripts.md#stale_forkserver_count
@@ -2365,15 +2622,23 @@ def stale_forkserver_count(
     proc: Path = Path("/proc"),
     *,
     concurrent_checks: int | None,
-    stale_after_s: float = _FORKSERVER_STALE_AFTER_S,
+    stale_after_s: float | None = None,
 ) -> int | None:
     """How many live `multiprocessing.forkserver` helpers are STALE (T-2517):
-    older than `stale_after_s` (default 1 hour) with no `frob check`
-    currently running on the host, REGARDLESS of whether their parent
-    process is still alive. This is the signal `orphaned_forkserver_count`
-    structurally cannot report -- T-2517's own incident measured 82 of 148
-    forkservers past this age, all still parented to a live agent shell,
-    holding 12GB of swap while the orphan count read a clean 0.
+    older than `stale_after_s` with no `frob check` currently running on
+    the host, REGARDLESS of whether their parent process is still alive.
+    This is the signal `orphaned_forkserver_count`'s ancestry walk cannot
+    catch on its own -- a forkserver whose parent chain genuinely still
+    resolves to nothing known (map raced a process exiting mid-scan) reads
+    "unknown" from the ancestry test, not stale; age is an independent,
+    cheap backstop, per the ticket's own explicit ask.
+
+    `stale_after_s` defaults (`None`) to `_derive_forkserver_stale_after_s`
+    (T-2818) -- this repo's own recorded `frob check` stage timings
+    (`.frob/check-budget-timing-samples.json`, T-2809), not a frozen
+    constant; pass an explicit value only to override for a specific
+    measurement (tests do this to avoid depending on this checkout's own
+    timing history).
 
     `concurrent_checks` is the caller's own `concurrent_check_count`
     reading, passed in rather than re-measured here so both numbers in one
@@ -2393,8 +2658,11 @@ def stale_forkserver_count(
         return None
     if concurrent_checks != 0:
         return 0
+    threshold = (
+        _derive_forkserver_stale_after_s() if stale_after_s is None else stale_after_s
+    )
     return sum(
-        1 for p in snapshot if p["age_s"] is not None and p["age_s"] >= stale_after_s
+        1 for p in snapshot if p["age_s"] is not None and p["age_s"] >= threshold
     )
 
 
@@ -2460,26 +2728,16 @@ def concurrent_check_count(proc: Path = Path("/proc")) -> int | None:
     -- `fleet_status.py` is not itself a `frob check` process, so there is
     no self-exclusion case here. Returns `None` if `/proc` is missing/
     unreadable, mirroring `orphaned_forkserver_count`'s own best-effort-
-    degrades-to-None contract exactly."""
-    if not proc.is_dir():
+    degrades-to-None contract exactly.
+
+    T-2818: now `len(_live_check_pids(proc))`, sharing the exact same
+    cmdline scan `_forkserver_root_is_live_check`'s ancestry walk needs
+    (DUP001 -- this used to duplicate that scan independently); behavior
+    is unchanged, only the scan itself is shared."""
+    pids = _live_check_pids(proc)
+    if pids is None:
         return None
-    try:
-        entries = list(proc.iterdir())
-    except OSError:
-        return None
-    count = 0
-    for entry in entries:
-        if not entry.name.isdigit():
-            continue
-        try:
-            raw = (entry / "cmdline").read_bytes()
-        except OSError:
-            continue
-        if not raw.endswith(b"\x00"):
-            raw += b"\x00"
-        if _FROB_CHECK_TOKEN_RE.search(raw) and _CHECK_TOKEN_RE.search(raw):
-            count += 1
-    return count
+    return len(pids)
 
 
 # frob:doc docs/guides/coordinator-scripts.md#_swap_guidance
@@ -3368,26 +3626,74 @@ def _land_status_lines(
     return lines
 
 
+# frob:ticket T-2818
+def _forkserver_contradiction_line(
+    orphaned_forkservers: int | None,
+    stale_forkservers: int | None,
+    forkserver_swap_kb: int | None,
+) -> str | None:
+    """`None`, or a loud `CONTRADICTION:` line, when `orphaned_forkservers
+    == 0` and `stale_forkservers == 0` both read clean while `forkserver_
+    swap_kb` is above `_SWAP_PRESSURE_FLOOR_KB` (T-2818) -- the exact
+    combination this ticket was filed from: `ORPHANED FORKSERVERS: 0`,
+    `STALE FORKSERVERS: 0`, `SWAP HELD BY FORKSERVERS: 13.9GB`, read by a
+    human as "nothing to reap" for 45 minutes while the box degraded to
+    1.6GB available. Those three readings cannot all be honest at once --
+    multiple gigabytes of forkserver swap requires SOME live forkserver
+    holding it, and if none of them are classified orphaned or stale, the
+    classification itself is the thing that needs to be doubted, not the
+    swap number. Never fires when any of the three inputs is `None`
+    (unknown) -- a contradiction claim needs all three readings to
+    actually be zero/zero/high, not a guess from a partial read."""
+    if orphaned_forkservers is None or stale_forkservers is None:
+        return None
+    if forkserver_swap_kb is None:
+        return None
+    if orphaned_forkservers == 0 and stale_forkservers == 0:
+        if forkserver_swap_kb >= _SWAP_PRESSURE_FLOOR_KB:
+            swap_gb = forkserver_swap_kb / (1024 * 1024)
+            return (
+                f"CONTRADICTION: 0 orphaned + 0 stale forkservers but "
+                f"{swap_gb:.1f}GB of forkserver swap in use -- these "
+                "readings cannot both be true (T-2818: this is the exact "
+                "combination that hid a 92-forkserver leak for 45 minutes); "
+                "do not trust the 0/0 classification, investigate directly "
+                "(`ps -eo pid,ppid,etimes,cmd | grep multiprocessing.forkserver`) "
+                "before concluding this is genuine live working set"
+            )
+    return None
+
+
 def _forkserver_status_lines(
     orphaned_forkservers: int | None,
     stale_forkservers: int | None,
     forkserver_swap_kb: int | None,
     concurrent_checks: int | None,
 ) -> list[str]:
-    """The four forkserver/check lines (`ORPHANED FORKSERVERS`, `STALE
-    FORKSERVERS`, `SWAP HELD BY FORKSERVERS`, `CONCURRENT CHECKS`) --
-    ARCH001 split of `_land_status_lines` (T-2517), pure formatting, no
-    behavior change from inlining. T-2517: the three forkserver numbers
-    stay on THREE separate lines, never collapsed into one -- see `_land_
-    status_lines`'s own docstring for why."""
+    """The forkserver/check lines (`ORPHANED FORKSERVERS`, `STALE
+    FORKSERVERS`, `SWAP HELD BY FORKSERVERS`, `CONCURRENT CHECKS`, and a
+    `CONTRADICTION:` line when warranted) -- ARCH001 split of `_land_
+    status_lines` (T-2517), pure formatting, no behavior change from
+    inlining. T-2517: the three forkserver numbers stay on THREE separate
+    lines, never collapsed into one -- see `_land_status_lines`'s own
+    docstring for why. T-2818: `_forkserver_contradiction_line` is
+    checked FIRST and printed BEFORE the individual number lines when it
+    fires, so the loudest signal is not buried after three lines that
+    each look clean in isolation."""
     lines: list[str] = []
+    contradiction = _forkserver_contradiction_line(
+        orphaned_forkservers, stale_forkservers, forkserver_swap_kb
+    )
+    if contradiction is not None:
+        lines.append(contradiction)
     if orphaned_forkservers is None:
         lines.append("ORPHANED FORKSERVERS: unknown (/proc unreadable)")
     elif orphaned_forkservers > 0:
         lines.append(
-            f"ORPHANED FORKSERVERS: {orphaned_forkservers} reparented to "
-            "init (T-2443 leak signature -- SIGTERM them or wait for the "
-            "next `frob check`'s own startup reaper)"
+            f"ORPHANED FORKSERVERS: {orphaned_forkservers} do not have a "
+            "live `frob check` anywhere in their ancestry (T-2443/T-2818 "
+            "leak signature -- SIGTERM them or wait for the next `frob "
+            "check`'s own startup reaper)"
         )
     else:
         lines.append("ORPHANED FORKSERVERS: 0")
@@ -3395,7 +3701,9 @@ def _forkserver_status_lines(
         lines.append("STALE FORKSERVERS: unknown (/proc unreadable)")
     elif stale_forkservers > 0:
         lines.append(
-            f"STALE FORKSERVERS: {stale_forkservers} idle >1h with no check "
+            f"STALE FORKSERVERS: {stale_forkservers} older than this "
+            "repo's own derived check-duration threshold "
+            "(_derive_forkserver_stale_after_s, T-2818) with no check "
             "running (T-2517 leak signature -- SIGTERM them; safe only "
             "because CONCURRENT CHECKS is 0 right now)"
         )

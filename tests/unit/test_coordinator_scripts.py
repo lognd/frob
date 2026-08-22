@@ -963,9 +963,7 @@ class TestWorktreeStartedTicketIds:
     resolved to `None` for most of this fleet's real worktree names."""
 
     # frob:ticket T-2755
-    def test_non_conventionally_named_worktree_resolves(
-        self, tmp_path: Path
-    ) -> None:
+    def test_non_conventionally_named_worktree_resolves(self, tmp_path: Path) -> None:
         """T-2755 must-now-fire: a worktree named after its SUBJECT
         (`waive-liveness`, T-2740's own real name per T-2747's docstring)
         -- `_worktree_ticket_id("waive-liveness")` returns `None` (no
@@ -980,9 +978,7 @@ class TestWorktreeStartedTicketIds:
         _run_git(["commit", "-q", "-m", "c1"], repo)
 
         worktree = tmp_path / "waive-liveness"
-        _run_git(
-            ["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo
-        )
+        _run_git(["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo)
         (worktree / "x.txt").write_text("x\nchanged\n")
         _run_git(["add", "-A"], worktree)
         _run_git(
@@ -994,9 +990,7 @@ class TestWorktreeStartedTicketIds:
         assert fleet_status._worktree_ticket_id("waive-liveness") is None
 
     # frob:ticket T-2755
-    def test_no_start_transition_commits_resolves_empty(
-        self, tmp_path: Path
-    ) -> None:
+    def test_no_start_transition_commits_resolves_empty(self, tmp_path: Path) -> None:
         """Negative control: a worktree with unlanded commits but NONE
         of them the canonical start-transition subject resolves to `[]`,
         never force-matched to a ticket id it never structurally started.
@@ -1019,9 +1013,7 @@ class TestWorktreeStartedTicketIds:
         assert fleet_status._worktree_started_ticket_ids(worktree) == []
 
     # frob:ticket T-2755
-    def test_series_worktree_resolves_every_started_id(
-        self, tmp_path: Path
-    ) -> None:
+    def test_series_worktree_resolves_every_started_id(self, tmp_path: Path) -> None:
         """T-2755 must-now-fire: a grouped-dispatch series worktree
         (`t2763-t2359`-shaped: named for one ticket, holding several)
         structurally started TWO ids -- both resolve, not just the one
@@ -1035,9 +1027,7 @@ class TestWorktreeStartedTicketIds:
         _run_git(["commit", "-q", "-m", "c1"], repo)
 
         worktree = tmp_path / "t2763-t2359"
-        _run_git(
-            ["worktree", "add", "-q", "-b", "t2763-t2359", str(worktree)], repo
-        )
+        _run_git(["worktree", "add", "-q", "-b", "t2763-t2359", str(worktree)], repo)
         (worktree / "x.txt").write_text("x\nchanged once\n")
         _run_git(["add", "-A"], worktree)
         _run_git(
@@ -1272,9 +1262,7 @@ class TestWorktreeContentClassificationLiveGit:
         _run_git(["commit", "-q", "-m", "c1: existing() plus in-progress ticket"], repo)
 
         worktree = tmp_path / "waive-liveness"
-        _run_git(
-            ["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo
-        )
+        _run_git(["worktree", "add", "-q", "-b", "waive-liveness", str(worktree)], repo)
         _run_git(
             [
                 "commit",
@@ -2450,7 +2438,7 @@ class TestPrintLandStatus:
         monkeypatch.setattr(fleet_status, "orphaned_forkserver_count", lambda: 94)
         fleet_status._print_land_status()
         out = capsys.readouterr().out
-        assert "ORPHANED FORKSERVERS: 94 reparented to init" in out
+        assert "ORPHANED FORKSERVERS: 94 do not have a live" in out
 
     # frob:ticket T-2443
     def test_zero_orphaned_forkservers_prints_zero_not_omitted(
@@ -2675,7 +2663,8 @@ class TestSwapPressure:
 
 # frob:ticket T-2443
 class TestOrphanedForkserverCount:
-    """`fleet_status.orphaned_forkserver_count` (T-2443)."""
+    """`fleet_status.orphaned_forkserver_count` (T-2443, ancestry-walk fix
+    T-2818)."""
 
     @staticmethod
     def _write_entry(proc: Path, pid: int, *, cmdline: bytes, ppid: int) -> None:
@@ -2684,26 +2673,35 @@ class TestOrphanedForkserverCount:
         (entry / "cmdline").write_bytes(cmdline)
         (entry / "stat").write_text(f"{pid} (python3) S {ppid} {pid} 0 0 -1 0\n")
 
+    @staticmethod
+    def _write_live_check(proc: Path, pid: int, *, ppid: int = 1) -> None:
+        """A live `frob check` process at `pid` -- no forkserver cmdline,
+        so it never enters `_forkserver_snapshot`, but it DOES enter
+        `_live_check_pids` and `_all_process_ppids` (T-2818), which is all
+        an ancestry test needs of it."""
+        entry = proc / str(pid)
+        entry.mkdir(parents=True)
+        (entry / "cmdline").write_bytes(b"/x/.venv/bin/frob\x00check\x00")
+        (entry / "stat").write_text(f"{pid} (frob) S {ppid} {pid} 0 0 -1 0\n")
+
+    _FORKSERVER_CMDLINE = (
+        b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00"
+    )
+
     def test_counts_forkserver_reparented_to_init(self, tmp_path: Path) -> None:
         proc = tmp_path / "proc"
         proc.mkdir()
-        self._write_entry(
-            proc,
-            4242,
-            cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
-            ppid=1,
-        )
+        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=1)
         assert fleet_status.orphaned_forkserver_count(proc) == 1
 
     def test_ignores_forkserver_with_live_parent(self, tmp_path: Path) -> None:
+        """A forkserver whose immediate parent is a genuinely LIVE `frob
+        check` process (T-2818: ancestry, not one-level ppid==1, is the
+        fix's own required semantics) must not be counted orphaned."""
         proc = tmp_path / "proc"
         proc.mkdir()
-        self._write_entry(
-            proc,
-            4242,
-            cmdline=b"python3\x00-c\x00from multiprocessing.forkserver import main; main(...)\x00",
-            ppid=999,
-        )
+        self._write_live_check(proc, 999)
+        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=999)
         assert fleet_status.orphaned_forkserver_count(proc) == 0
 
     def test_ignores_non_forkserver_processes(self, tmp_path: Path) -> None:
@@ -2714,6 +2712,42 @@ class TestOrphanedForkserverCount:
 
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         assert fleet_status.orphaned_forkserver_count(tmp_path / "no-proc") is None
+
+    def test_two_level_chain_with_dead_root_is_orphaned(self, tmp_path: Path) -> None:
+        """T-2818's own positive control, the case that failed before this
+        fix: a forkserver (4242) whose parent is ANOTHER forkserver (5000)
+        whose own originating check already died (reparented to init, no
+        live check pid anywhere in the tree). The old one-level test read
+        4242 as 'live-parented' because 5000 is alive; the ancestry walk
+        must classify BOTH as orphaned."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_entry(proc, 5000, cmdline=self._FORKSERVER_CMDLINE, ppid=1)
+        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=5000)
+        assert fleet_status.orphaned_forkserver_count(proc) == 2
+
+    def test_deep_chain_under_a_live_check_is_not_orphaned(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2818's other positive control, the one that matters most: a
+        forkserver several hops below a genuinely RUNNING check must never
+        read as orphaned, at any depth -- getting this wrong reaps live
+        workers mid-check."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_live_check(proc, 6000)
+        self._write_entry(proc, 5000, cmdline=self._FORKSERVER_CMDLINE, ppid=6000)
+        self._write_entry(proc, 4242, cmdline=self._FORKSERVER_CMDLINE, ppid=5000)
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
+
+    def test_zero_forkservers_reports_zero(self, tmp_path: Path) -> None:
+        """MUST-STILL-PASS: no forkservers at all (even with other, live,
+        non-forkserver processes present) reports a clean `0`, never an
+        error or `None`."""
+        proc = tmp_path / "proc"
+        proc.mkdir()
+        self._write_live_check(proc, 100)
+        assert fleet_status.orphaned_forkserver_count(proc) == 0
 
 
 # frob:ticket T-2517
@@ -2794,6 +2828,64 @@ class TestStaleForkserverCount:
         )
 
 
+# frob:ticket T-2818
+class TestDeriveForkserverStaleAfterS:
+    """`fleet_status._derive_forkserver_stale_after_s` (T-2818): the age
+    backstop threshold DERIVED from this repo's own recorded `frob check`
+    timings, replacing a hardcoded constant -- the ticket's own explicit
+    requirement, citing T-2715/`_TRUE_COUNT_BUDGET_S` as the precedent for
+    why a frozen number silently stops tracking repo growth."""
+
+    def test_derives_from_recorded_samples_with_headroom(self, tmp_path: Path) -> None:
+        """Sums each group's own MAX sample (worst-case per stage) then
+        applies the headroom multiplier -- two groups whose maxima are
+        100s and 50s derive to (100 + 50) * headroom, floored only if that
+        product is below the floor."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS.test_derives_from_recorded_samples_with_headroom  # noqa: E501
+        (tmp_path / ".frob").mkdir()
+        (tmp_path / ".frob" / "check-budget-timing-samples.json").write_text(
+            json.dumps({"gates-fast": [10.0, 100.0, 40.0], "static": [50.0, 20.0]}),
+            encoding="utf-8",
+        )
+        expected = (100.0 + 50.0) * fleet_status._FORKSERVER_STALE_AFTER_HEADROOM
+        assert fleet_status._derive_forkserver_stale_after_s(tmp_path) == max(
+            expected, fleet_status._FORKSERVER_STALE_AFTER_FLOOR_S
+        )
+
+    def test_missing_samples_file_falls_back(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS.test_missing_samples_file_falls_back  # noqa: E501
+        assert (
+            fleet_status._derive_forkserver_stale_after_s(tmp_path)
+            == fleet_status._FORKSERVER_STALE_AFTER_S_FALLBACK
+        )
+
+    def test_malformed_samples_file_falls_back(self, tmp_path: Path) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS.test_malformed_samples_file_falls_back  # noqa: E501
+        (tmp_path / ".frob").mkdir()
+        (tmp_path / ".frob" / "check-budget-timing-samples.json").write_text(
+            "not json{{", encoding="utf-8"
+        )
+        assert (
+            fleet_status._derive_forkserver_stale_after_s(tmp_path)
+            == fleet_status._FORKSERVER_STALE_AFTER_S_FALLBACK
+        )
+
+    def test_thin_samples_never_derive_below_the_floor(self, tmp_path: Path) -> None:
+        """A tiny recorded sample (a fresh repo with only a couple of
+        quick runs logged) must never derive a threshold below
+        `_FORKSERVER_STALE_AFTER_FLOOR_S`, which would risk flagging an
+        in-progress check's own forkservers as stale."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestDeriveForkserverStaleAfterS.test_thin_samples_never_derive_below_the_floor  # noqa: E501
+        (tmp_path / ".frob").mkdir()
+        (tmp_path / ".frob" / "check-budget-timing-samples.json").write_text(
+            json.dumps({"lint": [0.5]}), encoding="utf-8"
+        )
+        assert (
+            fleet_status._derive_forkserver_stale_after_s(tmp_path)
+            == fleet_status._FORKSERVER_STALE_AFTER_FLOOR_S
+        )
+
+
 # frob:ticket T-2517
 class TestForkserverSwapHeldKb:
     """`fleet_status.forkserver_swap_held_kb` (T-2517): summed VmSwap,
@@ -2839,6 +2931,54 @@ class TestForkserverSwapHeldKb:
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverSwapHeldKb.test_missing_proc_returns_none  # noqa: E501
         assert fleet_status.forkserver_swap_held_kb(tmp_path / "no-proc") is None
+
+
+# frob:ticket T-2818
+class TestForkserverContradictionLine:
+    """`fleet_status._forkserver_contradiction_line` (T-2818): the loud
+    refusal to let '0 orphaned + 0 stale' sit next to multi-gigabyte
+    forkserver swap without comment -- the exact combination that hid a
+    92-forkserver leak for 45 minutes."""
+
+    def test_fires_on_zero_zero_high_swap(self) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine.test_fires_on_zero_zero_high_swap  # noqa: E501
+        line = fleet_status._forkserver_contradiction_line(0, 0, 14 * 1024 * 1024)
+        assert line is not None
+        assert "CONTRADICTION" in line
+
+    def test_silent_when_swap_below_pressure_floor(self) -> None:
+        """MUST-STILL-PASS: 0/0 next to a few MB of ordinary idle swap
+        (not the multi-gigabyte incident shape) must never fire -- this is
+        not "any swap at all", matching `_SWAP_PRESSURE_FLOOR_KB`'s own
+        contract."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine.test_silent_when_swap_below_pressure_floor  # noqa: E501
+        assert fleet_status._forkserver_contradiction_line(0, 0, 1024) is None
+
+    def test_silent_when_orphaned_or_stale_nonzero(self) -> None:
+        """A nonzero orphaned/stale reading already explains the swap --
+        no contradiction to surface."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine.test_silent_when_orphaned_or_stale_nonzero  # noqa: E501
+        assert (
+            fleet_status._forkserver_contradiction_line(3, 0, 14 * 1024 * 1024) is None
+        )
+        assert (
+            fleet_status._forkserver_contradiction_line(0, 3, 14 * 1024 * 1024) is None
+        )
+
+    def test_silent_on_any_unknown_input(self) -> None:
+        """MUST-STILL-PASS: a contradiction claim needs all three readings
+        to be real -- any `None` (unknown) input suppresses it rather than
+        guessing."""
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestForkserverContradictionLine.test_silent_on_any_unknown_input  # noqa: E501
+        assert (
+            fleet_status._forkserver_contradiction_line(None, 0, 14 * 1024 * 1024)
+            is None
+        )
+        assert (
+            fleet_status._forkserver_contradiction_line(0, None, 14 * 1024 * 1024)
+            is None
+        )
+        assert fleet_status._forkserver_contradiction_line(0, 0, None) is None
 
 
 # frob:ticket T-2473
