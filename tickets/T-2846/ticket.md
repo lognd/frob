@@ -1,7 +1,7 @@
 ---
 id: T-2846
 title: Split frob-core/src/lib.rs's clone-detection rungs into sibling modules
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -20,10 +20,17 @@ scope:
 - frob-core/src/r5.rs
 - frob-core/src/exact_regions.rs
 - frob-core/src/callgraph.rs
+evidence_scope:
+- tests/test_arch_near_duplicate_native.py
+- tests/test_dup_native_rungs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_arch_near_duplicate_native.py::test_native_kernel_matches_difflib_over_this_repos_own_arch_tree
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r4_gapped_clone
+- tests/test_dup_native_rungs.py::TestNativeRungsEnabled::test_enabled_finds_the_r5_dataflow_clone
 designated_repro_test: null
 threat: null
 component: null

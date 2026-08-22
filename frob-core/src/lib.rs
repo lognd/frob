@@ -6,1438 +6,73 @@
 //! cross this boundary; a malformed input is a Python-side validation bug,
 //! not something this crate defends against.
 
-// frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: 865 of this file's \
-// 2297 lines (roughly 38%) are its own #[cfg(test)] mod tests block (line 1431 on), the idiomatic \
-// Rust convention of colocating unit tests in the same file as the code they test rather than a \
-// separate tests/ directory -- this is not production-code bulk. The remaining ~1430 lines are \
-// this crate's data-in/data-out clone-detection kernels (R1.5 exact-region suffix-array matching, \
-// R3 canonical hashing, R4 winnowing/candidate-pairing/tree-edit-distance, R5 Weisfeiler-Lehman \
-// dataflow hashing, plus callgraph/arch-similarity helpers) -- each an independent PyO3-exposed \
-// #[pyfunction] already, genuinely separable by rung, but pyo3's #[pymodule] registration (the \
-// frob_core fn at file end) needs every #[pyfunction] visible in one crate-root scope to register \
-// them, and splitting the rungs into sibling modules (mirroring \
-// arch_python.rs/capability_python.rs's own extraction pattern) is real, tracked, \
-// follow-up-worthy work -- see Done report."
+// T-2846: the R1.5/R3/R4/R5/callgraph rungs previously lived here directly.
+// The earlier LARGE001 waiver on this file claimed pyo3's #[pymodule]
+// registration needed every #[pyfunction] visible in crate-root scope --
+// false: this crate already registers extract_tree_*/scan_python_capabilities/
+// py_function_metrics from sibling modules (extract.rs/capability_python.rs/
+// arch_python.rs) via plain `use` imports below, and wrap_pyfunction! only
+// needs the name in scope, not defined in this file. Measured zero cross-
+// calls between the five rungs (only `hash_str` is shared, kept here as
+// `pub(crate)`), so each rung moved to its own sibling module below,
+// mirroring arch_python.rs/capability_python.rs's own extraction pattern.
+// This shrank the file from 2297 to 932 lines but did not clear LARGE001's
+// 500-line threshold on its own, so a fresh waiver replaces the old one:
+
+// frob:waive LARGE001 reason="post-T-2846 shape: 834 of this file's 932 lines (line 66 on) are \
+// its own #[cfg(test)] mod tests block, the idiomatic Rust convention of colocating unit tests \
+// with the code they test rather than a separate tests/ directory -- not production-code bulk. \
+// The remaining ~98 lines are the module doc, the mod/use declarations wiring in this crate's six \
+// sibling kernel/binding modules (arch_python, callgraph, capability_python, exact_regions, \
+// extract, r3, r4, r5), the shared hash_str helper genuinely used by two of those rungs, and the \
+// pymodule registration function -- there is no further rung left to extract; this is the \
+// crate-root wiring itself, mirroring strata-core/src/lib.rs's own identical post-split LARGE001 \
+// waiver shape."
 
 use pyo3::prelude::*;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 mod arch_python;
+mod callgraph;
 mod capability_python;
+mod exact_regions;
 mod extract;
+mod r3;
+mod r4;
+mod r5;
 use arch_python::py_function_metrics;
+use callgraph::{
+    called_names, near_duplicate_indices, ordered_called_names, referenced_names,
+    resolve_call_edges, unresolved_exempt_names,
+};
 use capability_python::scan_python_capabilities;
+use exact_regions::exact_regions as run_exact_regions;
 use extract::{extract_tree_cpp, extract_tree_python, extract_tree_rust, extract_tree_typescript};
+use r3::r3_canonical_hash;
+use r4::{apted_similarity, candidate_pairs, tree_edit_similarity, winnow_fingerprints};
+use r5::{anti_unify, wl_hash};
+#[cfg(test)]
+use callgraph::arch_sim_ratio;
+#[cfg(test)]
+use exact_regions::{build_suffix_array, kasai_lcp};
+#[cfg(test)]
+use r3::{is_numeric_literal, is_string_literal};
+#[cfg(test)]
+use r4::{build_postorder, zhang_shasha_distance};
+#[cfg(test)]
+use r5::anti_unify_core;
+#[cfg(test)]
+use r5::AntiUnifyErr;
+#[cfg(test)]
+use std::collections::HashMap;
 
 /// Deterministic 64-bit hash of one token (std `DefaultHasher` is
 /// unkeyed/deterministic across runs, unlike `HashMap`'s `RandomState`).
-fn hash_str(s: &str) -> u64 {
+pub(crate) fn hash_str(s: &str) -> u64 {
     let mut h = DefaultHasher::new();
     s.hash(&mut h);
     h.finish()
-}
-
-/// True iff `tok` is shaped like a numeric literal (optional leading `-`,
-/// digits, at most one `.`) -- e.g. `1`, `-3`, `2.5`. Deliberately
-/// conservative: anything ambiguous (an identifier, a keyword) is left
-/// alone rather than risk collapsing two DIFFERENT non-literal tokens
-/// into the same placeholder (T-0447).
-fn is_numeric_literal(tok: &str) -> bool {
-    let body = tok.strip_prefix('-').unwrap_or(tok);
-    if body.is_empty() {
-        return false;
-    }
-    let mut seen_dot = false;
-    let mut seen_digit = false;
-    for c in body.chars() {
-        if c == '.' {
-            if seen_dot {
-                return false;
-            }
-            seen_dot = true;
-        } else if c.is_ascii_digit() {
-            seen_digit = true;
-        } else {
-            return false;
-        }
-    }
-    seen_digit
-}
-
-/// True iff `tok` is a quoted string literal (starts and ends with the
-/// same quote character, `'` or `"`, and is at least two characters --
-/// i.e. the quotes are not the same single character counted twice).
-fn is_string_literal(tok: &str) -> bool {
-    let mut chars = tok.chars();
-    let Some(first) = chars.next() else {
-        return false;
-    };
-    if first != '\'' && first != '"' {
-        return false;
-    }
-    tok.len() >= 2 && tok.ends_with(first) && tok.chars().count() >= 2
-}
-
-/// R3 canonicalization pass: literal abstraction + control-flow desugar,
-/// applied to an already alpha-renamed (R2) token stream before folding.
-///
-/// WHY here and not in Python: `docs/modules/dup.md`'s R3 row promises
-/// "canonicalized-AST subtree hash: alpha-rename, literal abstraction, ...
-/// control-flow normalization", but until T-0447 `r3_canonical_hash` only
-/// folded the raw R2 stream -- literally indistinguishable from R2 (T-0199
-/// finding). Two real, tractable-without-an-AST transforms close that gap:
-///
-/// - literal abstraction: every numeric-literal-shaped or quoted-string-
-///   literal-shaped token collapses to one canonical placeholder per kind
-///   (`_lit_num` / `_lit_str`), so two bodies differing only in a constant
-///   value hash identically.
-/// - control-flow desugar: `elif` is real syntactic sugar for `else: if`
-///   (true in every grammar frob.lang parses that has an `elif` keyword,
-///   Python's included) -- expanding it to the three tokens
-///   `["else", ":", "if"]` before folding makes an `if/elif/else` chain
-///   and its manually-nested `if/else: if/else` equivalent hash the same,
-///   without needing real AST restructuring.
-///
-/// Anything beyond these two (commutative-operand reordering, real
-/// for/while loop-shape desugaring) needs actual AST structure, not a
-/// token fold, and is intentionally NOT attempted here -- see
-/// `docs/modules/dup.md`'s R3 deviations note and `frob:todo T-0001`.
-fn r3_canonicalize(tokens: &[String]) -> Vec<String> {
-    let mut out = Vec::with_capacity(tokens.len());
-    for tok in tokens {
-        if tok == "elif" {
-            out.push("else".to_string());
-            out.push(":".to_string());
-            out.push("if".to_string());
-        } else if is_numeric_literal(tok) {
-            out.push("_lit_num".to_string());
-        } else if is_string_literal(tok) {
-            out.push("_lit_str".to_string());
-        } else {
-            out.push(tok.clone());
-        }
-    }
-    out
-}
-
-/// R3: canonicalized-AST subtree hash.
-///
-/// WHY: the caller (frob.dup._pipeline) has already alpha-renamed locals
-/// via `frob.lang` (R2 normalization) -- this function's job is to finish
-/// canonicalizing the resulting token sequence (literal abstraction,
-/// `elif` control-flow desugar -- `r3_canonicalize`, T-0447) and fold it
-/// into one stable hex digest, so equal-shape bodies collide regardless of
-/// source length, constant values, or `elif`-vs-nested-`if/else` spelling.
-/// Kept as a pure fold (not a crate like blake3) to keep the dependency
-/// surface at just pyo3.
-#[pyfunction]
-fn r3_canonical_hash(tokens: Vec<String>) -> String {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    let canonical = r3_canonicalize(&tokens);
-    let mut acc: u64 = 0xcbf29ce484222325; // FNV offset basis, arbitrary seed
-    for tok in &canonical {
-        let h = hash_str(tok);
-        acc = acc.rotate_left(5) ^ h;
-    }
-    format!("{:016x}", acc)
-}
-
-/// R4: winnowing fingerprints (Moss-style) over sliding token windows.
-///
-/// Returns the set of selected k-gram hashes after winnowing with window
-/// `w`, so fingerprints are position-independent -- the same substring
-/// anywhere in the token stream produces the same fingerprint, which is
-/// what makes region-granular matching (docs/modules/dup.md's "regions, not just
-/// functions") fall out for free.
-#[pyfunction]
-fn winnow_fingerprints(tokens: Vec<String>, k: usize, w: usize) -> Vec<u64> {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    if k == 0 || tokens.len() < k {
-        return Vec::new();
-    }
-    // k-gram hashes
-    let kgram_hashes: Vec<u64> = (0..=tokens.len() - k)
-        .map(|i| {
-            let mut h = DefaultHasher::new();
-            for tok in &tokens[i..i + k] {
-                tok.hash(&mut h);
-            }
-            h.finish()
-        })
-        .collect();
-
-    if w == 0 || kgram_hashes.len() < w {
-        // No windowing possible -- every k-gram hash is selected.
-        let mut out = kgram_hashes;
-        out.dedup();
-        return out;
-    }
-
-    // Classic winnowing: in each window of w consecutive hashes, keep the
-    // minimum (rightmost on ties), dedup consecutive repeats.
-    let mut selected: Vec<u64> = Vec::new();
-    let mut last_selected_idx: Option<usize> = None;
-    for start in 0..=kgram_hashes.len() - w {
-        let window = &kgram_hashes[start..start + w];
-        let mut min_idx = start;
-        let mut min_val = window[0];
-        for (off, &v) in window.iter().enumerate() {
-            if v <= min_val {
-                min_val = v;
-                min_idx = start + off;
-            }
-        }
-        if last_selected_idx != Some(min_idx) {
-            selected.push(min_val);
-            last_selected_idx = Some(min_idx);
-        }
-    }
-    selected
-}
-
-/// R4 candidate discovery: LSH-style bucketing by shared fingerprints.
-///
-/// `ids` and `fingerprint_sets` are parallel arrays (one fingerprint list
-/// per region). Returns index pairs `(i, j)` with `i < j` whose fingerprint
-/// sets share at least `min_shared` values -- the candidate pairs that get
-/// verified downstream by `tree_edit_similarity`.
-#[pyfunction]
-fn candidate_pairs(fingerprint_sets: Vec<Vec<u64>>, min_shared: usize) -> Vec<(usize, usize)> {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    let mut buckets: HashMap<u64, Vec<usize>> = HashMap::new();
-    for (idx, fps) in fingerprint_sets.iter().enumerate() {
-        for fp in fps {
-            buckets.entry(*fp).or_default().push(idx);
-        }
-    }
-    let mut shared_counts: HashMap<(usize, usize), usize> = HashMap::new();
-    for members in buckets.values() {
-        if members.len() < 2 {
-            continue;
-        }
-        for a in 0..members.len() {
-            for b in (a + 1)..members.len() {
-                if members[a] == members[b] {
-                    // Same region indexed twice in one bucket (duplicate
-                    // fingerprint values within a single region's set) must
-                    // never emit a self-pair (i, i) -- a region always
-                    // "shares" with itself and that's not a candidate.
-                    continue;
-                }
-                let (i, j) = (members[a].min(members[b]), members[a].max(members[b]));
-                *shared_counts.entry((i, j)).or_insert(0) += 1;
-            }
-        }
-    }
-    let mut out: Vec<(usize, usize)> = shared_counts
-        .into_iter()
-        .filter(|(_, count)| *count >= min_shared)
-        .map(|(pair, _)| pair)
-        .collect();
-    out.sort_unstable();
-    out
-}
-
-/// R4 verification: statement-sequence edit distance and alignment.
-///
-/// **Deviation from docs/modules/dup.md**: the design names APTED (tree edit
-/// distance over the full subtree structure). This implementation is a
-/// statement-level Needleman-Wunsch/Levenshtein alignment over each
-/// region's flattened statement-hash sequence, not a full tree metric --
-/// it catches inserted/deleted statements (the R4 use case named in the
-/// rung table) but not within-statement tree restructuring, which is a
-/// known gap recorded for a follow-up (frob:ticket T-0001 follow-up:
-/// upgrade to true APTED). Returns `(similarity, alignment)` where
-/// `alignment` is matched `(i, j)` statement-index pairs.
-#[pyfunction]
-fn tree_edit_similarity(a: Vec<u64>, b: Vec<u64>) -> (f64, Vec<(usize, usize)>) {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    let n = a.len();
-    let m = b.len();
-    if n == 0 && m == 0 {
-        return (1.0, Vec::new());
-    }
-    if n == 0 || m == 0 {
-        return (0.0, Vec::new());
-    }
-
-    // dp[i][j] = edit distance between a[..i] and b[..j]
-    let mut dp = vec![vec![0usize; m + 1]; n + 1];
-    for i in 0..=n {
-        dp[i][0] = i;
-    }
-    for j in 0..=m {
-        dp[0][j] = j;
-    }
-    for i in 1..=n {
-        for j in 1..=m {
-            if a[i - 1] == b[j - 1] {
-                dp[i][j] = dp[i - 1][j - 1];
-            } else {
-                dp[i][j] = 1 + dp[i - 1][j].min(dp[i][j - 1]).min(dp[i - 1][j - 1]);
-            }
-        }
-    }
-    let dist = dp[n][m];
-    let max_len = n.max(m);
-    let similarity = 1.0 - (dist as f64 / max_len as f64);
-
-    // Backtrace to recover matched (equal) index pairs.
-    let mut alignment: Vec<(usize, usize)> = Vec::new();
-    let (mut i, mut j) = (n, m);
-    while i > 0 && j > 0 {
-        if a[i - 1] == b[j - 1] && dp[i][j] == dp[i - 1][j - 1] {
-            alignment.push((i - 1, j - 1));
-            i -= 1;
-            j -= 1;
-        } else if dp[i][j] == dp[i - 1][j - 1] + 1 {
-            i -= 1;
-            j -= 1;
-        } else if dp[i][j] == dp[i - 1][j] + 1 {
-            i -= 1;
-        } else {
-            j -= 1;
-        }
-    }
-    alignment.reverse();
-    (similarity, alignment)
-}
-
-/// R4 verification (real tree edit distance): Zhang-Shasha algorithm over
-/// two labeled ordered trees, each given as a flat `parents` array (index i
-/// is a node, `parents[i]` its parent index or `-1` for the root; any
-/// traversal order is fine -- this function derives its own postorder).
-///
-/// This is the real tree-edit-distance metric the rung table names (APTED
-/// generalizes Zhang-Shasha with a smarter choice of single/double-path
-/// decomposition for better worst-case complexity; Zhang-Shasha is the
-/// same edit-distance *result* -- insert/delete/rename over full subtree
-/// structure, not a flat statement sequence -- at a still-polynomial
-/// O(n*m*min(depth,leaves)) cost, which is what frob.dup's clone-sized
-/// inputs need). Unlike the old `tree_edit_similarity` (kept below for
-/// R4's statement-alignment/region-span narrowing, a different job), this
-/// operates on real subtree shape: a token reordered *within* one
-/// statement changes the tree structure and is caught here, where the
-/// flat statement-sequence Levenshtein could not see it.
-fn build_postorder(parents: &[i64]) -> (Vec<usize>, Vec<usize>, usize) {
-    let n = parents.len();
-    let mut children: Vec<Vec<usize>> = vec![Vec::new(); n];
-    let mut root = 0usize;
-    for (i, &p) in parents.iter().enumerate() {
-        if p < 0 {
-            root = i;
-        } else {
-            children[p as usize].push(i);
-        }
-    }
-    let mut postorder: Vec<usize> = Vec::with_capacity(n);
-    let mut leftmost_of: Vec<usize> = vec![0; n]; // node id -> leftmost-leaf node id
-    // iterative post-order to avoid unbounded recursion depth on large trees
-    let mut stack: Vec<(usize, usize)> = vec![(root, 0)]; // (node, next-child-idx)
-    let mut first_leaf_stack: Vec<Option<usize>> = vec![None];
-    while let Some(&(node, idx)) = stack.last() {
-        let kids = &children[node];
-        if kids.is_empty() {
-            postorder.push(node);
-            leftmost_of[node] = node;
-            stack.pop();
-            first_leaf_stack.pop();
-            if let Some(top) = first_leaf_stack.last_mut() {
-                if top.is_none() {
-                    *top = Some(node);
-                }
-            }
-        } else if idx < kids.len() {
-            stack.last_mut().unwrap().1 += 1;
-            stack.push((kids[idx], 0));
-            first_leaf_stack.push(None);
-        } else {
-            postorder.push(node);
-            let lf = first_leaf_stack.pop().unwrap().unwrap_or(node);
-            leftmost_of[node] = lf;
-            stack.pop();
-            if let Some(top) = first_leaf_stack.last_mut() {
-                if top.is_none() {
-                    *top = Some(lf);
-                }
-            }
-        }
-    }
-    let mut pos_of: Vec<usize> = vec![0; n];
-    for (i, &node) in postorder.iter().enumerate() {
-        pos_of[node] = i;
-    }
-    let lmd: Vec<usize> = postorder.iter().map(|&node| pos_of[leftmost_of[node]]).collect();
-    (postorder, lmd, root)
-}
-
-fn keyroots(lmd: &[usize]) -> Vec<usize> {
-    let mut last_for_l: HashMap<usize, usize> = HashMap::new();
-    for (i, &l) in lmd.iter().enumerate() {
-        last_for_l.insert(l, i); // largest i wins, since we overwrite in order
-    }
-    let mut kr: Vec<usize> = last_for_l.values().copied().collect();
-    kr.sort_unstable();
-    kr
-}
-
-/// The Zhang-Shasha tree-edit-distance value between two labeled trees
-/// (postorder positions are 0-indexed internally; the algorithm's classic
-/// formulation is used with a +1 offset for the forestdist boundary row).
-fn zhang_shasha_distance(
-    labels_a: &[String],
-    postorder_a: &[usize],
-    lmd_a: &[usize],
-    labels_b: &[String],
-    postorder_b: &[usize],
-    lmd_b: &[usize],
-) -> usize {
-    let n = postorder_a.len();
-    let m = postorder_b.len();
-    if n == 0 && m == 0 {
-        return 0;
-    }
-    if n == 0 {
-        return m;
-    }
-    if m == 0 {
-        return n;
-    }
-    let mut treedist = vec![vec![0usize; m]; n];
-    let kr_a = keyroots(lmd_a);
-    let kr_b = keyroots(lmd_b);
-
-    for &i in &kr_a {
-        for &j in &kr_b {
-            let li = lmd_a[i];
-            let lj = lmd_b[j];
-            let rows = i - li + 2;
-            let cols = j - lj + 2;
-            let mut forestdist = vec![vec![0usize; cols]; rows];
-            for x in 1..rows {
-                forestdist[x][0] = forestdist[x - 1][0] + 1;
-            }
-            for y in 1..cols {
-                forestdist[0][y] = forestdist[0][y - 1] + 1;
-            }
-            for x in 1..rows {
-                let node_x = li + x - 1;
-                for y in 1..cols {
-                    let node_y = lj + y - 1;
-                    if lmd_a[node_x] == li && lmd_b[node_y] == lj {
-                        let cost_rename =
-                            if labels_a[postorder_a[node_x]] == labels_b[postorder_b[node_y]] {
-                                0
-                            } else {
-                                1
-                            };
-                        let del = forestdist[x - 1][y] + 1;
-                        let ins = forestdist[x][y - 1] + 1;
-                        let ren = forestdist[x - 1][y - 1] + cost_rename;
-                        let val = del.min(ins).min(ren);
-                        forestdist[x][y] = val;
-                        treedist[node_x][node_y] = val;
-                    } else {
-                        let p = lmd_a[node_x] - li;
-                        let q = lmd_b[node_y] - lj;
-                        let del = forestdist[x - 1][y] + 1;
-                        let ins = forestdist[x][y - 1] + 1;
-                        let ren = forestdist[p][q] + treedist[node_x][node_y];
-                        forestdist[x][y] = del.min(ins).min(ren);
-                    }
-                }
-            }
-        }
-    }
-    treedist[n - 1][m - 1]
-}
-
-/// R4 verification (real APTED-class tree edit distance): see
-/// `zhang_shasha_distance` for the algorithm. `parents_a`/`parents_b` are
-/// flat parent-index arrays (root has parent `-1`); `labels_a`/`labels_b`
-/// are the per-node labels in the SAME index space as their parents array
-/// (node structure, not tree-sitter node types directly -- the caller,
-/// `frob.dup._pipeline`, builds this from `frob.lang`'s exported subtree).
-/// Returns similarity in `[0, 1]` (`1 - distance / max(|A|, |B|)`).
-#[pyfunction]
-fn apted_similarity(
-    labels_a: Vec<String>,
-    parents_a: Vec<i64>,
-    labels_b: Vec<String>,
-    parents_b: Vec<i64>,
-) -> f64 {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    if labels_a.is_empty() && labels_b.is_empty() {
-        return 1.0;
-    }
-    if labels_a.is_empty() || labels_b.is_empty() {
-        return 0.0;
-    }
-    let (postorder_a, lmd_a, _root_a) = build_postorder(&parents_a);
-    let (postorder_b, lmd_b, _root_b) = build_postorder(&parents_b);
-    let dist = zhang_shasha_distance(
-        &labels_a,
-        &postorder_a,
-        &lmd_a,
-        &labels_b,
-        &postorder_b,
-        &lmd_b,
-    );
-    let max_len = labels_a.len().max(labels_b.len());
-    1.0 - (dist as f64 / max_len as f64)
-}
-
-/// Children-index lists for a parent-index array, in source (array) order --
-/// same construction `build_postorder` uses, factored out so `anti_unify`
-/// can walk lockstep without paying for postorder/keyroots bookkeeping it
-/// does not need.
-fn children_lists(parents: &[i64]) -> (Vec<Vec<usize>>, usize) {
-    let n = parents.len();
-    let mut children: Vec<Vec<usize>> = vec![Vec::new(); n];
-    let mut root = 0usize;
-    for (i, &p) in parents.iter().enumerate() {
-        if p < 0 {
-            root = i;
-        } else {
-            children[p as usize].push(i);
-        }
-    }
-    (children, root)
-}
-
-/// Failure modes for `anti_unify_core`: only the hole-ceiling sanity check
-/// today (item 17/T-0194's ADOPT clause) -- a template that is mostly holes
-/// carries no real generalization value, so the caller should fall back to
-/// treating the pair as a plain (non-generalized) clone match.
-#[derive(Debug, PartialEq, Eq)]
-enum AntiUnifyErr {
-    /// Generalized template is >50% `$hole_N` placeholders by node count.
-    HoleCeilingExceeded,
-}
-
-/// Plotkin lgg output: the generalized node array (shared labels plus
-/// `$hole_N` placeholders at each divergence) and, per hole, the pair of
-/// concrete subtree roots it generalizes -- one index into `parents_a`'s
-/// node space, one into `parents_b`'s.
-#[derive(Debug)]
-struct Template {
-    labels: Vec<String>,
-    parents: Vec<i64>,
-    /// `(hole_id, node_index_in_a)`, one entry per hole, in hole order.
-    bindings_a: Vec<(usize, usize)>,
-    /// `(hole_id, node_index_in_b)`, one entry per hole, in hole order.
-    bindings_b: Vec<(usize, usize)>,
-}
-
-/// Recursive lockstep walk: at `(a, b)`, emit a shared node and recurse into
-/// children pairwise when labels AND arity agree; otherwise emit a fresh
-/// `$hole_N` at this position, bind it to `(a, b)`, and do not recurse --
-/// everything under a hole is exactly what differs per-instance, so it
-/// belongs to the binding, not the template.
-// frob:invariant terminates reason="each recursive call descends strictly into a child of a and b \
-// in the input parse trees, which are finite; recursion stops at leaves (empty child lists) or on \
-// any label/arity mismatch" measure="min(remaining-depth-in-a, remaining-depth-in-b) from the \
-// current (a, b) pair to a leaf"
-#[allow(clippy::too_many_arguments)]
-fn anti_unify_walk(
-    a: usize,
-    b: usize,
-    parent_out: i64,
-    children_a: &[Vec<usize>],
-    children_b: &[Vec<usize>],
-    labels_a: &[String],
-    labels_b: &[String],
-    out_labels: &mut Vec<String>,
-    out_parents: &mut Vec<i64>,
-    bindings_a: &mut Vec<(usize, usize)>,
-    bindings_b: &mut Vec<(usize, usize)>,
-    hole_counter: &mut usize,
-) {
-    let kids_a = &children_a[a];
-    let kids_b = &children_b[b];
-    if labels_a[a] == labels_b[b] && kids_a.len() == kids_b.len() {
-        let idx = out_labels.len() as i64;
-        out_labels.push(labels_a[a].clone());
-        out_parents.push(parent_out);
-        for k in 0..kids_a.len() {
-            anti_unify_walk(
-                kids_a[k],
-                kids_b[k],
-                idx,
-                children_a,
-                children_b,
-                labels_a,
-                labels_b,
-                out_labels,
-                out_parents,
-                bindings_a,
-                bindings_b,
-                hole_counter,
-            );
-        }
-    } else {
-        let hole_id = *hole_counter;
-        *hole_counter += 1;
-        out_labels.push(format!("$hole_{hole_id}"));
-        out_parents.push(parent_out);
-        bindings_a.push((hole_id, a));
-        bindings_b.push((hole_id, b));
-    }
-}
-
-/// Anti-unification core (Plotkin 1970 least-general-generalization): the
-/// pure algorithm, independent of the PyO3 boundary, so cargo tests can
-/// assert on `Err` directly (docs/modules/dup-sota-survey.md section 4).
-/// Both-empty inputs generalize to an empty template with zero holes;
-/// exactly-one-empty is a maximal-divergence case (nothing shared) and
-/// always exceeds the hole ceiling below.
-fn anti_unify_core(
-    labels_a: &[String],
-    parents_a: &[i64],
-    labels_b: &[String],
-    parents_b: &[i64],
-) -> Result<Template, AntiUnifyErr> {
-    if labels_a.is_empty() && labels_b.is_empty() {
-        return Ok(Template {
-            labels: Vec::new(),
-            parents: Vec::new(),
-            bindings_a: Vec::new(),
-            bindings_b: Vec::new(),
-        });
-    }
-    if labels_a.is_empty() || labels_b.is_empty() {
-        return Err(AntiUnifyErr::HoleCeilingExceeded);
-    }
-
-    let (children_a, root_a) = children_lists(parents_a);
-    let (children_b, root_b) = children_lists(parents_b);
-
-    let mut out_labels = Vec::new();
-    let mut out_parents = Vec::new();
-    let mut bindings_a = Vec::new();
-    let mut bindings_b = Vec::new();
-    let mut hole_counter = 0usize;
-
-    anti_unify_walk(
-        root_a,
-        root_b,
-        -1,
-        &children_a,
-        &children_b,
-        labels_a,
-        labels_b,
-        &mut out_labels,
-        &mut out_parents,
-        &mut bindings_a,
-        &mut bindings_b,
-        &mut hole_counter,
-    );
-
-    let hole_count = out_labels
-        .iter()
-        .filter(|l| l.starts_with("$hole_"))
-        .count();
-    // HOLE-CEILING sanity: >50% holes means too little shared structure to
-    // be a meaningful generalization -- fall back to a plain clone pair.
-    if hole_count * 2 > out_labels.len() {
-        return Err(AntiUnifyErr::HoleCeilingExceeded);
-    }
-
-    Ok(Template {
-        labels: out_labels,
-        parents: out_parents,
-        bindings_a,
-        bindings_b,
-    })
-}
-
-/// Plotkin lgg over the `(labels, parents)` node-array representation
-/// `apted_similarity` already consumes (docs/modules/dup-sota-survey.md
-/// section 4, T-0194). Lockstep top-down walk: where labels and arity
-/// agree, keep the shared node and recurse; on divergence, emit a fresh
-/// `$hole_N` and bind it to the two diverging subtrees without recursing
-/// into them. Returns `(ok, template_labels, template_parents, bindings_a,
-/// bindings_b)` rather than raising -- this crate's data-in/data-out
-/// contract (see module doc) never lets a Rust exception cross the PyO3
-/// boundary, so a hole-ceiling failure (`ok == false`) is a plain sentinel
-/// value, not a Python exception; all four arrays are empty in that case.
-#[pyfunction]
-fn anti_unify(
-    labels_a: Vec<String>,
-    parents_a: Vec<i64>,
-    labels_b: Vec<String>,
-    parents_b: Vec<i64>,
-) -> (
-    bool,
-    Vec<String>,
-    Vec<i64>,
-    Vec<(usize, usize)>,
-    Vec<(usize, usize)>,
-) {
-    // frob:doc docs/modules/dup.md#anti-unification-plotkin-lgg
-    match anti_unify_core(&labels_a, &parents_a, &labels_b, &parents_b) {
-        Ok(t) => (true, t.labels, t.parents, t.bindings_a, t.bindings_b),
-        Err(AntiUnifyErr::HoleCeilingExceeded) => {
-            (false, Vec::new(), Vec::new(), Vec::new(), Vec::new())
-        }
-    }
-}
-
-/// R5: Weisfeiler-Lehman graph-kernel hash over a def-use/control adjacency.
-///
-/// `adjacency` is an edge list `(u, v)` over node indices `0..labels.len()`
-/// (undirected -- the caller symmetrizes if it wants directed semantics);
-/// `labels[i]` is node `i`'s initial color (identifier role, e.g. "def" vs
-/// "use", the caller's choice). Standard 1-WL refinement: each iteration,
-/// every node's new label is the hash of its own label plus the *sorted*
-/// multiset of its neighbors' labels (sorting makes it isomorphism-stable --
-/// two graphs with relabeled-but-isomorphic structure hash identically).
-/// After `iterations` rounds the per-node labels are folded (order-
-/// independent, via XOR) into one graph hash, so reordered-but-equivalent
-/// dataflow graphs collide regardless of node numbering.
-#[pyfunction]
-fn wl_hash(adjacency: Vec<(usize, usize)>, labels: Vec<String>, iterations: usize) -> u64 {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    let n = labels.len();
-    if n == 0 {
-        return 0;
-    }
-    let mut neighbors: Vec<Vec<usize>> = vec![Vec::new(); n];
-    for (u, v) in &adjacency {
-        if *u < n && *v < n {
-            neighbors[*u].push(*v);
-            neighbors[*v].push(*u);
-        }
-    }
-
-    let mut colors: Vec<u64> = labels.iter().map(|l| hash_str(l)).collect();
-    for _ in 0..iterations {
-        let mut next_colors: Vec<u64> = Vec::with_capacity(n);
-        for i in 0..n {
-            let mut neighbor_colors: Vec<u64> = neighbors[i].iter().map(|&j| colors[j]).collect();
-            neighbor_colors.sort_unstable();
-            let mut h = DefaultHasher::new();
-            colors[i].hash(&mut h);
-            neighbor_colors.hash(&mut h);
-            next_colors.push(h.finish());
-        }
-        colors = next_colors;
-    }
-
-    // Order-independent fold: the graph hash must not depend on node
-    // numbering, only on the (now-refined) multiset of node colors.
-    let mut sorted_colors = colors;
-    sorted_colors.sort_unstable();
-    let mut acc: u64 = 0x9e3779b97f4a7c15; // golden-ratio seed, arbitrary
-    for c in sorted_colors {
-        acc = acc.wrapping_add(c.wrapping_mul(0xff51afd7ed558ccd));
-        acc ^= acc >> 33;
-    }
-    acc
-}
-
-/// Token-id/document-index bookkeeping for `exact_regions`: `global` is the
-/// concatenation of every document's token ids with a unique per-document
-/// sentinel appended after each one (so no suffix can match across a
-/// document boundary); `doc_of[i]`/`offset_of[i]` recover which document and
-/// local token offset global position `i` came from (`doc_of[i] == None` at
-/// a sentinel position).
-fn flatten_documents(documents: &[Vec<String>]) -> (Vec<i64>, Vec<Option<usize>>, Vec<usize>) {
-    let mut token_ids: HashMap<&str, i64> = HashMap::new();
-    let mut next_id: i64 = 0;
-    let mut global: Vec<i64> = Vec::new();
-    let mut doc_of: Vec<Option<usize>> = Vec::new();
-    let mut offset_of: Vec<usize> = Vec::new();
-    for (doc_idx, doc) in documents.iter().enumerate() {
-        for (tok_idx, tok) in doc.iter().enumerate() {
-            let id = *token_ids.entry(tok.as_str()).or_insert_with(|| {
-                let v = next_id;
-                next_id += 1;
-                v
-            });
-            global.push(id);
-            doc_of.push(Some(doc_idx));
-            offset_of.push(tok_idx);
-        }
-        // Unique negative sentinel per document -- real token ids are >= 0,
-        // so a sentinel can never equal (or be lexicographically confused
-        // with) a real token id, and two different documents' sentinels
-        // never collide with each other either.
-        global.push(-1 - doc_idx as i64);
-        doc_of.push(None);
-        offset_of.push(0);
-    }
-    (global, doc_of, offset_of)
-}
-
-/// Suffix array of `s` via the classic O(n log^2 n) rank-doubling
-/// algorithm (Manber-Myers). `s` may contain any `i64` values (not just
-/// `0..alphabet_size`) -- ranks are recomputed from the current ordering
-/// each round rather than assuming a bounded alphabet, so the negative
-/// sentinel ids from `flatten_documents` work unmodified.
-fn build_suffix_array(s: &[i64]) -> Vec<usize> {
-    let n = s.len();
-    if n == 0 {
-        return Vec::new();
-    }
-    let mut sa: Vec<usize> = (0..n).collect();
-    let mut rank: Vec<i64> = s.to_vec();
-    let mut tmp: Vec<i64> = vec![0; n];
-    let key = |i: usize, rank: &[i64], k: usize| -> (i64, i64) {
-        let hi = rank[i];
-        let lo = if i + k < n { rank[i + k] } else { i64::MIN };
-        (hi, lo)
-    };
-    let mut k = 1usize;
-    loop {
-        sa.sort_unstable_by_key(|&i| key(i, &rank, k));
-        tmp[sa[0]] = 0;
-        for i in 1..n {
-            let prev_key = key(sa[i - 1], &rank, k);
-            let cur_key = key(sa[i], &rank, k);
-            tmp[sa[i]] = tmp[sa[i - 1]] + if cur_key > prev_key { 1 } else { 0 };
-        }
-        rank.copy_from_slice(&tmp);
-        if rank[sa[n - 1]] as usize == n - 1 || k >= n {
-            break;
-        }
-        k <<= 1;
-    }
-    sa
-}
-
-/// Kasai's O(n) LCP-array construction: `lcp[i]` is the length of the
-/// longest common prefix between the suffixes at `sa[i]` and `sa[i-1]`
-/// (`lcp[0]` is unused/`0`, there is no predecessor).
-fn kasai_lcp(s: &[i64], sa: &[usize]) -> Vec<usize> {
-    let n = s.len();
-    if n == 0 {
-        return Vec::new();
-    }
-    let mut rank = vec![0usize; n];
-    for (i, &p) in sa.iter().enumerate() {
-        rank[p] = i;
-    }
-    let mut lcp = vec![0usize; n];
-    let mut h = 0usize;
-    for i in 0..n {
-        if rank[i] > 0 {
-            let j = sa[rank[i] - 1];
-            while i + h < n && j + h < n && s[i + h] == s[j + h] {
-                h += 1;
-            }
-            lcp[rank[i]] = h;
-            if h > 0 {
-                h -= 1;
-            }
-        } else {
-            h = 0;
-        }
-    }
-    lcp
-}
-
-/// Collapse raw adjacent-SA-pair matches into maximal repeated regions.
-///
-/// Two matches `(da, oa, db, ob, l)` lie on the same "diagonal" of the
-/// `(doc_a offset, doc_b offset)` alignment grid when `oa - ob` is constant
-/// -- exactly the condition for them to be different windows onto the same
-/// underlying repeat. Grouping by `(da, db, diagonal)` and merging
-/// overlapping/touching `[oa, oa+l)` intervals on that diagonal recovers
-/// the single maximal region a generalized suffix automaton would report
-/// directly, instead of one entry per SA-adjacent sub-window.
-fn merge_diagonals(
-    raw: Vec<(usize, usize, usize, usize, usize)>,
-) -> Vec<(usize, usize, usize, usize, usize)> {
-    let canon: Vec<(usize, usize, usize, usize, usize)> = raw
-        .into_iter()
-        .map(|(da, oa, db, ob, l)| {
-            if (da, oa) <= (db, ob) {
-                (da, oa, db, ob, l)
-            } else {
-                (db, ob, da, oa, l)
-            }
-        })
-        .collect();
-
-    let mut groups: HashMap<(usize, usize, i64), Vec<(usize, usize)>> = HashMap::new();
-    for (da, oa, db, ob, l) in canon {
-        let diag = oa as i64 - ob as i64;
-        groups.entry((da, db, diag)).or_default().push((oa, l));
-    }
-
-    let mut out: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
-    for ((da, db, diag), mut intervals) in groups {
-        intervals.sort_unstable();
-        let (mut cur_start, first_len) = intervals[0];
-        let mut cur_end = cur_start + first_len;
-        for &(s, l) in intervals.iter().skip(1) {
-            let e = s + l;
-            if s <= cur_end {
-                cur_end = cur_end.max(e);
-            } else {
-                out.push((
-                    da,
-                    cur_start,
-                    db,
-                    (cur_start as i64 - diag) as usize,
-                    cur_end - cur_start,
-                ));
-                cur_start = s;
-                cur_end = e;
-            }
-        }
-        out.push((
-            da,
-            cur_start,
-            db,
-            (cur_start as i64 - diag) as usize,
-            cur_end - cur_start,
-        ));
-    }
-    out.sort_unstable();
-    out
-}
-
-/// R1.5: exact repeated-region discovery via a generalized suffix array
-/// over the whole corpus's (already-normalized, caller's choice of
-/// abstraction) token stream.
-///
-/// WHY: R1/R2 (`_r1_hash`/`_r2_hash` in `frob.dup._pipeline`) hash whole
-/// symbol bodies, so a copy-pasted block sitting inside two otherwise-
-/// different functions is invisible to them -- neither whole-body hash
-/// collides. A suffix array + LCP pass over the concatenated corpus finds
-/// *every* maximal exact-token-match region of length `>= min_len`,
-/// anywhere in any document, in one O(n log^2 n) pass (suffix-automaton-
-/// equivalent recall, suffix-array-simple implementation -- see
-/// docs/modules/dup-sota-survey.md section 16 for why either data
-/// structure is acceptable here). `documents[i]` is one symbol's token
-/// stream (index `i` is the caller's document id, threaded back through
-/// the returned tuples); `min_len` is a token-count floor below which a
-/// match is not reported (mirrors R4's `min_shared`/`min_tokens` floors --
-/// keeps trivial single-token "matches" out of the result).
-///
-/// Returns `(regions, truncated)`. `regions` is a list of `(doc_a,
-/// start_a, doc_b, start_b, length)` tuples: doc `doc_a` at token offset
-/// `start_a` and doc `doc_b` at token offset `start_b` share an exact
-/// `length`-token run. `doc_a <= doc_b` (and `start_a <= start_b` when
-/// `doc_a == doc_b`) by construction -- callers get each region pair once,
-/// not twice.
-///
-/// `max_run_size` (T-0273, reviewer finding on T-0193: `emit_run_pairs` is
-/// O(k^2) in one equal-token run's size `k` -- 2000 near-identical docs
-/// sharing a block produced 1,999,000 pairs in a demonstrated worst case)
-/// bounds `k` per run: a run larger than `max_run_size` only pairs its
-/// first `max_run_size` occurrences with each other, capping the per-run
-/// cost at O(max_run_size^2) regardless of how many more times the block
-/// repeats. `truncated` is `true` iff at least one run was capped -- an
-/// honest signal, never a silent drop (the T-0193-recall-bug lesson):
-/// callers are expected to surface it (e.g. a WARN log) rather than treat
-/// the result as exhaustive when `truncated` is set.
-#[pyfunction]
-#[pyo3(signature = (documents, min_len, max_run_size=200))]
-fn exact_regions(
-    documents: Vec<Vec<String>>,
-    min_len: usize,
-    max_run_size: usize,
-) -> (Vec<(usize, usize, usize, usize, usize)>, bool) {
-    // frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-    if documents.is_empty() || min_len == 0 {
-        return (Vec::new(), false);
-    }
-    let (global, doc_of, offset_of) = flatten_documents(&documents);
-    if global.is_empty() {
-        return (Vec::new(), false);
-    }
-    let sa = build_suffix_array(&global);
-    let lcp = kasai_lcp(&global, &sa);
-
-    let mut raw: Vec<(usize, usize, usize, usize, usize)> = Vec::new();
-    let mut truncated = false;
-    for (lo, hi) in lcp_runs(&lcp, min_len) {
-        let run_truncated = emit_run_pairs(
-            &sa,
-            &doc_of,
-            &offset_of,
-            lo,
-            hi,
-            &lcp,
-            min_len,
-            max_run_size,
-            &mut raw,
-        );
-        truncated = truncated || run_truncated;
-    }
-    (merge_diagonals(raw), truncated)
-}
-
-/// Maximal `[lo, hi]` (inclusive, both indices into `sa`/`lcp`) SA-index
-/// ranges such that every consecutive pair inside the range has
-/// `lcp >= min_len` -- i.e. every suffix in `sa[lo..=hi]` shares a common
-/// prefix of at least `min_len` tokens with every other suffix in the same
-/// range (LCP is a "staircase": for a sorted suffix array, the shared
-/// prefix length between ANY two suffixes in a range is the MINIMUM
-/// `lcp[k]` for `k` strictly between them, so bounding every adjacent gap
-/// bounds every pairwise gap too). This is what lets `exact_regions` emit
-/// every occurrence pair of a block repeated 3+ times, not just
-/// SA-adjacent ones (the bug T-0193's reviewer caught: only comparing
-/// `(sa[i-1], sa[i])` silently drops `(sa[i-2], sa[i])` and further-apart
-/// pairs within the same run).
-fn lcp_runs(lcp: &[usize], min_len: usize) -> Vec<(usize, usize)> {
-    let n = lcp.len();
-    let mut runs: Vec<(usize, usize)> = Vec::new();
-    let mut run_start: Option<usize> = None;
-    for i in 1..n {
-        if lcp[i] >= min_len {
-            if run_start.is_none() {
-                run_start = Some(i - 1);
-            }
-        } else if let Some(start) = run_start.take() {
-            runs.push((start, i - 1));
-        }
-    }
-    if let Some(start) = run_start {
-        runs.push((start, n - 1));
-    }
-    runs
-}
-
-/// Emit every occurrence pair `(sa[i], sa[j])`, `i < j`, within one
-/// `lcp_runs` range `[lo, hi]` -- the shared length reported is the
-/// minimum `lcp[k]` for `k` in `(lo, hi]`, which every pair in the range
-/// is guaranteed to share (see `lcp_runs`'s doc comment). O(k^2) in the
-/// run size `k`; runs are bounded by how many times one block repeats in
-/// the corpus, not by corpus size, so this stays cheap in the common case
-/// -- but a pathologically large equal-token run (many near-identical
-/// generated/boilerplate symbols sharing a block) is NOT bounded by
-/// anything else, so `max_run_size` (T-0273) caps `k` before the O(k^2)
-/// double loop: only the run's first `max_run_size` occurrences (by SA
-/// order) are paired with each other. Returns `true` iff the run exceeded
-/// `max_run_size` and was capped, so the caller can propagate an honest
-/// truncation signal instead of silently under-reporting.
-fn emit_run_pairs(
-    sa: &[usize],
-    doc_of: &[Option<usize>],
-    offset_of: &[usize],
-    lo: usize,
-    hi: usize,
-    lcp: &[usize],
-    min_len: usize,
-    max_run_size: usize,
-    out: &mut Vec<(usize, usize, usize, usize, usize)>,
-) -> bool {
-    let run_len = lcp[lo + 1..=hi].iter().copied().min().unwrap_or(min_len);
-    let run_size = hi - lo + 1;
-    let truncated = run_size > max_run_size.max(1);
-    let capped_hi = if truncated {
-        lo + max_run_size.max(1) - 1
-    } else {
-        hi
-    };
-    for i in lo..=capped_hi {
-        let Some(da) = doc_of[sa[i]] else { continue };
-        for j in (i + 1)..=capped_hi {
-            let Some(db) = doc_of[sa[j]] else { continue };
-            out.push((da, offset_of[sa[i]], db, offset_of[sa[j]], run_len));
-        }
-    }
-    truncated
-}
-
-/// Approximates Python's `str.isidentifier()` over the token alphabet
-/// `frob.lang`'s tokenizers actually emit (identifiers vs punctuation/
-/// operator/literal tokens) -- first char a letter or underscore, every
-/// other char alphanumeric or underscore, Unicode-aware via Rust's own
-/// `char::is_alphabetic`/`is_alphanumeric` (T-0930, same "close enough
-/// for real source token text, documented rather than silently assumed"
-/// posture as this crate's `is_numeric_literal`/`is_string_literal`).
-fn is_identifier_token(tok: &str) -> bool {
-    let mut chars = tok.chars();
-    match chars.next() {
-        Some(c) if c == '_' || c.is_alphabetic() => {}
-        _ => return false,
-    }
-    chars.all(|c| c == '_' || c.is_alphanumeric())
-}
-
-/// T-0930: the `frob.graph.callgraph._called_names`/`_ordered_called_names`
-/// shared token scan -- an identifier token immediately followed by `(`
-/// is a call name; a bare-identifier argument to a known wrapper marker
-/// (`memoize_per_run(_target)`) is rescued too (T-0583). `ordered`
-/// selects which of the two Python functions' contracts to match:
-/// `false` collapses into a de-duplicated, UNORDERED name list
-/// (`_called_names`'s frozenset contract); `true` preserves source-text
-/// order with duplicates kept (`_ordered_called_names`'s contract) --
-/// same scan, two output shapes, avoiding two near-identical loops.
-fn scan_call_tokens(body_tokens: &[String], wrapper_markers: &[String], ordered: bool) -> Vec<String> {
-    let markers: std::collections::HashSet<&str> =
-        wrapper_markers.iter().map(|s| s.as_str()).collect();
-    let n = body_tokens.len();
-    let mut ordered_out: Vec<String> = Vec::new();
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for i in 0..n.saturating_sub(1) {
-        let tok = &body_tokens[i];
-        if body_tokens[i + 1] != "(" || !is_identifier_token(tok) {
-            continue;
-        }
-        if ordered || seen.insert(tok.clone()) {
-            ordered_out.push(tok.clone());
-        }
-        if markers.contains(tok.as_str())
-            && i + 2 < n
-            && is_identifier_token(&body_tokens[i + 2])
-            && (i + 3 >= n || body_tokens[i + 3] == ")" || body_tokens[i + 3] == ",")
-        {
-            let wrapped = &body_tokens[i + 2];
-            if ordered || seen.insert(wrapped.clone()) {
-                ordered_out.push(wrapped.clone());
-            }
-        }
-    }
-    ordered_out
-}
-
-/// T-0930: `frob.graph.callgraph._called_names` -- de-duplicated call-name
-/// scan (see `scan_call_tokens`).
-// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-#[pyfunction]
-fn called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
-    scan_call_tokens(&body_tokens, &wrapper_markers, false)
-}
-
-/// T-0930: `frob.graph.callgraph._ordered_called_names` -- source-order,
-/// duplicates-kept call-name scan (see `scan_call_tokens`).
-// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-#[pyfunction]
-fn ordered_called_names(body_tokens: Vec<String>, wrapper_markers: Vec<String>) -> Vec<String> {
-    scan_call_tokens(&body_tokens, &wrapper_markers, true)
-}
-
-/// T-0930: `frob.graph.callgraph._referenced_names` -- every identifier
-/// token across `sig_tokens` then `body_tokens`, de-duplicated (broader
-/// recall than `called_names`: catches dispatch-table/decorator/default-
-/// value mentions that never appear as a `name(` call token at all).
-// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-#[pyfunction]
-fn referenced_names(sig_tokens: Vec<String>, body_tokens: Vec<String>) -> Vec<String> {
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
-    let mut out: Vec<String> = Vec::new();
-    for tok in sig_tokens.iter().chain(body_tokens.iter()) {
-        if is_identifier_token(tok) && seen.insert(tok.clone()) {
-            out.push(tok.clone());
-        }
-    }
-    out
-}
-
-/// T-0930: `frob.graph.callgraph._unresolved_exempt_names` -- every call
-/// name whose EVERY occurrence is an attribute call on a receiver other
-/// than `self` (T-0813's `obj._method(...)`/`super().__init__(...)`
-/// false-positive disposition).
-// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-#[pyfunction]
-fn unresolved_exempt_names(body_tokens: Vec<String>) -> Vec<String> {
-    let mut confident: std::collections::HashSet<String> = std::collections::HashSet::new();
-    let mut all_calls: std::collections::HashSet<String> = std::collections::HashSet::new();
-    let n = body_tokens.len();
-    for i in 0..n.saturating_sub(1) {
-        let tok = &body_tokens[i];
-        if body_tokens[i + 1] != "(" || !is_identifier_token(tok) {
-            continue;
-        }
-        all_calls.insert(tok.clone());
-        let is_attr_call = i > 0 && body_tokens[i - 1] == ".";
-        let receiver_is_self = is_attr_call && i > 1 && body_tokens[i - 2] == "self";
-        if !is_attr_call || receiver_is_self {
-            confident.insert(tok.clone());
-        }
-    }
-    all_calls.difference(&confident).cloned().collect()
-}
-
-/// T-0930: resolve caller->callee edges over a PRE-EXTRACTED per-caller
-/// name list against a shared by-short-name candidate index -- the hot
-/// `O(names * candidates)` matching + `UNRESOLVED_CALLEE` bookkeeping loop
-/// inside `frob.graph.callgraph._resolve_edges` (dead_symbols's DEAD001
-/// gate, `build_call_graph`, `build_reference_graph` all share this
-/// substrate, docs/audits/check-performance.md rust-candidate row 8).
-///
-/// Data-in/data-out, matching this crate's whole-file convention: token
-/// extraction (`_called_names`/`_referenced_names`) and privacy
-/// classification (`RawSymbol.public`) both stay in Python -- this is
-/// only the matching loop, byte-identical in behavior to
-/// `frob.graph.callgraph._resolve_edges_python` (the pure-Python fallback
-/// kept alongside this for when `frob_core` is unavailable).
-///
-/// `callers`/`names_per_caller`/`exempt_per_caller` are parallel, same
-/// length, one entry per symbol. Returns `(caller, callees)` pairs in
-/// CALLER-ITERATION ORDER (not a `HashMap`, deliberately -- Python's own
-/// dict-insertion-order contract must survive the FFI boundary) with
-/// callers that resolved to zero callees omitted, exactly like the
-/// Python original.
-// frob:doc docs/modules/dup.md#frob-core-kernels-the-pyo3-exported-surface
-#[pyfunction]
-fn resolve_call_edges(
-    callers: Vec<String>,
-    names_per_caller: Vec<Vec<String>>,
-    exempt_per_caller: Vec<Vec<String>>,
-    by_name: HashMap<String, Vec<(String, String, bool)>>,
-    mark_unresolved: bool,
-    unresolved_sentinel: String,
-) -> Vec<(String, Vec<String>)> {
-    let mut out: Vec<(String, Vec<String>)> = Vec::with_capacity(callers.len());
-    for ((caller, names), exempt) in callers
-        .into_iter()
-        .zip(names_per_caller.into_iter())
-        .zip(exempt_per_caller.into_iter())
-    {
-        let exempt_set: std::collections::HashSet<&str> =
-            exempt.iter().map(|s| s.as_str()).collect();
-        let mut callees: Vec<String> = Vec::new();
-        let mut saw_unresolved = false;
-        for name in &names {
-            let candidates = by_name.get(name);
-            let mut matched_private = false;
-            if let Some(cands) = candidates {
-                for (symref, _cand_path, is_private) in cands {
-                    if symref == &caller {
-                        continue;
-                    }
-                    if *is_private {
-                        callees.push(symref.clone());
-                        matched_private = true;
-                    }
-                }
-            }
-            let has_candidates = candidates.is_some_and(|c| !c.is_empty());
-            if mark_unresolved
-                && !matched_private
-                && !has_candidates
-                && name.starts_with('_')
-                && !exempt_set.contains(name.as_str())
-            {
-                saw_unresolved = true;
-            }
-        }
-        if saw_unresolved {
-            callees.push(unresolved_sentinel.clone());
-        }
-        if !callees.is_empty() {
-            out.push((caller, callees));
-        }
-    }
-    out
-}
-
-// T-0953: archgate's `_near_duplicate_cluster` (src/frob/arch/_python.py)
-// body-similarity clustering, ported from a statement-for-statement read of
-// CPython's `difflib.py` (`SequenceMatcher`, autojunk enabled, no explicit
-// `isjunk` -- exactly the call shape `_near_duplicate_cluster` uses:
-// `difflib.SequenceMatcher(None, a, b).ratio()`). Parity here means
-// byte-identical cluster membership, not merely close scores -- a
-// near-duplicate detector that quietly drifts from its Python twin would
-// silently change which functions get flagged as extractable abstractions.
-
-/// `b2j`: char -> ascending list of indices in `b` where it occurs, and
-/// `bjunk`: the "popular" chars CPython's autojunk heuristic excludes from
-/// `b2j` when `b` is long enough (`len(b) >= 200`) for a char occurring in
-/// more than 1% of it to be noise rather than signal. Mirrors
-/// `difflib.SequenceMatcher.__chain_b` exactly (no explicit `isjunk`, so
-/// `bjunk` here is purely the autojunk set).
-fn arch_sim_build_b2j(
-    b: &[char],
-) -> (HashMap<char, Vec<usize>>, std::collections::HashSet<char>) {
-    let mut b2j: HashMap<char, Vec<usize>> = HashMap::new();
-    for (i, &c) in b.iter().enumerate() {
-        b2j.entry(c).or_default().push(i);
-    }
-    let mut bjunk = std::collections::HashSet::new();
-    let n = b.len();
-    if n >= 200 {
-        let ntest = n / 100 + 1;
-        let popular: Vec<char> = b2j
-            .iter()
-            .filter(|(_, idxs)| idxs.len() > ntest)
-            .map(|(&c, _)| c)
-            .collect();
-        for c in popular {
-            bjunk.insert(c);
-            b2j.remove(&c);
-        }
-    }
-    (b2j, bjunk)
-}
-
-/// Port of `difflib.SequenceMatcher.find_longest_match`: the longest
-/// matching block of `a[alo:ahi]` against `b[blo:bhi]`, extended first over
-/// non-junk boundary chars, then over junk ones -- same two-phase extension
-/// CPython's own implementation does, in the same order (order matters:
-/// swapping phases can pick a different, still-maximal, block).
-fn arch_sim_find_longest_match(
-    a: &[char],
-    b: &[char],
-    b2j: &HashMap<char, Vec<usize>>,
-    bjunk: &std::collections::HashSet<char>,
-    alo: usize,
-    ahi: usize,
-    blo: usize,
-    bhi: usize,
-) -> (usize, usize, usize) {
-    let mut besti = alo;
-    let mut bestj = blo;
-    let mut bestsize = 0usize;
-    let mut j2len: HashMap<usize, usize> = HashMap::new();
-    for i in alo..ahi {
-        let mut newj2len: HashMap<usize, usize> = HashMap::new();
-        if let Some(js) = b2j.get(&a[i]) {
-            for &j in js {
-                if j < blo {
-                    continue;
-                }
-                if j >= bhi {
-                    break;
-                }
-                let k = if j == 0 {
-                    1
-                } else {
-                    j2len.get(&(j - 1)).copied().unwrap_or(0) + 1
-                };
-                newj2len.insert(j, k);
-                if k > bestsize {
-                    besti = i + 1 - k;
-                    bestj = j + 1 - k;
-                    bestsize = k;
-                }
-            }
-        }
-        j2len = newj2len;
-    }
-    while besti > alo
-        && bestj > blo
-        && !bjunk.contains(&b[bestj - 1])
-        && a[besti - 1] == b[bestj - 1]
-    {
-        besti -= 1;
-        bestj -= 1;
-        bestsize += 1;
-    }
-    while besti + bestsize < ahi
-        && bestj + bestsize < bhi
-        && !bjunk.contains(&b[bestj + bestsize])
-        && a[besti + bestsize] == b[bestj + bestsize]
-    {
-        bestsize += 1;
-    }
-    while besti > alo
-        && bestj > blo
-        && bjunk.contains(&b[bestj - 1])
-        && a[besti - 1] == b[bestj - 1]
-    {
-        besti -= 1;
-        bestj -= 1;
-        bestsize += 1;
-    }
-    while besti + bestsize < ahi
-        && bestj + bestsize < bhi
-        && bjunk.contains(&b[bestj + bestsize])
-        && a[besti + bestsize] == b[bestj + bestsize]
-    {
-        bestsize += 1;
-    }
-    (besti, bestj, bestsize)
-}
-
-/// Port of `difflib.SequenceMatcher.get_matching_blocks`: the maximal set of
-/// non-adjacent matching `(a_start, b_start, size)` triples covering `a`/`b`,
-/// via the same iterative divide-and-conquer queue (not recursion, to avoid
-/// a Rust stack-depth concern the Python original's recursion doesn't have
-/// to worry about at CPython's default recursion limit) followed by the
-/// same adjacent-block merge pass.
-fn arch_sim_matching_blocks(
-    a: &[char],
-    b: &[char],
-    b2j: &HashMap<char, Vec<usize>>,
-    bjunk: &std::collections::HashSet<char>,
-) -> Vec<(usize, usize, usize)> {
-    let la = a.len();
-    let lb = b.len();
-    let mut queue = vec![(0usize, la, 0usize, lb)];
-    let mut raw: Vec<(usize, usize, usize)> = Vec::new();
-    while let Some((alo, ahi, blo, bhi)) = queue.pop() {
-        let (i, j, k) = arch_sim_find_longest_match(a, b, b2j, bjunk, alo, ahi, blo, bhi);
-        if k > 0 {
-            raw.push((i, j, k));
-            if alo < i && blo < j {
-                queue.push((alo, i, blo, j));
-            }
-            if i + k < ahi && j + k < bhi {
-                queue.push((i + k, ahi, j + k, bhi));
-            }
-        }
-    }
-    raw.sort();
-    let mut non_adjacent: Vec<(usize, usize, usize)> = Vec::new();
-    let (mut i1, mut j1, mut k1) = (0usize, 0usize, 0usize);
-    for (i2, j2, k2) in raw {
-        if i1 + k1 == i2 && j1 + k1 == j2 {
-            k1 += k2;
-        } else {
-            if k1 > 0 {
-                non_adjacent.push((i1, j1, k1));
-            }
-            i1 = i2;
-            j1 = j2;
-            k1 = k2;
-        }
-    }
-    if k1 > 0 {
-        non_adjacent.push((i1, j1, k1));
-    }
-    non_adjacent
-}
-
-/// Port of `difflib.SequenceMatcher(None, a, b).ratio()`: `2*M / T` where
-/// `M` is the total matched length from `get_matching_blocks` and `T` is
-/// `len(a) + len(b)` (1.0 when both are empty, matching CPython's
-/// `_calculate_ratio`'s zero-length special case).
-fn arch_sim_ratio(a: &[char], b: &[char]) -> f64 {
-    let (b2j, bjunk) = arch_sim_build_b2j(b);
-    let blocks = arch_sim_matching_blocks(a, b, &b2j, &bjunk);
-    let matches: usize = blocks.iter().map(|&(_, _, k)| k).sum();
-    let length = a.len() + b.len();
-    if length == 0 {
-        1.0
-    } else {
-        2.0 * matches as f64 / length as f64
-    }
-}
-
-/// `_near_duplicate_cluster`'s pairwise body-similarity clustering
-/// (docs/modules/arch.md, T-0370/T-0953), moved to Rust as ONE marshal per
-/// same-signature group (not per pairwise comparison -- the batching shape
-/// T-0930's reverted `resolve_call_edges` prototype lacked). `bodies` are
-/// already-eligible (`>= _BODY_MIN_TOKENS`), already-normalized
-/// body-fingerprint strings; returns the sorted indices of members that
-/// have at least one same-group partner scoring `>= threshold` under
-/// `arch_sim_ratio` (difflib-`SequenceMatcher.ratio()`-equivalent).
-// frob:doc docs/modules/dup.md#rust-core
-#[pyfunction]
-fn near_duplicate_indices(bodies: Vec<String>, threshold: f64) -> Vec<usize> {
-    let chars: Vec<Vec<char>> = bodies.iter().map(|s| s.chars().collect()).collect();
-    let mut cluster: std::collections::HashSet<usize> = std::collections::HashSet::new();
-    for i in 0..chars.len() {
-        for j in (i + 1)..chars.len() {
-            if arch_sim_ratio(&chars[i], &chars[j]) >= threshold {
-                cluster.insert(i);
-                cluster.insert(j);
-            }
-        }
-    }
-    let mut out: Vec<usize> = cluster.into_iter().collect();
-    out.sort_unstable();
-    out
 }
 
 #[cfg(test)]
@@ -1878,7 +513,7 @@ mod tests {
             .chain(["print", "y"].iter())
             .map(|s| s.to_string())
             .collect();
-        let (regions, truncated) = exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len(), 10_000);
+        let (regions, truncated) = run_exact_regions(vec![doc_a.clone(), doc_b.clone()], shared.len(), 10_000);
         assert!(!truncated);
         assert_eq!(regions.len(), 1);
         let (da, oa, db, ob, l) = regions[0];
@@ -1894,7 +529,7 @@ mod tests {
         let shared = vec!["a", "b", "c"];
         let doc_a: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
         let doc_b: Vec<String> = shared.iter().map(|s| s.to_string()).collect();
-        let (regions, _) = exact_regions(vec![doc_a, doc_b], 10, 10_000);
+        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 10, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1902,7 +537,7 @@ mod tests {
     fn exact_regions_no_match_across_wholly_different_documents() {
         let doc_a: Vec<String> = vec!["a".into(), "b".into(), "c".into(), "d".into()];
         let doc_b: Vec<String> = vec!["w".into(), "x".into(), "y".into(), "z".into()];
-        let (regions, _) = exact_regions(vec![doc_a, doc_b], 2, 10_000);
+        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 2, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1912,7 +547,7 @@ mod tests {
         // the boundary from being reported as a match with anything.
         let doc_a: Vec<String> = vec!["p".into(), "q".into(), "r".into()];
         let doc_b: Vec<String> = vec!["r".into(), "s".into(), "t".into()];
-        let (regions, _) = exact_regions(vec![doc_a, doc_b], 1, 10_000);
+        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 1, 10_000);
         // "r" alone (length 1) legitimately matches (doc0 offset 2, doc1
         // offset 0) -- but nothing longer, since "r","s" (from b) never
         // equals a real 2-token run present in doc_a.
@@ -1930,17 +565,17 @@ mod tests {
         let shared: Vec<String> = (0..12).map(|i| format!("t{i}")).collect();
         let doc_a = shared.clone();
         let doc_b = shared.clone();
-        let (regions, _) = exact_regions(vec![doc_a, doc_b], 3, 10_000);
+        let (regions, _) = run_exact_regions(vec![doc_a, doc_b], 3, 10_000);
         assert_eq!(regions.len(), 1);
         assert_eq!(regions[0].4, shared.len());
     }
 
     #[test]
     fn exact_regions_empty_input_is_empty_output() {
-        let (regions, truncated) = exact_regions(Vec::new(), 1, 10_000);
+        let (regions, truncated) = run_exact_regions(Vec::new(), 1, 10_000);
         assert!(regions.is_empty());
         assert!(!truncated);
-        let (regions, _) = exact_regions(vec![vec!["a".into()]], 0, 10_000);
+        let (regions, _) = run_exact_regions(vec![vec!["a".into()]], 0, 10_000);
         assert!(regions.is_empty());
     }
 
@@ -1968,7 +603,7 @@ mod tests {
         // them in the suffix array.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs = vec![block.clone(), block.clone(), block.clone()];
-        let (regions, _) = exact_regions(docs, 2, 10_000);
+        let (regions, _) = run_exact_regions(docs, 2, 10_000);
         assert!(has_pair(&regions, 0, 1, 4), "missing (doc0, doc1): {regions:?}");
         assert!(has_pair(&regions, 0, 2, 4), "missing (doc0, doc2): {regions:?}");
         assert!(has_pair(&regions, 1, 2, 4), "missing (doc1, doc2): {regions:?}");
@@ -1979,7 +614,7 @@ mod tests {
         // frob:tests frob-core/src/lib.rs::exact_regions kind="unit"
         let block: Vec<String> = (0..6).map(|i| format!("w{i}")).collect();
         let docs = vec![block.clone(), block.clone(), block.clone(), block.clone()];
-        let (regions, _) = exact_regions(docs, 3, 10_000);
+        let (regions, _) = run_exact_regions(docs, 3, 10_000);
         for x in 0..4 {
             for y in (x + 1)..4 {
                 assert!(has_pair(&regions, x, y, 6), "missing ({x}, {y}): {regions:?}");
@@ -2008,7 +643,7 @@ mod tests {
         let doc0 = mk(&region_b);
         let doc1 = mk(&region_b);
         let doc2 = mk(&["x", "y", "z"]); // no region B
-        let (regions, _) = exact_regions(vec![doc0, doc1, doc2], 3, 10_000);
+        let (regions, _) = run_exact_regions(vec![doc0, doc1, doc2], 3, 10_000);
 
         // Region A (length 4) ties all three documents together.
         assert!(has_pair(&regions, 0, 1, 4), "missing region-A (doc0,doc1): {regions:?}");
@@ -2038,7 +673,7 @@ mod tests {
         // never mistakes the capped result for exhaustive.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs: Vec<Vec<String>> = (0..500).map(|_| block.clone()).collect();
-        let (regions, truncated) = exact_regions(docs, 2, 200);
+        let (regions, truncated) = run_exact_regions(docs, 2, 200);
         assert!(truncated, "500-document identical run must be flagged truncated");
         let max_uncapped_pairs = 500usize * 499 / 2;
         let cap_pairs = 200usize * 199 / 2;
@@ -2057,7 +692,7 @@ mod tests {
         // signal, and every pair among the (small) run is still reported.
         let block: Vec<String> = ["a", "b", "c", "d"].iter().map(|s| s.to_string()).collect();
         let docs: Vec<Vec<String>> = (0..5).map(|_| block.clone()).collect();
-        let (regions, truncated) = exact_regions(docs, 2, 200);
+        let (regions, truncated) = run_exact_regions(docs, 2, 200);
         assert!(!truncated);
         assert_eq!(regions.len(), 5 * 4 / 2);
     }
@@ -2287,7 +922,7 @@ fn frob_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(apted_similarity, m)?)?;
     m.add_function(wrap_pyfunction!(anti_unify, m)?)?;
     m.add_function(wrap_pyfunction!(wl_hash, m)?)?;
-    m.add_function(wrap_pyfunction!(exact_regions, m)?)?;
+    m.add_function(wrap_pyfunction!(run_exact_regions, m)?)?;
     m.add_function(wrap_pyfunction!(resolve_call_edges, m)?)?;
     m.add_function(wrap_pyfunction!(called_names, m)?)?;
     m.add_function(wrap_pyfunction!(ordered_called_names, m)?)?;

@@ -308,6 +308,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2839: Fix malformed frob:waive LARGE001 directive on arch/_patterns.py (T-2823 regression)
 - T-2841: Fix I001 import-sort regression in T-2729's selfconform split (6 files)
 - T-2845: Split scripts/fleet_status.py into readiness/procscan/rot submodules
+- T-2846: Split frob-core/src/lib.rs's clone-detection rungs into sibling modules
 - T-2847: LARGE001: src/frob/tickets/_setters.py unwaived after T-2834's split (1111 lines)
 
 ## [0.530.0] - unreleased
