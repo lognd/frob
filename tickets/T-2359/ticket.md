@@ -343,9 +343,6 @@ evidence:
 - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
 designated_repro_test: null
 acceptance:
-- text: given the repo after this lands, when ruff format --check . runs, then zero
-    files need reformatting
-  evidence: []
 - text: given the format-only commit series, when its diffs are reviewed, then they
     contain no semantic changes and no fixture-corpus files
   evidence: []
@@ -407,6 +404,15 @@ acceptance_amendments:
   new_text: null
   reason: duplicate final-batch criterion left over from the earlier documentation-only
     removal; collapsing to one copy
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  index: 0
+  old_text: given the repo after this lands, when ruff format --check . runs, then
+    zero files need reformatting
+  new_text: null
+  reason: duplicate of newly re-added index (final-batch criterion); same stale-removal-was-documentation-only
+    issue
   actor: logan
   at: '2026-08-21'
 threat: null
