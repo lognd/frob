@@ -2,7 +2,7 @@
 id: T-2869
 title: docs/modules/tickets-landing.md has a frob:enumerates anchor with no members=
   attribute
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -16,10 +16,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/tickets-landing.md
+evidence_scope:
+- tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'add BUG002 waiver: this is a doc anchor-verb correction filed as kind=bug,
+    not a runtime defect with a fail-then-pass repro'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 1382
+  new_length: 1684
+evidence:
+- tests/unit/graph/test_dsl_markdown_waive.py::TestBrokenDirectEdgeVerbIsLoud::test_well_formed_describes_still_parses_cleanly
 designated_repro_test: null
 threat: null
 component: null
@@ -52,3 +64,5 @@ since `Ticket` is a pydantic model class and not a collection literal --
 this should probably be a `frob:describes` anchor instead of `frob:
 enumerates`. Read the surrounding "Evidence-only scope (T-1944)" section
 context before choosing.
+
+<!-- frob:waive BUG002 reason="doc anchor-verb correction (frob:enumerates -> frob:describes), not a runtime code defect; no fail-at-main/pass-at-fix repro exists because there is no code behavior to reproduce -- cited evidence proves the mechanism this fix relies on, not a fail-then-pass delta" -->
