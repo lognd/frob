@@ -2,7 +2,7 @@
 id: T-2844
 title: Split _host_isolation.py along lateral/vertical/movement seams (blocked on
   via-scope migration review)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-21'
@@ -17,10 +17,61 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_host_isolation.py
 - design/frob.strata
+- tests/unit/strata/test_host_isolation.py
+- src/frob/strata/_host_isolation_shared.py
+- src/frob/strata/_host_isolation_lateral.py
+- src/frob/strata/_host_isolation_vertical.py
+- src/frob/strata/_host_isolation_movement.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/strata/test_host_isolation.py
+  reason: T-2844's split moves symbols out of _host_isolation.py into new sibling
+    files; the frob:tests directives in test_host_isolation.py are anchored to the
+    OLD file path per-symbol and must be updated to the new definition file to avoid
+    orphaning coverage evidence (T-2729 selfconform precedent did the same). New sibling
+    files hold the moved code itself.
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/strata/_host_isolation_shared.py
+  reason: T-2844's split moves symbols out of _host_isolation.py into new sibling
+    files; the frob:tests directives in test_host_isolation.py are anchored to the
+    OLD file path per-symbol and must be updated to the new definition file to avoid
+    orphaning coverage evidence (T-2729 selfconform precedent did the same). New sibling
+    files hold the moved code itself.
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/strata/_host_isolation_lateral.py
+  reason: T-2844's split moves symbols out of _host_isolation.py into new sibling
+    files; the frob:tests directives in test_host_isolation.py are anchored to the
+    OLD file path per-symbol and must be updated to the new definition file to avoid
+    orphaning coverage evidence (T-2729 selfconform precedent did the same). New sibling
+    files hold the moved code itself.
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/strata/_host_isolation_vertical.py
+  reason: T-2844's split moves symbols out of _host_isolation.py into new sibling
+    files; the frob:tests directives in test_host_isolation.py are anchored to the
+    OLD file path per-symbol and must be updated to the new definition file to avoid
+    orphaning coverage evidence (T-2729 selfconform precedent did the same). New sibling
+    files hold the moved code itself.
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/strata/_host_isolation_movement.py
+  reason: T-2844's split moves symbols out of _host_isolation.py into new sibling
+    files; the frob:tests directives in test_host_isolation.py are anchored to the
+    OLD file path per-symbol and must be updated to the new definition file to avoid
+    orphaning coverage evidence (T-2729 selfconform precedent did the same). New sibling
+    files hold the moved code itself.
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
