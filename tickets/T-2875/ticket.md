@@ -27,6 +27,9 @@ scope_changes:
   reason: T-2875's own regression test lives here
   actor: logan
   at: '2026-08-22'
+evidence:
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_callee_raises_trailing_placement_is_silently_skipped
+- tests/unit/graph/test_dsl.py::TestReservedMarkerVerbs::test_callee_raises_standalone_placement_is_silently_skipped
 designated_repro_test: null
 threat: null
 component: null
