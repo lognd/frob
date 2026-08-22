@@ -23,6 +23,8 @@ scope:
 - src/frob/gates/_docptr.py
 - src/frob/gates/_fix_engine.py
 - src/frob/gates/_fix_engine_sync.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +39,21 @@ scope_changes:
     all resolve to severity=note
   actor: logan
   at: '2026-08-21'
+body_changes:
+- mode: append
+  reason: T-2828 land refused with BUG002/EvidenceConfirmatoryOnly since this batch's
+    evidence is confirmatory-only for a kind=bug ticket; this IS a comment-only no-behavior-change
+    batch (9 frob:waive additions), so declaring that explicitly per the land error's
+    own remedy option 2
+  actor: logan
+  at: '2026-08-21'
+  old_length: 1545
+  new_length: 1980
+evidence:
+- tests/test_gates.py::TestDeadSymbolGate::test_unwired_private_function_is_flagged
+- tests/test_gates.py::TestDebtGate::test_debt002_closed_ticket_is_reported
+- tests/test_gates.py::TestFixEngineTierA::test_doc007_dotted_form_rewrite_applies_and_reverifies_clean
+- tests/test_gates.py::TestCov002ScopeCoverage::test_open_ticket_scope_covers_changed_symbol
 designated_repro_test: null
 threat: null
 component: null
@@ -51,3 +68,5 @@ Per-file disposition is a JUDGMENT CALL, not a mechanical split: T-1651 already 
 Do NOT touch src/frob/strata/_selfconform.py -- it is T-2729's own ticket (largest LARGE001 offender, 2290 lines), already filed, do not absorb it here.
 
 Closure for this CHILD ticket: every file below reads as severity=note (waived) or disappears from LARGE001 entirely when re-measured. Do NOT flip LARGE001 warning->error severity here -- that promotion is T-2375's own final step, deferred until every sibling batch lands (promoting early reds main for siblings' still-open debt).
+
+frob:no-behavior-change reason="this batch is comment-only (9 frob:waive LARGE001 directives added, zero code lines changed); no defect fix is claimed for those 9 files -- verified via ast.parse on every touched file plus a full test_gates.py re-run (803/809, 6 pre-existing failures reproduced independently on unmodified main). BUG002's designated-repro requirement does not apply: there is no behavior to reproduce a failure for."
