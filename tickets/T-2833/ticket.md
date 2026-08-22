@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 76865828e80b3fc3b152d5680f17ca815113fda9
 ---
 frob.tickets._leases.py (3587 lines) has a real, investigated seam: the worktree-sweep family (sweep_worktrees, remove_worktree, _WorktreeVerdict, _sweep_verdict_for_worktree, _kept_*, _worktree_is_clean, _worktree_head_age_seconds, _list_agent_worktrees, _is_agent_worktree_path, _WorktreeSweepError -- roughly lines 3065-3502) is consumed by a distinct CLI surface (frob.app.worktree_runner, frob.app.ticket_runner._rapid_sweep) than the lease-CRUD/ledger-commit machinery the rest of the module serves.
 
