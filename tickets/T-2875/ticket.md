@@ -68,7 +68,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cab0f9fb38348bde2d2dc7e55c08b3d8edd8aa4d
 ---
 Found while satisfying FFI002 on src/frob/process/_reap.py's real libc.prctl(...) call in T-2849 (the first genuine, non-test, non-docstring-prose production use of the frob:callee-raises call-site marker in this repo).
 
