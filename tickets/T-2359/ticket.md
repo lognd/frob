@@ -29,8 +29,9 @@ evidence_scope:
 - tests/unit/test_ticket_new_scope_plausibility.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: epic closes with zero pending files -- repo-wide ruff format
+  --check . is already clean, no edits required
 scope_changes:
 - op: add
   glob: .claude/hooks/diagnosis-nudge.py
