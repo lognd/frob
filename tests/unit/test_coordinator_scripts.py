@@ -5087,3 +5087,42 @@ class TestWaitForLandSlotMain:
         assert code != wait_for_land_slot.EXIT_SLOT_FREE
         out = capsys.readouterr()
         assert "measurement failed" in out.out
+
+
+class TestFleetStatusLarge001WaiverParses:
+    """T-2845: scripts/fleet_status.py's frob:waive LARGE001 directive was
+    corrected to record real cross-calls found between its four concerns
+    (readiness->rot, readiness->procscan) and a monkeypatch-coupling risk
+    that made an actual file split unsafe. This is a regression test for
+    the directive-DSL parser hazard flagged this session (an embedded
+    escaped quote in a frob:waive reason broke the comment DSL repo-wide):
+    the multi-line corrected reason must still parse cleanly and still
+    suppress LARGE001 for this file via the real arch gate + waiver
+    machinery `frob check` itself uses.
+
+    frob:tests tests/unit/test_coordinator_scripts.py::TestFleetStatusLarge001WaiverParses.test_waiver_still_suppresses_large001
+    """
+
+    def test_waiver_still_suppresses_large001(self, tmp_path: Path) -> None:
+        """arch_gate() + _apply_waivers() against a live build_graph()
+        snapshot of this repo report zero KEPT LARGE001 findings for
+        scripts/fleet_status.py -- proving the corrected, multi-line
+        frob:waive reason still parses as one directive and still binds,
+        rather than silently regressing to a bare unwaived LARGE001 error
+        the way a malformed directive would."""
+        from frob.gates._arch import arch_gate  # noqa: PLC0415
+        from frob.gates._waive import _apply_waivers  # noqa: PLC0415
+        from frob.graph import build_graph  # noqa: PLC0415
+
+        repo_root = Path(__file__).resolve().parents[2]
+        snapshot = build_graph(repo_root, tmp_path / "cache.db").danger_ok
+        raw = arch_gate(repo_root)
+        kept, waived = _apply_waivers(raw, snapshot)
+        kept_offenders = [
+            v for v in kept if v.rule == "LARGE001" and "fleet_status.py" in v.file
+        ]
+        waived_offenders = [
+            v for v in waived if v.rule == "LARGE001" and "fleet_status.py" in v.file
+        ]
+        assert kept_offenders == [], f"unwaived LARGE001 on fleet_status.py: {kept_offenders}"
+        assert waived_offenders != [], "expected fleet_status.py's LARGE001 to be waived"

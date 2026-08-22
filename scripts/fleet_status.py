@@ -22,20 +22,27 @@ Usage:
     python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-####]
 """
 
-# frob:waive LARGE001 reason="a genuine consumer-set seam DOES exist here (this script \
-# has at least four distinguishable concerns -- ticket readiness/scope-lease collision \
-# computation, /proc-based land-process/host-load/forkserver detection, ticket-rot \
-# reporting, and the _print_* report-formatting functions -- and none of them import \
-# each other's private helpers across the boundary) and was investigated for \
-# extraction into sibling scripts/ modules. Rejected for THIS ticket purely on scope \
-# grounds: a new file is not covered by T-2824's enumerated file-list scope (no glob \
-# to grow into), even though design/frob.strata's scripts_ops node already grants \
-# scripts/** a blanket fs.write/fs.read/exec capability with no per-file declaration \
-# needed (unlike src/frob/tickets/_leases.py's worktree-sweep family, which DOES need \
-# a new design/frob.strata grant). This script is also not imported by any src/frob \
-# module (git grep confirms zero importers) -- lower risk than a package-internal \
-# split, since there is no external caller's import path to preserve. Filed as a \
-# follow-up (see Done report) rather than forced through scope creep."
+# frob:waive LARGE001 reason="this script has four distinguishable concerns -- ticket \
+# readiness/scope-lease collision computation, /proc-based land-process/host- \
+# load/forkserver detection, ticket-rot reporting, and the _print_* report-formatting \
+# functions that compose the first three for main() -- but T-2845 (dispatched to \
+# actually perform the split) measured REAL cross-calls between the first three \
+# groups, not just the expected print-layer composition: blocked_in_progress_leases \
+# (readiness) calls _classify_blockers_local (rot), and both _land_ticket_collisions \
+# and ticket_readiness (readiness) call land_invocations (procscan). On top of that, \
+# ~13 test files (see tests/unit/test_coordinator_scripts.py) monkeypatch module-level \
+# globals (LEASES, TICKETS_DIR, QUARANTINE, VERIFY_QUEUE, REPO, ...) directly on the \
+# fleet_status module object and rely on the functions that read them living in THIS \
+# module's namespace -- moving those functions to sibling modules would retarget every \
+# one of those monkeypatch.setattr(fleet_status, ...) calls onto a module the reading \
+# function no longer lives in (the same import-retarget hazard that has bitten other \
+# splits this session), silently un-isolating those tests without any visible failure \
+# at edit time. This script is the fleet's own land- safety instrument \
+# (scripts/wait_for_land_slot.py imports land_process_rows and \
+# _parse_land_argv_ticket_id from it directly), so a split that quietly breaks test \
+# isolation here is a materially worse outcome than the LARGE001 warning. T-2845 \
+# investigated the split and declined it on this evidence rather than force it; see \
+# its Done report."
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 ---
 id: T-2845
 title: Split scripts/fleet_status.py into readiness/procscan/rot submodules
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -18,10 +18,14 @@ scope:
 - scripts/fleet_readiness.py
 - scripts/fleet_procscan.py
 - scripts/fleet_rot.py
+evidence_scope:
+- tests/unit/test_coordinator_scripts.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestFleetStatusLarge001WaiverParses::test_waiver_still_suppresses_large001
 designated_repro_test: null
 threat: null
 component: null
