@@ -2,7 +2,7 @@
 id: T-2849
 title: 'frob check leaks its multiprocessing forkservers: ~150 orphans reaped by hand
   in one session, once reaching 16.7GB swap and stalling all lands for 45 minutes'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/__init__.py
 - src/frob/process/_reap.py
 - src/frob/__main__.py
+- docs/modules/process.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -65,6 +66,14 @@ scope_changes:
     in src/frob/gates/__init__.py; the existing SIGTERM-only mitigation is install_sigterm_reaper
     / reap_orphaned_forkservers in src/frob/process/_reap.py, wired from src/frob/__main__.py.
     Retargeting to those three files so the ticket is implementable.'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: docs/modules/process.md
+  reason: new public constant FORKSERVER_ARM_PDEATHSIG_ENV and the two changed functions
+    arm_parent_death_signal/_arm_forkserver_helper_pdeathsig_if_requested owe a doc
+    anchor under the existing forkserver-reaping-t-2443 section; incomplete work per
+    AFFECT001/COV001/ENV001, not out-of-scope work
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
