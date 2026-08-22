@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 71951858f145ed3f82784c93adccaadf2cb81cfa
 ---
 frob-core/src/lib.rs (2297 lines) has a real seam beyond its own #[cfg(test)] test padding: the crate already extracts arch_python.rs and capability_python.rs as sibling modules (`mod arch_python; mod capability_python;`), but the crate root itself still hosts several independently-callable, already-#[pyfunction]-exposed algorithm families with no cross-calls between them -- R1.5 exact-region suffix-array matching (flatten_documents/build_suffix_array/kasai_lcp/merge_diagonals/exact_regions), R3 canonicalization/hashing (r3_canonicalize/r3_canonical_hash), R4 winnowing/candidate-pairing/tree-edit-distance (winnow_fingerprints/candidate_pairs/tree_edit_similarity/apted_similarity and their zhang-shasha/postorder/keyroots helpers), R5 anti-unification and Weisfeiler-Lehman hashing (anti_unify/anti_unify_core/anti_unify_walk/wl_hash), and a separate callgraph/arch-similarity family (called_names/referenced_names/resolve_call_edges/near_duplicate_indices/the arch_sim_* difflib-style ratio helpers).
 
