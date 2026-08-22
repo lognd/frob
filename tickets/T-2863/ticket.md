@@ -2,7 +2,7 @@
 id: T-2863
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2840):
   2 new (rule, file) identit(ies), 21 finding(s) (F401, F822)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -48,3 +48,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - F822  /home/logan/projects/frob/src/frob/gates/_bug_repro.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-22: duplicate of/resolved by T-2864 (landed e6baf3b9cf1c), which fixed this exact F401 x20 / F822 x1 pair before this sweep-filed ticket was read; re-measured post-T-2864 land: ruff-check 0 findings on both files
