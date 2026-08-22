@@ -66,7 +66,7 @@ body_changes:
   old_length: 1545
   new_length: 2237
 evidence:
-- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_completes_and_stamps
 designated_repro_test: null
 acceptance:
@@ -78,8 +78,17 @@ acceptance:
     files disappear from LARGE001 entirely (no waiver needed) and all existing tests
     (tests/unit/test_check_budget.py, tests/unit/test_check.py) still pass
   evidence:
-  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
   - tests/unit/test_app_runners_batch6.py::TestCheckRunner::test_stamp_baseline_only_chunk_completes_and_stamps
+evidence_changes:
+- old_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  new_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+  reason: 'T-2831 renamed this test as part of its intentional WARN-to-ERROR severity
+    promotion (same class, same assertion shape: LARGE001 fires on an oversized production
+    file); this ticket cited it as general LARGE001-gate-exists evidence, not a claim
+    about WARN specifically, so the renamed successor still proves the same property.'
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: null
 anchor: false

@@ -9,6 +9,10 @@ priority: medium
 parent: null
 tier: ticket
 sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/**
 - design/frob.strata
@@ -19,6 +23,8 @@ scope:
 - src/frob/tickets/_models.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 scope_changes:
 - op: add
   glob: src/frob/app/config.py
@@ -48,12 +54,24 @@ scope_changes:
   actor: logan
   at: '2026-08-06'
 evidence:
-- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_test_file_exempt_from_large001
 - tests/test_arch_gate.py::TestArchGateLargeFile::test_single_file_mode_matches_directory_walk
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  new_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+  reason: 'T-2831 renamed this test as part of its intentional WARN-to-ERROR severity
+    promotion (same class, same assertion shape: LARGE001 fires on an oversized production
+    file); this ticket cited it as general LARGE001-gate-exists evidence, not a claim
+    about WARN specifically, so the renamed successor still proves the same property.'
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 T-1646 split one file this round: src/frob/gates/_fix_engine.py (1940
 lines, the single highest edit-frequency LARGE001 file, 34 edits over the

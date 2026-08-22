@@ -1,7 +1,7 @@
 ---
 id: T-2872
 title: 'Fix COV003: 12 tickets cite renamed test_large_file_fires_large001_warn'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -28,6 +28,8 @@ scope:
 - tickets/T-2839
 - tickets/archive/T-1102
 - tickets/archive/T-1651
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -45,6 +47,17 @@ scope_changes:
     and tickets/T-1651 as originally declared
   actor: logan
   at: '2026-08-22'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Pure ticket-ledger evidence rebind across 12
+    tickets (dead node id to its T-2831 rename); no production code path changed,
+    nothing for a designated repro test to exercise differently between commits.'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 1819
+  new_length: 2053
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 designated_repro_test: null
 threat: null
 component: null
@@ -90,3 +103,5 @@ writes have a documented DuplicateId corruption hazard.
 Verify with a re-measured 'frob check --json' (unbudgeted,
 gate-summary present) showing zero COV003 findings after the 12
 replacements, before landing.
+
+frob:no-behavior-change reason="Pure ticket-ledger evidence rebind across 12 tickets (dead node id to its T-2831 rename); no production code path changed, nothing for a designated repro test to exercise differently between commits."

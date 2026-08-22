@@ -53,7 +53,7 @@ body_changes:
   old_length: 1305
   new_length: 1762
 evidence:
-- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then the finding
@@ -63,14 +63,14 @@ acceptance:
     because a single-cause fix does not exist here (85 independently oversized files,
     each needing its own split-or-waive judgment call per the T-1651 precedent)
   evidence:
-  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 - text: given the family's gate module, when its severity is read, then the WARN->ERROR
     promotion is tracked as a separate successor ticket, blocked-by all 9 child batch
     tickets, and executed only after every child lands -- promoting severity before
     the children land would red main for every not-yet-fixed file, which T-2809/T-2816's
     own lesson (do not spend a shared budget/state prematurely) applies here as well
   evidence:
-  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 acceptance_amendments:
 - op: replace
   index: 0
@@ -108,6 +108,15 @@ acceptance_amendments:
     two test files), and tracked -- just not performed by this ticket'
   actor: logan
   at: '2026-08-21'
+evidence_changes:
+- old_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  new_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+  reason: 'T-2831 renamed this test as part of its intentional WARN-to-ERROR severity
+    promotion (same class, same assertion shape: LARGE001 fires on an oversized production
+    file); this ticket cited it as general LARGE001-gate-exists evidence, not a claim
+    about WARN specifically, so the renamed successor still proves the same property.'
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: null
 anchor: false

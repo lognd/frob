@@ -40,7 +40,7 @@ body_changes:
   old_length: 2258
   new_length: 2971
 evidence:
-- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
 designated_repro_test: null
 acceptance:
 - text: given the batch's 6 files, when frob check --json measures LARGE001, then
@@ -48,7 +48,16 @@ acceptance:
     no split seam exists, or the seam is filed as a follow-up ticket) rather than
     warning
   evidence:
-  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+evidence_changes:
+- old_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+  new_node: tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_error
+  reason: 'T-2831 renamed this test as part of its intentional WARN-to-ERROR severity
+    promotion (same class, same assertion shape: LARGE001 fires on an oversized production
+    file); this ticket cited it as general LARGE001-gate-exists evidence, not a claim
+    about WARN specifically, so the renamed successor still proves the same property.'
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: null
 anchor: false
