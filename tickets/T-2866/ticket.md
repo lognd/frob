@@ -26,7 +26,6 @@ scope:
 - src/frob/gates/_arch_schema.py
 - src/frob/gates/_milestone.py
 - src/frob/lang/_support.py
-- src/frob/process/_reap.py
 - src/frob/testing/_coverage_refresh.py
 - src/frob/tickets/__init__.py
 - src/frob/tickets/_archive.py
@@ -43,6 +42,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/process/_reap.py
+  reason: T-2849 holds an in-progress lease on this file; narrowing to avoid collision,
+    will handle _FROB_TOKEN_RE's COV007 waiver in a follow-up or after T-2849 lands
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
