@@ -327,6 +327,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2864: F401/F822: T-2851 split left import/export hygiene debt in _mutation_evidence.py/_bug_repro.py
 - T-2865: Burn COV006 WARN findings to zero via individual waivers (never promote)
 - T-2869: docs/modules/tickets-landing.md has a frob:enumerates anchor with no members= attribute
+- T-2871: Fix SELFAUDIT001: T-2851/T-2843 splits left gates capability via-lists stale, plus 2 ratchet ceiling bumps
 - T-2872: Fix COV003: 12 tickets cite renamed test_large_file_fires_large001_warn
 - T-2873: Write 36 individual COV007 waivers (all but the T-2849-blocked _reap.py finding)
 

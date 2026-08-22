@@ -2,7 +2,7 @@
 id: T-2871
 title: 'Fix SELFAUDIT001: T-2851/T-2843 splits left gates capability via-lists stale,
   plus 2 ratchet ceiling bumps'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'

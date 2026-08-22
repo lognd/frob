@@ -428,7 +428,18 @@ node gates : trusted {
     // from tracked frob.toml, not user input, and failures fail open to
     // the unbound warning path.
     may "eval" via "src/frob/gates/_docblocks_shared.py";
-    may "exec" via "src/frob/gates/_bug_repro.py", "src/frob/gates/_mutation_evidence.py";
+    // T-2871: `_mutation_evidence.py` is REMOVED from this via-list --
+    // T-2851 moved the BUG002/must-still-pass repro-classification code
+    // (the only exec call this file ever justified) into
+    // `_bug_repro.py`; the old file makes zero exec calls now (SYS101
+    // measured it as declared-but-never-observed), so repointing the
+    // via-list to the file that actually holds the call is the fix, not
+    // widening the grant to keep a now-unused source around.
+    may "exec" via "src/frob/gates/_bug_repro.py";
+    // T-2871: new precise env.read grant for the same T-2851 split --
+    // `_bug_repro.py` reads an env var the coarser bare `may "env"`
+    // grant above already covers ambiently, but SYS100 wants the
+    // precise mode declared where a via-list exists for it.
     may "env.read" via "src/frob/gates/_bug_repro.py";
     // T-0956/T-1146: same SYS203/tickets_ledger disposition as `cli`
     // above -- SYS203 now genuinely discharges live here too (the
