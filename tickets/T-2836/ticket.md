@@ -69,7 +69,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fcf4664a84fdbbb59595b3f5dfa40a4d9f295cc1
 ---
 Batch 3/N of T-2369. T-2812 (batch 1, 36->18) and T-2832 (batch 2, 18->1, excluding CHK-GATE-DOC012 which was blocked by T-2359's live lease on src/frob/gates/_docblocks.py) left exactly one entry: CHK-GATE-DOC012. The coordinator released T-2359's leaked lease; this batch adds the missing # frob:enforces CHK-GATE-DOC012 directive above doc012_gate in src/frob/gates/_docblocks.py. Full unbudgeted re-measurement after this fix shows REG008 = 3, not 0 -- the 3 remaining entries (CHK-GATE-SYS108, CHK-GATE-SYS110, SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE) all site in src/frob/strata/_selfconform.py, which T-2729 (queued: split that file by SYS1xx rule family) declares in its own scope; adding directives there triggered CrossTicketLeakage at land time in the prior batch and was reverted. REG008 severity stays WARN in this batch -- not yet a true zero.
 
