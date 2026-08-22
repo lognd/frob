@@ -1,0 +1,31 @@
+---
+id: T-2844
+title: Split _host_isolation.py along lateral/vertical/movement seams (blocked on
+  via-scope migration review)
+state: queued
+kind: bug
+origin: human
+created: '2026-08-21'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope:
+- src/frob/strata/_host_isolation.py
+- design/frob.strata
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+Found while working T-2826 (LARGE001 strata batch). src/frob/strata/_host_isolation.py (1285 lines) has a genuine structural seam T-2826 did NOT act on: three independent top-level checks (evaluate_lateral_isolation, evaluate_vertical_isolation, host_movement_flows) each with their own violation-computation helper cluster, sharing only the HostIsolationViolation model and a few small utilities (_mode_digits/_mode_owner_writable/_mode_has_setuid). Unlike this batch's other 9 files, this genuinely looks splittable along those three functions. NOT done under T-2826 because: this module carries via-scoped capability grants in design/frob.strata (per this repo's own recent incident where an innocuous import change nearly broke a noflow assertion, and T-2729's own split of _selfconform.py needed a via-list update when code moved between files) -- moving functions between files may require updating which file a via-glob covers, and that needs a dedicated, careful pass (read the current via-declarations, confirm what moves, re-verify SYS003/SYS100 exhaustively) rather than a batch LARGE001 judgment call. Scope includes design/frob.strata so whoever picks this up can update via-declarations in the same change if the split requires it.
