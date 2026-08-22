@@ -2,7 +2,7 @@
 id: T-2875
 title: 'frob.graph.dsl._RESERVED_MARKER_VERBS omits callee-raises, so a real # frob:callee-raises
   call-site marker fires DSL001 unknown-verb'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
