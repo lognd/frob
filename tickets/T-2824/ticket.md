@@ -2,7 +2,7 @@
 id: T-2824
 title: 'LARGE001: split or waive oversized misc small-package modules + native (rust)
   files'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -36,6 +36,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record BUG002 waiver rationale and the direct re-measurement method used,
+    same shape as prior series tickets
+  actor: logan
+  at: '2026-08-21'
+  old_length: 1545
+  new_length: 2548
 designated_repro_test: null
 threat: null
 component: null
@@ -50,3 +58,5 @@ Per-file disposition is a JUDGMENT CALL, not a mechanical split: T-1651 already 
 Do NOT touch src/frob/strata/_selfconform.py -- it is T-2729's own ticket (largest LARGE001 offender, 2290 lines), already filed, do not absorb it here.
 
 Closure for this CHILD ticket: every file below reads as severity=note (waived) or disappears from LARGE001 entirely when re-measured. Do NOT flip LARGE001 warning->error severity here -- that promotion is T-2375's own final step, deferred until every sibling batch lands (promoting early reds main for siblings' still-open debt).
+
+<!-- frob:waive BUG002 reason="this ticket's disposition is split-or-waive judgment calls across 17 files (13 Python, 4 Rust) -- no functional code changed and no single reproducible defect exists to bind a failing-at-parent test to; the correct closure per T-2375's own body is a frob:waive LARGE001 directive on each file with T-1651-grade reasoning, not a forced split. Two files (scripts/fleet_status.py, frob-core/src/lib.rs) DO have a genuine investigated seam, filed as follow-up tickets rather than split here because new files are outside this ticket's declared scope. Directly re-measured via frob.gates._arch.arch_gate + frob.gates._waive._apply_waivers against a live build_graph snapshot (not the aggregate JSON summary, which does not decompose per-file) -- confirmed 0 of my 17 files appear in the unwaived LARGE001 set; the 30 remaining unwaived findings repo-wide are all in src/frob/gates/** (T-2369) or src/frob/strata/** (T-2729), both explicitly out of scope for this series" -->
