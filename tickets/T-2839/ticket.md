@@ -1,7 +1,7 @@
 ---
 id: T-2839
 title: Fix malformed frob:waive LARGE001 directive on arch/_patterns.py (T-2823 regression)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-21'
