@@ -965,6 +965,29 @@ pass, matching WAIVE001's existing "reason is mandatory" contract for
 every other waiver in this repo. Every waive (with or without a reason) is
 logged at `WARNING`, same visibility class as `--skip-mutation-evidence`.
 
+**A malformed waiver attempt is reported, never silently dropped
+(T-2870).** `_BUG002_WAIVER_RE` is a SECOND, independent directive parser
+deliberately outside `frob.graph.dsl` -- `tickets.md` is excluded from
+`frob.graph.build_graph`'s file walk (the same `is_ledger` exclusion noted
+above), so the general-purpose `parse_directives`/`markdown_anchors`
+machinery never sees a ticket body at all. That duplication is
+intentional, but it means BUG002's waiver grammar must be kept in sync
+with `frob.graph.dsl`'s markdown `frob:waive` grammar BY HAND -- two homes
+for one rule, a shape this repo has been bitten by before -- rather than
+inheriting a fix automatically. Before T-2870, a `frob:waive BUG002
+reason=` shape-match that failed to parse (an unquoted value with no
+opening `"` at all, or a `reason="` opened but never closed anywhere in
+the rest of the body) fell through `_BUG002_WAIVER_RE`'s `finditer` as a
+plain non-match, and `_bug002_waiver_reason` treated that identically to
+"no waiver was ever attempted" -- BUG002 ran its normal check with no
+indication a waiver had been tried and silently rejected. `_bug002_
+malformed_waiver` now scans for the same looser shape with a separate,
+deliberately permissive `_BUG002_WAIVER_CANDIDATE_RE` and reports (at
+`WARNING`, naming the ticket id and offending text) any candidate whose
+start position `_BUG002_WAIVER_RE`'s strict grammar does not also match --
+distinguishing "no waiver attempted" from "a waiver was attempted and
+rejected" the same way T-2857 did for the markdown-side parser.
+
 **`frob:no-behavior-change reason="..."` INVERTS the obligation, never
 skips it (T-1616).** BUG002 is unsatisfiable BY CONSTRUCTION for a pure
 refactor or deletion, where the whole point is that behavior did NOT

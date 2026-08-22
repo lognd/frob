@@ -833,15 +833,7 @@ def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_wired_guard_fails_at_parent_is_permitted kind="integration"  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
 # frob:ticket T-1678
-# frob:waive AFFECT001 reason="T-2870: this diff only ADDS a new, additive \
-# malformed-waiver WARNING log line ahead of the existing waiver check -- no existing \
-# BUG002 behavior documented in \
-# docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-repr\
-# oduces changed. The doc update this finding asks for is deferred: \
-# docs/modules/gates.md is under a concurrent ticket's (T-2874) live scope lease at \
-# the time of this fix, so T-2870 cannot claim it without a ScopeLeaseConflict. See \
-# this function's own new _bug002_malformed_waiver call and T-2870's Done report for \
-# the narrative that belongs in that section once the lease clears."
+# frob:ticket T-2883
 def bug_repro_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:

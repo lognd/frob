@@ -335,6 +335,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2875: frob.graph.dsl._RESERVED_MARKER_VERBS omits callee-raises, so a real # frob:callee-raises call-site marker fires DSL001 unknown-verb
 - T-2877: SELFAUDIT001: T-2849's process/_reap.py env.read growth and a new via-less core ffi grant lack ratchet/because coverage
 - T-2879: Red-tail sweep: COV001/DRIFT002/DOCENUM001/PERF004/DOC011/DOC006 (6 independent causes, CYCLE001/TICK004 verified correctly left alone)
+- T-2883: docs/modules/gates.md: document T-2870's BUG002 malformed-waiver diagnostic
 
 ## [0.530.0] - unreleased
 

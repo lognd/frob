@@ -1,7 +1,7 @@
 ---
 id: T-2883
 title: 'docs/modules/gates.md: document T-2870''s BUG002 malformed-waiver diagnostic'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-22'
@@ -27,6 +27,8 @@ scope_changes:
     T-2870 once the doc paragraph it deferred is written'
   actor: logan
   at: '2026-08-22'
+evidence:
+- cmd:/tmp/t2883_verify.sh exit=0 sha256=73562f782534
 designated_repro_test: null
 threat: null
 component: null
