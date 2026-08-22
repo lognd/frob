@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: af4c61da1d7308c06ebd151d0448e688e528de5c
 ---
 T-2375's own declared scope (src/frob/gates/_arch.py's _ERROR_SEVERITY_CATEGORIES: add 'large-file' so LARGE001 promotes from Severity.WARN to Severity.ERROR) was deliberately NOT executed by T-2375 -- T-2375 itself only measured (85 LARGE001 warnings, confirmed against T-2796's independent measurement), characterized (many independent oversized-file causes, no shared root fix, T-1651 precedent applies: forced splits with no real seam are worse than the warning), and decomposed into 9 disjoint child tickets covering all 84 non-_selfconform.py files (T-2822/T-2823/T-2824/T-2825/T-2826/T-2827/T-2828/T-2829/T-2830; T-2729 separately owns src/frob/strata/_selfconform.py, the single largest offender, and is not one of these 9).
 
