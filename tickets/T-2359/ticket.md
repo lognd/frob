@@ -2,7 +2,7 @@
 id: T-2359
 title: Reformat the 138 files pending ruff-format as one deliberate commit, unblocking
   T-2244/T-2245
-state: queued
+state: in-progress
 kind: feature
 origin: agent
 created: '2026-08-17'
@@ -348,6 +348,14 @@ acceptance:
   evidence: []
 - text: given the format-only commit, when its diff is reviewed, then it contains
     no semantic changes and no fixture-corpus files
+  evidence: []
+- text: given the test suite, when it runs after the reformat, then it passes unchanged
+  evidence: []
+- text: given the repo after this lands, when ruff format --check . runs, then zero
+    files need reformatting
+  evidence: []
+- text: given the format-only commit series, when its diffs are reviewed, then they
+    contain no semantic changes and no fixture-corpus files
   evidence: []
 - text: given the test suite, when it runs after the reformat, then it passes unchanged
   evidence: []
