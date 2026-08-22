@@ -101,7 +101,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1b34180719b475f8d6c4849d08fcc1d0b08802c1
 ---
 frob.gates._doclink_docanchor.py (1035 lines) has a real, investigated seam,
 but distinct from the module's own docstring: the docstring describes only
