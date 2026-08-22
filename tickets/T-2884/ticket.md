@@ -18,6 +18,8 @@ scope:
 - src/frob/app/_daemon_proxy.py
 - src/frob/serve/_socketd.py
 - tests/test_app_daemon_proxy.py
+- docs/modules/serve.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -27,6 +29,20 @@ scope_changes:
   glob: tests/test_app_daemon_proxy.py
   reason: T-2884 needs a test-file edit to add the content-sensitive skew coverage
     (positive controls + fail-safe cases), no production symbols live here
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001: _handle_version and _source_head_sha changes must update their
+    existing frob:doc anchor docs/modules/serve.md#version-handshake-t-1105 in this
+    same diff'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001: _socketd.py''s new subprocess.run(git rev-parse) call is
+    a new exec capability on the serve node that must be declared in the self-model
+    in this same diff'
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
