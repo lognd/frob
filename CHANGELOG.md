@@ -307,6 +307,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2834: Split frob.tickets._setters's sprint/flow analytics family into _flow.py
 - T-2836: REG008 burn-down batch 3/N: CHK-GATE-DOC012 (final entry, lease cleared)
 - T-2839: Fix malformed frob:waive LARGE001 directive on arch/_patterns.py (T-2823 regression)
+- T-2840: frob ticket requeue from a worktree reports success while its ledger mirror never reaches main, leaving a stale in-progress state and a held lease
 - T-2841: Fix I001 import-sort regression in T-2729's selfconform split (6 files)
 - T-2843: Split frob.gates._doclink_docanchor's later-bolted docstatus/docmake/docseverity gates out
 - T-2844: Split _host_isolation.py along lateral/vertical/movement seams (blocked on via-scope migration review)

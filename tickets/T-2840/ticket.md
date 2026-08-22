@@ -2,7 +2,7 @@
 id: T-2840
 title: frob ticket requeue from a worktree reports success while its ledger mirror
   never reaches main, leaving a stale in-progress state and a held lease
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -35,7 +35,10 @@ scope_changes:
     doc section
   actor: logan
   at: '2026-08-22'
-designated_repro_test: null
+evidence:
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_requeue_edit_from_worktree_is_visible_on_primary
+- tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope::test_requeue_running_in_the_primary_checkout_is_a_no_op
+designated_repro_test: tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::test_requeue_edit_from_worktree_is_visible_on_primary
 threat: null
 component: null
 anchor: false

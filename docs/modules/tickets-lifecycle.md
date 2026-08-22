@@ -937,6 +937,50 @@ change correctly and then crashed on the unhandled `KeyError` before
 the CLI could report success, discovered by running the new verb
 end-to-end rather than only through its own unit tests.
 
+T-2840 reclassified `"requeue"` from `GENERIC_COMMIT_UNMIRRORED` to
+`GENERIC_COMMIT_MIRRORED`. MEASURED INCIDENT: an agent ran `frob ticket
+requeue T-2370` from inside a worktree; the command reported success,
+but its ledger-mirror commit never reached the primary checkout -- main
+kept reading `state: in-progress` (and, since the T-0453 tree-lease is
+derived live from that state plus scope, kept the lease HELD) until an
+agent caught it by reading main's own copy post-hoc and reapplied the
+requeue from the primary checkout directly. `requeue` had been grouped
+with `close`/`drop`/`fail`/`done-report` under the reasoning that "land
+already carries this atomically with the code it describes" -- true for
+those four, since a ticket that closes/drops/fails/reports done is
+finishing (or ending) work some later `land` call actually lands. It is
+FALSE for `requeue`: the entire point of requeuing is that the ticket's
+worktree work will never land -- there is no future `land` call for any
+mechanism to piggyback the state change onto. Left unmirrored, a
+requeue's lease release is real only in the requeuing worktree's own
+git history; if that worktree is later swept (its working tree reads
+clean once the requeue is committed, and `frob.tickets._unlanded`'s
+finished-work detector does not fire for a ticket going BACKWARD to
+`queued`, since "finished" there means a done-report or a `done`/
+`dropped` state, never `queued`) the release is lost with it, and main
+keeps citing a lease nobody holds.
+
+The fix needed no change to the worktree-sweep or lease machinery
+outside this module: `_auto_commit_ledger_after_dispatch` already calls
+`mirror_ledger_change_to_primary` unconditionally for every ticket-
+scoped command strategy other than the two `OWN_TRANSACTION*` values
+(see that function's own docstring), gating what actually happens
+purely on `LEDGER_VERB_STRATEGY` membership. Moving `requeue`'s single
+table entry to `GENERIC_COMMIT_MIRRORED` was therefore sufficient: the
+requeue's ledger write now reaches the primary checkout synchronously,
+inside the same `frob ticket requeue` invocation, before the command
+returns and long before any worktree-sweep decision is ever made -- the
+same fleet-visibility guarantee `scope`/`block`/`unblock` already had.
+When the primary checkout is unreachable (a land in flight, most
+commonly), the existing `_log_mirror_unavailable` path fires exactly as
+it does for every other `GENERIC_COMMIT_MIRRORED` verb: a loud `ERROR`
+naming the ticket and the exact recovery command, never a silent
+"reported success but nothing changed" outcome (`tests/unit/
+test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain::
+test_requeue_edit_from_worktree_is_visible_on_primary` and
+`TestLedgerMirrorScope::test_requeue_running_in_the_primary_checkout_is_a_no_op`
+are the positive controls both directions).
+
 ## Stale-worktree-cut warning (T-1059)
 
 T-1030 root-caused a recurring incident (fa606fe8, b3589c3e): dispatched

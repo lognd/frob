@@ -110,6 +110,46 @@ class TestLedgerMirrorReachesMain:
 
         assert _visible_on_primary(primary, "T-9999")
 
+    # frob:ticket T-2840
+    def test_requeue_edit_from_worktree_is_visible_on_primary(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2840: a requeue's `IN_PROGRESS -> QUEUED` transition IS the
+        lease release (see `_requeue`'s own docstring) -- unlike
+        close/drop/fail, no future `land` ever carries a requeued
+        ticket's state to main, so unlike those verbs `requeue` must be
+        mirrored immediately or the lease it claims to release stays
+        held on main forever. This is the measured incident this ticket
+        closes: the command reported success while main kept reading
+        `in-progress`.
+
+        Primary starts at `in-progress` (simulating the ticket having
+        been started, unmirrored, exactly like `start` still is today)
+        and a unique marker distinguishes "mirror actually ran" from
+        "the field already happened to read right" -- without it, a
+        no-op mirror and a working one would be indistinguishable since
+        both begin and end reading `queued`-shaped text somewhere."""
+        assert "requeue" in MIRRORED_LEDGER_VERBS
+        primary, worktree = _setup(tmp_path)
+        for root in (primary, worktree):
+            path = root / "tickets" / "T-0001" / "ticket.md"
+            path.write_text(path.read_text().replace("queued", "in-progress"))
+        _git("commit", "-q", "-am", "start", cwd=primary)
+        _git("commit", "-q", "-am", "start", cwd=worktree)
+
+        path = worktree / "tickets" / "T-0001" / "ticket.md"
+        path.write_text(
+            path.read_text().replace("in-progress", "queued")
+            + "requeue-marker-t2840\n"
+        )
+        _git("commit", "-q", "-am", "requeue edit", cwd=worktree)
+
+        mirror_ledger_change_to_primary(worktree, "T-0001", "requeue")
+
+        assert _visible_on_primary(primary, "requeue-marker-t2840")
+        assert _visible_on_primary(primary, "state: queued")
+        assert not _visible_on_primary(primary, "in-progress")
+
     # frob:ticket T-2563
     def test_attachment_file_reaches_primary(self, tmp_path: Path) -> None:
         """`attach` writes a NEW file inside the ticket directory, so the
@@ -241,6 +281,22 @@ class TestLedgerMirrorScope:
         before = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
 
         mirror_ledger_change_to_primary(primary, "T-0001", "scope")
+
+        assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
+        assert _git("status", "--porcelain", cwd=primary).stdout.strip() == ""
+
+    # frob:ticket T-2840
+    def test_requeue_running_in_the_primary_checkout_is_a_no_op(
+        self, tmp_path: Path
+    ) -> None:
+        """Positive control, the other direction: reclassifying `requeue`
+        must not change its behaviour for the coordinator's own
+        already-on-main path -- `requeue` issued from the primary
+        checkout still works exactly as before this ticket."""
+        primary, _worktree = _setup(tmp_path)
+        before = _git("rev-parse", "HEAD", cwd=primary).stdout.strip()
+
+        mirror_ledger_change_to_primary(primary, "T-0001", "requeue")
 
         assert _git("rev-parse", "HEAD", cwd=primary).stdout.strip() == before
         assert _git("status", "--porcelain", cwd=primary).stdout.strip() == ""

@@ -84,18 +84,34 @@ class LedgerWriteStrategy(enum.Enum):
         ticket's ledger pathspecs onto the primary checkout (T-2563) --
         the pure-metadata verbs (`scope`, `block`, `priority`, ...) whose
         entire effect the rest of the fleet must see immediately, because
-        `scope` IS the write lease in this repo.
+        `scope` IS the write lease in this repo. `requeue` (T-2840) is
+        also a member for the same reason even though it is otherwise a
+        state-machine verb: the T-0453 tree-lease is derived live from
+        IN_PROGRESS state + scope, so requeue's `IN_PROGRESS -> QUEUED`
+        transition IS a lease release -- exactly the kind of edit the
+        rest of the fleet must see immediately, not only once some later
+        `land` happens to carry it (which, for a requeued ticket, never
+        happens at all: see `GENERIC_COMMIT_UNMIRRORED`'s docstring
+        above for the measured incident this closes).
     GENERIC_COMMIT_UNMIRRORED: the dispatch-wrapper may attempt the same
         generic commit (usually a no-op: these state-machine verbs --
-        `new`/`start`/`close`/`drop`/`fail`/`requeue`/`done-report`/
-        `evidence`/`archive`/`milestone`/... -- already call
+        `new`/`start`/`close`/`drop`/`fail`/`done-report`/`evidence`/
+        `archive`/`milestone`/... -- already call
         `commit_ticket_ledger_change` themselves, T-1130/T-1178) but is
         NEVER mirrored: their ledger write describes progress on work
         that is still worktree-local, and `land` already carries it
         across atomically with the code it describes. Mirroring one
         would advance `main`'s state machine ahead of the work it claims
         to have finished -- a worse failure than the one this module
-        exists to fix.
+        exists to fix. `requeue` is deliberately NOT a member of this
+        set (T-2840): unlike close/drop/fail/done-report, a requeue's
+        whole point is that the ticket's worktree work will NEVER land
+        -- there is no future `land` to carry its QUEUED state across to
+        main atomically. Classifying it here left the release of a
+        held lease invisible to the fleet whenever the requeuing
+        worktree was later swept before some OTHER mechanism happened
+        to carry the edit across; see `GENERIC_COMMIT_MIRRORED`'s entry
+        for `requeue` below.
     NOT_TICKET_SCOPED: `_auto_commit_ledger_after_dispatch`'s `cfg.
         ticket_id is None` early-return always fires for this verb (pure
         read-only verbs -- `list`/`show`/`doable`/`board`/...; `migrate`,
@@ -120,6 +136,10 @@ class LedgerWriteStrategy(enum.Enum):
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_all_classified
 # frob:tests \
 # tests/unit/test_ticket_runner_ledger_mirror.py::TestVerbStrategy.test_derived_sets_track_the_live_strategy_table  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorReachesMain.test_requeue_edit_from_worktree_is_visible_on_primary  # noqa: E501
+# frob:tests \
+# tests/unit/test_ticket_runner_ledger_mirror.py::TestLedgerMirrorScope.test_requeue_running_in_the_primary_checkout_is_a_no_op  # noqa: E501
 #: The single source of truth for every `frob ticket` verb's ledger-write
 #: strategy (T-2603). `_MIRRORED_LEDGER_VERBS`/`_OWN_TRANSACTION_VERBS`
 #: below are DERIVED from this table, never redeclared, so there is
@@ -163,13 +183,18 @@ LEDGER_VERB_STRATEGY: dict[str, LedgerWriteStrategy] = {
     # removing rather than appending an entry) -- same fleet-visibility
     # reasoning, same strategy.
     "unblock": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
+    # T-2840: reclassified from GENERIC_COMMIT_UNMIRRORED -- a requeue's
+    # IN_PROGRESS -> QUEUED transition releases the T-0453 tree-lease,
+    # and (unlike close/drop/fail) no future `land` ever carries a
+    # requeued ticket's state across, so this write must reach main the
+    # same way scope/block do, not wait on a land that will never come.
+    "requeue": LedgerWriteStrategy.GENERIC_COMMIT_MIRRORED,
     # GENERIC_COMMIT_UNMIRRORED -- state-machine progress `land` already
     # carries atomically; never mirrored ahead of the work it describes.
     "new": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "plan": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "start": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "work": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
-    "requeue": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "sweep": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "reconcile": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
     "close": LedgerWriteStrategy.GENERIC_COMMIT_UNMIRRORED,
