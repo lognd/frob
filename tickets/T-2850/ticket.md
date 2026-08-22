@@ -3,7 +3,7 @@ id: T-2850
 title: 'root-write-guard cannot see a pre-worktree agent: both its signals are set
   by frob ticket work, so an agent editing the root before creating its worktree is
   indistinguishable from a human'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -17,10 +17,27 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/root-write-guard.py
+- tests/test_hook_root_write_guard.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_hook_root_write_guard.py
+  reason: T-2850 inverts the guard's default (deny-root/allow-worktree) which necessarily
+    changes the coupled test file's assertions and the hook's own doc section; widening
+    scope rather than leaving broken evidence or undocumented behavior
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: T-2850 inverts the guard's default (deny-root/allow-worktree) which necessarily
+    changes the coupled test file's assertions and the hook's own doc section; widening
+    scope rather than leaving broken evidence or undocumented behavior
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
