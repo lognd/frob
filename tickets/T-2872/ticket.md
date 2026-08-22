@@ -26,10 +26,25 @@ scope:
 - tickets/T-2829
 - tickets/T-2830
 - tickets/T-2839
+- tickets/archive/T-1102
+- tickets/archive/T-1651
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/archive/T-1102
+  reason: evidence --replace --archived wrote to the archive path, not tickets/T-1102
+    and tickets/T-1651 as originally declared
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tickets/archive/T-1651
+  reason: evidence --replace --archived wrote to the archive path, not tickets/T-1102
+    and tickets/T-1651 as originally declared
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
