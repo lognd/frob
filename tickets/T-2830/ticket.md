@@ -2,7 +2,7 @@
 id: T-2830
 title: 'LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 1
   of 2'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -21,6 +21,8 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_lifecycle.py
 - tickets/T-draft-783d89c8/ticket.md
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,7 +40,36 @@ scope_changes:
     is legitimate diff residue from filing that ticket while T-2830 was in-progress
   actor: logan
   at: '2026-08-21'
+body_changes:
+- mode: append
+  reason: BUG002 land-time gate needs this directive for a comment-only waiver change
+    with no behavior delta
+  actor: logan
+  at: '2026-08-21'
+  old_length: 1545
+  new_length: 1998
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 designated_repro_test: null
+acceptance:
+- text: given the 5 in-scope files, when frob check --json runs unbudgeted, then each
+    file's LARGE001 finding reads as severity=note (waived) with T-1651-grade per-file
+    reasoning naming the specific reason no split seam exists, not a generic size
+    waiver
+  evidence:
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
+acceptance_amendments:
+- op: remove
+  index: 1
+  old_text: given the 5 in-scope files, when frob check --json runs unbudgeted, then
+    each file's LARGE001 finding reads as severity=note (waived) with T-1651-grade
+    per-file reasoning naming the specific reason no split seam exists, not a generic
+    size waiver
+  new_text: null
+  reason: duplicate criterion from a retried command (the first attempt's exit-143
+    report was misleading -- it had already written)
+  actor: logan
+  at: '2026-08-21'
 threat: null
 component: null
 anchor: false
@@ -52,3 +83,5 @@ Per-file disposition is a JUDGMENT CALL, not a mechanical split: T-1651 already 
 Do NOT touch src/frob/strata/_selfconform.py -- it is T-2729's own ticket (largest LARGE001 offender, 2290 lines), already filed, do not absorb it here.
 
 Closure for this CHILD ticket: every file below reads as severity=note (waived) or disappears from LARGE001 entirely when re-measured. Do NOT flip LARGE001 warning->error severity here -- that promotion is T-2375's own final step, deferred until every sibling batch lands (promoting early reds main for siblings' still-open debt).
+
+<!-- frob:no-behavior-change reason="This ticket is a comment-only LARGE001 waiver pass (T-1651-grade split/waive review) -- all 5 files got a frob:waive LARGE001 directive added, no logic, control flow, or public behavior changed. The designated evidence (test_large_file_fires_large001_warn) passing at both main and this ticket's tip is expected and correct for a no-behavior-change change, not confirmatory-only evidence of an unfixed defect." -->
