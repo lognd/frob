@@ -1,5 +1,8 @@
 """SIGTERM-safe reaping of leaked `multiprocessing` children (T-2443,
-docs/modules/process.md#forkserver-reaping-t-2443).
+docs/modules/process.md#forkserver-reaping-t-2443), plus (T-2849) the
+`PR_SET_PDEATHSIG`-based root-cause fix that stops the leak from happening
+at all on the dominant SIGKILL path -- see `arm_parent_death_signal` and
+`_arm_forkserver_helper_pdeathsig_if_requested` below for that half.
 
 MEASURED DEFECT this closes: `frob check`'s gate-running `ProcessPoolExecutor`
 (`frob.gates._open_process_pool`, `forkserver` start method) tears itself down
@@ -54,6 +57,7 @@ starts, only what happens to them if the run is killed.
 
 from __future__ import annotations
 
+import ctypes
 import multiprocessing
 import os
 import re
@@ -101,6 +105,152 @@ _SignalHandler = (
 #: silently swallows whatever behavior was registered before this module
 #: ran (e.g. a test harness's own SIGTERM handling).
 _prior_sigterm_handler: _SignalHandler = None
+
+
+# frob:ticket T-2849
+#: `linux/prctl.h`'s `PR_SET_PDEATHSIG` option number -- stable ABI, not
+#: exposed by the stdlib `os`/`signal` modules, so it is called directly
+#: via `ctypes` against libc's `prctl(2)` (the same approach every other
+#: language's "die with parent" helper uses; there is no portable stdlib
+#: wrapper for this option).
+_PR_SET_PDEATHSIG = 1
+
+# frob:doc docs/modules/process.md#forkserver-reaping-t-2443
+# frob:ticket T-2849
+#: Env var `_open_process_pool` (`frob.gates`) stamps to `"1"` in the
+#: PARENT process's environment, BEFORE constructing its `multiprocessing.
+#: forkserver` pool, so the freshly-exec'd forkserver HELPER process (which
+#: inherits the parent's environment at exec time, same mechanism
+#: `_WORKER_STDOUT_LOG_LEVEL_ENV`/`_INHERITED_LOCK_KEYS_ENV` already rely
+#: on) can tell it is running as that helper and should arm itself -- see
+#: `_arm_forkserver_helper_pdeathsig_if_requested`. A normal `frob` CLI
+#: invocation (or test import of this module) never sets this, so the
+#: check below is a no-op there.
+FORKSERVER_ARM_PDEATHSIG_ENV = "FROB_FORKSERVER_ARM_PDEATHSIG"
+
+
+# frob:doc docs/modules/process.md#forkserver-reaping-t-2443
+# frob:ticket T-2849
+# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_arms_successfully_on_linux  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
+def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
+    """Arm `PR_SET_PDEATHSIG(sig)` (T-2849) on the CALLING process via
+    `ctypes`' libc `prctl(2)`: the kernel delivers `sig` to this process
+    the instant its DIRECT OS parent terminates, by ANY means including
+    `SIGKILL` -- this is what makes the mechanism uncatchable-parent-death
+    -proof where a `finally`/`atexit` handler is not (T-2443's own
+    documented gap: a `SIGTERM`-killed parent still runs Python cleanup,
+    a `SIGKILL`-killed one never does). Returns `False` (never raises) on
+    any non-Linux platform or a `prctl` call failure -- callers degrade to
+    "not armed", the same best-effort posture every other `/proc`-reading
+    helper in this module already has.
+
+    Closes the race between "read my current parent" and "the arm call
+    actually takes effect": if `os.getppid()` differs before vs.
+    immediately after the `prctl` call, the original parent already
+    exited in that window and the kernel may have had no live parent left
+    to attribute the future signal to, so this self-delivers `sig`
+    immediately rather than risk running on, unmonitored, exactly like
+    the leak this closes.
+
+    T-2849's own two use sites: (1) `frob.gates._open_process_pool`'s
+    forkserver-helper preload hook below arms this on the HELPER, whose
+    real OS parent is the `frob check` launcher (multiprocessing `exec`s
+    the helper directly, confirmed via T-2849's own failure-log
+    measurement); (2) the pool's worker initializer arms this on each
+    WORKER, whose real OS parent is that same helper (workers are raw
+    `fork()`ed from it, never `exec`ed). Chaining the two closes the full
+    launcher-death propagation path across the intermediate helper this
+    ticket's failure log identified as the trap in a naive one-hop fix:
+    launcher dies -> helper (direct child) is signalled -> helper dies ->
+    every worker (direct child of the HELPER, not the launcher) is
+    signalled in turn."""
+    if sys.platform != "linux":
+        return False
+    try:
+        libc = ctypes.CDLL(None, use_errno=True)
+    except OSError:
+        _log.debug("process: arm_parent_death_signal: could not load libc")
+        return False
+    parent_before = os.getppid()
+    try:
+        # frob:waive DSL001 follow_up="T-2875" reason="callee-raises is \
+        # frob.arch._ffi's own call-site marker (T-0931), not a frob.graph.dsl verb -- \
+        # graph.dsl._RESERVED_MARKER_VERBS lists raises but omits callee-raises, a \
+        # separate pre-existing gap outside this file's own scope, filed rather than \
+        # fixed here"
+        rc = libc.prctl(_PR_SET_PDEATHSIG, int(sig), 0, 0, 0)  # frob:callee-raises
+    except (OSError, AttributeError) as exc:
+        _log.debug("process: arm_parent_death_signal: prctl call failed: %s", exc)
+        return False
+    if rc != 0:
+        _log.debug("process: arm_parent_death_signal: prctl returned rc=%d", rc)
+        return False
+    if os.getppid() != parent_before:
+        # The direct parent already exited/reparented between the getppid()
+        # above and the prctl() call landing -- the kernel may have had no
+        # parent left to deliver `sig` to when it dies, so self-deliver now
+        # rather than risk running on as a fresh orphan.
+        _log.warning(
+            "process: arm_parent_death_signal: parent changed pid=%d during arm "
+            "(was %d), self-signalling %d",
+            os.getpid(),
+            parent_before,
+            sig,
+        )
+        os.kill(os.getpid(), sig)
+    return True
+
+
+# frob:doc docs/modules/process.md#forkserver-reaping-t-2443
+# frob:ticket T-2849
+# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_arms_when_env_var_set  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_success_logs_nothing_at_all  # noqa: E501
+# frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_failure_still_warns  # noqa: E501
+def _arm_forkserver_helper_pdeathsig_if_requested() -> None:
+    """Module-import-time hook (T-2849): `frob.gates._FORKSERVER_PRELOAD`
+    names this module, so `multiprocessing.forkserver` imports it exactly
+    ONCE inside the freshly-started forkserver HELPER process, before that
+    helper forks any worker. When `FORKSERVER_ARM_PDEATHSIG_ENV` is set
+    (stamped by `frob.gates._open_process_pool` into the environment the
+    helper inherits at `exec` time -- see that env var's own docstring),
+    arm `PR_SET_PDEATHSIG(SIGKILL)` on THIS process, i.e. the helper
+    itself, via `arm_parent_death_signal`. The helper's real OS parent is
+    the `frob check` launcher, not the launcher's own parent shell -- so
+    this is the half of T-2849's fix that makes the helper die the instant
+    the launcher does, by any means. A plain `import frob.process._reap`
+    from the main CLI process or a test module never has the env var set,
+    so this check is a no-op there; it only ever fires inside the
+    forkserver helper subprocess.
+
+    Deliberately silent on SUCCESS (matches `arm_parent_death_signal`'s
+    own convention of returning `True` with no log call) -- this hook
+    runs at HELPER PRELOAD time, before `frob.gates._run_process_gate`'s
+    per-job `_WORKER_STDOUT_LOG_LEVEL_ENV` clamp (T-0806) has ever had a
+    chance to run for this process, so a DEBUG-level log emitted here
+    would reach `frob check --json`'s stdout unfiltered on every single
+    run (this repo's own `[handlers.stdout]` default is `level = "DEBUG"`)
+    -- reproduced directly while validating this ticket's own fix
+    (`process: forkserver helper pid=... armed ...` leaking into a real
+    `frob check --json` capture) before removing it. The failure branch
+    stays a `_log.warning`, which is safe: `[handlers.stderr]` is the
+    WARNING-and-above sink and `[handlers.stdout]`'s own `below_warning`
+    filter explicitly excludes it, so a genuine arm failure still
+    surfaces on stderr without contaminating JSON stdout."""
+    # frob:waive SEC110 reason="boolean forkserver-arm marker, not a secret"
+    if os.environ.get(FORKSERVER_ARM_PDEATHSIG_ENV) == "1":
+        if not arm_parent_death_signal(signal.SIGKILL):
+            _log.warning(
+                "process: forkserver helper pid=%d could not arm "
+                "PR_SET_PDEATHSIG -- launcher-death leak NOT closed for this run "
+                "(non-Linux platform or prctl failure)",
+                os.getpid(),
+            )
+
+
+_arm_forkserver_helper_pdeathsig_if_requested()
 
 
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443

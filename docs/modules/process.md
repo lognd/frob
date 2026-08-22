@@ -291,6 +291,48 @@ cmdline+ppid detection in plain form (that script's own "no `frob` import"
 contract) and surfaces the live count in `_print_land_status`'s report,
 next to the existing swap-pressure guidance line.
 
+T-2849: both functions above are best-effort/after-the-fact -- neither
+runs on a `SIGKILL`ed launcher (uncatchable, no Python code runs at all),
+which measured as the DOMINANT leak source in practice (~150 orphans
+reaped by hand in one session, once reaching 16.7GB swap and stalling
+every land for 45 minutes). `frob.gates._open_process_pool` now also
+arms a structural, kernel-level fix that closes the leak at its root
+instead of cleaning up after it:
+
+- `arm_parent_death_signal` arms `PR_SET_PDEATHSIG` (Linux `prctl(2)`,
+  via `ctypes`) on the calling process, so the kernel delivers the given
+  signal the instant that process's DIRECT OS parent dies, by any means
+  including `SIGKILL` -- including a self-kill fallback for the narrow
+  fork/prctl race window where the parent exits between the two calls.
+- The trap this closes: a `forkserver`-spawned WORKER's real OS parent is
+  the persistent forkserver HELPER process, not the `frob check`
+  launcher (workers are raw `fork()`ed from the helper, never `exec`ed,
+  so they even inherit the helper's own `/proc/pid/cmdline`). Arming
+  `PR_SET_PDEATHSIG` only on workers would track the helper's death, not
+  the launcher's, and would not close the leak. The fix instead arms
+  BOTH hops: `_open_process_pool` stamps `frob.process._reap.
+  FORKSERVER_ARM_PDEATHSIG_ENV` into the environment before constructing
+  the pool, so the freshly-started forkserver HELPER (named in `_open_
+  process_pool`'s own `_FORKSERVER_PRELOAD`, imported once at helper
+  startup) arms itself against the launcher, its real OS parent
+  (`_arm_forkserver_helper_pdeathsig_if_requested`); the pool's
+  `initializer` arms every WORKER against the helper, ITS real OS
+  parent. Launcher death by any means now cascades: helper dies, then
+  every worker dies in turn -- no `finally`/`atexit` involved anywhere
+  in the chain.
+- Verified with real fork/exec processes, both directions: a `SIGKILL`ed
+  launcher now leaves zero forkserver/worker survivors (previously left
+  both, reparented to init); a genuinely running pool's helper/workers
+  are never touched while the launcher stays alive.
+
+This does not replace `reap_active_multiprocessing_children`/`reap_
+orphaned_forkservers` above -- those remain the defense-in-depth sweep
+for leaks predating this fix or reached some other way; T-2818's
+ancestry-walk oracle they build on
+(`scripts/fleet_status.py::_forkserver_root_is_live_check`) is
+unchanged and still the one place "is this forkserver orphaned" is
+decided.
+
 <!-- frob:doc docs/modules/process.md#concurrent-check-advisory-t-2473 -->
 ## Concurrent check advisory (T-2473)
 

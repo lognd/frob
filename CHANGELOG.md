@@ -315,6 +315,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2845: Split scripts/fleet_status.py into readiness/procscan/rot submodules
 - T-2846: Split frob-core/src/lib.rs's clone-detection rungs into sibling modules
 - T-2847: LARGE001: src/frob/tickets/_setters.py unwaived after T-2834's split (1111 lines)
+- T-2849: frob check leaks its multiprocessing forkservers: ~150 orphans reaped by hand in one session, once reaching 16.7GB swap and stalling all lands for 45 minutes
 - T-2850: root-write-guard cannot see a pre-worktree agent: both its signals are set by frob ticket work, so an agent editing the root before creating its worktree is indistinguishable from a human
 - T-2851: Split BUG002/must-still-pass repro-classification family out of frob.gates._mutation_evidence
 - T-2853: LARGE001: src/frob/tickets/_leases.py unwaived after T-2833's split (3182 lines)

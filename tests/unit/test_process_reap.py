@@ -7,6 +7,7 @@ from __future__ import annotations
 import multiprocessing
 import os
 import signal
+import sys
 import time
 from pathlib import Path
 
@@ -14,8 +15,11 @@ import pytest
 
 from frob.process import _reap
 from frob.process._reap import (
+    FORKSERVER_ARM_PDEATHSIG_ENV,
+    _arm_forkserver_helper_pdeathsig_if_requested,
     _is_orphaned_forkserver,
     _process_start_age_s,
+    arm_parent_death_signal,
     count_running_checks,
     install_sigterm_reaper,
     reap_active_multiprocessing_children,
@@ -268,3 +272,108 @@ class TestCountRunningChecks:
     def test_missing_proc_returns_none(self, tmp_path: Path) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestCountRunningChecks.test_missing_proc_returns_none  # noqa: E501
         assert count_running_checks(proc=tmp_path / "does-not-exist") is None
+
+
+# frob:ticket T-2849
+class TestArmParentDeathSignal:
+    """`arm_parent_death_signal` -- T-2849's root-cause primitive: arms
+    `PR_SET_PDEATHSIG` on the calling process so the kernel signals it the
+    instant its DIRECT OS parent dies, by any means including `SIGKILL`."""
+
+    def test_arms_successfully_on_linux(self) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_arms_successfully_on_linux  # noqa: E501
+        if sys.platform != "linux":
+            pytest.skip("PR_SET_PDEATHSIG is Linux-only")
+        read_fd, write_fd = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            os.close(read_fd)
+            armed = arm_parent_death_signal(signal.SIGTERM)
+            os.write(write_fd, b"1" if armed else b"0")
+            os.close(write_fd)
+            os._exit(0)
+        os.close(write_fd)
+        try:
+            outcome = os.read(read_fd, 1)
+        finally:
+            os.close(read_fd)
+            os.waitpid(pid, 0)
+        assert outcome == b"1"
+
+    def test_self_kills_on_missed_reparent_race(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
+        ppid_sequence = iter([111, 222])
+        monkeypatch.setattr(os, "getppid", lambda: next(ppid_sequence))
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
+
+        class _FakeLibc:
+            def prctl(self, *args: object) -> int:
+                return 0
+
+        monkeypatch.setattr(_reap.ctypes, "CDLL", lambda *a, **k: _FakeLibc())
+        result = arm_parent_death_signal(signal.SIGTERM)
+        assert result is True
+        assert killed == [(os.getpid(), signal.SIGTERM)]
+
+    def test_returns_false_off_linux(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
+        monkeypatch.setattr(sys, "platform", "darwin")
+        assert arm_parent_death_signal(signal.SIGTERM) is False
+
+
+# frob:ticket T-2849
+class TestArmForkserverHelperPdeathsigIfRequested:
+    """`_arm_forkserver_helper_pdeathsig_if_requested` -- the module-import
+    -time hook `frob.gates._FORKSERVER_PRELOAD` triggers inside the
+    forkserver helper; must be a no-op unless the env marker is set."""
+
+    def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501
+        monkeypatch.delenv(FORKSERVER_ARM_PDEATHSIG_ENV, raising=False)
+        called: list[int] = []
+        monkeypatch.setattr(
+            _reap, "arm_parent_death_signal", lambda sig: called.append(sig) or True
+        )
+        _arm_forkserver_helper_pdeathsig_if_requested()
+        assert called == []
+
+    def test_arms_when_env_var_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_arms_when_env_var_set  # noqa: E501
+        monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
+        called: list[int] = []
+        monkeypatch.setattr(
+            _reap, "arm_parent_death_signal", lambda sig: called.append(sig) or True
+        )
+        _arm_forkserver_helper_pdeathsig_if_requested()
+        assert called == [signal.SIGKILL]
+
+    def test_success_logs_nothing_at_all(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_success_logs_nothing_at_all  # noqa: E501
+        # A DEBUG-level log call here would leak straight onto `frob check
+        # --json`'s stdout (this hook runs at forkserver PRELOAD time,
+        # before T-0806's per-job stdout clamp has ever run for this
+        # process) -- reproduced for real while validating this fix. The
+        # success path must stay silent.
+        monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
+        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig: True)
+        with caplog.at_level("DEBUG", logger="frob.process._reap"):
+            _arm_forkserver_helper_pdeathsig_if_requested()
+        assert caplog.records == []
+
+    def test_failure_still_warns(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_failure_still_warns  # noqa: E501
+        # WARNING is safe to log here even at preload time: this repo's
+        # own [handlers.stderr] sink is WARNING-and-above and [handlers.
+        # stdout]'s below_warning filter explicitly excludes it, so this
+        # never contaminates --json stdout the way a DEBUG log would.
+        monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
+        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig: False)
+        with caplog.at_level("WARNING", logger="frob.process._reap"):
+            _arm_forkserver_helper_pdeathsig_if_requested()
+        assert len(caplog.records) == 1
+        assert caplog.records[0].levelname == "WARNING"

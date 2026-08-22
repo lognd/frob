@@ -2,7 +2,7 @@
 id: T-2849
 title: 'frob check leaks its multiprocessing forkservers: ~150 orphans reaped by hand
   in one session, once reaching 16.7GB swap and stalling all lands for 45 minutes'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -115,6 +115,14 @@ scope_changes:
     not out-of-scope
   actor: logan
   at: '2026-08-22'
+evidence:
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_arms_successfully_on_linux
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_on_missed_reparent_race
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_returns_false_off_linux
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_noop_without_env_var
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_arms_when_env_var_set
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_success_logs_nothing_at_all
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_failure_still_warns
 designated_repro_test: null
 threat: null
 component: null

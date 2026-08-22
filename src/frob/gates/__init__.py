@@ -37,6 +37,7 @@ import logging
 import multiprocessing
 import os
 import re
+import signal
 import time
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
@@ -7346,7 +7347,14 @@ def _merge_canonical_order(raw: dict[str, tuple[Violation, ...]]) -> list[Violat
 #: so `_open_process_pool` and any future direct test of the preload list
 #: read the same value.
 # frob:ticket T-0947
-_FORKSERVER_PRELOAD: tuple[str, ...] = ("frob.gates",)
+# frob:ticket T-2849
+#: T-2849: `frob.process._reap` is ALSO preloaded (not just `frob.gates`) so
+#: its module-import-time hook (`_arm_forkserver_helper_pdeathsig_if_
+#: requested`) runs once inside the forkserver helper's own startup and
+#: arms `PR_SET_PDEATHSIG(SIGKILL)` on the helper -- see that function's
+#: docstring and `_open_process_pool`'s own T-2849 note for the full
+#: launcher-death-propagation chain this closes.
+_FORKSERVER_PRELOAD: tuple[str, ...] = ("frob.gates", "frob.process._reap")
 
 
 def _process_pool_start_method() -> str:
@@ -7484,10 +7492,53 @@ def _stamp_worker_parse_artifact_cache_env(root: Path) -> None:
     os.environ[PARSE_ARTIFACT_CACHE_ENV] = str(cache_path)
 
 
+# frob:ticket T-2849
+def _stamp_forkserver_pdeathsig_env() -> None:
+    """Stamp `frob.process._reap.FORKSERVER_ARM_PDEATHSIG_ENV` to `"1"`
+    (T-2849), BEFORE `_open_process_pool` constructs its pool -- same
+    env-inheritance timing as `_stamp_worker_stdout_log_level_env`/
+    `_stamp_worker_lock_keys_env`/`_stamp_worker_parse_artifact_cache_env`
+    above. The forkserver helper `multiprocessing` execs inherits this
+    process's environment at that moment, so its own preloaded import of
+    `frob.process._reap` (see `_FORKSERVER_PRELOAD`) sees the marker set
+    and arms `PR_SET_PDEATHSIG(SIGKILL)` on itself, tracking THIS
+    (launcher) process's death. A no-op when the chosen start method is
+    `spawn` (no persistent helper exists to arm), which is harmless --
+    `spawn` workers are `exec`ed directly as children of this process, so
+    `_worker_arm_pdeathsig` (the pool's own `initializer`) already tracks
+    this process correctly for them without any helper-level step."""
+    from frob.process._reap import FORKSERVER_ARM_PDEATHSIG_ENV
+
+    # frob:waive SEC110 reason="boolean marker, not a secret"
+    os.environ[FORKSERVER_ARM_PDEATHSIG_ENV] = "1"
+
+
+# frob:ticket T-2849
+def _worker_arm_pdeathsig() -> None:
+    """`ProcessPoolExecutor` worker `initializer` (T-2849): arms
+    `PR_SET_PDEATHSIG(SIGKILL)` on THIS worker process via `frob.process.
+    _reap.arm_parent_death_signal`, tracking the worker's own real OS
+    parent -- the `forkserver` helper (workers are raw `fork()`ed from it,
+    never `exec`ed) when that start method is in use, or this launcher
+    process directly under the `spawn` fallback. Combined with
+    `_stamp_forkserver_pdeathsig_env`'s helper-level arm above, this
+    closes the full chain: launcher dies -> helper (its direct child) is
+    signalled -> helper dies -> every worker (the HELPER's direct child,
+    not the launcher's) is signalled in turn. Runs once per worker, right
+    after it starts, before it ever picks up a job -- never raises: a
+    failure to arm (non-Linux, prctl failure) is logged by
+    `arm_parent_death_signal` itself and degrades to the pre-T-2849
+    behavior for that one worker, never blocks the pool from starting."""
+    from frob.process._reap import arm_parent_death_signal
+
+    arm_parent_death_signal(signal.SIGKILL)
+
+
 # frob:ticket T-0767
 # frob:ticket T-0806
 # frob:ticket T-0947
 # frob:ticket T-0990
+# frob:ticket T-2849
 def _open_process_pool(
     process_jobs: dict[str, _ProcessJob],
     *,
@@ -7556,11 +7607,24 @@ def _open_process_pool(
     helper directly) skips the stamp entirely -- workers just see no
     persistent artifact cache configured, the same passthrough behavior
     `frob.lang._artifact_cache_connection` already has for an unset env
-    var."""
+    var.
+
+    T-2849: also stamps `frob.process._reap.FORKSERVER_ARM_PDEATHSIG_ENV`
+    (`_stamp_forkserver_pdeathsig_env`) BEFORE constructing the pool, and
+    passes `_worker_arm_pdeathsig` as this pool's `initializer` -- the two
+    halves that close the leaked-forkserver-on-SIGKILL defect this
+    ticket's failure log measured (~150 orphans/session, 16.7GB swap
+    peak): the env stamp arms `PR_SET_PDEATHSIG(SIGKILL)` on the
+    forkserver HELPER (tracking this launcher process, its real OS
+    parent), the initializer arms the same on every WORKER (tracking the
+    helper, ITS real OS parent) -- see both functions' docstrings for why
+    neither alone is sufficient and `arm_parent_death_signal`'s docstring
+    for the full chain."""
     _stamp_worker_stdout_log_level_env()
     _stamp_worker_lock_keys_env()
     if root is not None:
         _stamp_worker_parse_artifact_cache_env(root)
+    _stamp_forkserver_pdeathsig_env()
     # Bounded worker count (constraint 4): never more workers than
     # jobs, never more than the machine's CPU count.
     proc_workers = max(1, min(len(process_jobs), os.cpu_count() or 4))
@@ -7572,6 +7636,7 @@ def _open_process_pool(
     return ProcessPoolExecutor(
         max_workers=proc_workers,
         mp_context=ctx,
+        initializer=_worker_arm_pdeathsig,
     )
 
 
