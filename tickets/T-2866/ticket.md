@@ -37,7 +37,6 @@ scope:
 - src/frob/verify/_selection.py
 - src/frob/verify/_worker.py
 - src/frob/vet/_capability_python.py
-- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,6 +46,12 @@ scope_changes:
   glob: src/frob/process/_reap.py
   reason: T-2849 holds an in-progress lease on this file; narrowing to avoid collision,
     will handle _FROB_TOKEN_RE's COV007 waiver in a follow-up or after T-2849 lands
+  actor: logan
+  at: '2026-08-22'
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: T-2849 holds an in-progress lease; writing the 37 waivers first (none touch
+    this file), will re-add for the promotion step once T-2849 lands
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
