@@ -1,75 +1,94 @@
 """.claude/hooks/root-write-guard.py: PreToolUse Write/Edit/NotebookEdit/Bash
-hook that refuses a dispatched agent's file write into the SHARED ROOT (the
-primary git checkout) at edit time, before the tree is dirtied.
+hook that refuses ANY write into the SHARED ROOT (the primary git checkout)
+at edit time, before the tree is dirtied, UNLESS an explicit positive
+marker or a small, measured exemption list applies.
 
-T-2481: THREE separate incidents in one session dirtied the shared root
-through `Bash` -- a `frob ticket done-report` with no `cd <worktree> &&` in
-the same call, direct edits in the root, and a `python3` heredoc missing
-its `cd` prefix -- and none of them tripped this hook, because `Bash` was
-never a guarded tool. The root cause generalises: the harness resets `cwd`
-between Bash calls, so a sequence that `cd`s once and issues follow-up
-commands assuming that directory silently operates on the root instead.
+T-2850: DEFAULT INVERTED. Two dispatched agents, in one session, edited the
+PRIMARY CHECKOUT directly (307 and 278 insertions respectively) and this
+hook fired for neither, each time blocking every other agent's land until
+a human noticed and hand-walked recovery. In both incidents
+`.claude/worktrees/*<ticket>*` did not exist yet -- the agent had never
+run `frob ticket work`, which is the ONLY thing that ever sets `FROB_AGENT`
+or `FROB_WORKTREE` (`frob agent env`, invoked as part of `frob ticket
+work`). The hook's PRE-T-2850 discriminator, `_is_agent_context`, fired on
+EITHER of those two vars -- and an agent between dispatch and `ticket work`
+carries NEITHER, making it environmentally identical to the coordinator's
+own shell. No env-var pairing can separate those two cases, because they
+are not actually different environments. That was not a bug in the
+discriminator's logic; it was the CONTRACT being wrong: "never fire for
+the coordinator or a human" cannot coexist with "always fire for an agent"
+once the dangerous window is a state with no agent-only signal in it at
+all.
+
+The fix is not a better discriminator -- it is a different default. This
+hook now refuses every write into the primary checkout UNLESS one of a
+short, explicit allowlist holds:
+
+  1. `FROB_LAND_INTERNAL=1` -- land's own internal machinery (unchanged
+     from before T-2850).
+  2. The write target is `tickets.md` / `tickets/**` -- the `frob ticket`
+     CLI's own ledger auto-commit machinery (unchanged from before
+     T-2850).
+  3. The write target resolves inside a REAL, currently-registered linked
+     worktree (`git worktree list --porcelain`) -- an agent's own leased
+     worktree is never touched, regardless of which shell is writing to
+     it (unchanged from before T-2850, but no longer conditioned on a
+     FROB_AGENT/FROB_WORKTREE match -- any writer inside a real worktree
+     is fine, because a write INSIDE a worktree was never the danger; a
+     write into the ROOT was).
+  4. `FROB_COORDINATOR=1` is set -- the new, explicit, opt-in positive
+     marker this ticket adds. Set this once in a human/coordinator shell's
+     own environment (e.g. shell rc) to keep writing to the primary
+     checkout freely. There is no way to synthesize this marker
+     accidentally: unlike `FROB_AGENT`/`FROB_WORKTREE`, nothing in the
+     dispatch or `frob ticket work` pipeline ever sets it, so its absence
+     cannot regress into a false negative the way the old pairing did.
+
+The asymmetry driving this (from the ticket, restated here since it is the
+whole design rationale): a false BLOCK costs one confused turn and a clear
+error message naming the exact recovery. A false ALLOW costs the ENTIRE
+FLEET its ability to land until a human notices -- twice, in one session,
+multi-hour each. Given that no signal exists that reliably tells a
+pre-worktree agent apart from a human, the only sound default is to
+refuse both, and let the ONE actor who legitimately needs to write to the
+root (the coordinator) opt in explicitly.
+
+`REASON` (the refusal text) carries the exact recovery recipe measured to
+work twice in the incidents that motivated this ticket, plus the
+`FROB_COORDINATOR=1` escape hatch for a genuine false positive -- this
+still honors the module's other standing rule (see below) that "a guard
+that blocks legitimate commands gets disabled by whoever it obstructs":
+the fix for that risk is a precise, actionable message, never a return to
+default-allow.
 
 A Bash command's write target is not a declared field the way `Write`'s
-`file_path` is -- it must be inferred from the command TEXT, and inference
-is exactly the lexical guessing this repo forbids elsewhere (see
-`.claude/hooks/_shellscan.py`'s own docstring for the same tension). So
-`_bash_targets_root` is deliberately narrow: it detects only the two
+`file_path` is -- it must be inferred from the command TEXT, and
+inference is exactly the lexical guessing this repo forbids elsewhere
+(see `.claude/hooks/_shellscan.py`'s own docstring for the same tension).
+So `_bash_targets_root` is deliberately narrow: it detects only the two
 high-frequency shapes actually observed (a `frob ticket <mutating-verb>`
 invocation with neither a `cd` into a registered worktree in the same
 command nor an explicit `--path`; a `>`/`>>`/`tee`/`sed -i` whose target
 resolves under the primary checkout) and returns "no target" (allow) for
-anything else, INCLUDING a command it cannot confidently parse. When in
-doubt, allow -- a guard that blocks legitimate commands gets disabled by
-whoever it obstructs, and a disabled guard protects nothing.
+anything else, INCLUDING a command it cannot confidently parse. This
+narrowness is UNCHANGED by T-2850 -- the default that flipped is what
+happens once a target IS identified as hitting the root, not how
+aggressively targets are identified in the first place. When in doubt
+about WHAT a command targets, still allow; once a target is confidently
+identified as the primary checkout, now deny by default rather than
+allow by default.
 
 CANONICAL COPY. This file is git-tracked and is the source of truth; the
-`~/.claude/hooks/` copy is written by `sync-claude-config.py` and must never
-be hand-edited (it will be overwritten). Edit here, sync outward.
-
-T-2396: the pre-existing `_WORKTREE_LEASE_HOOK_SCRIPT` git hook
-(`src/frob/scaffold/project.py`) guards COMMIT time -- by then the shared
-root is already dirty and every concurrent `frob ticket land` is already
-refusing (DirtyMain). Measured twice in one drive: two agents in one wave
-edited the shared root instead of their leased worktree, and a third
-agent's land was blocked as a result. This hook closes the gap by firing
-on the WRITE itself (`Write`/`Edit`/`NotebookEdit` tool calls), the
-earliest point Claude Code's own hook surface can see.
-
-DISCRIMINATOR (must fire for an agent, never for the coordinator or a
-human -- both directions matter, T-2396 acceptance 1/2). `FROB_AGENT`
-alone is not enough: the T-2071 comment in `_WORKTREE_LEASE_HOOK_SCRIPT`
-measured it UNSET in real Agent-tool shells. This hook pairs it with a
-FACT-based signal instead of trusting either alone: `FROB_WORKTREE`
-(the sibling var the same `frob agent env <worktree-path>` call always
-exports alongside `FROB_AGENT`, playbook section 1b) must additionally
-resolve to a REAL, currently-registered linked worktree directory per
-`git worktree list --porcelain` -- not just a set string, which could be
-stale or spoofed. `_worktree_fact` performs that structural check.
-`_is_agent_context` fires when EITHER `FROB_AGENT` is truthy OR the
-worktree fact independently holds, so a shell missing one of the two
-(the exact measured gap) is still caught by the other. A coordinator or
-human shell carries neither var -- `frob agent env` is only ever invoked
-for a dispatched worktree agent's own shell -- so neither disjunct fires
-and the guard stays silent, closing acceptance criterion 2.
-
-SCOPE OF THE REFUSAL. Only a write whose TARGET resolves (via `git
-worktree list --porcelain`'s own `worktree ` line) to the PRIMARY
-checkout is refused -- a write inside the agent's own leased worktree
-(the normal, correct case) is never touched. `tickets.md` and
-`tickets/**` are exempted (`_is_ledger_path`): the `frob ticket` CLI's
-own ledger auto-commit machinery legitimately writes there from a
-worktree context during merge/land bookkeeping, matching the same
-carve-out `_WORKTREE_LEASE_HOOK_SCRIPT`'s T-2071 check already uses.
-`FROB_LAND_INTERNAL=1` (land's own internal escape hatch, never set by a
-worktree agent's own shell) exempts everything, matching every other
-land-owned-file guard in this repo (playbook section 4b).
+`~/.claude/hooks/` copy is written by `sync-claude-config.py` and must
+never be hand-edited (it will be overwritten). Edit here, sync outward.
 
 FAILS OPEN, NEVER BLOCKS THE HARNESS ITSELF. Any stdin parse error,
 missing `git`, or a `cwd` outside a git repo all degrade to silent
 allow (exit 0, no output) -- a hook that can itself crash a turn is
 worse than one that misses a refusal, the same posture every other hook
-in this directory takes.
+in this directory takes. This is unchanged by T-2850: the inversion only
+changes what happens once the hook CAN measure the write's target and
+context; it never changes what happens when it cannot measure at all.
 """
 
 from __future__ import annotations
@@ -88,13 +107,31 @@ _GUARDED_TOOLS = frozenset({"Write", "Edit", "NotebookEdit", "Bash"})
 _LEDGER_ALLOW = re.compile(r"^(tickets\.md|tickets/.*)$")
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-2850
+#: The recovery recipe measured to work twice on the incidents that
+#: motivated T-2850 -- `git diff` out of the root, apply into the
+#: worktree, THEN restore the root from the index. Deliberately the BARE
+#: `git checkout -- <path>` form, never `git checkout <branch> -- <path>`:
+#: the latter copies the whole file and can silently revert fixes landed
+#: since divergence (playbook, "checkout branch -- file silently
+#: reverts").
 REASON = (
-    "frob: refusing WRITE to the shared root (T-2396) -- this shell is a "
-    "dispatched agent context (FROB_AGENT/FROB_WORKTREE). "
-    "Use `frob ticket work <id>` and edit inside your leased worktree "
-    "instead; the shared root is coordinator/human territory only. "
+    "frob: refusing WRITE to the shared root (T-2850) -- writes to the "
+    "primary checkout are default-DENIED now, not just for detected "
+    "agent shells, because no environment signal reliably tells a "
+    "pre-worktree agent apart from a human. Run `frob ticket work <id>` "
+    "and edit inside your leased worktree instead. "
     "(tickets.md/tickets/** are exempt; FROB_LAND_INTERNAL=1 covers "
-    "land's own internal machinery.)"
+    "land's own internal machinery; a genuine coordinator/human shell "
+    "that needs to write here directly sets FROB_COORDINATOR=1 once.) "
+    "If this refusal came AFTER a write already landed content in the "
+    "root, recover it into your worktree rather than losing it: "
+    "  git diff HEAD -- <paths> > /tmp/rescue.patch   # verify non-empty\n"
+    "  cd <worktree> && git apply --3way /tmp/rescue.patch\n"
+    "  # verify content present, THEN:\n"
+    "  cd <root> && git checkout -- <paths>   # bare form -- restores from "
+    "the index, never `git checkout <branch> -- <path>` (that form can "
+    "silently revert fixes landed since divergence)."
 )
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
@@ -204,7 +241,11 @@ def _git(args: list[str], cwd: str) -> str | None:
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 def _worktree_paths(cwd: str) -> list[str]:
     """Every `worktree ` line's path from `git worktree list --porcelain`,
-    run from `cwd` -- the first entry is always the primary checkout."""
+    run from `cwd` -- the first entry is always the primary checkout.
+    Returns `[]` only when `git` itself could not be run (missing binary,
+    non-repo cwd, timeout) -- a real repo always reports at least its own
+    primary checkout, so an empty result is unambiguously "could not
+    measure", never "no worktrees exist", and callers fail open on it."""
     out = _git(["worktree", "list", "--porcelain"], cwd)
     if not out:
         return []
@@ -216,36 +257,19 @@ def _worktree_paths(cwd: str) -> list[str]:
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
-def _worktree_fact(cwd: str) -> bool:
-    """True when `FROB_WORKTREE` names a directory that ACTUALLY appears as
-    a registered linked worktree in `git worktree list` -- the fact-based
-    half of the discriminator (T-2071's lesson: an env var alone can be
-    unset in a real agent shell, or in principle stale/spoofed)."""
-    # frob:waive SEC110 reason="FROB_WORKTREE is a dispatch-context path marker \
-    # (T-0574), carries no sensitive value -- same posture as FROB_AGENT's own \
-    # precedent at src/frob/tickets/_leases.py"
-    worktree_env = os.environ.get("FROB_WORKTREE")
-    if not worktree_env:
-        return False
-    target = os.path.realpath(worktree_env)
-    paths = _worktree_paths(cwd)
-    if len(paths) < 2:
-        # Only the primary checkout is registered -- no fleet, no lease.
-        return False
-    return any(os.path.realpath(p) == target for p in paths[1:])
-
-
-# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
-def _is_agent_context(cwd: str) -> bool:
-    """The paired discriminator: `FROB_AGENT` truthy OR the independent
-    `_worktree_fact` check -- either disjunct alone covers the case where
-    the other is unset, per this module's docstring."""
-    # frob:waive SEC110 reason="FROB_AGENT is a dispatch-context marker (T-0574), \
-    # carries no sensitive value -- same precedent as src/frob/tickets/_leases.py's \
-    # own waiver on this exact read"
-    if os.environ.get("FROB_AGENT"):
-        return True
-    return _worktree_fact(cwd)
+# frob:ticket T-2850
+def _coordinator_marker_set() -> bool:
+    """True when `FROB_COORDINATOR=1` (or any truthy value) is set --
+    T-2850's explicit, opt-in positive marker for a human/coordinator
+    shell that legitimately writes to the primary checkout directly.
+    Nothing in the dispatch or `frob ticket work` pipeline ever sets this,
+    unlike `FROB_AGENT`/`FROB_WORKTREE`, so its presence cannot be an
+    accidental false negative the way the pre-T-2850 discriminator's
+    absence could."""
+    # frob:waive SEC110 reason="FROB_COORDINATOR is a dispatch-context marker \
+    # (T-2850), carries no sensitive value -- same posture as FROB_AGENT/ \
+    # FROB_WORKTREE/FROB_LAND_INTERNAL's own precedent waivers in this file"
+    return bool(os.environ.get("FROB_COORDINATOR"))
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
@@ -280,8 +304,7 @@ def _strip_quotes(raw: str) -> str:
 def _leading_cd_target(command: str) -> str | None:
     """The directory a command's leading `cd <dir> &&`/`cd <dir>;` segment
     names, or `None` if the command has no such prefix -- the "cd into a
-    worktree in the same call" shape acceptance criterion 2 requires this
-    hook to still allow."""
+    worktree in the same call" shape this hook must still allow."""
     match = _LEADING_CD_RE.match(command)
     if not match:
         return None
@@ -391,14 +414,15 @@ def _bash_targets_root(
     `_bash_redirect_targets_root`) -- every other command, including
     anything this hook cannot confidently parse, returns `False` (allow).
     This is the "when in doubt, allow" rule from this module's docstring,
-    applied as code."""
+    applied as code -- unaffected by T-2850's default inversion, which only
+    changes what happens once a target IS confidently identified."""
     effective_cwd = _effective_cwd(command, payload_cwd)
     if effective_cwd is None:
         return False
     effective_real = os.path.realpath(effective_cwd)
     if _under_any(effective_real, worktree_reals):
-        # The command already cd'd into a leased worktree -- allow, this is
-        # acceptance criterion 2's must-still-allow shape.
+        # The command already cd'd into a leased (or any real linked)
+        # worktree -- allow, this is the must-still-allow shape.
         return False
     return _bash_ticket_verb_targets_root(
         command, effective_cwd, primary_real
@@ -408,14 +432,18 @@ def _bash_targets_root(
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
-# frob:ticket T-2481
-def _agent_worktree_paths(cwd: str) -> list[str] | None:
-    """`_worktree_paths(cwd)` gated behind `_is_agent_context`, or `None`
-    when either check comes back negative -- the one "is this even worth
-    evaluating" guard both `_handle_bash` and `_handle_file_write` share,
-    factored out so neither mixes it with its own I/O/decision body
-    (`ARCH103`)."""
-    if not _is_agent_context(cwd):
+# frob:ticket T-2850
+def _root_write_worktree_paths(cwd: str) -> list[str] | None:
+    """`_worktree_paths(cwd)`, or `None` when the coordinator marker is set
+    or the lookup itself could not be measured (fail open) -- the one "is
+    this even worth evaluating" guard both `_handle_bash` and
+    `_handle_file_write` share, factored out so neither mixes it with its
+    own I/O/decision body (`ARCH103`). Replaces the pre-T-2850
+    `_agent_worktree_paths` (which gated on `_is_agent_context` instead of
+    the coordinator marker) -- the default this hook applies is now DENY,
+    so what used to gate "should I even look" now only gates the two
+    explicit escapes (marker set, or nothing to measure)."""
+    if _coordinator_marker_set():
         return None
     paths = _worktree_paths(cwd)
     return paths or None
@@ -428,8 +456,8 @@ def _handle_bash(command: str, cwd: str) -> None:
     length/complexity thresholds `ARCH001`/`ARCH103` enforce: refuses via
     `_deny()` when `_bash_targets_root` finds one of the two narrow shapes
     this hook detects, does nothing otherwise (including a negative
-    `_agent_worktree_paths`)."""
-    paths = _agent_worktree_paths(cwd)
+    `_root_write_worktree_paths`)."""
+    paths = _root_write_worktree_paths(cwd)
     if paths is None:
         return
     primary_real = os.path.realpath(paths[0])
@@ -484,10 +512,10 @@ def _file_write_targets_root(file_path: str, cwd: str, paths: list[str]) -> bool
 def _handle_file_write(file_path: str, cwd: str) -> None:
     """`main`'s `Write`/`Edit`/`NotebookEdit` branch, split out to keep
     `main` under the length/complexity thresholds `ARCH001`/`ARCH103`
-    enforce -- the original T-2396 logic, unchanged: refuses via `_deny()`
-    only when `_file_write_targets_root` holds (and `_agent_worktree_paths`
-    found something to evaluate at all)."""
-    paths = _agent_worktree_paths(cwd)
+    enforce: refuses via `_deny()` only when `_file_write_targets_root`
+    holds (and `_root_write_worktree_paths` found something to evaluate at
+    all)."""
+    paths = _root_write_worktree_paths(cwd)
     if paths is not None and _file_write_targets_root(file_path, cwd, paths):
         _deny()
 
@@ -497,8 +525,9 @@ def _handle_file_write(file_path: str, cwd: str) -> None:
 # frob:tests tests/test_hook_root_write_guard.py kind="integration"
 def main() -> None:
     """Entry point: JSON payload on stdin, a `permissionDecision: deny`
-    object on stdout when an agent-context write targets the shared root,
-    nothing otherwise. Any parse/lookup failure degrades to silent allow."""
+    object on stdout when a write targets the shared root and no exemption
+    applies, nothing otherwise. Any parse/lookup failure degrades to
+    silent allow."""
     try:
         payload = json.load(sys.stdin)
     except (OSError, ValueError):
@@ -509,8 +538,7 @@ def main() -> None:
     if tool_name not in _GUARDED_TOOLS:
         return
     # frob:waive SEC110 reason="FROB_LAND_INTERNAL is a dispatch-context marker, \
-    # carries no sensitive value -- same posture as the FROB_AGENT/FROB_WORKTREE \
-    # waivers above"
+    # carries no sensitive value -- same posture as the FROB_COORDINATOR waiver above"
     if os.environ.get("FROB_LAND_INTERNAL"):
         return
     tool_input = payload.get("tool_input") or {}

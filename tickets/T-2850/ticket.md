@@ -3,7 +3,7 @@ id: T-2850
 title: 'root-write-guard cannot see a pre-worktree agent: both its signals are set
   by frob ticket work, so an agent editing the root before creating its worktree is
   indistinguishable from a human'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -38,7 +38,28 @@ scope_changes:
     scope rather than leaving broken evidence or undocumented behavior
   actor: logan
   at: '2026-08-22'
-designated_repro_test: null
+evidence:
+- tests/test_hook_root_write_guard.py::test_no_marker_write_to_root_is_refused
+- tests/test_hook_root_write_guard.py::test_stale_agent_env_vars_do_not_exempt_a_root_write
+- tests/test_hook_root_write_guard.py::test_coordinator_marker_allows_a_root_write
+- tests/test_hook_root_write_guard.py::test_write_inside_a_real_worktree_is_allowed_with_no_markers
+- tests/test_hook_root_write_guard.py::test_write_inside_a_nested_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_fake_worktree_looking_path_does_not_exempt_a_root_write
+- tests/test_hook_root_write_guard.py::test_ledger_paths_are_exempt_with_no_markers
+- tests/test_hook_root_write_guard.py::test_frob_land_internal_exempts_a_root_write_with_no_other_markers
+- tests/test_hook_root_write_guard.py::test_non_guarded_tool_is_ignored
+- tests/test_hook_root_write_guard.py::test_notebook_edit_to_root_is_refused_with_no_markers
+- tests/test_hook_root_write_guard.py::test_refusal_names_the_recovery_recipe
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_coordinator_marker_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_cd_into_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_explicit_path_flag_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_redirect_into_primary_with_no_marker_is_refused
+- tests/test_hook_root_write_guard.py::test_bash_redirect_inside_worktree_is_allowed_with_no_markers
+- tests/test_hook_root_write_guard.py::test_bash_ambiguous_redirect_target_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_read_only_ticket_verb_is_never_refused
+- tests/test_hook_root_write_guard.py::test_bash_unrelated_command_is_never_refused
+designated_repro_test: tests/test_hook_root_write_guard.py::test_no_marker_write_to_root_is_refused
 threat: null
 component: null
 anchor: false

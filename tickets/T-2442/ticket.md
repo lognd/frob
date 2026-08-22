@@ -20,8 +20,16 @@ scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 evidence:
-- tests/test_hook_root_write_guard.py::test_agent_write_inside_a_nested_worktree_is_allowed
+- tests/test_hook_root_write_guard.py::test_write_inside_a_nested_worktree_is_allowed
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/test_hook_root_write_guard.py::test_agent_write_inside_a_nested_worktree_is_allowed
+  new_node: tests/test_hook_root_write_guard.py::test_write_inside_a_nested_worktree_is_allowed
+  reason: T-2850 rewrote the guard's test suite for its default-inversion; old node
+    id no longer resolves, re-pointed to the closest surviving test covering the same
+    behavior class under the new contract
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: null
 anchor: false

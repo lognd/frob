@@ -135,14 +135,13 @@ Tested end-to-end via `tests/test_hook_pending_background_guard.py`.
 ## `root-write-guard.py`
 
 A PreToolUse hook (`Write`/`Edit`/`NotebookEdit`/`Bash`) that refuses a
-dispatched agent's write into the SHARED ROOT (the primary git checkout)
-at edit time -- before the tree is dirtied and every concurrent `frob
-ticket land` starts refusing with DirtyMain. The pre-existing `_WORKTREE_
-LEASE_HOOK_SCRIPT` git hook (`src/frob/scaffold/project.py`) only guards
-COMMIT time, which is too late for the failure this closes (T-2396:
-measured twice in one drive -- two agents edited the shared root instead
-of their leased worktree, and a third agent's land was DirtyMain-blocked
-as a result).
+write into the SHARED ROOT (the primary git checkout) at edit time --
+before the tree is dirtied and every concurrent `frob ticket land` starts
+refusing with DirtyMain. The pre-existing `_WORKTREE_LEASE_HOOK_SCRIPT`
+git hook (`src/frob/scaffold/project.py`) only guards COMMIT time, which
+is too late for the failure this closes (T-2396: measured twice in one
+drive -- two agents edited the shared root instead of their leased
+worktree, and a third agent's land was DirtyMain-blocked as a result).
 
 T-2481 extended coverage to `Bash`: three separate incidents in one
 session dirtied the root through a heredoc/redirect or a `frob ticket`
@@ -161,43 +160,65 @@ computes the directory a command's write actually lands in from its
 leading `cd` segment, falling back to the PreToolUse payload's own `cwd`
 when there is none. Any candidate path containing `$`/backtick/glob
 characters (`_AMBIGUOUS_PATH_CHARS`) is treated as unresolvable and
-allowed rather than guessed -- acceptance criterion 4's "when in doubt,
-allow" rule, enforced as code, not just a docstring promise. This is a
-narrower, ADDITIVE detector layered on top of the existing `Write`/
-`Edit`/`NotebookEdit` path -- it reuses the same `_is_agent_context`
-discriminator and the same primary-vs-worktree resolution, just against
-command text instead of a declared `file_path`.
+allowed rather than guessed -- "when in doubt about the TARGET, allow"
+enforced as code, not just a docstring promise. This narrowness governs
+only whether a command's write target is confidently IDENTIFIED at all;
+it is unaffected by T-2850's default inversion below, which only changes
+what happens once a target IS identified as hitting the root.
 
-`_is_agent_context` is the discriminator, and it must fire for an agent
-and never for the coordinator or a human (both directions matter): it
-fires when `FROB_AGENT` is truthy OR `_worktree_fact` independently holds.
-`FROB_AGENT` alone is insufficient -- `_WORKTREE_LEASE_HOOK_SCRIPT`'s own
-T-2071 comment measured it UNSET in real Agent-tool shells -- so
-`_worktree_fact` pairs it with a FACT check: `FROB_WORKTREE` (the sibling
-var the same `frob agent env <worktree-path>` call always exports
-alongside `FROB_AGENT`) must resolve to a directory that ACTUALLY appears
-as a registered linked worktree per `git worktree list --porcelain`, not
-just an unverified string. A coordinator or human shell carries neither
-var (`frob agent env` is only ever invoked for a dispatched worktree
-agent's own shell), so neither disjunct fires and the guard stays silent.
+**T-2850 inverted the discriminator's default.** The original design
+(`_is_agent_context`: `FROB_AGENT` truthy OR `_worktree_fact` -- a real,
+currently-registered `FROB_WORKTREE`) ALLOWED a root write unless it could
+positively detect an agent context, on the theory that a coordinator/
+human shell never carries either var. Measured twice in one session: an
+agent dispatched but not yet run through `frob ticket work` (which is the
+ONLY thing that ever sets either var, via `frob agent env`) carries
+NEITHER signal -- making it environmentally IDENTICAL to the coordinator,
+not merely hard to detect. No env-var pairing can close that gap, because
+the two cases are not actually different environments. 307 and 278
+inserted lines respectively landed straight into the primary checkout
+before anyone noticed, in the two real incidents that motivated this.
 
-The refusal itself is scoped narrowly: `_target_path` resolves the file a
-call targets (`file_path` for `Write`/`Edit`, `notebook_path` for
-`NotebookEdit`), and `main` only denies when that path resolves (via
-`git worktree list --porcelain`'s first `worktree ` line) to the PRIMARY
-checkout -- a write inside the agent's own leased worktree, the normal
-case, is never touched. `_is_ledger_path` exempts `tickets.md`/
-`tickets/**` (the `frob ticket` CLI's own ledger writes), matching the
-same carve-out `_WORKTREE_LEASE_HOOK_SCRIPT` already uses; `FROB_LAND_
-INTERNAL=1` exempts everything, matching every other land-owned-file
-guard (playbook section 4b). `REASON` is the exact refusal text, naming
-`frob ticket work <id>` as the correct next step. `main` reads the JSON
-payload from stdin and fails open (silent allow) on any parse or lookup
-failure. Tested end-to-end via `tests/test_hook_root_write_guard.py`,
-including a positive control proving the discriminator actually
-discriminates: it fires under a simulated agent env and does not fire
-under a plain coordinator/human env, both against the identical target
-path.
+The hook now DENIES every write into the primary checkout by default,
+with a short, explicit allowlist instead of a detector:
+
+1. `FROB_LAND_INTERNAL=1` -- land's own internal machinery (unchanged).
+2. The target is `tickets.md`/`tickets/**` (`_is_ledger_path`, unchanged)
+   -- the `frob ticket` CLI's own ledger auto-commit machinery.
+3. The target resolves inside a REAL, currently-registered linked
+   worktree per `git worktree list --porcelain` -- being inside a
+   worktree is sufficient on its own now, with no `FROB_AGENT`/
+   `FROB_WORKTREE` env check at all (a write INSIDE a worktree was never
+   the danger; a write into the ROOT was, regardless of who made it).
+4. `FROB_COORDINATOR=1` -- the new, explicit, opt-in positive marker a
+   human/coordinator shell sets once (e.g. in its own shell rc) to keep
+   writing to the primary checkout directly. Nothing in the dispatch or
+   `frob ticket work` pipeline ever sets this, unlike `FROB_AGENT`/
+   `FROB_WORKTREE`, so its absence cannot regress into the same false
+   negative the old pairing had.
+
+`FROB_AGENT`/`FROB_WORKTREE` are no longer read by this hook at all --
+`_is_agent_context`/`_worktree_fact` were removed, not repurposed. The
+asymmetry driving the inversion: a false BLOCK costs one confused turn and
+a message naming the exact fix; a false ALLOW costs the entire fleet its
+ability to land until a human notices. `REASON` (the refusal text) names
+`frob ticket work <id>` as the normal fix, `FROB_COORDINATOR=1` as the
+escape hatch for a genuine false positive, and the exact `git diff` /
+`git apply --3way` / bare `git checkout -- <paths>` recovery recipe
+measured to work on both incidents that motivated this ticket -- never
+the branch-qualified `git checkout <branch> -- <path>` form, which copies
+the whole file and can silently revert fixes landed since divergence.
+
+`main` reads the JSON payload from stdin and fails open (silent allow) on
+any parse or lookup failure -- a `cwd` outside a git repo, a missing
+`git` binary, or malformed stdin all still degrade to allow, unaffected
+by the default inversion (which governs the decision once the write CAN
+be measured, never what happens when it cannot be). Tested end-to-end via
+`tests/test_hook_root_write_guard.py`, including the two must-pass
+positive controls this ticket cares about most: a plain shell with NO
+markers set at all -- the exact pre-`ticket work` agent shape -- is
+refused, and the identical write from a shell carrying
+`FROB_COORDINATOR=1` is allowed.
 
 ## `_agent_context.py`
 

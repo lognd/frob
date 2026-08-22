@@ -50,10 +50,10 @@ scope_changes:
   actor: logan
   at: '2026-08-18'
 evidence:
-- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_and_no_path_is_refused
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
 - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_cd_into_worktree_is_allowed
 - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_explicit_path_flag_is_allowed
-- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_coordinator_marker_is_allowed
 - tests/test_hook_root_write_guard.py::test_bash_ambiguous_redirect_target_is_allowed
 designated_repro_test: null
 acceptance:
@@ -61,7 +61,7 @@ acceptance:
     with neither a cd into a worktree in the same call nor an explicit --path, when
     it runs, then it is refused before the root is dirtied.
   evidence:
-  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_and_no_path_is_refused
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
 - text: Given the same command with cd worktree in the same call or an explicit --path,
     when it runs, then it succeeds unchanged.
   evidence:
@@ -70,12 +70,27 @@ acceptance:
 - text: Given the coordinator or a human running that command in the root, when it
     runs, then the guard does not fire, proving the discriminator works in both directions.
   evidence:
-  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_coordinator_marker_is_allowed
 - text: Given a Bash command whose write target cannot be determined, when it runs,
     then it is allowed rather than refused, so the guard cannot block legitimate work
     on a guess.
   evidence:
   - tests/test_hook_root_write_guard.py::test_bash_ambiguous_redirect_target_is_allowed
+evidence_changes:
+- old_node: tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_and_no_path_is_refused
+  new_node: tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
+  reason: T-2850 rewrote the guard's test suite for its default-inversion; old node
+    id no longer resolves, re-pointed to the closest surviving test covering the same
+    behavior class under the new contract
+  actor: logan
+  at: '2026-08-22'
+- old_node: tests/test_hook_root_write_guard.py::test_bash_ticket_verb_from_human_or_coordinator_shell_is_allowed
+  new_node: tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_coordinator_marker_is_allowed
+  reason: T-2850 inverted the default this test's name described (human/coordinator
+    with no markers is now DENIED, not allowed); re-pointed to the surviving positive
+    control proving the explicit FROB_COORDINATOR marker still allows the write
+  actor: logan
+  at: '2026-08-22'
 threat: null
 component: hooks
 anchor: false
