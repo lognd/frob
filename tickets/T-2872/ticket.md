@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: de84dffff3d9e9db4c59f6bd85a7edf6504bf39b
 ---
 Re-measured 2026-08-22 via unbudgeted 'frob check --json' (gate-summary
 present): main carries 12 COV003 findings, all citing the identical
