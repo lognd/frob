@@ -871,15 +871,40 @@ entirely outside this module: `frob.gates._refs._md_waived_rules`
 (REF001/REF002), `frob.gates._docptr._WAIVE_DOC006_RE` (DOC006),
 `frob.gates._docblocks_refs._WAIVE_DOC004_RE` (DOC004),
 `frob.gates._inv._DOC_WAIVE_MARKER_RE` (INV003/INV004),
-`frob.gates._mutation_evidence._BUG002_WAIVER_RE` (BUG002, over a
-ticket's own body text). `_unhandled_markdown_directive` treats exactly
+`frob.gates._bug_repro._BUG002_WAIVER_RE` (BUG002, over a
+ticket's own body text -- NOT this module, so a malformed `reason=`
+there is not caught by anything described on this page; see T-2857's
+follow-up ticket). `_unhandled_markdown_directive` treats exactly
 that set (`_MD_WAIVE_HONORED_RULES`) as handled; a `frob:waive` naming
-any OTHER rule id, or any verb outside `_MD_HANDLED_VERBS` (the three
-`markdown_anchors` itself produces an edge for, plus `frob.gates.
+any OTHER rule id, or any verb outside `_MD_HANDLED_VERBS` (`frob.gates.
 _docblocks`'s `frob:generated-start`/`frob:generated-end` table-fence
-markers, T-1011) becomes a `MalformedDirective` -- markdown's half of
-DSL001's own catch-all contract ("no frob: comment that fails to parse
-into a real edge goes unreported").
+markers, T-1011, plus a handful of other-subsystem markers) becomes a
+`MalformedDirective` -- markdown's half of DSL001's own catch-all
+contract ("no frob: comment that fails to parse into a real edge goes
+unreported").
+
+`describes`/`enumerates`/`until`/`ticket`/`doc` are NOT in
+`_MD_HANDLED_VERBS` (T-2857): `_unhandled_markdown_directive` only ever
+runs on a line after `markdown_anchors`'s own strict per-verb regex has
+already tried and failed to turn it into a real edge, so a shape-matched
+`frob:describes`/etc reaching this check is proof the line is broken
+(a bad symref -- e.g. an embedded space left by a line-wrap gone wrong,
+or a `frob:enumerates` missing its mandatory `members="..."` attribute),
+never a false positive on something that still parses.
+
+`_MD_WAIVE_HONORED_RULES` membership alone used to be sufficient to
+accept a `frob:waive` line as clean (T-2857 mode 1): the check for the
+opening `reason="` never verified the value actually CLOSED before
+`-->`, so a bare unescaped `"` inside the reason text silently produced
+zero diagnostic while also suppressing nothing (each per-rule gate's own
+regex above has the exact same closure gap independently). The value is
+now matched with a backslash-escape-aware grammar (`\"` does not
+terminate it, matching this repo's own existing informal convention for
+a literal quote inside a reason) so a genuinely early close -- leftover
+text before `-->` -- is reported; a value that has no closing quote on
+this physical line at all is left alone, since a legitimate `frob:waive`
+reason can span multiple physical lines and this scanner is line-by-line
+by design.
 
 Directives live in ordinary comments in any supported language (`#`, `//`,
 `/* */`). Grammar: `frob:<verb> <target> [key="value" ...]`. One directive

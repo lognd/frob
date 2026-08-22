@@ -446,6 +446,29 @@ _ANY_MD_DIRECTIVE_RE = re.compile(r"<!--\s*frob:(?P<verb>\S+)")
 # OWN body text (a different scan surface, tickets/**, not general
 # markdown docs) -- included here too since a ticket body IS markdown.
 _MD_WAIVE_RE = re.compile(r'frob:waive\s+(?P<rule>\S+)\s+reason="')
+# frob:ticket T-2857
+# T-2857 mode 1: `_MD_WAIVE_RE` above only checks for the OPENING
+# `reason="` -- it never verified the value actually closes, so a bare
+# unescaped `"` inside the reason text (a genuine incident: two agents
+# wrote `reason="the "old" foo"` in a markdown doc) silently matched as if
+# well-formed, extracting the wrong (truncated) `rule`/never checking the
+# rest of the line at all -- `_unhandled_markdown_directive` then saw a
+# recognized rule and returned `None`, no diagnostic, ever. This
+# escape-aware value grammar (`\"` does NOT terminate the value, mirroring
+# the informal backslash-escape convention this repo's own docs already
+# use, e.g. `docs/modules/tickets-verify-sweep.md`'s `reason="... ==
+# \"select-batch-tests\" ..."`) finds the REAL closing quote so
+# `_md_waive_reason_tail_error` below can tell a genuinely early close
+# (leftover text before `-->`, the incident's shape) from a value that
+# legitimately continues onto a later physical line (this per-line scanner
+# cannot see across lines at all, so that case is left exactly as
+# tolerant as before rather than guessed at -- see that function's
+# docstring for the measured false-positive check against all 219
+# tracked `<!-- frob:waive` sites in this repo, T-2857's positive
+# control).
+_MD_WAIVE_VALUE_RE = re.compile(
+    r'frob:waive\s+(?P<rule>\S+)\s+reason="(?P<value>(?:[^"\\]|\\.)*)"'
+)
 # T-1968: every rule id SOME gate's own dedicated mechanism actually
 # reads directly out of markdown text today. Any OTHER rule id in the
 # same `frob:waive <RULE> reason="..."` shape is accepted syntactically
@@ -457,11 +480,31 @@ _MD_WAIVE_RE = re.compile(r'frob:waive\s+(?P<rule>\S+)\s+reason="')
 _MD_WAIVE_HONORED_RULES = frozenset(
     {"REF001", "REF002", "DOC004", "DOC006", "INV003", "INV004", "BUG002"}
 )
-# Verbs `markdown_anchors`'s OWN loop already turns into a real edge
-# (describes/enumerates/until/ticket/doc, T-1989 adding the latter two),
-# plus verbs a DIFFERENT module owns and reads directly from markdown
-# text -- neither is "unhandled", so neither belongs in this ticket's
-# diagnostic:
+# frob:ticket T-2857
+# T-2857 mode 4: these five verbs used to sit in `_MD_HANDLED_VERBS` below,
+# on the assumption that reaching this function with one of them meant
+# "already turned into a real edge, nothing to report". That assumption is
+# false: `markdown_anchors`'s loop only calls `_unhandled_markdown_
+# directive` on a line AFTER `_directive_edge` has already tried and
+# FAILED to match it (see that loop's `if directive_edge is not None:
+# continue` immediately above the call) -- so a line whose verb is one of
+# these five reaching this function is proof the line shape-matched loosely
+# (`_ANY_MD_DIRECTIVE_RE`) but failed the strict per-verb regex
+# (`_DESCRIBES_RE`/`_ENUMERATES_RE`/`_UNTIL_RE`/`_TICKET_MD_RE`/
+# `_DOC_MD_RE`) -- e.g. a `frob:describes` symref broken by an embedded
+# space from a bad line-wrap (T-2857's own measured repro: `frob:describes
+# path::Class.metho d_further_here` -- the wrapped continuation's trailing
+# space landed mid-identifier). Treating them as unconditionally "handled"
+# made that failure completely silent: verb membership alone said "fine",
+# with no check that THIS line actually produced the edge. A well-formed
+# directive of any of these five verbs can never reach this function in
+# the first place (it `continue`s out of the loop above), so moving them
+# out of the blanket-accept set below cannot produce a new false positive
+# on anything that already parses.
+_MD_DIRECT_EDGE_VERBS = frozenset({"describes", "enumerates", "until", "ticket", "doc"})
+# Verbs a DIFFERENT module owns and reads directly from markdown text --
+# never routed through `_directive_edge` at all, so reaching this function
+# with one of these is not evidence of anything broken:
 # - `generated-start`/`generated-end`: `frob.gates._docblocks`'s table
 #   fence markers (T-1011).
 # - `invariant`: `frob.gates._inv._DOC_INVARIANT_MARKER_RE` (INV002/
@@ -478,10 +521,41 @@ _MD_WAIVE_HONORED_RULES = frozenset(
 #   across every tracked file type, markdown included, not just source.
 # frob:ticket T-1989
 _MD_HANDLED_VERBS = frozenset(
-    {"describes", "enumerates", "until", "ticket", "doc"}
-    | {"generated-start", "generated-end", "invariant", "claims"}
-    | _RESERVED_MARKER_VERBS
+    {"generated-start", "generated-end", "invariant", "claims"} | _RESERVED_MARKER_VERBS
 )
+
+
+# frob:ticket T-2857
+def _md_waive_reason_tail_error(line: str) -> str | None:
+    """T-2857 mode 1: `None` if a `frob:waive ... reason="..."` on `line`
+    either closes cleanly (nothing but optional whitespace before `-->`) or
+    cannot be resolved from this line alone (no real closing quote found at
+    all -- the value legitimately continues onto a later physical line,
+    which this per-line scanner has no way to see and must not guess about);
+    otherwise a short human-readable description of the leftover text found
+    between the value's first REAL (non-backslash-escaped) closing quote and
+    `-->`, which is exactly the shape a bare, unescaped `"` inside the
+    reason text produces (T-2857's measured incident). `\"` inside the value
+    is treated as an escaped quote, not a terminator -- matching this
+    repo's own existing informal convention for a literal quote inside a
+    waiver reason (`docs/modules/tickets-verify-sweep.md`'s `reason="...
+    \"select-batch-tests\" ..."`, verified NOT to regress under this check:
+    the escaped quotes are skipped, so the real closing quote is found
+    correctly and nothing is flagged)."""
+    match = _MD_WAIVE_VALUE_RE.search(line)
+    if match is None:
+        return None
+    tail = line[match.end() :].lstrip()
+    if not tail or tail.startswith("-->"):
+        return None
+    if "-->" not in tail:
+        # No closing anchor on this line either -- most likely this is
+        # itself a later line of a still-open multi-line value (the first
+        # "real" quote we found was itself inside free text); leave it
+        # alone rather than guess.
+        return None
+    leftover = tail.split("-->", 1)[0].strip()
+    return f"leftover text {leftover!r} before \"-->\" (unescaped `\"` in reason=?)"
 
 
 # frob:ticket T-1968
@@ -499,7 +573,17 @@ def _unhandled_markdown_directive(
     already-claimed-elsewhere (`frob:waive`/`frob:tests`/`frob:debt`) --
     this finding IS meant to fall through DSL001's own generic catch-all,
     not be mistaken for a WAIVE001 missing-`reason=` case (every
-    incident this ticket measured already carries a real `reason=`)."""
+    incident this ticket measured already carries a real `reason=`).
+
+    T-2857 adds two more shapes, both LOUDER-failure fixes with no change
+    to what already parses cleanly (see each helper's own docstring for
+    the measured no-regression check): a `frob:waive` whose `reason="..."`
+    closes early on an unescaped internal `"` (`_md_waive_reason_tail_
+    error`), and a `describes`/`enumerates`/`until`/`ticket`/`doc` verb
+    that shape-matched but failed its strict per-verb regex
+    (`_MD_DIRECT_EDGE_VERBS` -- reaching this function with one of these
+    is only possible when `_directive_edge` already tried and failed on
+    this exact line, per `markdown_anchors`'s call order)."""
     match = _ANY_MD_DIRECTIVE_RE.search(line)
     if match is None:
         return None
@@ -523,6 +607,17 @@ def _unhandled_markdown_directive(
                 ),
             )
         rule = waive.group("rule")
+        # frob:ticket T-2857
+        tail_error = _md_waive_reason_tail_error(line)
+        if tail_error is not None:
+            return MalformedDirective(
+                file=doc_path,
+                line=lineno,
+                reason=(
+                    f"unhandled markdown directive (verb={verb!r}, rule={rule!r}): "
+                    f"reason=\"...\" does not close cleanly -- {tail_error}"
+                ),
+            )
         if rule in _MD_WAIVE_HONORED_RULES:
             return None
         return MalformedDirective(
@@ -532,6 +627,18 @@ def _unhandled_markdown_directive(
                 f"unhandled markdown directive (verb={verb!r}, rule={rule!r}): "
                 f"only {sorted(_MD_WAIVE_HONORED_RULES)} are read from "
                 f"markdown waivers -- this suppresses nothing"
+            ),
+        )
+    if verb in _MD_DIRECT_EDGE_VERBS:
+        # frob:ticket T-2857
+        return MalformedDirective(
+            file=doc_path,
+            line=lineno,
+            reason=(
+                f"unhandled markdown directive (verb={verb!r}): shape-matches "
+                f"frob:{verb} but failed to parse into a real edge -- check the "
+                "target/attribute syntax (a broken symref, e.g. an embedded "
+                "space left by a bad line-wrap, is the usual cause)"
             ),
         )
     if verb in _MD_HANDLED_VERBS:

@@ -187,6 +187,125 @@ class TestMarkdownDirectiveMentionVsUse:
         assert edges[0].kind == EdgeKind.DOC
 
 
+# frob:ticket T-2857
+class TestWaiveReasonUnescapedQuoteIsLoud:
+    """T-2857 mode 1: a `frob:waive` in markdown whose `reason="..."` value
+    contains a bare, unescaped `"` used to be silently accepted -- the old
+    `_MD_WAIVE_RE` only checked for the OPENING `reason="`, never that the
+    value actually closed before `-->`. Two agents hit this for real on
+    different tickets tonight: the target rule stayed unwaived and NOTHING
+    said why."""
+
+    # frob:ticket T-2857
+    def test_unescaped_internal_quote_is_reported_not_silently_accepted(
+        self,
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        text = (
+            '<!-- frob:waive DOC006 reason="the "old" convention '
+            'no longer applies" -->\n'
+        )
+        edges, malformed = markdown_anchors("docs/x.md", text)
+        assert edges == ()
+        assert len(malformed) == 1
+        assert "DOC006" in malformed[0].reason
+        assert "does not close cleanly" in malformed[0].reason
+
+    # frob:ticket T-2857
+    def test_escaped_internal_quote_still_parses_cleanly(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # Positive control: this repo's own existing informal convention
+        # for a literal quote inside a reason (a backslash-escaped `\"`,
+        # e.g. docs/modules/tickets-verify-sweep.md) must NOT regress into
+        # a new finding -- `\"` is treated as an escaped quote, not a
+        # terminator.
+        text = (
+            '<!-- frob:waive DOC006 reason="cfg.x == \\"y\\" '
+            'is fine" -->\n'
+        )
+        edges, malformed = markdown_anchors("docs/x.md", text)
+        assert edges == ()
+        assert malformed == ()
+
+    # frob:ticket T-2857
+    def test_well_formed_waiver_of_an_honored_rule_still_suppresses(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # The control that matters most (T-2857's body): a normal,
+        # correctly quoted waiver of an honored rule must still be
+        # accepted with zero finding -- a stricter parser must never
+        # silently invalidate an existing, well-formed waiver.
+        text = '<!-- frob:waive DOC006 reason="a perfectly normal reason" -->\n'
+        edges, malformed = markdown_anchors("docs/x.md", text)
+        assert edges == ()
+        assert malformed == ()
+
+    # frob:ticket T-2857
+    def test_reason_continuing_onto_a_later_physical_line_is_not_flagged(
+        self,
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # This per-line scanner cannot see across physical lines -- a
+        # genuinely multi-line reason (no closing quote on THIS line at
+        # all, e.g. tickets/T-1968/ticket.md's own real waivers) must stay
+        # exactly as tolerant as before, not newly flagged.
+        text = '<!-- frob:waive DOC006 reason="this text continues\n'
+        edges, malformed = markdown_anchors("docs/x.md", text)
+        assert edges == ()
+        assert malformed == ()
+
+
+# frob:ticket T-2857
+class TestBrokenDirectEdgeVerbIsLoud:
+    """T-2857 mode 4: `describes`/`enumerates`/`until`/`ticket`/`doc` used
+    to be unconditionally treated as "already handled" the moment their
+    verb shape-matched, even when the strict per-verb regex had already
+    failed to parse them into a real edge -- e.g. a `frob:describes`
+    symref broken by an embedded space (a bad continuation line-wrap
+    leaving a stray trailing space, T-2857's own measured incident while
+    splitting `_host_isolation.py`). `markdown_anchors` only reaches this
+    check after `_directive_edge` has already failed on the same line, so
+    surfacing these five verbs here can never false-positive on anything
+    that still parses."""
+
+    # frob:ticket T-2857
+    def test_describes_with_a_broken_symref_is_reported_not_silently_dropped(
+        self,
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        text = "# H\n\n<!-- frob:describes src/x.py::Class.metho d_method -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert edges == ()
+        assert len(malformed) == 1
+        assert "describes" in malformed[0].reason
+
+    # frob:ticket T-2857
+    def test_enumerates_missing_required_members_attr_is_reported(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        text = "# H\n\n<!-- frob:enumerates src/x.py::Y -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert edges == ()
+        assert len(malformed) == 1
+        assert "enumerates" in malformed[0].reason
+
+    # frob:ticket T-2857
+    def test_well_formed_describes_still_parses_cleanly(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        # Positive control: a correctly wrapped symref (no embedded space)
+        # must still produce a real edge, not a new false positive.
+        text = "# H\n\n<!-- frob:describes src/x.py::Class.method_name -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+        assert len(edges) == 1
+
+    # frob:ticket T-2857
+    def test_well_formed_ticket_and_until_still_parse_cleanly(self) -> None:
+        # frob:tests src/frob/graph/dsl.py::markdown_anchors
+        text = "# H\n\n<!-- frob:ticket T-0042 -->\n<!-- frob:until T-0043 -->\n"
+        edges, malformed = markdown_anchors("doc.md", text)
+        assert malformed == ()
+        assert len(edges) == 2
+
+
 # frob:ticket T-1994
 class TestChangelogMultiLineCodeSpanMention:
     """T-1994: `_blank_code_spans` only masks a SAME-LINE inline-code

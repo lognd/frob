@@ -2,7 +2,7 @@
 id: T-2857
 title: 'the frob comment DSL drops malformed directives SILENTLY: four distinct failure
   modes measured in one session, each leaving a finding unsuppressed with no diagnostic'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -18,8 +18,8 @@ scope:
 - src/frob/graph/dsl.py
 - docs/modules/graph.md
 - tests/unit/graph/test_dsl_markdown_waive.py
-- tickets/T-draft-40cab320/ticket.md
-- tickets/T-draft-54b05cf2/ticket.md
+- tickets/T-2869/ticket.md
+- tickets/T-2870/ticket.md
 evidence_scope:
 - tests/unit/graph/test_dsl_markdown_waive.py
 scope_breadth_ack: false
@@ -40,13 +40,13 @@ scope_changes:
   actor: logan
   at: '2026-08-22'
 - op: add
-  glob: tickets/T-draft-40cab320/ticket.md
+  glob: tickets/T-2869/ticket.md
   reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
     this ticket filed
   actor: logan
   at: '2026-08-22'
 - op: add
-  glob: tickets/T-draft-54b05cf2/ticket.md
+  glob: tickets/T-2870/ticket.md
   reason: docs/tests for the dsl.py fix, plus the two out-of-scope follow-up tickets
     this ticket filed
   actor: logan

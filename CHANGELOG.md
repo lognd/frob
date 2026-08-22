@@ -320,6 +320,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2853: LARGE001: src/frob/tickets/_leases.py unwaived after T-2833's split (3182 lines)
 - T-2854: malformed-directive false-positive: docstring prose containing 'frob:waive reason' parsed as an attribute
 - T-2855: post-land sweep regression from T-2846: 22 new (rule, file) identit(ies), 172 finding(s) (COV001, DOC006, DRIFT002, REF001)
+- T-2857: the frob comment DSL drops malformed directives SILENTLY: four distinct failure modes measured in one session, each leaving a finding unsuppressed with no diagnostic
 - T-2858: Main red: DRIFT002/DOC006/COV001/TEST001 outside T-2855 scope (tickets-data-storage.md, test005 audit, callgraph.py, _multifile.py)
 - T-2860: T-2850 blocks frob ticket land from the root, and its FROB_COORDINATOR escape hatch only works session-wide, so the choice is guard-on-nobody-lands or guard-off-for-everyone
 - T-2864: F401/F822: T-2851 split left import/export hygiene debt in _mutation_evidence.py/_bug_repro.py
