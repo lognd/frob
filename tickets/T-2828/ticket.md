@@ -1,7 +1,7 @@
 ---
 id: T-2828
 title: 'LARGE001: split or waive oversized frob.gates modules, batch 1 of 2'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -20,7 +20,6 @@ scope:
 - src/frob/gates/_debt_deprecated.py
 - src/frob/gates/_docblocks.py
 - src/frob/gates/_docblocks_refs.py
-- src/frob/gates/_doclink_docanchor.py
 - src/frob/gates/_docptr.py
 - src/frob/gates/_fix_engine.py
 - src/frob/gates/_fix_engine_sync.py
@@ -28,6 +27,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/_doclink_docanchor.py
+  reason: real seam identified (docstatus/docmake/docseverity bolted onto the documented
+    DOC001/DOC002 pair without doc-anchor/re-export verification) but not resolvable
+    inside this batch's scope -- filed as its own ticket (T-draft-107afed9, same shape
+    as T-2833/T-2834) with the full investigation; this batch's remaining 9 files
+    all resolve to severity=note
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
