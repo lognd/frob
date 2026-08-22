@@ -311,6 +311,10 @@ def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViola
             if name in seen:
                 dupes.add(name)
             seen.add(name)
+        # frob:waive PERF004 reason="dupes is THIS node's own distinct set (a \
+        # different value every time the outer node loop advances), sorted only for \
+        # deterministic WARNING log ordering -- not a repeated re-sort of identical \
+        # data across iterations"
         for name in sorted(dupes):
             _log.warning(
                 "selfconform: SYS108 duplicate interface symbol %s on %s",
@@ -369,6 +373,10 @@ def _undeclared_intended_surface_violations(
         if not declared:
             continue
         real = _node_real_public_surface(binding, root, node.id)
+        # frob:waive PERF004 reason="real - declared is THIS node's own distinct set \
+        # (a different value every time the outer node loop advances), sorted only for \
+        # deterministic WARNING log ordering -- not a repeated re-sort of identical \
+        # data across iterations"
         for symbol in sorted(real - declared):
             _log.warning(
                 "selfconform: SYS110 undeclared public symbol %s on %s",
@@ -426,6 +434,10 @@ def _purpose_contract_violations(
         if allowed is None:
             continue  # "full" -- explicit opt-out, no restriction
         observed = observed_by_node.get(node.id, frozenset())
+        # frob:waive PERF004 reason="observed - allowed is THIS node's own distinct \
+        # set (a different value every time the outer node loop advances), sorted only \
+        # for deterministic WARNING log ordering -- not a repeated re-sort of \
+        # identical data across iterations"
         for kind in sorted(observed - allowed):
             _log.warning(
                 "selfconform: SYS105 %s effect outside purpose=%s on %s",

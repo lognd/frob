@@ -815,7 +815,7 @@ itself, not to the ticket's own branch.
 
 ### `--check-repro` cannot verify a squashed ticket's repro test after it lands (T-2025)
 
-<!-- frob:describes src/frob/gates/_mutation_evidence.py::_BugReproOutcome -->
+<!-- frob:describes src/frob/gates/_bug_repro.py::_BugReproOutcome -->
 
 **This is a permanent, by-construction limitation, not a bug to be fixed
 later.** `frob ticket evidence <id> --check-repro [NODE-ID] [--base-ref
@@ -918,7 +918,7 @@ removed, for the same reason described above.
 
 ### `BUG003`: the positive-direction must-still-pass control (T-2193)
 
-<!-- frob:describes src/frob/gates/_mutation_evidence.py::must_still_pass_violations -->
+<!-- frob:describes src/frob/gates/_bug_repro.py::must_still_pass_violations -->
 
 BUG002 and TEST016 both only ever prove a NEGATIVE claim: a designated
 repro test that genuinely failed before this ticket's fix (BUG002), or

@@ -113,7 +113,7 @@ and T-2796 itself)
   recommend someone git-archaeology the gap (26 -> 4) to find the
   survivor(s) that did most of this work, since a name was not found in
   this pass. NOT a drop candidate without that name.
-- T-2693 (TICK006 phantom-refile of T-draft-be1e79b5 collides with
+- T-2693 (TICK006 phantom-refile of `T-draft-be1e79b5` collides with
   T-2689's identical title/scope): CANNOT MEASURE from the check run --
   this is a specific historical draft-id collision, not a gate-identity
   claim; would need `frob ticket show T-2689`/archive grep for the named

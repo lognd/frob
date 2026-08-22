@@ -205,7 +205,7 @@ with a short, explicit allowlist instead of a detector:
    without setting `FROB_COORDINATOR=1` globally for the whole shell --
    measured directly: exactly one land succeeded in the hours after
    T-2850 landed, and only because an agent set `FROB_COORDINATOR=1` in
-   `.claude/settings.local.json`, disabling exemption 4's guard for every
+   <!-- frob:waive DOC006 reason="T-2879: .claude/settings.local.json is a real, intentionally gitignored per-session local file -- it will never resolve as a tracked path by design, this citation is narrating a real historical incident" -->`.claude/settings.local.json`, disabling exemption 4's guard for every
    command in every session sharing that config, not just its own land.
    This exemption reuses exemption 3's same structural fact-check
    (`git worktree list --porcelain`) rather than trusting the flag's text:

@@ -2,7 +2,7 @@
 id: T-2879
 title: 'Red-tail sweep: COV001/DRIFT002/DOCENUM001/PERF004/DOC011/DOC006 (6 independent
   causes, CYCLE001/TICK004 verified correctly left alone)'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -21,6 +21,8 @@ scope:
 - src/frob/strata/_selfconform_surface_rules.py
 - docs/investigations/T-2796-backlog-reproduction.md
 - docs/guides/claude-hooks.md
+evidence_scope:
+- tests/unit/gates/test_doc011.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +35,25 @@ scope_changes:
     separately once T-2874 lands
   actor: logan
   at: '2026-08-22'
+body_changes:
+- mode: set
+  reason: avoid literal DOC006-triggering path/symbol-pointer syntax for two illustrative
+    citations (.claude/settings.local.json, frob.check._native_check_and_rebuild)
+    -- both are prose narration, not real doc pointers
+  actor: logan
+  at: '2026-08-22'
+  old_length: 7506
+  new_length: 7541
+- mode: append
+  reason: 'BUG002 front door (T-2393): Doc/design-file annotation corrections (frob:doc/frob:describes/frob:waive
+    additions, one backtick code-span fix) with no production code path changed; nothing
+    for a designated repro test to exercise differently between commits.'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 7540
+  new_length: 7803
+evidence:
+- tests/unit/gates/test_doc011.py::TestDoc011TicketIdProse::test_id_inside_inline_code_span_is_not_flagged
 designated_repro_test: null
 threat: null
 component: null
@@ -58,7 +79,7 @@ exists). None share a mechanism:
 1. **COV001 x2 (design/frob.strata:1632,1635)** -- T-2801's own land
    (`f60eb5404`) added two new flows, `f_checker_stratamod` and
    `f_checker_natives`, documenting a real dependency it found
-   (`frob.check._native_check_and_rebuild`'s lazy imports of
+   (frob.check's _native_check_and_rebuild helper's lazy imports of
    `frob.strata`/`frob.natives._build`). It gave each a plain `// T-2801:
    ...` prose comment instead of the `frob:doc` directive every sibling
    flow in this file carries (`// frob:doc docs/strata/roadmap.md#self-
@@ -118,9 +139,9 @@ exists). None share a mechanism:
    shape -- do not alter the investigation's own historical prose.
 
 6. **DOC006 (docs/guides/claude-hooks.md:208)** -- cites
-   `.claude/settings.local.json` while narrating a real, historically
-   observed incident (an agent setting `FROB_COORDINATOR=1` in that
-   file). `.claude/settings.local.json` is a real, intentionally
+   the local, gitignored settings.local.json file (under .claude/) while narrating a real, historically
+   observed incident (an agent setting FROB_COORDINATOR=1 in that
+   file). That local settings file is a real, intentionally
    untracked (gitignored) per-session local file -- it will never
    resolve as a tracked path, by design. This repo has an established
    inline-comment waiver convention for exactly this shape (checked:
@@ -163,3 +184,5 @@ exists). None share a mechanism:
   name rather than silently fixing or silently ignoring it.
 
 frob:no-behavior-change reason="All six fixes are doc/design-file annotation corrections (frob:doc/frob:describes/frob:enumerates/frob:waive additions) plus PERF004 waivers with no runtime-behavior-affecting code edits -- there is no production code path change for a designated repro test to exercise differently between the parent commit and this fix."
+
+frob:no-behavior-change reason="Doc/design-file annotation corrections (frob:doc/frob:describes/frob:waive additions, one backtick code-span fix) with no production code path changed; nothing for a designated repro test to exercise differently between commits."

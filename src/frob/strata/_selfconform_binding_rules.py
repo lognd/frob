@@ -89,6 +89,10 @@ def _binding_totality_violations(
         kinds = scan_file_capabilities(path)
         if not kinds:
             continue
+        # frob:waive PERF004 reason="kinds is THIS file's own distinct set (a \
+        # different value every time the outer file loop advances), sorted only for \
+        # deterministic WARNING log ordering -- not a repeated re-sort of identical \
+        # data across iterations"
         capability = ", ".join(sorted(kinds))
         _log.warning(
             "selfconform: SYS106 laundered capable file %s (%s) reachable "
@@ -199,6 +203,10 @@ def _via_less_large_node_violations(
         via_less_atoms = _via_less_atoms_for_node(node)
         if not via_less_atoms:
             continue
+        # frob:waive PERF004 reason="via_less_atoms is THIS node's own distinct set (a \
+        # different value every time the outer node loop advances), sorted only for \
+        # deterministic WARNING log ordering -- not a repeated re-sort of identical \
+        # data across iterations"
         for atom in sorted(via_less_atoms):
             _log.warning(
                 "selfconform: SYS107 via-less may %r grant on large node %s "
