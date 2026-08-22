@@ -45,6 +45,12 @@ body_changes:
   old_length: 1545
   new_length: 2548
 designated_repro_test: null
+acceptance:
+- text: 'given the batch''s 17 files, when arch_gate + _apply_waivers is run directly
+    against a build_graph snapshot, then none of the 17 files appear in the unwaived
+    LARGE001 kept-set (verified: 0 of 17, remaining 30 unwaived repo-wide are all
+    in src/frob/gates/** or src/frob/strata/**, out of scope)'
+  evidence: []
 threat: null
 component: null
 anchor: false
