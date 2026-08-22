@@ -2,7 +2,7 @@
 id: T-2871
 title: 'Fix SELFAUDIT001: T-2851/T-2843 splits left gates capability via-lists stale,
   plus 2 ratchet ceiling bumps'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -17,10 +17,23 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+evidence_scope:
+- tests/unit/strata/test_effects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 needs this directive: no code behavior change, only strata/ratchet
+    declaration corrections'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 3103
+  new_length: 3460
+evidence:
+- tests/unit/strata/test_effects.py::TestCapabilityRatchet::test_deleting_lock_entry_does_not_bypass_the_ratchet
+- tests/unit/strata/test_effects.py::TestCapabilityRatchet::test_unscoped_grant_is_never_ratcheted
 designated_repro_test: null
 threat: null
 component: null
@@ -89,3 +102,5 @@ Grouped by root cause:
 ## Failure log
 
 (none yet)
+
+frob:no-behavior-change reason="T-2871 is a static declarative fix (design/frob.strata via-lists and docs/design/registry/capability-via-ratchet.lock.json ratchet ceilings) correcting capability declarations to match code that T-2851/T-2843 already moved -- no runtime behavior changes, only which files a may-grant names/how large a committed ceiling is"
