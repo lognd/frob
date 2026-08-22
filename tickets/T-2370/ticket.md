@@ -1,7 +1,7 @@
 ---
 id: T-2370
 title: Burn COV006/COV007 WARN gates to zero, then promote to error
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -28,6 +28,24 @@ body_changes:
   at: '2026-08-18'
   old_length: 1314
   new_length: 4507
+- mode: append
+  reason: re-measured unbudgeted post-T-2810; characterized COV006 (single collapsible
+    class, matches T-2550, never promotable) vs COV007 (24 distinct files, per-symbol
+    genuine documentation, REG008-shape not REF001-shape); recording before any further
+    batching per coordinator directive
+  actor: logan
+  at: '2026-08-21'
+  old_length: 4507
+  new_length: 7583
+- mode: append
+  reason: re-measured unbudgeted post-T-2810; characterized COV006 (single collapsible
+    class, matches T-2550, never promotable) vs COV007 (24 distinct files, per-symbol
+    genuine documentation, REG008-shape not REF001-shape); recording before any further
+    batching per coordinator directive
+  actor: logan
+  at: '2026-08-21'
+  old_length: 7583
+  new_length: 10659
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
@@ -122,3 +140,109 @@ Promoting a heuristic built on an unsound graph to a land-blocking ERROR
 is the same mistake class this repo already paid for once.
 
 REMAINING TO ZERO: 132 = 18 (T-2550) + 78 (T-2551) + 36 (waivers).
+
+
+
+RE-MEASURED 2026-08-22 (unbudgeted, `frob check --only coverage --json`,
+fresh worktree, post T-2810 land): exit 1, gate-summary present (real
+measurement, not a budget abort).
+
+  COV006: 5 live warnings (up from 2 at T-2810's time -- tree moved, new
+          tests added since; same root-cause class, not a new class)
+  COV007: 37 live warnings across 24 files (down from 44 -- exactly
+          44 - 7 = 37, consistent with T-2810 removing 7 duplicate
+          anchors from _multifile.py; no other file changed since)
+
+CHARACTERIZATION (read every live finding's file, not just counted):
+
+COV006 -- ONE collapsible class, matches T-2550 exactly. All 5 are the
+land pipeline driving a private helper (`_land_merge.py::_validate_
+closeable`, `_fix_engine.py::_resolve_via_git_rename`) through a public
+entry point several hops out (`land()` -> ... -> the private target),
+the identical "cross-file public entry, several hops out" shape T-2550
+already diagnosed and closed as a genuine call-graph-blindness gap, not
+an unexercised binding. New count vs old count is new TEST CASES hitting
+the same known-blind shape, not a new bug class. Per COV006's own
+docstring (frob.graph.callgraph is deliberately best-effort/name-based),
+this code must NEVER be promoted to ERROR regardless of count -- these 5
+are individual-waiver candidates citing T-2550, not fixes, and not
+promotion material.
+
+COV007 -- NOT a single collapsible class. Sampled 5 of the 24 files
+directly (_rapid_sweep.py, _lifecycle.py, _ledger_mirror.py, _worker.py,
+_store_migrate.py) by reading the target doc's `frob:describes` block for
+each flagged symbol. Unlike T-2810's file (duplicate anchor already
+covered by a public sibling), these are GENUINELY individually documented:
+e.g. docs/modules/tickets-verify-sweep.md:545-546 `frob:describes` both
+`_attribute_new_findings` and `_ticket_is_open` BY NAME, each with its own
+prose section -- this is the deliberate per-helper pattern (matching
+vet.md's precedent T-2810 explicitly declined to touch), not duplication.
+24 distinct files, ~30 distinct private symbols, each carrying its own
+individually-authored doc anchor -- the REG008 shape (many distinct
+emitting symbols needing per-entry waivers), not the REF001 shape (one
+glob change collapsing hundreds). A full pass still needs to check the
+remaining ~19 unsampled files for the T-2810 duplicate-anchor pattern
+before waiving each (some may yet collapse), but the majority sampled so
+far are genuine per-symbol documentation, not bugs.
+
+DISPOSITION: neither code is at zero; promotion stays blocked on both
+(COV006 permanently per its own docstring, COV007 pending the remaining
+per-file waiver/fix pass). Not closing or promoting this batch --
+requeuing with this measurement recorded so the next batch does not
+re-triage from scratch. Suggested next batches: (1) sweep the remaining
+19 COV007 files for the T-2810 duplicate-anchor shape before waiving
+anything, (2) write the 5 COV006 + confirmed-genuine COV007 waivers
+citing their doc anchors / T-2550, narrow scope per batch as T-2810 did.
+
+
+
+RE-MEASURED 2026-08-22 (unbudgeted, `frob check --only coverage --json`,
+fresh worktree, post T-2810 land): exit 1, gate-summary present (real
+measurement, not a budget abort).
+
+  COV006: 5 live warnings (up from 2 at T-2810's time -- tree moved, new
+          tests added since; same root-cause class, not a new class)
+  COV007: 37 live warnings across 24 files (down from 44 -- exactly
+          44 - 7 = 37, consistent with T-2810 removing 7 duplicate
+          anchors from _multifile.py; no other file changed since)
+
+CHARACTERIZATION (read every live finding's file, not just counted):
+
+COV006 -- ONE collapsible class, matches T-2550 exactly. All 5 are the
+land pipeline driving a private helper (`_land_merge.py::_validate_
+closeable`, `_fix_engine.py::_resolve_via_git_rename`) through a public
+entry point several hops out (`land()` -> ... -> the private target),
+the identical "cross-file public entry, several hops out" shape T-2550
+already diagnosed and closed as a genuine call-graph-blindness gap, not
+an unexercised binding. New count vs old count is new TEST CASES hitting
+the same known-blind shape, not a new bug class. Per COV006's own
+docstring (frob.graph.callgraph is deliberately best-effort/name-based),
+this code must NEVER be promoted to ERROR regardless of count -- these 5
+are individual-waiver candidates citing T-2550, not fixes, and not
+promotion material.
+
+COV007 -- NOT a single collapsible class. Sampled 5 of the 24 files
+directly (_rapid_sweep.py, _lifecycle.py, _ledger_mirror.py, _worker.py,
+_store_migrate.py) by reading the target doc's `frob:describes` block for
+each flagged symbol. Unlike T-2810's file (duplicate anchor already
+covered by a public sibling), these are GENUINELY individually documented:
+e.g. docs/modules/tickets-verify-sweep.md:545-546 `frob:describes` both
+`_attribute_new_findings` and `_ticket_is_open` BY NAME, each with its own
+prose section -- this is the deliberate per-helper pattern (matching
+vet.md's precedent T-2810 explicitly declined to touch), not duplication.
+24 distinct files, ~30 distinct private symbols, each carrying its own
+individually-authored doc anchor -- the REG008 shape (many distinct
+emitting symbols needing per-entry waivers), not the REF001 shape (one
+glob change collapsing hundreds). A full pass still needs to check the
+remaining ~19 unsampled files for the T-2810 duplicate-anchor pattern
+before waiving each (some may yet collapse), but the majority sampled so
+far are genuine per-symbol documentation, not bugs.
+
+DISPOSITION: neither code is at zero; promotion stays blocked on both
+(COV006 permanently per its own docstring, COV007 pending the remaining
+per-file waiver/fix pass). Not closing or promoting this batch --
+requeuing with this measurement recorded so the next batch does not
+re-triage from scratch. Suggested next batches: (1) sweep the remaining
+19 COV007 files for the T-2810 duplicate-anchor shape before waiving
+anything, (2) write the 5 COV006 + confirmed-genuine COV007 waivers
+citing their doc anchors / T-2550, narrow scope per batch as T-2810 did.
