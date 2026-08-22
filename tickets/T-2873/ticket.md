@@ -60,7 +60,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1782e07514af0128b6f7e699ebce7ce436b85fad
 ---
 Split off T-2866: writes the 36 of 37 individually-reasoned frob:waive
 COV007 comments that are within reach today (the 37th,
