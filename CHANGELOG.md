@@ -289,6 +289,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2818: fleet_status reports 0 orphaned forkservers while 90 leaked ones hold 13GB: the orphan check tests only the immediate parent, not the ancestry root
 - T-2820: REF001/REF002 systematic collapse (glob entrypoints) + promote to error
 - T-2821: Reformat batch 16/N: 12 files pending ruff-format (T-2359 child)
+- T-2822: LARGE001: split or waive oversized frob.tickets modules, batch 2 of 2
 - T-2825: LARGE001: split or waive oversized frob.tickets modules, batch 1 of 2
 
 ## [0.530.0] - unreleased

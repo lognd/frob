@@ -30,6 +30,17 @@ frob.gates and the CLI never see the difference.
 # connect the migration names into this module's own cohesion clusters, and losing \
 # them is what newly crossed the heuristic's report threshold, not new fragmentation \
 # in the remaining code"
+# frob:waive LARGE001 reason="T-1651-grade: the ARCH102 waiver directly above already \
+# establishes this file's cohesion (one persistence concern across three coexisting \
+# on-disk representations), and T-2695 already performed this exact family's real \
+# extraction (the v1/v2 migration functions, into src/frob/tickets/_store_migrate.py) \
+# as its own 'LARGE001 remainder batch 2' land. What remains -- locking primitives, \
+# path resolution across both backends, (de)serialization, ledger parse/render/ \
+# splice, and the index/archive read-through caches -- all share the same Ticket/ \
+# TicketQueue on-disk contract and the same atomic-write discipline the module \
+# docstring requires (temp file + os.replace, every write); splitting further would \
+# separate a cache invalidation helper from the write path it must stay consistent \
+# with, the same 'cut a real edge' outcome T-1651 already ruled out."
 
 from __future__ import annotations
 

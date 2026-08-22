@@ -16,6 +16,16 @@ name), preserving the same package-level-monkeypatch indirection T-1103
 established, now just from a different caller module.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as T-1103 split residue that ALREADY shed its one separable family (draft-id \
+# finalization moved to _draft_finalize at T-1192, specifically because it was \
+# LARGE001 residue then too). What remains -- id allocation (_next_ticket_id) and the \
+# whole-tree renumber/renumber_one rewrite family -- is one cohesive concern: every \
+# renumber_one call must find EVERY reference to an old id (ledger, archive, waive \
+# directives, doc anchors, comments) and rewrite them atomically, so the \
+# scanner/rewriter helpers are each other's only caller and cannot be split without \
+# duplicating the same file-walk across two modules."
+
 from __future__ import annotations
 
 import fcntl

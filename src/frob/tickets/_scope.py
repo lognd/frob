@@ -20,6 +20,15 @@ load-order-safe indirection T-1103/T-1108 used for `renumber_one`/
 before `_load_ticket_and_queue` exists yet at its own module scope.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states the \
+# cohesion directly -- every function here serves ONE call, mutate_scope's own \
+# validate-then-write pipeline for frob ticket scope --add/--remove. The lease- \
+# conflict check, the T-0561 new-concrete-file carve-out, the evidence-orphan guard, \
+# the over-broad-glob nudge, and the audit-trail builder are each a distinct \
+# VALIDATION STEP of that one pipeline, run in sequence by mutate_scope, not \
+# independently callable concerns with their own consumer set -- splitting them apart \
+# would scatter one transaction's steps across files for no external caller."
+
 from __future__ import annotations
 
 import fnmatch

@@ -22,6 +22,20 @@ writes/removes it exactly when a ticket enters/leaves `IN_PROGRESS`, and
 ledger's own `IN_PROGRESS` rows, to compute collisions.
 """
 
+# frob:waive LARGE001 reason="a genuine consumer-set seam DOES exist here (the \
+# frob.app.worktree_runner-consumed sweep_worktrees/remove_worktree family, lines \
+# ~3065-3502, is reachable from a distinct CLI surface than the lease-CRUD/ledger- \
+# commit machinery the rest of this module serves) and was investigated for extraction \
+# into a new frob.tickets._worktree_sweep module. Rejected: design/frob.strata's \
+# fs.write/fs.read/env capability-effect declarations (design/frob.strata lines \
+# ~1263/1274/1275) enumerate this module by name as an authorized \
+# writer/reader/env-user, and a genuinely new source file performing the same \
+# git-worktree-remove/fs-stat operations would need its own capability grant there \
+# before SYS100/SYS003 would accept it -- design/frob.strata is outside this ticket's \
+# declared scope (src/frob/tickets/* only), so the split cannot be landed without an \
+# out-of-scope edit. Filed as a follow-up (see Done report) rather than forced through \
+# scope creep or left silently undone."
+
 from __future__ import annotations
 
 import importlib

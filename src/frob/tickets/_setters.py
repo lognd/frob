@@ -23,6 +23,18 @@ time, the same load-order-safe indirection `_doable.py` uses for
 before either name exists yet at its own module scope.
 """
 
+# frob:waive LARGE001 reason="a genuine consumer-set seam exists here (the sprint/ \
+# flow analytics family -- sprint_view/sprint_velocity/ticket_flow and their git- \
+# history-mining helpers, ~440 lines) vs. the single-field setter family the rest of \
+# this module holds -- and was investigated for extraction into a new frob.tickets. \
+# _flow module. Rejected for THIS ticket: a new source file is not covered by T-2822's \
+# enumerated file-list scope (no glob to grow into), and frob.tickets. __init__ (which \
+# re-exports sprint_velocity/sprint_view/ticket_flow at the package level for \
+# tests/app/ticket_runner/_mutate.py + _query.py's `from frob.tickets import ...` call \
+# sites) is itself outside this ticket's scope to amend if the re-export path needed \
+# touching. Filed as a follow-up (see Done report) rather than forced through scope \
+# creep."
+
 from __future__ import annotations
 
 import re

@@ -39,6 +39,13 @@ either exists yet at its own module scope.
 # evidence onto an EXISTING ticket after filing, not by call-graph adjacency alone; \
 # same T-1103/T-1152 precedent as frob.tickets.__init__'s own ARCH102 waiver for the \
 # identical reason (one deliberately centralized concern, not several bolted together)"
+# frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
+# already establishes -- one 'record what happened to this ticket, in its own words' \
+# concern (done-report, review, drop, attach), not a bundle of unrelated ones. \
+# Attach's own quartet (attach/_attachment_bytes/_next_attachment_path/_record_ \
+# attachment) is a linear write pipeline with no other caller; the done-report trio \
+# similarly shares one compose-capture-set sequence -- splitting either would sever a \
+# call chain rather than find a real external consumer-set boundary."
 
 from __future__ import annotations
 
