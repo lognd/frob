@@ -1,7 +1,7 @@
 ---
 id: T-2872
 title: 'Fix COV003: 12 tickets cite renamed test_large_file_fires_large001_warn'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
