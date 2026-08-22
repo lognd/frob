@@ -2,7 +2,7 @@
 id: T-2870
 title: BUG002 ticket-body waiver regex silently ignores an unquoted/malformed reason=
   value
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -32,6 +32,13 @@ scope_changes:
   reason: regression tests for the new _bug002_malformed_waiver detection
   actor: logan
   at: '2026-08-22'
+evidence:
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_unquoted_reason_value_is_reported_not_silently_dropped
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_unterminated_reason_value_is_reported
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_well_formed_waiver_is_not_reported_as_malformed
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_no_directive_at_all_is_not_reported
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_bare_directive_with_no_reason_attempt_is_not_reported
+- tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver::test_directive_inside_code_span_is_not_reported
 designated_repro_test: null
 threat: null
 component: null

@@ -14,6 +14,7 @@ from typani import Ok
 
 from frob.gates import mutation_evidence_violations
 from frob.gates._bug_repro import (
+    _bug002_malformed_waiver,
     _bug002_waiver_reason,
     _bug_repro_outcome_at_ref,
     _BugReproOutcome,
@@ -370,6 +371,89 @@ class TestBug002Waiver:
         assert _bug002_waiver_reason(_bug_ticket(body=body)) == (
             "genuinely nondeterministic"
         )
+
+
+# frob:ticket T-2870
+class TestBug002MalformedWaiver:
+    """T-2870: `_bug002_malformed_waiver` distinguishes "no waiver
+    attempted" (silence is correct) from "a waiver was attempted here and
+    failed to parse" (must be reported loudly, never a silent fall-through
+    to BUG002 running as though nothing were declared)."""
+
+    def test_unquoted_reason_value_is_reported_not_silently_dropped(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_unquote\
+        # d_reason_value_is_reported_not_silently_dropped
+        """T-2857 mode 2's own measured incident: an agent wrote `reason=`
+        with a bare, unquoted value. `_bug002_waiver_reason` correctly
+        returns `None` (unchanged, pre-fix behavior), but pre-fix there
+        was NO way to tell that apart from "no waiver attempted at all" --
+        `_bug002_malformed_waiver` must return a non-`None` diagnostic."""
+        body = "## Description\nfrob:waive BUG002 reason=this was not quoted\n"
+        ticket = _bug_ticket(body=body)
+        assert _bug002_waiver_reason(ticket) is None
+        assert _bug002_malformed_waiver(ticket) is not None
+
+    def test_unterminated_reason_value_is_reported(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_untermi\
+        # nated_reason_value_is_reported
+        body = '## Description\nfrob:waive BUG002 reason="never closed\n'
+        ticket = _bug_ticket(body=body)
+        assert _bug002_waiver_reason(ticket) is None
+        assert _bug002_malformed_waiver(ticket) is not None
+
+    def test_well_formed_waiver_is_not_reported_as_malformed(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_well_fo\
+        # rmed_waiver_is_not_reported_as_malformed
+        """Positive control: a genuinely well-formed waiver must never be
+        flagged malformed -- there are hundreds of live BUG002 waivers in
+        this repo, and a false positive here would spuriously warn on
+        every one of them."""
+        body = '## Description\nfrob:waive BUG002 reason="a genuine reason"\n'
+        ticket = _bug_ticket(body=body)
+        assert _bug002_waiver_reason(ticket) == "a genuine reason"
+        assert _bug002_malformed_waiver(ticket) is None
+
+    def test_no_directive_at_all_is_not_reported(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_no_dire\
+        # ctive_at_all_is_not_reported
+        ticket = _bug_ticket(body="## Description\nnothing relevant here\n")
+        assert _bug002_malformed_waiver(ticket) is None
+
+    def test_bare_directive_with_no_reason_attempt_is_not_reported(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_bare_di\
+        # rective_with_no_reason_attempt_is_not_reported
+        """A bare `frob:waive BUG002` with no `reason=` anywhere near it
+        is left alone (unchanged, pre-existing behavior) rather than
+        flagged malformed -- a measured false positive during this fix's
+        own repo-wide scan (`tickets/T-1748/ticket.md`) is exactly this
+        shape: plain prose mentioning the mechanism by name with no
+        `reason=` attempt and no quoting markup to exclude it via T-2218's
+        code-span/blockquote check."""
+        body = (
+            "## Description\nplus a frob:waive BUG002 on the second -- "
+            "both checks disabled for the whole series.\n"
+        )
+        ticket = _bug_ticket(body=body)
+        assert _bug002_waiver_reason(ticket) is None
+        assert _bug002_malformed_waiver(ticket) is None
+
+    def test_directive_inside_code_span_is_not_reported(self) -> None:
+        # frob:tests \
+        # tests/test_gates_mutation_evidence.py::TestBug002MalformedWaiver.test_directi\
+        # ve_inside_code_span_is_not_reported
+        """T-2218's discussed-not-declared exclusion applies here too: a
+        malformed EXAMPLE quoted inside backticks must not be flagged."""
+        body = (
+            "## Description\nExample of the (broken) shape: "
+            "`frob:waive BUG002 reason=unquoted`\n"
+        )
+        ticket = _bug_ticket(body=body)
+        assert _bug002_malformed_waiver(ticket) is None
 
 
 class TestNoBehaviorChange:

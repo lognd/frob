@@ -89,7 +89,64 @@ _BUG_REPRO_WORKTREE_TIMEOUT_S = 30.0
 #: WAIVE001's contract elsewhere in this repo); a bare `frob:waive BUG002`
 #: with no parseable reason is treated as ABSENT (the check still runs)
 #: rather than a silent pass.
-_BUG002_WAIVER_RE = re.compile(r'frob:waive\s+BUG002\s+reason="([^"]*)"')
+#:
+#: T-2870: escape-aware value grammar (`\"` does NOT terminate the
+#: value), the exact same fix T-2857 applied to `frob.graph.dsl`'s
+#: markdown `frob:waive` regex (`_MD_WAIVE_VALUE_RE`) -- this is a SECOND,
+#: independent implementation of the same "waive with reason=" shape,
+#: living here rather than routed through `frob.graph.dsl` because (per
+#: the module docstring above) `tickets.md`/`ticket.body` is deliberately
+#: excluded from the general markdown graph walk, so there is no shared
+#: call path to reuse without also breaking that exclusion. Kept as an
+#: explicit, documented duplication rather than a silent one: if this
+#: value grammar ever needs a third fix, check `_MD_WAIVE_VALUE_RE` too,
+#: and vice versa -- the two are meant to accept exactly the same shape.
+_BUG002_WAIVER_RE = re.compile(
+    r'frob:waive\s+BUG002\s+reason="(?P<value>(?:[^"\\]|\\.)*)"'
+)
+
+#: T-2870: a looser "shape-like" match -- `frob:waive BUG002 reason=`
+#: (an attempt at the reason attribute specifically), WITHOUT requiring
+#: the value to actually be well-formed. Used only to detect the
+#: silent-drop incident this ticket exists to fix (T-2857 mode 2,
+#: measured): an agent writes `frob:waive BUG002 reason=` with a bare,
+#: UNQUOTED value (no opening `"` at all), or opens `reason="` but never
+#: closes it anywhere in the rest of the body -- both shapes make
+#: `_BUG002_WAIVER_RE` above simply not match, which `_bug002_waiver_
+#: reason` used to treat exactly like "no waiver was ever attempted"
+#: (BUG002 runs silently, no diagnostic). `_bug002_malformed_waiver`
+#: below distinguishes those two outcomes: a candidate match here with
+#: no corresponding `_BUG002_WAIVER_RE` match at the SAME start position
+#: means a waiver was ATTEMPTED and could not be parsed, which must be
+#: reported loudly instead of silently falling through.
+#:
+#: Deliberately requires `reason=` to already be present (not just bare
+#: `frob:waive BUG002`) -- a measured false positive during this fix's
+#: own repo-wide scan: `tickets/T-1748/ticket.md` discusses the mechanism
+#: in plain prose ("...plus a frob:waive BUG002 on the second -- both
+#: checks disabled...") with no `reason=` anywhere nearby and no quoting
+#: markup at all, so `_is_quoted`'s code-span/blockquote exclusion (T-2218)
+#: does not apply to it either. A bare `frob:waive BUG002` mention with no
+#: `reason=` attempt is exactly as likely to be prose ABOUT the mechanism
+#: as a genuine (if incomplete) attempt to invoke it, so it is left as
+#: "silently absent" (unchanged, pre-existing behavior) rather than risk
+#: a false "malformed" warning against real ticket prose; only once
+#: `reason=` itself appears is intent to waive rather than mere mention.
+#:
+#: Deliberately does NOT attempt to also catch a genuinely UNESCAPED
+#: internal `"` splitting an otherwise-quoted value mid-sentence (T-2857
+#: mode 1's shape) -- unlike a markdown anchor's single physical line
+#: bounded by a `-->` terminator, a ticket body's `reason="..."` value is
+#: free-form prose that legitimately spans multiple lines and
+#: parenthetical asides (this repo's own tickets/ already carry several
+#: multi-paragraph BUG002 waivers), so there is no safe, terminator-
+#: bounded "end of directive" to tail-check the way `frob.graph.dsl._md_
+#: waive_reason_tail_error` does for one markdown line without risking a
+#: false positive against those live waivers. If a genuine instance of
+#: that specific shape is ever measured for BUG002 (as opposed to
+#: markdown), it should reuse `_MD_WAIVE_VALUE_RE`'s escape-aware grammar
+#: rather than re-deriving a bespoke tail-check here.
+_BUG002_WAIVER_CANDIDATE_RE = re.compile(r"frob:waive\s+BUG002\s+reason=")
 
 #: `frob:no-behavior-change reason="..."` (T-1616): the honest home for
 #: refactor/deletion-shaped work filed as `bug`/`security` kind (there is
@@ -260,6 +317,44 @@ def _bug002_waiver_reason(ticket: Ticket) -> str | None:
     for match in _BUG002_WAIVER_RE.finditer(ticket.body):
         if not _is_quoted(match.start(), quoted):
             return match.group(1)
+    return None
+
+
+# frob:ticket T-2870
+def _bug002_malformed_waiver(ticket: Ticket) -> str | None:
+    """T-2870: a short human-readable description of why a `frob:waive
+    BUG002 ...` occurrence in `ticket.body` did NOT parse as a well-formed
+    waiver, or `None` if either no such occurrence exists at all (nothing
+    was ever attempted -- not this function's concern) or every occurrence
+    parsed cleanly (`_bug002_waiver_reason` already returned it).
+
+    Distinguishes "no waiver attempted" from "a waiver was attempted here
+    and silently failed to parse" the same way `_bug002_waiver_reason`
+    finds a WELL-formed one: scan every `_BUG002_WAIVER_CANDIDATE_RE`
+    shape-match, skip anything inside a quoted range (T-2218's own
+    discussed-not-declared exclusion, reused identically here), and check
+    whether `_BUG002_WAIVER_RE`'s strict grammar also matches starting at
+    that exact same offset. The two most likely mismatches, both measured
+    incidents or their direct siblings: `reason=` with no opening `"` at
+    all (a bare, unquoted value), and `reason="` opened but never closed
+    anywhere in the rest of the body."""
+    from frob.gates._mutation_evidence import (  # noqa: PLC0415
+        _is_quoted,
+        _quoted_char_ranges,
+    )
+
+    quoted = _quoted_char_ranges(ticket.body)
+    well_formed_starts = {
+        match.start() for match in _BUG002_WAIVER_RE.finditer(ticket.body)
+    }
+    for candidate in _BUG002_WAIVER_CANDIDATE_RE.finditer(ticket.body):
+        if _is_quoted(candidate.start(), quoted):
+            continue
+        if candidate.start() in well_formed_starts:
+            continue
+        end = candidate.start() + 80
+        snippet = ticket.body[candidate.start() : end].splitlines()[0]
+        return f'{snippet!r} does not match the required reason="..." shape'
     return None
 
 
@@ -738,6 +833,15 @@ def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> 
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_reconstructed_wired_guard_fails_at_parent_is_permitted kind="integration"  # noqa: E501
 # frob:tests tests/test_gates_mutation_evidence.py::TestBugRepro.test_fix_committed_direct_to_main_is_unresolved_not_refused kind="integration"  # noqa: E501
 # frob:ticket T-1678
+# frob:waive AFFECT001 reason="T-2870: this diff only ADDS a new, additive \
+# malformed-waiver WARNING log line ahead of the existing waiver check -- no existing \
+# BUG002 behavior documented in \
+# docs/modules/gates.md#bug002-t-1421-a-bug-ticket-must-prove-the-defect-no-longer-repr\
+# oduces changed. The doc update this finding asks for is deferred: \
+# docs/modules/gates.md is under a concurrent ticket's (T-2874) live scope lease at \
+# the time of this fix, so T-2870 cannot claim it without a ScopeLeaseConflict. See \
+# this function's own new _bug002_malformed_waiver call and T-2870's Done report for \
+# the narrative that belongs in that section once the lease clears."
 def bug_repro_violations(
     root: Path, ticket: Ticket, base_ref: str = "main"
 ) -> tuple[Violation, ...]:
@@ -779,6 +883,22 @@ def bug_repro_violations(
             waiver_reason,
         )
         return ()
+    # T-2870: a `frob:waive BUG002` was ATTEMPTED but could not be parsed
+    # (unquoted/unterminated reason=) -- report it LOUDLY, naming the
+    # ticket and the offending text, rather than silently falling through
+    # to "no waiver present" the way this used to (T-2857 mode 2's
+    # measured incident: the author believed the ticket was waived, the
+    # land proceeded as though it were not).
+    malformed = _bug002_malformed_waiver(ticket)
+    if malformed is not None:
+        _log.warning(
+            "BUG002: %s has a frob:waive BUG002 directive that does NOT "
+            "parse and is therefore NOT applied (%s) -- BUG002 runs as "
+            "though no waiver were present; fix the reason=\"...\" "
+            "quoting to actually suppress this check",
+            ticket.id,
+            malformed,
+        )
     test_id = _designated_repro_test(ticket)
     if test_id is None:
         _log.debug(
