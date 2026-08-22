@@ -429,7 +429,7 @@ threat: null
 component: build
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4e28dc00cead8b35979ec4dc9d99c65828ffa804
 ---
 MEASURED 2026-08-17: `uv run ruff format --check .` reports
 **138 files would be reformatted, 975 already formatted**.
