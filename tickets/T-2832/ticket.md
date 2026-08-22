@@ -136,7 +136,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ecbbfda39843533e2332fd6cb578a50e3b3b1b71
 ---
 Batch 2/N of T-2369. T-2812 (batch 1) fixed 18/36 REG008 findings. Full unbudgeted re-measurement (frob check --json, gate-summary present) confirmed 18 remaining, exactly matching T-2812's disclosed 'remaining' list. Characterization: one homogeneous class (a registry entry dispositioned handled_by:<RULE> with no matching # frob:enforces <ENTRY-ID> directive anywhere in code) but genuinely scattered across 9 files with no shared root cause -- unlike REF001's glob-entrypoint collapse, no single structural fix applies here since each rule's real violation-emitting function is a distinct symbol. This batch fixes 17 of the 18: SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE, CHK-GATE-SYS108, CHK-GATE-SYS109, CHK-GATE-SYS110, CHK-GATE-SYS112, CHK-GATE-BUDGET001, CHK-GATE-CHECK001, CHK-GATE-CVEFP001, CHK-GATE-DEPLOY001, CHK-GATE-DEPLOY002, CHK-GATE-DEPLOY003, CHK-GATE-DERIVED001, CHK-GATE-CAP001, CHK-GATE-CLAUDE001, CHK-GATE-EXHAUST004, CHK-GATE-CYCLE001, CHK-GATE-QUEUE001 -- each got a # frob:enforces directive added directly above its real violation-emitting function. The 18th, CHK-GATE-DOC012 (src/frob/gates/_docblocks.py), is EXCLUDED from this batch: that file is held by a live in-progress lease from T-2359 (a stalled reformat-batch ticket with no active worktree), so a scope --add there is refused (ScopeLeaseConflict). REG008 is NOT promoted WARN->ERROR in this batch -- 1 finding remains, and promoting early would red main for that one unfixed entry. Re-measured full unbudgeted frob check --json after this batch's fix: REG008 = 1 (CHK-GATE-DOC012 only), still WARN.
 
