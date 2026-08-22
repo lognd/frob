@@ -1,7 +1,7 @@
 ---
 id: T-2370
 title: Burn COV006/COV007 WARN gates to zero, then promote to error
-state: in-progress
+state: queued
 kind: bug
 origin: agent
 created: '2026-08-17'
