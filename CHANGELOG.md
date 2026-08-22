@@ -276,6 +276,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2796: a large fraction of the queued backlog is already resolved by landed work, and 'already resolved' was being requeued instead of dropped
 - T-2798: size a content-hash cache for sys's ast-based capability scan (currently fully uncached, largest single stage)
 - T-2800: Burn ruff I001 batch 2: tests/ subset
+- T-2801: post-land sweep regression from T-2794, T-2686, T-2795, T-2675, T-2790: 18 new (rule, file) identit(ies), 37 finding(s) (COV001, CYCLE001, DOC001, DOC006)
 - T-2805: native-staleness content-digest check is a permanent latch: a reproducible rebuild is byte-identical, so frob natives build can never clear NATIVE001
 - T-2806: Stamp the parse-artifact cache env before build_graph, not just before the gate process pool
 - T-2807: wait_for_land_slot reports a free slot during the window where frob's own T-1619 process scan still refuses LandInProgress

@@ -654,6 +654,13 @@ _KNOWN_GATE_RULES = frozenset(
         # a DOC005 table-row mention alone does not satisfy this
         # (frob.gates._docblocks.doc012_gate).
         "DOC012",
+        # T-2843: a doc's own severity table lists a rule as error/warn
+        # but `frob.toml [gates.severity]` explicitly overrides it to a
+        # different value -- update the table or the override
+        # (frob.gates._docstatus._doc013_violation). Filed as REG002 by
+        # T-2801: this rule existed and fired since T-2843 but was never
+        # added to this generated registry.
+        "DOC013",
         # T-1227: `frob:enumerates` doc-claimed member-list AST-diff, ack-
         # immune (frob.gates._docenum).
         "DOCENUM001",

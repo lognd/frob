@@ -1624,6 +1624,13 @@ flow f_checker_graphlang : checker -> graphlang { label Internal; attr local; }
 flow f_checker_core : checker -> core { label Internal; attr local; }
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_checker_gates : checker -> gates { label Internal; attr local; }
+// T-2801: checker's derived-state/native-staleness self-heal path (frob.
+// check._native_check_and_rebuild) lazily imports frob.strata.stale_natives/
+// stale_native_warning to detect a stale native extension.
+flow f_checker_stratamod : checker -> stratamod { label Internal; attr local; }
+// T-2801: the same self-heal path lazily imports frob.natives._build.
+// build_natives to rebuild a stale native extension in place.
+flow f_checker_natives : checker -> natives { label Internal; attr local; }
 
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 flow f_core_graphlang : core -> graphlang { label Internal; attr local; }

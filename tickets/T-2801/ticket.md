@@ -2,7 +2,7 @@
 id: T-2801
 title: 'post-land sweep regression from T-2794, T-2686, T-2795, T-2675, T-2790: 18
   new (rule, file) identit(ies), 37 finding(s) (COV001, CYCLE001, DOC001, DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'

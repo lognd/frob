@@ -241,6 +241,10 @@ def _warn_if_finding_duplicate_at_start(
         )
         shared = wanted & theirs
         if shared:
+            # frob:waive PERF004 reason="shared is THIS iteration's own \
+            # per-other-ticket distinct set (a different intersection every time \
+            # queue.values() advances), formatted only for a WARNING log line -- not a \
+            # shared re-sort of identical data across iterations"
             _log.warning(
                 "tickets: %s starting while %s already declares the same "
                 "finding(s) %s -- two tickets may be about to double-work "

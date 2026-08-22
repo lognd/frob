@@ -349,6 +349,10 @@ def _run_drain_async(cfg: AppConfig) -> None:
     )
 
     root = _resolve_root(cfg)
+    # frob:waive SEC110 reason="_EXCLUDE_PID_ENV_VAR/_LAND_TICKET_ID_ENV_VAR are \
+    # land-internal dispatch-context markers (a PID and a ticket id), carry no \
+    # sensitive value -- same posture as the FROB_AGENT/FROB_WORKTREE waivers \
+    # elsewhere in this repo"
     raw_pid = os.environ.get(_EXCLUDE_PID_ENV_VAR)
     exclude_pid = int(raw_pid) if raw_pid and raw_pid.isdigit() else None
     land_ticket_id = os.environ.get(_LAND_TICKET_ID_ENV_VAR)

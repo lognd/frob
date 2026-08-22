@@ -203,6 +203,15 @@ class SealedGrantSet:
         self._grants: dict[str, MayGrantDecl] = grants
 
     # frob:doc docs/strata/surface.md#fragments-t-2502
+    # frob:tests \
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_declared_at\
+    # om_still_works
+    # frob:tests \
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_widen_on_undeclared_\
+    # atom_refuses_closed
+    # frob:tests \
+    # tests/unit/strata/test_fragments.py::TestSealedGrantSet.test_fresh_insert_raises_\
+    # at_runtime
     @classmethod
     def from_root_node(cls, node: NodeDecl) -> "SealedGrantSet":
         """The ONLY construction path -- one entry per grant the ROOT

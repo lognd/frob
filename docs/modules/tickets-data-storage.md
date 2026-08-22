@@ -933,7 +933,7 @@ AttachError = TicketError | ClipboardError
 <!-- frob:describes src/frob/tickets/_store.py::load_all -->
 <!-- frob:describes src/frob/tickets/_store.py::write_ticket -->
 <!-- frob:describes src/frob/tickets/_store.py::write_all -->
-<!-- frob:describes src/frob/tickets/_store.py::migrate_to_ledger -->
+<!-- frob:describes src/frob/tickets/_store_migrate.py::migrate_to_ledger -->
 <!-- frob:describes src/frob/tickets/_store.py::atomic_write -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
 <!-- frob:describes src/frob/tickets/_store.py::iter_raw_ledger_frontmatter -->
@@ -950,9 +950,9 @@ backend switch described under Storage above; `frob/tickets/__init__.py`
 
 ### Migration to v2 (T-1259, docs/design/ledger-v2.md section 7)
 
-<!-- frob:describes src/frob/tickets/_store.py::migrate_v1_to_v2 -->
-<!-- frob:describes src/frob/tickets/_store.py::_migrate_one_v2 -->
-<!-- frob:describes src/frob/tickets/_store.py::_split_done_report -->
+<!-- frob:describes src/frob/tickets/_store_migrate.py::migrate_v1_to_v2 -->
+<!-- frob:describes src/frob/tickets/_store_migrate.py::_migrate_one_v2 -->
+<!-- frob:describes src/frob/tickets/_store_migrate.py::_split_done_report -->
 
 `migrate_v1_to_v2(root)` is the one-shot, reversible v1 -> v2 migrator
 (design section 7, deliverable 1): it reads today's `tickets.md`/

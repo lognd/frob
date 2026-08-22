@@ -405,6 +405,7 @@ def _languages_present(paths: Sequence[str]) -> frozenset[str]:
     return frozenset(languages)
 
 
+# frob:doc docs/audits/graph.md#callgraphpy----best-effort-private-callee-call-graph
 def build_call_graph(
     root: Path,
     paths: Sequence[str],

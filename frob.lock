@@ -1439,6 +1439,42 @@
       "old_digest": null,
       "reason": "T-2843: split docstatus_gate/docmake_gate/docseverity_gate out of _doclink_docanchor.py into _docstatus.py, no behavior change; existing tests/test_gates.py bindings re-verified to still resolve against the new file",
       "ref": "src/frob/gates/_docstatus.py::docseverity_gate"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "body",
+      "new_digest": "a237b85e04616177c73f350bec11bd0381c0154f3f69322fc07a14f4b50cfec3",
+      "old_digest": "c6f256f5b112c7a59607f96f8b67aa7abbe2835daf5db6c082c5bdee345a7008",
+      "reason": "T-2801: re-read the function body against docs/modules/tickets-landing.md's description (T-2713's own check-stage-name gap fix) -- prose still accurately describes current behavior; body digest moved from an unrelated edit, not a doc-invalidating change",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "sig",
+      "new_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "old_digest": "63174356c2c40bb45031875e99279302761e37b215097b8232bad61fbb5f8596",
+      "reason": "T-2801: re-read the function body against docs/modules/tickets-landing.md's description (T-2713's own check-stage-name gap fix) -- prose still accurately describes current behavior; body digest moved from an unrelated edit, not a doc-invalidating change",
+      "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "body",
+      "new_digest": "86d9d230b1eab77a93ec0cf281fd18ae421bc750b8ebe2bc2f4854b9a213c56d",
+      "old_digest": null,
+      "reason": "T-2801: re-read the signature against docs/modules/tickets-data-storage.md's milestone-first/priority/age ordering description -- still accurate; sig digest moved from an unrelated formatting/type-annotation change, not a doc-invalidating change",
+      "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-22",
+      "facet": "sig",
+      "new_digest": "1b749525847483c66f347e233678dae1941cabee7a59fe423707d3b1f6f3da0c",
+      "old_digest": "3eb8e14206d9bda5ef6424e9637ee4986eda1de476d24b3cabc9d618dd172297",
+      "reason": "T-2801: re-read the signature against docs/modules/tickets-data-storage.md's milestone-first/priority/age ordering description -- still accurate; sig digest moved from an unrelated formatting/type-annotation change, not a doc-invalidating change",
+      "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
     }
   ],
   "entries": [
@@ -1593,7 +1629,7 @@
       "ref": "src/frob/app/ticket_runner/_verify.py::_error_finding_identity"
     },
     {
-      "digest": "c6f256f5b112c7a59607f96f8b67aa7abbe2835daf5db6c082c5bdee345a7008",
+      "digest": "a237b85e04616177c73f350bec11bd0381c0154f3f69322fc07a14f4b50cfec3",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_verify.py::_parse_error_findings_from_json"
     },
@@ -2378,7 +2414,12 @@
       "ref": "src/frob/tickets/__init__.py::_capture_done_report_claims"
     },
     {
-      "digest": "3eb8e14206d9bda5ef6424e9637ee4986eda1de476d24b3cabc9d618dd172297",
+      "digest": "86d9d230b1eab77a93ec0cf281fd18ae421bc750b8ebe2bc2f4854b9a213c56d",
+      "facet": "body",
+      "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
+    },
+    {
+      "digest": "1b749525847483c66f347e233678dae1941cabee7a59fe423707d3b1f6f3da0c",
       "facet": "sig",
       "ref": "src/frob/tickets/__init__.py::_doable_sort_key"
     },

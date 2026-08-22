@@ -898,6 +898,9 @@ class TestPublish:
             GraphSnapshot(root=str(tmp_path), symbols={}, edges=()),
             dry_run=False,
         )
+        # frob:waive SEC110 reason="test-only assertion that a FAKE placeholder token \
+        # ('pypi-XXXX', never a real credential) was set by the code under test -- no \
+        # real secret value ever flows through this read"
         assert os.environ.get("UV_PUBLISH_TOKEN") == "pypi-XXXX"
         monkeypatch.delenv("UV_PUBLISH_TOKEN", raising=False)
 

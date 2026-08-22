@@ -346,6 +346,9 @@ def _repro_merge_base_root(root: Path) -> Path:
     dispatched-agent case, not a behavior change for that one."""
     from frob.tickets._worktree_guard import FROB_WORKTREE_ENV
 
+    # frob:waive SEC110 reason="FROB_WORKTREE is a dispatch-context path marker \
+    # (T-0574), carries no sensitive value -- same posture as the existing \
+    # FROB_AGENT/FROB_WORKTREE waivers elsewhere in this repo"
     worktree = os.environ.get(FROB_WORKTREE_ENV, "").strip()
     return Path(worktree) if worktree else root
 
