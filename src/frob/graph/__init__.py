@@ -24,6 +24,11 @@ reaches the graph automatically.
 # than by direct calls -- splitting query accessors away from the builder of the \
 # structure they query would separate one cohesive graph API into pieces with no \
 # independent reason to exist apart"
+# frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
+# already establishes -- one build-graph pipeline (ingest/parse/cache-prune) plus its \
+# three query accessors, coupled by the shared GraphSnapshot model. Splitting the \
+# pipeline stages apart would sever load_graph's own incremental-cache-vs-reparse \
+# decision from the parse/ingest steps it decides between."
 
 from __future__ import annotations
 

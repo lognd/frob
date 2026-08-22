@@ -24,6 +24,14 @@ frob_core-dependent rungs, not to this best-effort resolution step).
 # reusable sentinel-vs-real-symref predicate over the same CallGraph.calls shape those \
 # exports produce -- coupled to the pipeline by the data model it validates, not a \
 # second unrelated concern to split into its own module"
+# frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
+# already establishes -- one interprocedural call-resolution pipeline (build_call_ \
+# graph/build_ordered_call_graph/build_reference_graph/closure/scope_private_helper_ \
+# gaps) built once so frob.dup and future arch work share the same resolution logic \
+# rather than re-deriving it (module docstring's own design rationale). Splitting the \
+# graph-building stages from the closure/gap-detection consumers that walk the exact \
+# CallGraph shape they produce would force a fresh import edge back to this module \
+# from its own split-out half."
 
 from __future__ import annotations
 

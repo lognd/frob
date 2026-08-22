@@ -2,6 +2,14 @@
 (T-1420 split -- the single-language table earns its own file since python
 is this registry's largest single-language slice by a wide margin)."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states its \
+# reason for existing directly -- it is ALREADY the product of a per-language split \
+# (T-1420) that gave python its own file specifically because it is this registry's \
+# largest single-language slice by a wide margin. It is a flat data table \
+# (_PYTHON_OPERATIONS tuple of _DangerousOperation entries), not executable logic with \
+# internal seams; splitting it further would be an arbitrary line-count cut through \
+# one language's needle catalog, with no responsibility boundary to hang the cut on."
+
 from __future__ import annotations
 
 from frob.vet._capability_registry._schemas import _DangerousOperation, _op

@@ -13,6 +13,14 @@ namespace so this split is invisible to any external caller -- moved
 verbatim, no behavior change.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as T-1420's shared-primitives split -- pattern compilation, comment/docstring byte- \
+# span computation, needle-matching, and embedded-code detection that EVERY per- \
+# language binding module (python/typescript/rust/c/kotlin) depends on and none owns \
+# individually. This is the single shared substrate by design; splitting it would \
+# either duplicate these primitives across the language modules or introduce a fresh \
+# import cycle between two halves of what is one scanner core."
+
 # frob:ticket T-1420
 # frob:ticket T-1210
 # frob:ticket T-1223

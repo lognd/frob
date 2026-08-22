@@ -126,6 +126,16 @@ yet" (the remaining `PYIDIOM-*` rows). See docs/modules/arch.md's
 full per-pattern reasoning.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: one advisory design-pattern recommender \
+# registry (module docstring: HALLMARK->PATTERN and ANTI-PATTERN->ESCAPE detectors), \
+# all sharing one severity channel (severity=\"suggestion\", never build-blocking) and \
+# one structural-walk substrate (_iter_py_functions/_child/_node_text) this package \
+# already provides. Each detector rule is short; the bulk is the volume of distinct \
+# hallmark/anti-pattern rules under one shared design-constraint header (advisory- \
+# only, strong-hallmark-only), not a bundle of unrelated concerns -- splitting by \
+# rule-count would be an arbitrary cut with no consumer-set boundary, since every rule \
+# is reached only through this module's own single entrypoint."
+
 from __future__ import annotations
 
 from dataclasses import dataclass

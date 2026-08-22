@@ -27,6 +27,14 @@ tests) a `CallGraph` + `Edge` sequence up front: this module performs no
 filesystem walk of its own.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring names an \
+# explicit DESIGN CONSTRAINT (T-0745 acceptance) that this stays ONE shared fixpoint \
+# engine, not two, specifically so a future consumer (T-0686 may-raise) can host its \
+# own lattice over the exact same SCC-ordered worklist rather than re-deriving call- \
+# graph traversal -- splitting the worklist/SCC-ordering machinery from the summary \
+# lattice it drives would violate that constraint directly, not just cut a line-count \
+# corner."
+
 from __future__ import annotations
 
 import ast

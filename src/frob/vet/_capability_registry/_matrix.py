@@ -4,6 +4,14 @@ EXCUSES`, `NO_CAPABILITY_MODULES`, and the `capability_matrix`/
 `DANGEROUS_OPERATIONS` table -- split out (T-1420) as its own concern,
 distinct from the tables it reasons over."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as its own T-1420 split-out concern already (the capability-kind x language coverage \
+# matrix, distinct from the tables it reasons over). CAPABILITY_MATRIX_EXCUSES/ \
+# NO_CAPABILITY_MODULES and the capability_matrix/_unexcused_empty_cells/ \
+# _validate_registry_kinds functions that consume them are one read-only reporting \
+# concern over the same DANGEROUS_OPERATIONS reassembly; splitting the excuse tables \
+# from the functions that interpret them would separate data from its only reader."
+
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict

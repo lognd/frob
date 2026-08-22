@@ -7,6 +7,17 @@ A malformed directive is data (`MalformedDirective`), never a crash and
 never silently dropped -- `frob.gates` reports it.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this is the ONE frob:<verb> comment-DSL \
+# grammar (module docstring: 'line-oriented, no expressions, grep-able in any of \
+# frob.lang's five grammars'), applied uniformly to both source comments and markdown \
+# frob:describes anchors through the shared _VERB_TABLE/EdgeKind vocabulary. The \
+# markdown-anchor parsing (mask_frob_mentions/markdown_anchors) and the source-comment \
+# parsing (_parse_attrs*/_parse_line/parse_directives) look separable by target \
+# surface, but both resolve to the same Edge/EdgeKind/MalformedDirective model and the \
+# same per-verb attribute grammar (_attrs_verb_error_*) -- splitting them would \
+# duplicate that shared verb grammar across two files rather than find a real \
+# consumer-set boundary."
+
 from __future__ import annotations
 
 import re

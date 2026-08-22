@@ -7,6 +7,15 @@ changed, and `load_graph` can read the whole snapshot back without
 re-parsing anything.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: one SQLite-backed persistence concern for \
+# GraphSnapshot (module docstring: 'everything stored here is derived and rebuildable \
+# from the tracked source tree'), covering schema, incremental per-file hash-keyed \
+# writes, and the full-snapshot read-back load_graph depends on. Splitting schema/ \
+# migration from the read/write paths that depend on the exact same row shape would \
+# cut a single atomic-write discipline in half, the same 'cut a real edge' outcome \
+# T-1651 already ruled out for this repo's other persistence-layer files (frob.tickets \
+# ._store's own LARGE001 waiver draws the identical distinction)."
+
 from __future__ import annotations
 
 import json

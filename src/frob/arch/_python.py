@@ -7,6 +7,14 @@ the recursion (into class bodies and nested functions) lives in exactly one
 place instead of a bespoke nested closure per check.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states the \
+# seam directly -- every walker (long-function, god-class, high-coupling, deep- \
+# nesting, cross-file abstraction-opportunity grouping) is driven off the ONE shared \
+# _iter_py_functions generator specifically so the class/nested-function recursion \
+# lives in exactly one place instead of a bespoke nested closure per check. Splitting \
+# the walkers apart would either duplicate that shared recursion or force a fresh \
+# import edge back to it from every split-out piece."
+
 from __future__ import annotations
 
 import re

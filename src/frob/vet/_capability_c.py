@@ -8,6 +8,14 @@ operations` are moved here from their original out-of-order position
 cohesive in one file. Every name here is re-exported (or imported back)
 by `_capability` so the module's public surface is unchanged."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as T-1420's per-language split of frob.vet._capability -- the C/C++ import/binding- \
+# aware resolution family is cohesive by language (macro-alias tables, scope-binding, \
+# resolved-candidate collection all specific to C/C++'s preprocessor-driven renaming \
+# idiom), mirroring the sibling python/rust/typescript/kotlin language modules this \
+# same split produced. Splitting further would separate the macro-alias machinery from \
+# the binding resolution it exists only to feed."
+
 # frob:ticket T-1420
 from __future__ import annotations
 

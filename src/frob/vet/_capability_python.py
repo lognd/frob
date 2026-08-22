@@ -5,6 +5,15 @@ family, split verbatim out of `frob.vet._capability` (T-0328 lineage).
 Every name here is re-exported (or imported back) by `_capability` so the
 module's public surface is unchanged."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as T-1420's per-language split of frob.vet._capability -- the python import/binding- \
+# aware resolution family (scope-binding, alias-table construction, resolved-candidate \
+# collection) is cohesive by language, mirroring the sibling c/rust/typescript/kotlin \
+# language modules the same split produced. Python is this registry's largest single- \
+# language slice (per the sibling _dangerous_ops_python.py's own docstring), which is \
+# why this file is the largest of the five -- a real language-cohesion seam, not \
+# accidental bulk."
+
 # frob:ticket T-1420
 from __future__ import annotations
 

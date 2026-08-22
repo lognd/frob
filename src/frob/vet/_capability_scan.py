@@ -12,6 +12,15 @@ per-file/per-directory fingerprint and capability aggregation
 here is re-exported (or imported back) by `_capability` so the module's
 public surface (including its `__all__` list) is unchanged."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as T-1420's 'aggregation/fingerprint/opaque tail' split -- three families (self-path \
+# exclusion, per-file/per-directory fingerprint aggregation, and the _OpaqueFinding \
+# structural-opaqueness family) that T-1459's own design review considered splitting \
+# further and flagged as a FOLLOW-UP beyond the six per-language binding families, not \
+# as three independently-consumed concerns today -- all three are private, re-exported \
+# only through frob.vet._capability's own __all__, with no external caller \
+# distinguishing between them."
+
 # frob:ticket T-1420
 from __future__ import annotations
 

@@ -84,6 +84,14 @@ not a replacement for, the pre-existing bare-name `NormalizedField`
 mapping (`_rust_enum_variants`) every variant still also gets.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states it is \
+# deliberately kept as ONE adapter mirroring frob.arch._typescript.TypeScriptAdapter's \
+# node-walk structure one-for-one (a T-0611 review correction), covering every rust \
+# construct mapped to the shared NormalizedModule shape (struct/enum/trait/impl). \
+# Splitting by construct-kind would break the one-for-one mirroring this module's \
+# entire design rationale depends on, with no independent consumer for any single \
+# construct-mapper."
+
 from __future__ import annotations
 
 import re
