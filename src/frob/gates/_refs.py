@@ -6,6 +6,13 @@
 # layer's negative result falls through to the next), not independently callable \
 # concerns with their own consumer set -- splitting would scatter one per-file \
 # classification decision across files for no external caller."
+# frob:waive OPAQUE001 reason="T-2888: this module docstring TEXTUALLY mentions \
+# importlib.import_module(...) as an EXAMPLE of the opacity concern this gate itself \
+# detects (line 31), not a real call anywhere in this file -- a real, reproduced bug \
+# in _non_executable_byte_spans/_PY_DOCSTRING_QUERY_SRC (the module-docstring query \
+# anchor breaks when a comment, like this very LARGE001 waiver, precedes the \
+# docstring), tracked and root-caused for a proper fix in T-2885 rather than patched \
+# here"
 """REF001/REF002/REF003: anti-orphan gate over every git-tracked file
 (docs/modules/gates.md#anti-orphan-file-reference-gate, T-0396).
 

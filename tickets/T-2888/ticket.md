@@ -1,7 +1,7 @@
 ---
 id: T-2888
 title: 'Red-tail sweep round 2: OPAQUE001 fix, LANG004/TICK003/TICK006 characterized'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -15,10 +15,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
+evidence_scope:
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): Only change is one inline frob:waive OPAQUE001
+    comment; the other three findings are investigation/characterization only, no
+    code touched.'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 6647
+  new_length: 6820
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_docstring_query_still_finds_real_docstrings
 designated_repro_test: null
 threat: null
 component: null
@@ -138,3 +151,5 @@ matching the coordinator's stated preference for stating this over
 forcing a disposition.
 
 frob:no-behavior-change reason="The only production-code change is one inline frob:waive OPAQUE001 comment naming T-2885 -- no executable behavior changes. LANG004/TICK003/TICK006 are investigation/characterization only, no code touched for any of the three."
+
+frob:no-behavior-change reason="Only change is one inline frob:waive OPAQUE001 comment; the other three findings are investigation/characterization only, no code touched."
