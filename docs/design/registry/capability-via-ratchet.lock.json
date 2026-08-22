@@ -41,9 +41,14 @@
       "ticket": "T-1628"
     },
     "core::env.read": {
-      "accepted_count": 3,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 4,
+      "reason": "T-2877: SYS111 measured this pair above its committed ceiling of 3; the new site is src/frob/process/_reap.py, added by T-2849's forkserver leak fix -- a genuine new env.read call (os.environ.get(FORKSERVER_ARM_PDEATHSIG_ENV)), not a moved one, so bumping the ceiling to the current measured count is correct rather than a via-repoint.",
+      "ticket": "T-2877"
+    },
+    "core::ffi": {
+      "accepted_count": 1,
+      "reason": "T-2877: first via-scoped ffi grant for core -- T-2849's via-less, unjustified `may \"ffi\"` grant is converted to a precise via-list naming src/frob/process/_reap.py (the sole ffi call site in this node, measured by scanning every file the node's code globs cover), so this ratchet pair has no prior baseline; baselining it at the one genuine site.",
+      "ticket": "T-2877"
     },
     "core::env.write": {
       "accepted_count": 1,

@@ -332,6 +332,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2872: Fix COV003: 12 tickets cite renamed test_large_file_fires_large001_warn
 - T-2873: Write 36 individual COV007 waivers (all but the T-2849-blocked _reap.py finding)
 - T-2874: Waive COV007's last finding (_reap.py) and promote COV007 to ERROR
+- T-2877: SELFAUDIT001: T-2849's process/_reap.py env.read growth and a new via-less core ffi grant lack ratchet/because coverage
 - T-2879: Red-tail sweep: COV001/DRIFT002/DOCENUM001/PERF004/DOC011/DOC006 (6 independent causes, CYCLE001/TICK004 verified correctly left alone)
 
 ## [0.530.0] - unreleased

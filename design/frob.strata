@@ -822,7 +822,16 @@ node core : trusted {
     // declares for the pre-extraction handler this module generalizes.
     may "process-control" via "src/frob/testing/_stackdump.py";
     may "env.write" via "src/frob/release/_publish.py";
-    may "ffi";
+    // T-2877: T-2849 added a via-less, unjustified `may "ffi"` grant
+    // here alongside the `_reap.py` forkserver-parent-death-signal
+    // work. Measured (git grep across every file this node's code
+    // globs cover): `src/frob/process/_reap.py` is the ONLY ffi
+    // call site in the whole node -- `ctypes.CDLL(None)` loading
+    // libc to call `prctl(2)` and arm PR_SET_PDEATHSIG so a
+    // forkserver child dies with its parent (the T-2849 leak fix).
+    // Via-scoping to that one file rather than leaving the grant
+    // ambient over this node's 126 files.
+    may "ffi" via "src/frob/process/_reap.py";
     // T-0778: `src/frob/gitio.py`'s own subprocess spawns are now real,
     // wired kill-switch coverage (frob.process._guard.
     // guarded_subprocess_run, transitively covering the serve daemon and

@@ -2,7 +2,7 @@
 id: T-2877
 title: 'SELFAUDIT001: T-2849''s process/_reap.py env.read growth and a new via-less
   core ffi grant lack ratchet/because coverage'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
