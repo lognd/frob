@@ -2,7 +2,7 @@
 id: T-2826
 title: 'LARGE001: split or waive oversized frob.strata modules (excludes T-2729''s
   _selfconform.py)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -25,10 +25,19 @@ scope:
 - src/frob/strata/_infra.py
 - src/frob/strata/_mode_conformance.py
 - src/frob/strata/_threat.py
+- src/frob/app/_check_chunking.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/_check_chunking.py
+  reason: T-2369's lease on this file cleared (it re-homed the file to child T-2832,
+    now done); T-2830's own dispatch flagged this file as an open, unclaimed LARGE001
+    finding -- picking it up here since a lease is free
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 threat: null
 component: null
