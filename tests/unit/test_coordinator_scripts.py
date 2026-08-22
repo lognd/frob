@@ -5107,9 +5107,9 @@ class TestFleetStatusLarge001WaiverParses:
         """arch_gate() + _apply_waivers() against a live build_graph()
         snapshot of this repo report zero KEPT LARGE001 findings for
         scripts/fleet_status.py -- proving the corrected, multi-line
-        frob:waive reason still parses as one directive and still binds,
-        rather than silently regressing to a bare unwaived LARGE001 error
-        the way a malformed directive would."""
+        frob:quote(frob:waive reason) still parses as one directive and still
+        binds, rather than silently regressing to a bare unwaived LARGE001
+        error the way a malformed directive would."""
         from frob.gates._arch import arch_gate  # noqa: PLC0415
         from frob.gates._waive import _apply_waivers  # noqa: PLC0415
         from frob.graph import build_graph  # noqa: PLC0415
@@ -5126,3 +5126,32 @@ class TestFleetStatusLarge001WaiverParses:
         ]
         assert kept_offenders == [], f"unwaived LARGE001 on fleet_status.py: {kept_offenders}"
         assert waived_offenders != [], "expected fleet_status.py's LARGE001 to be waived"
+
+
+# frob:ticket T-2854
+class TestOwnDocstringHasNoMalformedDirective:
+    """T-2854: this file's own TestFleetStatusLarge001WaiverParses docstring
+    used to contain an unescaped line ('frob:waive reason still parses as
+    one directive and still binds,') that the directive DSL parses per-line
+    -- a docstring is directive-scannable too (T-0342), and that line's
+    SHAPE (starts with 'frob:<verb>') is indistinguishable from a genuine
+    one-line directive, so it was reported as a MalformedDirective ('bad
+    attribute syntax'). Fixed by wrapping the mention in the DSL's own
+    `frob:quote(...)` escape (T-1970) rather than weakening the scanner --
+    see tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMention
+    Escape for the escape mechanism's own isolated coverage. This test
+    binds directly to THIS file's real content so a future edit re-
+    introducing an unescaped directive-shaped docstring line here is
+    caught immediately, not just in the synthetic fixture."""
+
+    def test_no_malformed_directives_in_this_file(self) -> None:
+        # frob:tests tests/unit/test_coordinator_scripts.py::TestOwnDocstringHasNoMalformedDirective.test_no_malformed_directives_in_this_file  # noqa: E501
+        from frob.graph.dsl import parse_directives  # noqa: PLC0415
+        from frob.lang import parse_file  # noqa: PLC0415
+
+        this_file = Path(__file__)
+        parsed = parse_file(this_file).danger_ok
+        _edges, malformed = parse_directives(parsed)
+        assert malformed == (), (
+            f"unescaped directive-shaped prose in {this_file.name}: {malformed}"
+        )

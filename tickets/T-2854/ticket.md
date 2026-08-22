@@ -2,7 +2,7 @@
 id: T-2854
 title: 'malformed-directive false-positive: docstring prose containing ''frob:waive
   reason'' parsed as an attribute'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -16,11 +16,36 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tests/unit/test_coordinator_scripts.py
+- tests/unit/graph/test_dsl_mention_escape.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: T-2854's fix needs a regression test in the canonical T-1970 mention-escape
+    home (tests/unit/graph/test_dsl_mention_escape.py), not just the one docstring
+    reworded in test_coordinator_scripts.py, so the docstring-carrier false positive
+    has a durable positive-control pair (escaped/unescaped) rather than only a fixed
+    fixture
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tests/unit/graph/test_dsl_mention_escape.py
+  reason: T-2854's fix needs a regression test in the canonical T-1970 mention-escape
+    home (tests/unit/graph/test_dsl_mention_escape.py), not just the one docstring
+    reworded in test_coordinator_scripts.py, so the docstring-carrier false positive
+    has a durable positive-control pair (escaped/unescaped) rather than only a fixed
+    fixture
+  actor: logan
+  at: '2026-08-22'
+evidence:
+- tests/unit/test_coordinator_scripts.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
+- tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_unescaped_docstring_prose_is_malformed
+- tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_escaped_docstring_prose_produces_no_malformed_or_edge
+- tests/unit/graph/test_dsl_mention_escape.py::TestDocstringMentionEscape::test_real_directive_inside_a_docstring_still_parses
+designated_repro_test: tests/unit/test_coordinator_scripts.py::TestOwnDocstringHasNoMalformedDirective::test_no_malformed_directives_in_this_file
 threat: null
 component: null
 anchor: false

@@ -138,3 +138,77 @@ class TestMarkdownAnchorsMentionEscape:
         assert malformed == ()
         assert len(edges) == 1
         assert edges[0].target == "src/x.py::Y"
+
+
+# frob:ticket T-2854
+class TestDocstringMentionEscape:
+    """T-2854: a Python DOCSTRING (not a `#` comment) is also directive-
+    scannable (T-0342, `frob.lang._walk_python._walk_python_docstring_
+    comments`), so prose inside one that happens to occupy a whole line
+    starting with `frob:<verb>` is parsed exactly like a real directive --
+    the same over-parse T-1970 already named, in a comment shape T-1970's
+    own fixtures never exercised. `frob:quote(...)` is the same one
+    escape either way; these are the docstring-carrier positive controls
+    (both directions) T-2854's own investigation measured directly
+    against this repo's real tests/unit/test_coordinator_scripts.py
+    before applying its fix there."""
+
+    def test_unescaped_docstring_prose_is_malformed(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # T-2854's reproduced incident, minimized: a docstring line that
+        # merely QUOTES "frob:waive reason" in prose, with no real
+        # attribute syntax, is indistinguishable in SHAPE from a genuine
+        # one-line directive -- this control documents that the scanner
+        # DOES fire here today, which is why the escape below is needed
+        # rather than optional polish.
+        src = (
+            "def foo() -> None:\n"
+            '    """proving the corrected, multi-line\n'
+            "    frob:waive reason still parses as one directive and still\n"
+            '    binds."""\n'
+            "    pass\n"
+        )
+        parsed = parse_file(_write(tmp_path, "m.py", src)).danger_ok
+        _edges, malformed = parse_directives(parsed)
+        assert len(malformed) == 1
+        assert "bad attribute syntax" in malformed[0].reason
+
+    def test_escaped_docstring_prose_produces_no_malformed_or_edge(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # Same docstring, with the mention wrapped -- T-2854's actual fix
+        # shape, applied to tests/unit/test_coordinator_scripts.py's own
+        # TestFleetStatusLarge001WaiverParses docstring.
+        src = (
+            "def foo() -> None:\n"
+            '    """proving the corrected, multi-line\n'
+            "    frob:quote(frob:waive reason) still parses as one directive and\n"
+            '    still binds."""\n'
+            "    pass\n"
+        )
+        parsed = parse_file(_write(tmp_path, "m.py", src)).danger_ok
+        edges, malformed = parse_directives(parsed)
+        assert malformed == ()
+        assert edges == ()
+
+    def test_real_directive_inside_a_docstring_still_parses(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # The other half of the control: escaping the PROSE case must not
+        # regress T-0342's own point -- a GENUINE directive written inside
+        # a docstring (not a `#` comment) must still bind.
+        src = (
+            "def foo() -> None:\n"
+            '    """T-0342: directives work in docstrings too.\n'
+            '    frob:waive RULE-1 reason="real, unescaped, still live"\n'
+            '    """\n'
+            "    pass\n"
+        )
+        parsed = parse_file(_write(tmp_path, "m.py", src)).danger_ok
+        edges, malformed = parse_directives(parsed)
+        assert malformed == ()
+        assert len(edges) == 1
+        assert edges[0].kind == EdgeKind.WAIVE
+        assert edges[0].target == "RULE-1"
