@@ -305,6 +305,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2836: REG008 burn-down batch 3/N: CHK-GATE-DOC012 (final entry, lease cleared)
 - T-2839: Fix malformed frob:waive LARGE001 directive on arch/_patterns.py (T-2823 regression)
 - T-2841: Fix I001 import-sort regression in T-2729's selfconform split (6 files)
+- T-2847: LARGE001: src/frob/tickets/_setters.py unwaived after T-2834's split (1111 lines)
 
 ## [0.530.0] - unreleased
 

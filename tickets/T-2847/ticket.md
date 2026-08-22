@@ -2,7 +2,7 @@
 id: T-2847
 title: 'LARGE001: src/frob/tickets/_setters.py unwaived after T-2834''s split (1111
   lines)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'

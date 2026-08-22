@@ -1,3 +1,18 @@
+# frob:waive LARGE001 reason="T-1651-grade, post-T-2834 shape (T-2847): the \
+# sprint/flow analytics family already split out to _flow.py in T-2834, leaving only \
+# single-ticket field mutators (set_priority/set_kind/set_tier/set_parent/ \
+# set_body/set_runs_last/set_runs_last_parallel_safe/set_milestone/ \
+# set_scope_breadth_ack/set_no_scope_declared/set_designated_repro_test/ \
+# set_sprint/set_component) plus their shared write-path helpers (_set_ticket_field, \
+# _refuse_write_if_land_in_progress, _validate_parent_edge, _validate_body_amend, \
+# _current_actor). Every one of these is the SAME consumer concern -- mutating exactly \
+# one field on exactly one already-loaded Ticket through the same single-writer choke \
+# point -- so there is no consumer-set seam left to cut: any split would either \
+# duplicate _set_ticket_field/_refuse_write_if_land_in_progress across two files or \
+# introduce a cross-file coupling neither the flow split nor the original T-1151 split \
+# needed. 1111 lines reflects the number of distinct ticket fields this repo lets an \
+# agent mutate, not an uncohered file; a further line-count-driven split here would be \
+# strictly worse than the warning per the T-1651 bar."
 """frob.tickets._setters -- the field-setter family (T-1151, T-1123/T-1108
 residue, narrowed by T-2834): the single-field setters (`set_priority`/
 `set_kind`/`set_tier`/`set_sprint`/`set_component`) split out of
