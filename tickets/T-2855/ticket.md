@@ -2,7 +2,7 @@
 id: T-2855
 title: 'post-land sweep regression from T-2846: 22 new (rule, file) identit(ies),
   172 finding(s) (COV001, DOC006, DRIFT002, REF001)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -74,6 +74,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: record no-behavior-change rationale before landing (comment/directive-only
+    doc-drift fix)
+  actor: logan
+  at: '2026-08-22'
+  old_length: 5202
+  new_length: 5699
+evidence:
+- tests/unit/test_dup_core.py::TestAptedSimilarity::test_identical_trees_similarity_one
+- tests/test_arch_near_duplicate_native.py::test_near_duplicate_cluster_dispatches_to_native_and_matches_reference
 designated_repro_test: null
 threat: null
 component: null
@@ -136,3 +147,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TEST001  frob-core/src/r5.rs  -> attributed to T-2846 (commit 71951858f145, already closed/dropped -- filed below) via frob-core/src/r5.rs::AntiUnifyErr
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:no-behavior-change reason="comment/directive-only fix -- repoints frob:describes/frob:tests edge targets and adds frob:doc comments for pub(crate) helpers T-2846's split newly exposed, zero behavior changed. Verified via a full targeted pytest re-run (tests/unit/test_dup_core.py + tests/test_arch_near_duplicate_native.py, 26/26 passed) and frob natives build (frob_core built cleanly). BUG002 designated-repro requirement does not apply: there is no behavior to reproduce a failure for."
