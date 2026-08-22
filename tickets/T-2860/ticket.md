@@ -32,7 +32,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cf74bde1f7bb6fb3ba9eb6e91cfc0f2cf1c7a8ae
 ---
 ## T-2850 blocks the fleet's core operation
 
