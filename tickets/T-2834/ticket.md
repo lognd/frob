@@ -33,7 +33,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 759475b02d0f4c0f3aef0dc5ba8c732875d8e23b
 ---
 frob.tickets._setters.py (1573 lines) has a real, investigated seam: the sprint/flow analytics family (sprint_view, sprint_velocity, ticket_flow, and their git-history-mining helpers -- _ledger_commit_history/_blob_at/_mine_done_transitions*/_load_flow_ticket_universe/_count_filed_by_day/_count_landed_by_day/_build_flow_rows/_median_cycle_days, roughly 440 lines) is a distinct concern from the single-field setter family (set_priority/set_kind/set_tier/set_parent/set_body/etc) the rest of the module holds -- the setters mutate one ticket's field, the flow family mines git history across the whole queue to report burn-down/velocity.
 
