@@ -1,7 +1,7 @@
 ---
 id: T-2866
 title: Write 37 individual COV007 waivers across 24 files, then promote to error
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
