@@ -42,6 +42,18 @@ include!("grammar_flow.rs");
 include!("grammar_infra.rs");
 include!("grammar_policy.rs");
 
+// frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: this file's own \
+// module doc documents it as the T-1099 residue of splitting a former 4346-line single-file \
+// parse.rs into a parser spine (this file) plus per-family grammar fragments spliced back in via \
+// include! (lexer/grammar_core/grammar_node/ grammar_flow/grammar_infra/grammar_policy) -- \
+// deliberately textual inclusion rather than real child mods, so \
+// Parser/ModuleAst/Token/ParseError and ~50 internal recursive-descent helpers stay exactly as \
+// private as the pre-split monolith, documented above as intentional (a real mod would force \
+// pub(crate) visibility and spuriously demand frob:doc/frob:tests edges on internal helpers). Of \
+// this file's own ~1736 lines, ~1667 (from #[cfg(test)] mod tests on) are colocated unit tests, \
+// the idiomatic Rust convention -- the actual parser-spine code (parse_source_impl plus the \
+// include! directives) is a few dozen lines."
+
 /// Parse strata surface source text into a JSON-encoded AST or diagnostic.
 ///
 /// WHY: the parser is compute-heavy (charter D3, amended 2026-07-17) so it
@@ -51,12 +63,11 @@ include!("grammar_policy.rs");
 pub(crate) fn parse_source_impl(text: &str) -> String {
     // frob:doc docs/strata/surface.md#parser
     // frob:tests strata-core/src/parse/mod.rs::parse_source_impl kind="unit"
-    // frob:waive AFFECT001 reason="T-1099 pure file-relocation refactor: the diff \
-    // moves this function's body verbatim from parse.rs to parse/mod.rs (git sees the \
-    // whole file as new, so the body reads as changed), no grammar/JSON-surface \
-    // behavior changed; docs/strata/surface.md#parser's prose still accurately \
-    // describes the unchanged behavior -- cargo tests (137 passing, unchanged) are \
-    // this refactor's safety net, not a doc edit"
+    // frob:waive AFFECT001 reason="T-1099 pure file-relocation refactor: the diff moves this \
+    // function's body verbatim from parse.rs to parse/mod.rs (git sees the whole file as new, so \
+    // the body reads as changed), no grammar/JSON-surface behavior changed; \
+    // docs/strata/surface.md#parser's prose still accurately describes the unchanged behavior -- \
+    // cargo tests (137 passing, unchanged) are this refactor's safety net, not a doc edit"
     match lex(text).and_then(|toks| Parser::new(toks).parse_program()) {
         Ok(module) => json!({ "ok": module }).to_string(),
         Err(e) => json!({

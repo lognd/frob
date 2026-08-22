@@ -66,6 +66,13 @@ fork/exec inheritance means every `frob check` subprocess `verify_fn`
 spawns inherits both automatically, no per-subprocess wiring needed.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states an \
+# explicit CONTRACT THIS MODULE MUST NOT VIOLATE -- the worker coalesces, it does not \
+# iterate, enforced structurally by the function's own control flow rather than by a \
+# comment. Splitting this module would risk separating that control-flow guarantee \
+# from the queue-reading logic it is enforced over, the exact failure mode the \
+# module's own docstring warns against introducing."
+
 from __future__ import annotations
 
 import hashlib

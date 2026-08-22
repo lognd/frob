@@ -11,6 +11,15 @@ their `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref.
 re-exported here for the same reason (T-0599).
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states the \
+# seam directly -- the public orchestration surface (run_check and its \
+# run_check_cpp/run_check_rust/run_check_ts siblings, plus the cross-module memo \
+# helpers) is kept HERE on purpose so frob:doc/frob:tests bindings keep their \
+# __init__.py symref, while the per-tool runner bodies live in the private _python/ \
+# _native/_ts submodules already split out. Moving the orchestration surface itself \
+# elsewhere would break the exact symref stability this module's docstring names as \
+# the reason it stays here."
+
 from __future__ import annotations
 
 import concurrent.futures

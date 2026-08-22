@@ -6,6 +6,13 @@ They are private helpers of `frob.check`; `run_check` composes them in
 parallel.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring names it as \
+# ONE per-tool-runner family for the Python frob check pipeline (each _run_* helper \
+# shells out to one tool and normalizes its output into a ToolResult), mirroring the \
+# sibling _native/_ts per-language runner modules already split at that same language \
+# boundary. Splitting further would cut individual tool runners apart with no distinct \
+# consumer -- run_check is the only caller of every one of them."
+
 from __future__ import annotations
 
 import os

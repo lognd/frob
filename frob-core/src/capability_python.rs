@@ -71,6 +71,16 @@
 //! literal-string/integer-keyed dict/list container-alias resolution
 //! (T-1626).
 
+// frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: this file's own \
+// module doc states it is EXTRACTION ONLY, mirroring frob.vet._capability_python's resolution \
+// semantics one-for-one in the native kernel, deliberately keeping rule evaluation (the \
+// DANGEROUS_OPERATIONS needle table) entirely in Python so a security reviewer can \
+// read/waive/audit it directly. The import table, scope-shadowing, and alias copy-propagation \
+// machinery this mirrors is one cohesive resolver by design; it is 859 lines against an 800-line \
+// threshold calibrated for this repo's Python modules, not idiomatically-verbose Rust, and has no \
+// #[cfg(test)] padding inflating it -- splitting it would break the one-for-one mirroring with \
+// its Python counterpart this module's entire design rationale depends on."
+
 use std::collections::HashMap;
 
 use pyo3::prelude::*;
@@ -493,14 +503,13 @@ fn resolve_subscript(node: Node, source: &[u8], alias_table: &AliasTable) -> Opt
 /// the SAME judgment as an explicit UNRESOLVED candidate instead of
 /// silently omitting it, per the module docstring's UNRESOLVED
 /// requirement.
-// frob:waive DUP001 reason="the r2 structural match is against \
-// walk_leaves/collect_comment_nodes (this same crate, unrelated shape: an \
-// early-return-on-node-kind tree walk), anti_unify_core (a lockstep two-tree \
-// Plotkin-lgg walk), and four strata-core recursive-descent parser methods -- none \
-// share this function's actual logic (an is-a-non-literal-subscript-key predicate \
-// with no recursion at all); the r2 rung matches on generic Option-chaining \
-// control-flow shape only, a coincidental match class this size of function is prone \
-// to, not a real code duplication to extract a helper from"
+// frob:waive DUP001 reason="the r2 structural match is against walk_leaves/collect_comment_nodes \
+// (this same crate, unrelated shape: an early-return-on-node-kind tree walk), anti_unify_core (a \
+// lockstep two-tree Plotkin-lgg walk), and four strata-core recursive-descent parser methods -- \
+// none share this function's actual logic (an is-a-non-literal-subscript-key predicate with no \
+// recursion at all); the r2 rung matches on generic Option-chaining control-flow shape only, a \
+// coincidental match class this size of function is prone to, not a real code duplication to \
+// extract a helper from"
 // frob:ticket T-1221
 fn is_dynamic_dispatch_subscript(node: Node, source: &[u8]) -> bool {
     if node.kind() != "subscript" {
@@ -739,16 +748,14 @@ fn record_list_container_alias(
 /// (module docstring's UNRESOLVED requirement) -- matches
 /// `_collect_py_candidates`'s recursion shape, extended with the
 /// unresolved branch that has no Python-side counterpart.
-// frob:waive DUP001 reason="the r2 structural match is against \
-// walk_leaves/collect_comment_nodes (this same crate's generic child-recursion shape, \
-// a different traversal with a different payload), anti_unify_core (a lockstep \
-// two-tree walk over TWO trees, not one), and four strata-core recursive-descent \
-// parser methods (grammar productions, an unrelated domain) -- none share this \
-// function's actual per-node dispatch logic (call/attribute/subscript \
-// candidate-vs-unresolved classification against import/alias tables); the r2 rung \
-// matches on the generic 'match on node.kind(), recurse into children' shape every \
-// tree-sitter walker in this crate necessarily has, not a real duplication to extract \
-// a helper from"
+// frob:waive DUP001 reason="the r2 structural match is against walk_leaves/collect_comment_nodes \
+// (this same crate's generic child-recursion shape, a different traversal with a different \
+// payload), anti_unify_core (a lockstep two-tree walk over TWO trees, not one), and four \
+// strata-core recursive-descent parser methods (grammar productions, an unrelated domain) -- none \
+// share this function's actual per-node dispatch logic (call/attribute/subscript \
+// candidate-vs-unresolved classification against import/alias tables); the r2 rung matches on the \
+// generic 'match on node.kind(), recurse into children' shape every tree-sitter walker in this \
+// crate necessarily has, not a real duplication to extract a helper from"
 // frob:ticket T-1221
 fn collect_candidates(
     node: Node,

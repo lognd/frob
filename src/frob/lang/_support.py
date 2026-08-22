@@ -27,6 +27,14 @@ the unaccounted-for hole this whole module exists to make loud -- see its
 docstring.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states its \
+# entire reason for existing is to be the SINGLE place that derives a LanguageSupport \
+# snapshot per language across five upstream registries (frob.lang, frob.vet, \
+# frob.dup, frob.arch, frob.gates._docblocks) -- the audit that motivated T-0405 found \
+# scattering this exact concern across multiple places is what let a half-added \
+# language ship silently. Splitting this module would recreate the scattering problem \
+# it was built to eliminate."
+
 from __future__ import annotations
 
 from enum import StrEnum

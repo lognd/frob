@@ -22,6 +22,21 @@ Usage:
     python3 scripts/fleet_status.py [--idle-minutes N] [--ticket T-####]
 """
 
+# frob:waive LARGE001 reason="a genuine consumer-set seam DOES exist here (this script \
+# has at least four distinguishable concerns -- ticket readiness/scope-lease collision \
+# computation, /proc-based land-process/host-load/forkserver detection, ticket-rot \
+# reporting, and the _print_* report-formatting functions -- and none of them import \
+# each other's private helpers across the boundary) and was investigated for \
+# extraction into sibling scripts/ modules. Rejected for THIS ticket purely on scope \
+# grounds: a new file is not covered by T-2824's enumerated file-list scope (no glob \
+# to grow into), even though design/frob.strata's scripts_ops node already grants \
+# scripts/** a blanket fs.write/fs.read/exec capability with no per-file declaration \
+# needed (unlike src/frob/tickets/_leases.py's worktree-sweep family, which DOES need \
+# a new design/frob.strata grant). This script is also not imported by any src/frob \
+# module (git grep confirms zero importers) -- lower risk than a package-internal \
+# split, since there is no external caller's import path to preserve. Filed as a \
+# follow-up (see Done report) rather than forced through scope creep."
+
 from __future__ import annotations
 
 import sys as _sys

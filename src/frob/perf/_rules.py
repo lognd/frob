@@ -22,6 +22,14 @@ container-kind inference (list vs set/Map) is Python-only since sig/body
 tokens carry no type information to lean on for the other two languages.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents ONE \
+# documented architectural cut (lexical, token-stream-deep scanning over frob.lang's \
+# flattened leaf-token stream, function-granularity loop-context approximation) that \
+# every PERF001..PERF004 rule shares -- not four independent rules bundled together, \
+# but four instances of the identical scanning contract and its documented false- \
+# negative/false-positive tradeoff. Splitting by rule number would duplicate that \
+# shared contract's explanation four times over."
+
 from __future__ import annotations
 
 import re

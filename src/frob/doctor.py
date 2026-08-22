@@ -67,6 +67,13 @@ with `JournalCollision`, inspect `.frob/mutate-backup/<hash>.json` by
 hand -- the recorded PID may have been reused.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states its one \
+# job directly -- verify the native extensions are importable and print exact \
+# remediation when they are not, plus (T-0570) fingerprint every derived artifact frob \
+# writes under .frob/ for present-but-corrupt detection BEFORE any gate consumes them. \
+# Both are the same 'is the installed environment actually usable' diagnostic concern \
+# `frob doctor` exists to answer in one CLI surface, not two."
+
 from __future__ import annotations
 
 import importlib

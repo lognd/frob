@@ -5,6 +5,16 @@ Split out of `frob.__main__` (T-1076) purely to keep that module below the
 large-file gate threshold -- no behavior change, same argparse tree.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states it is \
+# ALREADY a mechanical split of frob.__main__ (T-1076) purely to keep that module \
+# below the large-file gate threshold, with explicitly NO behavior change and the same \
+# argparse tree. Every builder function here (test/vet/perf/release/mutate/ \
+# stats/doctor/clean/fmt/natives/serve/sys/deploy) has the identical single consumer \
+# (frob.__main__'s own dispatch-table wiring) and the identical argparse-subparser \
+# shape -- splitting further would be a second mechanical line-count cut through one \
+# already-cohesive parser-builder group, with no additional consumer-set boundary to \
+# hang it on."
+
 from __future__ import annotations
 
 import argparse

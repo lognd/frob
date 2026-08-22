@@ -48,6 +48,15 @@ Each rule module documents its own Unknown policy where it consumes this
 substrate (see `_loop_effects.py`'s and `_dup_spawn.py`'s module
 docstrings)."""
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring names an \
+# explicit T-0922 user directive -- reuse the T-0659 binding-resolver convention and \
+# the T-0745 summary-fixpoint precedent in ONE shared substrate rather than inventing \
+# a third engine. EffectGraph/Unknown/the needle tables are read by every consuming \
+# PERF rule (PERF008, PERF012, future rules); splitting the graph model from the \
+# resolution logic it is built from would violate the 'one engine, not two' posture \
+# this whole module exists to enforce, the same design constraint frob.graph.summary's \
+# own LARGE001 waiver draws on."
+
 from __future__ import annotations
 
 import re

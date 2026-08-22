@@ -2,7 +2,7 @@
 id: T-2824
 title: 'LARGE001: split or waive oversized misc small-package modules + native (rust)
   files'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -32,6 +32,8 @@ scope:
 - frob-core/src/lib.rs
 - strata-core/src/lib.rs
 - strata-core/src/parse/mod.rs
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,13 +46,16 @@ body_changes:
   at: '2026-08-21'
   old_length: 1545
   new_length: 2548
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 designated_repro_test: null
 acceptance:
 - text: 'given the batch''s 17 files, when arch_gate + _apply_waivers is run directly
     against a build_graph snapshot, then none of the 17 files appear in the unwaived
     LARGE001 kept-set (verified: 0 of 17, remaining 30 unwaived repo-wide are all
     in src/frob/gates/** or src/frob/strata/**, out of scope)'
-  evidence: []
+  evidence:
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 threat: null
 component: null
 anchor: false

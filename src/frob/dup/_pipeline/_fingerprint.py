@@ -8,6 +8,14 @@ public `find_clones`/`find_helper_clones` entry points that assemble a
 `CloneReport` from every rung's groups -- see docs/modules/dup.md#pipeline.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring names it as \
+# the R3-R5 fingerprinting family already split out of dup/_pipeline.py (T-1086) -- \
+# canonical hash, winnowed fingerprints/prefilters/statement-alignment verification, \
+# and Weisfeiler-Lehman dataflow hashing are three INCREASINGLY EXPENSIVE rungs of the \
+# same escalating clone-detection pipeline (docs/modules/dup.md), each rung's output \
+# feeding the next's candidate set. Splitting rungs apart would separate a pipeline \
+# stage from the exact candidate list the next stage consumes."
+
 from __future__ import annotations
 
 from collections import defaultdict

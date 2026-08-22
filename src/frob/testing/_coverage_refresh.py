@@ -51,6 +51,14 @@ floor still refuses a coverage.xml that was genuinely truncated, and
 `write_coverage_lock`'s ratchet still refuses to lower a committed floor.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states its job \
+# is to be the frob-native, cross-platform REPLACEMENT for ~300 lines of Makefile \
+# shell (subprocess rc generation, pytest --cov, coverage combine/xml, frob check \
+# --stamp-coverage), explicitly including real xdist-crash-recovery and rerun-deadline \
+# logic the original shell recipe needed. Splitting the orchestration from the \
+# crash-recovery/rerun logic it must coordinate with would recreate exactly the \
+# cross-file-recipe fragility this module was built to replace."
+
 from __future__ import annotations
 
 import json

@@ -33,6 +33,12 @@ boundary) lives here.
 # (cpp_function_nodes/child_by_field/node_text/ resolve_local_import) has been \
 # extracted to `frob.lang._nodes` and re-exported here (T-0989); re-measure after this \
 # change decided whether this waiver remains needed at the new, lower cluster count"
+# frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
+# already establishes -- the extension-table lookups and the parse-cache memo family \
+# are each coupled by shared module-level state (_EXTENSION_TABLE/_SUPPORTED_ \
+# LANGUAGES; _parse_cache/_parse_cache_hits/_parse_cache_misses), not by call-graph \
+# adjacency. Splitting the cache-memo functions into their own module would leave them \
+# with no caller but this one, per the ARCH102 waiver's own analysis."
 
 from __future__ import annotations
 

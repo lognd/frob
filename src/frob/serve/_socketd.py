@@ -40,6 +40,13 @@ Three pieces:
    process forever.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring states its \
+# entire design constraint -- a SECOND frontend over the exact same frob.serve._tools \
+# core, adding NO parallel implementation of any query, only a second transport (a \
+# standalone unix-socket JSON-RPC daemon process). The protocol framing, socket \
+# lifecycle, and dispatch-into-_tools glue are one transport concern; splitting them \
+# would separate the socket loop from the dispatch table it exists only to serve."
+
 from __future__ import annotations
 
 import errno

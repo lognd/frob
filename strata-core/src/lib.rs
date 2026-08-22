@@ -10,6 +10,14 @@
 //! fixpoint/propagation loops live here rather than in Python (charter
 //! decision D3 as amended 2026-07-17).
 
+// frob:waive LARGE001 reason="Rust-idiom, not a Python line-budget question: ~193 of this file's \
+// 869 lines (line 677 on) are its own #[cfg(test)] mod tests block, the idiomatic Rust convention \
+// of colocating unit tests with the code they test rather than a separate tests/ directory. The \
+// remaining ~675 lines of actual kernel code (the influence-graph fixpoint/propagation prover, \
+// data-in/data-out per this file's own module doc) sit UNDER the 800-line threshold on their own \
+// -- this file crosses the threshold only because of its colocated tests, not because the \
+// production kernel itself is oversized."
+
 use pyo3::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -90,11 +98,10 @@ type AgedEdge = (String, String, String, f64);
 /// Depth-first search for a cycle through `start` (following forward
 /// out-edges) whose accumulated age is strictly positive. Returns the cycle
 /// witness (node/flow ids from `start` back to `start`) when found.
-// frob:invariant terminates reason="recursion only follows an edge to a node not \
-// already in the active set, and active gains one entry per call; the node universe \
-// is finite so active fills up and the recursion bottoms out" measure="number of \
-// nodes not yet in active (strictly decreases each recursive call since the callee's \
-// node is added to active before it returns)"
+// frob:invariant terminates reason="recursion only follows an edge to a node not already in the \
+// active set, and active gains one entry per call; the node universe is finite so active fills up \
+// and the recursion bottoms out" measure="number of nodes not yet in active (strictly decreases \
+// each recursive call since the callee's node is added to active before it returns)"
 fn find_positive_cycle(
     start: &str,
     node: &str,
@@ -164,11 +171,10 @@ fn has_positive_cycle_reaching(
 /// memoized-DFS `worst_age` was rejected for exactly this kind of
 /// context-dependent nondeterminism, so every helper here is deterministic
 /// by construction, not by accident).
-// frob:invariant terminates reason="Tarjan's algorithm: strongconnect recurses only \
-// into a node not yet present in `indices`, and assigns that node an index before \
-// recursing further, so each node is entered at most once across the whole traversal \
-// over a finite node set" measure="number of nodes not yet present in indices \
-// (strictly decreases each recursive call)"
+// frob:invariant terminates reason="Tarjan's algorithm: strongconnect recurses only into a node \
+// not yet present in `indices`, and assigns that node an index before recursing further, so each \
+// node is entered at most once across the whole traversal over a finite node set" measure="number \
+// of nodes not yet present in indices (strictly decreases each recursive call)"
 #[allow(clippy::too_many_arguments)]
 fn strongconnect(
     v: &str,
@@ -517,13 +523,12 @@ type DemandEdge = (String, String, String, Option<f64>, f64);
 /// on flows without declared rates and (b) is reachable, forward, from
 /// some node with a declared outbound rate (`reach`) -- the documented v0
 /// unboundedness rule.
-// frob:invariant terminates reason="recursion follows undeclared-rate edges into src \
-// nodes tracked on the explicit `active` stack; a node already on `active` \
-// short-circuits to a cycle Err instead of recursing again, and the node universe is \
-// finite, so the active stack cannot grow past the total node count before either \
-// terminating on a declared-rate edge or returning the cycle witness" measure="number \
-// of nodes not yet on active (bounded above by the finite node count; each recursive \
-// call pushes a fresh node)"
+// frob:invariant terminates reason="recursion follows undeclared-rate edges into src nodes \
+// tracked on the explicit `active` stack; a node already on `active` short-circuits to a cycle \
+// Err instead of recursing again, and the node universe is finite, so the active stack cannot \
+// grow past the total node count before either terminating on a declared-rate edge or returning \
+// the cycle witness" measure="number of nodes not yet on active (bounded above by the finite node \
+// count; each recursive call pushes a fresh node)"
 #[allow(clippy::too_many_arguments)]
 fn compute_demand(
     node: &str,
