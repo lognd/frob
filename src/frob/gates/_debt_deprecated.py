@@ -7,6 +7,13 @@ API surface itself (DEPR001-004 mirror DEBT001-003's shape one-for-one;
 DEPR005 is deprecated-specific, T-0639) and both feed the same REL001
 release-blocking check in `run_gates`'s spine.
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring already states the reason these two families are kept together -- \
+# frob:deprecated is frob:debt generalized to the API surface itself (DEPR001-004 \
+# mirror DEBT001-003's shape one-for-one), and both feed the same REL001 \
+# release-blocking check in run_gates's spine. This is deliberately-paired-by-design \
+# (T-1115 following T-1072/T-1077 precedent), not two bolted-together unrelated \
+# concerns."
 
 from __future__ import annotations
 

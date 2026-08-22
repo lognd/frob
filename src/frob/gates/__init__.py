@@ -15,6 +15,17 @@ posture. The public gate functions stay defined in this module so their
 `frob:doc`/`frob:tests` bindings keep their `__init__.py` symref; each rule
 is decomposed into small private helpers alongside it.
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring states the seam explicitly -- public gate functions MUST stay defined here \
+# so their frob:doc/frob:tests bindings keep their __init__.py symref; only private \
+# per-rule helpers get decomposed alongside them. Splitting the public functions out \
+# would break every existing frob:doc/frob:tests edge pointing at \
+# gates/__init__.py::<gate_func> across the whole doc graph. This is also the live \
+# source T-1072/T-1077/T-1115/T-1140/T-1159/T-1170/T-1195 already incrementally \
+# extract cohesive families FROM (see _debt_deprecated.py, _doclink_docanchor.py, \
+# _docblocks_refs.py docstrings for the precedent) -- a bulk split now would preempt \
+# that documented one-family-per-land discipline with an ad-hoc cut instead of a real \
+# seam."
 
 from __future__ import annotations
 

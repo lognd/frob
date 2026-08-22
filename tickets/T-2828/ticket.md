@@ -1,7 +1,7 @@
 ---
 id: T-2828
 title: 'LARGE001: split or waive oversized frob.gates modules, batch 1 of 2'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'

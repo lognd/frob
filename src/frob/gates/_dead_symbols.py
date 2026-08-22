@@ -67,6 +67,12 @@ now holds DEAD001 only. `_CALLABLE_KINDS`/`_is_dunder`/`_is_test_symbol`
 stay here and are imported back by `_wire.py` (both gates need the same
 dunder/test-symbol exemption logic).
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): one gate (DEAD001), one \
+# algorithm -- constant-fold dead-branch detection feeding call-graph/declared-edge \
+# reachability, all converging into the single dead_symbol_gate entrypoint. Every one \
+# of the 22 top-level defs exists only to build that one pipeline stage by stage (fold \
+# analysis -> dead-range detection -> transitive-name closure -> gate); there is no \
+# second consumer or independent concern to cut along."
 
 from __future__ import annotations
 

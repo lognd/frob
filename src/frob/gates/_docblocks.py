@@ -124,6 +124,14 @@ T-2316) and promoted DOC012 to ERROR (T-2299) once the measured count
 reached zero -- a new undocumented subcommand now fails `frob check`
 immediately instead of accumulating silently. See `doc012_gate`.
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): DOC004/DOC005/DOC012 share \
+# real infra, not just a file -- doc005_gate's own docstring states it walks the same \
+# [[docblocks.commands]]-configured argparse.ArgumentParser factory DOC004's console \
+# tier already walks (_console_trees, _project_namespaces). T-1195 already extracted \
+# the genuinely separable per-language DOC004 backend out to _docblocks_refs.py \
+# (residue split, see that module's docstring); what remains here is the core \
+# namespace/console-tree infra plus three gates that consume it directly, not an \
+# accidental bundle."
 
 from __future__ import annotations
 

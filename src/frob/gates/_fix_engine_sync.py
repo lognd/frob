@@ -53,6 +53,14 @@ standing owner directive that no code path may auto-update declared
 public-symbol surface, retiring the silently-mutating handler alongside
 the false registry row was the narrower, more consistent fix.
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring already documents its seam -- sibling of the _fix_engine_text split \
+# (T-1646), this module holds every Tier-A handler that resolves its fix by SYNCING a \
+# generated/derived artifact back to its source of truth \
+# (REG010/REL002/SYS100/COV002/DOCENUM001/WAIVE004), as opposed to _fix_engine_text's \
+# line-scoped rewrites or _fix_engine.py's graph-driven handlers. The three-way split \
+# was already drawn deliberately at T-1646; there is no further natural boundary \
+# within this family."
 
 from __future__ import annotations
 

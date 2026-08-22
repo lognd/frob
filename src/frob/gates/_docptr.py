@@ -61,6 +61,12 @@ edges, not doc prose, so it goes through the normal edge-waiver path
 `frob.gates.__init__._apply_waivers` uses for every other code-facing
 gate, not DOC006's own `.md`-only nearby-line scan).
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): one gate (DOC006/DOC007), \
+# six claim-kinds -- path, CLI, config, symbol, file-symbol, and bare-identifier \
+# violations -- all independently-shaped checks over prose-claimed references that \
+# converge into the single doc006_gate entrypoint. This mirrors _dead_symbols.py's \
+# shape exactly (one rule, several detection sub-passes, one gate function); there is \
+# no distinct consumer set to split along, only the one rule's own internal breadth."
 # frob:ticket T-0437
 
 from __future__ import annotations

@@ -30,6 +30,14 @@ live here was removed along with the rest of the INV006 gate -- see
 `docs/modules/gates.md`'s T-1763 note for why (338 waivers, zero live
 findings across the gate's whole lifetime, a purely lexical corpus-wide
 keyword scan `frob:invariant`/INV001/INV002 already makes redundant)."""
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring already documents the seam T-1646 drew -- the source-text/line-level \
+# handler family went to _fix_engine_text, shared infra (FixApplied, manifest helpers) \
+# went to _fix_engine_shared (to break a circular import), and this module \
+# deliberately kept the GRAPH-driven handlers (DOC007/DOC002/TICK002/TICK006) plus \
+# TIER_A_HANDLERS/apply_tier_a_fixes, the dispatch table binding all three files \
+# together. A further split has no more natural boundary than the one T-1646 already \
+# investigated and drew."
 
 from __future__ import annotations
 

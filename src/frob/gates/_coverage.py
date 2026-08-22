@@ -24,6 +24,14 @@ against a freshly-loaded `CoverageData` and flag drift beyond tolerance --
 e.g. a lock committed from a locally-inflated coverage.xml that a genuine
 CI run cannot reproduce.
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring describes ONE pipeline -- coverage.xml parsing -> per-symbol mapping -> \
+# the .frob/coverage-stamp writer -> the committed frob-coverage.lock.json summary -- \
+# all serving TEST005/006/012's single ratchet mechanism. The existing ARCH102 waiver \
+# just above already establishes this precedent for is_stamp_stale ('not a new \
+# independent concern', same file_hashes shape stamp_coverage/load_stamp share); \
+# splitting parsing from stamping would separate a writer from the reader of the exact \
+# state it produces."
 # frob:waive ARCH102 reason="T-1366's new is_stamp_stale tipped this module from 30 to \
 # 31 top-level exports, crossing the threshold that makes the naming/usage cluster \
 # heuristic report at all -- it is not a new independent concern. is_stamp_stale reads \

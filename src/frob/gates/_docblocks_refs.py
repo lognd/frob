@@ -5,6 +5,12 @@ subparser-tree walk backing the console/bash tier, and the python/rust/
 ts/c-cpp reference-resolution checkers `doc004_gate` dispatches to per
 block language (docs/modules/gates.md#doc004).
 """
+# frob:waive LARGE001 reason="T-1651-grade review (T-2828): this module's own \
+# docstring says it IS the T-1195 LARGE001 residue split already -- the per-language \
+# (python/rust/ts/c-cpp) DOC004 reference-resolution checkers doc004_gate dispatches \
+# to per block language. It is the result of a prior real split, not a candidate for \
+# another one; splitting per-language checkers further would separate cousins that \
+# already share only the minimal _docblocks_shared infra they need."
 
 from __future__ import annotations
 
