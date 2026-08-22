@@ -1,7 +1,7 @@
 ---
 id: T-2834
 title: Split frob.tickets._setters's sprint/flow analytics family into _flow.py
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -16,10 +16,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_setters.py
 - src/frob/tickets/_flow.py
+evidence_scope:
+- tests/test_tickets_velocity.py
+- tests/test_tickets_tiers.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_tickets_velocity.py::TestSprintVelocity::test_transitions_mined_from_history
+- tests/test_tickets_tiers.py::TestSprintShow::test_state_rollup_and_velocity
+- tests/test_tickets_velocity.py::TestTicketFlow::test_filed_and_landed_counted_per_day
+- tests/test_tickets_velocity.py::TestSprintVelocityV2Mode::test_v1_v2_parity_for_equivalent_history
 designated_repro_test: null
 threat: null
 component: null
