@@ -1,3 +1,18 @@
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): a real-looking seam was \
+# investigated and rejected -- the wave/contention cluster (_wave/_render_wave_json/ \
+# _render_wave_plain/_ContentionEntry/_ContentionOutcome/_suggested_contention_ \
+# batches/_compute_contention/_contention/_render_contention_json/_render_ \
+# contention_plain, ~lines 1002-1315, ~315 lines) looks separable from list/show/ \
+# doable's own rendering. It shares the exact same read-path shape as every other \
+# function here though (`frob.tickets.load_queue` the queue, compute a view, render \
+# JSON or plain text via a matching _render_*_json/_render_*_plain pair -- the same \
+# pattern _list/_show/_doable already use). Both _wave and _contention are framed, in \
+# their own docstrings, as companion views over the SAME doable/open-ticket set \
+# _doable renders ('complements frob ticket wave', 'the question frob ticket new's own \
+# pairwise overlap warning cannot answer') -- dispatch-planning read paths over the \
+# identical TicketQueue, not a separate concern with its own data source. A 315-line \
+# extraction that still opens the same queue the file it left already opens is a \
+# line-count cut dressed as a seam, not a real one."
 """frob.app.ticket_runner._query -- the `list`/`show`/`doable`/`migrate`/
 `renumber` read-path command family.
 

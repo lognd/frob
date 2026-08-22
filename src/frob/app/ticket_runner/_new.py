@@ -1,3 +1,21 @@
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): single command (`frob \
+# ticket new`) with one genuinely large concern -- pre-flight duplicate/ \
+# related-ticket detection (_title_words/_looks_identifier_shaped/ \
+# _split_scope_plausibility_words/_scope_plausibility_ticket_words/ \
+# _visit_scope_plausibility_string_nodes/_scope_plausibility_file_words/ \
+# _scope_plausibility_warnings/related_tickets/_possible_enforcement_symbols/ \
+# _refuse_unacknowledged_related_tickets, ~lines 407-810) plus the scope-closure \
+# warning helpers (_emit_scope_closure_warnings/_expand_scope_globs_to_paths/ \
+# _non_relative_scope_patterns/_scope_overlap_warnings/_emit_scope_overlap_warnings/ \
+# _scope_closure_warnings, ~lines 937-1198). The duplicate-detection cluster exists \
+# only to serve `_new`'s own pre-flight checks; the scope-closure cluster is shared \
+# with `_mutate.py`'s `_scope` command (`from ._new import _emit_scope_closure_ \
+# warnings, _scope_closure_warnings`) -- both `new` and `scope --add` run the same \
+# closure check, which is exactly why `_new.py`, not `_mutate.py`, owns it (it is the \
+# ORIGINAL definition site the other command family imports from, matching the T-1089 \
+# residue shape every sibling file in this package already has). Moving it to a third \
+# module would not remove a dependency, only relocate the same shared import one hop \
+# further from its only two callers."
 """frob.app.ticket_runner._new -- the `frob ticket new` command family.
 
 Extracted from `frob.app.ticket_runner` (T-1089, T-0395 tier-2 split

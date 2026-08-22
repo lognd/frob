@@ -1,4 +1,17 @@
 # frob:ticket T-1684
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): one detached pipeline \
+# (baseline read/write/CAS-lock -> land-id enumeration since the last sweep -> \
+# unscoped check -> attribution/quarantine partitioning -> quarantine-raise for a red \
+# batch -> commit the debt line), same orchestrator shape T-1651 already accepted for \
+# check_runner.py/sys_runner.py -- every helper here (baseline I/O, attribution, \
+# quarantine filtering) exists only to serve this one sweep's stages, in the order \
+# those stages run, not a bundle of unrelated concerns. The file is large because the \
+# pipeline genuinely has many stages (this module's own docstring walks through 5+ of \
+# them to justify why a synchronous land no longer needs to), not because unrelated \
+# features were bundled in. A line-count cut through a linear pipeline would separate \
+# a stage from its own upstream/downstream data (e.g. the baseline CAS-lock helpers \
+# from the attribution step that reads what they wrote), the same 'strictly worse than \
+# the warning' shape T-1651 established."
 """T-1684: the `rapid`-profile replacement for `_land_cmd`'s synchronous
 post-land unscoped error sweep -- a DETACHED sweep that files a ticket
 instead of blocking the land.

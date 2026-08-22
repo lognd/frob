@@ -294,6 +294,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2822: LARGE001: split or waive oversized frob.tickets modules, batch 2 of 2
 - T-2823: LARGE001: split or waive oversized frob.vet/graph/arch modules
 - T-2825: LARGE001: split or waive oversized frob.tickets modules, batch 1 of 2
+- T-2829: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 2 of 2
 - T-2830: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 1 of 2
 - T-2832: REG008 burn-down batch 2/N: 17 missing frob:enforces directives across gates/app/strata/check modules
 

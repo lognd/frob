@@ -1,3 +1,16 @@
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): 34 top-level defs, but ~20 \
+# of them are already independent, one-field CLI setters (_priority/_kind/ \
+# _component/_label/_tier/_set_parent/_runs_last/_milestone/_sprint/...) each 15-40 \
+# lines -- the file is not a monolith needing a split, it is already granular; \
+# grouping them in one module is the docstring's own stated shape (single mutation \
+# command family, T-1089 extraction residue). The largest sub-clusters (scope/ \
+# scope-ack at ~265 lines, accept/accept-amend/accept-remove at ~185 lines) are each \
+# under the threshold on their own and share resolve_*_reason helpers with sibling \
+# verbs in this same file (e.g. _resolve_scope_reason/_resolve_triage_reason/ \
+# _resolve_body_reason follow one _resolve_*_reason shape) -- carving out one verb's \
+# cluster would separate it from that shared idiom, not from unrelated code. No single \
+# verb's own logic is large enough to independently justify a file, and the whole file \
+# is already one command family, not several bundled ones."
 """frob.app.ticket_runner._mutate -- the `scope`/`scope-ack`/`priority`/
 `kind`/`component`/`label`/`accept`/`board`/`epic`/`tier`/`sprint`/`brief`/
 `flow` mutation command family.

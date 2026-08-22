@@ -1,3 +1,17 @@
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): this module's own \
+# docstring already names the two halves and why they are together -- the \
+# `evidence`/`done-report` CLI commands plus the shared check-spawn/evidence- \
+# verification helper cluster (_shared_check_spawn_fn/_check_gates_summary_fn/ \
+# _parse_check_json/_parse_error_findings_from_json/_parse_error_findings_from_ \
+# stdout/_collect_error_findings/...) that BOTH `evidence`/`done-report` here AND \
+# `_close_cmd.py`'s close/reverify and `_land_cmd.py`'s land all depend on for the \
+# identical 'spawn a check, parse its JSON, decide pass/fail' logic -- it is the one \
+# shared implementation every evidence-verifying command family imports from (matching \
+# this package's own T-1089 residue pattern: shared logic lives at its first \
+# extraction site, siblings import it). Splitting the shared-helper half out would not \
+# remove a dependency, only relocate it one hop from most of its callers; splitting \
+# `evidence`/`done-report` away from the helpers they call directly would separate a \
+# command from its own primary logic."
 """frob.app.ticket_runner._verify -- the `evidence`/`done-report` command
 family plus the shared check-spawn/evidence-verification helpers.
 

@@ -1,3 +1,13 @@
+# frob:waive LARGE001 reason="T-2829 (T-1651-grade review): single feature, one CLI \
+# subcommand (`frob ticket waive-audit`) with two phases this module's own docstring \
+# already names -- scan (run_scan/_all_current_waivers/_waiver_identity/ \
+# find_collision_suspects/classify_waiver_liveness) and complete (complete_pass/ \
+# _complete_refusal_reason/_next_catchup_fields) -- both phases share the same \
+# ScannedWaiver/WaiveAuditScanReport/CollisionSuspect/WaiverLiveness data model \
+# (defined once, at the top, used throughout) and the complete phase's own docstring \
+# frames it as literally 'the next pass over what scan already found', not an \
+# independent concern. Same shape T-1651 already accepted for check_runner. \
+# py/sys_runner.py: one subcommand's pipeline, no distinct consumer set to split along."
 """T-2467: `frob ticket waive-audit` -- the periodic, watermark-scoped
 successor to T-1614's one-shot `runs_last` waiver audit.
 
