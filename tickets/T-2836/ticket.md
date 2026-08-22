@@ -1,7 +1,7 @@
 ---
 id: T-2836
 title: 'REG008 burn-down batch 3/N: CHK-GATE-DOC012 (final entry, lease cleared)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
