@@ -36,7 +36,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fd0ded5fdb44ca773a0986ebeda6b0ecd5e08fb9
 ---
 T-2823 added a frob:waive LARGE001 comment to src/frob/arch/_patterns.py whose reason text contains an escaped quote (severity backslash-quote suggestion backslash-quote) that the frob:<verb> comment-DSL attribute grammar cannot parse, producing a 'malformed directive: bad attribute syntax' warning on every frob check run since. Rewrite the reason text without embedded quotes so the directive parses cleanly, and confirm frob check --only static/arch no longer reports this malformed-directive warning.
 
