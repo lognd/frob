@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_ledger_mirror.py
 - tests/unit/test_ticket_runner_ledger_mirror.py
+- docs/modules/tickets-lifecycle.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +27,12 @@ scope_changes:
   glob: tests/unit/test_ticket_runner_ledger_mirror.py
   reason: requeue reclassify fix needs coverage in this repo's existing ledger-mirror
     test module
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: docs/modules/tickets-lifecycle.md
+  reason: documenting requeue's reclassification alongside the existing one-verb-table
+    doc section
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
