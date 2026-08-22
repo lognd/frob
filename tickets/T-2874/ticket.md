@@ -1,7 +1,7 @@
 ---
 id: T-2874
 title: Waive COV007's last finding (_reap.py) and promote COV007 to ERROR
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -16,10 +16,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
 - src/frob/gates/__init__.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: promotion requires updating gates.md's COV007 rule-table row and prose section
+    to reflect the new error severity
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
