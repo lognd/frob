@@ -22,6 +22,9 @@ scope:
 - src/frob/strata/_host_isolation_lateral.py
 - src/frob/strata/_host_isolation_vertical.py
 - src/frob/strata/_host_isolation_movement.py
+- docs/strata/host.md
+evidence_scope:
+- tests/unit/strata/test_litmus_host_isolation.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -72,6 +75,18 @@ scope_changes:
     files hold the moved code itself.
   actor: logan
   at: '2026-08-22'
+- op: add
+  glob: docs/strata/host.md
+  reason: 'DOC006: docs/strata/host.md:438 points at _host_isolation.py::host_movement_flows,
+    which T-2844 moved to _host_isolation_movement.py -- the doc pointer must follow
+    the symbol to its new file, same as the frob:tests directive updates.'
+  actor: logan
+  at: '2026-08-22'
+evidence:
+- tests/unit/strata/test_host_isolation.py::TestLateralIsolation::test_skips_below_two_users
+- tests/unit/strata/test_host_isolation.py::TestMultiAceDenyOverridesAllow::test_single_deny_entry_denies
+- tests/unit/strata/test_host_isolation.py::TestHostIsolationWaivers::test_vuln_model_fires_unwaived
+- tests/unit/strata/test_litmus_host_isolation.py::TestHostIsolationVulnLitmus::test_shared_user_model_fires_host001_and_host002
 designated_repro_test: null
 threat: null
 component: null
