@@ -2186,7 +2186,7 @@ touches test files should re-open this question.
 ## Evidence-only scope (T-1944)
 
 <!-- frob:describes src/frob/tickets/_scope.py::demote_to_evidence_only -->
-<!-- frob:enumerates src/frob/tickets/_models.py::Ticket -->
+<!-- frob:describes src/frob/tickets/_models.py::Ticket -->
 
 `scope` used to serve two different purposes wrongly conflated into one
 field: evidence coverage ("this ticket's recorded evidence lives here",
