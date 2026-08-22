@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): one vocabulary elaborator \
+# (std.trust: surface AST -> kernel facts, module docstring's own framing) -- a single \
+# linear pipeline `elaborate()` drives at the bottom (validate -> build base model -> \
+# expand infra/secrets -> apply refines -> log), same orchestrator shape T-1651 \
+# already accepted for check_runner.py/ sys_runner.py. Every \
+# _validate_*/_elaborate_*/_apply_refine* helper exists only to serve this one \
+# pipeline's stages in the order they run; a line-count cut would separate a stage \
+# from the upstream facts or downstream consumer it shares with its neighbors."
 """std.trust elaborator: surface AST -> kernel facts (docs/strata/surface.md).
 
 A vocabulary is a pure function `surface construct -> kernel facts` (charter

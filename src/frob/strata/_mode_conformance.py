@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): one conformance proof \
+# (module docstring: prove each node's code OBEYS its declared T-0700 access mode) -- \
+# check_mode_conformance at the bottom aggregates per-mode violation helpers \
+# (_read_violation/_append_violation/_write_violations/_alpha_exclusive_violations/ \
+# _no_arbiter_violation/...) that all share the same ModeObservation/ \
+# ModeConformanceViolation models and the same _file_mode_observations/ \
+# _node_mode_observations extraction substrate. One proof over one shared observation \
+# model, not several bundled concerns."
 """T-0701: strata mode-conformance enforcement -- prove each node's code
 OBEYS its declared T-0700 `access` mode (`read`/`append`/`alpha`/`write`/
 `exclusive`), the code-level half of the resource-contention mandate

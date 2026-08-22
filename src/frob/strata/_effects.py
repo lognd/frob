@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): the capability-effect \
+# checking family (check_capability_conformance/check_stale_via_symbols/ \
+# capability_ratchet_violations) all share the same via-glob/via-symbol matching \
+# substrate defined once near the top (_via_glob_and_symbol/_via_matches/ \
+# _via_matches_site) and the same ObservedEffect/CapabilityViolation models -- three \
+# checks over one shared capability-declaration grammar, not independent features. \
+# Splitting any one check out would either duplicate the via-matching substrate or \
+# leave it importing back from wherever the substrate stayed, the same shared- helper \
+# shape T-2829's _new.py/_verify.py waivers already established as not a real seam."
 """strata tier-2 effect extraction: net/fs/exec facts vs `may` capabilities
 (docs/strata/surface.md#code-binding-tier-2-v0-implementation, T-0079).
 

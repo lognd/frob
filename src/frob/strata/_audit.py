@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): one pipeline \
+# (evaluate_exhaustiveness) aggregating per-family gap computation (threat/ \
+# compliance/pii/lint/fingerprint/host-isolation/blast-radius) into the single \
+# THREAT001-003+COMPLIANCE001-002 exhaustiveness conjunction this module's own \
+# docstring names as its one job -- the 'CHECKING counterpart to frob sys doc's \
+# rendering'. Every per-family _*_gaps helper exists only to feed the one aggregator \
+# at the bottom; splitting by family would separate each helper from the shared \
+# FamilyGap/GroupedGap models and waiver-application logic they all funnel through, \
+# not from unrelated code."
 """`frob sys audit` -- the CHECKING counterpart to `frob sys doc`'s rendering
 (T-0115, docs/strata/threat.md#the-exhaustiveness-proof-the-point item F).
 

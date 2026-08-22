@@ -1,3 +1,11 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): the second vocabulary \
+# elaborator (std.infra: store/queue/balancer/cache/cdn -> kernel facts) alongside \
+# _elaborate.py's std.trust -- same single-vocabulary-pipeline shape (module \
+# docstring: 'never grows the kernel; every construct here desugars to Node/Flow/ \
+# Boundary'). One _elaborate_* helper per infra construct type, all funneling into \
+# elaborate_infra at the bottom; splitting by construct type would separate each \
+# helper from the shared InfraExpansion result type and the _elaborate_all_infra_ \
+# nodes orchestration every construct type shares."
 """std.infra elaborator: store/cache/queue/cdn/balancer -> kernel facts.
 
 A vocabulary is a pure function `surface construct -> kernel facts` (charter

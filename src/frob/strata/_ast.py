@@ -1,3 +1,10 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): frozen pydantic AST models \
+# mirroring the Rust parser's JSON shape one-for-one (module docstring: 'structurally \
+# close to the kernel models in _models.py but a distinct layer'). 41 classes, each a \
+# thin data shape with no independent behavior -- splitting by construct-family would \
+# separate declarations that the elaborator (_elaborate.py) already treats as one \
+# surface grammar, and every class exists to serve the same single parser-output \
+# contract, not several bundled concerns."
 """Surface AST for strata (docs/strata/surface.md).
 
 Frozen pydantic models mirroring the JSON shape emitted by the Rust

@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): strata obligation catalog \
+# phase F (std.compliance) -- module docstring frames this as ONE catalog family among \
+# five (security/performance/reliability/compatibility/compliance), already \
+# phase-split at the package level from _threat.py's phases A-C. Each _check_* \
+# function (COPPA/erasure/retention/lawful-basis/BAA/privacy-notice/ minimization) \
+# shares the same ComplianceViolation model and feeds the same evaluate_compliance \
+# aggregator; the registry-unit disposition/backing checks at the end \
+# (check_cmpl_registry*) share that same violation model and catalog pattern too. One \
+# regulatory catalog, not a bundle of unrelated concerns."
 """strata obligation catalog phase F (compliance): `std.compliance` --
 COPPA/GDPR/HIPAA regulatory obligations + privacy-policy-as-claims reverse
 audit (docs/strata/threat.md#compliance-regulatory-obligations-stdcompliance,

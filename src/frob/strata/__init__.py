@@ -1,3 +1,10 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): this file has zero \
+# top-level defs/classes -- it is entirely the package's public re-export surface (one \
+# `from frob.strata._X import ...` block per submodule, plus one closing `__all__` \
+# list). There is no logic to separate a seam from; splitting a flat import/`__all__` \
+# list by line count would just move part of the SAME list to a second file with no \
+# principled cut point -- every name here is equally `frob. strata`'s public surface, \
+# not several bundled concerns."
 """frob.strata -- the provable system-design language (docs/strata/charter.md).
 
 Phase 0 exposes the kernel: the six-primitive data model the elaborator

@@ -1,3 +1,16 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): a REAL seam exists here, \
+# unlike this batch's other 9 files -- three independent checks \
+# (evaluate_lateral_isolation/evaluate_vertical_isolation/host_movement_flows) each \
+# with their own violation-computation cluster, sharing only the \
+# HostIsolationViolation model and a few small mode-parsing utilities. NOT split under \
+# this ticket: this module carries via-scoped capability grants in design/frob.strata, \
+# and this repo has a live incident record (an agent nearly broke a noflow assertion \
+# via an innocuous import change; T-2729's own _selfconform.py split needed a via-list \
+# update when code moved between files) showing that moving code between \
+# strata-adjacent files can require updating which file a via-glob covers -- that \
+# needs a dedicated pass verifying SYS003/ SYS100 exhaustively, not a batch LARGE001 \
+# judgment call. Filed T-2844 to do that split properly, scoped to include \
+# design/frob.strata."
 # invariant spec: [INV-033](invariants/INV-033.md)
 """HOST001/HOST002: movement-impossibility proofs over `std.host`
 manifests (T-0256, docs/strata/host.md#movement-impossibility-proofs).

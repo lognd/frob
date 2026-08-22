@@ -1,3 +1,12 @@
+# frob:waive LARGE001 reason="T-2826 (T-1651-grade review): strata obligation catalog \
+# phases A-C (std.cwe + weakness/capability grammar + THREAT001-005, module \
+# docstring's own framing) -- catalog/capability/effect completeness checks \
+# (check_catalog_completeness/check_capability_completeness/check_effect_ \
+# completeness) all share the same ThreatViolation model and feed the single \
+# evaluate_threats aggregator (_run_all_completeness_checks). Same one-catalog- family \
+# shape as _compliance.py's own waiver; splitting by completeness-check type would \
+# separate each from the shared violation model and aggregator every other check in \
+# this file also depends on."
 """strata obligation catalog phases A-C: `std.cwe` + weakness/capability
 grammar + THREAT001-THREAT005 (docs/strata/threat.md,
 T-0109/T-0111/T-0112/T-0113).

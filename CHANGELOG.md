@@ -296,6 +296,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2823: LARGE001: split or waive oversized frob.vet/graph/arch modules
 - T-2824: LARGE001: split or waive oversized misc small-package modules + native (rust) files
 - T-2825: LARGE001: split or waive oversized frob.tickets modules, batch 1 of 2
+- T-2826: LARGE001: split or waive oversized frob.strata modules (excludes T-2729's _selfconform.py)
 - T-2828: LARGE001: split or waive oversized frob.gates modules, batch 1 of 2
 - T-2829: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 2 of 2
 - T-2830: LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 1 of 2
