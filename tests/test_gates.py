@@ -2095,9 +2095,12 @@ class TestCoverageGate:
         )
         assert _cov006_third_file_reachable(tmp_path, edge) is False
 
+    # frob:ticket T-2874
     def test_cov007_flags_doc_anchor_on_private_helper(self, tmp_path: Path) -> None:
         """T-0483: a `frob:doc` edge whose src symbol is PRIVATE fires
-        COV007 -- doc anchors are for the public API surface."""
+        COV007 -- doc anchors are for the public API surface. ERROR
+        severity since T-2866/T-2873/T-2874 promoted it from WARN once
+        the repo's live findings burned down to zero."""
         # frob:tests src/frob/gates/__init__.py::_cov007
         _write(
             tmp_path,
@@ -2115,7 +2118,7 @@ class TestCoverageGate:
         violations = coverage_gate(tmp_path, snap, queue, diff, tests)
         v = _first_rule(violations, "COV007")
         assert v is not None
-        assert v.severity == Severity.WARN
+        assert v.severity == Severity.ERROR
         assert "_helper" in v.message
 
     def test_cov007_silent_for_doc_anchor_on_public_symbol(

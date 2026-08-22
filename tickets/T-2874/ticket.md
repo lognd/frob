@@ -1,7 +1,7 @@
 ---
 id: T-2874
 title: Waive COV007's last finding (_reap.py) and promote COV007 to ERROR
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -17,6 +17,8 @@ scope:
 - src/frob/process/_reap.py
 - src/frob/gates/__init__.py
 - docs/modules/gates.md
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +30,18 @@ scope_changes:
     to reflect the new error severity
   actor: logan
   at: '2026-08-22'
+body_changes:
+- mode: append
+  reason: 'waive BUG002: severity promotion is not repro-shaped'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 1997
+  new_length: 2715
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov007_flags_doc_anchor_on_private_helper
+- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_doc_anchor_on_public_symbol
+- tests/test_gates.py::TestCoverageGate::test_cov007_silent_for_a_strata_node_whose_clearance_is_not_public
+- tests/test_gates.py::TestCoverageGate::test_cov007_still_fires_for_a_python_private_helper_after_t2549
 designated_repro_test: null
 threat: null
 component: null
@@ -69,3 +83,6 @@ Acceptance: (0) zero COV007 warnings via the same command, confirmed
 unbudgeted, (1) COV007 promoted from WARN to ERROR in
 src/frob/gates/__init__.py, re-verified with a second unbudgeted
 measurement after promotion.
+
+
+frob:waive BUG002 reason="this ticket's real behavior change is a gate SEVERITY promotion (COV007 WARN to ERROR), not a defect a single-commit repro can express -- check-repro necessarily diffs a full commit against its parent, and any parent commit for this branch either predates the test-assertion update (old test/old code, trivially consistent) or predates the severity flip only (which would make the OLD test fail against NEW code, not a meaningful repro either way). The real evidence for this promotion is the unbudgeted frob check --only coverage --json re-measurement recorded in the Done report: COV007 warning-tier count 0 both before AND after promoting (a genuine true-zero, not a test-shaped defect)"

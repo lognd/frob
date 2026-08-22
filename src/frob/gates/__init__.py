@@ -3281,16 +3281,19 @@ def _cov006_edge_violation(
 # frob:enforces CHK-GATE-COV007
 # frob:ticket T-2549
 # frob:ticket T-2551
+# frob:ticket T-2874
 def _cov007(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     """COV007: a `frob:doc` edge whose src symbol is PRIVATE.
 
     `frob:doc` obligations (COV001) exist to keep public-surface docs in
     sync; a private helper carrying its own doc anchor is usually either a
     directive that rode along onto the wrong symbol (see COV005's rebind
-    case) or documentation that belongs on the public caller instead. WARN
-    severity: a private helper can legitimately warrant its own doc anchor
-    (a complex internal algorithm, say) -- this flags it for a human
-    decision, it does not forbid the pattern.
+    case) or documentation that belongs on the public caller instead. ERROR
+    severity (T-2866/T-2873/T-2874, promoted from WARN once the repo's
+    live findings burned down to zero): a private helper can legitimately
+    warrant its own doc anchor (a complex internal algorithm, say), but
+    that is now a `frob:waive COV007` decision made explicitly at the
+    site, not a WARN a human can silently scroll past.
     """
     from frob.gates._refs import _load_allowlist
 
@@ -3339,7 +3342,7 @@ def _cov007(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
         violations.append(
             Violation(
                 rule="COV007",
-                severity=Severity.WARN,
+                severity=Severity.ERROR,
                 file=file,
                 line=record.span[0],
                 message=(

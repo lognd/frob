@@ -330,6 +330,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2871: Fix SELFAUDIT001: T-2851/T-2843 splits left gates capability via-lists stale, plus 2 ratchet ceiling bumps
 - T-2872: Fix COV003: 12 tickets cite renamed test_large_file_fires_large001_warn
 - T-2873: Write 36 individual COV007 waivers (all but the T-2849-blocked _reap.py finding)
+- T-2874: Waive COV007's last finding (_reap.py) and promote COV007 to ERROR
 
 ## [0.530.0] - unreleased
 

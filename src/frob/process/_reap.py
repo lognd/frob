@@ -209,6 +209,10 @@ def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
 # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_arms_when_env_var_set  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_success_logs_nothing_at_all  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_failure_still_warns  # noqa: E501
+# frob:waive COV007 reason="docs/modules/process.md's Forkserver reaping (T-2443) \
+# section documents several symbols under one section, not just a public entry point \
+# -- the many-symbols-one-section convention this repo already accepted for vet.md \
+# (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _arm_forkserver_helper_pdeathsig_if_requested() -> None:
     """Module-import-time hook (T-2849): `frob.gates._FORKSERVER_PRELOAD`
     names this module, so `multiprocessing.forkserver` imports it exactly
@@ -516,6 +520,10 @@ def reap_orphaned_forkservers(
 #: all of them. Compiled against RAW cmdline bytes (NUL-separated argv,
 #: kept as-is rather than replaced with spaces) so token-boundary matching
 #: is exact.
+# frob:waive COV007 reason="docs/modules/process.md's Concurrent-check advisory \
+# (T-2473) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols-one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 _FROB_TOKEN_RE = re.compile(rb"(?:^|/)frob\x00")
 _CHECK_TOKEN_RE = re.compile(rb"\x00check\x00|\x00check$")
 
