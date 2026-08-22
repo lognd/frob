@@ -2,7 +2,7 @@
 id: T-2853
 title: 'LARGE001: src/frob/tickets/_leases.py unwaived after T-2833''s split (3182
   lines)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'

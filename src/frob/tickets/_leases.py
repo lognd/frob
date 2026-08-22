@@ -1,3 +1,23 @@
+# frob:waive LARGE001 reason="T-1651-grade, post-T-2833 shape (T-2853): the \
+# worktree-sweep family (sweep_worktrees/remove_worktree) already split out to \
+# frob.tickets._worktree_sweep in T-2833, per this module's own docstring, leaving \
+# only the cross-worktree lease side-channel (T-0473) itself: lease record \
+# CRUD/staleness \
+# (record_lease/release_lease/force_release_lease/rename_lease/resolve_lease/read_all_l\
+# eases/orphaned_leases), land-lock probing during a transition \
+# (refuse_if_land_in_progress/scan_for_live_worktree_process/_scan_for_live_land_proces\
+# s), the ledger-commit that makes a transition's git write atomic \
+# (commit_ticket_ledger_change/commit_full_ledger_change/_add_and_commit_tickets_md), \
+# and the crash-recovery repair markers for an interrupted commit (T-2714's \
+# _ledger_commit_repair family). These are stages of ONE pipeline -- safely \
+# transitioning a ticket's state across worktrees sharing one git common dir -- not \
+# independent rule-id families: splitting the ledger-commit half out would separate it \
+# from the lease-transition callers that need its atomicity guarantee, the same \
+# coupling this module's own docstring already names when it calls this the \
+# lease-CRUD/ledger-commit machinery. 3182 lines reflects how many distinct failure \
+# modes cross-worktree git coordination has (staleness, land races, crash mid-commit, \
+# force-release audit trail), not an uncohered file; a further line-count-driven split \
+# here would be strictly worse than the warning per the T-1651 bar."
 """Cross-worktree scope-lease side-channel under the git COMMON dir (T-0473).
 
 `frob ticket start`'s in-progress scope-lease (T-0453) lives entirely in
