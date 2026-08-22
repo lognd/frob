@@ -43,6 +43,19 @@ short, explicit allowlist holds:
      accidentally: unlike `FROB_AGENT`/`FROB_WORKTREE`, nothing in the
      dispatch or `frob ticket work` pipeline ever sets it, so its absence
      cannot regress into a false negative the way the old pairing did.
+  5. T-2860: a `frob ticket land <id> --worktree <path>` invocation whose
+     `--worktree` value resolves to a REAL, currently-registered linked
+     worktree (`_is_legitimate_land`) -- landing IS a root write by design
+     (it merges a worktree's branch into the primary checkout and can
+     remove the worktree), and as originally shipped this hook made T-2850's
+     own `land` a member of `_MUTATING_TICKET_VERBS` refuse it exactly like
+     any other unmarked root write, leaving no way to land without setting
+     `FROB_COORDINATOR=1` -- a global bypass that reopens exemption 4's
+     hazard for every other command in the same shell for as long as it
+     stays set. This exemption is scoped to `land` alone and re-validates
+     the SAME structural fact exemption 3 already trusts (a real entry in
+     `git worktree list --porcelain`), so a `--worktree` naming a directory
+     that is not an actual registered worktree gets no exemption at all.
 
 The asymmetry driving this (from the ticket, restated here since it is the
 whole design rationale): a false BLOCK costs one confused turn and a clear
@@ -374,15 +387,72 @@ def _resolves_under_primary(
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-2860
+#: T-2860: matches a `--worktree <path>` / `--worktree=<path>` flag anywhere
+#: in a command string, capturing the (possibly quoted) path in group 1.
+_WORKTREE_FLAG_RE = re.compile(
+    r"--worktree(?:=|\s+)(\"[^\"]+\"|'[^']+'|[^\s;&|><]+)"
+)
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-2860
+def _land_worktree_flag_target(command: str) -> str | None:
+    """The `--worktree` flag's argument value in `command` with one layer
+    of quoting stripped, or `None` when the flag is absent."""
+    match = _WORKTREE_FLAG_RE.search(command)
+    if not match:
+        return None
+    return _strip_quotes(match.group(1))
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-2860
+def _is_legitimate_land(
+    command: str, effective_cwd: str, worktree_reals: list[str]
+) -> bool:
+    """True when `command` is a `frob ticket land` invocation whose
+    `--worktree` flag resolves to a REAL, currently-registered linked
+    worktree (per `worktree_reals`, sourced from `git worktree list
+    --porcelain` the same way every other worktree fact in this hook is) --
+    T-2860's fix for the fleet's core operation (`frob ticket land <id>
+    --worktree <wt>`, run from the root by design so it can merge and clean
+    up the worktree) being indistinguishable, pre-fix, from an arbitrary
+    root-mutating `frob ticket` call. Reuses `_worktree_paths`'s existing
+    structural fact-check rather than trusting the flag's text alone: a
+    `--worktree` naming a nonexistent or unregistered directory does NOT
+    qualify, so this cannot be satisfied by an attacker-controlled or
+    just-wrong path string. Ambiguous flag values (`$`, backtick, glob --
+    `_unambiguous_target`) are rejected, same posture as every other target
+    resolution in this file: when in doubt about the fact, do not grant the
+    exemption."""
+    match = _TICKET_VERB_RE.search(command)
+    if not match or match.group(1) != "land":
+        return False
+    raw = _land_worktree_flag_target(command)
+    if raw is None:
+        return False
+    target = _unambiguous_target(raw)
+    if target is None:
+        return False
+    resolved = os.path.realpath(_resolve_relative(target, effective_cwd))
+    return _under_any(resolved, worktree_reals)
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2481
 def _bash_ticket_verb_targets_root(
-    command: str, effective_cwd: str, primary_real: str
+    command: str, effective_cwd: str, primary_real: str, worktree_reals: list[str]
 ) -> bool:
     """Shape 1: a `frob ticket <mutating-verb>` with no `--path` in the
-    command, whose effective cwd resolves under the primary checkout."""
+    command, whose effective cwd resolves under the primary checkout --
+    UNLESS it is a legitimate `land` naming a real registered worktree
+    (`_is_legitimate_land`, T-2860)."""
     if "--path" in command:
         return False
     if not _TICKET_VERB_RE.search(command):
+        return False
+    if _is_legitimate_land(command, effective_cwd, worktree_reals):
         return False
     effective_real = os.path.realpath(effective_cwd)
     return _under_any(effective_real, [primary_real])
@@ -425,7 +495,7 @@ def _bash_targets_root(
         # worktree -- allow, this is the must-still-allow shape.
         return False
     return _bash_ticket_verb_targets_root(
-        command, effective_cwd, primary_real
+        command, effective_cwd, primary_real, worktree_reals
     ) or _bash_redirect_targets_root(
         command, effective_cwd, primary_real, worktree_reals
     )

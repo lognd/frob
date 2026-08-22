@@ -2,7 +2,7 @@
 id: T-2860
 title: T-2850 blocks frob ticket land from the root, and its FROB_COORDINATOR escape
   hatch only works session-wide, so the choice is guard-on-nobody-lands or guard-off-for-everyone
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -16,10 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/root-write-guard.py
+evidence_scope:
+- tests/test_hook_root_write_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_hook_root_write_guard.py::test_land_with_real_registered_worktree_is_allowed_with_no_markers
+- tests/test_hook_root_write_guard.py::test_land_with_unregistered_worktree_path_is_still_refused
+- tests/test_hook_root_write_guard.py::test_land_with_no_worktree_flag_is_still_refused
+- tests/test_hook_root_write_guard.py::test_non_land_mutating_verb_with_worktree_flag_is_still_refused
 designated_repro_test: null
 threat: null
 component: null

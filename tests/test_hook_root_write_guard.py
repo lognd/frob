@@ -453,3 +453,65 @@ def test_bash_unrelated_command_is_never_refused(tmp_path):
         env={},
     )
     assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2860
+def test_land_with_real_registered_worktree_is_allowed_with_no_markers(tmp_path):
+    """The fleet-stopper this ticket fixes: `frob ticket land <id>
+    --worktree <real registered worktree>`, run from the primary checkout
+    with NO markers at all, is allowed -- landing IS a root write by
+    design, and this is the exact shape T-2850 accidentally refused."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"timeout 540 uv run frob ticket land T-0001 --worktree {worktree} --finish",
+        env={},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2860
+def test_land_with_unregistered_worktree_path_is_still_refused(tmp_path):
+    """A `--worktree` naming a directory that is NOT an actual registered
+    linked worktree gets no exemption -- the discriminator re-validates
+    the real structural fact, it does not trust the flag's text alone."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    fake = primary / ".claude" / "worktrees" / "not-a-real-worktree"
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"timeout 540 uv run frob ticket land T-0001 --worktree {fake} --finish",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2860
+def test_land_with_no_worktree_flag_is_still_refused(tmp_path):
+    """`frob ticket land` with no `--worktree` at all is still refused --
+    the exemption requires the flag to be present and to resolve."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="timeout 540 uv run frob ticket land T-0001",
+        env={},
+    )
+    assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2860
+def test_non_land_mutating_verb_with_worktree_flag_is_still_refused(tmp_path):
+    """The land exemption is scoped to `land` alone -- a different mutating
+    verb carrying a `--worktree`-shaped flag (not a real flag any other
+    verb accepts, but the hook must not generalize the exemption to it)
+    gets no exemption."""
+    primary, worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"frob ticket done-report T-0001 --why done --worktree {worktree}",
+        env={},
+    )
+    assert _denial_reason(result) is not None

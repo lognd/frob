@@ -196,6 +196,31 @@ with a short, explicit allowlist instead of a detector:
    `frob ticket work` pipeline ever sets this, unlike `FROB_AGENT`/
    `FROB_WORKTREE`, so its absence cannot regress into the same false
    negative the old pairing had.
+5. `frob ticket land <id> --worktree <path>` where `--worktree` resolves
+   to a REAL, currently-registered linked worktree (`_is_legitimate_land`,
+   T-2860) -- landing IS a root write by design (it merges a worktree's
+   branch into the primary checkout and can remove the worktree), and as
+   shipped T-2850 made `land` a member of `_MUTATING_TICKET_VERBS` refuse
+   it exactly like any other unmarked root write. That left no way to land
+   without setting `FROB_COORDINATOR=1` globally for the whole shell --
+   measured directly: exactly one land succeeded in the hours after
+   T-2850 landed, and only because an agent set `FROB_COORDINATOR=1` in
+   `.claude/settings.local.json`, disabling exemption 4's guard for every
+   command in every session sharing that config, not just its own land.
+   This exemption reuses exemption 3's same structural fact-check
+   (`git worktree list --porcelain`) rather than trusting the flag's text:
+   a `--worktree` naming a directory that is not an actual registered
+   worktree, or a `land` invocation with no `--worktree` at all, gets no
+   exemption and is refused like any other mutating verb. It is scoped to
+   the `land` verb alone -- a different mutating verb carrying a
+   `--worktree`-shaped argument does not inherit it. `FROB_LAND_INTERNAL`
+   (exemption 1) was considered and rejected as the fix here: it is set by
+   `_land_internal_git_env` only around specific git-commit spawns
+   *inside* the already-running `land` Python process, never in the
+   calling shell's environment at the moment the agent's Bash tool
+   invokes `frob ticket land` itself -- so it cannot exempt the outer
+   invocation this hook gates, only `land`'s own internal commits once it
+   is already running.
 
 `FROB_AGENT`/`FROB_WORKTREE` are no longer read by this hook at all --
 `_is_agent_context`/`_worktree_fact` were removed, not repurposed. The
@@ -218,7 +243,11 @@ be measured, never what happens when it cannot be). Tested end-to-end via
 positive controls this ticket cares about most: a plain shell with NO
 markers set at all -- the exact pre-`ticket work` agent shape -- is
 refused, and the identical write from a shell carrying
-`FROB_COORDINATOR=1` is allowed.
+`FROB_COORDINATOR=1` is allowed. T-2860 added the fleet-stopper control on
+top of these: `frob ticket land <id> --worktree <real registered
+worktree>`, run from the primary checkout with NO markers at all, is
+allowed; the identical command with an unregistered or absent `--worktree`
+is still refused.
 
 ## `_agent_context.py`
 
