@@ -574,7 +574,7 @@ node stratamod : trusted {
     // observed `fs.write`/`fs.read` site (`Path.open("rb")`/`tomllib.load`),
     // not previously exercised anywhere else in this package.
     may "fs.write" via "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_threat.py";
-    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform.py", "src/frob/strata/_sync_may.py";
+    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform_surface_rules.py", "src/frob/strata/_sync_may.py";
     may "net.connect" via "src/frob/strata/_threat_catalog_benign.py";
 }
 

@@ -1,7 +1,7 @@
 ---
 id: T-2729
 title: 'LARGE001: split strata/_selfconform.py (2290 lines) by SYS1xx rule family'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-20'
@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/strata/test_selfconform.py::TestDuplicateInterface::test_duplicate_symbol_fires
+- tests/unit/strata/test_selfconform.py::TestBindingTotality::test_laundered_capable_file_fires
+- tests/unit/strata/test_selfconform.py::TestCoverageTotality::test_foreign_file_with_capability_fires_sys103
+- tests/unit/strata/test_selfconform.py::TestPurposeContract::test_effect_outside_profile_fires
+- tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface::test_real_symbol_outside_declared_set_fires
+- tests/unit/strata/test_selfconform.py::TestNonPythonLanguageWiring::test_sorted_capability_files_includes_typescript
 designated_repro_test: null
 threat: null
 component: null

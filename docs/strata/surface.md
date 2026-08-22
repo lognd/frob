@@ -184,11 +184,11 @@ itself uses.
 **Delivered by T-1440's children:** per-`via`-surface SYS101 staleness
 (T-1450) -- a grant scoped to file A that only file B ever exercised now
 reads as stale on A specifically, judged per `MayGrant` rather than per
-flat kind (`_selfconform.py::_stale_design_violations_for_node`); and
+flat kind (`_selfconform_core_rules.py::_stale_design_violations_for_node`); and
 SYS107 (T-1451), a finding for a via-less `may` on a node whose `code`
 glob binds more than `_LARGE_NODE_FILE_THRESHOLD` (20) files, one per
 offending capability atom (T-2224: `capability=<atom>` on each
-`SelfConformViolation`, `_selfconform.py::_via_less_atoms_for_node` +
+`SelfConformViolation`, `_selfconform_binding_rules.py::_via_less_atoms_for_node` +
 `_via_less_large_node_violations` -- a node with via-less grants on
 TWO atoms produces two separate findings, not one covering both).
 Severity is decided per atom (`frob.gates._sys_selfaudit._
@@ -197,7 +197,7 @@ capability kind keep the original T-1451 posture (WARN by default,
 escalatable to ERROR via a `[strata] require_may_scope` config knob,
 `_scope_config.py::StrataScopeConfig`), but a via-less grant on one of
 the FAIL-CLOSED kinds -- `exec`, `eval`, `install-hook`, `ffi`
-(`_selfconform.py::SYS107_FAIL_CLOSED_ATOMS`) -- is ALWAYS `Severity.
+(`_selfconform_ids.py::SYS107_FAIL_CLOSED_ATOMS`) -- is ALWAYS `Severity.
 ERROR`, unconditionally, with no `require_may_scope` opt-in needed.
 T-2224's own threat: these four kinds let a node run attacker-
 influenced code (`exec`/`eval`), persist beyond itself (`install-hook`),

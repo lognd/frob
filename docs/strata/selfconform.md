@@ -53,7 +53,7 @@ detection THREAT004 already runs.
     violations` just relabels its `CapabilityViolation`s as SYS100. Zero
     new detection for this slice.
   - eval/env/ffi/install-hook: NEW code
-    (`_selfconform.py::_extended_kind_violations`, `_EXTENDED_KINDS`).
+    (`_selfconform_core_rules.py::_extended_kind_violations`, `_selfconform_kinds.py::_EXTENDED_KINDS`).
     **Gap statement:** `_effects.py::_KIND_MAP` (7 entries: net-connect,
     net-listen, fs-write, fs-read, exec, env-read, env-write) covers
     net/fs-write/fs-read/exec/env-read/env-write -- `env-read`/`env-write`
@@ -82,7 +82,7 @@ detection THREAT004 already runs.
   `_sorted_capability_files`), so such a node has provably zero files
   observation could EVER see, excluded or not, forever -- there is
   nothing "stale" about a design that structurally cannot be checked.
-  `_selfconform.py::_fully_excluded_node_ids` computes, once per audit,
+  `_selfconform_kinds.py::_fully_excluded_node_ids` computes, once per audit,
   which node ids match this: every real (skip-dir-filtered) file the
   node's `code=` globs match is excluded, AND at least one such file
   exists (a glob matching NOTHING at all is a different, pre-existing
@@ -169,7 +169,7 @@ suppress the corresponding live `frob sys audit` finding.
 
 The net-connect/net-listen/fs-write/fs-read/exec vs. eval/env-read/
 env-write/ffi/install-hook/sql/deserialize/html_render/fetch_url/
-client_storage split (`_selfconform.py::_EXTENDED_KINDS`) is the one fact
+client_storage split (`_selfconform_kinds.py::_EXTENDED_KINDS`) is the one fact
 this module hardcodes that could silently rot if `_effects.py::_KIND_MAP`
 ever grows a new key. `tests/unit/strata/test_selfconform.py::
 TestExtendedKindsDriftLock::test_extended_kinds_is_disjoint_from_kind_map`

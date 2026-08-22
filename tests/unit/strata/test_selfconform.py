@@ -729,6 +729,7 @@ class TestUnmodeledCodeMissingPackageRoot:
         assert not any("selfconform" in r.getMessage() for r in warnings), warnings
 
 
+# frob:ticket T-2729
 class TestNonPythonLanguageWiring:
     """T-0169: the logand.app pilot found `frob sys audit` never scanned
     TS/JS at all -- `bind_code` walks only `.py` (T-0078, correctly, since
@@ -817,7 +818,8 @@ class TestNonPythonLanguageWiring:
         hit = [v for v in result.danger_ok.violations if v.rule == SYS_STALE_DESIGN]
         assert any(v.node == "widget" and "fetch_url" in v.detail for v in hit)
 
-    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
+    # frob:tests src/frob/strata/_selfconform_kinds.py::_sorted_capability_files \
+    # kind="unit"
     def test_sorted_capability_files_includes_typescript(self, tmp_path: Path):
         """Direct proof `_sorted_capability_files` (the file walk feeding
         `_capability_binding`) actually yields a `.ts` path, not just that
@@ -826,7 +828,8 @@ class TestNonPythonLanguageWiring:
         found = _sorted_capability_files(tmp_path)
         assert any(p.suffix == ".ts" for p in found)
 
-    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
+    # frob:tests src/frob/strata/_selfconform_kinds.py::_sorted_capability_files \
+    # kind="unit"
     def test_sorted_capability_files_honors_graph_exclude(self, tmp_path: Path):
         """T-0274: a [graph].exclude dir (e.g. bundled frontend build
         output) must be pruned the same way bind_code's walk is, not just
@@ -964,8 +967,10 @@ class TestCoreUndeclaredInterfaceNonPython:
         )
 
 
+# frob:ticket T-2729
 class TestLanguageCoverageDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_sorted_capability_files kind="unit"
+    # frob:tests src/frob/strata/_selfconform_kinds.py::_sorted_capability_files \
+    # kind="unit"
     # frob:waive COV006 reason="T-0536: SCANNED_LANGUAGES (frob.vet._capability) and \
     # LANGUAGES (frob.vet._capability_registry) are both module-level constants \
     # asserted for set equality here -- neither is ever CALLED by this test's body, so \
@@ -1010,8 +1015,10 @@ class TestLanguageCoverageDriftLock:
             assert resolved in SCANNED_LANGUAGES
 
 
+# frob:ticket T-2729
 class TestExtendedKindsDriftLock:
-    # frob:tests src/frob/strata/_selfconform.py::_observed_extended_kinds_by_node \
+    # frob:tests \
+    # src/frob/strata/_selfconform_kinds.py::_observed_extended_kinds_by_node \
     # kind="unit"
     # frob:waive COV006 reason="T-0536: _EXTENDED_KINDS/_KIND_MAP/_PATTERNS are \
     # module-level constants this test asserts set operations over -- never CALLED, so \
@@ -1307,6 +1314,7 @@ class TestModeQualifiedFsStaleDesign:
 
 
 # invariant spec: [INV-048](invariants/INV-048.md)
+# frob:ticket T-2729
 class TestCoverageTotality:
     """SYS103 (SYS-COV, T-0667): a `FOREIGN` file the binding-aware
     scanner observes ANY capability in fires, on any root -- not just
@@ -1317,7 +1325,8 @@ class TestCoverageTotality:
     see that class's docstring for why (both run a ~400MB full-repo scan;
     grouping keeps the two peaks off separate concurrent workers)."""
 
-    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
     def test_foreign_file_with_capability_fires_sys103(self, tmp_path: Path):
         """A file with an observed `net` effect and no node's `code=`
@@ -1367,7 +1376,8 @@ class TestCoverageTotality:
             v.rule == SYS_UNDECLARED_INTERFACE for v in result.danger_ok.violations
         )
 
-    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
     def test_foreign_capability_free_file_does_not_fire_sys103(self, tmp_path: Path):
         """A `FOREIGN` file with zero observed capabilities (plain data)
@@ -1382,7 +1392,8 @@ class TestCoverageTotality:
             v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.violations
         )
 
-    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
     def test_fires_outside_src_frob_layout(self, tmp_path: Path):
         """SYS103 is repo-general, unlike SYS102's `_PACKAGE_ROOT`
@@ -1401,7 +1412,8 @@ class TestCoverageTotality:
         ]
         assert any(v.node == "app/widget/_io.py" for v in hit)
 
-    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
     def test_sys103_waivable_as_bare_rule(self, tmp_path: Path):
         """A bare `waive "SYS103"` clause suppresses the finding -- SYS103
@@ -1434,8 +1446,10 @@ class TestCoverageTotality:
         )
         assert any(v.rule == SYS_COVERAGE_TOTALITY for v in result.danger_ok.waived)
 
-    # frob:tests src/frob/strata/_selfconform.py::_coverage_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_core_rules.py::_coverage_totality_violations \
     # kind="unit"
+    # frob:ticket T-2729
     @pytest.mark.xdist_group(name="selfconform-full-repo-scan")
     def test_repo_unrestricted_scan_is_clean(self, monkeypatch: pytest.MonkeyPatch):
         """T-1079 (SYS103's 264-finding follow-up), STILL GREEN post-T-1091:
@@ -1458,6 +1472,7 @@ class TestCoverageTotality:
         monkeypatch needed there since T-1091)."""
         pytest.importorskip("strata_core")
         from frob.strata import _selfconform as sc
+        from frob.strata import _selfconform_core_rules as sc_core
         from frob.strata._design_load import load_design_ids
         from frob.strata._sysdoc import merge_models
 
@@ -1466,7 +1481,12 @@ class TestCoverageTotality:
         assert not ids.errors, f"design load failed: {ids.errors}"
         model = merge_models(ids.models)
 
-        monkeypatch.setattr(sc, "_coverage_totality_scan_prefix", lambda r: None)
+        # T-2729: `_coverage_totality_scan_prefix` now lives in
+        # `_selfconform_core_rules.py` (SYS100/SYS101/SYS103 family
+        # module) -- patch it there, since that is the module whose own
+        # global `_coverage_totality_violations` actually reads at call
+        # time, not the re-exported name on `_selfconform` itself.
+        monkeypatch.setattr(sc_core, "_coverage_totality_scan_prefix", lambda r: None)
 
         result = sc.check_self_conformance(model, root)
         assert result.is_ok, result.err
@@ -1474,12 +1494,14 @@ class TestCoverageTotality:
         assert violations == (), [(v.rule, v.node, v.detail) for v in violations]
 
 
+# frob:ticket T-2729
 class TestDuplicateInterface:
     """SYS108 (T-1624): a node's `interface=` attrs must not name the same
     symbol more than once -- the elaborated-model shape two byte-identical
     `attr interface=[...]` blocks on one node produce."""
 
-    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_duplicate_interface_violations \
     # kind="unit"
     def test_duplicate_symbol_fires(self, tmp_path: Path):
         """A node whose `interface=` attrs repeat a name (the shape two
@@ -1508,7 +1530,8 @@ class TestDuplicateInterface:
         assert hits[0].node == "widget"
         assert hits[0].capability == "public_fn"
 
-    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_duplicate_interface_violations \
     # kind="unit"
     def test_grammar_parsed_duplicate_blocks_fire_not_lexical_text(
         self, tmp_path: Path
@@ -1562,7 +1585,8 @@ class TestDuplicateInterface:
         assert len(hits) == 1
         assert hits[0].capability == "public_fn"
 
-    # frob:tests src/frob/strata/_selfconform.py::_duplicate_interface_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_duplicate_interface_violations \
     # kind="unit"
     def test_no_duplicates_silent(self, tmp_path: Path):
         """A node whose `interface=` attrs name every symbol exactly once
@@ -1584,6 +1608,7 @@ class TestDuplicateInterface:
         )
 
 
+# frob:ticket T-2729
 class TestUndeclaredIntendedSurface:
     """SYS110 (T-1629): `interface=` is hand-declared INTENT, not a
     generated mirror (the deleted SYS104's own shape) -- a node that has
@@ -1593,8 +1618,8 @@ class TestUndeclaredIntendedSurface:
     requirement)."""
 
     # frob:tests \
-    # src/frob/strata/_selfconform.py::_undeclared_intended_surface_violations \
-    # kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
+    # tions kind="unit"
     def test_real_symbol_outside_declared_set_fires(self, tmp_path: Path) -> None:
         _write(
             tmp_path,
@@ -1622,8 +1647,8 @@ class TestUndeclaredIntendedSurface:
         assert hits[0].capability == "undeclared_fn"
 
     # frob:tests \
-    # src/frob/strata/_selfconform.py::_undeclared_intended_surface_violations \
-    # kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
+    # tions kind="unit"
     def test_declared_superset_is_silent(self, tmp_path: Path) -> None:
         """Declaring MORE than the real surface (an aspirational/future
         entry) is not itself a SYS110 finding -- only the reverse
@@ -1650,8 +1675,8 @@ class TestUndeclaredIntendedSurface:
         )
 
     # frob:tests \
-    # src/frob/strata/_selfconform.py::_undeclared_intended_surface_violations \
-    # kind="unit"
+    # src/frob/strata/_selfconform_surface_rules.py::_undeclared_intended_surface_viola\
+    # tions kind="unit"
     def test_node_with_no_interface_attrs_is_skipped(self, tmp_path: Path) -> None:
         """A node with ZERO `interface=` attrs has not opted into
         hand-declared intent yet -- the phased-migration design point,
@@ -1670,7 +1695,7 @@ class TestUndeclaredIntendedSurface:
             for v in result.danger_ok.violations
         )
 
-    # frob:tests src/frob/strata/_selfconform.py::SYS110_UNAUDITED_NODES kind="unit"
+    # frob:tests src/frob/strata/_selfconform_ids.py::SYS110_UNAUDITED_NODES kind="unit"
     def test_unaudited_node_is_silenced_regardless_of_drift(
         self, tmp_path: Path
     ) -> None:
@@ -1701,7 +1726,7 @@ class TestUndeclaredIntendedSurface:
         )
 
     # frob:ticket T-1981
-    # frob:tests src/frob/strata/_selfconform.py::SYS110_UNAUDITED_NODES kind="unit"
+    # frob:tests src/frob/strata/_selfconform_ids.py::SYS110_UNAUDITED_NODES kind="unit"
     def test_burn_down_shrinks_the_exemption_never_widens_it(self) -> None:
         """T-1981: the exemption set must be smaller than T-1629's
         original 15 -- `natives` was hand-audited (its one real drift
@@ -1733,12 +1758,14 @@ class TestUndeclaredIntendedSurface:
         )
 
 
+# frob:ticket T-2729
 class TestPurposeContract:
     """SYS105 (T-0669): a node's `purpose=` attr bounds its allowed
     observed effect kinds -- opt-in only (module docstring's SYS105
     scope cut)."""
 
-    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_purpose_contract_violations \
     # kind="unit"
     def test_effect_outside_profile_fires(self, tmp_path: Path):
         """A `purpose=logging` node that opens a network socket fires
@@ -1765,7 +1792,8 @@ class TestPurposeContract:
         ]
         assert any(v.capability == "net.connect" for v in hits)
 
-    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_purpose_contract_violations \
     # kind="unit"
     def test_read_only_purpose_with_write_effect_fires(self, tmp_path: Path):
         """T-0669's own acceptance wording, verbatim: a node whose
@@ -1793,7 +1821,8 @@ class TestPurposeContract:
         ]
         assert any(v.capability == "fs.write" for v in hits)
 
-    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_purpose_contract_violations \
     # kind="unit"
     def test_unrecognized_profile_fires(self, tmp_path: Path):
         """A typo'd `purpose=` profile name is itself a finding -- never
@@ -1815,7 +1844,8 @@ class TestPurposeContract:
         ]
         assert any("logg1ng" in v.detail for v in hits)
 
-    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_purpose_contract_violations \
     # kind="unit"
     def test_effect_inside_profile_is_silent(self, tmp_path: Path):
         """A `purpose=read-only` node that only reads a file fires no
@@ -1841,7 +1871,8 @@ class TestPurposeContract:
             v.rule == SYS_PURPOSE_CONTRACT for v in result.danger_ok.violations
         )
 
-    # frob:tests src/frob/strata/_selfconform.py::_purpose_contract_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_surface_rules.py::_purpose_contract_violations \
     # kind="unit"
     def test_node_with_no_purpose_attr_is_never_checked(self, tmp_path: Path):
         """A node declaring no `purpose=` attr at all is silently skipped
@@ -1868,12 +1899,14 @@ class TestPurposeContract:
         )
 
 
+# frob:ticket T-2729
 class TestBindingTotality:
     """SYS106 (T-0670): a `FOREIGN` file reachable via resolved local
     imports from a bound node's own files, with an observed capability,
     fires -- "logic laundered into an unbound file"."""
 
-    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_binding_rules.py::_binding_totality_violations \
     # kind="unit"
     def test_laundered_capable_file_fires(self, tmp_path: Path):
         """A bound node's file imports an unmodeled helper module that
@@ -1903,7 +1936,8 @@ class TestBindingTotality:
         ]
         assert any(v.node == "src/frob/widget/_helper.py" for v in hits)
 
-    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_binding_rules.py::_binding_totality_violations \
     # kind="unit"
     def test_unreachable_foreign_file_does_not_fire_sys106(self, tmp_path: Path):
         """A capable FOREIGN file that no bound file imports (unreachable)
@@ -1931,7 +1965,8 @@ class TestBindingTotality:
             for v in result.danger_ok.violations
         )
 
-    # frob:tests src/frob/strata/_selfconform.py::_binding_totality_violations \
+    # frob:tests \
+    # src/frob/strata/_selfconform_binding_rules.py::_binding_totality_violations \
     # kind="unit"
     def test_bound_reachable_file_does_not_fire_sys106(self, tmp_path: Path):
         """A reachable file that IS bound to some node (any node, not
