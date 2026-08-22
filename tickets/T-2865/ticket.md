@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f0d1aa5bbb92e3e8b0f80b85a85e769dd662a056
 ---
 Split off T-2370: COV006's own docstring (frob/gates/__init__.py::_cov006)
 states WARN severity is deliberate and unconditional -- frob.graph.callgraph
