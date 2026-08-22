@@ -20,6 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_lifecycle.py
+- tickets/T-draft-783d89c8/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,12 @@ scope_changes:
   glob: src/frob/app/_check_chunking.py
   reason: T-2369 (in-progress) holds an active lease on _check_chunking.py; deferring
     this file, will file follow-up if needed after T-2369 lands
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tickets/T-draft-783d89c8/ticket.md
+  reason: SCOPE001 flagged the new follow-up ticket's own file as out-of-scope; it
+    is legitimate diff residue from filing that ticket while T-2830 was in-progress
   actor: logan
   at: '2026-08-21'
 designated_repro_test: null
