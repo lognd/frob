@@ -648,11 +648,12 @@ def _reg008_undeclared_enforcement(
     code<->corpus conformance drift T-0428 calls out as the two-SSOT
     split's required bidirectional check.
 
-    WARN, not ERROR: this repo's registry carries ~1950 entries built
-    before `frob:enforces` existed, essentially all of them undeclared in
-    code by this measure -- an honest first-turn-on debt, the same shape
-    as INV003/INV004's own initial red state, not something this pass
-    can retroactively backfill in one ticket."""
+    WARN, not ERROR: T-2369 burned this down from 36 -> 1 (T-2812's batch
+    plus this ticket's own batch), but the last entry (CHK-GATE-DOC012)
+    sits in src/frob/gates/_docblocks.py, live-leased by in-progress
+    T-2359 -- promoting to ERROR before that lease clears and the final
+    directive lands would red every check run on a file this ticket
+    cannot touch. Promote once T-2369's own re-measurement reads zero."""
     violations: list[Violation] = []
     for rel_path, registry_file in parsed.items():
         for entries in registry_file.entry_lists.values():

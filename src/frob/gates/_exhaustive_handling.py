@@ -356,6 +356,7 @@ def _function_violations(
 # frob:enforces CHK-GATE-EXHAUST001
 # frob:enforces CHK-GATE-EXHAUST002
 # frob:enforces CHK-GATE-EXHAUST003
+# frob:enforces CHK-GATE-EXHAUST004
 def exhaustive_handling_gate(root: Path) -> tuple[Violation, ...]:
     """EXHAUST001/EXHAUST002/EXHAUST003 (T-0688, narrowed T-1402) over
     every python file under `root`: a function/method that has attempted

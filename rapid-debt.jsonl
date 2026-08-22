@@ -2514,6 +2514,11 @@
 {"commit": "17c3dfff55cee2e50fd5a1cf4dbb8b785f0ec9ab", "skipped": "land-evidence-scope-unbound", "ticket": "T-2821"}
 {"commit": "c7f781e683cf45ca25a6a2957ae687f91864a9fa", "skipped": "land-evidence-scope-unbound", "ticket": "T-2820"}
 {"commit": "a80fcae9cee3d6c85f94b395c8f72018da146042", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2820"}
+{"commit": "6d97b387da63907aba13fc3ae51df3f09f9c78e2", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2832"}
+{"commit": "6d97b387da63907aba13fc3ae51df3f09f9c78e2", "skipped": "missing-evidence-or-done-report", "ticket": "T-2832"}
+{"commit": "89855af11d207cded87d09f72efeddde7b3f00f3", "skipped": "land-evidence-scope-unbound", "ticket": "T-2832"}
+{"commit": "0e6dd2fb8fea625db3f8b6a3256e6c342b69dbc5", "skipped": "land-evidence-scope-unbound", "ticket": "T-2832"}
+{"commit": "9c38194c4e207c029a284db6cdd526cf641c7d2a", "skipped": "land-evidence-scope-unbound", "ticket": "T-2832"}
 {"commit": "753c7172c2e95aaa8e95d47a114bbbc74d1a3cb5", "skipped": "land-evidence-scope-unbound", "ticket": "T-2375"}
 {"commit": "775fb3c8abfc900e1b6c63f6a503f1aefba85c0c", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2375"}
 {"commit": "8054811cbb066e52e52bbc245568245b57b88fa9", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2821"}
@@ -2523,5 +2528,6 @@
 {"commit": "43ffc4cc6227e4808f53e4d3eef76ce2a52f656e", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2818"}
 {"commit": "1126a8ec766356f300705bb0dbdb19cae5bfa537", "skipped": "land-evidence-scope-unbound", "ticket": "T-2825"}
 {"commit": "3c9035ff7c5cec5e7d1ebb3aad1ae053e6036801", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2825"}
+{"commit": "ca9c107dd2a338255552009403684140c11994df", "skipped": "land-evidence-scope-unbound", "ticket": "T-2832"}
 {"commit": "3893740a878deed385ac68c4a46f096b870f61e3", "skipped": "land-evidence-scope-unbound", "ticket": "T-2822"}
 {"commit": "2b9a24a4f76dd5b101ffc80edf2ffc5651d06f3e", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2822"}

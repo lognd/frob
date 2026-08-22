@@ -394,6 +394,7 @@ class FingerprintViolation(BaseModel):
     detail: str = ""
 
 
+# frob:enforces CHK-GATE-CVEFP001
 def _drift_violation(entry: CveFingerprint) -> FingerprintViolation:
     """CVEFP001 violation helper: deny-by-default unjoined `cwe_id`."""
     _log.warning(

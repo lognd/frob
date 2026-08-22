@@ -108,6 +108,8 @@ def _selfaudit_violation(
 # SELFAUDIT001's own shape/behavior is unchanged, only which findings it now correctly \
 # skips); docs/modules/gates.md is not in T-1146's declared scope"
 # frob:invariant INV-041
+# frob:enforces CHK-GATE-SYS109
+# frob:enforces CHK-GATE-SYS112
 # frob:tests \
 # tests/test_gates.py::TestSelfAuditGate.test_selfaudit001_folds_selfconform_violation
 # frob:tests \

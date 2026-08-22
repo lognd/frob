@@ -339,6 +339,7 @@ _DISPATCH_BY_TYPE = {
 
 
 # frob:ticket T-0546
+# frob:enforces CHK-GATE-CHECK001
 def _unknown_project_type_result(root: Path, project_type: str) -> CheckResult:
     """A loud CHECK001 error `CheckResult` for an unrecognized `project_type`
     (T-0404 finding 6).
@@ -462,6 +463,7 @@ def _opt_in_deploy_stage_result(
 # frob:tests \
 # tests/test_check_runner.py::TestClaudeConfigDriftStage.test_no_stage_when_repo_has_no\
 # _managed_config
+# frob:enforces CHK-GATE-CLAUDE001
 def _claude_config_drift_result(root: Path) -> ToolResult | None:
     """CLAUDE001 (T-1809, T-1719 item 2): fails `frob check` when a
     `.claude/hooks/sync-claude-config.py`-managed file (T-1808's `MANAGED`
@@ -541,6 +543,7 @@ def _deploy_drift_result(root: Path) -> ToolResult | None:
     )
 
 
+# frob:enforces CHK-GATE-DEPLOY001
 def _deploy_drift_tool_result(violations) -> ToolResult:  # noqa: ANN001
     """Wrap DEPLOY001 `violations` (possibly empty) as the `deploy-drift`
     stage's `ToolResult`."""

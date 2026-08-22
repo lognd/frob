@@ -357,6 +357,7 @@ def _cycle_representative_file(cycle: list[str]) -> str:
     return min(cycle)
 
 
+# frob:enforces CHK-GATE-CYCLE001
 def _cycle_diags(cycles) -> list[Diagnostic]:  # noqa: ANN001
     """One diagnostic per detected import cycle, severity scaled by size.
 
@@ -994,6 +995,7 @@ def _label_replay(results: list, *, age_s: float) -> list:  # noqa: ANN001
 
 
 # frob:ticket T-2684
+# frob:enforces CHK-GATE-QUEUE001
 def _gates_error_result(err, gate_error_cls) -> ToolResult:  # noqa: ANN001
     """The `ToolResult` for a failed `run_gates` call: a hard ERROR if the
     ticket queue itself failed to load, else a soft skip.

@@ -611,6 +611,7 @@ def _run_budget_chunk(
 
 # frob:ticket T-1004
 # frob:ticket T-1195
+# frob:enforces CHK-GATE-BUDGET001
 def _budget_deferred_result(
     deferred: list[str], budget_s: int, *, persisted: bool = True
 ) -> ToolResult:

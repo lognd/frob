@@ -121,6 +121,7 @@ def _native_staleness_result(root: Path) -> ToolResult | None:
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_corrupt_artifact_fails_closed_before_any_stage_runs  # noqa: E501
 # frob:tests tests/unit/test_check.py::TestDerivedStateIntegrityGate.test_absent_artifact_is_not_a_violation  # noqa: E501
 # frob:ticket T-0603
+# frob:enforces CHK-GATE-DERIVED001
 def _derived_state_integrity_result(root: Path) -> ToolResult | None:
     """`None` if every derived artifact under `root` is present-and-healthy
     or simply absent (T-0570's `verify_derived_state` fail-open-on-absent

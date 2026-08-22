@@ -114,6 +114,7 @@ def _node_capacity_per_second(node: Node) -> float | None:
     return base.danger_ok * node.capacity.replicas_max
 
 
+# frob:enforces CHK-GATE-CAP001
 def _capacity_violation(
     node_id: str, projected_demand: float, capacity: float
 ) -> CapacityViolation:

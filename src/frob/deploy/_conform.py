@@ -447,6 +447,7 @@ def _script_conformance(
     return violations
 
 
+# frob:enforces CHK-GATE-DEPLOY002
 def _deploy002_extras(
     filename: str, extras: frozenset[MutationTarget]
 ) -> list[ConformanceViolation]:
@@ -476,6 +477,7 @@ def _deploy002_extras(
     return violations
 
 
+# frob:enforces CHK-GATE-DEPLOY003
 def _deploy003_misses(
     filename: str, misses: frozenset[MutationTarget]
 ) -> list[ConformanceViolation]:
