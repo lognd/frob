@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b9cc2dfed8150fe77bafdd37bd875a7a0411bfa2
 ---
 Re-measured 2026-08-22 via unbudgeted `frob check --json` (gate-summary
 present): assigned subset is LANG004 (1), OPAQUE001 (1), TICK003 (1),
