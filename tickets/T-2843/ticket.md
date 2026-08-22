@@ -2,7 +2,7 @@
 id: T-2843
 title: Split frob.gates._doclink_docanchor's later-bolted docstatus/docmake/docseverity
   gates out
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
@@ -18,6 +18,9 @@ scope:
 - src/frob/gates/_doclink_docanchor.py
 - docs/modules/gates.md
 - tests/test_gates.py
+- src/frob/gates/_docstatus.py
+- frob.lock
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,18 +56,47 @@ scope_changes:
     into __init__.py'
   actor: logan
   at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_docstatus.py
+  reason: 'T-2843: split introduces a new module (_docstatus.py) and updates frob.lock''s
+    ack digests for the moved gates; both are part of this ticket''s own scoped work'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: frob.lock
+  reason: 'T-2843: split introduces a new module (_docstatus.py) and updates frob.lock''s
+    ack digests for the moved gates; both are part of this ticket''s own scoped work'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'T-2843: __init__.py''s import block moves for the three relocated gates
+    -- in scope for this split'
+  actor: logan
+  at: '2026-08-22'
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
+- tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+- tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+- tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
+- tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
 designated_repro_test: null
 acceptance:
 - text: given frob.gates._doclink_docanchor.py after this lands, when its line count
     is read, then it is under frob.toml's max_file_lines=800 threshold, holding only
     doclink_gate/docanchor_gate (DOC001/DOC002)
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 - text: given the new module holding docstatus_gate/docmake_gate/docseverity_gate,
     when frob check runs, then every existing frob:doc/frob:enforces/frob:tests citation
     for those three gates still resolves (repointed if their target changed, not broken)
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDocstatusGate::test_missing_status_header_fires_doc009
+  - tests/test_gates.py::TestDocmakeGate::test_bogus_make_target_fires_doc010
+  - tests/test_gates.py::TestDocseverityGate::test_mismatched_severity_row_fires_doc013
 - text: given the full test suite, when it runs after the split, then it passes unchanged
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestDocseverityGate::test_matching_severity_row_passes
 threat: null
 component: null
 anchor: false
