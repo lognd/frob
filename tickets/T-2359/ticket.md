@@ -346,14 +346,6 @@ acceptance:
 - text: given the repo after this lands, when ruff format --check . runs, then zero
     files need reformatting
   evidence: []
-- text: given the format-only commit, when its diff is reviewed, then it contains
-    no semantic changes and no fixture-corpus files
-  evidence: []
-- text: given the test suite, when it runs after the reformat, then it passes unchanged
-  evidence: []
-- text: given the repo after this lands, when ruff format --check . runs, then zero
-    files need reformatting
-  evidence: []
 - text: given the format-only commit series, when its diffs are reviewed, then they
     contain no semantic changes and no fixture-corpus files
   evidence: []
@@ -389,6 +381,34 @@ acceptance_amendments:
     bound to a genuine repo-wide ruff-format-clean measurement'
   actor: logan
   at: '2026-08-20'
+- op: remove
+  index: 2
+  old_text: given the test suite, when it runs after the reformat, then it passes
+    unchanged
+  new_text: null
+  reason: duplicate of newly re-added index 5 (final-batch criterion); the earlier
+    2026-08-20 removal amendment was documentation-only and never actually stripped
+    the entry, so both copies existed
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  index: 1
+  old_text: given the format-only commit, when its diff is reviewed, then it contains
+    no semantic changes and no fixture-corpus files
+  new_text: null
+  reason: duplicate of newly re-added index (final-batch criterion); same stale-removal-was-documentation-only
+    issue
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  index: 1
+  old_text: given the repo after this lands, when ruff format --check . runs, then
+    zero files need reformatting
+  new_text: null
+  reason: duplicate final-batch criterion left over from the earlier documentation-only
+    removal; collapsing to one copy
+  actor: logan
+  at: '2026-08-21'
 threat: null
 component: build
 anchor: false
