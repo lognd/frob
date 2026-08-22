@@ -1,7 +1,7 @@
 ---
 id: T-2865
 title: Burn COV006 WARN findings to zero via individual waivers (never promote)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -20,6 +20,11 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
+- tests/test_gates.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
+- tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty::test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+- tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr::test_wip_commit_failure_logs_stderr
 designated_repro_test: null
 threat: null
 component: null
