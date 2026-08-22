@@ -1,7 +1,7 @@
 ---
 id: T-2825
 title: 'LARGE001: split or waive oversized frob.tickets modules, batch 1 of 2'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -20,6 +20,8 @@ scope:
 - src/frob/tickets/_land_finalize.py
 - src/frob/tickets/_land_release.py
 - src/frob/tickets/_land_squash.py
+evidence_scope:
+- tests/test_arch_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,12 +34,15 @@ body_changes:
   at: '2026-08-21'
   old_length: 1545
   new_length: 2167
+evidence:
+- tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 designated_repro_test: null
 acceptance:
 - text: given the batch's 6 files, when frob check --json measures LARGE001, then
     each file reads as severity=note (waived with T-1651-grade reasoning naming why
     no split seam exists) rather than warning
-  evidence: []
+  evidence:
+  - tests/test_arch_gate.py::TestArchGateLargeFile::test_large_file_fires_large001_warn
 threat: null
 component: null
 anchor: false

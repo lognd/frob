@@ -20,6 +20,17 @@ the same load-order-safe indirection T-1103 used for `renumber_one`/
 exists yet at its own module scope.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module IS the T-1103 per-family \
+# extraction seam already applied -- 'is this ticket dispatchable, and if not why' is \
+# one cohesive question (lease collision, scope-breadth, live-lease overlay, and the \
+# staleness alarm all feed the same doable()/doable_blocked() decision), not a bundle \
+# of unrelated concerns. A further line-count split would have to cut either a helper \
+# away from the doable()/doable_blocked() call site it exists only to serve, or the \
+# wave()/wave_result family (which reuses the same collision-detection helpers) into a \
+# sibling module that would immediately import back everything it just left -- the \
+# same 'cut apart, not a real boundary' outcome T-1651 established as strictly worse \
+# than the warning."
+
 from __future__ import annotations
 
 import fnmatch

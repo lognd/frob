@@ -18,6 +18,17 @@ T-1334's other split-out module) imports what it still needs back from
 here.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module is ITSELF the product of the \
+# T-1334 split -- one release-coherence concern (version bump monotonicity, \
+# uv.lock/manifest re-sync, native-rebuild staleness) where every helper feeds the \
+# same _apply_release_bump/_finalize_release_coherence call chain. Splitting further \
+# would separate the version-bump validators from the _apply_release_bump call site \
+# that is their only caller, or split the uv.lock re-sync helpers from the \
+# monotonicity checks they must run alongside atomically (a land must not bump the \
+# version without also re-syncing the lock, or vice versa) -- cutting either apart \
+# breaks the same-transaction guarantee this module exists to hold together, the 'real \
+# seam vs cut a real edge' distinction T-1651 already drew."
+
 from __future__ import annotations
 
 import json

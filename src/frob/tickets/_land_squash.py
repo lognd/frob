@@ -31,6 +31,17 @@ helpers this family calls (`_apply_release_bump`/`_apply_gate_rule_sync`/
 `frob.tickets._land_release` module and are imported back from there.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module is itself the T-1334 split's \
+# squash-apply/close output, and its own docstring shows the internal seam \
+# (_land_squash_apply/_land_squash_apply_finish) was ALREADY cut at the one safe point \
+# (the squash call, the sole unwind point every path shares). What remains -- the \
+# v1/v2 splice pair, their conflict checks, the unwind/regression-sweep pair, the \
+# completeness assertion, and the stacked-sibling absorption check -- are five guards \
+# that all run in the same _land_squash_apply/_land_squash_apply_finish sequence \
+# against the same worktree-vs-main diff; splitting them apart would scatter one \
+# atomic commit-or-unwind transaction's checks across files with no independent \
+# consumer, the same outcome T-1651 ruled worse than the warning."
+
 from __future__ import annotations
 
 from collections.abc import Callable

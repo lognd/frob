@@ -39,6 +39,14 @@ module scope.
 # this family exists to enforce, not by call-graph adjacency alone; same T-1103/T-1108 \
 # precedent as frob.tickets.__init__'s own ARCH102 waiver for the identical reason \
 # (one deliberately centralized concern, not several bolted together)"
+# frob:waive LARGE001 reason="T-1651-grade: same cohesion the ARCH102 waiver above \
+# already establishes for this exact module -- one DONE-transition concern (record, \
+# verify, guard, close) not a bundle of unrelated ones. A line-count split would have \
+# to sever the guard chain (_done_transition_*) from the transition() call site that \
+# invokes them in sequence, or separate add_evidence()/add_cmd_evidence() from the \
+# _check_evidence_* helpers they call directly -- both are the same 'cut a real edge, \
+# not a real boundary' outcome T-1651 already ruled out for this repo's other \
+# guard-chain files."
 
 from __future__ import annotations
 

@@ -30,6 +30,24 @@ imports `_land_finalize_and_close` from `_land_finalize` and
 `_land_squash_apply`/`_v2_effective_scope` from `_land_squash` directly.
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents two \
+# prior extractions (T-1186, T-1334) that already carved out every naturally separable \
+# stage (merge/splice, post-merge claim reverification, draft-finalize, squash-apply, \
+# release-bump). What remains is the land lock/repair-marker machinery, the \
+# land()/_land_locked orchestrator, and the preflight validator chain \
+# (cross-ticket-leakage, passenger-ticket, already-landed, orphaned-evidence \
+# detection) it calls in sequence. That preflight chain LOOKS separable by file size \
+# alone, but its own leakage-detection helpers (_find_leaked_tickets, \
+# _check_passenger_tickets) are interleaved with the already-landed-detection helpers \
+# (_check_already_landed, _ticket_directive_present_on_ref) through shared diff- \
+# parsing primitives (_raw_tree_for_ref, _comment_lines_in_tree, _DiffLineTracker) -- \
+# extracting one preflight family without the other would duplicate the tree-sitter \
+# plumbing or force a fresh import edge between two modules that would immediately \
+# import each other back, the same 'no real boundary' outcome T-1651 ruled out. Every \
+# symbol referenced above has zero callers outside this file (verified via git grep) \
+# -- there is no distinct external consumer set to split along, only an internal call \
+# chain that already reflects the actual preflight sequence."
+
 from __future__ import annotations
 
 import importlib

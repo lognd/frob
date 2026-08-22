@@ -29,6 +29,17 @@ moved function keeps its original body, docstring, and `frob:ticket`/
 directly instead of from here (this module no longer defines them).
 """
 
+# frob:waive LARGE001 reason="T-1651-grade: this module's own docstring documents it \
+# as the RESIDUE of two prior splits (T-1186, T-1251, T-1334) that already carved the \
+# git-plumbing family and the squash-apply/release families out into their own \
+# modules. What remains -- draft-id finalization, sibling-draft renumbering, the \
+# stale-draft-id-reference rewrite trio, and ticket closing -- is one sequential \
+# pipeline (_land_finalize_and_close calls each stage in order on the same draft-id \
+# rename), not a bundle of unrelated concerns. A further split would have to cut the \
+# rewrite trio away from _finalize_draft_id, the one caller that needs all three run \
+# back-to-back against the same renamed id -- the same 'severs a real call sequence, \
+# not a real seam' outcome T-1651 already ruled out."
+
 from __future__ import annotations
 
 import re
