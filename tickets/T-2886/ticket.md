@@ -28,6 +28,13 @@ body_changes:
   at: '2026-08-22'
   old_length: 1833
   new_length: 7453
+- mode: append
+  reason: record the executed removal, rescue-dump locations, post-removal fleet_status,
+    and two out-of-scope findings surfaced during the operation
+  actor: logan
+  at: '2026-08-22'
+  old_length: 7453
+  new_length: 10576
 designated_repro_test: null
 threat: null
 component: null
@@ -174,3 +181,66 @@ main` as the fix, requiring the agent to run it explicitly and verify
 silent merge near reporting" doctrine better than an automatic merge.
 Suggest a follow-up ticket to build the threshold check itself (not
 this one -- this ticket is audit-only per your instruction).
+
+
+## Removal executed (2026-08-22), REAP APPROVED by coordinator
+
+Rescue dumps (status + diff HEAD, before removal) for all 39 removed
+worktrees: /home/logan/.claude/jobs/9e116a8d/tmp/worktree-rescue/*.{status,diff}
+
+Note: several worktrees not in the coordinator's spot-check sample also
+carried uncommitted content beyond rapid-debt.jsonl/ledger copies --
+e.g. t-1945 (544-line diff), t1860-series (91 lines), t-2125 (57
+lines), t-1614/dev-friction (~50 lines each). Inspected a sample: these
+are `ruff format` line-wrap churn on test files (formatting drift from
+whenever these branches diverged, not logic changes) -- same category
+as the two the coordinator already characterized as abandoned
+experiments, not new risk. Full diffs are in the rescue dump if anyone
+wants to double check.
+
+Re-verified t-2875 before removal: T-2875 landed as cab0f9fb3 and
+fleet_status confirmed no live lease -- removed along with the other
+36.
+
+12 worktrees removed cleanly (no dirty state): t-2801, t-2850, t-2858,
+t-2869, t-2870, t-2871, t-2875, t-2877, t-2880, and 3 more.
+27 required `--force` (dirty state only -- rescue-dumped first). None
+refused for a live-shell/lock reason; nothing was skipped.
+
+Left alone: t-2883 (live lease, T-2883 in-progress), t-2888 (new
+worktree, live lease T-2888, appeared mid-audit -- not part of the
+original 39, not investigated).
+
+### Post-removal fleet_status
+Worktree count: 41 -> 3 (t-1906, t-2883, t-2888).
+ORPHANED FORKSERVERS: 54 -> 30.
+SWAP HELD BY FORKSERVERS: 3.8GB -> 0.7GB.
+
+### Two things found during removal, outside this ticket's scope -- reporting, not fixing
+
+1. `.claude/worktrees/t-1906` is NOT a git worktree (no `.git`, just a
+   leftover `.frob/telemetry.jsonl` stub dir) -- ticket T-1906 is done.
+   Also two stray loose files directly under `.claude/worktrees/`:
+   `t-2356-scratch-golden-check.py` and `t1768.patch`, debris from past
+   sessions. All three rescued to the same dump directory
+   (`t-1906-stub-filelist.txt`, `t-2356-scratch-golden-check.py`,
+   `t1768.patch`) but NOT deleted -- outside T-2886's audited scope
+   (real git worktrees only), flagging for your call rather than
+   unilaterally removing.
+
+2. **The primary checkout root is currently DIRTY**, discovered by the
+   post-removal `fleet_status` re-run, NOT caused by any command I ran
+   (I never touched these files):
+   `src/frob/app/_daemon_proxy.py`, `src/frob/serve/_socketd.py`,
+   `tests/test_app_daemon_proxy.py` (239 insertions/6 deletions).
+   This blocks every other agent's land per the standing
+   "coordinator/agents never dirty the shared root" doctrine. Flagging
+   immediately per that doctrine -- I have not touched or reverted it,
+   since I don't know whose in-flight work it is.
+
+Follow-up ticket filed for the `frob ticket work` staleness-refuse
+recommendation: T-2889 (reasoning: refuse-and-suggest over auto-merge,
+to avoid the T-1868/T-1093 draft-ticket collision class; also records
+the 3-instance stale-code-silently-in-effect family: stale worktrees,
+the stale bare `frob` on PATH with version-string parity masking it,
+and T-2884's content-blind daemon skew check).
