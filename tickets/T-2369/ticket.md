@@ -24,6 +24,10 @@ scope:
 - src/frob/gates/_refs.py
 - tests/test_refs_gate.py
 - tests/unit/gates/test_refs.py
+- src/frob/strata/_selfconform_surface_rules.py
+- src/frob/gates/_registry_exhaustiveness.py
+- tests/test_registry_exhaustiveness.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -301,6 +305,34 @@ scope_changes:
 - op: remove
   glob: docs/modules/gates.md
   reason: re-homed to child T-2836 (batch 3/N)
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/strata/_selfconform_surface_rules.py
+  reason: final 3 REG008 entries (SYS108/SYS110/SLH-SYS-EVA-03) moved by T-2729's
+    split to _selfconform_surface_rules.py; add directives + promote WARN->ERROR at
+    true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: final 3 REG008 entries (SYS108/SYS110/SLH-SYS-EVA-03) moved by T-2729's
+    split to _selfconform_surface_rules.py; add directives + promote WARN->ERROR at
+    true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: final 3 REG008 entries (SYS108/SYS110/SLH-SYS-EVA-03) moved by T-2729's
+    split to _selfconform_surface_rules.py; add directives + promote WARN->ERROR at
+    true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: final 3 REG008 entries (SYS108/SYS110/SLH-SYS-EVA-03) moved by T-2729's
+    split to _selfconform_surface_rules.py; add directives + promote WARN->ERROR at
+    true zero
   actor: logan
   at: '2026-08-21'
 evidence:
