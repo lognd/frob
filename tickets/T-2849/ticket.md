@@ -20,6 +20,7 @@ scope:
 - src/frob/__main__.py
 - docs/modules/process.md
 - tests/unit/test_process_reap.py
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -103,6 +104,15 @@ scope_changes:
   reason: unit tests for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
     / the leak-regression stdout-contamination controls belong in this ticket's own
     scope, not filed separately
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: design/frob.strata
+  reason: the new os.environ.get read in _arm_forkserver_helper_pdeathsig_if_requested
+    is a genuinely new env.read capability use on src/frob/process/_reap.py (main
+    has zero env reads in this file today); SELFAUDIT001/SYS100 requires it declared
+    on node core's env.read via-list, incomplete work per this ticket's own new code,
+    not out-of-scope
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
