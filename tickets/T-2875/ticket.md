@@ -2,7 +2,7 @@
 id: T-2875
 title: 'frob.graph.dsl._RESERVED_MARKER_VERBS omits callee-raises, so a real # frob:callee-raises
   call-site marker fires DSL001 unknown-verb'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -17,6 +17,9 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/graph/dsl.py
 - tests/unit/graph/test_dsl.py
+- src/frob/process/_reap.py
+- rapid-debt.jsonl
+- tickets/T-2887/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -25,6 +28,36 @@ scope_changes:
 - op: add
   glob: tests/unit/graph/test_dsl.py
   reason: T-2875's own regression test lives here
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/process/_reap.py
+  reason: T-2875's fix makes _reap.py's frob:waive DSL001 follow_up=T-2875 inert;
+    removing that dead waiver in the same change (T-2874's lease has now cleared)
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: frob's own ticket-CLI bookkeeping artifacts (post-land sweep debt ledger
+    append, and the dropped successor draft) produced while working this ticket
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tickets/T-2887/ticket.md
+  reason: frob's own ticket-CLI bookkeeping artifacts (post-land sweep debt ledger
+    append, and the dropped successor draft) produced while working this ticket
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: rapid-debt.jsonl
+  reason: frob's own ticket-CLI bookkeeping artifacts (post-land sweep debt ledger
+    append, and the dropped successor draft) produced while working this ticket
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tickets/T-2887/ticket.md
+  reason: frob's own ticket-CLI bookkeeping artifacts (post-land sweep debt ledger
+    append, and the dropped successor draft) produced while working this ticket
   actor: logan
   at: '2026-08-22'
 evidence:

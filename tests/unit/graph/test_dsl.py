@@ -182,6 +182,7 @@ class TestContinuation:
         assert targets == {"T-0001\\", "T-0002"}
 
 
+# frob:ticket T-2875
 class TestReservedMarkerVerbs:
     """Verbs another subsystem owns as a literal marker (T-0294) must parse
     to neither an edge nor a `MalformedDirective` -- the DSL parser silently
@@ -195,6 +196,41 @@ class TestReservedMarkerVerbs:
             '    # frob:secret-fake reason="fabricated fixture token"\n'
             '    token = "sk-fake-1234567890"\n'
             "    return token\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert not malformed
+
+    def test_callee_raises_trailing_placement_is_silently_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # T-2875: the call-site sibling of "raises" -- a bare, same-line
+        # trailing `# frob:callee-raises` comment -- must not fire DSL001.
+        assert "callee-raises" in _RESERVED_MARKER_VERBS
+        src = (
+            "def foo() -> None:\n"
+            "    libc.prctl(1, 0, 0, 0, 0)  # frob:callee-raises\n"
+            "    return None\n"
+        )
+        pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
+        edges, malformed = parse_directives(pf)
+        assert not edges
+        assert not malformed
+
+    def test_callee_raises_standalone_placement_is_silently_skipped(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/graph/dsl.py::parse_directives
+        # T-2875: the same bare verb on its own full comment line must also
+        # not fire DSL001.
+        assert "callee-raises" in _RESERVED_MARKER_VERBS
+        src = (
+            "def foo() -> None:\n"
+            "    # frob:callee-raises\n"
+            "    libc.prctl(1, 0, 0, 0, 0)\n"
+            "    return None\n"
         )
         pf = parse_file(_write(tmp_path, "a.py", src)).danger_ok
         edges, malformed = parse_directives(pf)

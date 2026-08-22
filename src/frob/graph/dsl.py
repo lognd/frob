@@ -241,11 +241,31 @@ _INFER_PAIRS: tuple[tuple[str, str], ...] = (
 #:   one type per directive line, stacked above a `def`) that marks a
 #:   function's intentional uncaught exception escape for EXHAUST002. Its
 #:   own module scans directive text directly (`_DIRECTIVE_PREFIX`), never
-#:   a graph edge; the call-site sibling form `frob:callee-raises` (T-0931)
-#:   is a same-line trailing comment the DSL's line-based scan never
-#:   matches in the first place, so only the standalone-line `raises` verb
-#:   needs listing here.
-_RESERVED_MARKER_VERBS = frozenset({"secret-fake", "used-by", "raises"})
+#:   a graph edge.
+#: - "callee-raises": owned by `frob.arch._python`/`frob.arch._ffi`/
+#:   `frob.gates._ffi_boundary` (T-0689/T-0931) -- the call-site sibling of
+#:   "raises", a same-line trailing comment (`# frob:callee-raises
+#:   ValueError, OSError`, or the bare empty-set form `# frob:callee-raises`)
+#:   declaring a call's own exception escapes for FFI002/EXHAUST002. T-2875:
+#:   this verb WAS previously omitted here on the claim that a same-line
+#:   trailing comment is one the DSL's line-based scan "never matches in
+#:   the first place" -- that claim is false (confirmed against
+#:   `parse_directives` for both a same-line trailing placement and a
+#:   standalone full-line placement of a bare `# frob:callee-raises`
+#:   comment; both produced a DSL001 unknown-verb `MalformedDirective`
+#:   before this fix). `_RESERVED_MARKER_VERBS` is a hand-maintained set
+#:   with no single canonical source to derive it from: each owning
+#:   subsystem above keeps its own private marker literal/regex
+#:   (`frob.gates._secrets._REAL_FAKE_MARKER_REASON_RE`,
+#:   `frob.gates._refs`'s `"frob:used-by"` prefix check,
+#:   `frob.gates._exhaustive_handling._DIRECTIVE_PREFIX`,
+#:   `frob.arch._python._FROB_RAISES_RE`) with no shared registry module;
+#:   introducing one is a bigger cross-subsystem change than this ticket's
+#:   scope. Keep this list and its per-entry owner comment in sync BY HAND
+#:   whenever a new call-site/marker-style verb is added elsewhere.
+_RESERVED_MARKER_VERBS = frozenset(
+    {"secret-fake", "used-by", "raises", "callee-raises"}
+)
 
 _DESCRIBES_RE = re.compile(
     r"<!--\s*frob:describes\s+(?P<symref>\S+)(?:\s+(?P<facet>sig|body|doc))?\s*-->"

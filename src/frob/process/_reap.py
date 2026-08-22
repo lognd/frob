@@ -175,11 +175,6 @@ def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
         return False
     parent_before = os.getppid()
     try:
-        # frob:waive DSL001 follow_up="T-2875" reason="callee-raises is \
-        # frob.arch._ffi's own call-site marker (T-0931), not a frob.graph.dsl verb -- \
-        # graph.dsl._RESERVED_MARKER_VERBS lists raises but omits callee-raises, a \
-        # separate pre-existing gap outside this file's own scope, filed rather than \
-        # fixed here"
         rc = libc.prctl(_PR_SET_PDEATHSIG, int(sig), 0, 0, 0)  # frob:callee-raises
     except (OSError, AttributeError) as exc:
         _log.debug("process: arm_parent_death_signal: prctl call failed: %s", exc)
