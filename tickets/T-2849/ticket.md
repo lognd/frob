@@ -19,6 +19,7 @@ scope:
 - src/frob/process/_reap.py
 - src/frob/__main__.py
 - docs/modules/process.md
+- tests/unit/test_process_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,13 @@ scope_changes:
     arm_parent_death_signal/_arm_forkserver_helper_pdeathsig_if_requested owe a doc
     anchor under the existing forkserver-reaping-t-2443 section; incomplete work per
     AFFECT001/COV001/ENV001, not out-of-scope work
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: unit tests for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
+    / the leak-regression stdout-contamination controls belong in this ticket's own
+    scope, not filed separately
   actor: logan
   at: '2026-08-22'
 designated_repro_test: null
