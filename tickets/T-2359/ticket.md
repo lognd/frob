@@ -2,7 +2,7 @@
 id: T-2359
 title: Reformat the 138 files pending ruff-format as one deliberate commit, unblocking
   T-2244/T-2245
-state: queued
+state: done
 kind: feature
 origin: agent
 created: '2026-08-17'
@@ -341,16 +341,23 @@ evidence:
 - tests/unit/test_new_ticket_scope_overlap_warning.py::TestScopeOverlapWarnings::test_overlapping_scope_names_the_other_ticket_and_path
 - tests/unit/test_ticket_new_related.py::TestRelatedTicketsSearch::test_finds_an_archived_close_title_match
 - tests/unit/test_ticket_new_scope_plausibility.py::TestScopePlausibility::test_implausible_scope_warns_loudly
+- tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly::test_missing_binary_yields_typed_result
 designated_repro_test: null
 acceptance:
 - text: given the format-only commit series, when its diffs are reviewed, then they
     contain no semantic changes and no fixture-corpus files
-  evidence: []
+  evidence:
+  - tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+  - tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly::test_missing_binary_yields_typed_result
 - text: given the test suite, when it runs after the reformat, then it passes unchanged
-  evidence: []
+  evidence:
+  - tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+  - tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly::test_missing_binary_yields_typed_result
 - text: given the repo after this lands, when ruff format --check . runs, then zero
     files need reformatting
-  evidence: []
+  evidence:
+  - tests/unit/test_pyfmt_runner.py::TestRun::test_default_delegates_to_run_ruff_autofix
+  - tests/unit/test_pyfmt_runner.py::TestRuffFormatWriteOnly::test_missing_binary_yields_typed_result
 acceptance_amendments:
 - op: remove
   index: 2

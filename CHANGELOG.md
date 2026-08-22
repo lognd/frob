@@ -40,6 +40,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2251: frob format subcommand: replace make format/lint-fix/all (ruff fix+format wrapper)
 - T-2301: Relocate two archgate SCOPE002-widening tests out of test_examined_sites.py
 - T-2311: DOC006: repair remaining docs/modules/tickets-*.md pointers (tickets.md-adjacent contended family)
+- T-2359: Reformat the 138 files pending ruff-format as one deliberate commit, unblocking T-2244/T-2245
 - T-2363: 5-package import cycle (serve/stats/tickets/testing/app) needs an owner decision on which dependency to invert
 - T-2364: frob-cycle gate emits identity-less findings (code=None, file=None) -- an unownable finding masked three real cycles
 - T-2366: COV003: T-1205/T-1235/T-1397/T-1526 evidence does not resolve against tests/unit/test_makefile_coverage.py
