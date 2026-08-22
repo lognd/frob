@@ -45,7 +45,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e6baf3b9cf1c0cc87d4d2e5cdaf60f31e7fd5984
 ---
 T-2851 extracted the BUG002/must-still-pass repro-classification family out of src/frob/gates/_mutation_evidence.py into a new src/frob/gates/_bug_repro.py (the split named in T-2827's own waiver text) -- an otherwise excellent split (retargeted 40 mock.patch call sites with a positive control) that shipped without import/export hygiene: 20 F401 (unused-import) findings in _mutation_evidence.py (imports that were only needed by the code that moved out) and 1 F822 (name in __all__ that no longer resolves) in _bug_repro.py. Same class of regression as T-2846 (rust split, fixed by T-2855) and T-2695 (_store.py migration split) -- a file split moves symbols without re-auditing the OLD file's now-dead imports or the NEW file's export surface. Found via unbudgeted 'frob check --json' re-measurement while verifying T-2855's land (main went 115 -> 85 errors; these are part of the remaining 85, unrelated to T-2855's own scope). Fix: for each F401, git grep the name first -- an import kept solely for re-export will look unused to ruff and break a consumer if deleted blind; delete only genuinely-dead ones. For the F822, determine via importers whether to restore the export or drop it from __all__.
 
