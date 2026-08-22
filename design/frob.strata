@@ -1411,7 +1411,7 @@ node testsuite : trusted {
     // T-1586: `"FORCE_COLOR" not in os.environ` container-membership reads
     // classify as the distinct `env.read` capability kind (not `env`,
     // which covers `os.environ.get(...)`).
-    may "env.read" via "tests/test_coverage.py", "tests/test_hook_frob_suggest.py", "tests/test_hook_frob_timeout_guard.py", "tests/test_release.py", "tests/unit/test_confinement_lattice.py", "tests/unit/test_conftest_color_env.py", "tests/unit/verify/test_watermark.py";
+    may "env.read" via "tests/test_coverage.py", "tests/test_hook_frob_suggest.py", "tests/test_hook_frob_timeout_guard.py", "tests/test_release.py", "tests/unit/test_check.py", "tests/unit/test_confinement_lattice.py", "tests/unit/test_conftest_color_env.py", "tests/unit/verify/test_watermark.py";
     may "eval" via "tests/test_capability_registry.py", "tests/test_fuzz.py", "tests/test_gates.py", "tests/test_graph_lock.py", "tests/test_refs_gate.py", "tests/test_serve.py", "tests/test_telemetry_hook_script.py", "tests/test_tickets_acceptance.py", "tests/test_tickets_collision.py", "tests/test_vet.py", "tests/unit/strata/test_audit.py", "tests/unit/strata/test_conform_eval_needle.py", "tests/unit/strata/test_selfconform.py", "tests/unit/test_arch.py", "tests/unit/test_conftest_stackdump.py";
     // T-2503: exec/fs.read/fs.write collapsed from per-file `via` enumeration (676 sites combined) to ambient (whole-node, `because`-
     // justified) grants -- every file under this node's `tests/**` code binding legitimately exercises all three, so listing each site

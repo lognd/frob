@@ -674,6 +674,7 @@ class TestSweepWorktreesUnlandedWork:
 
 
 # frob:ticket T-1433
+# frob:ticket T-2833
 class TestWorktreeSweepCli:
     """`frob worktree sweep`'s CLI entry point (`frob.app.worktree_runner.
     run`) prints one verdict line per worktree plus a summary count."""
@@ -691,6 +692,7 @@ class TestWorktreeSweepCli:
         assert "removed" in out
         assert "swept 1 worktree(s)" in out
 
+    # frob:ticket T-2833
     def test_sweep_cli_exits_1_on_sweep_error(self, sweep_repo: Path, capsys) -> None:
         # frob:tests tests/test_ticket_leases.py::TestWorktreeSweepCli.test_sweep_cli_exits_1_on_sweep_error  # noqa: E501
         # T-1400: `_run_sweep`'s `result.is_err` branch (worktree_runner.py
@@ -699,7 +701,7 @@ class TestWorktreeSweepCli:
         from typani import Err
 
         from frob.app.worktree_runner import run as worktree_run
-        from frob.tickets._leases import _WorktreeSweepError
+        from frob.tickets._worktree_sweep import _WorktreeSweepError
 
         with patch(
             "frob.app.worktree_runner.sweep_worktrees",
@@ -711,6 +713,7 @@ class TestWorktreeSweepCli:
         out = capsys.readouterr().out
         assert out == ""
 
+    # frob:ticket T-2833
     def test_sweep_cli_prints_kept_lease_and_detail_verdicts(
         self, sweep_repo: Path, capsys
     ) -> None:
@@ -721,7 +724,7 @@ class TestWorktreeSweepCli:
         # distinct from the bare-verdict `else` line already covered by
         # test_sweep_cli_prints_verdicts_and_summary.
         from frob.app.worktree_runner import run as worktree_run
-        from frob.tickets._leases import _WorktreeVerdict
+        from frob.tickets._worktree_sweep import _WorktreeVerdict
 
         fake_verdicts = [
             _WorktreeVerdict(
@@ -1979,6 +1982,7 @@ class TestDispatchLandGuard:
 
 
 # frob:ticket T-1779
+# frob:ticket T-2833
 class TestRemoveWorktree:
     """T-1779: `remove_worktree` -- the single-worktree twin of
     `sweep_worktrees`, reusing the SAME T-1739 per-candidate verdict
@@ -1986,9 +1990,10 @@ class TestRemoveWorktree:
     `git worktree remove` that is actually easier to reach than the
     bulk-scan `sweep` command for one specific worktree."""
 
+    # frob:ticket T-2833
     def test_removes_a_clean_unleased_worktree(self, sweep_repo: Path) -> None:
-        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
-        from frob.tickets._leases import remove_worktree
+        # frob:tests src/frob/tickets/_worktree_sweep.py::remove_worktree kind="unit"
+        from frob.tickets._worktree_sweep import remove_worktree
 
         wt = _add_agent_worktree(sweep_repo, "wt1")
 
@@ -1997,9 +2002,10 @@ class TestRemoveWorktree:
         assert result.danger_ok.verdict == "removed"
         assert not wt.exists()
 
+    # frob:ticket T-2833
     def test_keeps_a_live_process_worktree(self, sweep_repo: Path) -> None:
-        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
-        from frob.tickets._leases import remove_worktree
+        # frob:tests src/frob/tickets/_worktree_sweep.py::remove_worktree kind="unit"
+        from frob.tickets._worktree_sweep import remove_worktree
 
         wt = _add_agent_worktree(sweep_repo, "wt1")
         holder = subprocess.Popen(
@@ -2016,11 +2022,12 @@ class TestRemoveWorktree:
             holder.kill()
             holder.wait(timeout=5)
 
+    # frob:ticket T-2833
     def test_refuses_a_path_not_registered_as_a_worktree(
         self, sweep_repo: Path, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/tickets/_leases.py::remove_worktree kind="unit"
-        from frob.tickets._leases import _WorktreeSweepError, remove_worktree
+        # frob:tests src/frob/tickets/_worktree_sweep.py::remove_worktree kind="unit"
+        from frob.tickets._worktree_sweep import _WorktreeSweepError, remove_worktree
 
         not_a_worktree = tmp_path / "elsewhere"
         not_a_worktree.mkdir()

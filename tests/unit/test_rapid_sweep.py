@@ -4032,6 +4032,8 @@ class TestDeferredSweepMultiLandAttribution:
 class TestSweepStaleWorktreesAfterLand:
     """`_rapid_sweep.sweep_stale_worktrees_after_land` (T-2261)."""
 
+    # frob:ticket T-2833
+
     def test_never_uses_force(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -4102,6 +4104,7 @@ class TestSweepStaleWorktreesAfterLand:
         assert "removed 1 of 6" in out
 
     # frob:ticket T-2261
+    # frob:ticket T-2833
     def test_a_failed_sweep_is_logged_never_raised(
         self,
         tmp_path: Path,
@@ -4113,7 +4116,7 @@ class TestSweepStaleWorktreesAfterLand:
         waiting on and must never raise back into `_sweep_async`."""
         from typani import Err
 
-        from frob.tickets._leases import _WorktreeSweepError
+        from frob.tickets._worktree_sweep import _WorktreeSweepError
 
         def fake_sweep(
             root, *, min_age_hours=None, dry_run=False, force=False, now=None
