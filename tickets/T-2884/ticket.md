@@ -17,10 +17,18 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/_daemon_proxy.py
 - src/frob/serve/_socketd.py
+- tests/test_app_daemon_proxy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: T-2884 needs a test-file edit to add the content-sensitive skew coverage
+    (positive controls + fail-safe cases), no production symbols live here
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
