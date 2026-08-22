@@ -2,7 +2,7 @@
 id: T-2869
 title: docs/modules/tickets-landing.md has a frob:enumerates anchor with no members=
   attribute
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
