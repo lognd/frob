@@ -1,7 +1,7 @@
 ---
 id: T-2834
 title: Split frob.tickets._setters's sprint/flow analytics family into _flow.py
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-21'

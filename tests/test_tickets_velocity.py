@@ -126,6 +126,7 @@ class TestModelsAreFrozen:
 
 # frob:ticket T-0938
 # frob:ticket T-1151
+# frob:ticket T-2834
 class TestSprintVelocity:
     """`sprint_velocity` mines `done` transitions from `tickets.md`'s git
     history for whichever tickets currently carry a given `sprint` label
@@ -133,8 +134,9 @@ class TestSprintVelocity:
 
     # frob:ticket T-0938
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_transitions_mined_from_history(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -170,8 +172,9 @@ class TestSprintVelocity:
 
     # frob:ticket T-0938
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_reopen_and_reclose_both_counted(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -204,8 +207,9 @@ class TestSprintVelocity:
 
     # frob:ticket T-0938
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_no_tickets_in_sprint_is_empty_not_a_crash(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_velocity kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         queue = TicketQueue(tickets={})
         report = sprint_velocity(tmp_path, queue, "sprint-none")
@@ -216,8 +220,9 @@ class TestSprintVelocity:
 
     # frob:ticket T-0938
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_non_git_root_returns_empty_transitions(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_velocity kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_velocity kind="unit"
         ticket: Ticket = _ticket(
             ticket_id="T-0003", state=TicketState.DONE, sprint="sprint-3"
         )
@@ -230,6 +235,7 @@ class TestSprintVelocity:
 
 
 # frob:ticket T-1330
+# frob:ticket T-2834
 class TestSprintVelocityV2Mode:
     """T-1330: `sprint_velocity`/`ticket_flow` (via `_mine_done_
     transitions`) mine v2-mode repos through `v2_state_transitions` (each
@@ -308,6 +314,7 @@ class TestSprintVelocityV2Mode:
         assert transition.to_state == "done"
 
     # frob:ticket T-1330
+    # frob:ticket T-2834
     def test_v1_v2_parity_for_equivalent_history(self, tmp_path: Path) -> None:
         # frob:tests tests/test_tickets_velocity.py::TestSprintVelocityV2Mode.test_v1_v2_parity_for_equivalent_history  # noqa: E501
         """T-1330's own acceptance criterion (mirroring T-1257's unclosed
@@ -316,7 +323,7 @@ class TestSprintVelocityV2Mode:
         transitions_v2`) must agree on the derived transitions, modulo
         the `sha`/`committed_at` values (different commits, different
         storage layout) -- ticket_id/from_state/to_state must match."""
-        from frob.tickets._setters import (
+        from frob.tickets._flow import (
             _mine_done_transitions_v1,
             _mine_done_transitions_v2,
         )
@@ -360,6 +367,7 @@ class TestSprintVelocityV2Mode:
 # frob:ticket T-1528
 # frob:ticket T-1100
 # frob:ticket T-1151
+# frob:ticket T-2834
 class TestTicketFlow:
     """`ticket_flow` (T-1100): filed/day (from `created`) vs landed/day
     (mined the same way `sprint_velocity` is, over the WHOLE queue) vs
@@ -371,8 +379,9 @@ class TestTicketFlow:
 
     # frob:ticket T-1100
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_filed_and_landed_counted_per_day(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -404,8 +413,9 @@ class TestTicketFlow:
 
     # frob:ticket T-1100
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_zero_activity_days_are_filled_not_sparse(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -433,8 +443,9 @@ class TestTicketFlow:
 
     # frob:ticket T-1100
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_eta_none_when_queue_not_shrinking(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
 
         ticket = _ticket(
@@ -450,8 +461,9 @@ class TestTicketFlow:
 
     # frob:ticket T-1100
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_eta_computed_when_queue_shrinking(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -494,9 +506,10 @@ class TestTicketFlow:
         assert report.eta_days is not None
 
     # frob:ticket T-1528
+    # frob:ticket T-2834
     def test_median_cycle_days_from_created_to_first_done(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::ticket_flow kind="unit"
-        # frob:tests src/frob/tickets/_setters.py::_median_cycle_days kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::ticket_flow kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::_median_cycle_days kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True
@@ -522,8 +535,9 @@ class TestTicketFlow:
         assert report.median_cycle_days == 4.0
 
     # frob:ticket T-1528
+    # frob:ticket T-2834
     def test_median_cycle_none_when_nothing_done(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/tickets/_setters.py::_median_cycle_days kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::_median_cycle_days kind="unit"
         subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
         subprocess.run(
             ["git", "checkout", "-q", "-b", "main"], cwd=tmp_path, check=True

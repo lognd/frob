@@ -348,14 +348,16 @@ class TestSprintAssign:
 
 
 # frob:ticket T-1151
+# frob:ticket T-2834
 class TestSprintShow:
     """`sprint_view` (T-0715), the `frob ticket sprint show` primitive:
     every ticket committed to a sprint label plus a state rollup and
     closed-count velocity."""
 
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_state_rollup_and_velocity(self) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_view kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_view kind="unit"
         done = _ticket(ticket_id="T-0001", sprint="sprint-1", state=TicketState.DONE)
         queued = _ticket(
             ticket_id="T-0002", sprint="sprint-1", state=TicketState.QUEUED
@@ -368,8 +370,9 @@ class TestSprintShow:
         assert report.closed == 1
 
     # frob:ticket T-1151
+    # frob:ticket T-2834
     def test_no_tickets_in_sprint_is_empty_not_a_crash(self) -> None:
-        # frob:tests src/frob/tickets/_setters.py::sprint_view kind="unit"
+        # frob:tests src/frob/tickets/_flow.py::sprint_view kind="unit"
         queue = TicketQueue(tickets={})
         report = sprint_view(queue, "sprint-nonexistent")
         assert report.tickets == ()
