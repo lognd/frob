@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3a3d153c3ebccd2504f05f2e5ab75275915fb5e6
 ---
 src/frob/gates/_mutation_evidence.py's module docstring claims it implements only TEST016 (T-0755's diff-scoped adversarial evidence obligation), but the file also contains the entire BUG002/MUST-STILL-PASS repro-classification family: _BugReproOutcome, _checkout_bug_repro_worktree, _spawn_designated_test, _classify_designated_test_exit, _run_designated_test, bug_repro_outcome_at_ref, bug_repro_violations, must_still_pass_violations, and their message builders -- roughly 800 of the file's 1267 lines, lines ~463-1267.
 
