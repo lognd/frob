@@ -90,6 +90,10 @@ def _union_touched_symbols(entries: Sequence[VerifyQueueEntry]) -> frozenset[str
 
 
 # frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Batch test \
+# selection (T-1689) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _synthetic_diff_for_touched_symbols(
     snapshot: GraphSnapshot, touched_symbols: frozenset[str]
 ) -> Diff:

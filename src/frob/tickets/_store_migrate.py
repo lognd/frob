@@ -103,6 +103,9 @@ def migrate_to_ledger(root: Path) -> Result[int, TicketError]:
 # function affects is unchanged, only the source file path moved; the doc itself \
 # (docs/modules/tickets-data-storage.md) is under another ticket's LIVE lease (T-2718) \
 # at the time of this extraction, so it cannot be edited here"
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Migration to v2 \
+# (T-1259) section individually frob:describes this symbol by its own qualified path \
+# -- a deliberate per-symbol anchor, not a duplicate"
 def _split_done_report(body: str) -> tuple[str, str | None]:
     """Split a v1-mode ticket `body` into (body_without_done_report,
     done_report_text_or_None), the mechanical inverse of `_models.
@@ -141,6 +144,9 @@ def _split_done_report(body: str) -> tuple[str, str | None]:
 # function affects is unchanged, only the source file path moved; the doc itself \
 # (docs/modules/tickets-data-storage.md) is under another ticket's LIVE lease (T-2718) \
 # at the time of this extraction, so it cannot be edited here"
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Migration to v2 \
+# (T-1259) section individually frob:describes this symbol by its own qualified path \
+# -- a deliberate per-symbol anchor, not a duplicate"
 def _migrate_one_v2(
     root: Path, ticket: Ticket, dest_dir: Path
 ) -> Result[None, TicketError]:

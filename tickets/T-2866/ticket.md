@@ -1,7 +1,7 @@
 ---
 id: T-2866
 title: Write 37 individual COV007 waivers across 24 files, then promote to error
-state: in-progress
+state: queued
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -146,3 +146,6 @@ own docstring does NOT forbid promotion; it is fine once genuinely zero.
 
 Acceptance: (0) zero COV007 warnings via the same command, (1) COV007
 promoted from WARN to ERROR in frob/gates/__init__.py.
+
+## Failure log
+- 2026-08-22 attempt 1: 36 of 37 waivers written and characterized; split off T- -- landing the 36 completed waivers under a new ticket and tracking the last (_reap.py, blocked by T-2849's live lease) plus promotion under T-2874

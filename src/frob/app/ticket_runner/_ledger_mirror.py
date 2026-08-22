@@ -301,6 +301,10 @@ OWN_TRANSACTION_VERBS = frozenset(
 
 # frob:ticket T-2570
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Worktree ledger mirror \
+# (T-2563) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 _UNMIRRORED_TICKET_FILENAMES = frozenset({"done-report.md"})
 """T-2570: filenames the mirror must never copy or commit even when they
 sit inside an otherwise-mirrored `tickets/T-####/` directory.
@@ -440,6 +444,10 @@ def _resolve_mirror_primary(root: Path, ticket_id: str, command: str) -> Path | 
 
 # frob:ticket T-2563
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Worktree ledger mirror \
+# (T-2563) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _mirror_target(root: Path, ticket_id: str, command: str) -> Path | None:
     """The primary checkout this edit must be mirrored onto, or `None` if
     `command` is not a `MIRRORED_LEDGER_VERBS` member (delegates the rest
@@ -452,6 +460,10 @@ def _mirror_target(root: Path, ticket_id: str, command: str) -> Path | None:
 
 # frob:ticket T-2563
 # frob:doc docs/modules/tickets-lifecycle.md#worktree-ledger-mirror-t-2563
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Worktree ledger mirror \
+# (T-2563) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _commit_mirrored_paths(
     primary: Path, pathspecs: tuple[str, ...], ticket_id: str, command: str
 ) -> None:

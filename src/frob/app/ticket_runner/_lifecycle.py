@@ -9,8 +9,7 @@
 # one side and its own callers on the other -- a circular import, not a real seam, \
 # unless _start's own coupling to worktree setup is restructured first (e.g. \
 # dependency-injecting it), which is a design change bigger than a LARGE001 pass. \
-# Filed T-2835 (renumbers at land) to evaluate that restructuring as its own \
-# ticket."
+# Filed T-2835 (renumbers at land) to evaluate that restructuring as its own ticket."
 """frob.app.ticket_runner._lifecycle -- the `plan`/`start`/`requeue`/
 `sweep`/`reconcile`/`attach`/`block` command family.
 
@@ -1064,6 +1063,11 @@ def _apply_scope_breadth_ack_on_start(root: Path, cfg: AppConfig, ticket):  # no
 # frob:doc docs/modules/tickets-data-storage.md#mega-glob-scope-refused-at-start-t-1866
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_refuses_over_broad_scope  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Mega-glob scope \
+# refused at start (T-1866) section documents several symbols under one section, not \
+# just a public entry point -- the many-symbols- one-section convention this repo \
+# already accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped \
+# duplicate"
 def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN001
     """T-1866: `sys.exit(1)` if `ticket`'s declared scope contains a
     mega-glob (the SAME breadth measure TICK009/`large_glob_warnings`
@@ -1117,6 +1121,10 @@ def _refuse_over_broad_scope_on_start(root: Path, ticket) -> None:  # noqa: ANN0
 # tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_declared_no_scope_starts_cleanly  # noqa: E501
 # frob:tests \
 # tests/test_tickets_no_scope.py::TestRefuseEmptyScopeOnStart.test_nonempty_scope_starts_cleanly  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Declared no-scope \
+# (T-2394) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _refuse_empty_scope_on_start(ticket) -> None:  # noqa: ANN001
     """T-2394: `sys.exit(1)` if `ticket.scope` is empty and `ticket.
     no_scope_declared` is not set.
@@ -1215,6 +1223,10 @@ def _refuse_on_scope_lease_collision(root: Path, ticket_id: str, ticket) -> None
 # frob:doc docs/modules/gates.md#tick009tick010-t-0714
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_over_broad_scope_ack_bypasses_refusal  # noqa: E501
 # frob:tests tests/unit/test_app_runners_batch7.py::TestTicketStart.test_start_precise_scope_warns_nothing  # noqa: E501
+# frob:waive COV007 reason="docs/modules/gates.md's TICK009/TICK010 (T-0714) section \
+# documents several symbols under one section, not just a public entry point -- the \
+# many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
+# declined to touch it), not a T-2810-shaped duplicate"
 def _warn_scope_breadth_on_start(root: Path, ticket) -> None:  # noqa: ANN001
     """T-1645: surface TICK009's over-broad-scope nudge directly at `frob
     ticket start` -- "your scope matches N files, narrow it now" is far
@@ -1377,6 +1389,10 @@ def _block(root: Path, cfg: AppConfig) -> None:
 # frob:tests tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_when_not_present  # noqa: E501
 # frob:tests \
 # tests/test_ticket_lifecycle.py::TestUnblock.test_unblock_refuses_invalid_ref
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's One verb table, not \
+# two sets (T-2603) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _unblock(root: Path, cfg: AppConfig) -> None:
     """`frob ticket unblock <id> --by <blocker>`: the missing inverse of
     `_block` above (T-2681) -- `blocked_by` could only ever be APPENDED to

@@ -1,7 +1,7 @@
 ---
-id: T-draft-90b2bcf5
+id: T-2873
 title: Write 36 individual COV007 waivers (all but the T-2849-blocked _reap.py finding)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -120,7 +120,7 @@ Re-measured after writing (unbudgeted `frob check --only coverage
 --json`, worktree t-2866): COV007 note-tier count went from 163 to 199,
 exactly +36 (no silent DSL drop, T-2857 hazard checked); COV007
 warning-tier count went from 37 to 1 (the _reap.py finding tracked in
-T-draft-84220bf6/its landed id). No trailing space before any `\`
+T-2874/its landed id). No trailing space before any `\`
 continuation, no embedded quote in any `reason=` value -- each verified
 by direct read after writing.
 

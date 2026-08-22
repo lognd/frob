@@ -1278,6 +1278,9 @@ def _wrapper_function_capabilities(
 # frob:ticket T-2798
 # frob:doc docs/modules/vet.md#one-hop-public-cross-file-wrapper-resolution-t-2223
 # frob:tests tests/unit/test_capability_native.py::TestResolvedCandidatesThreading.test_local_wrapper_capabilities_with_and_without_precomputed_candidates_agree kind="unit"  # noqa: E501
+# frob:waive COV007 reason="docs/modules/vet.md's One-hop public cross-file wrapper \
+# resolution (T-2223) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _python_local_wrapper_capabilities(
     path: Path,
     table: dict[str, tuple[str, ...]],

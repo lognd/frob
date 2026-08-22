@@ -488,6 +488,10 @@ _RAPID_SOFT_WARN_AGE_S = _STANDARD_DEFAULT_MAX_AGE_S
 
 # frob:doc docs/modules/tickets-verify-sweep.md#backpressure-t-1692
 # frob:ticket T-2290
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Backpressure \
+# (T-1692) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _rapid_soft_warn_thresholds(root: Path) -> tuple[int, float]:
     """T-2290: `(warn_depth, warn_age_s)` for `rapid_soft_warning` --
     `frob.toml`'s `[profile] rapid_soft_warn_depth`/`rapid_soft_warn_

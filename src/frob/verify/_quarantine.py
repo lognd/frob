@@ -446,6 +446,10 @@ def _all_findings_disposed(findings: tuple[QuarantinedFinding, ...]) -> bool:
 # frob:tests tests/unit/verify/test_quarantine.py::TestClearQuarantine.test_green_verification_alone_never_clears kind="unit"  # noqa: E501
 # frob:tests tests/unit/verify/test_quarantine.py::TestIdentityLessFindingRecovery.test_cli_addressing_can_never_key_an_identity_less_finding kind="unit"  # noqa: E501
 # frob:ticket T-2312
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
+# breaker (T-1693) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _refuse_if_undisposed(
     root: Path,
     disposed_findings: tuple[QuarantinedFinding, ...],

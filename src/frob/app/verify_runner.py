@@ -321,6 +321,11 @@ def _run_status(cfg: AppConfig) -> None:
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#automatic-watermark-drain-rapid-only-t-2310
 # frob:ticket T-2310
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Automatic watermark \
+# drain (rapid only, T-2310) section documents several symbols (also shared with \
+# src/frob/verify/_drain.py) under one section, not just a public entry point -- the \
+# many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
+# declined to touch it), not a T-2810-shaped duplicate"
 def _run_drain_async(cfg: AppConfig) -> None:
     """`frob verify drain-async`: the CLI entry point the detached drain
     child runs (T-2310). Not a verb a developer normally types -- `frob

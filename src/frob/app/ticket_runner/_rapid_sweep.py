@@ -1123,6 +1123,9 @@ def sweep_stale_worktrees_after_land(root: Path) -> None:
 # frob:ticket T-1690
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_empty_queue_returns_empty_mapping  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestAttributeNewFindings.test_attributed_and_unattributed_round_trip  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
+# attribution (T-1690) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _attribute_new_findings(
     root: Path, pairs: Sequence[tuple[str, str] | tuple[str, str, int]]
 ):  # noqa: ANN201 -- dict[tuple[str, str], Attribution], deferred-import type
@@ -1172,6 +1175,9 @@ def _attribute_new_findings(
 # tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_done_ticket_is_not_open
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestTicketIsOpen.test_missing_ticket_is_not_open
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
+# attribution (T-1690) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _ticket_is_open(root: Path, ticket_id: str) -> bool:
     """`True` when `ticket_id` still exists and is NOT `done`/`dropped` --
     the "owning ticket still open" half of T-1690's filing rule. A ticket
@@ -1197,6 +1203,10 @@ def _ticket_is_open(root: Path, ticket_id: str) -> bool:
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_attributed_to_open_ticket_is_not_refiled  # noqa: E501
 # frob:tests \
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
+# attribution (T-1690) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _partition_findings_by_attribution(
     root: Path,
     final_id: str,
@@ -1273,6 +1283,9 @@ _NATIVE_EXTENSION_ADJACENT_RULE_IDS = frozenset({"unresolved-import"})
 
 # frob:doc docs/modules/tickets-verify-sweep.md#quarantine-circuit-breaker-t-1693
 # frob:ticket T-1847
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
+# breaker (T-1693) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> bool:  # noqa: ANN001 -- Attribution | None, deferred-import type
     """T-1847: `True` when `(rule, attr)` matches the cold-worktree
     native-extension-noise shape (UNATTRIBUTED, rule in
@@ -1320,6 +1333,10 @@ def _warm_tree_clears_unattributed_native_noise(root: Path, rule: str, attr) -> 
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_open_ticket_attribution_clears_the_quarantine_raise  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_closed_ticket_attribution_still_raises  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_unattributed_still_raises_alongside_open_ticket_finding  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
+# breaker (T-1693) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _filter_pairs_for_quarantine_raise(
     root: Path,
     final_id: str,
@@ -1394,6 +1411,9 @@ def _filter_pairs_for_quarantine_raise(
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raises_with_attributed_and_unattributed_findings  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_empty_queue_logs_and_skips_the_raise  # noqa: E501
 # frob:tests tests/unit/test_rapid_sweep.py::TestRaiseQuarantineForRedBatch.test_raise_failure_is_logged_not_raised  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Quarantine circuit \
+# breaker (T-1693) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _raise_quarantine_for_red_batch(
     root: Path,
     final_id: str,
@@ -1952,6 +1972,10 @@ def _build_regression_body(
 # tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_unattributed_is_filed
 # frob:tests tests/unit/test_rapid_sweep.py::TestFileRegressionTicket.test_all_attributed_to_open_tickets_files_nothing  # noqa: E501
 # frob:ticket T-2312
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Symbolic \
+# attribution (T-1690) section documents several symbols under one section, not just a \
+# public entry point -- the many-symbols- one-section convention this repo already \
+# accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _dispose_to_existing_duplicate_or_none(
     root: Path,
     spec: TicketSpec,

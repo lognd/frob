@@ -39,6 +39,9 @@ def run(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md Batch test selection \
+# (T-1689) section individually frob:describes this symbol by its own qualified path \
+# -- a deliberate per-symbol anchor, not a duplicate"
 # frob:doc docs/modules/tickets-verify-sweep.md#batch-test-selection-t-1689
 # frob:tests tests/unit/verify/test_selection.py::TestRunBatchSelectedTests.test_graph_unavailable_is_an_error  # noqa: E501
 def _run_select_batch_tests(root: Path) -> None:

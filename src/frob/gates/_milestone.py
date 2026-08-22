@@ -341,6 +341,10 @@ def _mile004_pair_violation(milestone: str, a: Ticket, b: Ticket) -> Violation |
 # frob:tests tests/test_gates_milestone.py::TestMile004.test_single_runs_last_ticket_never_fires  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile004.test_different_milestones_never_pair  # noqa: E501
 # frob:tests tests/test_gates_milestone.py::TestMile004.test_terminal_sibling_excluded  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's MILE004 (T-2579 \
+# M4b) section documents several symbols under one section, not just a public entry \
+# point -- the many-symbols- one-section convention this repo already accepted for \
+# vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _mile004_unordered_runs_last(
     root: Path, queue: TicketQueue
 ) -> tuple[Violation, ...]:

@@ -59,6 +59,10 @@ _log = get_logger(__name__)
 #: `load_arch_config` itself have a single place to add a new arch knob.
 # frob:doc docs/modules/gates.md#archschema001-t-2390-epic-child-t-2433
 # frob:ticket T-2433
+# frob:waive COV007 reason="docs/modules/gates.md's ARCHSCHEMA001 (T-2390 epic child, \
+# T-2433) section documents several symbols under one section, not just a public entry \
+# point -- the many-symbols- one-section convention this repo already accepted for \
+# vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 _ARCH_DEFAULT_KEYS: tuple[str, ...] = (
     "max_function_lines",
     "max_class_methods",

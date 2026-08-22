@@ -359,6 +359,11 @@ def closed_ticket_ids(queue: TicketQueue) -> tuple[str, ...]:
 # frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_earlier_milestone_outranks_critical_later_milestone  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_unmilestoned_sorts_after_every_declared_milestone  # noqa: E501
 # frob:tests tests/test_tickets_milestone_sort.py::TestDoableSortKey.test_semver_numeric_not_lexical_ordering  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Milestone as the \
+# doable sort axis, and inheritance (T-2577 M3) section documents several symbols \
+# (also shared with src/frob/tickets/_doable.py) under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _doable_sort_key(
     t: Ticket, queue: "TicketQueue | None" = None
 ) -> tuple[int, object, int, date, str]:

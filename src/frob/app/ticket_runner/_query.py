@@ -942,6 +942,9 @@ def _render_unlanded_branch_work_summary(root: Path | None) -> None:
 # frob:doc docs/modules/tickets-lifecycle.md#cross-worktree-lease-side-channel-t-0473
 # frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_dead_holder_flagged_with_reason  # noqa: E501
 # frob:tests tests/unit/test_app_runners_doable_stale_lease.py::TestStaleLeaseReasons.test_live_holder_not_flagged  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Cross-worktree lease \
+# side channel (T-0473) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _stale_lease_reasons(root: Path | None) -> dict[str, str]:
     """`ticket_id -> lease_staleness_reason` for every held lease under
     `root` that `frob.tickets._leases.lease_staleness_reason` judges

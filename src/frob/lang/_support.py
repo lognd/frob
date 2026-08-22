@@ -324,6 +324,10 @@ class AdapterCapabilitySupport(BaseModel):
 # frob:doc docs/modules/lang.md#language-support-contract
 # frob:tests tests/test_lang_support.py::TestConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
 # frob:tests tests/test_lang_support.py::TestCapabilityConformanceViolations.test_unreasoned_known_gap_fails  # noqa: E501
+# frob:waive COV007 reason="docs/modules/lang.md's Adapter-capability contract \
+# (T-2365) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _unreasoned_names(
     universe: tuple[str, ...],
     cells: dict[str, FacetStatus] | dict[str, CapabilityStatus],

@@ -952,6 +952,9 @@ def _new(root: Path, cfg: AppConfig) -> None:
 # frob:doc \
 # docs/design/cli-hygiene.md#principle-4-scope-closure-warning-volume-must-not-bury-its\
 # -own-most
+# frob:waive COV007 reason="docs/design/cli-hygiene.md's Principle 4 section \
+# individually frob:describes this symbol by its own qualified path -- a deliberate \
+# per-symbol anchor, not a duplicate"
 def _emit_scope_closure_warnings(
     prefix: str, ticket_id: str, warnings: tuple[str, ...]
 ) -> None:

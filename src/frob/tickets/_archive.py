@@ -204,6 +204,11 @@ def archive(root: Path, *, force: bool = False) -> Result[int, TicketError]:
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_refuses_when_another_worktree_exists kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_force_overrides_the_live_worktree_refusal kind="unit"  # noqa: E501
 # frob:tests tests/test_tickets_organization.py::TestArchiveRefusesLiveWorktrees.test_no_other_worktree_archives_normally kind="unit"  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Archive: the \
+# live-worktree guard (T-1750) section documents several symbols under one section, \
+# not just a public entry point -- the many-symbols- one-section convention this repo \
+# already accepted for vet.md (T-2810 declined to touch it), not a T-2810-shaped \
+# duplicate"
 def _refuse_archive_if_other_worktrees_live(root: Path) -> Result[None, TicketError]:
     """`archive`'s T-1750 in-flight-worktree guard: `Err
     (ArchiveLiveLeaseExists)` if ANY OTHER linked git worktree of `root`'s

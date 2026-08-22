@@ -470,6 +470,10 @@ def _resolve_body_mode_and_text(cfg: AppConfig) -> tuple[str, str] | None:
 # frob:doc docs/modules/tickets-data-storage.md#data-models
 # frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_append_writes_body
 # frob:tests tests/test_tickets_body.py::TestBodyCli.test_cli_missing_text_exits_nonzero
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's Data models section \
+# documents several symbols under one section, not just a public entry point -- the \
+# many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
+# declined to touch it), not a T-2810-shaped duplicate"
 def _body(root: Path, cfg: AppConfig) -> None:
     """`frob ticket body <id> (--append TEXT|--append-file PATH | --set
     TEXT|--set-file PATH) --reason TEXT`: the ONLY thing this command does

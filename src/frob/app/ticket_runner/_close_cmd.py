@@ -13,9 +13,9 @@
 # module changes nothing about who calls what, only where the call crosses a file \
 # boundary, and this dir's own dispatch caution (T-2830's brief) is explicit that a \
 # bad split on a file this heavily exercised by the landing path is worse than the \
-# warning it would silence. Filed T-2835 (renumbers at land) to evaluate a \
-# proper extraction (obligation predicates -> frob.tickets, where _land_cmd already \
-# imports similar shared helpers from) as its own carefully- scoped, non-batch ticket."
+# warning it would silence. Filed T-2835 (renumbers at land) to evaluate a proper \
+# extraction (obligation predicates -> frob.tickets, where _land_cmd already imports \
+# similar shared helpers from) as its own carefully- scoped, non-batch ticket."
 """frob.app.ticket_runner._close_cmd -- the `close`/`reverify`/`review`/
 `fail`/`drop` command family.
 
@@ -1180,6 +1180,10 @@ def _resolve_no_behavior_change_reason(cfg: AppConfig) -> str | None:
 # tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_flag_writes_directive_before_close  # noqa: E501
 # frob:tests \
 # tests/test_bug002_no_behavior_change.py::TestNoBehaviorChangeCli.test_reason_missing_exits_nonzero  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-data-storage.md's `frob ticket body` \
+# (T-2392) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _apply_no_behavior_change_directive(root: Path, cfg: AppConfig) -> None:
     """`frob ticket close --no-behavior-change --no-behavior-change-reason
     TEXT`: the first-class front door (T-2393) for BUG002's pre-existing

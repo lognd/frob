@@ -325,6 +325,9 @@ def _default_available_memory_mb() -> int | None:
 # frob:tests \
 # tests/unit/verify/test_worker.py::TestBackpressure.test_yields_below_memory_floor
 # frob:tests tests/unit/verify/test_worker.py::TestBackpressure.test_unmeasurable_memory_never_blocks_a_run  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Resource budget: \
+# never starve foreground agents (T-1695) section individually frob:describes this \
+# symbol by its own qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _worker_backpressure_reason(
     root: Path,
     *,
@@ -374,6 +377,9 @@ _PRIORITY_REDUCED = False
 # -1695
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_applies_nice_and_ionice_exactly_once  # noqa: E501
 # frob:tests tests/unit/verify/test_worker.py::TestEnsureReducedPriority.test_failed_nice_call_never_raises  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-verify-sweep.md's Resource budget: \
+# never starve foreground agents (T-1695) section individually frob:describes this \
+# symbol by its own qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _ensure_reduced_priority() -> None:
     """Lower this process's CPU (`os.nice`) and, where the `ionice`
     binary exists, I/O scheduling priority (T-1695) -- applied AT MOST

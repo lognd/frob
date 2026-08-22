@@ -289,6 +289,9 @@ def _scope_add_queue_conflict(
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddRefusesLiveCrossWorktreeLease.test_scope_add_refused_by_unmerged_sibling_worktrees_live_lease  # noqa: E501
 # frob:tests \
 # tests/test_ticket_leases_cross_worktree.py::TestScopeAddIgnoresTerminalLease.test_dropped_ticket_on_local_ledger_does_not_block_live_lease  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-lifecycle.md's Cross-worktree lease \
+# side channel (T-0473) section individually frob:describes this symbol by its own \
+# qualified path -- a deliberate per-symbol anchor, not a duplicate"
 def _scope_add_live_lease_conflict(
     glob: str,
     ticket_id: str,

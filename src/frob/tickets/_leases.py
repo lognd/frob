@@ -1873,6 +1873,10 @@ def scan_for_live_worktree_process(
 # frob:ticket T-1619
 # frob:doc docs/modules/tickets-landing.md#land-exclusivity-lease-t-1619
 # frob:tests tests/test_ticket_leases.py::TestRefuseIfLandInProgress.test_belt_and_braces_process_scan_without_the_lock_file  # noqa: E501
+# frob:waive COV007 reason="docs/modules/tickets-landing.md's Land exclusivity lease \
+# (T-1619) section documents several symbols under one section, not just a public \
+# entry point -- the many-symbols- one-section convention this repo already accepted \
+# for vet.md (T-2810 declined to touch it), not a T-2810-shaped duplicate"
 def _scan_for_live_land_process(
     root: Path, *, exclude_pid: int | None = None
 ) -> tuple[int, str | None] | None:

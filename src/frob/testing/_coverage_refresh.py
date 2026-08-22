@@ -112,6 +112,10 @@ _SUBPROCESS_RC_REL = ".frob/coverage-subprocess.rc"
 # frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_uses_absolute_source_and_data_file  # noqa: E501
 # frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_declares_multiprocessing_and_sigterm  # noqa: E501
 # frob:tests tests/test_coverage.py::TestSubprocessCoverageRc.test_rc_remaps_paths_back_to_source  # noqa: E501
+# frob:waive COV007 reason="docs/modules/testing.md's Public API section documents \
+# several symbols under one section, not just a public entry point -- the \
+# many-symbols- one-section convention this repo already accepted for vet.md (T-2810 \
+# declined to touch it), not a T-2810-shaped duplicate"
 def _write_coverage_subprocess_rc(root: Path, *, cov_target: str) -> Path:
     """Write `root/.frob/coverage-subprocess.rc` with ABSOLUTE `source`/
     `data_file` paths (T-1235's "Loss A" fix, ported here since T-2240's
