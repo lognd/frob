@@ -20,6 +20,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'add no-behavior-change directive: this is a comment-only waiver addition'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 1971
+  new_length: 2239
 evidence:
 - tests/test_gates.py::TestCoverageGate::test_cov006_third_file_reachable_chases_relative_import_reexport
 - tests/test_gates.py::TestFixEngineTierA::test_tick006_renamed_draft_resolved_via_git_not_refiled
@@ -62,3 +69,5 @@ embedded quote in its reason string (T-2857 hazard).
 Acceptance: zero COV006 warnings via `frob check --only coverage --json`
 unbudgeted. Do NOT add an acceptance criterion to promote COV006 -- the
 gate's own docstring forbids it permanently.
+
+frob:no-behavior-change reason="this ticket only adds frob:waive/frob:ticket comments to test files to suppress COV006 findings -- no test logic, assertion, or production code changed; the bound evidence tests are expected to PASS identically at main and at the fix"
