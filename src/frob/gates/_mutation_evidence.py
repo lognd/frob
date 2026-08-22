@@ -35,21 +35,10 @@ requirement, satisfied structurally rather than via a ratchet pool)."""
 
 from __future__ import annotations
 
-import os
-import re
-import shutil
-import subprocess
-import sys
-import tempfile
-from enum import Enum, auto
 from pathlib import Path
 
-from typani import Err, Ok, Result
-
 from frob.gates._models import Severity, Violation
-from frob.gitio import run_argv
 from frob.logging import get_logger
-from frob.process._guard import ProcessGuardError, exec_enabled, guarded_subprocess_run
 from frob.tickets._models import Ticket, TicketKind
 from frob.tickets._mutation_evidence import (
     ConfirmatoryFinding,
@@ -398,7 +387,7 @@ def _is_quoted(pos: int, quoted_ranges: tuple[tuple[int, int], ...]) -> bool:
 # T-2851: BUG002/must-still-pass repro-classification family moved to
 # frob.gates._bug_repro (see its own module doc); re-exported here so
 # frob.gates.__init__'s existing import line needs no change.
-from frob.gates._bug_repro import (  # noqa: E402
+from frob.gates._bug_repro import (  # noqa: E402, F401 -- re-exported for frob.gates.__init__'s existing import line
     BugReproOutcome,
     bug_repro_outcome_at_ref,
     bug_repro_violations,

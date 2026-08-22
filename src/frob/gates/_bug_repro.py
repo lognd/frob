@@ -954,5 +954,4 @@ def must_still_pass_violations(
 __all__ = [
     "bug_repro_violations",
     "must_still_pass_violations",
-    "mutation_evidence_violations",
 ]

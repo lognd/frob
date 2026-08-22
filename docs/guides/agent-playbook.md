@@ -583,6 +583,46 @@ unscoped yourself -- which you must do regardless, per section 6c.
   Anything else you find that needs fixing gets filed as a new ticket
   (`frob ticket new`), not silently folded in.
 
+## 4c. A file split must re-check the rules it just promoted (T-2846/T-2695/T-2851)
+
+Moving symbols into a new file is not scope-neutral even when the diff is
+"just a move": a new file starts with ZERO inbound doc/test edges and,
+if the split forces a previously-private helper to cross the new file
+boundary (private `fn` -> `pub(crate)`, a module-private def -> imported
+by a sibling), a wider visibility than it had before. Three splits in one
+night shipped the identical regression class on three different rules,
+each one otherwise a careful, well-evidenced land:
+
+- T-2846 (rust `frob-core/src/lib.rs` split into `r3.rs`/`r4.rs`/`r5.rs`/
+  `exact_regions.rs`/`callgraph.rs`): 5x REF001 (new files with no inbound
+  reference at all), 53x DRIFT002 (frob:describes/frob:tests directives
+  left pointing at the OLD file after their symbol moved out), plus
+  COV001/TEST001 on helpers the split's `pub(crate)` requirement newly
+  exposed. Fixed by T-2855.
+- T-2695 (`_store.py` v1/v2 migration split into `_store_migrate.py`):
+  same DRIFT002 shape on `docs/modules/tickets-data-storage.md`'s
+  describes edges. Tracked separately (T-2858).
+- T-2851 (`_mutation_evidence.py` BUG002/must-still-pass family split
+  into `_bug_repro.py`): 20x F401 (imports the moved code needed, left
+  behind in the OLD file) plus 1x F822 (a name added to the NEW file's
+  `__all__` that was never actually defined there -- it stayed behind in
+  the old file). Fixed by the ticket filed alongside this note.
+
+Before landing ANY file split (not just LARGE001-motivated ones), re-run
+`frob check --json --ticket <id>` (unbudgeted, `gate-summary` present) and
+confirm zero NEW findings for: REF001/REF002 (new file has no inbound
+reference -- a `frob:describes`/`frob:tests` directive target counts as
+one, so repointing existing directives is often enough on its own, no
+`[[refs.entrypoint]]` needed), DRIFT002 (an edge naming the OLD file's
+symbol that now lives in the NEW file), COV001/TEST001 (a helper whose
+visibility widened crossing the file boundary now needs the doc/test edge
+it never needed as a private symbol), and F401/F822 (an import the moved
+code needed left behind in the old file; an `__all__` entry naming a
+symbol that moved out, or a symbol that should now be exported from the
+new file but was left off). None of these require new prose -- reuse
+whatever already-accurate description exists and just repoint the edge;
+do not rewrite content you have not re-verified.
+
 ## 4b. Land-owned files are untouchable in a worktree (T-0731)
 
 `pyproject.toml`'s `version = "..."` line, `CHANGELOG.md`, and `uv.lock`

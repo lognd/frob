@@ -1,7 +1,7 @@
 ---
-id: T-draft-f8e203bc
+id: T-2864
 title: 'F401/F822: T-2851 split left import/export hygiene debt in _mutation_evidence.py/_bug_repro.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -17,6 +17,8 @@ scope:
 - src/frob/gates/_mutation_evidence.py
 - src/frob/gates/_bug_repro.py
 - docs/guides/agent-playbook.md
+evidence_scope:
+- tests/test_gates_mutation_evidence.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +38,8 @@ body_changes:
   at: '2026-08-22'
   old_length: 1205
   new_length: 2384
+evidence:
+- tests/test_gates_mutation_evidence.py::TestBug002Waiver::test_reason_present_suppresses
 designated_repro_test: null
 threat: null
 component: null
