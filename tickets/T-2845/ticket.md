@@ -31,7 +31,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 930f0cf551b34de24b3d8dc3d7574ee4a3123d92
 ---
 scripts/fleet_status.py (4121 lines) has a real, investigated seam: at least four distinguishable concerns share the file with no cross-calls between their private helpers -- (1) ticket readiness/scope-lease collision computation (leases/in_progress_ticket_scope_leases/scope_intersections/ticket_readiness), (2) /proc-based land-process/host-load/forkserver detection (land_process_rows/host_load/swap_pressure/orphaned_forkserver_count and siblings), (3) ticket-rot reporting (rotting_tickets/_print_ticket_rot and its epic/blocker helpers), and (4) the _print_* fleet-report formatting functions that compose 1-3's output for `main()`.
 
