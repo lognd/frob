@@ -1,7 +1,7 @@
 ---
 id: T-2883
 title: 'docs/modules/gates.md: document T-2870''s BUG002 malformed-waiver diagnostic'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-22'
@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - docs/modules/gates.md
+- src/frob/gates/_bug_repro.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_bug_repro.py
+  reason: 'T-2883: removing the now-inert frob:waive AFFECT001 placeholder left by
+    T-2870 once the doc paragraph it deferred is written'
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
