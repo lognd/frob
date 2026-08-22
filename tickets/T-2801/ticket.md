@@ -2,7 +2,7 @@
 id: T-2801
 title: 'post-land sweep regression from T-2794, T-2686, T-2795, T-2675, T-2790: 18
   new (rule, file) identit(ies), 37 finding(s) (COV001, CYCLE001, DOC001, DOC006)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -67,10 +67,27 @@ findings:
   - tickets.md
 - - TICK004
   - tickets.md
+evidence_scope:
+- tests/unit/strata/test_fragments.py
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 escape hatch: this ticket''s fixes are doc/registry/design-declaration
+    corrections with no reproducible runtime behavior change'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 4758
+  new_length: 5495
+evidence:
+- tests/test_release.py::TestPublish::test_env_only_loaded_on_a_real_run
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_widen_on_declared_atom_still_works
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_widen_on_undeclared_atom_refuses_closed
+- tests/unit/strata/test_fragments.py::TestSealedGrantSet::test_fresh_insert_raises_at_runtime
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -127,3 +144,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - TICK004  tickets.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+<!-- frob:waive BUG002 reason="This ticket's 14 fixed identities are all doc-anchor/registry-entry/design-flow-declaration corrections and gate waivers (frob:doc/frob:tests edges added, a stale anchor repointed, a missing DOC013 registry entry added, two undeclared-import design flows declared, PERF004/SEC110 waivers, two DRIFT001 acks) -- none of them change runtime behavior a pytest node id could genuinely fail-then-pass across. No confirmatory-only test was intentionally offered as a real repro; the bound evidence (test_env_only_loaded_on_a_real_run, the three SealedGrantSet tests, the CLI-dispatch integration test) demonstrates the touched code paths still work, not that a behavioral defect was reproduced and fixed." -->
