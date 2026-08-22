@@ -13,10 +13,40 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_docblocks.py
+- src/frob/gates/_registry_exhaustiveness.py
+- tests/test_registry_exhaustiveness.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: 'batch 3/N: add missing frob:enforces CHK-GATE-DOC012 directive; document
+    REG008''s remaining count'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: 'batch 3/N: add missing frob:enforces CHK-GATE-DOC012 directive; document
+    REG008''s remaining count'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: 'batch 3/N: add missing frob:enforces CHK-GATE-DOC012 directive; document
+    REG008''s remaining count'
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'batch 3/N: add missing frob:enforces CHK-GATE-DOC012 directive; document
+    REG008''s remaining count'
+  actor: logan
+  at: '2026-08-21'
 designated_repro_test: null
 acceptance:
 - text: given CHK-GATE-DOC012, when frob check --json runs, then it no longer appears
