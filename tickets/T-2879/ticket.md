@@ -17,7 +17,6 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - docs/modules/tickets-landing.md
-- docs/modules/gates.md
 - src/frob/strata/_selfconform_binding_rules.py
 - src/frob/strata/_selfconform_surface_rules.py
 - docs/investigations/T-2796-backlog-reproduction.md
@@ -26,6 +25,14 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md is under T-2874's live lease (Waive COV007's last
+    finding); deferring DOCENUM001 fix to avoid a scope collision, will file/handle
+    separately once T-2874 lands
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
