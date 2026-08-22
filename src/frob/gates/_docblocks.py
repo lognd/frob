@@ -849,6 +849,7 @@ def _doc012_violation(name: str, prog: str) -> Violation:
 # fy
 # frob:tests \
 # tests/test_gates.py::TestDoc012CommandSectionGate.test_no_config_means_no_checking
+# frob:enforces CHK-GATE-DOC012
 def doc012_gate(root: Path) -> tuple[Violation, ...]:
     """DOC012 (T-1783): for every top-level subcommand the SAME live
     `[[docblocks.commands]]`-configured registry DOC004/DOC005 already

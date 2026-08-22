@@ -648,12 +648,15 @@ def _reg008_undeclared_enforcement(
     code<->corpus conformance drift T-0428 calls out as the two-SSOT
     split's required bidirectional check.
 
-    WARN, not ERROR: T-2369 burned this down from 36 -> 1 (T-2812's batch
-    plus this ticket's own batch), but the last entry (CHK-GATE-DOC012)
-    sits in src/frob/gates/_docblocks.py, live-leased by in-progress
-    T-2359 -- promoting to ERROR before that lease clears and the final
-    directive lands would red every check run on a file this ticket
-    cannot touch. Promote once T-2369's own re-measurement reads zero."""
+    WARN, not ERROR: T-2369 burned this from 36 down to 3 (T-2812's batch
+    of 18, T-2832's batch of 17, this ticket's own CHK-GATE-DOC012 fix).
+    The remaining 3 (CHK-GATE-SYS108, CHK-GATE-SYS110,
+    SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE) all site in
+    src/frob/strata/_selfconform.py, which T-2729 (queued: split that
+    file by SYS1xx rule family) declares in its own scope -- landing a
+    directive-only edit there ahead of T-2729 triggers CrossTicketLeakage.
+    Promote once T-2729 lands (or releases that scope) and the last 3
+    entries clear."""
     violations: list[Violation] = []
     for rel_path, registry_file in parsed.items():
         for entries in registry_file.entry_lists.values():

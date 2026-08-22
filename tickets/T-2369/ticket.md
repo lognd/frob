@@ -259,6 +259,50 @@ scope_changes:
     a live lease on this file
   actor: logan
   at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: final REG008 entry CHK-GATE-DOC012 (lease cleared) + promote REG008 WARN->ERROR
+    at true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: final REG008 entry CHK-GATE-DOC012 (lease cleared) + promote REG008 WARN->ERROR
+    at true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: tests/test_registry_exhaustiveness.py
+  reason: final REG008 entry CHK-GATE-DOC012 (lease cleared) + promote REG008 WARN->ERROR
+    at true zero
+  actor: logan
+  at: '2026-08-21'
+- op: add
+  glob: docs/modules/gates.md
+  reason: final REG008 entry CHK-GATE-DOC012 (lease cleared) + promote REG008 WARN->ERROR
+    at true zero
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_docblocks.py
+  reason: re-homed to child T-2836 (batch 3/N)
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: src/frob/gates/_registry_exhaustiveness.py
+  reason: re-homed to child T-2836 (batch 3/N)
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: tests/test_registry_exhaustiveness.py
+  reason: re-homed to child T-2836 (batch 3/N)
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: re-homed to child T-2836 (batch 3/N)
+  actor: logan
+  at: '2026-08-21'
 evidence:
 - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_exempts_matching_files
 - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_does_not_exempt_non_matching_files
