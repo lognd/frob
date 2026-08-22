@@ -48,7 +48,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7cff575ae9b1423cf648eb4ee3d76c221aa9ff8a
 ---
 T-2373 burned ruff I001 (import-sort) to zero and promoted it WARN->ERROR. T-2729's strata/_selfconform.py split (6 new modules) landed with unsorted import blocks, which the promoted-to-ERROR gate correctly caught as a regression the moment it appeared. Pure import reordering via ruff --select I001 --fix, zero behavior change. T-2729's agent has retired.
 
