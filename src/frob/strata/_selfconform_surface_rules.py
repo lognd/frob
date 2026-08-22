@@ -287,6 +287,7 @@ def _cross_node_referenced_symbols(
 # every other COV007 waiver in this repo already carries, not accidental drift onto a \
 # private symbol introduced by this move"
 # frob:doc docs/strata/surface.md#compact-interface-attrs-t-1198
+# frob:enforces CHK-GATE-SYS108
 # frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_duplicate_symbol_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestDuplicateInterface.test_no_duplicates_silent  # noqa: E501
 # frob:waive AFFECT001 reason="T-2729: LARGE001 split of _selfconform.py by SYS1xx \
@@ -336,6 +337,8 @@ def _duplicate_interface_violations(model: KernelModel) -> list[SelfConformViola
 # private symbol introduced by this move"
 # frob:ticket T-1629
 # frob:doc docs/strata/surface.md#sys110-undeclared-intended-surface-t-1629
+# frob:enforces CHK-GATE-SYS110
+# frob:enforces SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE
 # frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_real_symbol_outside_declared_set_fires  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_declared_superset_is_silent  # noqa: E501
 # frob:tests tests/unit/strata/test_selfconform.py::TestUndeclaredIntendedSurface.test_node_with_no_interface_attrs_is_skipped  # noqa: E501

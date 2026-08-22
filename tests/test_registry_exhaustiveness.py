@@ -664,7 +664,9 @@ entries:
         rules = _rules(*(v.rule for v in violations))
         assert "REG008" in rules
         reg008 = next(v for v in violations if v.rule == "REG008")
-        assert reg008.severity == Severity.WARN
+        # T-2369: REG008 promoted WARN -> ERROR once the corpus's
+        # undeclared-enforcement count reached true zero.
+        assert reg008.severity == Severity.ERROR
 
     # frob:ticket T-0428
     def test_handled_by_with_frob_enforces_edge_is_silent(self, tmp_path: Path) -> None:

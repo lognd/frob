@@ -641,22 +641,23 @@ def _enforced_concept_ids(snapshot: GraphSnapshot) -> frozenset[str]:
 def _reg008_undeclared_enforcement(
     parsed: dict[str, RegistryFile], enforced_ids: frozenset[str]
 ) -> list[Violation]:
-    """REG008 (WARN, advisory): an entry dispositioned
+    """REG008 (ERROR, T-2369): an entry dispositioned
     `handled_by:<rule-id>` (a claim that SOME rule enforces it) with no
     `frob:enforces` edge anywhere in code naming that entry's id -- the
     yaml claims enforcement that the code does not itself declare, a
     code<->corpus conformance drift T-0428 calls out as the two-SSOT
     split's required bidirectional check.
 
-    WARN, not ERROR: T-2369 burned this from 36 down to 3 (T-2812's batch
-    of 18, T-2832's batch of 17, this ticket's own CHK-GATE-DOC012 fix).
-    The remaining 3 (CHK-GATE-SYS108, CHK-GATE-SYS110,
-    SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE) all site in
-    src/frob/strata/_selfconform.py, which T-2729 (queued: split that
-    file by SYS1xx rule family) declares in its own scope -- landing a
-    directive-only edit there ahead of T-2729 triggers CrossTicketLeakage.
-    Promote once T-2729 lands (or releases that scope) and the last 3
-    entries clear."""
+    T-2369 burned this down from 36 -> 0 (T-2812's batch of 18, T-2832's
+    batch of 17, T-2836's CHK-GATE-DOC012 fix, and this ticket's own
+    fix for the final 3 -- CHK-GATE-SYS108, CHK-GATE-SYS110,
+    SLH-SYS-EVA-03-UNDECLARED-PUBLIC-SURFACE -- once T-2729's split of
+    src/frob/strata/_selfconform.py landed and moved their real
+    violation-emitting functions into _selfconform_surface_rules.py) and
+    promoted WARN -> ERROR at that true, re-measured zero, so a newly
+    undeclared handled_by claim now fails `frob check` immediately
+    instead of silently reaccumulating -- the same posture REF001/REF002
+    were promoted under in sibling child T-2820."""
     violations: list[Violation] = []
     for rel_path, registry_file in parsed.items():
         for entries in registry_file.entry_lists.values():
@@ -669,7 +670,7 @@ def _reg008_undeclared_enforcement(
                 violations.append(
                     Violation(
                         rule="REG008",
-                        severity=Severity.WARN,
+                        severity=Severity.ERROR,
                         file=rel_path,
                         line=0,
                         message=(

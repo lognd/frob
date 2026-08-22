@@ -1,7 +1,7 @@
 ---
 id: T-2369
 title: Burn REF001/REF002 + REG008 WARN gates to zero, then promote to error
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -339,6 +339,7 @@ evidence:
 - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_exempts_matching_files
 - tests/test_refs_gate.py::TestEntrypointAllowlist::test_glob_entrypoint_does_not_exempt_non_matching_files
 - tests/test_refs_gate.py::TestSeverityAndDegrade::test_all_violations_are_warn_severity
+- tests/test_registry_exhaustiveness.py::TestEnforcesConformance::test_handled_by_with_frob_enforces_edge_is_silent
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
