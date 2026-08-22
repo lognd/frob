@@ -14,7 +14,6 @@ from frob.logging import get_logger
 
 from ._code_binding import CodeBinding, _dotted, _join_dotted, _relative_base_dir
 from ._models import KernelModel
-from ._selfconform_models import SelfConformViolation
 from ._selfconform_ids import (
     SYS110_UNAUDITED_NODES,
     SYS_DUPLICATE_INTERFACE,
@@ -22,6 +21,7 @@ from ._selfconform_ids import (
     SYS_UNDECLARED_INTENDED_SURFACE,
 )
 from ._selfconform_kinds import _node_attr_values
+from ._selfconform_models import SelfConformViolation
 
 _log = get_logger(__name__)
 

@@ -14,9 +14,19 @@ from frob.logging import get_logger
 from frob.vet._capability import is_self_pattern_path, scan_file_capabilities
 from frob.vet._capability_modes import canonical_declared_kind, expand_declared_kind
 
-from ._code_binding import CodeBinding, FOREIGN
-from ._effects import _declared_kinds, _may_kind, _via_matches, check_capability_conformance
+from ._code_binding import FOREIGN, CodeBinding
+from ._effects import (
+    _declared_kinds,
+    _may_kind,
+    _via_matches,
+    check_capability_conformance,
+)
 from ._models import KernelModel
+from ._selfconform_ids import (
+    SYS_COVERAGE_TOTALITY,
+    SYS_STALE_DESIGN,
+    SYS_UNDECLARED_INTERFACE,
+)
 from ._selfconform_kinds import (
     _EXTENDED_KINDS,
     _fully_excluded_node_ids,
@@ -26,7 +36,6 @@ from ._selfconform_kinds import (
     _sorted_capability_files,
 )
 from ._selfconform_models import SelfConformViolation
-from ._selfconform_ids import SYS_COVERAGE_TOTALITY, SYS_STALE_DESIGN, SYS_UNDECLARED_INTERFACE
 
 _log = get_logger(__name__)
 

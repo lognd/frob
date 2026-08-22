@@ -24,9 +24,13 @@ from typani.result import Err, Ok, Result
 
 from frob.excludes import is_excluded, is_skipped_dir, load_exclude_globs, walk_pruned
 from frob.logging import get_logger
-from frob.vet._capability import is_self_pattern_path, language_for, scan_file_capabilities
+from frob.vet._capability import (
+    is_self_pattern_path,
+    language_for,
+    scan_file_capabilities,
+)
 
-from ._code_binding import CodeBinding, FOREIGN, _node_code_globs
+from ._code_binding import FOREIGN, CodeBinding, _node_code_globs
 from ._effects import _KIND_MAP, _may_kind
 from ._errors import StrataError
 from ._models import KernelModel

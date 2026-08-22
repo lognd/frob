@@ -20,15 +20,15 @@ from frob.lang import resolve_local_import
 from frob.logging import get_logger
 from frob.vet._capability import is_self_pattern_path, scan_file_capabilities
 
-from ._code_binding import CodeBinding, FOREIGN, _python_imports_with_lines
+from ._code_binding import FOREIGN, CodeBinding, _python_imports_with_lines
 from ._models import KernelModel, Node
-from ._selfconform_models import SelfConformViolation
 from ._selfconform_ids import (
+    _PACKAGE_ROOT,
     SYS_BINDING_TOTALITY,
     SYS_UNMODELED_CODE,
     SYS_VIA_LESS_LARGE_NODE,
-    _PACKAGE_ROOT,
 )
+from ._selfconform_models import SelfConformViolation
 
 _log = get_logger(__name__)
 

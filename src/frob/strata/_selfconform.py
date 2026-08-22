@@ -241,17 +241,8 @@ from ._code_binding import CodeBinding, bind_code
 from ._errors import StrataError
 from ._models import KernelModel
 from ._scope_config import load_strata_scope_config
-from ._waive import (
-    CONFORMANCE_WAIVER_EXPIRED_RULE,
-    STALE_WAIVER_RULE,
-    WaiverApplication,
-    _split_waiver_rule,
-    _stale_detail,
-    apply_waivers,
-    parse_waiver_expiry,
-)
-
 from ._selfconform_ids import (
+    _LARGE_NODE_FILE_THRESHOLD,
     SYS107_FAIL_CLOSED_ATOMS,
     SYS110_UNAUDITED_NODES,
     SYS_BINDING_TOTALITY,
@@ -263,9 +254,7 @@ from ._selfconform_ids import (
     SYS_UNDECLARED_INTERFACE,
     SYS_UNMODELED_CODE,
     SYS_VIA_LESS_LARGE_NODE,
-    _LARGE_NODE_FILE_THRESHOLD,
 )
-from ._selfconform_models import SelfConformReport, SelfConformViolation
 from ._selfconform_kinds import (
     _EXTENDED_KINDS,
     _aggregate_raw_kinds_by_node,
@@ -276,6 +265,16 @@ from ._selfconform_kinds import (
     _observed_extended_kinds_by_node,
     _observed_raw_kinds_by_file,
     _sorted_capability_files,
+)
+from ._selfconform_models import SelfConformReport, SelfConformViolation
+from ._waive import (
+    CONFORMANCE_WAIVER_EXPIRED_RULE,
+    STALE_WAIVER_RULE,
+    WaiverApplication,
+    _split_waiver_rule,
+    _stale_detail,
+    apply_waivers,
+    parse_waiver_expiry,
 )
 
 #: T-2729: these SYS1xx symbols are not referenced below -- they are kept
@@ -308,6 +307,11 @@ __all__ = [
     "_dedupe_sys100_extended_against_core",
     "check_self_conformance",
 ]
+from ._selfconform_binding_rules import (
+    _binding_totality_violations,
+    _unmodeled_violations,
+    _via_less_large_node_violations,
+)
 from ._selfconform_core_rules import (
     _core_undeclared_violations,
     _coverage_totality_violations,
@@ -318,11 +322,6 @@ from ._selfconform_surface_rules import (
     _duplicate_interface_violations,
     _purpose_contract_violations,
     _undeclared_intended_surface_violations,
-)
-from ._selfconform_binding_rules import (
-    _binding_totality_violations,
-    _unmodeled_violations,
-    _via_less_large_node_violations,
 )
 
 _log = get_logger(__name__)

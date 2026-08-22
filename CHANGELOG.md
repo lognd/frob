@@ -299,6 +299,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2832: REG008 burn-down batch 2/N: 17 missing frob:enforces directives across gates/app/strata/check modules
 - T-2836: REG008 burn-down batch 3/N: CHK-GATE-DOC012 (final entry, lease cleared)
 - T-2839: Fix malformed frob:waive LARGE001 directive on arch/_patterns.py (T-2823 regression)
+- T-2841: Fix I001 import-sort regression in T-2729's selfconform split (6 files)
 
 ## [0.530.0] - unreleased
 
