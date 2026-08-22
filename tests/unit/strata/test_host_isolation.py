@@ -88,16 +88,16 @@ def _isolated_hardened_model() -> KernelModel:
 
 
 class TestLateralIsolation:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_skips_below_two_users(self):
         node = Node(id="solo", trust="trusted", attrs=("runs_as=svc-a", "unit"))
         model = KernelModel(nodes=(node,))
         violations = evaluate_lateral_isolation(model).danger_ok
         assert violations == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_shared_writable_path_and_socket_fire(self):
         violations = evaluate_lateral_isolation(_shared_user_model()).danger_ok
         sub_targets = {v.sub_target for v in violations}
@@ -105,8 +105,8 @@ class TestLateralIsolation:
         assert "cross-user-socket" in sub_targets
         assert "shared-group" in sub_targets  # T-0272: derived from shared group=ops
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_declared_flow_discharges_cross_user_socket(self):
         api = Node(
             id="api",
@@ -124,14 +124,14 @@ class TestLateralIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "cross-user-socket" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_isolated_paths_do_not_fire_shared_writable_path(self):
         violations = evaluate_lateral_isolation(_isolated_hardened_model()).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_disjoint_groups_do_not_fire_shared_group(self):
         """T-0272: two users declaring DIFFERENT groups must not fire
         shared-group -- it is now a real intersection, not an always-fire
@@ -141,13 +141,15 @@ class TestLateralIsolation:
 
 
 class TestVerticalIsolation:
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_skips_with_no_users(self):
         model = KernelModel(nodes=(Node(id="n", trust="trusted"),))
         assert evaluate_vertical_isolation(model).danger_ok == ()
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_setuid_owned_path_fires(self):
         node = Node(
@@ -159,7 +161,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "setuid" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     # T-0272: renamed from `test_sudoers_always_fires_as_honest_gap` would
     # break T-0256's archived Done-report evidence (tickets-archive.md is
@@ -180,7 +183,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "sudoers" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_sudoers_does_not_fire_when_undeclared(self):
         """T-0272: a user with no `sudoers` clause at all produces no
@@ -190,7 +194,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert not any(v.sub_target == "sudoers" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_root_unit_path_writable_by_user_fires(self):
         root_unit = Node(
@@ -207,7 +212,8 @@ class TestVerticalIsolation:
         violations = evaluate_vertical_isolation(model).danger_ok
         assert any(v.sub_target == "root-unit-writable-by-user" for v in violations)
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_write_to_higher_trust_path_fires(self):
         model = KernelModel(
@@ -325,7 +331,8 @@ def test_blast_radius():
         assert claim_result.verdict.value == "proved"
 
 
-# frob:tests src/frob/strata/_host_isolation.py::host_movement_flows kind="unit"
+# frob:tests src/frob/strata/_host_isolation_movement.py::host_movement_flows \
+# kind="unit"
 def test_movement_flows():
     """`host_movement_flows` derives a bidirectional synthetic Flow pair
     over a shared writable path -- the fact HOST001 already detects,
@@ -349,8 +356,8 @@ class TestWindowsHostIsolation:
     strength to the linux `runs_as`/`owns`/`listens` path (docs/strata/
     host.md#windows-wiring-t-0606)."""
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_shared_writable_acl_path_and_pipe_fire(self):
         """Two windows-only nodes (`service_account`/`acl`/`pipe`, no
         `runs_as`/`owns`/`listens` at all) sharing a write-capable ACL
@@ -384,8 +391,8 @@ class TestWindowsHostIsolation:
         assert "shared-writable-path" in sub_targets
         assert "cross-user-socket" in sub_targets
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_deny_acl_does_not_fire_shared_writable_path(self):
         """A shared ACL path where neither side's RULE grants write (both
         `:deny`'d, or a read-only RIGHTS) must not fire
@@ -415,8 +422,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_explicit_deny_acl_flag_does_not_fire_shared_writable_path(self):
         """T-0791: exercise the `:deny` flag directly (not just a
         non-write RIGHTS value) -- Everyone:Modify:deny on a write-capable
@@ -446,8 +453,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" not in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_lateral_isolation \
-    # kind="unit"
+    # frob:tests \
+    # src/frob/strata/_host_isolation_lateral.py::evaluate_lateral_isolation kind="unit"
     def test_explicit_deny_acl_flag_fires_when_write_rights_present_elsewhere(self):
         """T-0791's fire counterpart: a `:deny`'d ACE for one principal
         alongside a plain write-capable ACE for a DIFFERENT principal on
@@ -480,7 +487,8 @@ class TestWindowsHostIsolation:
         violations = evaluate_lateral_isolation(model).danger_ok
         assert "shared-writable-path" in {v.sub_target for v in violations}
 
-    # frob:tests src/frob/strata/_host_isolation.py::evaluate_vertical_isolation \
+    # frob:tests \
+    # src/frob/strata/_host_isolation_vertical.py::evaluate_vertical_isolation \
     # kind="unit"
     def test_service_with_no_account_is_root_run(self):
         """A windows `service` with no `service_account` (SCM's own
@@ -544,17 +552,20 @@ class TestMultiAceDenyOverridesAllow:
     gap (module docstring's "Multi-ACE deny-overrides-allow join"
     section)."""
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_single_deny_entry_denies(self):
         entries = [HostAcl(path="/p", rule="Everyone:Modify:deny")]
         assert _join_acl_entries(entries) is False
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_single_allow_entry_grants(self):
         entries = [HostAcl(path="/p", rule="Everyone:Modify")]
         assert _join_acl_entries(entries) is True
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_narrow_deny_then_broad_allow_same_principal_denies(self):
         """T-0825 WRITE_DAC-indirection corner (the T-0792 reviewer
         finding this ticket closes; SAME test name as the pre-fix T-0791/
@@ -576,7 +587,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(entries) is True
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_broad_allow_then_narrow_deny_same_principal_still_denies(self):
         """Same corner as above, declaration order reversed: `FullControl`
         allow first, narrower `Modify` deny second -- still write-capable
@@ -591,7 +603,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(entries) is True
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_fullcontrol_deny_denies_fullcontrol_allow_no_indirection(self):
         """The WRITE_DAC-indirection corner does NOT apply when the deny
         is ITSELF `FullControl`-level: an explicit `FullControl` deny
@@ -605,7 +618,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(entries) is False
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_narrow_deny_narrow_allow_same_principal_still_denies(self):
         """The indirection corner is `FullControl`-allow-specific: a
         `Modify` allow never grants WRITE_DAC/WRITE_OWNER in the first
@@ -618,7 +632,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(entries) is False
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_write_deny_modify_allow_same_principal_still_denies(self):
         """A narrower `Write` deny against a `Modify` allow: `Modify`
         never grants WRITE_DAC either, so there is no indirection bit to
@@ -631,7 +646,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(entries) is False
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_deny_for_one_principal_does_not_cancel_another_principals_allow(self):
         """The T-0792 fix's core case: a deny for principal X does not
         reach across to cancel a write grant to a DIFFERENT principal Y
@@ -651,7 +667,8 @@ class TestMultiAceDenyOverridesAllow:
         ]
         assert _join_acl_entries(reversed_entries) is True
 
-    # frob:tests src/frob/strata/_host_isolation.py::_join_acl_entries kind="unit"
+    # frob:tests src/frob/strata/_host_isolation_shared.py::_join_acl_entries \
+    # kind="unit"
     def test_no_write_rights_entries_denies(self):
         entries = [
             HostAcl(path="/p", rule="Everyone:Read"),

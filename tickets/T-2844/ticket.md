@@ -2,7 +2,7 @@
 id: T-2844
 title: Split _host_isolation.py along lateral/vertical/movement seams (blocked on
   via-scope migration review)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-21'

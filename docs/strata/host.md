@@ -401,7 +401,7 @@ grammar-extension ticket is future work, not folded into this fix.
 ### Waiver discipline
 
 HOST001/HOST002 are multi-instance-per-node (one finding per pair
-sub-target / per user sub-target) -- `_host_isolation.py::
+sub-target / per user sub-target) -- `_host_isolation_shared.py::
 HOST_MULTI_INSTANCE_WAIVER_FAMILIES` requires the SAME `RULE:SUBTARGET`
 waiver shape T-0174 established for SYS100/SYS101/THREAT002/THREAT003
 (`_waive.py`), run through the SAME `apply_waivers` channel
@@ -435,7 +435,7 @@ it has no dependency on `HostManifest` ownership by itself. Two users
 sharing a writable path with NO declared app `Flow` between them would
 make HOST001 correctly fire (`shared-writable-path`) while the SAME
 model's blast-radius claim vacuously reported PROVED -- false assurance,
-caught in review. The fix: `_host_isolation.py::host_movement_flows`
+caught in review. The fix: `_host_isolation_movement.py::host_movement_flows`
 derives the SAME sharing relations HOST001 detects (shared writable
 path, shared reachable socket) as synthetic `Flow` facts, and the
 scenario builder wraps each in the new `AddFlow` rewrite (`_models.py`)
