@@ -53,6 +53,13 @@ body_changes:
   at: '2026-08-21'
   old_length: 10659
   new_length: 7583
+- mode: append
+  reason: re-measured COV006/COV007, burned COV006 to zero via 4 waivers, fully characterized
+    remaining 19 COV007 files, requeuing
+  actor: logan
+  at: '2026-08-22'
+  old_length: 7583
+  new_length: 14139
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
@@ -200,3 +207,110 @@ re-triage from scratch. Suggested next batches: (1) sweep the remaining
 19 COV007 files for the T-2810 duplicate-anchor shape before waiving
 anything, (2) write the 5 COV006 + confirmed-genuine COV007 waivers
 citing their doc anchors / T-2550, narrow scope per batch as T-2810 did.
+
+
+RE-MEASURED 2026-08-22 (unbudgeted, `frob check --only coverage --json`, worktree
+t-2370, natives freshly built): exit 1, gate-summary present.
+
+Starting point this batch: COV006 4 live warnings (down from 5; tree moved
+again -- one of the previously-flagged test edges is no longer present, not a
+new class), COV007 37 live warnings across 24 files (unchanged from the prior
+batch's re-measurement).
+
+COV006 -- confirmed the gate's own docstring (`frob/gates/__init__.py::
+_cov006`) states WARN severity is deliberate: `frob.graph.callgraph` is an
+explicitly best-effort, name-based resolver, so a miss is "a prompt to double
+check, not proof the binding is wrong." This is unconditional -- there is no
+count-based exception. COV006 MUST NOT be promoted to ERROR, ever, regardless
+of how many times it is burned to zero. Confirmed this is the same class
+T-2550 already diagnosed (public entry point several hops from the private
+target, invisible to the name-based call graph).
+
+Wrote 4 individual `frob:waive COV006` comments, one per live finding, each
+citing the T-2550 class and confirming direct-read reachability:
+  - tests/test_gates.py::TestCoverageGate.test_cov006_third_file_reachable_chases_relative_import_reexport
+    -> src/frob/gates/__init__.py::_cov006_resolve_relative_module
+  - tests/test_gates.py::TestFixEngineTierA.test_tick006_renamed_draft_resolved_via_git_not_refiled
+    -> src/frob/gates/_fix_engine.py::_resolve_via_git_rename
+  - tests/test_ticket_land.py::TestWipCommitNormalizationOnlyDirty.test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed
+    -> src/frob/tickets/_land_git_ops.py::_do_wip_commit
+  - tests/test_ticket_land.py::TestGitFailureMessageCarriesStderr.test_wip_commit_failure_logs_stderr
+    -> src/frob/tickets/_land_git_ops.py::_do_wip_commit
+
+Re-measured after writing: COV006 warning count is 0 (34 note-tier, all
+already/newly waived). Each waiver comment re-verified present with no
+trailing space before its `\` continuation and no embedded quote in its
+`reason=` string (T-2857 hazard). NOT promoting COV006's severity -- zero is
+necessary but the docstring makes it permanently insufficient. This code stays
+WARN forever; only the individual findings get burned down as they appear.
+
+Adding the four `frob:ticket T-2370` edges these changes needed also
+surfaced COV002 (symbol changed with no open-ticket edge) on the enclosing
+test classes/methods -- fixed by placing `frob:ticket T-2370` directly above
+each changed class/method (a blank-line-separated placement inside the class
+body, after its docstring, did NOT satisfy COV002; the directive must
+immediately precede the changed symbol).
+
+COV007 -- completed the full-file pass across all 24 previously-partially-
+sampled files (the prior batch sampled 5; this batch read the remaining 19
+directly: graph_runner.py, _close_cmd.py, _mutate.py, _new.py, _query.py,
+verify_runner.py, _arch_schema.py, _milestone.py, _support.py, _reap.py,
+_coverage_refresh.py, tickets/__init__.py, _archive.py, _leases.py, _scope.py,
+_backpressure.py, _quarantine.py, _selection.py, _worker.py,
+_capability_python.py, plus re-confirming the previously-sampled
+_rapid_sweep.py/_lifecycle.py/_ledger_mirror.py/_store_migrate.py).
+
+Method: for each of the 37 flagged private symbols, read its own `frob:doc`
+anchor, then grepped that anchor's target doc file for a `frob:describes`
+directive individually naming the private symbol by its qualified path.
+Result: about a third resolve to an individually-named `frob:describes`
+anchor (e.g. `_scope_add_live_lease_conflict`, `_attribute_new_findings`,
+`_worker_backpressure_reason`) -- unambiguous HONEST WAIVE candidates, no
+further check needed.
+
+The remaining ~two-thirds (e.g. everything in `_support.py`, `_backpressure.
+py`, `_quarantine.py`, `_selection.py`, `_reap.py`, `_ledger_mirror.py`) do
+NOT carry an individually-named `frob:describes` block, but ALSO do not
+match the T-2810 duplicate-anchor bug shape: T-2810's fix removed a private
+helper's `frob:doc` comment only where a PUBLIC sibling in the SAME FILE
+already carried the IDENTICAL directive as a genuine, meaningless copy. Here
+the pattern is different and consistent across every file checked: MANY
+symbols -- public and private alike -- in the same file all cite the SAME
+section-level anchor (one conceptual feature, e.g. "backpressure",
+"quarantine circuit breaker", "adapter capability contract"), each comment
+marking where in the code that piece of the section's behavior lives. This
+is the same convention this repo already decided is legitimate for
+`vet.md` (T-2810 explicitly declined to touch it) -- a REG008-shaped,
+many-symbols-one-section documentation style, not a duplicate. No file in
+the remaining 19 exhibited T-2810's actual bug shape (an exact-duplicate
+directive on a private helper that a public sibling in the same file already
+carries to the identical anchor with nothing left for the private one to
+add).
+
+DISPOSITION: COV006 batch closed out this session (0 live warnings, 4
+waivers landed, promotion permanently refused per the gate's own docstring).
+COV007 is NOT at zero (37 live warnings, unchanged) and stays open --
+every one of the 24 files is now individually characterized as either (a)
+an honest waive candidate with an individually-named `frob:describes`
+anchor, or (b) an honest waive candidate under the many-symbols-one-section
+convention this repo has already accepted (vet.md precedent). ZERO of the
+37 need a code fix; zero exhibit the T-2810 bug. The remaining work is
+writing 37 individually-reasoned `frob:waive COV007` comments (one per
+symbol, citing its specific doc anchor) -- pure typing/attribution work, no
+further triage needed. Suggested next batch: write those 37 waivers in
+groups of ~8-10 per file cluster, re-measuring after each group per the
+T-2857 silent-drop hazard, then re-run this same `--only coverage --json`
+command for a true zero before considering COV007's promotion (COV007's own
+docstring does NOT forbid promotion the way COV006's does -- it is fine to
+promote once genuinely at zero).
+
+Requeuing (not closing): COV006 is functionally done but the ticket's own
+acceptance criteria bundle both codes, and COV006 can never satisfy
+criterion [1] (promote to error) by design. Recommend splitting this ticket
+in the next batch: close COV006's WARN-zero burn-down as ticket-scoped work
+with an explicit `frob:waive` on acceptance criterion [1] citing this
+docstring, and keep a separate ticket alive for COV007's waiver-writing
+pass through to promotion.
+
+## Failure log
+- 2026-08-22 attempt 1: bundles two codes with incompatible closure shapes: COV006 can never satisfy a promote-to-error criterion (its own docstring forbids it permanently, best-effort name-based resolver) while COV007 needs a 37-item individual waiver pass; split into T-2865 (COV006 waivers, done in this worktree) and T-2866 (COV007 waiver pass plus promotion)

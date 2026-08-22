@@ -1,7 +1,7 @@
 ---
 id: T-2865
 title: Burn COV006 WARN findings to zero via individual waivers (never promote)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'

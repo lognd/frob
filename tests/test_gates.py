@@ -534,6 +534,7 @@ class TestBaselineDelta:
 # frob:ticket T-0553
 # frob:ticket T-0783
 # frob:ticket T-2549
+# frob:ticket T-2865
 class TestCoverageGate:
     def test_cov001_broken_doc_edge_does_not_suppress_finding(
         self, tmp_path: Path
@@ -2008,6 +2009,7 @@ class TestCoverageGate:
         assert _cov006_third_file_reachable(tmp_path, edge) is False
 
     # frob:ticket T-2550
+    # frob:ticket T-2865
     def test_cov006_third_file_reachable_chases_relative_import_reexport(
         self, tmp_path: Path
     ) -> None:
@@ -2022,6 +2024,9 @@ class TestCoverageGate:
         "/")` turned that leading dot into a leading slash instead of the
         facade's own package, so the re-export hop silently failed to
         resolve to `_real.py` and the rescue never found the real `def`."""
+        # frob:waive COV006 reason="T-2550 class: this test's own body calls a public \
+        # entry point several hops from the private target, a shape build_call_graph \
+        # structurally cannot see through; confirmed reachable by direct read"
         # frob:tests src/frob/gates/__init__.py::_cov006_resolve_relative_module
         from frob.gates import _cov006_third_file_reachable
         from frob.graph import Edge, EdgeKind
@@ -11902,6 +11907,7 @@ class TestDocanchorGate:
 # frob:ticket T-1138
 # frob:ticket T-1531
 # frob:ticket T-1763
+# frob:ticket T-2865
 class TestFixEngineTierA:
     """`frob.gates._fix_engine`'s Tier-A deterministic --fix handlers
     (T-1138): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
@@ -12631,6 +12637,9 @@ class TestFixEngineTierA:
         assert applied == []
 
     # frob:tests src/frob/gates/_fix_engine.py::fix_tick006_phantom_refile kind="unit"
+    # frob:waive COV006 reason="T-2550 class: reached only through \
+    # fix_tick006_phantom_refile several hops out, a shape build_call_graph \
+    # structurally cannot see through; confirmed reachable by direct read"
     # frob:tests src/frob/gates/_fix_engine.py::_resolve_via_git_rename kind="unit"
     def test_tick006_renamed_draft_resolved_via_git_not_refiled(
         self, tmp_path: Path

@@ -3214,6 +3214,7 @@ class TestWipAddIgnoredPathFallback:
         )
 
 
+# frob:ticket T-2865
 class TestWipCommitNormalizationOnlyDirty:
     """T-0847: a worktree that is `_porcelain_dirty` purely because of a
     line-ending normalization status line (WSL/autocrlf phantom-modified)
@@ -3224,6 +3225,10 @@ class TestWipCommitNormalizationOnlyDirty:
     def test_normalization_only_dirty_worktree_treated_as_no_op_not_git_failed(
         self, repo: Path
     ) -> None:
+        # frob:ticket T-2865
+        # frob:waive COV006 reason="T-2550 class: reached only through a public land \
+        # entry point several hops out, a shape build_call_graph structurally cannot \
+        # see through; confirmed reachable by direct read"
         # frob:tests src/frob/tickets/_land_git_ops.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-wip-crlf", str(wt)], repo)
@@ -7003,6 +7008,7 @@ class TestLandInternalEnvThroughHook:
             os.environ.pop("FROB_LAND_INTERNAL", None)
 
 
+# frob:ticket T-2865
 class TestGitFailureMessageCarriesStderr:
     """T-0828: a failed land-internal git spawn must surface its argv and
     stderr in the log line, not collapse to a bare `GitFailed`."""
@@ -7038,6 +7044,10 @@ class TestGitFailureMessageCarriesStderr:
         monkeypatch: pytest.MonkeyPatch,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
+        # frob:ticket T-2865
+        # frob:waive COV006 reason="T-2550 class: reached only through a public land \
+        # entry point several hops out, a shape build_call_graph structurally cannot \
+        # see through; confirmed reachable by direct read"
         # frob:tests src/frob/tickets/_land_git_ops.py::_do_wip_commit kind="unit"
         wt = repo.parent / "wt"
         _run(["git", "worktree", "add", "-b", "feature-l8", str(wt)], repo)

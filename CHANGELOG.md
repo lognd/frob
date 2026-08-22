@@ -321,6 +321,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2854: malformed-directive false-positive: docstring prose containing 'frob:waive reason' parsed as an attribute
 - T-2855: post-land sweep regression from T-2846: 22 new (rule, file) identit(ies), 172 finding(s) (COV001, DOC006, DRIFT002, REF001)
 - T-2864: F401/F822: T-2851 split left import/export hygiene debt in _mutation_evidence.py/_bug_repro.py
+- T-2865: Burn COV006 WARN findings to zero via individual waivers (never promote)
 
 ## [0.530.0] - unreleased
 
