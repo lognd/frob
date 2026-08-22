@@ -1,3 +1,16 @@
+# frob:waive LARGE001 reason="T-2830 (T-1651-grade review): a real seam was \
+# investigated -- the worktree-provisioning cluster (_default_work_worktree, \
+# _worktree_add_or_reuse, _ensure_worktree_fresh, _build_natives_for_work, \
+# _start_cluster_members, _work_cluster, _work) looks separable from the plain \
+# ticket-state-transition commands (_plan/_requeue/_sweep_cmd/_reconcile_cmd/ \
+# _attach/_block/_unblock). It is not an acyclic boundary though: _work, \
+# _work_cluster, and _start_cluster_members all call _start directly (the state- \
+# transition entrypoint) to finish what they set up, so a module split puts _start on \
+# one side and its own callers on the other -- a circular import, not a real seam, \
+# unless _start's own coupling to worktree setup is restructured first (e.g. \
+# dependency-injecting it), which is a design change bigger than a LARGE001 pass. \
+# Filed T-2835 (renumbers at land) to evaluate that restructuring as its own \
+# ticket."
 """frob.app.ticket_runner._lifecycle -- the `plan`/`start`/`requeue`/
 `sweep`/`reconcile`/`attach`/`block` command family.
 

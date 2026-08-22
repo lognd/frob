@@ -1,3 +1,21 @@
+# frob:waive LARGE001 reason="T-2830 (T-1651-grade review): a real seam was \
+# investigated -- the obligation-checking predicates (_covers_scope_for_ticket, \
+# _close_mutation_evidence_for_ticket, _close_gate_claims_for_ticket, \
+# _close_own_obligations_for_ticket, _reverify_evidence_for_close, and their own \
+# private helpers, ~lines 213-929) look separable from the command entrypoints \
+# (_close/_review/_reverify/_fail/_drop, ~lines 951-1756) at first glance. It is not a \
+# real consumer-set boundary though: _land_cmd.py's own land-time guard \
+# (_covers_scope_for_ticket) and gate-claims check (_close_gate_claims_for_ticket) \
+# reuse these EXACT close-time predicates rather than duplicating them (see \
+# _land_cmd.py's own comments at those call sites) -- they are shared close/land \
+# obligation logic that happens to live here because close was extracted first \
+# (T-1089), not a distinct concern of _close_cmd alone. Splitting them into their own \
+# module changes nothing about who calls what, only where the call crosses a file \
+# boundary, and this dir's own dispatch caution (T-2830's brief) is explicit that a \
+# bad split on a file this heavily exercised by the landing path is worse than the \
+# warning it would silence. Filed T-2835 (renumbers at land) to evaluate a \
+# proper extraction (obligation predicates -> frob.tickets, where _land_cmd already \
+# imports similar shared helpers from) as its own carefully- scoped, non-batch ticket."
 """frob.app.ticket_runner._close_cmd -- the `close`/`reverify`/`review`/
 `fail`/`drop` command family.
 

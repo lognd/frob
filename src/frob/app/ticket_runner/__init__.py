@@ -1,3 +1,18 @@
+# frob:waive LARGE001 reason="T-2830 (T-1651-grade review): this module's own \
+# docstring states the constraint that rules out a line-count split -- \
+# _root_release_manifest/_graph_snapshot/guarded_subprocess_run (and every command \
+# family re-exported from _new/_query/_land_cmd/_lifecycle/_close_cmd/_verify/ \
+# _mutate/_archive) are deliberately re-exported HERE, not from the submodule that \
+# defines them, because tests monkeypatch them via `ticket_runner.<name>` and sibling \
+# command modules reach them back through `from frob.app import ticket_runner as \
+# _ticket_runner` rather than a direct import -- moving any of those names to a second \
+# module would silently stop tests observing the patch and stop cross-family callers \
+# (e.g. _land_cmd's own _covers_scope_for_ticket/ _close_gate_claims_for_ticket reuse) \
+# seeing it, a correctness regression, not a cosmetic one. The non-import remainder \
+# (_ticket_dispatch_table, run, _auto_commit_ledger_after_dispatch, \
+# _resolve_ticket_root, ...) is the single CLI dispatch/wiring hub for the whole `frob \
+# ticket` surface -- one consumer set (the CLI entrypoint), not a bundle of unrelated \
+# concerns."
 """CLI wiring for `frob ticket new|list|show|doable|board|epic|brief|plan|
 start|requeue|sweep|reconcile|land|merge-driver|attach|block|close|fail|
 drop|evidence|done-report|scope|priority|kind|component|label|archive|

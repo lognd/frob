@@ -1,3 +1,17 @@
+# frob:waive LARGE001 reason="T-2830 (T-1651-grade review): this is the single \
+# `land`/`merge-driver` command family (114 top-level helpers, all reachable only from \
+# _land/_merge_driver's own call tree per this module's docstring) -- the same 'single \
+# command family, no distinct consumer set' shape T-1651 already accepted for \
+# check_runner.py and sys_runner.py, just larger because land itself has more phases \
+# (pre-land guards, git merge, release bump, gate/evidence reverification, post-land \
+# sweep, worktree finalize). T-2830's own dispatch brief is explicit that this \
+# specific file is heavily exercised by the landing path every agent (including this \
+# one) depends on to land at all, and names it as the file where a bad split is worst: \
+# breaking it strands every in-flight worktree, not just this ticket. A real \
+# phase-boundary split is plausible in principle but not something to attempt under a \
+# batch LARGE001 pass with no dedicated review/rollback plan -- filed T-2835 \
+# (renumbers at land) to scope that as its own ticket, evaluated and tested in \
+# isolation rather than folded into this one."
 """frob.app.ticket_runner._land_cmd -- the `land`/`merge-driver` command
 family (T-1090/T-1078's atomic id-allocation and REL bump paths carried).
 

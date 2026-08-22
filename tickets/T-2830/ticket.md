@@ -2,7 +2,7 @@
 id: T-2830
 title: 'LARGE001: split or waive oversized frob.app/ticket_runner modules, batch 1
   of 2'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
@@ -20,7 +20,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/app/ticket_runner/_lifecycle.py
-- tickets/T-draft-783d89c8/ticket.md
+- tickets/T-2835/ticket.md
 evidence_scope:
 - tests/test_arch_gate.py
 scope_breadth_ack: false
@@ -35,7 +35,7 @@ scope_changes:
   actor: logan
   at: '2026-08-21'
 - op: add
-  glob: tickets/T-draft-783d89c8/ticket.md
+  glob: tickets/T-2835/ticket.md
   reason: SCOPE001 flagged the new follow-up ticket's own file as out-of-scope; it
     is legitimate diff residue from filing that ticket while T-2830 was in-progress
   actor: logan

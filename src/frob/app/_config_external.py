@@ -1,3 +1,14 @@
+# frob:waive LARGE001 reason="T-2830 (T-1651-grade review): ~510 of this file's 835 \
+# lines are the six field-name tuples (_STRING_FIELDS/_PATH_FIELDS/_INT_FIELDS/ \
+# _FLOAT_FIELDS/_LIST_FIELDS/_BOOL_FLAGS) that this module's own docstring already \
+# explains -- data, not logic, one entry per AppConfig field that from_external must \
+# forward. The remaining ~200 lines are one _apply_*_fields helper per tuple plus the \
+# find_dropped_cli_flags/_build_external_config_kwargs entrypoints that iterate them. \
+# There is no consumer-set seam here: every helper exists only to serve \
+# AppConfig.from_external's single field-copy concern (already isolated out of \
+# config.py by T-1270 for exactly this reason), and splitting by line count would cut \
+# a field-type's own tuple away from the one loop that reads it -- the opposite of a \
+# real boundary."
 """`AppConfig.from_external`'s argparse-Namespace-to-kwargs field-copy logic.
 
 Split out of `frob.app.config` (T-1270): `AppConfig.from_external` is the
