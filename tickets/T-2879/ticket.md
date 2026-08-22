@@ -59,7 +59,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: a40cf2f3a0b71ea637dee9dec94d92d66c3d084c
 ---
 Re-measured 2026-08-22 via unbudgeted `frob check --json` (gate-summary
 present, ~350s): main carries 33 errors / 14 distinct (rule,file)
