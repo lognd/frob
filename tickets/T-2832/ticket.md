@@ -2,7 +2,7 @@
 id: T-2832
 title: 'REG008 burn-down batch 2/N: 17 missing frob:enforces directives across gates/app/strata/check
   modules'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'
