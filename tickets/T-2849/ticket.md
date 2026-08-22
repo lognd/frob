@@ -15,11 +15,58 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/check/
+- src/frob/gates/__init__.py
+- src/frob/process/_reap.py
+- src/frob/__main__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/check/
+  reason: 'Original scope src/frob/check/ was wrong -- I set it without checking.
+    Measured: that package contains NO multiprocessing/ProcessPoolExecutor/forkserver
+    code, only concurrent.futures.ThreadPoolExecutor which shares the parent OS process
+    and cannot orphan. The leaking pool is frob.gates._open_process_pool / _process_pool_start_method
+    in src/frob/gates/__init__.py; the existing SIGTERM-only mitigation is install_sigterm_reaper
+    / reap_orphaned_forkservers in src/frob/process/_reap.py, wired from src/frob/__main__.py.
+    Retargeting to those three files so the ticket is implementable.'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: 'Original scope src/frob/check/ was wrong -- I set it without checking.
+    Measured: that package contains NO multiprocessing/ProcessPoolExecutor/forkserver
+    code, only concurrent.futures.ThreadPoolExecutor which shares the parent OS process
+    and cannot orphan. The leaking pool is frob.gates._open_process_pool / _process_pool_start_method
+    in src/frob/gates/__init__.py; the existing SIGTERM-only mitigation is install_sigterm_reaper
+    / reap_orphaned_forkservers in src/frob/process/_reap.py, wired from src/frob/__main__.py.
+    Retargeting to those three files so the ticket is implementable.'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/process/_reap.py
+  reason: 'Original scope src/frob/check/ was wrong -- I set it without checking.
+    Measured: that package contains NO multiprocessing/ProcessPoolExecutor/forkserver
+    code, only concurrent.futures.ThreadPoolExecutor which shares the parent OS process
+    and cannot orphan. The leaking pool is frob.gates._open_process_pool / _process_pool_start_method
+    in src/frob/gates/__init__.py; the existing SIGTERM-only mitigation is install_sigterm_reaper
+    / reap_orphaned_forkservers in src/frob/process/_reap.py, wired from src/frob/__main__.py.
+    Retargeting to those three files so the ticket is implementable.'
+  actor: logan
+  at: '2026-08-22'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'Original scope src/frob/check/ was wrong -- I set it without checking.
+    Measured: that package contains NO multiprocessing/ProcessPoolExecutor/forkserver
+    code, only concurrent.futures.ThreadPoolExecutor which shares the parent OS process
+    and cannot orphan. The leaking pool is frob.gates._open_process_pool / _process_pool_start_method
+    in src/frob/gates/__init__.py; the existing SIGTERM-only mitigation is install_sigterm_reaper
+    / reap_orphaned_forkservers in src/frob/process/_reap.py, wired from src/frob/__main__.py.
+    Retargeting to those three files so the ticket is implementable.'
+  actor: logan
+  at: '2026-08-22'
 designated_repro_test: null
 threat: null
 component: null
