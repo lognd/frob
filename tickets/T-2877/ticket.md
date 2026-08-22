@@ -2,7 +2,7 @@
 id: T-2877
 title: 'SELFAUDIT001: T-2849''s process/_reap.py env.read growth and a new via-less
   core ffi grant lack ratchet/because coverage'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -17,10 +17,23 @@ runs_last_parallel_safe_reason: null
 scope:
 - design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
+evidence_scope:
+- tests/unit/strata/test_effects.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 needs this directive: no code behavior change, only strata/ratchet
+    declaration corrections'
+  actor: logan
+  at: '2026-08-22'
+  old_length: 1944
+  new_length: 2287
+evidence:
+- tests/unit/strata/test_effects.py::TestCapabilityRatchet::test_deleting_lock_entry_does_not_bypass_the_ratchet
+- tests/unit/strata/test_effects.py::TestCapabilityRatchet::test_unscoped_grant_is_never_ratcheted
 designated_repro_test: null
 threat: null
 component: null
@@ -70,3 +83,5 @@ out of that ticket deliberately to stay narrow:
 ## Failure log
 
 (none yet)
+
+frob:no-behavior-change reason="T-2877 is a static declarative fix (design/frob.strata via-scoping and docs/design/registry/capability-via-ratchet.lock.json ratchet ceilings) correcting T-2849's capability declarations to match its own code -- no runtime behavior changes, only which files a may-grant names/how large a committed ceiling is"
