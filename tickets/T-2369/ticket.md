@@ -19,7 +19,6 @@ scope:
 - docs/investigations/T-2782-land-serialization.md
 - docs/investigations/T-2790-check-stage-profile.md
 - docs/investigations/T-2796-backlog-reproduction.md
-- docs/modules/gates.md
 - docs/modules/tickets-data-storage.md
 - frob.toml
 - src/frob/gates/_refs.py
@@ -252,6 +251,12 @@ scope_changes:
   glob: tests/test_registry_exhaustiveness.py
   reason: re-homed to child T-2832 (batch 2/N) so this work can land independently
     of parent T-2369
+  actor: logan
+  at: '2026-08-21'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: gates.md's REG008 row edit moved to child T-2832; T-2369 no longer needs
+    a live lease on this file
   actor: logan
   at: '2026-08-21'
 evidence:
