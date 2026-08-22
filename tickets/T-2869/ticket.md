@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: bd623210d97d8dfbc7ff4a89fef4880b5bca4748
 ---
 Found while measuring T-2857's positive control (repo-wide malformed-count
 before/after a stricter markdown DSL check): `docs/modules/tickets-landing.
