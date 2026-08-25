@@ -65,7 +65,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7100396e8bf5f1beea1f6697cc29a4386b30b8bc
 ---
 Split from T-1696 (queue-depth-dial collapse epic), second leaf --
 BLOCKED on the settings-resolver child (files the settings record this
