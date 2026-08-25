@@ -137,7 +137,7 @@ threat: null
 component: portability
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: e442e92745d8eec341368fb09b0974e2f956a1d1
 ---
 MEASURED (coordinator, 2026-08-25): a real off-repo run of this source tree's 'frob check' against /home/logan/projects/lograder (src-layout, package 'lograder', not frob) -- saved at /tmp/claude-1000/-home-logan-projects-frob/79c6402d-b401-4652-bea7-f81df1be9322/scratchpad/port-lograder.txt -- found 12 gates reporting '0 errors, 0 warnings, 1 unresolved, 0 waived' there: ARCHSCHEMA, DOCBLOCKSSCHEMA, DUPSCHEMA, FLAGCOV, GATESSCHEMA, GRAPHSCHEMA, NATIVESCHEMA, PROFILESCHEMA, REFSCHEMA, TESTINGSCHEMA, TESTRUNNERSCHEMA, TOPSCALARSCHEMA. In frob's own repo every one of these reports 0 unresolved. The other portability findings from the same run (REF 85, SELFAUDIT 98, SYS 50, OPAQUE 53, DOC 121) are real, correctly-firing off-repo findings and confirm the T-2384 retargeting already landed is working -- this ticket is scoped to the 12-gate UNRESOLVED-as-pass gap only.
 
