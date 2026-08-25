@@ -17,12 +17,45 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/
 - docs/modules/gates.md
+- src/frob/gates/_profile_boundary.py
+- src/frob/gates/__init__.py
+- tests/unit/gates/test_profile_boundary.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/
+  reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
+    per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_profile_boundary.py
+  reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
+    per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
+    per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/gates.md
+  reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
+    per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/gates/test_profile_boundary.py
+  reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
+    per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: tickets
