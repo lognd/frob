@@ -19,6 +19,8 @@ scope:
 - scripts/branch_stranded_work_analysis.py
 - docs/audits/branch-stranded-work-2026-08-25.md
 - tests/unit/test_branch_stranded_work_analysis.py
+- tickets/T-draft-c0911158/ticket.md
+- tickets/T-draft-2b8f8ae4/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +41,16 @@ scope_changes:
 - op: add
   glob: tests/unit/test_branch_stranded_work_analysis.py
   reason: unit tests for the new classification script
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-c0911158/ticket.md
+  reason: tickets filed from this worktree during T-2646's analysis
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-2b8f8ae4/ticket.md
+  reason: tickets filed from this worktree during T-2646's analysis
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
