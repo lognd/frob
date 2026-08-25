@@ -19,6 +19,7 @@ from frob.lang._common import _child_text, _span_of, _strip_comment_delims
 from frob.lang._common import _find_enclosing_symbol as _find_enclosing
 from frob.lang._common import _find_following_symbol as _find_following
 from frob.lang._models import RawComment, RawSymbol
+from frob.lang._walk_bash import _walk_bash
 from frob.lang._walk_c import _walk_c_family
 from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
@@ -38,6 +39,10 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     "c": frozenset({"comment"}),
     "cpp": frozenset({"comment"}),
     "kotlin": frozenset({"line_comment", "multiline_comment"}),
+    # frob:ticket T-1604
+    # Bash's one comment node type -- see `_walk_bash.COMMENT_TYPES`'s own
+    # docstring for why no block-comment form exists in this grammar.
+    "bash": frozenset({"comment"}),
 }
 
 
@@ -64,6 +69,7 @@ _WALKERS = {
     "c": _walk_c,
     "cpp": _walk_cpp,
     "kotlin": _walk_kotlin,
+    "bash": _walk_bash,
 }
 
 # frob:ticket T-0342
@@ -385,6 +391,34 @@ def _imports_kotlin(root: Node) -> tuple[str, ...]:
     return tuple(results)
 
 
+# frob:ticket T-1604
+def _imports_bash(root: Node) -> tuple[str, ...]:
+    """Every `source <path>`/`. <path>` command's target (T-1604) -- bash's
+    only dependency-declaring construct, and dynamic in the general case
+    (a variable-expanded or computed path resolves to nothing this static
+    walker can follow), so only a literal `word` argument is emitted,
+    mirroring `_imports_c_family`'s "one specifier per statement, let the
+    caller resolve it" shape. `source`/`.` are both plain `command_name`
+    text in this grammar (module docstring's own exploration), so both
+    spellings are recognized identically."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "command":
+            children = n.named_children
+            if len(children) >= 2 and children[0].type == "command_name":
+                name = _child_text(children[0])
+                if name in ("source", "."):
+                    target = children[1]
+                    if target.type == "word":
+                        results.append(_child_text(target))
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
 _IMPORT_WALKERS = {
     "python": _imports_python,
     "c": _imports_c_family,
@@ -393,6 +427,7 @@ _IMPORT_WALKERS = {
     "tsx": _imports_typescript,
     "rust": _imports_rust,
     "kotlin": _imports_kotlin,
+    "bash": _imports_bash,
 }
 
 

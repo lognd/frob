@@ -381,6 +381,85 @@ class TestBehavioralCapabilityCheck:
         assert not ok, f"unbuildable crate was wrongly reported as passing: {detail}"
 
 
+# frob:ticket T-1604
+class TestBashCapabilityConformance:
+    """Bash-specific positive/negative controls (T-1604) -- mirrors the
+    python controls above (`test_broken_continuation_fixture_is_caught_
+    not_rubber_stamped`/`test_no_symbols_fixture_is_caught_not_rubber_
+    stamped`) so bash's own adapter is proven, not merely registered."""
+
+    # frob:ticket T-1604
+    def test_bash_registered_capabilities_pass(self, tmp_path: Path) -> None:
+        """CLEAN CONTROL: every capability the live registry claims
+        IMPLEMENTED for bash actually works against the real fixture."""
+        registry = derive_capability_registry()
+        support = registry["bash"]
+        implemented = [
+            capability
+            for capability, status in support.capabilities.items()
+            if status.state is FacetState.IMPLEMENTED
+            and capability in _BEHAVIORALLY_CHECKED_CAPABILITIES
+        ]
+        assert set(implemented) >= {
+            "symbol_walk",
+            "publicness",
+            "doc_extract",
+            "directive_parse",
+            "import_graph",
+        }
+        # call_graph is a reasoned KNOWN_GAP for bash, not IMPLEMENTED --
+        # see `_capability_call_graph_status`'s own T-1604 comment: bash
+        # invocation has no parenthesized call syntax, so
+        # frob.graph.callgraph's shared token-adjacency detector cannot
+        # recognize a bash call at all.
+        assert "call_graph" not in implemented
+        for capability in implemented:
+            ok, detail = _behavioral_capability_check("bash", capability, tmp_path)
+            assert ok, f"bash/{capability}: {detail}"
+
+    # frob:ticket T-1604
+    def test_bash_broken_continuation_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL: a bash fixture whose `frob:tests \\`
+        continuation's second physical line is DROPPED (the directive can
+        never fold to the real target) must make `_behavioral_capability_
+        check` report failure -- proves the check genuinely inspects the
+        fold result rather than always passing once a `frob:tests` line
+        is merely present."""
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            "#!/usr/bin/env bash\n"
+            "# Capability fixture module doc.\n\n"
+            "public_fn() {\n"
+            "    _private_fn\n"
+            "}\n\n"
+            "# frob:tests \\\n"
+            "_private_fn() {\n"
+            "    return 2\n"
+            "}\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "bash", broken_source)
+        ok, detail = _behavioral_capability_check("bash", "directive_parse", tmp_path)
+        assert not ok, f"broken bash fixture was wrongly reported as passing: {detail}"
+
+    # frob:ticket T-1604
+    def test_bash_no_symbols_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A second, independent MUST-FAIL positive control: an empty bash
+        fixture (no functions/assignments at all) must fail `symbol_walk`'s
+        behavioral check."""
+        import frob.gates._lang_conformance as module
+
+        monkeypatch.setitem(
+            module._CAPABILITY_FIXTURE_SOURCES, "bash", "# just a comment\n"
+        )
+        ok, detail = _behavioral_capability_check("bash", "symbol_walk", tmp_path)
+        assert not ok, f"empty bash fixture was wrongly reported as passing: {detail}"
+
+
 # frob:ticket T-2365
 class TestCapabilityConformanceGate:
     """LANG004 (T-2365): the behavioral half of the adapter-capability axis

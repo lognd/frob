@@ -99,6 +99,7 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "cpp": ".cpp",
     "kotlin": ".kt",
     "strata": ".strata",
+    "bash": ".sh",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -184,6 +185,23 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         "// frob:tests \\\n"
         f"// {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "private fun privateFn(): Int {\n"
+        "    return 2\n"
+        "}\n"
+    ),
+    # T-1604: bash has no visibility keyword at all -- `_walk_bash.
+    # _bash_public`'s own convention (a leading underscore reads as
+    # private) is what this fixture exercises. `source` is bash's only
+    # dependency-declaring construct (CAPABILITY_IMPORT_GRAPH).
+    "bash": (
+        "#!/usr/bin/env bash\n"
+        "# Capability fixture module doc.\n\n"
+        "source ./lib.sh\n\n"
+        "public_fn() {\n"
+        "    _private_fn\n"
+        "}\n\n"
+        "# frob:tests \\\n"
+        f"# {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "_private_fn() {\n"
         "    return 2\n"
         "}\n"
     ),

@@ -105,6 +105,7 @@ the whole declaration and `body_tokens` is always `()`.
 | c | file-scope symbol without a `static` storage-class specifier |
 | cpp | file-scope symbol without `static`; class members are public unless the nearest preceding `access_specifier` in the enclosing `field_declaration_list` is `private`/`protected` (default access is `private` for `class`, `public` for `struct`, matching the language) |
 | kotlin | absence of a `private`/`protected`/`internal` visibility modifier (kotlin's own default visibility is `public`) |
+| bash | `not name.startswith("_")` -- bash has no visibility keyword at all; this is a naming *convention* (shellcheck's own leading-underscore-is-private idiom), not something the language enforces (T-1604) |
 
 ## Comment extraction and binding
 
@@ -130,7 +131,7 @@ names the walker treats as comment-typed leaves.
 
 Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
-shared by c/cpp, `_walk_kotlin.py`, `_walk_strata.py`) built on the shared
+shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -151,6 +152,25 @@ Notable per-language handling:
   `function_declarator` is found via `_find_declarator_name`, which walks
   the `declarator` field chain. `namespace_definition` is transparent like
   rust's `mod_item`.
+- **bash** (T-1604): only top-level `function_definition` and top-level
+  `variable_assignment` (bare or `export`/`readonly`/`declare`/`local`-
+  wrapped `declaration_command`) become symbols -- bash has no class/type
+  declaration concept (`CLASS`/`TYPE` are never emitted) and much real
+  behavior lives in bare top-level statements (a loop, an `if`, a bare
+  command) this walker deliberately does not turn into symbols; see the
+  "what is a public symbol here" decision recorded in `_walk_bash.py`'s
+  own module docstring. Bash has exactly one comment form (`# ...`, no
+  block-comment analogue), so a directive continuation is the only way a
+  `frob:` directive spans more than one physical line here -- handled by
+  the same language-agnostic `_block_ends` chaining every other grammar
+  uses, no bash-specific continuation logic needed. `CAPABILITY_CALL_
+  GRAPH` is a reasoned `KNOWN_GAP` for bash (`frob.lang._support.
+  _capability_call_graph_status`): bash invokes a function the same
+  bare-word way it invokes any other command (`foo`, never `foo()`), so
+  `frob.graph.callgraph`'s shared token-adjacency call detector
+  (identifier immediately followed by `(`) cannot recognize a bash call
+  at all -- a real shared-layer gap, filed separately rather than special-
+  cased into the shared detector (T-2901).
 
 ## Data models
 

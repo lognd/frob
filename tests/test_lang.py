@@ -675,6 +675,72 @@ class TestParseTsRustCppC:
         assert any("sum them" in c.text for c in pf.comments)
 
 
+# frob:ticket T-1604
+class TestBash:
+    """Bash walker (`frob.lang._walk_bash`) -- publicness convention
+    (leading underscore = private, since bash has no visibility keyword),
+    top-level-only symbol extraction (module docstring)."""
+
+    # frob:ticket T-1604
+    def test_parse_bash_produces_a_tree(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_parse_bash
+        from frob.lang._walk_bash import _parse_bash
+
+        tree = _parse_bash(b"greet() {\n    echo hi\n}\n")
+        assert tree.root_node.type == "program"
+        assert any(c.type == "function_definition" for c in tree.root_node.children)
+
+    # frob:ticket T-1604
+    def test_walks_top_level_function(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        pf = parse_file(_FIXTURES / "sample.sh").danger_ok
+        assert pf.language == "bash"
+        fn = _symbol(pf, "add")
+        assert fn.kind == SymbolKind.FUNCTION
+        assert fn.public is True
+        assert fn.doc_text == "Adds two numbers."
+
+    # frob:ticket T-1604
+    def test_private_symbol_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_bash_public
+        pf = parse_file(_FIXTURES / "sample.sh").danger_ok
+        hidden = _symbol(pf, "_hidden")
+        assert hidden.kind == SymbolKind.FUNCTION
+        assert hidden.public is False
+
+    # frob:ticket T-1604
+    def test_top_level_variable_assignment(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_bash_const_symbol
+        pf = parse_file(_FIXTURES / "sample.sh").danger_ok
+        const = _symbol(pf, "MAX_WIDGETS")
+        assert const.kind == SymbolKind.CONST
+        assert const.public is True
+
+    # frob:ticket T-1604
+    def test_leading_comment_binds_as_doc_text(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        pf = parse_file(_FIXTURES / "sample.sh").danger_ok
+        assert any("sum them" in c.text for c in pf.comments)
+
+    # frob:ticket T-1604
+    def test_nested_assignment_is_not_a_symbol(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::_walk_bash
+        source = "outer() {\n    LOCAL_ONLY=1\n    echo $LOCAL_ONLY\n}\n"
+        path = _write(tmp_path, "nested.sh", source)
+        pf = parse_file(path).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "outer" in names
+        assert "LOCAL_ONLY" not in names
+
+    # frob:ticket T-1604
+    def test_bash_no_block_comment_form(self) -> None:
+        # frob:tests src/frob/lang/_walk_bash.py::COMMENT_TYPES
+        # Bash has exactly one comment node type -- see module docstring.
+        from frob.lang._walk_bash import COMMENT_TYPES
+
+        assert COMMENT_TYPES == frozenset({"comment"})
+
+
 # frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:

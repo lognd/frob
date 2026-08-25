@@ -1,7 +1,7 @@
 ---
 id: T-1604
 title: 'Language support: Bash/Shell'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -27,7 +27,7 @@ scope:
 - src/frob/gates/_lang_conformance.py
 - src/frob/lang/_support.py
 - frob.toml
-- tickets/T-draft-f424b6c4/**
+- tickets/T-2901/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -162,7 +162,7 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-f424b6c4/**
+  glob: tickets/T-2901/**
   reason: the finding filed against the shared call-graph layer (frob.graph.callgraph
     bash bare-word invocation gap) is a new tracked file in this branch's diff; SCOPE001
     flags it as outside T-1604's declared scope even though tickets/** is normally
@@ -170,6 +170,17 @@ scope_changes:
     own directory
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/test_lang.py::TestBash::test_walks_top_level_function
+- tests/test_lang.py::TestBash::test_private_symbol_is_not_public
+- tests/test_lang.py::TestBash::test_top_level_variable_assignment
+- tests/test_lang.py::TestBash::test_leading_comment_binds_as_doc_text
+- tests/test_lang.py::TestBash::test_nested_assignment_is_not_a_symbol
+- tests/test_lang.py::TestBash::test_bash_no_block_comment_form
+- tests/test_lang.py::TestBash::test_parse_bash_produces_a_tree
+- tests/test_lang_conformance_gate.py::TestBashCapabilityConformance::test_bash_registered_capabilities_pass
+- tests/test_lang_conformance_gate.py::TestBashCapabilityConformance::test_bash_broken_continuation_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestBashCapabilityConformance::test_bash_no_symbols_fixture_is_caught_not_rubber_stamped
 designated_repro_test: null
 threat: null
 component: null

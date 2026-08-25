@@ -136,6 +136,13 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # `frob.lang._walk_kotlin._walk_kotlin`).
     ".kt": ("kotlin", "kotlin"),
     ".kts": ("kotlin", "kotlin"),
+    # frob:ticket T-1604
+    # `.sh`/`.bash` both route through the same "bash" grammar (the bash
+    # POSIX-superset dialect tree-sitter-bash parses) -- see
+    # `frob.lang._walk_bash` for the walker and its publicness/symbol-
+    # shape decisions.
+    ".sh": ("bash", "bash"),
+    ".bash": ("bash", "bash"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

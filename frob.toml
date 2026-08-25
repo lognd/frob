@@ -564,6 +564,31 @@ command = ["uv", "run", "pytest", "-q", "tests/unit/strata", "{files}"]
 all_command = ["uv", "run", "pytest", "-q", "tests/unit/strata"]
 cwd = "."
 
+[[test.runner]]
+# T-1604: `tests/fixtures/lang/sample.sh` (and any future `tests/**/*.sh`)
+# is bash SOURCE DATA, not runnable test code -- there is no standalone
+# bash test framework it runs under. `frob.excludes.is_test_file` treats
+# ANY touched file under a `tests/` path component as self-selecting
+# (its own path, not a package-directory fallback -- see `_select.py`'s
+# `for file in touched_files: if is_test_file(file): _add_selected(...)`
+# ), so `run_selected` ends up handed the raw `.sh` path as this
+# runner's one selected item. Passing that path to pytest as an explicit
+# CLI argument aborts pytest's ENTIRE collection phase (exit 5,
+# collected=0 for the whole invocation, not just a zero-match for that
+# one path -- confirmed interactively while building this entry), unlike
+# a directory argument (which pytest silently collects zero tests from).
+# `{files}` is still interpolated, exactly one placeholder as required by
+# `frob.testing._runners._validate_placeholder`, but routed to a `bash
+# -c` positional parameter the inner script never references (`--
+# "{files}"`) rather than pytest's own argv -- so it satisfies the
+# schema, stays inert at runtime, and the real covering suites
+# (tests/test_lang.py, tests/test_lang_conformance_gate.py) always run
+# in full regardless of which bash file triggered selection.
+language = "bash"
+command = ["bash", "-c", "uv run pytest -q tests/test_lang.py tests/test_lang_conformance_gate.py", "--", "{files}"]
+all_command = ["uv", "run", "pytest", "-q", "tests/test_lang.py", "tests/test_lang_conformance_gate.py"]
+cwd = "."
+
 # T-0333: compiled extension modules the pytest suite importorskip-gates on.
 # Declaring them lets `collect_python_tests` fingerprint their build state
 # (so `make core` invalidates the collection cache automatically instead of

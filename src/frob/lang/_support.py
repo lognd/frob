@@ -417,6 +417,10 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # `_arch_status`'s known-gap detail for every language frob.arch has
     # no per-language dispatch branch for yet (c/rust/typescript today).
     "T-0329": True,
+    # T-1604's own filed finding: bash's bare-word call syntax is
+    # unrecognized by frob.graph.callgraph's shared token-adjacency call
+    # detector -- cited by `_capability_call_graph_status`'s bash branch.
+    "T-2901": True,
     # T-2409 (`_capability_test_discovery_status`'s prior kotlin
     # KNOWN_GAP) removed -- the gap is closed, T-2409 landed a real
     # `frob.testing.collect_kotlin_tests` collector and T-2499's
@@ -719,7 +723,21 @@ def _capability_directive_parse_status(language: str) -> CapabilityStatus:
 
 def _capability_call_graph_status(language: str) -> CapabilityStatus:
     """Call-graph resolution is language-agnostic over symbol-walk output
-    -- `.strata` is the one reasoned exemption, see `_CALL_GRAPH_NOTE`."""
+    -- `.strata` is the one reasoned exemption, see `_CALL_GRAPH_NOTE`.
+    T-1604: bash is a SECOND, distinct exemption -- not because calls are
+    a meaningless concept for the language (they are exactly as
+    meaningful as any other grammar's), but because `frob.graph.
+    callgraph`'s shared token-adjacency call detector (`_called_names`,
+    "identifier immediately followed by '('") structurally cannot
+    recognize a bash call: bash invokes a function the same bare-word way
+    it invokes any other command (`foo arg1`, never `foo(arg1)`), so no
+    call in a bash `RawSymbol.body_tokens` stream ever produces the
+    token shape the detector looks for. A real, disclosed shared-layer
+    gap found while building T-1604 -- filed separately (this ticket's
+    own scope is the bash adapter, not `frob.graph.callgraph`'s shared
+    detector) rather than special-cased away quietly, per this ticket's
+    own instruction that a special case is evidence the abstraction is
+    wrong."""
     if language == "strata":
         return _cap_not_applicable(
             CapabilityRequirement.OPTIONAL,
@@ -728,6 +746,14 @@ def _capability_call_graph_status(language: str) -> CapabilityStatus:
             "own dependency/threat-discharge graphs (frob.strata._threat/"
             "_effects) cover the equivalent ground under a different "
             "vocabulary",
+        )
+    if language == "bash":
+        return _cap_known_gap(
+            CapabilityRequirement.REQUIRED,
+            "bash function invocation has no parenthesized call syntax "
+            "('foo', not 'foo()'), so frob.graph.callgraph's shared "
+            "token-adjacency call detector cannot recognize a call in "
+            "bash body_tokens at all -- tracked by T-2901",
         )
     return _cap_implemented(CapabilityRequirement.REQUIRED, _CALL_GRAPH_NOTE)
 
