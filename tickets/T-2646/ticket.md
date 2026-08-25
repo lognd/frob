@@ -18,6 +18,7 @@ scope:
 - docs/guides/agent-playbook.md
 - scripts/branch_stranded_work_analysis.py
 - docs/audits/branch-stranded-work-2026-08-25.md
+- tests/unit/test_branch_stranded_work_analysis.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -33,6 +34,11 @@ scope_changes:
   glob: docs/audits/branch-stranded-work-2026-08-25.md
   reason: T-2646 needs a new classification script + its output report; not covered
     by the default agent-playbook.md scope
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_branch_stranded_work_analysis.py
+  reason: unit tests for the new classification script
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
