@@ -2,7 +2,7 @@
 id: T-2881
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2871):
   1 new (rule, file) identit(ies), 3 finding(s) (DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-2879/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-25: stale-baseline false positive: the file this identity was filed against, tickets/T-2879/ticket.md, no longer exists at that path -- T-2879 was subsequently archived (commit 8d131b53a, 'archive 886 ticket(s)') and now lives at tickets/archive/T-2879/ticket.md. Re-measured 'frob check --only docblocks --json' on current main: zero DOC006 hits anywhere naming T-2879 (archived or active path). Nothing to fix; the routine archive move resolved this on its own.
