@@ -22,6 +22,7 @@ scope:
 - tests/unit/gates/test_profile_boundary.py
 - docs/modules/tickets-verify-sweep.md
 - src/frob/gates/_waive.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -87,6 +88,12 @@ scope_changes:
   glob: src/frob/gates/_waive.py
   reason: PROFILE001 must be registered in _KNOWN_GATE_RULES like every other gate
     rule id
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/gates.md
+  reason: the frob:enumerates _KNOWN_GATE_RULES directive is now stale by PROFILE001;
+    single-line members= update, lease cleared now that T-2891 landed
   actor: logan
   at: '2026-08-25'
 evidence:
