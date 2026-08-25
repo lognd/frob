@@ -31,6 +31,7 @@ scope:
 - src/frob/check/_python.py
 - docs/commands/check.md
 - docs/modules/gates.md
+- tests/unit/test_check.py
 evidence_scope:
 - tests/unit/test_check.py
 scope_breadth_ack: false
@@ -106,6 +107,21 @@ scope_changes:
     clarifies (no exit-code change, but the rendering behavior it describes
 
     gains a third rendered state for all-unresolved gate results).
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: 'gate:SCOPE SCOPE001 flagged tests/unit/test_check.py as outside declared
+
+    scope -- it holds the new repro test (TestUnresolvedOnlyGateRendering)
+
+    this bug ticket''s BUG002 evidence requires. Adding it to scope (it was
+
+    only in evidence_scope, not scope, which SCOPE001 does not accept as a
+
+    write-lease-covering entry).
 
     '
   actor: logan
