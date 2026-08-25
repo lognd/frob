@@ -3,7 +3,7 @@ id: T-2880
 title: 'T-2849''s PDEATHSIG fix is loaded but forkservers still leak: 27 new orphans
   in the 49 minutes after it landed, likely an already-started helper that never sees
   the arming env var'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -16,13 +16,43 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gates/__init__.py
 - src/frob/process/_reap.py
+- tests/unit/test_process_reap.py
+- docs/modules/process.md
+evidence_scope:
+- tests/unit/test_process_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
-designated_repro_test: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: narrowing to only the file actually touched by the fix (process/_reap.py),
+    plus the test file and doc anchor the fix updates; gates/__init__.py was never
+    edited (attempts 1/2 already found the mechanism correct there, root cause is
+    in the arm-race check itself)
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: narrowing to only the file actually touched by the fix (process/_reap.py),
+    plus the test file and doc anchor the fix updates; gates/__init__.py was never
+    edited (attempts 1/2 already found the mechanism correct there, root cause is
+    in the arm-race check itself)
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/process.md
+  reason: narrowing to only the file actually touched by the fix (process/_reap.py),
+    plus the test file and doc anchor the fix updates; gates/__init__.py was never
+    edited (attempts 1/2 already found the mechanism correct there, root cause is
+    in the arm-race check itself)
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_when_already_reparented_before_entry
+designated_repro_test: tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_when_already_reparented_before_entry
 threat: null
 component: null
 anchor: false
