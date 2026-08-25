@@ -29,6 +29,8 @@ scope:
 - src/frob/app/check_runner.py
 - src/frob/check/__init__.py
 - src/frob/check/_python.py
+- docs/commands/check.md
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -68,6 +70,40 @@ scope_changes:
     Adding these two files so the fix lands where the defect actually is,
 
     per the ticket''s own instruction not to touch the twelve resolvers.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/commands/check.md
+  reason: 'Adding the doc files the fix touches: docs/commands/check.md documents
+
+    CheckResult.as_text''s tool-summary rendering (scope-closure warning named
+
+    this explicitly), and docs/modules/gates.md carries the
+
+    #unresolved-t-1664 anchor whose counting/rendering contract this ticket
+
+    clarifies (no exit-code change, but the rendering behavior it describes
+
+    gains a third rendered state for all-unresolved gate results).
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'Adding the doc files the fix touches: docs/commands/check.md documents
+
+    CheckResult.as_text''s tool-summary rendering (scope-closure warning named
+
+    this explicitly), and docs/modules/gates.md carries the
+
+    #unresolved-t-1664 anchor whose counting/rendering contract this ticket
+
+    clarifies (no exit-code change, but the rendering behavior it describes
+
+    gains a third rendered state for all-unresolved gate results).
 
     '
   actor: logan
