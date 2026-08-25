@@ -2,7 +2,7 @@
 id: T-2362
 title: 'Profile-collapse: add a structural gate against ProfileName branches outside
   _profile.py'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -21,6 +21,7 @@ scope:
 - src/frob/gates/__init__.py
 - tests/unit/gates/test_profile_boundary.py
 - docs/modules/tickets-verify-sweep.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,30 @@ scope_changes:
     a follow-up to add the canonical gates.md rule-catalog entry once that lease clears
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: PROFILE001 must be registered in _KNOWN_GATE_RULES like every other gate
+    rule id
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: PROFILE001 must be registered in _KNOWN_GATE_RULES like every other gate
+    rule id
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: PROFILE001 must be registered in _KNOWN_GATE_RULES like every other gate
+    rule id
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_negative_control_settings_layer_only_is_silent
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_positive_control_reintroduced_branch_is_flagged
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_settings_resolver_layer_itself_is_never_flagged
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_pre_t2361_shape_is_flagged
+- tests/unit/gates/test_profile_boundary.py::TestProfileBoundaryGate::test_tests_directory_is_not_scanned
 designated_repro_test: null
 threat: null
 component: tickets
