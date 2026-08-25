@@ -31,6 +31,8 @@ scope:
 - src/frob/check/_python.py
 - docs/commands/check.md
 - docs/modules/gates.md
+evidence_scope:
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -108,7 +110,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_must_now_fire_unresolved_only_gate_is_not_rendered_as_pass
+- tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_control_a_real_clean_gate_still_renders_pass
+- tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_control_a_real_failing_gate_still_renders_fail
+- tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_control_non_gate_info_diagnostics_are_not_caught
+- tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_mixed_unresolved_and_findings_still_renders_pass_or_fail
+designated_repro_test: tests/unit/test_check.py::TestUnresolvedOnlyGateRendering::test_must_now_fire_unresolved_only_gate_is_not_rendered_as_pass
 threat: null
 component: portability
 anchor: false
