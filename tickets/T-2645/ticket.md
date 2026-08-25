@@ -29,7 +29,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1e422acb1ff3181dfc0c80786d84c780b7bf62e5
 ---
 `_directive_ids_via_real_parser` (`src/frob/tickets/_unlanded.py:508`)
 writes candidate text to a `tempfile.NamedTemporaryFile` purely so
