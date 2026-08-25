@@ -27,10 +27,51 @@ scope:
 - src/frob/gates/_toplevel_scalar_schema.py
 - src/frob/gates/_arch_schema.py
 - src/frob/app/check_runner.py
+- src/frob/check/__init__.py
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: 'Investigation confirms the rendering/exit-code defect lives in CheckResult.as_text
+
+    (src/frob/check/__init__.py, the per-tool pass/FAIL icon loop) and in
+
+    _gates_family_result (src/frob/check/_python.py, which sets the gate:X
+
+    ToolResult''s exit_code/diagnostics that as_text reads). check_runner.py only
+
+    calls result.as_text() -- it contains no per-tool rendering logic itself.
+
+    Adding these two files so the fix lands where the defect actually is,
+
+    per the ticket''s own instruction not to touch the twelve resolvers.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'Investigation confirms the rendering/exit-code defect lives in CheckResult.as_text
+
+    (src/frob/check/__init__.py, the per-tool pass/FAIL icon loop) and in
+
+    _gates_family_result (src/frob/check/_python.py, which sets the gate:X
+
+    ToolResult''s exit_code/diagnostics that as_text reads). check_runner.py only
+
+    calls result.as_text() -- it contains no per-tool rendering logic itself.
+
+    Adding these two files so the fix lands where the defect actually is,
+
+    per the ticket''s own instruction not to touch the twelve resolvers.
+
+    '
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: portability
