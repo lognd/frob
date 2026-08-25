@@ -2,7 +2,7 @@
 id: T-2804
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2796):
   3 new (rule, file) identit(ies), 3 finding(s) (DOC001, DOC011, TICK006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-21'

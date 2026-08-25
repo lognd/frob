@@ -7,9 +7,15 @@ Per playbook section 5, recording the existing CLI-dispatch integration
 test as evidence:
 tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 
-Filed: T-draft-b1ac02d7 (docs, kind=docs) -- document and enforce the
-drop --absorbed-by vs fail distinction in docs/guides/agent-playbook.md
-(out of this ticket's own scope, which is docs/investigations/ only).
+NOTE (T-2804, docs/guides/agent-playbook.md#1b, T-0577 draft-loss class):
+T-draft-b1ac02d7 (docs, kind=docs, document and enforce the drop
+--absorbed-by vs fail distinction in docs/guides/agent-playbook.md, out
+of this ticket's own scope which is docs/investigations/ only) was never
+filed successfully -- the draft did not survive land and never
+materialized as a real ticket id (T-0577's draft-loss bug; the draft
+block itself, commit 94763205f, was never renumbered/promoted). No
+surviving ticket covers this follow-up; re-file it fresh if the gap is
+still wanted.
 
 Gates: one full unbudgeted `frob check --json` was run and reused across
 every ticket's measurement (gate-summary present, 300s+ wall, per-stage

@@ -1,5 +1,5 @@
 ---
-id: T-draft-c3f8baf7
+id: T-2892
 title: 'T-2384: bind evidence to acceptance criteria and close epic'
 state: queued
 kind: docs
@@ -7,7 +7,7 @@ origin: human
 created: '2026-08-25'
 priority: high
 blocked_by:
-- T-draft-3de16fd7
+- T-2891
 parent: T-2384
 tier: ticket
 sprint: null
