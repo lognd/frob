@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: c51eed0f11e47df5fe9cdd3a6d02b6d1b6d4c59d
+land_commit: 112f9ce3fb4e8abc2efaa0f59fd7decee961eab7
 ---
 T-2790's profile measured archgate's per-function metrics extraction
 (_py_build_module/_py_build_function/_py_collect_body_events/_iter_own_
