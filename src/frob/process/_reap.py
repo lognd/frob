@@ -154,6 +154,29 @@ def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
     immediately rather than risk running on, unmonitored, exactly like
     the leak this closes.
 
+    T-2880: that before/after comparison only detects a parent death that
+    happens DURING this call -- it is blind to a parent that already died
+    BEFORE this function was ever entered (the real gap: fork() returns
+    in the child, then the real parent dies, then the child gets around
+    to calling this function -- by the time `parent_before` is read, the
+    kernel has already reparented the caller to init, so both reads agree
+    and no diff is ever observed). On Linux, a process's live parent
+    reparents to pid 1 (init) the instant it exits with no subreaper in
+    the chain (this codebase installs none -- see `docs/modules/process.
+    md#forkserver-reaping-t-2443`), and neither the forkserver helper's
+    real parent (the `frob check` launcher) nor a worker's real parent
+    (the helper) is ever legitimately pid 1 itself, so `getppid() == 1`
+    at this point is unambiguous evidence of exactly that already-missed
+    race, not a false positive on a normal parent. So: self-deliver `sig`
+    whenever the CURRENT parent (whether just-changed or already-1 when
+    first read) is pid 1, not only when the before/after reads disagree.
+    This was the actual leak T-2849's own fix left open (measured live:
+    T-2849's fix landed and orphans kept appearing at the pre-fix rate,
+    T-2880's own failure log) -- an already-orphaned process this
+    function is called on never had a chance to arm against a parent
+    that could still die, and the old check could never see that because
+    it only compared two reads of the SAME (already-wrong) answer.
+
     T-2849's own two use sites: (1) `frob.gates._open_process_pool`'s
     forkserver-helper preload hook below arms this on the HELPER, whose
     real OS parent is the `frob check` launcher (multiprocessing `exec`s
@@ -182,16 +205,36 @@ def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
     if rc != 0:
         _log.debug("process: arm_parent_death_signal: prctl returned rc=%d", rc)
         return False
-    if os.getppid() != parent_before:
+    parent_after = os.getppid()
+    if parent_after != parent_before:
         # The direct parent already exited/reparented between the getppid()
         # above and the prctl() call landing -- the kernel may have had no
         # parent left to deliver `sig` to when it dies, so self-deliver now
         # rather than risk running on as a fresh orphan.
         _log.warning(
             "process: arm_parent_death_signal: parent changed pid=%d during arm "
-            "(was %d), self-signalling %d",
+            "(was %d, now %d), self-signalling %d",
             os.getpid(),
             parent_before,
+            parent_after,
+            sig,
+        )
+        os.kill(os.getpid(), sig)
+    elif parent_after == 1:
+        # T-2880: already reparented to init BEFORE this function was even
+        # entered (parent_before == parent_after == 1) -- the before/after
+        # diff above can never catch this, since both reads already agree
+        # on the wrong answer. Neither a forkserver helper's real parent
+        # (the launcher) nor a worker's real parent (the helper) is ever
+        # legitimately pid 1, so this is unambiguous: the real parent is
+        # already gone and PR_SET_PDEATHSIG(sig) was just armed against a
+        # parent (init) that will not die, i.e. it will never fire. Self-
+        # deliver now instead of leaking as an unreapable orphan.
+        _log.warning(
+            "process: arm_parent_death_signal: pid=%d already reparented to "
+            "init (parent-before-entry race) -- pdeathsig against init would "
+            "never fire, self-signalling %d",
+            os.getpid(),
             sig,
         )
         os.kill(os.getpid(), sig)

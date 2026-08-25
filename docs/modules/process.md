@@ -325,6 +325,26 @@ instead of cleaning up after it:
   both, reparented to init); a genuinely running pool's helper/workers
   are never touched while the launcher stays alive.
 
+T-2880: T-2849's own before/after `getppid()` diff (see `arm_parent_death_
+signal` above) only detects a parent that dies DURING the arm call -- it
+was blind to a parent that already died BEFORE the function was even
+entered (the real race: `fork()` returns in the child, the real parent
+dies, then the child gets around to calling `arm_parent_death_signal` --
+by then both the before and after `getppid()` reads already agree on the
+new parent, pid 1/init, so the diff check finds nothing wrong and the
+process arms `PR_SET_PDEATHSIG` against init, which never dies, so the
+signal never fires). Live measurement after T-2849 landed showed the leak
+continuing at roughly the pre-fix rate (27 new orphans in 49 minutes),
+which is what this race produces: any worker/helper unlucky enough to
+lose its real parent in the fork-to-arm window leaks exactly as before.
+The fix: after arming, also check whether the CURRENT parent is pid 1
+outright (not only whether it CHANGED) -- neither a forkserver helper's
+real parent (the launcher) nor a worker's real parent (the helper) is
+ever legitimately pid 1 in this codebase's process tree (no subreaper is
+installed anywhere), so `getppid() == 1` at this point is unambiguous:
+self-deliver the signal immediately rather than run on as an unreapable
+orphan.
+
 This does not replace `reap_active_multiprocessing_children`/`reap_
 orphaned_forkservers` above -- those remain the defense-in-depth sweep
 for leaks predating this fix or reached some other way; T-2818's

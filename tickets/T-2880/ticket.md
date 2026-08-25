@@ -3,7 +3,7 @@ id: T-2880
 title: 'T-2849''s PDEATHSIG fix is loaded but forkservers still leak: 27 new orphans
   in the 49 minutes after it landed, likely an already-started helper that never sees
   the arming env var'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-22'

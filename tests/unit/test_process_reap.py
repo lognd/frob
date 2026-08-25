@@ -275,6 +275,7 @@ class TestCountRunningChecks:
 
 
 # frob:ticket T-2849
+# frob:ticket T-2880
 class TestArmParentDeathSignal:
     """`arm_parent_death_signal` -- T-2849's root-cause primitive: arms
     `PR_SET_PDEATHSIG` on the calling process so the kernel signals it the
@@ -320,6 +321,32 @@ class TestArmParentDeathSignal:
         # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
         monkeypatch.setattr(sys, "platform", "darwin")
         assert arm_parent_death_signal(signal.SIGTERM) is False
+
+    def test_self_kills_when_already_reparented_before_entry(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_when_already_reparented_before_entry  # noqa: E501
+        # T-2880: the real parent died BEFORE this function was ever
+        # entered (the fork()-to-arm race window T-2849's before/after
+        # diff cannot see) -- both getppid() reads inside the function
+        # already agree on pid 1 (init), so the old before/after-diff
+        # check found nothing wrong and the process armed pdeathsig
+        # against a parent (init) that will never die, leaking forever.
+        # This is exactly the mechanism T-2880's failure log identified
+        # as the gap T-2849 left open; reproduced here without a real
+        # fork/exec race by making BOTH getppid() reads return 1.
+        monkeypatch.setattr(os, "getppid", lambda: 1)
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
+
+        class _FakeLibc:
+            def prctl(self, *args: object) -> int:
+                return 0
+
+        monkeypatch.setattr(_reap.ctypes, "CDLL", lambda *a, **k: _FakeLibc())
+        result = arm_parent_death_signal(signal.SIGTERM)
+        assert result is True
+        assert killed == [(os.getpid(), signal.SIGTERM)]
 
 
 # frob:ticket T-2849
