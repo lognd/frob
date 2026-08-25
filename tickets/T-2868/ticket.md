@@ -2,7 +2,7 @@
 id: T-2868
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2860):
   1 new (rule, file) identit(ies), 1 finding(s) (DOC006)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-22'
@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  docs/guides/claude-hooks.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-25: stale-baseline false positive: re-measured 'frob check --only docblocks --json' on current main -- zero DOC006 findings for docs/guides/claude-hooks.md (the file's only hits repo-wide are 8 findings in OTHER files). T-2879 (commit a40cf2f3a, landed same day the sweep filed this ticket) already added the exact frob:waive DOC006 for this file's finding; the sweep's baseline predates that land. Nothing left to fix. (absorbed by T-2879)
