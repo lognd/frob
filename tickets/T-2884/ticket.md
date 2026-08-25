@@ -2,7 +2,7 @@
 id: T-2884
 title: Daemon version-skew self-heal is version-string-based, blind to source-only
   changes with no version bump
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-22'
@@ -45,7 +45,13 @@ scope_changes:
     in this same diff'
   actor: logan
   at: '2026-08-22'
-designated_repro_test: null
+evidence:
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_different_source_sha_is_skew
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_missing_source_sha_is_skew_not_live
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live
+- tests/test_app_daemon_proxy.py::TestSourceHeadSha::test_finds_git_ancestor
+- tests/test_app_daemon_proxy.py::TestSourceHeadSha::test_none_when_no_git_ancestor
+designated_repro_test: tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_different_source_sha_is_skew
 threat: null
 component: null
 anchor: false

@@ -1024,6 +1024,13 @@ node natives : trusted {
 // socket used only for `frob.serve._tools`'s own read-only enforcement
 // queries carries none of `vet`'s external-network-egress risk profile
 // that motivated that switch.
+// T-2884: (3) `exec` -- `_source_head_sha` spawns `git rev-parse HEAD`
+// directly (`subprocess.run`, bounded 1s timeout) to compute this daemon
+// process's own content-sensitive source identity for the version-skew
+// self-heal (`daemon_version()`'s package-metadata string alone cannot
+// detect a source-only fix with no version bump); read-only, local-only,
+// same disposition as `frob.app._daemon_proxy`'s existing `git`/spawn
+// calls on the client side of this same handshake.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7
 // frob:doc docs/modules/serve.md#socket-daemon-t-1092
 // frob:ticket T-0956
@@ -1045,6 +1052,7 @@ node serve : trusted {
     code "src/frob/serve/**";
     may "fs.write";  // because: "acquire_singleton_lock/lock_path persist the daemon's own lock and socket files from wherever the server process writes them"
     may "net";  // because: "the socket/stdio daemon's entire purpose is accepting and dispatching network connections"
+    may "exec";  // because: "_source_head_sha spawns git rev-parse HEAD to compute this daemon's own content-sensitive source identity for the T-2884 version-skew self-heal"
 
     // T-0756: same SYS203/tickets_ledger disposition as `cli`/`gates`/
     // `fleet`/`core` above (T-0724) -- `serve` also has a Flow into
@@ -2213,6 +2221,23 @@ assume "weakness:CWE-78:deploy" noflow registry -> deploy owner logan review "20
 // 2026-08-08.
 // frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
 assume "weakness:CWE-78:verify" noflow registry -> verify owner logan review "2026-10-15"
+
+// T-2884: `serve` newly declares `may "exec"` (`_source_head_sha`'s
+// `subprocess.run(["git", "rev-parse", "HEAD"], ...)` call, computing this
+// daemon process's own content-sensitive source identity for the
+// version-skew self-heal), dragging in the same CWE-78 discharge
+// obligation as core/vet/tickets_ledger/fleet/mutate/natives/deploy/
+// verify above. No flow exists from `registry` INTO `serve` in this graph
+// (`f_cli_serve`/`f_testsuite_serve` are the only inbound edges, both
+// from nodes with no registry path of their own) -- the same
+// graph-provable NoFlow case those nodes' comments already document;
+// `assume` used for the same uniformity reason. The ONLY argv this call
+// site ever builds is the hardcoded `["git", "rev-parse", "HEAD"]` list,
+// run with `cwd` set to a `.git`-ancestor directory found by walking up
+// from this module's OWN `__file__` -- never registry response bytes,
+// never a caller-supplied path or ref. Filed with T-2884.
+// frob:doc docs/strata/threat.md#capabilities-drag-in-obligations
+assume "weakness:CWE-78:serve" noflow registry -> serve owner logan review "2026-10-15"
 
 // T-0401 (docs/audits/strata.md G3): `eval` used to be globally
 // `BenignCapability`-excused ("no CWE_CATALOG entry targets dynamic code

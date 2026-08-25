@@ -18,6 +18,8 @@ from frob.app._daemon_proxy import ProxyReason, ensure_daemon, query
 from frob.serve import SocketDaemonConfig, run_socket_daemon
 from frob.serve._socketd import socket_path
 
+_UNSET = object()  # T-2884: distinguishes "no source_sha kwarg given" from "None"
+
 
 @pytest.fixture
 def root(tmp_path: Path) -> Path:
@@ -170,6 +172,47 @@ class TestEnsureDaemon:
             assert version == _daemon_proxy._client_version()
         finally:
             _shutdown(root, thread)
+
+
+class TestSourceHeadSha:
+    """T-2884: `_client_source_sha`'s git-ancestor walk and fail-safe
+    `None` -- the content-sensitive identity that closes the
+    version-string-blind self-heal gap."""
+
+    def test_finds_git_ancestor(self) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_finds_git_ancestor
+        # This module's own file lives inside a real git checkout (this
+        # repo), so resolution must succeed and match `git rev-parse
+        # HEAD` run directly.
+        _daemon_proxy._client_source_sha.cache_clear()
+        sha = _daemon_proxy._client_source_sha()
+        expected = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(_daemon_proxy.__file__).resolve().parent,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        assert sha == expected
+        _daemon_proxy._client_source_sha.cache_clear()
+
+    def test_none_when_no_git_ancestor(self, monkeypatch, tmp_path: Path) -> None:
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ances\
+        # tor
+        # A module living under a directory tree with no `.git` anywhere
+        # above it (T-2884's fail-safe: unresolvable is `None`, never a
+        # guessed match).
+        fake_module = tmp_path / "nogit" / "_daemon_proxy.py"
+        fake_module.parent.mkdir(parents=True)
+        fake_module.write_text("# not a real module\n")
+        monkeypatch.setattr(_daemon_proxy, "__file__", str(fake_module))
+        _daemon_proxy._client_source_sha.cache_clear()
+        try:
+            assert _daemon_proxy._client_source_sha() is None
+        finally:
+            _daemon_proxy._client_source_sha.cache_clear()
 
 
 class TestDifferentialParity:
@@ -740,11 +783,21 @@ class TestProbeDaemonVersion:
     what decides between reusing a daemon and restarting it."""
 
     @staticmethod
-    def _serve_one_version(path, version):
-        """A minimal listener that answers exactly one frob_version RPC."""
+    def _serve_one_version(path, version, source_sha=_UNSET):
+        """A minimal listener that answers exactly one frob_version RPC.
+
+        T-2884: `source_sha` defaults to THIS client's own
+        `_client_source_sha()` (the "matches" case is the common one
+        callers want); pass `None` explicitly for the "field omitted /
+        unresolvable" case, or any other string for the "differs" case."""
         import json
         import socket as _socket
         import threading
+
+        from frob.app._daemon_proxy import _client_source_sha
+
+        if source_sha is _UNSET:
+            source_sha = _client_source_sha()
 
         server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
         server.bind(str(path))
@@ -757,7 +810,16 @@ class TestProbeDaemonVersion:
                     conn.recv(65536)
                     conn.sendall(
                         (
-                            json.dumps({"id": 1, "result": {"version": version}}) + "\n"
+                            json.dumps(
+                                {
+                                    "id": 1,
+                                    "result": {
+                                        "version": version,
+                                        "source_sha": source_sha,
+                                    },
+                                }
+                            )
+                            + "\n"
                         ).encode("utf-8")
                     )
             except OSError:
@@ -797,6 +859,58 @@ class TestProbeDaemonVersion:
             liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
             assert liveness is DaemonLiveness.VersionSkew
             assert version == "0.0.0-stale"
+        finally:
+            server.close()
+            thread.join(timeout=2)
+
+    def test_matching_version_different_source_sha_is_skew(self, tmp_path):
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_\
+        # different_source_sha_is_skew
+        """T-2884's positive control: a source-only change (no version
+        bump) must still be detected as skew, not read as Live."""
+        from frob.app._daemon_proxy import (
+            DaemonLiveness,
+            _client_version,
+            probe_daemon,
+        )
+
+        (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
+        path = tmp_path / ".frob" / "daemon.sock"
+        server, thread = self._serve_one_version(
+            path, _client_version(), source_sha="deadbeef-stale-source"
+        )
+        try:
+            liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
+            assert liveness is DaemonLiveness.VersionSkew
+            assert version == _client_version()
+        finally:
+            server.close()
+            thread.join(timeout=2)
+
+    def test_missing_source_sha_is_skew_not_live(self, tmp_path):
+        # frob:tests \
+        # tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_missing_source_sh\
+        # a_is_skew_not_live
+        """T-2884's fail-safe direction: an indeterminate source identity
+        (a pre-T-2884 daemon that never sends `source_sha` at all, or one
+        that resolved it as `None`) must restart, not be trusted as a
+        match."""
+        from frob.app._daemon_proxy import (
+            DaemonLiveness,
+            _client_version,
+            probe_daemon,
+        )
+
+        (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
+        path = tmp_path / ".frob" / "daemon.sock"
+        server, thread = self._serve_one_version(
+            path, _client_version(), source_sha=None
+        )
+        try:
+            liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
+            assert liveness is DaemonLiveness.VersionSkew
+            assert version == _client_version()
         finally:
             server.close()
             thread.join(timeout=2)

@@ -337,6 +337,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2877: SELFAUDIT001: T-2849's process/_reap.py env.read growth and a new via-less core ffi grant lack ratchet/because coverage
 - T-2879: Red-tail sweep: COV001/DRIFT002/DOCENUM001/PERF004/DOC011/DOC006 (6 independent causes, CYCLE001/TICK004 verified correctly left alone)
 - T-2883: docs/modules/gates.md: document T-2870's BUG002 malformed-waiver diagnostic
+- T-2884: Daemon version-skew self-heal is version-string-based, blind to source-only changes with no version bump
 - T-2888: Red-tail sweep round 2: OPAQUE001 fix, LANG004/TICK003/TICK006 characterized
 
 ## [0.530.0] - unreleased

@@ -51,12 +51,14 @@ from __future__ import annotations
 
 import errno
 import fcntl
+import functools
 import json
 import multiprocessing
 import os
 import queue
 import socket
 import socketserver
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -112,6 +114,48 @@ def daemon_version() -> str:
     except Exception as exc:  # noqa: BLE001 -- best-effort version probe, never fatal
         _log.debug("serve: socketd: version lookup failed: %s", exc)
         return "unknown"
+
+
+# frob:ticket T-2884
+# frob:doc docs/modules/serve.md#version-handshake-t-1105
+# frob:tests tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_finds_git_ancestor
+# frob:tests tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ancestor  # noqa: E501
+@functools.lru_cache(maxsize=1)
+def _source_head_sha() -> str | None:
+    """`git rev-parse HEAD` of the git repository containing THIS running
+    daemon process's own `frob` source (T-2884) -- a content-sensitive
+    companion to `daemon_version()`'s package-metadata string, which stays
+    identical across a source-only fix with no version bump (the exact gap
+    T-2884 closes: a daemon that predates such a fix reported `Live`
+    forever, because `daemon_version()`/`_client_version()` never changed).
+
+    Cached for the lifetime of this daemon process (`lru_cache`,
+    `maxsize=1`): a running daemon's own identity cannot change out from
+    under it mid-life, so recomputing per RPC would only add a git spawn
+    (measured ~2-4ms) to every single query for no benefit -- the value
+    that matters is fixed at daemon startup. `None` on any resolution
+    failure (no `.git` ancestor found within the walk bound, or `git`
+    itself failing/timing out) -- callers MUST treat `None` as UNTRUSTED,
+    never as a match against another `None` (T-2884's fail-safe-to-stale
+    direction: an indeterminate check restarts rather than trusts)."""
+    here = Path(__file__).resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / ".git").exists():
+            try:
+                proc = subprocess.run(  # noqa: S603
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=str(candidate),
+                    capture_output=True,
+                    text=True,
+                    timeout=1.0,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                _log.debug("serve: socketd: source sha lookup failed: %s", exc)
+                return None
+            if proc.returncode != 0:
+                return None
+            return proc.stdout.strip()
+    return None
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
@@ -416,8 +460,17 @@ class _RequestHandler(socketserver.StreamRequestHandler):
         daemon-side replacement for the old client-written
         `.frob/daemon.meta.json` sidecar-file skew check (T-1093), which
         could go stale relative to whichever process actually happens to
-        be running the daemon."""
-        return {"id": request.id, "result": {"version": daemon_version()}}
+        be running the daemon. Also carries `source_sha` (T-2884), this
+        process's own `_source_head_sha()` -- content-sensitive, so a
+        source-only fix with no version bump still changes it, unlike
+        `version` alone."""
+        return {
+            "id": request.id,
+            "result": {
+                "version": daemon_version(),
+                "source_sha": _source_head_sha(),
+            },
+        }
 
     # frob:doc docs/modules/serve.md#version-handshake-t-1105
     # frob:waive COV007 reason="each _RequestHandler._handle_* method is a distinct \

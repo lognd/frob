@@ -493,7 +493,7 @@ answer about the daemon process itself rather than calling into
 
 ```
 --> {"id": 1, "method": "frob_version", "params": {}}
-<-- {"id": 1, "result": {"version": "0.4.2"}}
+<-- {"id": 1, "result": {"version": "0.4.2", "source_sha": "a1b2c3d..."}}
 
 --> {"id": 2, "method": "frob_shutdown", "params": {}}
 <-- {"id": 2, "result": {"shutting_down": true}}
@@ -501,7 +501,20 @@ answer about the daemon process itself rather than calling into
 
 `frob_version` answers with `daemon_version()` -- this daemon PROCESS's own
 installed `frob` version (`importlib.metadata.version("frob")`, "unknown"
-from a raw source checkout with no registered distribution). `frob_shutdown`
+from a raw source checkout with no registered distribution) -- AND
+`_source_head_sha()` (T-2884): `git rev-parse HEAD` of the git repository
+containing this daemon process's own `frob` source. `daemon_version()`
+alone is package-metadata, blind to a source-only fix landing with no
+version bump (this repo's normal case: a private-helper-only change, or a
+new public symbol that never triggers REL001); `source_sha` is the
+content-sensitive companion the client's skew check (below) actually
+compares now. Computed once and cached (`functools.lru_cache`) for this
+daemon process's whole lifetime -- its own identity cannot change mid-life,
+so there is nothing to gain recomputing it per RPC, only a git-spawn cost
+(measured ~2-4ms) to avoid paying on every single query. `None` on any
+resolution failure (no `.git` ancestor, or `git` itself failing/timing
+out) -- the client treats a missing/`None` `source_sha` as UNTRUSTED, per
+T-2884's fail-safe-to-stale posture, never as a match. `frob_shutdown`
 starts a short-lived helper thread that calls `server.shutdown()`
 (asynchronously -- calling it inline on the connection-handling thread
 would deadlock that thread against the very `serve_forever()` loop it is
@@ -853,6 +866,30 @@ only decides WHEN to ask a live daemon to step aside gracefully rather
 than relying on `flock` contention alone (which would just make the fresh
 spawn silently lose to the stale one it should be replacing). This closes
 the follow-on T-1093 disclosed (landed as T-1105).
+
+**Content-sensitive, not just version-string (T-2884).** `version` alone
+is package metadata (`importlib.metadata.version("frob")`) -- a
+source-only fix with no version bump left BOTH sides reporting the exact
+same string forever, so a warm daemon that predated such a fix was never
+detected as skewed and kept serving pre-fix code for its entire remaining
+lifetime (concrete instance: T-2849's forkserver-leak fix touched no
+`pyproject.toml`). `_classify_version_reply` now ALSO compares
+`source_sha` (the daemon's `_source_head_sha()`, T-2884) against this
+client's own `_client_source_sha()` -- both `git rev-parse HEAD` of the
+git repository containing the running `frob` source, the same identity
+`frob.gates._bug_repro._resolve_sha` already uses to compare commits
+elsewhere in this repo, reused here rather than inventing a new notion of
+"stale." `version` matching is necessary but no longer sufficient for
+`Live`: `source_sha` must ALSO match, and if EITHER side's is `None`
+(unresolvable -- no `.git` ancestor, `git` itself failed, or a
+pre-T-2884 daemon that never sends the field at all) that counts as a
+mismatch, never a trusted match against another `None` -- an
+indeterminate check restarts rather than trusts. Both sides' resolution is
+`functools.lru_cache`d per-process: the daemon's identity is fixed at its
+own startup (nothing to gain recomputing per RPC), and the client is a
+fresh short-lived process per invocation anyway, so a source-only land
+since the last invocation is still picked up correctly on the very next
+command.
 
 ### Daemon liveness (T-1377) and the opt-in switch (T-1379)
 

@@ -43,6 +43,7 @@ one against.
 
 from __future__ import annotations
 
+import functools
 import json
 import os
 import subprocess
@@ -183,17 +184,35 @@ def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLive
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_dict_result_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_non_str_version_is_wedged  # noqa: E501
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClassifyVersionReply.test_bad_utf8_is_wedged  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_different_source_sha_is_skew  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_missing_source_sha_is_skew_not_live  # noqa: E501
+# frob:tests tests/test_app_daemon_proxy.py::TestProbeDaemonVersion.test_matching_version_is_live  # noqa: E501
 def _classify_version_reply(buf: bytes) -> tuple[DaemonLiveness, str | None]:
     """A well-formed reply -> `Live` or `VersionSkew`; anything unreadable
-    -> `Wedged`, the conservative answer."""
+    -> `Wedged`, the conservative answer.
+
+    T-2884: `version` alone is package-metadata, blind to a source-only
+    fix with no version bump -- so a matching `version` is necessary but
+    no longer sufficient for `Live`. `source_sha` (the daemon's own
+    `_source_head_sha()`, T-2884) must ALSO match this client's
+    `_client_source_sha()`. Per T-2884's fail-safe-to-stale direction: if
+    EITHER side's source sha is unresolvable (`None` -- no `.git`
+    ancestor, `git` itself failed, or a pre-T-2884 daemon that has never
+    heard of this field) that is treated as a mismatch, never as a
+    trusted match against another `None` -- an indeterminate check
+    restarts rather than trusts."""
     try:
         payload = json.loads(buf.split(b"\n", 1)[0].decode("utf-8"))
         version = payload.get("result", {}).get("version")
+        source_sha = payload.get("result", {}).get("source_sha")
     except (ValueError, AttributeError, UnicodeDecodeError):
         return (DaemonLiveness.Wedged, None)
     if not isinstance(version, str):
         return (DaemonLiveness.Wedged, None)
     if version != _client_version():
+        return (DaemonLiveness.VersionSkew, version)
+    client_sha = _client_source_sha()
+    if source_sha is None or client_sha is None or source_sha != client_sha:
         return (DaemonLiveness.VersionSkew, version)
     return (DaemonLiveness.Live, version)
 
@@ -239,6 +258,53 @@ def _client_version() -> str:
     except Exception as exc:  # noqa: BLE001 -- best-effort version probe, never fatal
         _log.debug("daemon_proxy: version lookup failed: %s", exc)
         return "unknown"
+
+
+# frob:ticket T-2884
+# frob:tests tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_finds_git_ancestor
+# frob:tests tests/test_app_daemon_proxy.py::TestSourceHeadSha.test_none_when_no_git_ancestor  # noqa: E501
+@functools.lru_cache(maxsize=1)
+def _client_source_sha() -> str | None:
+    """`git rev-parse HEAD` of the git repository containing THIS running
+    client process's own `frob` source (T-2884) -- content-sensitive
+    companion to `_client_version()`'s package-metadata string, which
+    stays identical across a source-only fix with no version bump (the
+    gap T-2884 closes: `_classify_version_reply` used to compare version
+    strings alone, so a warm daemon predating such a fix was never
+    detected as skewed).
+
+    Duplicated (not imported) from `frob.serve._socketd._source_head_sha`'s
+    identical shape, same `frob.app`/`frob.serve` layering disposition
+    `_client_version`'s own docstring already documents.
+
+    Cached for the lifetime of THIS process (`lru_cache`, `maxsize=1`): a
+    short-lived CLI invocation's own source identity cannot change
+    mid-run, so a second `query()` call in the same process should not
+    pay a second git spawn (measured ~2-4ms) for an answer that cannot
+    have changed. A fresh process (the normal case -- one CLI invocation
+    per command) recomputes from disk regardless, so a source-only land
+    since the last invocation is still picked up correctly. `None` on any
+    resolution failure -- callers MUST treat `None` as UNTRUSTED, never as
+    a match against another `None` (T-2884's fail-safe-to-stale
+    direction)."""
+    here = Path(__file__).resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / ".git").exists():
+            try:
+                proc = subprocess.run(  # noqa: S603
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=str(candidate),
+                    capture_output=True,
+                    text=True,
+                    timeout=1.0,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                _log.debug("daemon_proxy: source sha lookup failed: %s", exc)
+                return None
+            if proc.returncode != 0:
+                return None
+            return proc.stdout.strip()
+    return None
 
 
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestSpawnDaemon.test_popen_oserror_is_swallowed  # noqa: E501
