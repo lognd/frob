@@ -25,6 +25,8 @@ scope:
 - src/frob/lang/_extract.py
 - src/frob/lang/__init__.py
 - src/frob/gates/_lang_conformance.py
+- src/frob/lang/_support.py
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -138,6 +140,24 @@ scope_changes:
     in _EXTENSION_TABLE and its symbol_walk/publicness/doc_extract/directive_parse/call_graph/import_graph
     capabilities go IMPLEMENTED; narrow single-file addition, not touching any gate
     logic other agents in gates/ are working on
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: bash's call syntax (bare-word invocation, no parenthesized args) cannot
+    be recognized by frob.graph.callgraph's shared token-based call detector (identifier-immediately-followed-by-'('
+    heuristic, T-0565) -- must declare CAPABILITY_CALL_GRAPH as a reasoned KNOWN_GAP
+    for bash rather than a false IMPLEMENTED claim; a one-branch addition to an existing
+    per-language dispatch function, not new machinery
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: frob.toml
+  reason: frob test selection now treats tests/fixtures/lang/sample.sh (a bash SOURCE
+    fixture, not runnable test code -- same T-0149 shape as the existing .strata litmus-fixture
+    entry) as a bash test-selection candidate once bash is a supported frob.lang extension,
+    and fails NoRunner without a [[test.runner]] entry naming the real covering pytest
+    suite; mirrors the existing strata [[test.runner]] entry exactly
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
