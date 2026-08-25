@@ -1,7 +1,7 @@
 ---
 id: T-2361
 title: 'Profile-collapse: migrate the 5 if-rapid call sites onto LandProfileSettings'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -24,6 +24,8 @@ scope:
 - docs/modules/tickets-verify-sweep.md
 - src/frob/verify/__init__.py
 - tests/unit/verify/test_backpressure.py
+evidence_scope:
+- tests/unit/test_land_cmd_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +55,11 @@ scope_changes:
     helper
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard::test_ok_passes_through
+- tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard::test_err_falls_back_to_standard
+- tests/unit/verify/test_backpressure.py::TestSettingsForProfile::test_fortress_matches_current_branch_logic
+- tests/unit/test_land_cmd_backpressure.py::TestApplyBackpressure::test_rapid_profile_calls_soft_warning_never_blocks
 designated_repro_test: null
 threat: null
 component: tickets

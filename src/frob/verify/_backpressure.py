@@ -306,6 +306,32 @@ def settings_for_profile(profile) -> LandProfileSettings:  # noqa: ANN001
     )
 
 
+# frob:doc docs/modules/tickets-verify-sweep.md#land-profile-settings-t-2360
+# frob:ticket T-2361
+# frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_ok_passes_through  # noqa: E501
+# frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_err_falls_back_to_standard  # noqa: E501
+def effective_profile_or_standard(root: Path):
+    """`frob.tickets._profile.effective_profile(root)`'s resolved
+    `ProfileName`, or `ProfileName.STANDARD` on any `Err` (T-2361: an
+    unreadable profile config can only ever make a caller's downstream
+    `ceilings_for_profile`/`settings_for_profile` resolution STRICTER,
+    never silently relax it -- same fail-closed posture every other
+    if-rapid-seam migration in this epic already uses, just centralized
+    here instead of re-inlined at each call site).
+
+    Exists so a caller that needs an actual resolved `ProfileName` value
+    to hand to `ceilings_for_profile`/`settings_for_profile` (not just a
+    derived boolean) never has to import `ProfileName` itself just to
+    spell its own `Err` fallback -- the last such import outside this
+    module and `frob.tickets._profile` was `_land_cmd.py`'s `_apply_
+    backpressure` call site, closing T-2361's own "zero ProfileName xref
+    outside the settings layer" acceptance check."""
+    from frob.tickets._profile import ProfileName, effective_profile
+
+    resolved = effective_profile(root)
+    return resolved.danger_ok if resolved.is_ok else ProfileName.STANDARD
+
+
 def _parse_enqueued_at(raw: str) -> float | None:
     """`VerifyQueueEntry.enqueued_at`'s ISO-8601 UTC string as a UNIX
     timestamp, or `None` on a genuinely unparsable value -- a corrupt

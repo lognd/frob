@@ -764,6 +764,7 @@ changed.
 
 <!-- frob:describes src/frob/verify/_backpressure.py::LandProfileSettings -->
 <!-- frob:describes src/frob/verify/_backpressure.py::settings_for_profile -->
+<!-- frob:describes src/frob/verify/_backpressure.py::effective_profile_or_standard -->
 
 `ceilings_for_profile` (above) is the target pattern for ONE axis --
 resolve a `ProfileName` to a settings record in exactly one place, and
@@ -833,6 +834,20 @@ existing per-seam test suites (`test_land_cmd_backpressure.py`,
 `frob.verify._backpressure` now returns only test fixtures constructing
 a `ProfileName` value to pass into these resolvers -- never a land-
 pipeline module branching on the name itself.
+
+**T-2361: `effective_profile_or_standard` closes the last non-branching
+`ProfileName` import.** `_land_cmd.py`'s `_apply_backpressure` call site
+still needed an actual resolved `ProfileName` value (not just a
+derived boolean) to hand to `ceilings_for_profile`, so it kept its own
+`from frob.tickets._profile import ProfileName` just to spell its
+`Err`-falls-back-to-`STANDARD` default inline. `effective_profile_or_
+standard(root)` (`frob.verify._backpressure`) centralizes that exact
+fallback -- same fail-closed posture every other seam in this section
+already uses -- so `_land_cmd.py` calls it instead and no longer imports
+`ProfileName` at all. `frob explore xref ProfileName` now returns zero
+hits in `src/frob/` production code outside `frob.tickets._profile` and
+`frob.verify._backpressure`, closing T-2360/T-2361's own acceptance
+check literally, not just in spirit.
 
 ## Quarantine circuit breaker (T-1693)
 

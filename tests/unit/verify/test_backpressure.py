@@ -14,6 +14,7 @@ from frob.verify._backpressure import (
     block_until_watermark_advances,
     ceilings_for_profile,
     current_status,
+    effective_profile_or_standard,
     rapid_soft_warning,
     settings_for_profile,
 )
@@ -136,6 +137,44 @@ class TestSettingsForProfile:
         # frob:tests tests/unit/verify/test_backpressure.py::TestSettingsForProfile.test_unknown_profile_value_raises  # noqa: E501
         with pytest.raises(ValueError, match="unrecognized ProfileName"):
             settings_for_profile("not-a-real-profile")
+
+
+# frob:ticket T-2361
+class TestEffectiveProfileOrStandard:
+    """T-2361: `effective_profile_or_standard` is the last seam that used
+    to force `_land_cmd.py` to import `ProfileName` directly just to
+    spell its own `Err`-falls-back-to-`STANDARD` default -- these tests
+    pin BOTH halves of that contract (pass-through on `Ok`, fallback on
+    `Err`) so a future change to `effective_profile`'s own error posture
+    cannot silently flip this helper's fail-closed default."""
+
+    # frob:ticket T-2361
+    def test_ok_passes_through(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_ok_passes_through  # noqa: E501
+        import frob.tickets._profile as profile_mod
+        from typani.result import Ok
+
+        monkeypatch.setattr(
+            profile_mod, "effective_profile", lambda root: Ok(ProfileName.RAPID)
+        )
+        assert effective_profile_or_standard(tmp_path) is ProfileName.RAPID
+
+    # frob:ticket T-2361
+    def test_err_falls_back_to_standard(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_err_falls_back_to_standard  # noqa: E501
+        import frob.tickets._profile as profile_mod
+        from typani.result import Err
+
+        monkeypatch.setattr(
+            profile_mod,
+            "effective_profile",
+            lambda root: Err(profile_mod.ProfileError.BadConfig),
+        )
+        assert effective_profile_or_standard(tmp_path) is ProfileName.STANDARD
 
 
 class TestCurrentStatus:

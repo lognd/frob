@@ -39,6 +39,7 @@ from frob.verify._backpressure import (
     block_until_watermark_advances,
     ceilings_for_profile,
     current_status,
+    effective_profile_or_standard,
     rapid_soft_warning,
     settings_for_profile,
 )
@@ -102,6 +103,7 @@ __all__ = [
     "commits_since_watermark",
     "compact_queue",
     "current_status",
+    "effective_profile_or_standard",
     "load_drain_refusal",
     "load_watermark",
     "queue_status",

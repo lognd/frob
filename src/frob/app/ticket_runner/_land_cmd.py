@@ -4656,13 +4656,12 @@ def _land_core_prepare(root: Path, cfg: AppConfig, worktree: Path) -> tuple[Path
     # skipped here. A fully baseline-thread-free rapid path is disclosed
     # as deferred follow-up, not implemented in this pass (see the T-1575
     # Done report).
-    from frob.tickets._profile import ProfileName, effective_profile
-    from frob.verify import settings_for_profile
+    from frob.verify import effective_profile_or_standard, settings_for_profile
 
-    _profile_result = effective_profile(worktree)
-    effective = (
-        _profile_result.danger_ok if _profile_result.is_ok else ProfileName.STANDARD
-    )
+    # T-2361: `effective_profile_or_standard` centralizes the Err-falls-
+    # back-to-STANDARD default (frob.verify._backpressure), so this call
+    # site no longer needs its own `ProfileName` import just to spell it.
+    effective = effective_profile_or_standard(worktree)
     # T-1696: pre_commit_sweep_enabled is the settings-record read; the
     # seam below still needs the boolean sense of "skip it" (rapid_land),
     # so negate rather than branch on the profile name directly.
