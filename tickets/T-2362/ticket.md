@@ -2,7 +2,7 @@
 id: T-2362
 title: 'Profile-collapse: add a structural gate against ProfileName branches outside
   _profile.py'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -23,7 +23,7 @@ scope:
 - docs/modules/tickets-verify-sweep.md
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
-- tickets/T-draft-9b9226a0/
+- tickets/T-2904/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -98,7 +98,7 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-9b9226a0/
+  glob: tickets/T-2904/
   reason: dropped this follow-up draft as absorbed into T-2362's own land; the drop's
     own ticket-dir edit needs to be in scope
   actor: logan

@@ -407,6 +407,12 @@ _KNOWN_GATE_RULES = frozenset(
         "PERF012",
         "PERF013",
         "PERF014",
+        # T-2362: PROFILE001 (frob.gates._profile_boundary), the
+        # profile-collapse epic's own closing structural gate -- no
+        # land-pipeline module may reference ProfileName/
+        # effective_profile/configured_profile outside the settings-
+        # resolver layer T-2360/T-2361 built.
+        "PROFILE001",
         # T-1087: `frob vet`'s own rule ids (src/frob/vet/**) -- a
         # different CLI surface (`frob vet`, not `frob check`'s gate
         # family), outside `_rule_id_scan.SCANNED_BASES` entirely, same

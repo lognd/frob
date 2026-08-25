@@ -180,6 +180,7 @@ from frob.gates._parse_failures import parse_failure_gate
 from frob.gates._pii_structural import pii_structural_gate
 from frob.gates._policy_weakening_gate import policy_weakening_gate
 from frob.gates._prework import load_prework, record_prework, sweep_ticket
+from frob.gates._profile_boundary import profile_boundary_gate
 from frob.gates._profile_schema import profile_schema_gate
 from frob.gates._protocol_summary import protocol_summary_gate
 from frob.gates._ratchet import (
@@ -5911,6 +5912,9 @@ _ALL_GATES = frozenset(
         "root_asset_dirs",
         # frob:ticket T-1782
         "env_var_docs",
+        # T-2362: PROFILE001, the profile-collapse epic's own closing
+        # structural gate.
+        "profile_boundary",
         # T-0412: frob:debt malformed/non-open-ticket/expired-until checks.
         "debt",
         # T-0459: bare stdout write outside frob.render.
@@ -6348,6 +6352,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "root_asset_dirs",
     # frob:ticket T-1782
     "env_var_docs",
+    # frob:ticket T-2362
+    "profile_boundary",
     "debt",
     # frob:ticket T-0797
     "deprecated",
@@ -6831,6 +6837,10 @@ def _build_thread_jobs(
         # T-1782: repo-wide scan (every FROB_* constant under src/frob/**),
         # always against repo_root, same reasoning as root_asset_dirs above.
         "env_var_docs": lambda: env_var_doc_gate(st.repo_root),
+        # T-2362: repo-wide scan (ProfileName/effective_profile/
+        # configured_profile references under src/frob/**), always
+        # against repo_root, same reasoning as env_var_docs above.
+        "profile_boundary": lambda: profile_boundary_gate(st.repo_root),
         # T-0396: whole-repo scan, always against repo_root (never the
         # possibly-scoped st.root) -- a `frob check <subdir>` run must see
         # the same inbound-reference graph as an unscoped run, same
@@ -8298,6 +8308,7 @@ __all__ = [
     "exclude_hazard_gate",
     "root_asset_dir_gate",
     "env_var_doc_gate",
+    "profile_boundary_gate",
     "fake_marker_staleness_gate",
     "fmt_gate",
     "format_paths",

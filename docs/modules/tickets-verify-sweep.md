@@ -849,6 +849,33 @@ hits in `src/frob/` production code outside `frob.tickets._profile` and
 `frob.verify._backpressure`, closing T-2360/T-2361's own acceptance
 check literally, not just in spirit.
 
+**T-2362: PROFILE001 makes the boundary a static, unwaivable-by-accident
+gate, not a manual re-run of the same xref command.** Without a gate, a
+future change can silently reintroduce an if-rapid-shaped branch and
+nothing catches it until someone happens to re-run `frob explore xref
+ProfileName` by hand -- exactly this section's own T-2360/T-2361
+closing-step verification, which was a one-off manual check, not a
+standing enforcement. `frob.gates._profile_boundary.profile_boundary_
+gate` (rule id `PROFILE001`, `docs/commands/xref.md`'s own `frob.xref.
+xref` primitive under the hood, `lang="python"` so `.py` files resolve
+through `frob.lang.iter_identifiers`'s tree-sitter token stream rather
+than a lexical/regex scan) flags every `src/frob/**` reference to
+`ProfileName` outside `src/frob/tickets/_profile.py`/`src/frob/verify/
+_backpressure.py` at `Severity.ERROR`. Deliberately checks `ProfileName`
+only, not `effective_profile`/`configured_profile`: every migrated
+caller still legitimately calls `effective_profile(root)` to obtain the
+resolved profile before handing it to `settings_for_profile`/
+`ceilings_for_profile`/`effective_profile_or_standard` -- flagging the
+accessor itself would make the whole settings-record architecture
+impossible to call from outside the two allowlisted files. Verified with
+both a positive control (a deliberately reintroduced `if profile is
+ProfileName.RAPID` fixture, plus the REAL pre-T-1696 source at every one
+of the 6 originally-measured line numbers, checked out from the parent
+commit and run through the gate directly -- all 6 fire) and a negative
+control (the post-migration settings-record-only shape stays silent),
+`tests/unit/gates/test_profile_boundary.py`. Canonical rule-catalog
+entry lives in `docs/modules/gates.md`'s Rule catalog table.
+
 ## Quarantine circuit breaker (T-1693)
 
 <!-- frob:describes src/frob/verify/_quarantine.py::QuarantineError -->
