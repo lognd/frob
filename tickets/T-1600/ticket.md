@@ -1,7 +1,7 @@
 ---
 id: T-1600
 title: 'Language support: C#'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -22,6 +22,11 @@ scope:
 - tests/test_lang_conformance_gate.py
 - tests/test_lang_support.py
 - docs/modules/lang.md
+- src/frob/lang/_extract.py
+- src/frob/lang/__init__.py
+- src/frob/gates/_lang_conformance.py
+- src/frob/lang/_support.py
+- frob.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -113,6 +118,41 @@ scope_changes:
     specific walker file already, the umbrella glob was a leftover'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
+    behavioral-conformance fixture registration, and (if the same test-selection issue
+    reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
+    behavioral-conformance fixture registration, and (if the same test-selection issue
+    reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_lang_conformance.py
+  reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
+    behavioral-conformance fixture registration, and (if the same test-selection issue
+    reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/lang/_support.py
+  reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
+    behavioral-conformance fixture registration, and (if the same test-selection issue
+    reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: frob.toml
+  reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
+    behavioral-conformance fixture registration, and (if the same test-selection issue
+    reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
