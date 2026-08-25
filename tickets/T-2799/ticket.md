@@ -1,11 +1,13 @@
 ---
 id: T-2799
 title: wire frob_core.py_function_metrics into archgate's per-function metrics walk
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-21'
 priority: high
+blocked_by:
+- T-draft-567dc170
 parent: T-2790
 tier: ticket
 sprint: null
