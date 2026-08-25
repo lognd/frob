@@ -17,10 +17,10 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- docs/modules/gates.md
 - src/frob/gates/_profile_boundary.py
 - src/frob/gates/__init__.py
 - tests/unit/gates/test_profile_boundary.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +54,20 @@ scope_changes:
   glob: tests/unit/gates/test_profile_boundary.py
   reason: narrow to the new PROFILE001 gate module + its registration + docs + tests,
     per the playbook's HOT FILE contention warning on src/frob/gates/**
+  actor: logan
+  at: '2026-08-25'
+- op: remove
+  glob: docs/modules/gates.md
+  reason: docs/modules/gates.md is leased by T-2891 (concurrent portability fix);
+    document PROFILE001 in the profile-collapse epic's own doc page instead and file
+    a follow-up to add the canonical gates.md rule-catalog entry once that lease clears
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: docs/modules/gates.md is leased by T-2891 (concurrent portability fix);
+    document PROFILE001 in the profile-collapse epic's own doc page instead and file
+    a follow-up to add the canonical gates.md rule-catalog entry once that lease clears
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
