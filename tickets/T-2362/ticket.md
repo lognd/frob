@@ -23,6 +23,7 @@ scope:
 - docs/modules/tickets-verify-sweep.md
 - src/frob/gates/_waive.py
 - docs/modules/gates.md
+- tickets/T-draft-9b9226a0/
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -94,6 +95,12 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: the frob:enumerates _KNOWN_GATE_RULES directive is now stale by PROFILE001;
     single-line members= update, lease cleared now that T-2891 landed
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-9b9226a0/
+  reason: dropped this follow-up draft as absorbed into T-2362's own land; the drop's
+    own ticket-dir edit needs to be in scope
   actor: logan
   at: '2026-08-25'
 evidence:
