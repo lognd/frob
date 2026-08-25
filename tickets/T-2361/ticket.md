@@ -23,6 +23,7 @@ scope:
 - src/frob/verify/_backpressure.py
 - docs/modules/tickets-verify-sweep.md
 - src/frob/verify/__init__.py
+- tests/unit/verify/test_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +45,12 @@ scope_changes:
 - op: add
   glob: src/frob/verify/__init__.py
   reason: re-export effective_profile_or_standard alongside its sibling settings_for_profile/ceilings_for_profile
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/verify/test_backpressure.py
+  reason: new TestEffectiveProfileOrStandard coverage for the effective_profile_or_standard
+    helper
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
