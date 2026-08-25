@@ -22,6 +22,7 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/verify/_backpressure.py
 - docs/modules/tickets-verify-sweep.md
+- src/frob/verify/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,6 +39,11 @@ scope_changes:
   glob: docs/modules/tickets-verify-sweep.md
   reason: new helper in _backpressure.py needs a frob:doc anchor in this module's
     existing doc page
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/verify/__init__.py
+  reason: re-export effective_profile_or_standard alongside its sibling settings_for_profile/ceilings_for_profile
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
