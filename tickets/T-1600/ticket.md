@@ -27,6 +27,8 @@ scope:
 - src/frob/gates/_lang_conformance.py
 - src/frob/lang/_support.py
 - frob.toml
+- tickets/T-draft-1275562a/**
+- tickets/T-draft-65e38e53/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -151,6 +153,22 @@ scope_changes:
   reason: 'same wiring surface T-1604 needed for bash: central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE),
     behavioral-conformance fixture registration, and (if the same test-selection issue
     reproduces for a tests/fixtures/lang/*.cs SOURCE fixture) a [[test.runner]] entry'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-1275562a/**
+  reason: two findings filed as part of this ticket's own work (wire-or-drop _parse_csharp
+    follow-up, and the shared bash+csharp FACETS-wiring finding) are new tracked files
+    in this branch's diff; SCOPE001 flags them the same way T-1604's own draft citation
+    did
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-65e38e53/**
+  reason: two findings filed as part of this ticket's own work (wire-or-drop _parse_csharp
+    follow-up, and the shared bash+csharp FACETS-wiring finding) are new tracked files
+    in this branch's diff; SCOPE001 flags them the same way T-1604's own draft citation
+    did
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
