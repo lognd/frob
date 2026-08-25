@@ -82,7 +82,10 @@ class CheckResult(BaseModel)
     total_errors: int      # property; sum of error diagnostics across tools
     total_warnings: int    # property; sum of warning diagnostics across tools
     def as_text(self, color: bool = False) -> str
-        # Human report: errors, warnings, notes, then a per-tool summary table.
+        # Human report: errors, warnings, notes, then a per-tool summary
+        # table -- each line's icon is pass/FAIL, or UNRES (T-2891) for a
+        # gate:X result that is entirely UNRESOLVED (see "Tool summary:
+        # pass / FAIL / UNRES" below); UNRES never changes exit_code.
     def as_json(self) -> str
         # The full structured result as JSON (--json CLI output).
 
@@ -465,6 +468,28 @@ arch          ok
 
 JSON output (`--json`) includes the full structured `CheckResult` with per-tool
 `ToolResult` entries containing `Diagnostic` objects.
+
+### Tool summary: `pass` / `FAIL` / `UNRES` (T-2891)
+
+The `## Tool summary` table's per-line icon is `pass` (green), `FAIL` (red),
+or a third state, `UNRES` (yellow), reserved for one specific shape: a
+`gate:<FAMILY>` line whose entire `ToolResult` is
+[UNRESOLVED](gates.md#unresolved-t-1664) -- zero errors, zero warnings, and
+every diagnostic UNRESOLVED (T-1664's `Severity.UNRESOLVED`). This is the
+opt-in-schema-not-declared shape the `*SCHEMA`/`FLAGCOV` gate families
+report when a project's `frob.toml` omits their `known_keys` declaration
+(`_docblocks_shared.resolve_dotted_symbol`'s target): the gate genuinely
+could not resolve anything, not "resolved and found nothing." Measured
+off-repo (T-2891): 12 such gates against a real foreign project each read
+`0 errors, 0 warnings, 1 unresolved, 0 waived` and rendered as `pass`,
+indistinguishable from a project that had actually declared and passed
+those schemas -- exactly the [[catalogued-is-not-enforced]] silent-zero
+shape wearing the UNRESOLVED costume. `UNRES` is a *rendering-only* third
+state: `exit_code`/`total_errors` and `frob check`'s exit-code contract
+are unchanged by it (an UNRESOLVED-only gate still never fails the exit
+code, per `#unresolved-t-1664` below) -- a gate mixing UNRESOLVED with any
+real error/warning finding still renders its ordinary `pass`/`FAIL` icon,
+since that shape genuinely did run a check over part of the repo.
 
 ## Use in CI
 

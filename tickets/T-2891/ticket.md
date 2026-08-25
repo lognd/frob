@@ -2,7 +2,7 @@
 id: T-2891
 title: twelve *SCHEMA-family gates (plus FLAGCOV) resolve UNRESOLVED off-repo and
   render as a clean pass
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'

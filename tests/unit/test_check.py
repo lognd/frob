@@ -68,6 +68,108 @@ class TestCheckResultCounts:
         assert result.total_warnings == 0
 
 
+# frob:ticket T-2891
+class TestUnresolvedOnlyGateRendering:
+    """T-2891: an all-UNRESOLVED gate:X result (the measured off-repo
+    defect -- 12 *SCHEMA/FLAGCOV families reporting `0 errors, 0
+    warnings, 1 unresolved, 0 waived` against a real foreign project)
+    must never render indistinguishably from a genuine clean pass."""
+
+    # frob:ticket T-2891
+    def _unresolved_gate_result(self, family: str = "ARCHSCHEMA") -> ToolResult:
+        """One `gate:<family>` `ToolResult` shaped exactly like
+        `_gates_family_result` builds it for an all-UNRESOLVED gate:
+        `exit_code=0` (never fails the exit code, T-1664), one
+        `info`-severity diagnostic, summary naming the unresolved count."""
+        return ToolResult(
+            tool=f"gate:{family}",
+            exit_code=0,
+            diagnostics=[
+                Diagnostic(
+                    severity="info",
+                    code=f"{family}001",
+                    message=f"{family}001: known_keys not declared in frob.toml",
+                )
+            ],
+            summary="0 errors, 0 warnings, 1 unresolved, 0 waived",
+        )
+
+    # frob:ticket T-2891
+    def test_must_now_fire_unresolved_only_gate_is_not_rendered_as_pass(self) -> None:
+        # frob:tests src/frob/check/__init__.py::CheckResult.as_text kind="unit"
+        result = CheckResult(path=".", results=[self._unresolved_gate_result()])
+        text = result.as_text()
+        assert "pass  gate:ARCHSCHEMA" not in text
+        assert "UNRES  gate:ARCHSCHEMA" in text
+        # exit-code contract is untouched: UNRESOLVED never fails frob check.
+        assert result.total_errors == 0
+
+    # frob:ticket T-2891
+    def test_control_a_real_clean_gate_still_renders_pass(self) -> None:
+        # frob:tests src/frob/check/__init__.py::CheckResult.as_text kind="unit"
+        clean = ToolResult(
+            tool="gate:ARCHSCHEMA",
+            exit_code=0,
+            diagnostics=[],
+            summary="0 errors, 0 warnings, 0 unresolved, 0 waived",
+        )
+        result = CheckResult(path=".", results=[clean])
+        text = result.as_text()
+        assert "pass  gate:ARCHSCHEMA" in text
+        assert "UNRES" not in text
+
+    # frob:ticket T-2891
+    def test_control_a_real_failing_gate_still_renders_fail(self) -> None:
+        # frob:tests src/frob/check/__init__.py::CheckResult.as_text kind="unit"
+        failing = ToolResult(
+            tool="gate:ARCHSCHEMA",
+            exit_code=1,
+            diagnostics=[Diagnostic(severity="error", code="ARCH001", message="bad")],
+            summary="1 errors, 0 warnings, 0 unresolved, 0 waived",
+        )
+        result = CheckResult(path=".", results=[failing])
+        text = result.as_text()
+        assert "FAIL  gate:ARCHSCHEMA" in text
+        assert "UNRES" not in text
+
+    # frob:ticket T-2891
+    def test_control_non_gate_info_diagnostics_are_not_caught(self) -> None:
+        # frob:tests src/frob/check/__init__.py::CheckResult.as_text kind="unit"
+        # frob-arch's large-file suggestions are info-severity too, but this
+        # is not the T-1664 UNRESOLVED concept -- must not be caught here.
+        arch = ToolResult(
+            tool="frob-arch",
+            exit_code=0,
+            diagnostics=[
+                Diagnostic(severity="info", code="large-file", message="512 lines")
+            ],
+            summary="0 warnings unaccounted, 1 suggestion",
+        )
+        result = CheckResult(path=".", results=[arch])
+        text = result.as_text()
+        assert "pass  frob-arch" in text
+        assert "UNRES" not in text
+
+    # frob:ticket T-2891
+    def test_mixed_unresolved_and_findings_still_renders_pass_or_fail(self) -> None:
+        # frob:tests src/frob/check/__init__.py::CheckResult.as_text kind="unit"
+        # A gate that resolved SOME sites and reported UNRESOLVED for
+        # others (not the all-unresolved shape) keeps its ordinary icon.
+        mixed = ToolResult(
+            tool="gate:REFSCHEMA",
+            exit_code=0,
+            diagnostics=[
+                Diagnostic(severity="warning", code="REFSCHEMA002", message="w"),
+                Diagnostic(severity="info", code="REFSCHEMA001", message="u"),
+            ],
+            summary="0 errors, 1 warnings, 1 unresolved, 0 waived",
+        )
+        result = CheckResult(path=".", results=[mixed])
+        text = result.as_text()
+        assert "pass  gate:REFSCHEMA" in text
+        assert "UNRES" not in text
+
+
 class TestRunCheck:
     def test_all_stages_skipped_returns_empty_result_for_root(
         self, tmp_path: Path

@@ -215,6 +215,46 @@ def _section_lines(
     return lines
 
 
+# frob:ticket T-2891
+def _is_unresolved_only_gate(r: ToolResult) -> bool:
+    """`True` iff `r` is a `gate:<FAMILY>` `ToolResult` whose entire content
+    is UNRESOLVED (T-1664's `Severity.UNRESOLVED`, rendered by
+    `frob.check._python._diag_severity` as `Diagnostic(severity="info")`)
+    -- zero errors, zero warnings, and at least one diagnostic, all of
+    them `"info"`-severity.
+
+    T-2891: a gate whose opt-in `known_keys` declaration
+    (`_docblocks_shared.resolve_dotted_symbol`'s target) is missing from
+    the target project's `frob.toml` correctly reports `UNRESOLVED`, not
+    an error -- that part works as designed. But `_gates_family_result`
+    sets `exit_code=0` whenever `n_err == 0` (correct: `UNRESOLVED` must
+    never fail the exit code, `docs/modules/gates.md#unresolved-t-1664`),
+    and `as_text`'s tool-summary row used to key its `pass`/`FAIL` icon
+    off exactly that same `exit_code == 0`. For an ordinary gate that
+    measured a mix of clean-and-unresolved findings this reads fine; for
+    one of the twelve `*SCHEMA`/`FLAGCOV` families that never resolved a
+    single real target (the measured off-repo defect: 12 gates against
+    `lograder`, each `0 errors, 0 warnings, 1 unresolved, 0 waived`), it
+    renders byte-for-byte like a real clean pass -- the entire tool
+    result IS the unresolved verdict, not a stray finding inside one.
+    This predicate isolates exactly that all-unresolved shape so `as_text`
+    can render it as its own third state instead of folding it into
+    `pass`, without touching `exit_code`/`total_errors` at all (the
+    exit-code contract this ticket deliberately leaves unchanged -- see
+    `docs/modules/gates.md#unresolved-t-1664`). Restricted to `gate:`-
+    prefixed tools: other stages (`frob-arch`'s `large-file` suggestions,
+    for one) also emit `"info"`-severity diagnostics for reasons that
+    have nothing to do with T-1664's UNRESOLVED concept, and must not be
+    caught by this check."""
+    return (
+        r.tool.startswith("gate:")
+        and r.error_count == 0
+        and r.warning_count == 0
+        and bool(r.diagnostics)
+        and all(d.severity == "info" for d in r.diagnostics)
+    )
+
+
 # frob:doc docs/commands/check.md#public-api
 class CheckResult(BaseModel):
     """Aggregate outcome of one `frob check` run: every tool's `ToolResult`."""
@@ -258,7 +298,17 @@ class CheckResult(BaseModel):
         lines.append(paint("## Tool summary", BOLD, color))
         for r in self.results:
             ok = r.passed and r.error_count == 0
-            icon = paint("pass", GREEN, color) if ok else paint("FAIL", RED, color)
+            # T-2891: an all-UNRESOLVED gate (see _is_unresolved_only_gate)
+            # is neither a real pass nor a FAIL -- render it as its own
+            # third state so it is never visually indistinguishable from
+            # a clean pass. exit_code/total_errors are untouched: this is
+            # a rendering-only distinction, not an exit-code change.
+            if _is_unresolved_only_gate(r):
+                icon = paint("UNRES", YELLOW, color)
+            elif ok:
+                icon = paint("pass", GREEN, color)
+            else:
+                icon = paint("FAIL", RED, color)
             lines.append(f"  {icon}  {r.tool:<22}  {r.summary}")
         return "\n".join(lines)
 

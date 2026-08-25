@@ -6074,6 +6074,26 @@ individually, filed as follow-up residue rather than forced into this
 change's scope. REF001 (T-1665, docs/modules/gates.md#anti-orphan-file-
 reference-gate) is the first concrete consumer.
 
+**T-2891: the coarse pass/FAIL rendering closed a gap this contract left
+open.** The twelve `*SCHEMA`/`FLAGCOV` gate families (each resolving an
+opt-in `known_keys` declaration out of the target project's own
+`frob.toml` via `_docblocks_shared.resolve_dotted_symbol`) correctly
+report UNRESOLVED, exactly as designed above, when a target project has
+not declared that table -- measured off-repo against a real foreign
+project (lograder): 12 gates, each `0 errors, 0 warnings, 1 unresolved,
+0 waived`. But `CheckResult.as_text`'s tool-summary row used to key its
+icon off `exit_code == 0` alone, so a gate whose ENTIRE result was
+UNRESOLVED (not a mix of UNRESOLVED-and-clean, the ordinary case this
+contract already covers) rendered identically to a genuine clean pass --
+the counting/rendering contract above was upheld at the data level (the
+count was always there, correctly named) but not at the coarse icon a
+human skims. `docs/commands/check.md#tool-summary-pass--fail--unres-
+t-2891` documents the fix: a third `UNRES` icon for exactly the
+all-UNRESOLVED shape. This is a RENDERING-only change -- `exit_code`,
+`total_errors`, and every counting rule above are unchanged; UNRESOLVED
+still never fails `frob check` by itself, mixed UNRESOLVED-and-real-
+finding gates still render their ordinary `pass`/`FAIL` icon.
+
 ## Data models
 
 <!-- frob:describes src/frob/gates/_models.py::Severity -->
