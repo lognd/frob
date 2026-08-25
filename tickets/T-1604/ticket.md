@@ -27,6 +27,7 @@ scope:
 - src/frob/gates/_lang_conformance.py
 - src/frob/lang/_support.py
 - frob.toml
+- tickets/T-draft-f424b6c4/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -158,6 +159,15 @@ scope_changes:
     entry) as a bash test-selection candidate once bash is a supported frob.lang extension,
     and fails NoRunner without a [[test.runner]] entry naming the real covering pytest
     suite; mirrors the existing strata [[test.runner]] entry exactly
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tickets/T-draft-f424b6c4/**
+  reason: the finding filed against the shared call-graph layer (frob.graph.callgraph
+    bash bare-word invocation gap) is a new tracked file in this branch's diff; SCOPE001
+    flags it as outside T-1604's declared scope even though tickets/** is normally
+    exempt from the root-write-guard -- narrow grant covering just this one draft's
+    own directory
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
