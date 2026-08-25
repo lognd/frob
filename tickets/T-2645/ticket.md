@@ -1,7 +1,7 @@
 ---
 id: T-2645
 title: unlanded-branch directive parsing uses a temp-file round trip per candidate
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -15,10 +15,15 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_unlanded.py
+evidence_scope:
+- tests/unit/test_unlanded_branch_work.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_real_directive_anchor_still_flagged_via_real_parser
+- tests/unit/test_unlanded_branch_work.py::TestUnlandedBranchWork::test_genuine_directive_anchored_specimen_still_flagged
 designated_repro_test: null
 threat: null
 component: null

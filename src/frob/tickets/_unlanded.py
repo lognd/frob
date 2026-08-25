@@ -469,6 +469,55 @@ def _done_report_and_local_state_signals(
 
 # frob:ticket T-1948
 # frob:ticket T-2300
+# frob:ticket T-2645
+#: T-2645: one scratch file per extension, reused across every candidate
+#: that shares it, instead of a fresh `tempfile.NamedTemporaryFile`
+#: create+write+flush+close+unlink round trip PER CANDIDATE (see
+#: `_directive_ids_via_real_parser`'s docstring for why a real path is
+#: required at all -- `frob.lang.parse_file` has no text-in API, and
+#: `src/frob/lang/__init__.py` was under another ticket's lease at the
+#: time this landed, so adding one was not available as an option here).
+#: `frob.lang.parse_file`'s own cache key is `f"{path}:{content_hash}"`
+#: (`frob.lang._parse`), so reusing the same path for different content
+#: across calls cannot collide -- the hash component still distinguishes
+#: every distinct blob. Safe only because this module has no threaded/
+#: concurrent caller (verified: no `ThreadPoolExecutor` anywhere in this
+#: module's call chain) -- a second writer racing the same path would
+#: corrupt a concurrent reader's parse.
+_SCRATCH_FILE_BY_SUFFIX: dict[str, str] = {}
+
+
+def _scratch_file_for_suffix(suffix: str) -> str:
+    """Return (creating once, lazily, per-process) the reusable temp-file
+    path this process uses to feed `suffix`-typed blob content through
+    `frob.lang.parse_file` (T-2645) -- see `_SCRATCH_FILE_BY_SUFFIX`."""
+    import atexit
+    import os
+    import tempfile
+
+    cached = _SCRATCH_FILE_BY_SUFFIX.get(suffix)
+    if cached is not None:
+        return cached
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    os.close(fd)
+    _SCRATCH_FILE_BY_SUFFIX[suffix] = path
+    atexit.register(_remove_scratch_file, path)
+    return path
+
+
+# frob:waive WIRE001 reason="only caller is atexit.register(_remove_scratch_file, \
+# path) in _scratch_file_for_suffix -- a dynamic registration the call-graph resolver \
+# cannot see, not a dead symbol"
+def _remove_scratch_file(path: str) -> None:
+    """`atexit` cleanup for one `_scratch_file_for_suffix` entry -- best
+    effort, a missing scratch file at interpreter exit is not an error."""
+    import contextlib
+    import os
+
+    with contextlib.suppress(OSError):
+        os.unlink(path)
+
+
 def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | None:
     """T-2300: `_directive_anchored_ticket_ids`'s real-parse path -- parse
     `text` (a blob's content, `path`'s own suffix for language dispatch)
@@ -483,13 +532,16 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
 
     `frob.lang.parse_file` only reads from a real filesystem path (no
     text-in API exists, by design -- tree-sitter's own grammar dispatch
-    keys off the path's suffix), so this writes `text` to a throwaway
-    temp file with the SAME suffix as `path` before parsing it, then
-    discards the temp file immediately -- `_unlanded`'s own no-checkout
-    posture (this module's docstring) is about never touching the
-    WORKING TREE or writing anything the caller could mistake for real
-    repo state; a private, immediately-deleted scratch file outside the
-    repo satisfies that same intent.
+    keys off the path's suffix), so this writes `text` into a scratch
+    file with the SAME suffix as `path` before parsing it. T-2645: that
+    scratch file is now created ONCE per suffix per process
+    (`_scratch_file_for_suffix`) and reused/overwritten for every later
+    candidate sharing the suffix, rather than a fresh `tempfile.
+    NamedTemporaryFile` create+delete per candidate -- `_unlanded`'s own
+    no-checkout posture (this module's docstring) is about never
+    touching the WORKING TREE or writing anything the caller could
+    mistake for real repo state; a private scratch file outside the repo,
+    reused or not, satisfies that same intent.
 
     A real parse distinguishes a directive-POSITION comment from the
     identical text sitting inside a string literal or prose comment by
@@ -498,22 +550,18 @@ def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | Non
     replaces cannot do at all -- the exact gap this ticket exists to
     close (a commented-out mention of a real id previously matched with
     equal confidence to a live directive)."""
-    import tempfile
-
     from frob.graph import EdgeKind
     from frob.graph.dsl import parse_directives
     from frob.lang import parse_file
 
     suffix = Path(path).suffix
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=suffix, delete=True, encoding="utf-8"
-    ) as tmp:
+    scratch_path = _scratch_file_for_suffix(suffix)
+    with open(scratch_path, "w", encoding="utf-8") as tmp:
         tmp.write(text)
-        tmp.flush()
-        parsed_result = parse_file(Path(tmp.name))
-        if parsed_result.is_err:
-            return None
-        edges, _malformed = parse_directives(parsed_result.danger_ok)
+    parsed_result = parse_file(Path(scratch_path))
+    if parsed_result.is_err:
+        return None
+    edges, _malformed = parse_directives(parsed_result.danger_ok)
     return frozenset(edge.target for edge in edges if edge.kind is EdgeKind.TICKET)
 
 
