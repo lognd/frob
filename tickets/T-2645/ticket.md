@@ -1,7 +1,7 @@
 ---
 id: T-2645
 title: unlanded-branch directive parsing uses a temp-file round trip per candidate
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-19'
