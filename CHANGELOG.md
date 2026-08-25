@@ -345,6 +345,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2884: Daemon version-skew self-heal is version-string-based, blind to source-only changes with no version bump
 - T-2888: Red-tail sweep round 2: OPAQUE001 fix, LANG004/TICK003/TICK006 characterized
 - T-2891: twelve *SCHEMA-family gates (plus FLAGCOV) resolve UNRESOLVED off-repo and render as a clean pass
+- T-2892: T-2384: bind evidence to acceptance criteria and close epic
 - T-2895: Root-write guard: cwd-keyed target, dead FROB_COORDINATOR hatch, mis-scoped ledger exemption
 
 ## [0.530.0] - unreleased

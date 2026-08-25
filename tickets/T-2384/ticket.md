@@ -2,7 +2,7 @@
 id: T-2384
 title: frob's enforcement surface is hardcoded to this repo's layout and sync-skills
   is not multi-repo safe
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -41,6 +41,14 @@ body_changes:
   at: '2026-08-25'
   old_length: 5062
   new_length: 5243
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic closed on evidence bound to already-landed
+    child tickets (T-2195/T-2386/T-2388/T-2389/T-2405/T-2891); no direct code change
+    under this ticket'
+  actor: logan
+  at: '2026-08-25'
+  old_length: 5243
+  new_length: 5424
 evidence:
 - tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
 - tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
@@ -192,5 +200,7 @@ registry DATA, not a mechanism. `src/frob/repo_meta.py`'s
 `project.get("name") != "frob"` is a deliberate self-identification
 check for the version floor. Neither of these two is a defect.
 
+
+frob:no-behavior-change reason="epic closed on evidence bound to already-landed child tickets (T-2195/T-2386/T-2388/T-2389/T-2405/T-2891); no direct code change under this ticket"
 
 frob:no-behavior-change reason="epic closed on evidence bound to already-landed child tickets (T-2195/T-2386/T-2388/T-2389/T-2405/T-2891); no direct code change under this ticket"

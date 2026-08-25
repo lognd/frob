@@ -1,7 +1,7 @@
 ---
 id: T-2892
 title: 'T-2384: bind evidence to acceptance criteria and close epic'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-25'
@@ -17,10 +17,22 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-2384/ticket.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): ticket-hygiene only: binds existing test evidence
+    to T-2384''s acceptance criteria, no src/ change'
+  actor: logan
+  at: '2026-08-25'
+  old_length: 2863
+  new_length: 2995
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
@@ -35,3 +47,5 @@ MEASUREMENT (2026-08-25, this ticket's own filing): all four of T-2384's accepta
 - Criteria 2 and 3 (sync-skills cooperative, provenance-aware, idempotent, first-run-against-hand-maintained-dir deletes nothing): MET by T-2386 (src/frob/scaffold/_skills_sync.py's SyncManifest). tests/unit/test_skills_sync.py::test_second_repo_does_not_delete_first_repos_entries, test_hand_maintained_entry_is_never_deleted_or_overwritten, test_hand_maintained_entry_collides_instead_of_being_overwritten, test_same_repo_sync_twice_is_a_no_op_second_run, test_manifest_records_only_this_repos_owned_entries directly cover criteria 2 and 3. Ran: uv run python -m pytest tests/unit/test_skills_sync.py -q -- 24 passed (combined with test_port_selfcheck.py in the same run).
 
 REMAINING WORK (this ticket, scope limited to the ticket file itself): cite the test node ids above against T-2384's four acceptance[].evidence lists via frob ticket evidence, re-verify each --check-repro is not needed (docs-kind, no repro), and close/drop the epic once evidence is bound. Do NOT touch src/ -- no further portability code change is indicated by measurement; this is ticket-hygiene only. If a re-run of frob check --only gates at land time surfaces any non-zero ENV001/ROOT001/PORT001 count against frob's own tree, STOP and re-open scope investigation instead of forcing evidence to close.
+
+frob:no-behavior-change reason="ticket-hygiene only: binds existing test evidence to T-2384's acceptance criteria, no src/ change"
