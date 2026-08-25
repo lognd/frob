@@ -134,9 +134,14 @@ REASON = (
     "agent shells, because no environment signal reliably tells a "
     "pre-worktree agent apart from a human. Run `frob ticket work <id>` "
     "and edit inside your leased worktree instead. "
-    "(tickets.md/tickets/** are exempt; FROB_LAND_INTERNAL=1 covers "
-    "land's own internal machinery; a genuine coordinator/human shell "
-    "that needs to write here directly sets FROB_COORDINATOR=1 once.) "
+    "(tickets.md/tickets/** are exempt, including every `frob ticket` "
+    "verb except `land` run directly from the root; FROB_LAND_INTERNAL=1 "
+    "covers land's own internal machinery; a genuine coordinator/human "
+    "shell that needs to write here directly runs "
+    "`mkdir -p .frob && touch .frob/coordinator-mode` once -- a PLAIN "
+    "FROB_COORDINATOR=1 shell export does NOT work here, because this "
+    "hook is a separately-spawned process that never inherits it; "
+    "`rm .frob/coordinator-mode` turns the marker back off.) "
     "If this refusal came AFTER a write already landed content in the "
     "root, recover it into your worktree rather than losing it: "
     "  git diff HEAD -- <paths> > /tmp/rescue.patch   # verify non-empty\n"
@@ -270,19 +275,49 @@ def _worktree_paths(cwd: str) -> list[str]:
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
+# frob:ticket T-2895
+#: T-2895: relative to the primary checkout root, the on-disk coordinator
+#: marker `_coordinator_marker_set` checks for. This hook process is
+#: spawned fresh per PreToolUse call by the harness (`.claude/settings.
+#: json`), so it never inherits an `export FROB_COORDINATOR=1` a Bash tool
+#: call makes for its OWN subprocess -- there is no process relationship
+#: through which that env var could ever reach here, which is why the
+#: env-only check below could never actually work as the advertised
+#: escape hatch. A file under `.frob/` is this repo's existing pattern
+#: for state that must survive across separately-spawned processes (see
+#: every other `.frob/*.lock`/`*-pending` marker `frob ticket land` itself
+#: reads and writes), so the coordinator marker now uses the same
+#: mechanism: `mkdir -p .frob && touch .frob/coordinator-mode` from the
+#: primary checkout turns it on; `rm .frob/coordinator-mode` turns it
+#: off. `.frob/` is already gitignored repo-local state (never tracked),
+#: exactly the right lifetime for a marker meant to persist for "this
+#: clone, right now" without leaking into git history.
+_COORDINATOR_MARKER_REL = os.path.join(".frob", "coordinator-mode")
+
+
+# frob:doc docs/guides/claude-hooks.md#root-write-guardpy
 # frob:ticket T-2850
-def _coordinator_marker_set() -> bool:
-    """True when `FROB_COORDINATOR=1` (or any truthy value) is set --
-    T-2850's explicit, opt-in positive marker for a human/coordinator
-    shell that legitimately writes to the primary checkout directly.
-    Nothing in the dispatch or `frob ticket work` pipeline ever sets this,
-    unlike `FROB_AGENT`/`FROB_WORKTREE`, so its presence cannot be an
+# frob:ticket T-2895
+def _coordinator_marker_set(primary_root: str) -> bool:
+    """True when `FROB_COORDINATOR=1` (or any truthy value) is set, OR
+    `<primary_root>/.frob/coordinator-mode` exists on disk -- T-2850's
+    opt-in positive marker for a human/coordinator shell that legitimately
+    writes to the primary checkout directly. T-2895 added the file check:
+    the env var alone can never reach THIS process in real usage (see
+    `_COORDINATOR_MARKER_REL`'s docstring), so the file is now the
+    mechanism that actually works end-to-end; the env var check is kept
+    for direct invocations (tests, a wrapper that execs this hook as a
+    true child) where inheritance genuinely does hold. Nothing in the
+    dispatch or `frob ticket work` pipeline ever sets either, unlike
+    `FROB_AGENT`/`FROB_WORKTREE`, so presence of either cannot be an
     accidental false negative the way the pre-T-2850 discriminator's
     absence could."""
     # frob:waive SEC110 reason="FROB_COORDINATOR is a dispatch-context marker \
     # (T-2850), carries no sensitive value -- same posture as FROB_AGENT/ \
     # FROB_WORKTREE/FROB_LAND_INTERNAL's own precedent waivers in this file"
-    return bool(os.environ.get("FROB_COORDINATOR"))
+    if os.environ.get("FROB_COORDINATOR"):
+        return True
+    return os.path.exists(os.path.join(primary_root, _COORDINATOR_MARKER_REL))
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
@@ -328,8 +363,14 @@ def _leading_cd_target(command: str) -> str | None:
 # frob:ticket T-2481
 def _resolve_relative(raw: str, base: str) -> str:
     """Join `raw` onto `base` when it is relative, else return `raw`
-    unchanged -- the one path-join rule every resolver below shares."""
-    return raw if os.path.isabs(raw) else os.path.join(base, raw)
+    unchanged -- the one path-join rule every resolver below shares.
+    `raw` is `~`-expanded first (T-2895): `os.path.isabs("~/x")` is
+    `False`, so a home-relative path was previously joined onto `base`
+    instead of expanded, making an outside-the-repo target falsely
+    resolve under the primary checkout whenever `base` was the repo
+    root -- the root cause of the cwd-keyed false refusal T-2895 fixes."""
+    expanded = os.path.expanduser(raw)
+    return expanded if os.path.isabs(expanded) else os.path.join(base, expanded)
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy
@@ -447,10 +488,23 @@ def _bash_ticket_verb_targets_root(
     """Shape 1: a `frob ticket <mutating-verb>` with no `--path` in the
     command, whose effective cwd resolves under the primary checkout --
     UNLESS it is a legitimate `land` naming a real registered worktree
-    (`_is_legitimate_land`, T-2860)."""
+    (`_is_legitimate_land`, T-2860), or any OTHER mutating verb (T-2895):
+    every verb in `_MUTATING_TICKET_VERBS` except `land` only ever writes
+    the ledger (`tickets.md`/`tickets/**`) through the `frob ticket` CLI's
+    own machinery -- the same class of write `_is_ledger_path` already
+    exempts on the `Write`/`Edit` tool path -- so refusing them here made
+    the module docstring's and `REASON`'s "tickets.md/tickets/** are
+    exempt" claim false for the one invocation shape (`Bash`, not
+    `Write`/`Edit`) most `frob ticket` verbs are actually run through.
+    `land` alone keeps the narrow structural check (`_is_legitimate_land`)
+    because it is the one verb in this set that legitimately writes
+    non-ledger content in the root by design (the merge itself)."""
     if "--path" in command:
         return False
-    if not _TICKET_VERB_RE.search(command):
+    match = _TICKET_VERB_RE.search(command)
+    if not match:
+        return False
+    if match.group(1) != "land":
         return False
     if _is_legitimate_land(command, effective_cwd, worktree_reals):
         return False
@@ -512,11 +566,19 @@ def _root_write_worktree_paths(cwd: str) -> list[str] | None:
     `_agent_worktree_paths` (which gated on `_is_agent_context` instead of
     the coordinator marker) -- the default this hook applies is now DENY,
     so what used to gate "should I even look" now only gates the two
-    explicit escapes (marker set, or nothing to measure)."""
-    if _coordinator_marker_set():
-        return None
+    explicit escapes (marker set, or nothing to measure). T-2895: the
+    marker check now runs AFTER the worktree-paths lookup, since the file
+    half of `_coordinator_marker_set` needs `paths[0]` (the primary
+    checkout root) to know where to look; when the lookup itself fails
+    (empty `paths`), this already returns `None` (fail open) regardless
+    of the marker, so the reordering changes no observable behavior for
+    that case."""
     paths = _worktree_paths(cwd)
-    return paths or None
+    if not paths:
+        return None
+    if _coordinator_marker_set(paths[0]):
+        return None
+    return paths
 
 
 # frob:doc docs/guides/claude-hooks.md#root-write-guardpy

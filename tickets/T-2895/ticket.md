@@ -1,8 +1,8 @@
 ---
-id: T-draft-9122342b
+id: T-2895
 title: 'Root-write guard: cwd-keyed target, dead FROB_COORDINATOR hatch, mis-scoped
   ledger exemption'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -33,34 +33,48 @@ scope_changes:
   reason: doc edges for touched symbols require this file in scope
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_hook_root_write_guard.py::test_bash_redirect_target_outside_repo_via_home_relative_path_is_allowed
+- tests/test_hook_root_write_guard.py::test_bash_redirect_target_inside_primary_via_home_relative_path_is_still_refused
+- tests/test_hook_root_write_guard.py::test_coordinator_marker_file_allows_a_root_write_with_no_env_var
+- tests/test_hook_root_write_guard.py::test_env_var_alone_still_works_when_genuinely_inherited
+- tests/test_hook_root_write_guard.py::test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd
+- tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
+designated_repro_test: tests/test_hook_root_write_guard.py::test_coordinator_marker_file_allows_a_root_write_with_no_env_var
 acceptance:
 - text: Given a Bash write whose real target path lies entirely outside the primary
     checkout (e.g. under the user's home directory, home-relative shorthand), issued
     with the shell cwd at the primary checkout root, when the hook evaluates the call,
     then it must ALLOW the write (no denial), because the write's real target is not
     the primary checkout.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_redirect_target_outside_repo_via_home_relative_path_is_allowed
 - text: Given a Bash write whose real target path lies inside the primary checkout,
     issued from an agent shell with no worktree cd and no ledger-only ticket verb
     involved, when the hook evaluates the call, then it must still DENY the write
     -- the guard must not be weakened for genuine root writes.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_redirect_target_inside_primary_via_home_relative_path_is_still_refused
+  - tests/test_hook_root_write_guard.py::test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused
 - text: Given the coordinator opt-in marker is enabled via the hook's supported persistence
     mechanism (a file the hook reads from disk, not a process environment variable),
     when a write targeting the primary checkout is evaluated, then it must be ALLOWED,
     and the mechanism must actually work end-to-end as a real PreToolUse-hook-process
     check, not merely as an env var passed to the Bash tool's own subprocess.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_coordinator_marker_file_allows_a_root_write_with_no_env_var
+  - tests/test_hook_root_write_guard.py::test_env_var_alone_still_works_when_genuinely_inherited
 - text: Given the ledger-only mutating ticket verbs, when invoked via Bash from the
     primary checkout root with no cd into a worktree, then they must be ALLOWED (matching
     the documented "tickets.md/tickets/** are exempt" claim), while the "land" verb
     without a --worktree flag naming a real registered worktree must still be DENIED.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd
 - text: Given the refusal message text, when read by an operator, then every escape
     hatch and exemption it names must actually function as described -- no documented
     hatch that does not work.
-  evidence: []
+  evidence:
+  - tests/test_hook_root_write_guard.py::test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd
 threat: null
 component: hooks
 anchor: false

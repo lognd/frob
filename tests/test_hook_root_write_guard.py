@@ -323,14 +323,19 @@ def _run_bash_hook(*, cwd: Path, command: str, env: dict[str, str]):
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-2850
 def test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused(tmp_path):
-    """The exact incident shape -- a `frob ticket done-report` run from the
-    primary checkout, with neither a `cd` into a worktree nor `--path` in
-    the same call, and NO markers set -- is refused. Fixture uses the REAL
-    nested-worktree topology."""
+    """The exact incident shape -- `frob ticket land` (the one verb that
+    genuinely writes non-ledger root content) run from the primary
+    checkout, with neither a `cd` into a worktree, a `--path`, nor a
+    resolvable `--worktree` flag, and NO markers set -- is refused.
+    Fixture uses the REAL nested-worktree topology. T-2895 narrowed the
+    Bash ticket-verb shape to `land` alone (every OTHER mutating verb is
+    ledger-only and exempt -- see `test_bash_ledger_only_ticket_verb_
+    is_allowed_with_no_markers_or_cd` below), so this is now the one
+    must-still-refuse case for this shape."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
-        command="frob ticket done-report T-0001 --why done",
+        command="timeout 540 uv run frob ticket land T-0001",
         env={},
     )
     assert _denial_reason(result) is not None
@@ -339,13 +344,32 @@ def test_bash_ticket_verb_with_no_cd_no_path_no_marker_is_refused(tmp_path):
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-2850
 def test_bash_ticket_verb_with_coordinator_marker_is_allowed(tmp_path):
-    """The identical must-refuse command from the previous test, run with
-    `FROB_COORDINATOR=1` set, is never refused."""
+    """The identical must-refuse `land` command from the previous test, run
+    with `FROB_COORDINATOR=1` set, is never refused."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_bash_hook(
+        cwd=primary,
+        command="timeout 540 uv run frob ticket land T-0001",
+        env={"FROB_COORDINATOR": "1"},
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2895
+def test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd(tmp_path):
+    """T-2895 defect 3, must-now-pass: `frob ticket done-report` (a
+    ledger-only mutating verb, never `land`) run from the primary checkout
+    with no `cd`, no `--path`, and NO markers set is now ALLOWED -- matching
+    the module docstring's and `REASON`'s standing claim that
+    `tickets.md`/`tickets/**` writes are exempt, which previously held only
+    for the `Write`/`Edit` tool path and never for this `Bash`-invoked CLI
+    shape."""
     primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
         command="frob ticket done-report T-0001 --why done",
-        env={"FROB_COORDINATOR": "1"},
+        env={},
     )
     assert result.stdout.strip() == ""
 
@@ -504,14 +528,98 @@ def test_land_with_no_worktree_flag_is_still_refused(tmp_path):
 # frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
 # frob:ticket T-2860
 def test_non_land_mutating_verb_with_worktree_flag_is_still_refused(tmp_path):
-    """The land exemption is scoped to `land` alone -- a different mutating
-    verb carrying a `--worktree`-shaped flag (not a real flag any other
-    verb accepts, but the hook must not generalize the exemption to it)
-    gets no exemption."""
+    """`_is_legitimate_land`'s structural `--worktree` check is scoped to
+    `land` alone -- a different mutating verb carrying a `--worktree`-
+    shaped flag (not a real flag any other verb accepts) never goes
+    through that check at all. Since T-2895 that verb is allowed anyway
+    (it is ledger-only, exempt independent of any flag) -- covered by
+    `test_bash_ledger_only_ticket_verb_is_allowed_with_no_markers_or_cd`
+    above. `land`'s own structural requirement (a flag that must resolve
+    to a REAL registered worktree, never trusted by text alone) is what
+    stays refused without it -- see `test_land_with_no_worktree_flag_is_
+    still_refused` and `test_land_with_unregistered_worktree_path_is_
+    still_refused` below."""
     primary, worktree = _make_repo_with_nested_worktree(tmp_path)
     result = _run_bash_hook(
         cwd=primary,
         command=f"frob ticket done-report T-0001 --why done --worktree {worktree}",
         env={},
     )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2895
+def test_bash_redirect_target_outside_repo_via_home_relative_path_is_allowed(tmp_path):
+    """T-2895 defect 1, must-now-pass: a Bash write whose real target is
+    OUTSIDE the repo entirely, expressed as a home-relative (`~/...`)
+    path, issued with cwd AT the primary checkout root, is ALLOWED. Before
+    the fix, `os.path.isabs("~/x")` is `False`, so the target was joined
+    onto the primary checkout instead of expanded, falsely resolving
+    under it -- the exact "refused solely because cwd is the repo root"
+    defect measured against a real coordinator/agent session."""
+    monkeypatch_home = tmp_path / "fakehome"
+    monkeypatch_home.mkdir()
+    outside_dir = monkeypatch_home / "notes"
+    outside_dir.mkdir()
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    env = {"HOME": str(monkeypatch_home)}
+    result = _run_bash_hook(
+        cwd=primary,
+        command="cat > ~/notes/scratch.md <<'EOF'\nx\nEOF",
+        env=env,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2895
+def test_bash_redirect_target_inside_primary_via_home_relative_path_is_still_refused(
+    tmp_path,
+):
+    """T-2895 must-still-fire control (the narrowing proof this ticket
+    requires alongside the must-now-pass case above): a `~`-expressed
+    target that genuinely resolves INSIDE the primary checkout (HOME
+    pointed at the primary checkout's own parent, target under the
+    checkout itself) is still refused -- `~`-expansion narrows false
+    refusals, it does not create a new blind spot for a real root
+    write expressed with a leading `~`."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    env = {"HOME": str(primary.parent)}
+    result = _run_bash_hook(
+        cwd=primary,
+        command=f"cat > ~/{primary.name}/notes.txt <<'EOF'\nx\nEOF",
+        env=env,
+    )
     assert _denial_reason(result) is not None
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2895
+def test_coordinator_marker_file_allows_a_root_write_with_no_env_var(tmp_path):
+    """T-2895 defect 2, must-now-pass: `.frob/coordinator-mode` present on
+    disk under the PRIMARY checkout, with `FROB_COORDINATOR` absent from
+    the environment entirely, allows a root write -- the mechanism that
+    actually works when the hook runs as a separately-spawned process that
+    never inherits a Bash tool call's own `export`."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    (primary / ".frob").mkdir(exist_ok=True)
+    (primary / ".frob" / "coordinator-mode").touch()
+    result = _run_hook(cwd=primary, file_path=primary / "src.py", env={})
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/root-write-guard.py::main kind="integration"
+# frob:ticket T-2895
+def test_env_var_alone_still_works_when_genuinely_inherited(tmp_path):
+    """The env-var marker is kept, not removed, for the case where
+    inheritance genuinely does hold (a direct child process, or a test
+    harness like this one) -- `FROB_COORDINATOR=1` with no marker file
+    still allows a root write."""
+    primary, _worktree = _make_repo_with_nested_worktree(tmp_path)
+    result = _run_hook(
+        cwd=primary,
+        file_path=primary / "src.py",
+        env={"FROB_COORDINATOR": "1"},
+    )
+    assert result.stdout.strip() == ""
