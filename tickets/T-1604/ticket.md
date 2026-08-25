@@ -1,7 +1,7 @@
 ---
 id: T-1604
 title: 'Language support: Bash/Shell'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -22,6 +22,8 @@ scope:
 - tests/test_lang_conformance_gate.py
 - tests/test_lang_support.py
 - docs/modules/lang.md
+- src/frob/lang/_extract.py
+- src/frob/lang/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -113,6 +115,20 @@ scope_changes:
     specific walker file already, the umbrella glob was a leftover'
   actor: logan
   at: '2026-08-18'
+- op: add
+  glob: src/frob/lang/_extract.py
+  reason: wiring the new bash walker into central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE)
+    requires editing these two files, same as T-0723 did for kotlin; declared scope
+    narrowly (two files, not src/frob/lang/**) to minimize lock footprint
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/lang/__init__.py
+  reason: wiring the new bash walker into central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE)
+    requires editing these two files, same as T-0723 did for kotlin; declared scope
+    narrowly (two files, not src/frob/lang/**) to minimize lock footprint
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
