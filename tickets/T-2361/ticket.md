@@ -1,7 +1,7 @@
 ---
 id: T-2361
 title: 'Profile-collapse: migrate the 5 if-rapid call sites onto LandProfileSettings'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-17'
@@ -20,10 +20,19 @@ scope:
 - src/frob/app/ticket_runner/_land_cmd.py
 - src/frob/tickets/_evidence.py
 - src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/verify/_backpressure.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/_backpressure.py
+  reason: settings-resolver module (T-2360) needs a small ProfileName-fallback helper
+    so _land_cmd.py's last non-branching ProfileName import can be removed, closing
+    T-2361's own zero-xref acceptance check
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: tickets
