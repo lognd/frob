@@ -24,6 +24,7 @@ scope:
 - docs/modules/lang.md
 - src/frob/lang/_extract.py
 - src/frob/lang/__init__.py
+- src/frob/gates/_lang_conformance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -127,6 +128,16 @@ scope_changes:
   reason: wiring the new bash walker into central dispatch (_WALKERS/COMMENT_TYPES/_EXTENSION_TABLE)
     requires editing these two files, same as T-0723 did for kotlin; declared scope
     narrowly (two files, not src/frob/lang/**) to minimize lock footprint
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_lang_conformance.py
+  reason: the behavioral conformance suite (T-2365) requires a per-language fixture
+    source registered in this file (_CAPABILITY_FIXTURE_SOURCES/_CAPABILITY_FIXTURE_EXTENSIONS)
+    or test_implemented_capability_behaves_as_claimed fails once bash is registered
+    in _EXTENSION_TABLE and its symbol_walk/publicness/doc_extract/directive_parse/call_graph/import_graph
+    capabilities go IMPLEMENTED; narrow single-file addition, not touching any gate
+    logic other agents in gates/ are working on
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
