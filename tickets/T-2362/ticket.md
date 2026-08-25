@@ -114,7 +114,7 @@ threat: null
 component: tickets
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: d9b7054c6dd41136165620e2101e1ae93ac803ea
 ---
 Split from T-1696 (queue-depth-dial collapse epic), closing leaf --
 BLOCKED on the migration child (nothing to statically enforce against
