@@ -79,7 +79,7 @@ threat: null
 component: hooks
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 20f4f12c9eb3e391373f9a3ed4b9e8f213d18e8e
 ---
 The T-2850 shared-root write guard (.claude/hooks/root-write-guard.py)
 has three measured defects, each reproduced directly against the hook's
