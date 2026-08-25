@@ -21,6 +21,7 @@ scope:
 - src/frob/tickets/_evidence.py
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/verify/_backpressure.py
+- docs/modules/tickets-verify-sweep.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -31,6 +32,12 @@ scope_changes:
   reason: settings-resolver module (T-2360) needs a small ProfileName-fallback helper
     so _land_cmd.py's last non-branching ProfileName import can be removed, closing
     T-2361's own zero-xref acceptance check
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: new helper in _backpressure.py needs a frob:doc anchor in this module's
+    existing doc page
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
