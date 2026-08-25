@@ -14,10 +14,16 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+evidence_scope:
+- tests/test_gates.py
+- tests/unit/test_skills_sync.py
+- tests/unit/gates/test_port_selfcheck.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: 'epic rollup: all four acceptance criteria satisfied by
+  landed child tickets T-2195/T-2386/T-2388/T-2389/T-2405/T-2891; no direct code owned
+  by this ticket'
 triage_changes:
 - field: parent
   old_value: null
@@ -26,6 +32,26 @@ triage_changes:
     sweep); re-parenting so the epic reads its true unmet goal instead of NEEDS CLOSE'
   actor: logan
   at: '2026-08-21'
+body_changes:
+- mode: append
+  reason: 'BUG002 front door (T-2393): epic closed on evidence bound to already-landed
+    child tickets (T-2195/T-2386/T-2388/T-2389/T-2405/T-2891); no direct code change
+    under this ticket'
+  actor: logan
+  at: '2026-08-25'
+  old_length: 5062
+  new_length: 5243
+evidence:
+- tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
+- tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_second_repo_does_not_delete_first_repos_entries
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_same_repo_sync_twice_is_a_no_op_second_run
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_manifest_records_only_this_repos_owned_entries
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_is_never_deleted_or_overwritten
+- tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_collides_instead_of_being_overwritten
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_path_prefix_is_flagged
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_identity_literal_in_tuple_is_flagged
+- tests/unit/gates/test_port_selfcheck.py::TestPort001::test_clean_gate_module_is_silent
 designated_repro_test: null
 acceptance:
 - text: Given a src-layout project whose package is NOT named frob, when every gate
@@ -34,22 +60,33 @@ acceptance:
     where previously it reported zero; proven per gate by a must-now-fire fixture,
     with the frob repo's own pre-change finding count unchanged as the must-still-pass
     control.
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestEnvVarDocGate::test_undocumented_env_var_fires_for_a_differently_named_project
+  - tests/test_gates.py::TestRootAssetDirGate::test_unreferenced_root_directory_fires_for_a_differently_named_project
 - text: Given two different frob-enabled repos that both sync agents/ and skills/
     into the same ~/.claude, when each runs frob sync-skills in turn, then neither
     run removes or overwrites an entry installed by the other, and running either
     repo's sync twice in a row produces no further change on the second run.
-  evidence: []
+  evidence:
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_second_repo_does_not_delete_first_repos_entries
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_same_repo_sync_twice_is_a_no_op_second_run
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_manifest_records_only_this_repos_owned_entries
 - text: Given a ~/.claude containing hand-maintained agents and skills that no frob
     repo installed, when frob sync-skills runs against it for the first time, then
     nothing is deleted and nothing pre-existing is overwritten.
-  evidence: []
+  evidence:
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_is_never_deleted_or_overwritten
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_hand_maintained_entry_collides_instead_of_being_overwritten
+  - tests/unit/test_skills_sync.py::TestSyncSkillsProvenance::test_manifest_records_only_this_repos_owned_entries
 - text: Given the source-root resolution logic, when the retarget is complete, then
     exactly one public resolver exists (promoted from frob.lang._nodes._declared_python_source_roots,
     T-2195) and no second implementation of source-root discovery has been added,
     verified by a frob-dup / grep check for surviving "src/frob/" literals outside
     frob's own self-referential gates.
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_path_prefix_is_flagged
+  - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_hardcoded_identity_literal_in_tuple_is_flagged
+  - tests/unit/gates/test_port_selfcheck.py::TestPort001::test_clean_gate_module_is_silent
 threat: null
 component: portability
 labels:
@@ -154,3 +191,6 @@ Deliberately NOT in scope: `strata/_compliance.py`'s owner="logan" is frob's own
 registry DATA, not a mechanism. `src/frob/repo_meta.py`'s
 `project.get("name") != "frob"` is a deliberate self-identification
 check for the version floor. Neither of these two is a defect.
+
+
+frob:no-behavior-change reason="epic closed on evidence bound to already-landed child tickets (T-2195/T-2386/T-2388/T-2389/T-2405/T-2891); no direct code change under this ticket"
