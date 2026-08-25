@@ -38,7 +38,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: de4429c64a3c9702c29f5fcb15d2a9e72f1cb083
 ---
 MEASUREMENT (2026-08-25, this ticket's own filing): all four of T-2384's acceptance criteria are already satisfied by landed child tickets, but the epic's acceptance[].evidence arrays are still empty and it remains state=queued.
 
