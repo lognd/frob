@@ -19,7 +19,6 @@ scope:
 - src/frob/stats/_agentic.py
 - src/frob/app/stats_runner.py
 - docs/guides/agentic-time-profiling.md
-- tests/test_hook_tool_call_telemetry.py
 - tests/test_stats_agentic.py
 - docs/modules/stats.md
 - src/frob/stats/__init__.py
@@ -88,6 +87,12 @@ scope_changes:
   glob: tests/test_hook_dispatch_telemetry.py
   reason: 'T-2912: fold tool-call-telemetry hook tests into an already exec-allowlisted
     test file (design/frob.strata is locked by T-2911)'
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: tests/test_hook_tool_call_telemetry.py
+  reason: 'T-2912: folded exec-capability tests into already-allowlisted tests/test_hook_dispatch_telemetry.py
+    instead'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
