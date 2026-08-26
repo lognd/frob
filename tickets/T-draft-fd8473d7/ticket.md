@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/unit/test_ticket_leases.py
 - tests/unit/test_ticket_new.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_new.py
   reason: evidence for the new-ticket-vs-land-lock fix
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: document the shortened wait + rollback behavior
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
