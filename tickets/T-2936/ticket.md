@@ -55,6 +55,11 @@ scope_changes:
   reason: affects()-closure doc for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: docs/modules/process.md
+  reason: affects doc
+  actor: logan
+  at: '2026-08-26'
 evidence:
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_default_arg_is_not_evaluated_at_def_time
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_sig_none_resolves_to_sigkill_only_after_the_platform_guard
