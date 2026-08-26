@@ -218,7 +218,7 @@ SWAP HELD BY FORKSERVERS: 3.8GB -> 0.7GB.
 
 ### Two things found during removal, outside this ticket's scope -- reporting, not fixing
 
-1. `.claude/worktrees/t-1906` is NOT a git worktree (no `.git`, just a
+1. <!-- frob:waive DOC006 reason="ephemeral per-session agent worktree path under .claude/worktrees/, never a tracked file -- this is reporting text about a stub directory found during a fleet audit, not a live doc pointer" -->`.claude/worktrees/t-1906` is NOT a git worktree (no `.git`, just a
    leftover `.frob/telemetry.jsonl` stub dir) -- ticket T-1906 is done.
    Also two stray loose files directly under `.claude/worktrees/`:
    `t-2356-scratch-golden-check.py` and `t1768.patch`, debris from past

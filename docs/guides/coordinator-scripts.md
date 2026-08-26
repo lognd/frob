@@ -662,7 +662,7 @@ implemented", with no scope check at all. Real incident: `--ticket
 T-2114` printed seven unrelated branches, none of which had implemented
 anything -- T-2114 had briefly collided with a different id before being
 renumbered to T-2140, so every branch's hit was collision-recovery
-ledger churn (`tickets/T-2114/ticket.md` edits), never real code in
+ledger churn (<!-- frob:waive DOC006 reason="T-2114 is the pre-renumber id cited by this historical incident text itself; the id was renumbered away to T-2140 before this doc was written, so tickets/T-2114/ticket.md never resolves and never should" -->`tickets/T-2114/ticket.md` edits), never real code in
 T-2114's own scope. Requiring a scope-glob match as well as the ticket-
 directory correlation fixes this: an empty `scope_globs` argument (no
 known scope to check against) now reports empty rather than falling

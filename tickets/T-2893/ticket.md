@@ -2,7 +2,7 @@
 id: T-2893
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2875):
   13 new (rule, file) identit(ies), 12 finding(s) (COV004, DOC006)'
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-25'
