@@ -1,7 +1,7 @@
 ---
 id: T-2923
 title: 'frob sys shrink: tighten unobserved may= capabilities, never widen'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -17,6 +17,8 @@ scope:
 - src/frob/strata/_shrink.py
 - src/frob/strata/__init__.py
 - tests/unit/strata/test_shrink.py
+- src/frob/app/sys_runner.py
+- src/frob/_cli_parsers/_misc.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,6 +52,18 @@ scope_changes:
   glob: tests/unit/strata/test_shrink.py
   reason: narrow to the new shrink module + its __init__ export + its own test file;
     CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: CLI wiring for the new frob sys shrink verb lives in these two files, alongside
+    the implicit __main__.py/config.py/ticket_runner grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: CLI wiring for the new frob sys shrink verb lives in these two files, alongside
+    the implicit __main__.py/config.py/ticket_runner grant
   actor: logan
   at: '2026-08-25'
 triage_changes:
