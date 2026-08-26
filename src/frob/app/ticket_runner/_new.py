@@ -35,8 +35,22 @@ from typing import TYPE_CHECKING
 
 from frob.app.config import AppConfig
 from frob.logging import get_logger
+from frob.tickets._leases import LeaseError
 
 from ._verify import _apply_evidence
+
+# frob:ticket T-2937
+# A much shorter bounded wait than the ~300-500s default every other
+# ledger-committing verb uses (`_load_land_wait_timeout_s`): `_new`'s own
+# ticket id is already durably, correctly allocated (`allocator_lock`/
+# `ledger_lock`, unaffected by anything below) before this constant is
+# ever consulted, and `commit_ticket_ledger_change`'s
+# `rollback_on_land_in_progress=True` pairing below means a timeout here
+# leaves `root` clean (the write is undone), not dirty -- so there is no
+# correctness reason to wait anywhere near as long as a verb whose ledger
+# CHANGE would otherwise be lost. See `_leases._rollback_pathspecs`'s
+# docstring for the mechanism this depends on.
+_NEW_TICKET_LAND_WAIT_TIMEOUT_S = 20.0
 
 if TYPE_CHECKING:
     from frob.tickets import Priority
@@ -845,9 +859,45 @@ def _maybe_attach_clipboard_image(root: Path, ticket_id: str) -> None:
         _log.info("attached clipboard image to %s", ticket_id)
 
 
+# frob:ticket T-2937
+def _commit_new_ticket_ledger_change_or_exit(  # noqa: ANN001
+    root: Path, ticket, no_commit: bool
+) -> None:
+    """`_new`'s final ledger-commit step, split out to keep that function
+    under the ARCH001 line threshold: a short bounded wait plus a clean
+    rollback of the just-written ticket on a `LandInProgress` timeout
+    (`commit_ticket_ledger_change`'s `wait_timeout_s`/`rollback_on_land_
+    in_progress`, see that function's own docstring) -- `sys.exit(1)` on
+    any failure, with a distinct, actionable message for the rollback
+    case naming that the id was NOT consumed and the command is safe to
+    retry as-is."""
+    from frob.tickets._leases import commit_ticket_ledger_change
+
+    committed = commit_ticket_ledger_change(
+        root,
+        ticket.id,
+        f"chore(tickets): file {ticket.id} {ticket.title}",
+        no_commit=no_commit,
+        wait_timeout_s=_NEW_TICKET_LAND_WAIT_TIMEOUT_S,
+        rollback_on_land_in_progress=True,
+    )
+    if committed.is_err:
+        if committed.danger_err is LeaseError.LandInProgress:
+            _log.error(
+                "ticket new: %s could not be filed -- a land is in "
+                "progress in %s; the just-written ticket was rolled "
+                "back (root is clean, no id was consumed) -- retry this "
+                "same command once the land finishes",
+                ticket.id,
+                root,
+            )
+        sys.exit(1)
+
+
 # frob:ticket T-0030
 # frob:ticket T-0106
 # frob:ticket T-1130
+# frob:ticket T-2937
 def _new(root: Path, cfg: AppConfig) -> None:
     """Create a ticket from `cfg`'s new-ticket flags; if `--evidence` ids
     were given, apply them (via `_apply_evidence`) after creation succeeds,
@@ -863,7 +913,6 @@ def _new(root: Path, cfg: AppConfig) -> None:
     criterion)."""
     # frob:ticket T-0005
     from frob.tickets import new_ticket
-    from frob.tickets._leases import commit_ticket_ledger_change
 
     if cfg.ticket_title is None or cfg.ticket_kind is None:
         _log.error("frob ticket new requires --title and --kind")
@@ -926,14 +975,7 @@ def _new(root: Path, cfg: AppConfig) -> None:
 
     _maybe_attach_clipboard_image(root, ticket.id)
 
-    committed = commit_ticket_ledger_change(
-        root,
-        ticket.id,
-        f"chore(tickets): file {ticket.id} {ticket.title}",
-        no_commit=cfg.ticket_no_commit,
-    )
-    if committed.is_err:
-        sys.exit(1)
+    _commit_new_ticket_ledger_change_or_exit(root, ticket, cfg.ticket_no_commit)
 
 
 # frob:ticket T-1556

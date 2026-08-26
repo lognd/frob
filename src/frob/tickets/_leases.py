@@ -2511,20 +2511,122 @@ def _finish_ledger_commit_marker(
 # this one check closes the concurrent-write hazard for every one of them
 # at once, without each verb's own call site needing to remember to
 # check separately.
+# frob:ticket T-2937
+# frob:doc \
+# docs/modules/tickets-landing.md#frob-ticket-new-no-longer-waits-out-a-full-land-t-dra\
+# ft-fd8473d7
+# frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean kind="unit"  # noqa: E501
+def _rollback_pathspecs(root: Path, ticket_id: str, pathspecs: tuple[str, ...]) -> None:
+    """T-2937: best-effort UNDO of a
+    still-uncommitted write to `pathspecs`, restoring `root` to exactly
+    the state it was in before that write -- used only when a caller
+    opted into `rollback_on_land_in_progress` and the ledger commit was
+    refused because a land is in progress, so a bounded-wait timeout
+    degrades to "nothing happened" instead of a stranded DirtyMain-
+    blocking write. Each pathspec is classified via `git status
+    --porcelain` (untracked `??` entries are newly-created paths this
+    write itself introduced -- removed outright; anything else is a
+    tracked file this write modified -- reverted to its committed
+    content via `git checkout --`). Best-effort and silent-on-failure by
+    design (logged at WARNING, never raised): a rollback that itself
+    fails must not mask the ORIGINAL `LandInProgress` the caller is
+    already about to return -- the caller's own error message already
+    tells the operator what to check by hand."""
+    status = gitio.run_argv(
+        ["git", "-C", str(root), "status", "--porcelain", "--", *pathspecs]
+    )
+    if status.is_err or not status.danger_ok.stdout.strip():
+        return
+    untracked: list[str] = []
+    tracked: list[str] = []
+    for line in status.danger_ok.stdout.splitlines():
+        if len(line) < 4:
+            continue
+        code = line[:2]
+        rel = line[3:].strip()
+        if not rel:
+            continue
+        (untracked if code == "??" else tracked).append(rel)
+    if tracked:
+        reverted = gitio.run_argv(["git", "-C", str(root), "checkout", "--", *tracked])
+        if reverted.is_err or reverted.danger_ok.returncode != 0:
+            _log.warning(
+                "tickets: %s rollback could not revert tracked path(s) %s "
+                "in %s -- check `git status` by hand",
+                ticket_id,
+                tracked,
+                root,
+            )
+    if untracked:
+        cleaned = gitio.run_argv(
+            ["git", "-C", str(root), "clean", "-fd", "--", *untracked]
+        )
+        if cleaned.is_err or cleaned.danger_ok.returncode != 0:
+            _log.warning(
+                "tickets: %s rollback could not remove untracked path(s) "
+                "%s in %s -- check `git status` by hand",
+                ticket_id,
+                untracked,
+                root,
+            )
+    _log.info(
+        "tickets: %s rolled back an uncommitted ledger write in %s "
+        "(land in progress) -- root is clean, the id is free to be "
+        "reallocated on retry",
+        ticket_id,
+        root,
+    )
+
+
+# frob:ticket T-2937
+# `wait_timeout_s`/`rollback_on_land_in_progress` (below, and on
+# `_add_and_commit_tickets_md`/`commit_ticket_ledger_change`) let a
+# caller that does NOT need the full land-wait budget (e.g. `frob
+# ticket new`, whose id allocation is already durably correct via
+# `allocator_lock`/`ledger_lock` regardless of what happens to this
+# commit) trade the ~300-500s default every other ledger-committing
+# verb still uses for a much shorter bounded wait plus a clean rollback
+# of the just-written pathspecs on timeout. Both default to the exact
+# pre-existing behavior (full wait, no rollback) for every other caller
+# -- a `start`/`close`/`drop`/`evidence`/`done-report` ledger CHANGE,
+# unlike a brand-new ticket's file, is not safe to just discard.
+def _land_check_with_optional_rollback(
+    root: Path,
+    ticket_id: str,
+    pathspecs: tuple[str, ...],
+    wait_timeout_s: float | None,
+    rollback_on_land_in_progress: bool,
+) -> Result[None, LeaseError]:
+    """`_add_and_commit_tickets_md`'s land-in-progress check, split out to
+    keep that function under the ARCH001 line threshold: probes
+    `refuse_if_land_in_progress` with the given `wait_timeout_s`, and,
+    only on `Err(LandInProgress)` specifically (never on a different
+    `LeaseError`) with `rollback_on_land_in_progress=True`, rolls back
+    `pathspecs` (`_rollback_pathspecs`) before returning the same `Err`
+    unchanged."""
+    land_check = refuse_if_land_in_progress(root, wait_timeout_s=wait_timeout_s)
+    if land_check.is_err:
+        is_land_in_progress = land_check.danger_err is LeaseError.LandInProgress
+        if rollback_on_land_in_progress and is_land_in_progress:
+            _rollback_pathspecs(root, ticket_id, pathspecs)
+    return land_check
+
+
+# frob:ticket T-2937
 def _add_and_commit_tickets_md(
     root: Path,
     ticket_id: str,
     message: str,
     *,
     pathspecs: tuple[str, ...] | None = None,
+    wait_timeout_s: float | None = None,
+    rollback_on_land_in_progress: bool = False,
 ) -> Result[None, LeaseError]:
     """`git add <pathspecs> && git commit -m message -- <pathspecs>` in
-    `root` (T-1054, generalized T-1130 to take an explicit `message`
-    rather than always hardcoding "start transition" -- `commit_start_
-    transition` and `commit_ticket_ledger_change` both funnel through this
-    one add+commit primitive with their own message text). `Err(
-    CommitFailed)`, loudly logged with the exact recovery command, if
-    either step fails.
+    `root` (T-1054, generalized T-1130 -- `commit_start_transition` and
+    `commit_ticket_ledger_change` both funnel through this one add+
+    commit primitive with their own message text). `Err(CommitFailed)`,
+    loudly logged with the exact recovery command, if either step fails.
 
     `pathspecs=None` computes `_ledger_pathspecs(root, ticket_id)`;
     `commit_full_ledger_change` (T-1615, a whole-ledger write not scoped
@@ -2533,19 +2635,21 @@ def _add_and_commit_tickets_md(
     directly above this function for the T-1432/T-1619 rationale.
 
     T-2714: reconciles any stale ledger-commit-repair marker a PRIOR
-    crashed call left behind (for any ticket) BEFORE this call's own work
-    starts, then brackets its OWN add+commit with the same marker family
-    -- written right after computing `pathspecs`, cleared in a `finally`
-    once the add+commit attempt below returns for any reason. See
-    `_repair_stale_ledger_commit_markers`'s own docstring for the crash
-    window this closes and why re-attempting the identical commit is
-    safe."""
+    crashed call left behind BEFORE this call's own work starts, then
+    brackets its OWN add+commit with the same marker family -- see
+    `_repair_stale_ledger_commit_markers`'s own docstring.
+
+    T-2937: `wait_timeout_s`/`rollback_on_land_in_progress` are
+    handled by `_land_check_with_optional_rollback` above -- see its
+    comment."""
     _repair_stale_ledger_commit_markers(root)
-    land_check = refuse_if_land_in_progress(root)
-    if land_check.is_err:
-        return Err(land_check.danger_err)
     if pathspecs is None:
         pathspecs = _ledger_pathspecs(root, ticket_id)
+    land_check = _land_check_with_optional_rollback(
+        root, ticket_id, pathspecs, wait_timeout_s, rollback_on_land_in_progress
+    )
+    if land_check.is_err:
+        return Err(land_check.danger_err)
     pre_tip = _rev_parse_head(root)
     _write_ledger_commit_repair_marker(root, ticket_id, message, pathspecs, pre_tip)
     try:
@@ -2604,6 +2708,7 @@ def _log_ledger_commit_failure(
 # frob:ticket T-1130
 # frob:ticket T-1615
 # frob:ticket T-1891
+# frob:ticket T-2937
 # frob:doc docs/modules/tickets-lifecycle.md#newdropfail-auto-commit-t-1130
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_commits_dirty_ledger_with_given_message kind="unit"  # noqa: E501
 # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_no_op_when_ledger_already_clean kind="unit"  # noqa: E501
@@ -2618,6 +2723,8 @@ def commit_ticket_ledger_change(
     *,
     no_commit: bool = False,
     warn_if_dirty: bool = True,
+    wait_timeout_s: float | None = None,
+    rollback_on_land_in_progress: bool = False,
 ) -> Result[None, LeaseError]:
     """Auto-commit `root`'s just-written `tickets.md` change with `message`
     (T-1130, parity with T-1054's `commit_start_transition` for `frob
@@ -2671,7 +2778,13 @@ def commit_ticket_ledger_change(
     right after -- if that later call itself is also `no_commit=True`
     (the genuine end-user opt-out), IT still warns (default `warn_if_
     dirty=True`), so the operator is never left without a warning for a
-    tree that is actually, durably left dirty."""
+    tree that is actually, durably left dirty.
+
+    T-2937: `wait_timeout_s`/
+    `rollback_on_land_in_progress` forward unchanged to
+    `_add_and_commit_tickets_md` -- see that function's own docstring.
+    Both default to the pre-existing behavior (full wait, no rollback)
+    for every caller that does not pass them."""
     if no_commit:
         if warn_if_dirty and _tickets_md_dirty(root, ticket_id):
             pathspecs = _ledger_pathspecs(root, ticket_id)
@@ -2691,7 +2804,13 @@ def commit_ticket_ledger_change(
         return Ok(None)
     if not _tickets_md_dirty(root, ticket_id):
         return Ok(None)
-    return _add_and_commit_tickets_md(root, ticket_id, message)
+    return _add_and_commit_tickets_md(
+        root,
+        ticket_id,
+        message,
+        wait_timeout_s=wait_timeout_s,
+        rollback_on_land_in_progress=rollback_on_land_in_progress,
+    )
 
 
 # frob:ticket T-1615

@@ -1,8 +1,8 @@
 ---
-id: T-draft-fd8473d7
+id: T-2937
 title: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted
   ticket on timeout
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -66,7 +66,10 @@ scope_changes:
   reason: confirm malformed directive fixed (no-op if already present)
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_rollback_on_land_in_progress_leaves_root_clean
+- tests/test_ticket_leases.py::TestConcurrentNewTicketAllocationDuringLand::test_n_concurrent_new_ticket_calls_produce_distinct_ids
+designated_repro_test: tests/test_ticket_leases.py::TestCommitTicketLedgerChange::test_rollback_on_land_in_progress_leaves_root_clean
 threat: null
 component: null
 anchor: false

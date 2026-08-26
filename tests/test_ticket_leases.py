@@ -931,6 +931,7 @@ class TestCommitStartTransition:
 
 
 # frob:ticket T-1130
+# frob:ticket T-2937
 class TestCommitTicketLedgerChange:
     """T-1130: `commit_ticket_ledger_change` -- the generalized (arbitrary
     message, `--no-commit` opt-out) sibling of `commit_start_transition`
@@ -1038,6 +1039,61 @@ class TestCommitTicketLedgerChange:
             r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING
         ]
         assert not any("DirtyMain-block" in w for w in warnings)
+
+    # frob:ticket T-2937
+    def test_rollback_on_land_in_progress_leaves_root_clean(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestCommitTicketLedgerChange.test_rollback_on_land_in_progress_leaves_root_clean  # noqa: E501
+        """`rollback_on_land_in_progress=True` paired with a short
+        `wait_timeout_s`: when a land holds `land.lock` for the whole
+        (short) wait, the just-written, still-uncommitted ledger change
+        is undone before `Err(LandInProgress)` returns -- `root` ends up
+        exactly as clean as before the call, never stranded dirty the
+        way an unqualified timeout leaves it today."""
+        import fcntl
+        import json
+
+        from frob.tickets import transition
+        from frob.tickets._leases import (
+            LAND_LOCK_REL,
+            LeaseError,
+            commit_ticket_ledger_change,
+        )
+
+        assert transition(repo, "T-0001", TicketState.PLANNED).is_ok
+        dirty_before = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo
+        ).stdout.strip()
+        assert dirty_before != ""
+
+        lock_path = repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+        try:
+            result = commit_ticket_ledger_change(
+                repo,
+                "T-0001",
+                "chore(tickets): drop T-0001",
+                wait_timeout_s=0,
+                rollback_on_land_in_progress=True,
+            )
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+        assert result.is_err
+        assert result.danger_err == LeaseError.LandInProgress
+        status_after = _run(
+            ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], repo
+        ).stdout.strip()
+        assert status_after == "", (
+            "rollback must leave root exactly as clean as before the "
+            f"call; git status still reports: {status_after!r}"
+        )
 
     # frob:ticket T-1615
     def test_no_commit_flag_does_not_warn_when_clean(
@@ -3025,6 +3081,96 @@ class TestNewTicketProgrammaticAutoCommit:
             ["git", "status", "--porcelain", "--", _LEDGER_PATHSPEC], main_repo
         )
         assert status.stdout.strip() == ""
+
+
+# frob:ticket T-2937
+class TestConcurrentNewTicketAllocationDuringLand:
+    """T-2937: the correctness constraint
+    on shortening/rolling-back `frob ticket new`'s land-in-progress wait
+    -- id-uniqueness must survive unchanged. `new_ticket`'s allocation
+    (`_allocate_and_write_new_ticket`) is guarded by `allocator_lock`/
+    `ledger_lock`, entirely SEPARATE from and unaffected by the land-
+    wait/rollback change to the later commit step -- this test proves
+    that directly rather than by argument: N concurrent `new_ticket`
+    calls, with a real `land.lock` held throughout by a foreign holder,
+    still produce N distinct ids and never `DuplicateId`."""
+
+    # frob:ticket T-2937
+    def test_n_concurrent_new_ticket_calls_produce_distinct_ids(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_leases.py::TestConcurrentNewTicketAllocationDuringLand.test_n_concurrent_new_ticket_calls_produce_distinct_ids  # noqa: E501
+        import fcntl
+        import json
+        import threading
+
+        from typani import Result
+
+        from frob.tickets import (
+            Origin,
+            Ticket,
+            TicketError,
+            TicketKind,
+            TicketSpec,
+            new_ticket,
+        )
+        from frob.tickets._leases import LAND_LOCK_REL
+
+        main_repo = tmp_path / "main"
+        _git_init(main_repo)
+        (main_repo / ".gitkeep").write_text("")
+        _commit_all(main_repo, "init")
+
+        # A real land.lock, held for the whole test by a foreign "holder"
+        # -- every concurrent new_ticket call below races against a
+        # genuinely in-flight land, not a simulated one.
+        lock_path = main_repo / LAND_LOCK_REL
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+        holder_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(holder_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        os.write(
+            holder_fd,
+            (json.dumps({"pid": os.getpid(), "ticket_id": "T-9999"}) + "\n").encode(),
+        )
+
+        n = 8
+        results: list[Result[Ticket, TicketError] | None] = [None] * n
+        errors: list[BaseException] = []
+
+        def _file_one(i: int) -> None:
+            try:
+                spec = TicketSpec(
+                    title=f"concurrent ticket {i}",
+                    kind=TicketKind.BUG,
+                    origin=Origin.AGENT,
+                )
+                # no_commit=True: this test is about ALLOCATION
+                # uniqueness, not the commit-step wait/rollback this
+                # ticket also touches (covered separately above) -- a
+                # concurrent git commit race is not this test's concern.
+                results[i] = new_ticket(main_repo, spec, no_commit=True)
+            except BaseException as exc:  # noqa: BLE001
+                errors.append(exc)
+
+        try:
+            threads = [threading.Thread(target=_file_one, args=(i,)) for i in range(n)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=30)
+                assert not t.is_alive(), "a new_ticket() call hung"
+        finally:
+            fcntl.flock(holder_fd, fcntl.LOCK_UN)
+            os.close(holder_fd)
+
+        assert not errors, errors
+        ids = []
+        for r in results:
+            if r is None:
+                raise AssertionError("a new_ticket() call never recorded a result")
+            assert r.is_ok, r.danger_err
+            ids.append(r.danger_ok.id)
+        assert len(set(ids)) == n, f"expected {n} distinct ids, got {ids}"
 
 
 class TestCloseEvidenceDoneReportRequeueAutoCommit:

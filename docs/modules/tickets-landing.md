@@ -2926,3 +2926,61 @@ unconditional in every profile.
 Best-effort, fail-closed: an unreadable profile config resolves to
 NOT-rapid (never skip), so a broken `frob.toml` can only make a land
 MORE thorough, never less.
+
+## `frob ticket new` no longer waits out a full land (T-2937)
+
+Every ledger-committing verb funnels its auto-commit through
+`_add_and_commit_tickets_md`, which refuses (`refuse_if_land_in_progress`)
+while `root` has a live `frob ticket land` holding `land.lock` -- correct
+in general, since `git commit -- <pathspecs>` racing land's own merge/
+squash-apply/commit on the SAME working tree's index is a genuine
+git-level hazard, not merely a ledger-content one. Every OTHER verb still
+uses the full default wait (`_load_land_wait_timeout_s`, ~300-500s
+scaled against the in-flight land's own start time) -- correct for them,
+since their ledger CHANGE (a state transition, evidence, a done report)
+would otherwise be lost.
+
+`frob ticket new` is different: its id is already durably, correctly
+allocated (`allocator_lock`+`ledger_lock`, T-1253) BEFORE the commit step
+runs, entirely independent of whether that commit ever succeeds. Waiting
+minutes for an unrelated land, just to commit a write that could instead
+be safely undone, bought nothing but latency -- and the pre-existing
+timeout behavior (`sys.exit(1)` with the ticket file still on disk,
+uncommitted) was *already* the exact DirtyMain hazard a long wait was
+implicitly trying to avoid by usually finishing first.
+
+`commit_ticket_ledger_change`/`_add_and_commit_tickets_md` now take
+`wait_timeout_s`/`rollback_on_land_in_progress` (both default to the
+unchanged prior behavior for every other caller). `frob ticket new`'s
+own CLI wrapper (`_new.py`) passes a short bounded wait
+(`_NEW_TICKET_LAND_WAIT_TIMEOUT_S = 20.0`) plus
+`rollback_on_land_in_progress=True`: on `LandInProgress` specifically
+(never on a real `CommitFailed`), `_rollback_pathspecs` reverts any
+tracked modification (`git checkout --`) and removes any untracked new
+path (`git clean -fd --`) the just-attempted write introduced, BEFORE
+returning the error -- so a fast refusal leaves `root` exactly as clean
+as before the call, and the id is immediately available for reallocation
+on retry (nothing on disk still claims it). This trades "wait ~5
+minutes, then dirty root anyway" for "wait ~20s, clean root, retry the
+same command" -- strictly better on both the latency and the
+DirtyMain-risk axes.
+
+Id-allocation uniqueness is untouched by this change: it is proven
+directly (not just by argument) by
+`tests/test_ticket_leases.py::TestConcurrentNewTicketAllocationDuringLand`,
+N concurrent `new_ticket()` calls against one repo with a real
+`land.lock` held throughout, asserting N distinct ids.
+
+A narrower fix that scoped land's OWN lock to just its actual root-
+mutation window (squash-apply), instead of its entire precheck-through-
+commit duration, was considered and rejected as out of scope for this
+fix: `_land_lock` (`_land.py`) wraps `_land_locked`'s whole body in one
+process-wide flock, and restructuring that scope is a high-risk core-
+locking change to a file with a long incident history -- see
+`docs/guides/agent-playbook.md` section 13 for the land-cost
+investigation this builds on. Every OTHER ledger-committing verb
+(`start`/`close`/`drop`/`fail`/`requeue`/`evidence`/`done-report`) still
+uses the original full-wait, no-rollback behavior; narrowing any of
+those the same way is explicitly out of this fix's scope, since their
+writes are not safe to silently discard the way a not-yet-committed
+brand-new ticket is.

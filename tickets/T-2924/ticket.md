@@ -77,3 +77,6 @@ not a design obstacle, purely a scheduling one.
 Scope: src/frob/app/ticket_runner/_land_cmd.py,
 src/frob/app/ticket_runner/_verify.py (both already need touching for
 the diff-threading), tests covering the new `--only` selection.
+
+## Failure log
+- 2026-08-25 attempt 2: no safe --only merge-delta scoping exists; it drops ToolResult coverage the T-0754 divergence check relies on -- needs owner decision, see Done report
