@@ -70,6 +70,14 @@ GATES_RATCHET_KNOWN_KEYS: frozenset[str] = frozenset({"rules"})
 
 
 # frob:ticket T-2435
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unresolved(message: str) -> Violation:
     """One GATESSCHEMA001 `Severity.UNRESOLVED` finding -- this check
     could not determine an answer, never rendered as a clean zero."""
@@ -83,6 +91,14 @@ def _unresolved(message: str) -> Violation:
 
 
 # frob:ticket T-2435
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unknown_ratchet_key_violation(key: str) -> Violation:
     """One GATESSCHEMA001 `Severity.ERROR` finding: `[gates.ratchet]`
     carries an undeclared key `key`."""
@@ -103,6 +119,14 @@ def _unknown_ratchet_key_violation(key: str) -> Violation:
 
 
 # frob:ticket T-2435
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unknown_severity_rule_violation(rule_id: str) -> Violation:
     """One GATESSCHEMA001 `Severity.ERROR` finding: `[gates.severity]`
     carries a key `rule_id` that is not a registered gate rule."""
@@ -124,6 +148,14 @@ def _unknown_severity_rule_violation(rule_id: str) -> Violation:
 
 
 # frob:ticket T-2435
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _resolve_ratchet_known_keys(
     root: Path,
 ) -> tuple[frozenset[str] | None, Violation | None]:

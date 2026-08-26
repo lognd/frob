@@ -91,6 +91,14 @@ def arch_known_keys() -> frozenset[str]:
 
 
 # frob:ticket T-2433
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unresolved(message: str) -> Violation:
     """One ARCHSCHEMA001 `Severity.UNRESOLVED` finding -- this check
     could not determine an answer, never rendered as a clean zero."""
@@ -104,6 +112,14 @@ def _unresolved(message: str) -> Violation:
 
 
 # frob:ticket T-2433
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unknown_key_violation(key: str) -> Violation:
     """One ARCHSCHEMA001 `Severity.ERROR` finding: the `[arch]` table
     carries an undeclared key `key`."""
@@ -125,6 +141,14 @@ def _unknown_key_violation(key: str) -> Violation:
 
 
 # frob:ticket T-2433
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | None]:
     """Resolve `[arch_schema] known_keys` to a real `frozenset[str]`, or
     return the `Violation` explaining why not."""

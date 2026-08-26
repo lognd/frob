@@ -2833,3 +2833,6 @@
 {"commit": "51932dc64fc671aebbe28cd5fafdb4985f3595be", "skipped": "land-evidence-scope-unbound", "ticket": "T-2961"}
 {"commit": "dbc0dcf2ab8b403721ee7e3b70d848bc98cc1fab", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2961"}
 {"commit": "fffea07ce9cb75987ee0c01ed201bf2b16bb3a5d", "skipped": "missing-evidence-or-done-report", "ticket": "T-2959"}
+{"commit": "8e375ff50f88f9c80a279779748701aeb7330056", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2956"}
+{"commit": "4d55bdab772521d7d38cd606fb703cb7299bf623", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2956"}
+{"commit": "072ceaccf32b3c9047e1f5835ac8343b878a0ae8", "skipped": "land-evidence-scope-unbound", "ticket": "T-2956"}

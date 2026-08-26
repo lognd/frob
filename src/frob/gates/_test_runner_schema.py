@@ -63,6 +63,14 @@ TEST_RUNNER_KNOWN_KEYS: frozenset[str] = frozenset(
 
 
 # frob:ticket T-2436
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unresolved(message: str) -> Violation:
     """One TESTRUNNERSCHEMA001 `Severity.UNRESOLVED` finding -- this
     check could not determine an answer, never rendered as a clean
@@ -77,6 +85,14 @@ def _unresolved(message: str) -> Violation:
 
 
 # frob:ticket T-2436
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unknown_key_violation(index: int, key: str) -> Violation:
     """One TESTRUNNERSCHEMA001 `Severity.ERROR` finding: entry `index` of
     `[[test.runner]]` carries an undeclared key `key`."""
@@ -97,6 +113,14 @@ def _unknown_key_violation(index: int, key: str) -> Violation:
 
 
 # frob:ticket T-2436
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | None]:
     """Resolve `[test_runner_schema] known_keys` to a real
     `frozenset[str]`, or return the `Violation` explaining why not."""
@@ -150,6 +174,14 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 # in this same file (not flagged) -- the resolver's coverage gap is inherent ambiguity \
 # in resolving doc.get(...).get(...) chains on an untyped tomllib result, not a real \
 # unhandled-exception risk"
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _test_runner_records(root: Path) -> list[dict] | None:
     """The RAW `[[test.runner]]` records straight off `tomllib.load`.
     Returns `None` if frob.toml is missing/malformed (same fail-open

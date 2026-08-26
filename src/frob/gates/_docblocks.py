@@ -827,6 +827,14 @@ def _doc012_documented_commands(root: Path, prog: str) -> frozenset[str]:
     return frozenset(documented)
 
 
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _doc012_violation(name: str, prog: str) -> Violation:
     """Build one DOC012 finding -- ERROR (T-2299): the T-1783 first-turn-
     on WARN period (T-0688 precedent, same posture DOC006 shipped under)

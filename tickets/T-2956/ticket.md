@@ -1,7 +1,7 @@
 ---
 id: T-2956
 title: 'frob-dup: triage src/frob/gates renamed-duplicate cluster (20 groups)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

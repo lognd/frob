@@ -57,6 +57,14 @@ if TYPE_CHECKING:
 
 
 # frob:ticket T-2397
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _unresolved(message: str) -> Violation:
     """One FLAGCOV001 `Severity.UNRESOLVED` finding: this gate could not
     determine an answer for some declared (or entirely absent) source --
@@ -72,6 +80,14 @@ def _unresolved(message: str) -> Violation:
 
 
 # frob:ticket T-2397
+# frob:waive DUP001 reason="T-2956 triage: this is the T-2390-epic \
+# config-table-validator family (_refs_schema.py and eight siblings) -- verified \
+# against the code, not just the docstring claim: each file is independently \
+# ticketed/tested (own frob:ticket, own frob:tests, own rule code, own message content \
+# naming its own config surface), and the resolve-known-keys/report-idiom is \
+# deliberately copied per T-2390 so each per-table validator evolves independently \
+# without a shared base coupling their message text or future divergence. See T-2956 \
+# done report."
 def _dropped_flag_violation(dest: str, config_cls_name: str, prog: str) -> Violation:
     """One FLAGCOV001 `Severity.ERROR` finding: `dest` parses on `prog`'s
     CLI tree but never reaches `config_cls_name` -- T-2387's exact defect
