@@ -14,10 +14,76 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/check/__init__.py
+- src/frob/app/check_runner.py
+- src/frob/render/_renderer.py
+- docs/modules/render.md
+- docs/modules/check.md
+- tests/unit/test_check.py
+- tests/unit/test_app_runners_batch6.py
+- tests/system/test_cli_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/check/__init__.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/check_runner.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/render/_renderer.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/render.md
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/check.md
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_app_runners_batch6.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: live per-task progress for frob check (TTY-only, reuses existing T-0419
+    Progress primitive; per-gate/branch-scan progress for other commands filed as
+    follow-up)
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
