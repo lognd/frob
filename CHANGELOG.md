@@ -53,6 +53,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2373: Burn ruff I001 (import-sort) warnings to zero, keep enforced
 - T-2374: Burn DOC004/DOC006 WARN gates to zero, then promote to error
 - T-2375: Burn LARGE001 WARN gate to zero, then promote to error
+- T-2378: Decompose and burn frob-dup (exact+renamed) WARN findings to zero, then promote to error
 - T-2389: retarget hardcoded src/frob/ literal in _env_var_docs.py and _root_asset_dirs.py to the T-2195 source-root resolver
 - T-2405: widen PORT001 scan scope past src/frob/gates/ (repo-wide src/frob/ hardcoded-identity sweep)
 - T-2408: frob.lang.extract_imports has no typescript/rust/kotlin walker (import_graph capability gap)

@@ -16,19 +16,9 @@ from pathlib import Path
 
 from frob.excludes import iter_files
 from frob.gates._models import Severity, Violation
-from frob.logging import get_logger
 from frob.vet._models import Dependency
+from frob.vet._source import _read_text_or_empty
 
-_log = get_logger(__name__)
-
-
-def _read_text_or_empty(path: Path) -> str:
-    """`path`'s UTF-8 text (replacement errors) or `""` on an OS read failure."""
-    try:
-        return path.read_text(encoding="utf-8", errors="replace")
-    except OSError as exc:
-        _log.warning("vet: could not read %s: %s", path, exc)
-        return ""
 
 
 # frob:enforces CHK-GATE-VET-PY001

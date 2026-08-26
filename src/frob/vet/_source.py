@@ -20,6 +20,22 @@ from frob.logging import get_logger
 _log = get_logger(__name__)
 
 
+# frob:ticket T-2378
+def _read_text_or_empty(path: Path) -> str:
+    """`path`'s UTF-8 text (replacement errors) or `""` on an OS read
+    failure -- shared by `_ecosystem.py` (per-dependency cheap rules) and
+    `_supplychain.py` (project-tree manifest checks), which both need the
+    same "never crash on an unreadable file, just treat it as absent"
+    policy over an arbitrary tracked-file read (frob-dup exact-duplicate
+    T-2378: the two copies were byte-identical, so this is a real shared
+    utility, not two independent decisions that happen to look alike)."""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        _log.warning("vet: could not read %s: %s", path, exc)
+        return ""
+
+
 def _candidate_uv_cache_dirs() -> tuple[Path, ...]:
     """Plausible uv/pip wheel-cache roots, cheapest-first."""
     dirs = []

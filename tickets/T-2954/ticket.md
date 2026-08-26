@@ -1,5 +1,5 @@
 ---
-id: T-draft-21102fcc
+id: T-2954
 title: frob ticket archive can strand a non-terminal ticket with no restore path (T-0450)
 state: queued
 kind: bug

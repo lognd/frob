@@ -2,7 +2,7 @@
 id: T-2378
 title: Decompose and burn frob-dup (exact+renamed) WARN findings to zero, then promote
   to error
-state: queued
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -18,8 +18,8 @@ scope:
 - src/frob/vet/_source.py
 - src/frob/vet/_ecosystem.py
 - src/frob/vet/_supplychain.py
-- tickets/T-draft-b8b8d1eb/**
-- tickets/T-draft-c6cb0e9a/**
+- tickets/T-2955/**
+- tickets/T-2956/**
 evidence_scope:
 - tests/test_vet.py
 scope_breadth_ack: false
@@ -53,13 +53,13 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-b8b8d1eb/**
+  glob: tickets/T-2955/**
   reason: sibling draft tickets filed from this ticket, need to be in scope for the
     commit that files them
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-c6cb0e9a/**
+  glob: tickets/T-2956/**
   reason: sibling draft tickets filed from this ticket, need to be in scope for the
     commit that files them
   actor: logan
@@ -104,9 +104,9 @@ acceptance_amendments:
 
     family into a histogram, extract the one genuine exact-duplicate found in
 
-    src/frob/vet, and file two sibling tickets (drafts T-draft-c6cb0e9a,
+    src/frob/vet, and file two sibling tickets (drafts T-2956,
 
-    T-draft-b8b8d1eb, parented to T-2378) covering the two largest untriaged
+    T-2955, parented to T-2378) covering the two largest untriaged
 
     clusters (src/frob/gates, ~20 groups; tests/, ~490 groups). "Zero findings
 
