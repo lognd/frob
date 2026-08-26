@@ -2,7 +2,7 @@
 id: T-2928
 title: 'WIRE001 and REF002 both MISS provably dead symbols: measured 1-of-3 detector
   hit rate on a controlled deletion'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -19,6 +19,8 @@ scope:
 - src/frob/gates/_refs.py
 - tests/test_gates.py
 - docs/modules/gates.md
+- tests/test_refs_gate.py
+- tests/unit/gates/test_refs.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,16 @@ scope_changes:
   glob: docs/modules/gates.md
   reason: investigate why WIRE001/REF002 both missed a controlled dead-symbol deletion
     (T-2900/T-2905); add regression fixtures and document detector scope
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: REF002 regression fixtures belong beside its existing test suite, not test_gates.py
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/gates/test_refs.py
+  reason: REF002 regression fixtures belong beside its existing test suite, not test_gates.py
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
