@@ -1,8 +1,8 @@
 ---
 id: T-2989
-title: Rename frob.yaml_io to frob.yamlio for io-seam naming consistency (via frob
+title: Rename frob.yamlio to frob.yamlio for io-seam naming consistency (via frob
   refactor, not hand-edits)
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -15,7 +15,7 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/yaml_io.py
+- src/frob/yamlio.py
 - src/frob/yamlio.py
 - src/frob/__init__.py
 - src/frob/gates/_fmt_directives.py
@@ -28,87 +28,227 @@ scope:
 - tests/unit/perf/test_hotpath_smells.py
 - tests/unit/test_ticket_store.py
 - docs/modules/tickets-data-storage.md
+- docs/commands/refactor.md
+- src/frob/refactor/_module_prose.py
+- src/frob/refactor/_module_scan_python.py
+- tests/test_refactor.py
+- design/frob.strata
+- tickets/T-2990/**
+- tickets/archive/T-1204/**
+- tickets/archive/T-1485/**
+- tickets/archive/T-1644/**
+- tickets/archive/T-1647/**
+- tickets/archive/T-1780/**
+- tickets/archive/T-1892/**
+- tickets/archive/T-2380/**
+- tickets/archive/T-2403/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
 scope_changes:
 - op: add
-  glob: src/frob/yaml_io.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  glob: src/frob/yamlio.py
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/yamlio.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/__init__.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/gates/_fmt_directives.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/gates/decisions.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/gates/invariants.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/registry/_models.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/tickets/_store.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/vet/_lockfile.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: src/frob/derived_state.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: tests/unit/perf/test_hotpath_smells.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: tests/unit/test_ticket_store.py
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: docs/modules/tickets-data-storage.md
-  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+  reason: rename frob.yamlio -> frob.yamlio via frob refactor move-module; 21 references
     across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/refactor/_module_prose.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/refactor/_module_scan_python.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_refactor.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/refactor/_module_prose.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/refactor/_module_scan_python.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_refactor.py
+  reason: T-2990 own illustrative examples spelled the literal string yaml_io; T-2989
+    acceptance requires git grep -c yaml_io == 0 repo-wide, so those examples must
+    be renamed to a non-colliding name as a prerequisite
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: design/frob.strata
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2990/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1204/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1485/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1644/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1647/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1780/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-1892/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2380/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2403/**
+  reason: move-module verb correctly repointed the .strata code= glob binding this
+    module and 8 archived tickets own path citations of the renamed module; required
+    by the tool own zero-surviving-references postcondition
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
@@ -118,16 +258,16 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
-`src/frob/yaml_io.py` is the only io-seam module carrying an underscore. Its
+`src/frob/yamlio.py` is the only io-seam module carrying an underscore. Its
 siblings are `src/frob/gitio.py` and `src/frob/tomlio.py`. The in-flight
 GitHub/CI seam (T-2983) has been redirected to land as `ghio` for the same
 reason, so `yaml_io` would be the last holdout of a spelling actively being
 removed.
 
-Rename `frob.yaml_io` -> `frob.yamlio`.
+Rename `frob.yamlio` -> `frob.yamlio`.
 
 MEASURED SCOPE:
-- `src/frob/yaml_io.py` is 73 lines.
+- `src/frob/yamlio.py` is 73 lines.
 - Public surface is a SINGLE symbol: `fast_yaml_loader`.
 - Module-private: `_coverage_tracer_active`, `__all__`.
 - References: 21 across 11 files (src/, tests/, docs/).
@@ -137,7 +277,7 @@ go through `frob refactor` so that import rewriting is done by the machinery
 rather than by hand. `frob refactor move` takes `MODULE:QUALNAME` pairs and
 rewrites all references:
 
-    frob refactor move frob.yaml_io:fast_yaml_loader frob.yamlio:fast_yaml_loader
+    frob refactor move frob.yamlio:fast_yaml_loader frob.yamlio:fast_yaml_loader
 
 Then deal with the residue deliberately:
 - `_coverage_tracer_active` is module-private and presumably supports
@@ -160,7 +300,7 @@ VERIFY, do not assume the tool got everything:
   rewritten: exercise `fast_yaml_loader` through a real call path.
 
 ACCEPTANCE
-- `frob.yamlio` exists, `frob.yaml_io` does not, and no shim remains.
+- `frob.yamlio` exists, `frob.yamlio` does not, and no shim remains.
 - `git grep -c "yaml_io"` across src/, tests/, docs/ returns 0.
 - The rename was performed by `frob refactor move`, not by hand-editing imports
   -- state in the Done report which command(s) you ran.
