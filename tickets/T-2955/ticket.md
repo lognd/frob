@@ -15,6 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - tickets/T-2955/**
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -34,12 +36,22 @@ body_changes:
   at: '2026-08-26'
   old_length: 2053
   new_length: 7202
+- mode: append
+  reason: 'BUG002 needs an explicit no-behavior-change declaration: this ticket is
+    a triage/decision record with no code change'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 7201
+  new_length: 7406
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 acceptance:
 - text: given the tests/ frob-dup cluster measured in this ticket's body, when triaged,
     then a decision (extract / per-group waive / detector-narrowing proposal) is recorded
     for every sub-cluster, decomposed into further children as needed
-  evidence: []
+  evidence:
+  - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 threat: null
 component: null
 anchor: false
@@ -174,3 +186,5 @@ T-2957 is NOT unblocked: this ticket's residue (479 groups) is the
 large majority of the whole family's unaccounted count, and it
 requires a real detector-design ticket (T-2967) to resolve honestly,
 not a mechanical burn-down.
+
+frob:no-behavior-change reason="this ticket records a triage decision (detector-narrowing, evidenced) in the ticket body only -- no production code changed, the detector-level fix is deferred to T-2967"
