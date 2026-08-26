@@ -202,6 +202,21 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: adding frob:waive BUG002 per land's own remedy instructions -- platform-absence
+    bug, same class as T-2952/T-2953
+  actor: logan
+  at: '2026-08-26'
+  old_length: 3427
+  new_length: 4417
+evidence:
+- tests/test_serve_events.py::TestSubscribeAndWait::test_no_daemon_is_unreachable
+- tests/test_coverage_wait_shared.py::TestWorktreeLock::test_falls_back_to_file_lock_when_no_daemon
+- tests/test_serve_socket.py::TestAcquireSingletonLock::test_first_caller_wins
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_applies_nice_and_ionice_exactly_once
+- tests/unit/verify/test_worker.py::TestEnsureReducedPriority::test_failed_nice_call_never_raises
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestEnsureDaemonLivenessBranches::test_wedged_does_not_spawn_a_rival
 designated_repro_test: null
 threat: null
 component: null
@@ -271,3 +286,19 @@ Acceptance: a real windows-latest CI run gets past `uv run ty check
 src` with zero diagnostics (or the daemon/worker code paths are
 restructured such that ty can resolve every attribute it type-checks
 on a Windows target).
+
+frob:waive BUG002 reason="T-2961 is a Windows-only import/class-definition-time
+crash (AttributeError raised the instant _socketd.py is imported on a
+platform lacking socketserver.ThreadingUnixStreamServer, plus 5 lazy
+socket.AF_UNIX runtime call sites) -- this Linux CI runner is not the
+platform the defect requires, so no pytest node can genuinely
+FAIL_AT_PARENT here, the same reasoning already applied without
+objection for T-2952 (bare import fcntl) and T-2953 (subprocess
+text-mode decode defaulting to the platform locale codec). Evidence
+instead: (1) a regression test proving the guarded refusal path returns
+the correct Err/liveness value rather than crashing
+(test_no_daemon_is_unreachable and its siblings), (2) a real
+windows-latest CI run at T-2952/T-2953's own land time as this chain's
+established acceptance pattern, attempted again here (PR #4, run
+32944685482) but blocked before reaching ty check by an unrelated,
+already-filed pre-existing defect on main (T-2960)."
