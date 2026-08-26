@@ -119,6 +119,13 @@ scope_changes:
     check (real portability+safety defect found during T-3003 triage)
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'waive BUG002: Windows-only defect, no local reproduction possible'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 0
+  new_length: 696
 evidence:
 - tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches::test_const_ref_resolves_against_assignment_in_another_file
 - tests/gates/test_rule_id_scan_branches.py::TestScanCandidateRuleIdLiterals::test_finds_typed_const_assignment
@@ -138,3 +145,4 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+frob:waive BUG002 reason="T-3003 fixes Windows-only portability defects (path-separator stringification in _rule_id_scan.py, os.kill(pid,0) able to TerminateProcess on Windows in mutate/_journal.py) that cannot be reproduced by any test run on this Linux CI/dev environment -- the defects only manifest on a real windows-latest runner (verified via the actual job log, run 32990187048/job 98245674275). The bound evidence node ids pass at both main and the fix on Linux by construction; the fixes were verified against the fcntl/msvcrt/os.kill semantics documented in each platform's own stdlib behavior and against the exact failure text from the real Windows CI job log, not by a local repro."
