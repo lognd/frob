@@ -2,7 +2,7 @@
 id: T-2930
 title: Triage macOS-only pytest failures found via T-2917 CI matrix (156 failures,
   non-fcntl/prctl remainder)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -14,6 +14,8 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tests/unit/test_process_reap.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -25,6 +27,12 @@ scope_changes:
   reason: triage-only ticket, no fixed file set yet
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_process_reap.py
+  reason: 'T-2930: fix macOS-CI test-only fragility in PDEATHSIG self-kill tests missing
+    a sys.platform pin'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
