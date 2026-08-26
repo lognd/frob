@@ -18,6 +18,9 @@ scope:
 - docs/modules/gates.md
 - src/frob/gates/_waive.py
 - src/frob/gates/_narrative_blocks.py
+- src/frob/__main__.py
+evidence_scope:
+- tests/test_narrative_blocks.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,6 +47,21 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'Land refused to close T-3014: src/frob/__main__.py:630''s SYS003 waiver
+    on _dispatch_narrative still cites follow_up="T-3014" (LiveTrackerCited). Re-pointing
+    that single citation to the new draft follow-up ticket to unblock close -- not
+    otherwise touching __main__.py''s logic.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGate::test_must_fire_long_archaeology_block
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGate::test_must_stay_quiet_short_keep_block
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGate::test_socketd_t2961_block_stays_quiet_at_default_threshold
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGateRepoScan::test_fires_on_a_tracked_file_with_a_long_block
 designated_repro_test: null
 threat: null
 component: null
