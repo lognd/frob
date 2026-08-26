@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/__init__.py
 - docs/modules/gates.md
 - src/frob/gates/_waive.py
+- src/frob/gates/_narrative_blocks.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -28,6 +29,17 @@ scope_changes:
     the docs/modules/gates.md frob:enumerates member list (GATERULE001 rule-catalog
     consistency) to match; this is a direct, minimal dependency of wiring NARR001''s
     docs table row, not a scope expansion beyond the ticket''s own wiring task.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_narrative_blocks.py
+  reason: 'The T-2993 WIRE001 waiver on frob.gates._narrative_blocks.narrative_blocks_gate
+    cites T-3014 as the follow_up that removes it once wired; adding the file to revisit
+    that waiver now that GATE_RUNNERS wiring is done (design/frob.strata is currently
+    leased by T-2989, so the SELFAUDIT001 fs.read declaration and the __main__.py
+    SYS003/narrative-component work stay as a follow-up, not touched here).
 
     '
   actor: logan
