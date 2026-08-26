@@ -19,6 +19,8 @@ scope:
 - src/frob/strata/_shrink.py
 - tests/unit/strata/test_sync_may.py
 - tests/unit/strata/test_shrink.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -49,6 +51,18 @@ scope_changes:
   glob: tests/unit/strata/test_shrink.py
   reason: 'close-out: delete _sync_may.py''s now-dead widening functions (no importer
     left after T-2922), extend the no-widening-path proof to a real repo-wide property'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: these files' own comments predicted and now must reflect the _sync_may.py
+    widening-function deletion this ticket performs
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: these files' own comments predicted and now must reflect the _sync_may.py
+    widening-function deletion this ticket performs
   actor: logan
   at: '2026-08-26'
 triage_changes:
