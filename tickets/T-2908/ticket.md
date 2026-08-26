@@ -1,7 +1,7 @@
 ---
 id: T-2908
 title: 'frob-suggest: three nudge rules misfire and tax every agent call with a retry'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -37,7 +37,18 @@ scope_changes:
   reason: frob:doc target for frob-suggest.py::main
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_hook_frob_suggest.py::test_floor_count_stays_quiet_when_grepping_a_rule_id
+- tests/test_hook_frob_suggest.py::test_find_name_still_fires_unscoped_at_repo_root
+- tests/test_hook_frob_suggest.py::test_find_name_stays_quiet_when_scoped_to_a_subdirectory
+- tests/test_hook_frob_suggest.py::test_raw_worktree_still_fires
+- tests/test_hook_frob_suggest.py::test_raw_worktree_no_longer_recommends_enterworktree
+- tests/test_hook_frob_suggest.py::test_hand_edit_ledger_still_fires_on_the_real_ledger
+- tests/test_hook_frob_suggest.py::test_hand_edit_ledger_stays_quiet_on_an_unrelated_file
+- tests/test_hook_frob_suggest.py::test_recursive_grep_still_fires_unscoped_at_repo_root
+- tests/test_hook_frob_suggest.py::test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory
+- tests/test_hook_frob_suggest.py::test_floor_count_still_fires_on_a_genuine_counting_pipeline
+designated_repro_test: tests/test_hook_frob_suggest.py::test_hand_edit_ledger_stays_quiet_on_an_unrelated_file
 threat: null
 component: null
 anchor: false

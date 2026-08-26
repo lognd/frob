@@ -95,7 +95,15 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
     ),
     (
         "hand-edit-ledger",
-        re.compile(r"(?:>>?\s*|sed +-i[^|;&]*|tee +[^|;&]*)[\w./-]*tickets\.md", re.M),
+        # `(?![\w.])` after the literal is required (T-2908 audit): without
+        # it the pattern matches "tickets.md" as a bare SUBSTRING, so a
+        # completely unrelated file like `tickets.md.example` or
+        # `tickets.md.bak` false-positives -- demonstrated directly with
+        # `sed -i 's/x/y/' docs/tickets.md.example`.
+        re.compile(
+            r"(?:>>?\s*|sed +-i[^|;&]*|tee +[^|;&]*)[\w./-]*tickets\.md(?![\w.])",
+            re.M,
+        ),
         "Never hand-edit tickets.md. Use the `uv run frob ticket ...` CLI. A "
         "hand-written ledger edit has already broken the tickets.md YAML once "
         "and took every gate down with it.",
@@ -123,9 +131,13 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
     (
         "raw-worktree",
         re.compile(_POS + r"git +worktree +add", re.M),
-        "Use the EnterWorktree tool (or `uv run frob worktree`) rather than "
-        "`git worktree add` -- frob tracks worktree leases, and a worktree it "
-        "does not know about will not be swept and can strand a ticket lease.",
+        "Use `uv run frob ticket work T-XXXX` rather than `git worktree "
+        "add` -- frob tracks worktree leases, and a worktree it does not "
+        "know about will not be swept and can strand a ticket lease. Do "
+        "NOT use the EnterWorktree tool for this: it pins the entire "
+        "session cwd, hard-blocks concurrent agents, and refuses outright "
+        "from a subagent (T-2908) -- exactly the audience this nudge fires "
+        "for most often.",
         None,
     ),
     (
@@ -144,7 +156,13 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "text. A raw recursive `grep` walks .venv/, .git/ and the ~20 agent "
         "worktrees under .claude/worktrees/, so its hit count is not a "
         "statement about this codebase.",
-        None,
+        # A trailing bare path token with a real subdirectory segment (e.g.
+        # `grep -rn foo src/frob/strata`) cannot walk .venv/, .git/, or a
+        # sibling worktree -- same false-positive shape as `raw-find-name`
+        # (T-2908 audit), demonstrated directly: `grep -rn 'foo'
+        # src/frob/strata` used to block with no usable alternative. `.`/
+        # the repo root still fall through and keep firing.
+        re.compile(r"\s([A-Za-z0-9_][\w.-]*(?:/[A-Za-z0-9_][\w.-]*)+)\s*(?:[|;&]|$)"),
     ),
     (
         "unscoped-symbol-search",
@@ -169,7 +187,14 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "descends into .venv/, build artifacts and every agent worktree "
         "unless you exclude them by hand, and the omission is invisible in "
         "the output.",
-        None,
+        # A root that is a concrete subdirectory (has a real path segment
+        # before an internal `/`, e.g. `src/frob/strata`) cannot descend
+        # into .venv/, build artifacts, or a SIBLING agent worktree the way
+        # this rule's stated rationale describes -- that rationale is
+        # FALSE for a path-scoped find (T-2908: this rule had NO negative
+        # pattern at all and blocked exactly this case). `.`/`./` and a bare
+        # repo-root path still fall through and keep firing.
+        re.compile(r"find +[A-Za-z0-9_][\w.-]*/[A-Za-z0-9_]"),
     ),
     (
         "handrolled-floor-count",
@@ -196,8 +221,15 @@ _RULES: list[tuple[str, re.Pattern[str], str, "re.Pattern[str] | None"]] = [
         "losing the real exit code behind a pipeline -- has already produced "
         "two false '0 errors' reports. check_summary.py encodes the correct "
         "traversal once instead of re-deriving it inline.",
-        # Already piping into check_summary.py IS the fix -- do not nudge it.
-        re.compile(r"check_summary\.py"),
+        # Already piping into check_summary.py IS the fix -- do not
+        # nudge it. A pipeline that greps a RULE ID (e.g. `LANG003`,
+        # `DOC006`) is LISTING findings, not counting them -- that is
+        # the single most common legitimate need this rule used to
+        # block outright (T-2908: it fired on `| tail -20`,
+        # `| grep -vE`, and `| grep LANG003` alike, with no usable
+        # alternative for any of them). Stay quiet whenever the raw
+        # command names something that looks like a rule id.
+        re.compile(r"check_summary\.py|\b[A-Z]{3,12}[0-9]{3}\b"),
     ),
     (
         "handrolled-fleet-probe",

@@ -303,3 +303,165 @@ def test_fleet_status_invocation_itself_is_not_blocked(tmp_path: Path):
     )
     result = _run_hook(command, home=home, cwd=root)
     assert result.stdout.strip() == ""
+
+
+# --- T-2908: three misfiring rules, each with a must-fire AND a
+# must-stay-quiet fixture (the missing half is exactly how all three
+# defects shipped undetected). ------------------------------------------
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_floor_count_still_fires_on_a_genuine_counting_pipeline(tmp_path: Path):
+    """`frob check | grep -c ...` (an actual COUNT, not a rule-id listing)
+    must still be blocked -- the fix narrows the rule, it does not disable
+    it."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    command = "uv run frob check --only gates 2>&1 | grep -c ERROR"
+    result = _run_hook(command, home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "check_summary.py" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_floor_count_stays_quiet_when_grepping_a_rule_id(tmp_path: Path):
+    """T-2908: listing findings by rule id is the single most common
+    legitimate need this rule used to block outright with no usable
+    alternative -- `| grep LANG003` must now stay quiet."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    for command in (
+        'uv run frob check --json 2>&1 | grep LANG003',
+        'uv run frob check --json 2>&1 | grep -vE "DOC006|WAIVE001"',
+        "uv run frob check 2>&1 | tail -20",
+    ):
+        result = _run_hook(command, home=home, cwd=root)
+        assert result.stdout.strip() == "", command
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_find_name_still_fires_unscoped_at_repo_root(tmp_path: Path):
+    """`find . -name ...` (no real scoping) must still be blocked -- the
+    fix narrows the rule, it does not disable it."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("find . -name '*.py'", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob explore map" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_find_name_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path):
+    """T-2908: the rule's own stated rationale (descends into .venv/,
+    build artifacts, every agent worktree) is FALSE for a path-scoped
+    find -- `find src/frob/strata -name '*.py'` must stay quiet."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("find src/frob/strata -name '*.py'", home=home, cwd=root)
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_raw_worktree_still_fires(tmp_path: Path):
+    """`git worktree add` must still be blocked -- only the recommended
+    replacement text changes, not whether the rule fires."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "git worktree add /tmp/x -b y main", home=home, cwd=root
+    )
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob ticket work" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_raw_worktree_no_longer_recommends_enterworktree(tmp_path: Path):
+    """T-2908: the old recommendation (EnterWorktree) pins the whole
+    session cwd, hard-blocks concurrent agents, and refuses outright from a
+    subagent -- exactly the audience this nudge fires for most often. The
+    message must steer toward `frob ticket work` and explicitly warn off
+    EnterWorktree, not recommend it as the primary fix."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "git worktree add /tmp/x -b y main", home=home, cwd=root
+    )
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "Use `uv run frob ticket work" in reason
+    assert "Do NOT use the EnterWorktree tool" in reason
+
+
+# --- T-2908 audit: two more genuine false positives found in the other
+# rules while checking for the same must-fire/must-stay-quiet gap. -------
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_hand_edit_ledger_still_fires_on_the_real_ledger(tmp_path: Path):
+    """`sed -i ... tickets.md` (the real ledger) must still be blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("sed -i 's/x/y/' tickets.md", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "Never hand-edit tickets.md" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_hand_edit_ledger_stays_quiet_on_an_unrelated_file(tmp_path: Path):
+    """T-2908 audit finding: the pattern matched "tickets.md" as a bare
+    SUBSTRING with no trailing boundary, so an unrelated file like
+    `tickets.md.example` false-positived. Demonstrated directly: `sed -i
+    's/x/y/' docs/tickets.md.example` used to block."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "sed -i 's/x/y/' docs/tickets.md.example", home=home, cwd=root
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_recursive_grep_still_fires_unscoped_at_repo_root(tmp_path: Path):
+    """`grep -rn ... .` (no real scoping) must still be blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("grep -rn 'foo' .", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob explore xref" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2908
+def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path):
+    """T-2908 audit finding: same false-positive shape as `raw-find-name`
+    -- `grep -rn 'foo' src/frob/strata` cannot walk .venv/, .git/, or a
+    sibling worktree, but used to block anyway with no negative pattern at
+    all."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("grep -rn 'foo' src/frob/strata", home=home, cwd=root)
+    assert result.stdout.strip() == ""
