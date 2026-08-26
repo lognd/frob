@@ -20,7 +20,6 @@ scope:
 - src/frob/app/config.py
 - tests/unit/strata/test_bootstrap.py
 - tests/unit/test_app_runners_batch7.py
-- design/frob.strata
 - docs/design/registry/capability-via-ratchet.lock.json
 - src/frob/app/_config_external.py
 scope_breadth_ack: false
@@ -91,6 +90,13 @@ scope_changes:
   reason: T-2920 (parent epic) holds a live lease on this shared doc file; land already
     verified this diff is entirely T-2910-authored via --allow-cross-ticket, narrowing
     declared scope only to unblock the start->in-progress transition
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: design/frob.strata
+  reason: T-2911 holds a live lease on this shared self-model file; land already verified
+    this diff is entirely T-2910-authored via --allow-cross-ticket, narrowing declared
+    scope only to unblock the start->in-progress transition
   actor: logan
   at: '2026-08-26'
 triage_changes:
