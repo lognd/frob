@@ -2,7 +2,7 @@
 id: T-draft-fd8473d7
 title: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted
   ticket on timeout
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -18,8 +18,8 @@ scope:
 - src/frob/app/ticket_runner/_new.py
 - src/frob/tickets/_leases.py
 - tests/unit/test_ticket_leases.py
-- tests/unit/test_ticket_new.py
 - docs/modules/tickets-landing.md
+- tests/test_tickets_new_gate_rule_acceptance.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +48,16 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: document the shortened wait + rollback behavior
+  actor: logan
+  at: '2026-08-25'
+- op: remove
+  glob: tests/unit/test_ticket_new.py
+  reason: correct the evidence-file glob to a real test file
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_tickets_new_gate_rule_acceptance.py
+  reason: correct the evidence-file glob to a real test file
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
