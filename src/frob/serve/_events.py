@@ -46,6 +46,7 @@ from __future__ import annotations
 import json
 import queue
 import socket
+import sys
 import threading
 import time
 from pathlib import Path
@@ -165,7 +166,14 @@ def subscribe_and_wait(
     cannot arrive (`docs/guides/agent-playbook.md` 6b/3b): a single
     blocking foreground call gets a definitive completion signal in-band,
     even when a DIFFERENT caller's single-flight run (T-1095) is what
-    actually resolves it."""
+    actually resolves it. Returns `Err(DaemonError.Unreachable)`
+    immediately on Windows (T-2961), before ever touching
+    `socket.AF_UNIX` -- the daemon's unix-socket transport has no
+    Windows equivalent, so "unreachable" is the accurate, already-
+    documented outcome; never a crash."""
+    if sys.platform == "win32":
+        _log.info("serve: events: client: unix-socket transport unavailable on win32")
+        return Err(DaemonError.Unreachable)
     path = socket_path(root.resolve())
     deadline = time.monotonic() + timeout_s
     try:
