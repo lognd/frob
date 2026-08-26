@@ -140,7 +140,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 96ab0e3787c423e07c6997b01002222ef9adb6cf
 ---
 MEASURED via a real windows-latest CI run (re-triggered after T-2936
 landed, run 32937296490, job 98080981096), verifying whether frob now
