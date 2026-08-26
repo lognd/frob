@@ -42,7 +42,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ce7136ae909df8422b430c08c1e213dab3ba1faa
 ---
 T-2980 fixed the CI hang by bounding tests/system/conftest.py's run()
 default timeout so a wedging test fails loudly instead of hanging
