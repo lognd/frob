@@ -112,7 +112,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: fc46d5ababe6a380eb3316a36bb7a2643d88f3d1
 ---
 T-2372 burned TICK011 to zero and promoted it to ERROR (fixed a bare-word
 false-positive pattern plus repaired two genuine unticketed disclosures).
