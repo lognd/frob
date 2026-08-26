@@ -121,10 +121,9 @@ def scan_narrative_blocks(
 # frob:tests \
 # tests/test_narrative_blocks.py::TestNarrativeBlocksGateRepoScan.test_fires_on_a_track\
 # ed_file_with_a_long_block
-# frob:waive WIRE001 reason="not yet wired into gates/__init__.py's GATE_RUNNERS dict \
-# -- that file was held by T-2986's live in-progress lease for the whole of T-2993's \
-# work window (T-2994 scope-realism constraint: do not attempt a repo-wide rewrite or \
-# expand scope onto a leased file)" follow_up="T-3014"
+# T-3014: wired into gates/__init__.py's GATE_RUNNERS dict (the WIRE001
+# waiver this comment used to carry is no longer warranted -- the T-2986
+# lease that blocked it has been released and the wiring is done).
 def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
     """NARR001 over every tracked `.py`/`.strata` file under `root` (T-2993).
     Reads files directly rather than via a shared snapshot object -- this
@@ -140,10 +139,10 @@ def narrative_blocks_gate(root: Path) -> tuple[Violation, ...]:
         full = root / rel
         # frob:waive SELFAUDIT001 reason="fs.read of every tracked .py/.strata file \
         # under root, same repo-wide-scan shape excludehazard/refs/secrets already \
-        # declare fs.read for; this gate's own node binding is the T-3014 \
-        # follow-up (WIRE001 waiver above), not yet added because design/frob.strata \
-        # was T-2986-leased for this ticket's whole work window" \
-        # follow_up="T-3014"
+        # declare fs.read for; T-3014 wired this gate into GATE_RUNNERS but could not \
+        # add its fs.read to the 'gates' strata node because design/frob.strata was \
+        # T-2989-leased for this ticket's whole work window" \
+        # follow_up="T-3020"
         try:
             text = full.read_text(encoding="utf-8")
         except OSError:

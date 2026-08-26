@@ -624,10 +624,11 @@ def _dispatch_narrative(argv: list[str]) -> None:
     import sys as _sys
 
     # frob:waive SYS003 reason="mirrors the identical cli -> refactor import two \
-    # functions above (_dispatch_refactor) -- the Flow declaration lives in \
-    # design/frob.strata, which was T-2986-leased for this ticket's whole work window; \
-    # tracked by the same follow-up as the WIRE001/SELFAUDIT001 waivers on \
-    # frob.gates._narrative_blocks" follow_up="T-3014"
+    # functions above (_dispatch_refactor) -- frob.narrative has no strata \
+    # component/node of its own yet (unlike frob.refactor's node + cli->refactor \
+    # flow), so declaring this import needs a new node/flow, not a one-line fix; \
+    # tracked by the same follow-up as the SELFAUDIT001 waiver on \
+    # frob.gates._narrative_blocks" follow_up="T-3020"
     from frob.narrative._cli import add_narrative_parser, run_narrative_command
 
     narrative_parser = argparse.ArgumentParser(prog="frob")

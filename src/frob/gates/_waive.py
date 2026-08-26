@@ -190,6 +190,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1782
 # frob:ticket T-2580
 # frob:ticket T-2919
+# frob:ticket T-3014
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -688,6 +689,11 @@ _KNOWN_GATE_RULES = frozenset(
         # T-0465: .git/info/exclude entry shadowing tracked source
         # (frob.gates._exclude_hazard).
         "EXCL001",
+        # T-3014 (T-2993 built the detector): over-long `# T-####:`
+        # narrative comment block in code or .strata design source, WARN
+        # severity pending the burn-then-promote ratchet
+        # (frob.gates._narrative_blocks).
+        "NARR001",
         # T-1784: repo-root top-level directory with zero code references
         # (frob.gates._root_asset_dirs).
         "ROOT001",

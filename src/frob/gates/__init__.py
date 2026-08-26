@@ -172,6 +172,7 @@ from frob.gates._mutation_evidence import (
     must_still_pass_violations,
     mutation_evidence_violations,
 )
+from frob.gates._narrative_blocks import narrative_blocks_gate
 from frob.gates._native_schema import native_schema_gate
 from frob.gates._negexist import negexist001_gate
 from frob.gates._opaque import opaque_gate
@@ -5941,6 +5942,11 @@ _ALL_GATES = frozenset(
         "docblocks",
         "walk_lint",
         "excludehazard",
+        # T-3014: NARR001 (frob.gates._narrative_blocks.narrative_blocks_gate),
+        # wired in immediately after excludehazard -- same repo-wide,
+        # lightweight-text-scan shape (T-2993 built the detector, this
+        # ticket wires it into the live gate dict per T-2994's doctrine).
+        "narrative_blocks",
         # frob:ticket T-1784
         "root_asset_dirs",
         # frob:ticket T-1782
@@ -6381,6 +6387,8 @@ _CANONICAL_GATE_ORDER: tuple[str, ...] = (
     "docblocks",
     "walk_lint",
     "excludehazard",
+    # T-3014: NARR001, same position as the _ALL_GATES entry above.
+    "narrative_blocks",
     # frob:ticket T-1784
     "root_asset_dirs",
     # frob:ticket T-1782
@@ -6863,6 +6871,11 @@ def _build_thread_jobs(
         # the possibly-scoped st.root) for the same reason secrets/refs
         # are -- the hazard is repo-wide by construction.
         "excludehazard": lambda: exclude_hazard_gate(st.repo_root),
+        # T-3014: NARR001, same repo-root-always reasoning as
+        # excludehazard immediately above -- an over-long `# T-####:`
+        # narrative comment block is repo-wide by construction, not
+        # scoped to st.root.
+        "narrative_blocks": lambda: narrative_blocks_gate(st.repo_root),
         # T-1784: repo-root scan, always against repo_root (never the
         # possibly-scoped st.root) -- same reasoning as excludehazard
         # above, a top-level directory hazard is repo-wide by construction.
@@ -8345,6 +8358,7 @@ __all__ = [
     "delta_violations",
     "drift_gate",
     "exclude_hazard_gate",
+    "narrative_blocks_gate",
     "root_asset_dir_gate",
     "env_var_doc_gate",
     "profile_boundary_gate",

@@ -414,6 +414,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-3001: Verification debt can never drain under fleet load: the budgeted verify run truncates, reports Unmeasurable, and retries forever
 - T-3003: Windows now reaches the Test stage: 19 failures across 7 files, clustered in test_cli_check and test_rule_id_scan_branches
 - T-3005: strata-core graph kernel: generic typed nodes, typed edges, closure, level constraints, cycle detection (see T-3004 section 4)
+- T-3014: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
 
 ## [0.530.0] - unreleased
 

@@ -1,7 +1,7 @@
 ---
 id: T-3014
 title: Wire NARR001 (T-2993's narrative-block detector) into gates/__init__.py
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
