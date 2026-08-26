@@ -23,6 +23,7 @@ scope:
 - src/frob/_reap.py
 - tests/conftest.py
 - pyproject.toml
+- tests/system/conftest.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -74,6 +75,11 @@ scope_changes:
   glob: pyproject.toml
   reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
     config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/conftest.py
+  reason: 'T-2980 fix: unbounded run() default hides infinite hang'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
