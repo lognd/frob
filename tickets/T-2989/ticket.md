@@ -263,7 +263,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 2f0d14f8a6d8a243e25329052a352a89270f2e18
 ---
 `src/frob/yamlio.py` is the only io-seam module carrying an underscore. Its
 siblings are `src/frob/gitio.py` and `src/frob/tomlio.py`. The in-flight
