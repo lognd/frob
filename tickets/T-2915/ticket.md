@@ -2,7 +2,7 @@
 id: T-2915
 title: Re-run branch stranded-work classification with the real directive parser,
   not bare regex
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -33,6 +33,9 @@ scope_changes:
   reason: the fix's own tests and the audit doc it updates
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch::test_string_literal_mention_is_not_a_directive
+- tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch::test_real_directive_comment_found_via_real_parser
 designated_repro_test: null
 threat: null
 component: null

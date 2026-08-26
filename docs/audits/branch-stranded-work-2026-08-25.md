@@ -40,6 +40,40 @@ checked in -- regenerate with `python3 scripts/branch_stranded_work_
 analysis.py --json <path>`; the repo-tracked artifact here is this
 summary, not the raw dump).
 
+## UPDATE (T-2915, real-parser re-scan)
+
+The real-parser path (`_directive_ids_via_real_parser`, mirroring
+`frob.tickets._unlanded`'s T-2300 helper) landed and DOES sharpen the
+"stranded" classification measurably, but two important caveats from
+direct measurement:
+
+1. **The false-positive framing below was partly wrong.** Most of
+   `tests/test_gates.py`'s 389 literal "frob:ticket" text occurrences
+   are GENUINE directive-position comments (this repo's own convention
+   puts `frob:tests`/`frob:ticket` directives densely across a large
+   gate-test file), not string-literal noise -- the real parser resolved
+   128 real directive edges out of that file's 389 lexical hits, not
+   near-zero. The bare regex was still over-counting (261 non-directive
+   hits filtered out), just less catastrophically than first assumed.
+2. **Measured improvement (same 199-branch sample, before -> after):**
+   `stranded` count dropped from 35 to 13 -- branches that used to read
+   "stranded" purely because a few non-terminal ticket ids got buried in
+   a large regex-inflated id list now correctly resolve to `ticket-done`
+   once the noise ids are gone.
+3. **The real-parser full-repo re-scan does NOT complete inside a
+   reasonable budget.** A full run over all ~1098 branches was killed
+   at the 480s mark (still running); the original bare-regex scan
+   completes the same set in ~6-7 minutes. Tree-sitter parsing every
+   large file (`tests/test_gates.py` alone is ~900KB) once per branch
+   that touches it, with no cross-branch content-hash cache, is the
+   cost -- `frob.lang.parse_file`'s own per-process cache does not help
+   here since each branch's blob is read into a FRESH scratch file path
+   whose content-hash key still forces a fresh parse per branch. Running
+   the real-parser path is worthwhile for a smaller, human-directed
+   re-check (e.g. `--limit N`, or filtered to just the class-(c)
+   branches from a prior regex pass) rather than as the default
+   full-repo scan.
+
 ## IMPORTANT: a known false-positive source in the "stranded" count
 
 The directive-comment signal is a **bare regex** over blob text

@@ -35,19 +35,25 @@ class TestIsMerged:
 
     def test_true_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Exit code 0 from `merge-base --is-ancestor` means merged."""
-        _stub_run(monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (0, "")})
+        _stub_run(
+            monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (0, "")}
+        )
         assert branch_analysis.is_merged("b", "main") is True
 
     def test_false_when_not_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """A nonzero exit code means not merged."""
-        _stub_run(monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (1, "")})
+        _stub_run(
+            monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (1, "")}
+        )
         assert branch_analysis.is_merged("b", "main") is False
 
 
 class TestTicketIdsOnBranch:
     """`branch_analysis.ticket_ids_on_branch`."""
 
-    def test_ledger_path_yields_its_own_id(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_ledger_path_yields_its_own_id(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A changed `tickets/T-####/ticket.md` path signals that id
         directly, no blob read needed."""
         _stub_run(monkeypatch, {})
@@ -61,12 +67,19 @@ class TestTicketIdsOnBranch:
         blob text is picked up via the fallback grep."""
         _stub_run(
             monkeypatch,
-            {("git", "show", "b:src/foo.py"): (0, "# frob:ticket T-0099\ndef f(): pass\n")},
+            {
+                ("git", "show", "b:src/foo.py"): (
+                    0,
+                    "# frob:ticket T-0099\ndef f(): pass\n",
+                )
+            },
         )
         ids = branch_analysis.ticket_ids_on_branch("b", ["src/foo.py"])
         assert ids == {"T-0099"}
 
-    def test_tickets_path_prefix_never_blob_read(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_tickets_path_prefix_never_blob_read(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A `tickets/**` path that is NOT a recognized ledger file (e.g. an
         attachment) is skipped, never blob-read for a directive mention --
         a ticket's own files legitimately cite other ids, which is not a
@@ -77,6 +90,31 @@ class TestTicketIdsOnBranch:
         )
         assert ids == set()
 
+    def test_string_literal_mention_is_not_a_directive(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2915: a ticket id sitting inside a STRING LITERAL (a test
+        fixture, a docstring example) is not a real directive-position
+        comment -- the real parser must not report it, unlike the bare
+        regex fallback this replaces (which cannot tell the two apart).
+        This is the exact false-positive class the module's own
+        docstring measures against tests/test_gates.py's 389 literal
+        occurrences."""
+        blob = 'EXAMPLE = "# frob:ticket T-9999"\ndef f(): pass\n'
+        _stub_run(monkeypatch, {("git", "show", "b:src/foo.py"): (0, blob)})
+        ids = branch_analysis.ticket_ids_on_branch("b", ["src/foo.py"])
+        assert ids == set()
+
+    def test_real_directive_comment_found_via_real_parser(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2915: a genuine directive-position comment is still found via
+        the real parser path, not just the regex fallback."""
+        blob = "# frob:ticket T-0055\ndef f(): pass\n"
+        _stub_run(monkeypatch, {("git", "show", "b:src/foo.py"): (0, blob)})
+        ids = branch_analysis.ticket_ids_on_branch("b", ["src/foo.py"])
+        assert ids == {"T-0055"}
+
 
 class TestClassifyBranch:
     """`branch_analysis.classify_branch` -- the full three-way decision."""
@@ -84,11 +122,15 @@ class TestClassifyBranch:
     def test_merged_when_ancestor(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """An ancestor branch classifies (a) merged without touching the
         diff/ticket-signal machinery at all."""
-        _stub_run(monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (0, "")})
+        _stub_run(
+            monkeypatch, {("git", "merge-base", "--is-ancestor", "b", "main"): (0, "")}
+        )
         result = branch_analysis.classify_branch("b", "main")
         assert result.class_ == "merged"
 
-    def test_ticket_done_when_all_ids_terminal(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_ticket_done_when_all_ids_terminal(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Not merged, but the branch's own referenced ticket is `done` on
         main -> class (b)."""
         _stub_run(
@@ -109,7 +151,9 @@ class TestClassifyBranch:
         assert result.class_ == "ticket-done"
         assert result.ticket_ids == ["T-0100"]
 
-    def test_stranded_when_ticket_not_terminal(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_stranded_when_ticket_not_terminal(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """The referenced ticket is still `queued` on main -> class (c),
         never silently promoted to (b)."""
         _stub_run(
@@ -122,7 +166,10 @@ class TestClassifyBranch:
                     0,
                     "tickets/T-0101/ticket.md\n",
                 ),
-                ("git", "show", "main:tickets/T-0101/ticket.md"): (0, "state: queued\n"),
+                ("git", "show", "main:tickets/T-0101/ticket.md"): (
+                    0,
+                    "state: queued\n",
+                ),
                 ("git", "show", "main:tickets/archive/T-0101/ticket.md"): (1, ""),
             },
         )
@@ -190,7 +237,12 @@ class TestLocalBranches:
         """`main` itself and blank lines are filtered out of the listing."""
         _stub_run(
             monkeypatch,
-            {("git", "branch", "--format=%(refname:short)"): (0, "main\nfeat-a\n\nfeat-b\n")},
+            {
+                ("git", "branch", "--format=%(refname:short)"): (
+                    0,
+                    "main\nfeat-a\n\nfeat-b\n",
+                )
+            },
         )
         assert branch_analysis.local_branches("main") == ["feat-a", "feat-b"]
 
@@ -198,7 +250,9 @@ class TestLocalBranches:
         """A nonzero exit code degrades to an empty list, never a raise --
         matches `frob.tickets._unlanded._local_branch_names`'s own
         best-effort posture."""
-        _stub_run(monkeypatch, {("git", "branch", "--format=%(refname:short)"): (1, "")})
+        _stub_run(
+            monkeypatch, {("git", "branch", "--format=%(refname:short)"): (1, "")}
+        )
         assert branch_analysis.local_branches("main") == []
 
 
@@ -219,7 +273,9 @@ class TestTreeIdentical:
 class TestOwnChangedFiles:
     """`branch_analysis.own_changed_files`."""
 
-    def test_returns_diff_against_merge_base(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_returns_diff_against_merge_base(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Paths come from `git diff --name-only <merge-base>..<branch>`,
         not a diff against `ref` directly."""
         _stub_run(
@@ -245,7 +301,9 @@ class TestBlobText:
         _stub_run(monkeypatch, {("git", "show", "main:a.py"): (0, "content\n")})
         assert branch_analysis.blob_text("main", "a.py") == "content\n"
 
-    def test_none_when_path_does_not_exist(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_none_when_path_does_not_exist(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """A nonzero exit (path/ref does not resolve) returns `None`, not
         an empty string -- callers rely on this to distinguish "no blob"
         from "empty blob"."""
@@ -279,7 +337,9 @@ class TestTicketStateOnMain:
         )
         assert branch_analysis.ticket_state_on_main("T-0042", "main") == "done"
 
-    def test_none_when_neither_path_resolves(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_none_when_neither_path_resolves(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Neither the active nor the archive path exists -> `None`, not a
         raise (an id `main` has genuinely never heard of, e.g. a template
         example like `T-9001`)."""
@@ -305,7 +365,9 @@ class TestMain:
         monkeypatch.setattr(
             "sys.argv", ["branch_stranded_work_analysis.py", "--ref", "main"]
         )
-        _stub_run(monkeypatch, {("git", "branch", "--format=%(refname:short)"): (0, "main\n")})
+        _stub_run(
+            monkeypatch, {("git", "branch", "--format=%(refname:short)"): (0, "main\n")}
+        )
         assert branch_analysis.main() == 0
         out = capsys.readouterr().out
         assert "scanned 0 branch(es) against main" in out

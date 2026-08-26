@@ -44,6 +44,12 @@ lands.py`'s own style) rather than importing `frob.tickets._unlanded`'s
 private helpers -- this is a standalone audit script, not part of any
 gate's call graph, and reuses only the CLASSIFICATION IDEA (T-1934/
 T-1948's two signals + terminal-state resolution), not the code.
+`_directive_ids_via_real_parser` is the one exception (T-2915): it calls
+`frob.lang.parse_file`/`frob.graph.dsl.parse_directives` directly (the
+same public-ish machinery `frob.tickets._unlanded`'s own T-2300 helper
+uses), imported lazily and defensively (`ImportError` degrades to the
+bare-regex fallback, never a crash) since this script is meant to be
+runnable standalone even outside a fully-installed frob checkout.
 
 Usage:
     python3 scripts/branch_stranded_work_analysis.py [--ref main]
@@ -235,11 +241,82 @@ def ticket_state_on_main(ticket_id: str, ref: str) -> str | None:
 # frob:tests \
 # tests/unit/test_branch_stranded_work_analysis.py::TestTicketIdsOnBranch.test_directiv\
 # e_comment_in_non_ticket_file_is_found kind="unit"
+#: T-2915: one reusable scratch file per suffix, mirroring `frob.tickets.
+#: _unlanded._scratch_file_for_suffix` (T-2645) exactly -- a fresh
+#: `tempfile.NamedTemporaryFile` per candidate is the same per-candidate
+#: syscall tax T-2645 measured and fixed there; no reason to reintroduce
+#: it here. This script has no threaded/concurrent caller (see the
+#: module docstring), so reuse is safe by the same argument T-2645 made.
+_SCRATCH_FILE_BY_SUFFIX: dict[str, str] = {}
+
+
+def _scratch_file_for_suffix(suffix: str) -> str:
+    """Return (creating once, lazily, per-process) the reusable temp-file
+    path this process uses to feed `suffix`-typed blob content through
+    `frob.lang.parse_file` (T-2915, mirrors `frob.tickets._unlanded`'s
+    identical T-2645 helper)."""
+    import tempfile
+
+    cached = _SCRATCH_FILE_BY_SUFFIX.get(suffix)
+    if cached is not None:
+        return cached
+    fd, path = tempfile.mkstemp(suffix=suffix)
+    import os
+
+    os.close(fd)
+    _SCRATCH_FILE_BY_SUFFIX[suffix] = path
+    return path
+
+
+def _directive_ids_via_real_parser(text: str, path: str) -> frozenset[str] | None:
+    """T-2915: the real-parse path for one blob's directive-comment scan
+    -- parse `text` with this repo's own comment-DSL parser
+    (`frob.lang.parse_file` + `frob.graph.dsl.parse_directives`, the SAME
+    machinery `frob.tickets._unlanded._directive_ids_via_real_parser`
+    uses) and return every `frob:ticket T-####` edge's target id, or
+    `None` if `path`'s language is unsupported or the blob fails to
+    parse at all -- the caller falls back to the bare regex in that case,
+    exactly like `_unlanded`'s own T-2300 precedent. This is what
+    sharpens the false-positive class the module docstring's "IMPORTANT"
+    section documents: a real parse distinguishes a directive-POSITION
+    comment from the identical text sitting inside a string literal or
+    test fixture (measured: `tests/test_gates.py` alone carries 389
+    literal "frob:ticket" occurrences in its own fixtures), which the
+    bare regex cannot."""
+    try:
+        from frob.graph import EdgeKind
+        from frob.graph.dsl import parse_directives
+        from frob.lang import parse_file
+    except ImportError:
+        return None
+
+    suffix = Path(path).suffix
+    scratch_path = _scratch_file_for_suffix(suffix)
+    try:
+        with open(scratch_path, "w", encoding="utf-8") as tmp:
+            tmp.write(text)
+        parsed_result = parse_file(Path(scratch_path))
+    except OSError:
+        return None
+    if parsed_result.is_err:
+        return None
+    edges, _malformed = parse_directives(parsed_result.danger_ok)
+    return frozenset(edge.target for edge in edges if edge.kind is EdgeKind.TICKET)
+
+
 def ticket_ids_on_branch(branch: str, changed: list[str]) -> set[str]:
     """Every ticket id `changed` signals for `branch` -- ledger paths plus
-    a `frob:ticket T-####` directive-comment grep over the non-ticket
-    files (regex only, deliberately -- see module docstring for why this
-    script does not reach for the real tree-sitter parser)."""
+    a `frob:ticket T-####` directive-comment mention in the non-ticket
+    files. T-2915: tries the REAL comment-DSL parser first
+    (`_directive_ids_via_real_parser`) -- it can tell a directive-
+    position comment apart from the identical text sitting in a string
+    literal or test fixture, which the bare regex fallback below
+    structurally cannot (the exact false-positive class this ticket
+    exists to shrink). Falls back to the regex only when the real parser
+    cannot handle `path` at all (unsupported language, `frob.lang`
+    unavailable, or the blob fails to parse) -- narrowing false positives
+    must never also narrow coverage for a language this repo's parser
+    does not yet support."""
     ids: set[str] = set()
     for path in changed:
         match = _TICKET_PATH_RE.match(path)
@@ -251,7 +328,11 @@ def ticket_ids_on_branch(branch: str, changed: list[str]) -> set[str]:
         text = blob_text(branch, path)
         if text is None:
             continue
-        ids.update(_TICKET_DIRECTIVE_RE.findall(text))
+        real_ids = _directive_ids_via_real_parser(text, path)
+        if real_ids is not None:
+            ids.update(real_ids)
+        else:
+            ids.update(_TICKET_DIRECTIVE_RE.findall(text))
     return ids
 
 
