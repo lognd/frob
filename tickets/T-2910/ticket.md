@@ -20,7 +20,6 @@ scope:
 - src/frob/app/config.py
 - tests/unit/strata/test_bootstrap.py
 - tests/unit/test_app_runners_batch7.py
-- docs/design/registry/capability-via-ratchet.lock.json
 - src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -97,6 +96,13 @@ scope_changes:
   reason: T-2911 holds a live lease on this shared self-model file; land already verified
     this diff is entirely T-2910-authored via --allow-cross-ticket, narrowing declared
     scope only to unblock the start->in-progress transition
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: T-2911 holds a live lease on this shared ratchet-lock file; land already
+    verified this diff is entirely T-2910-authored via --allow-cross-ticket, narrowing
+    declared scope only to unblock the start->in-progress transition
   actor: logan
   at: '2026-08-26'
 triage_changes:
