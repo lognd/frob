@@ -2,7 +2,7 @@
 id: T-2918
 title: 'Advisory locks degrade to a logged NO-OP without fcntl: concurrent lands/sweeps
   are unserialized on Windows'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -18,6 +18,7 @@ scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
+- tickets/archive/T-2595/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -50,7 +51,17 @@ scope_changes:
   reason: doc anchor for new BaselineLockUnavailable exception
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+- op: add
+  glob: tickets/archive/T-2595/ticket.md
+  reason: rebound T-2595 evidence id after renaming its no-fcntl test (test deletion/rename
+    must not orphan another ticket evidence)
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_windows_backend_serializes_two_concurrent_holders
+- tests/unit/test_rapid_sweep.py::TestBaselineLock::test_serializes_two_concurrent_holders
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestBaselineLock::test_no_lock_primitive_refuses_loudly
 threat: null
 component: null
 anchor: false
