@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-26'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -22,6 +22,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: os.kill(pid,0) can TerminateProcess a live process on Windows under PID
+    reuse, and the unfixed sibling copies are in _land.py and _leases.py -- the land
+    machinery itself, where killing a live process corrupts a land in flight
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
