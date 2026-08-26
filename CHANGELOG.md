@@ -381,6 +381,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2938: Move ClaimDivergence re-verification onto the deferred post-land queue instead of scoping it inline
 - T-2945: AF_UNIX socket path too long on macOS: relocate daemon.sock off deep project-root paths
 - T-2947: Land writes state=done and promotes drafts BEFORE the git merge succeeds: tip-drift leaves ledger-done with code absent from main
+- T-2952: Windows still cannot import frob: bare unconditional 'import fcntl' in _new_renumber.py/_socketd.py/_coverage_wait.py
 
 ## [0.530.0] - unreleased
 

@@ -1,7 +1,7 @@
 ---
 id: T-2952
 title: 'Windows still cannot import frob: bare unconditional ''import fcntl'' in _new_renumber.py/_socketd.py/_coverage_wait.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -21,7 +21,7 @@ scope:
 - tests/test_coverage_wait_shared.py
 - tests/test_serve_socket.py
 - docs/modules/serve.md
-- tickets/T-draft-3923b7dc/**
+- tickets/T-2953/**
 - docs/modules/testing.md
 evidence_scope:
 - tests/unit/test_process_lock.py
@@ -101,7 +101,7 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-3923b7dc/**
+  glob: tickets/T-2953/**
   reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
 
     touching the test files covering each of the three source files, plus

@@ -179,6 +179,71 @@ class TestAcquireSingletonLock:
         assert sum(outcomes) == 1
 
 
+class TestAcquireSingletonLockPlatformBackends:
+    """T-2952: `acquire_singleton_lock`'s msvcrt (Windows) backend and its
+    loud refusal (`Err(DaemonError.LockUnavailable)`) when neither
+    `fcntl` nor `msvcrt` exists -- the same PLATFORM001-shaped fix
+    T-2918/T-2934 applied elsewhere, closing this module's own former
+    bare, unconditional `import fcntl` (which crashed every caller's
+    import on Windows, not just this lock)."""
+
+    def test_no_lock_primitive_refuses_loudly(
+        self, root: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_no_\
+        # lock_primitive_refuses_loudly
+        monkeypatch.setattr(_socketd, "fcntl", None)
+        monkeypatch.setattr(_socketd, "msvcrt", None)
+        result = acquire_singleton_lock(root)
+        assert result.is_err
+        assert result.danger_err == DaemonError.LockUnavailable
+
+    def test_windows_backend_round_trips(
+        self, root: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The msvcrt backend is exercised on Linux CI via a fake module
+        standing in for the real Windows-only `msvcrt`, backed by real
+        `fcntl.flock` under the hood -- proves the control flow (acquire
+        non-blocking, contention, release) the real backend only ever
+        runs for real on Windows."""
+        # frob:tests \
+        # tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends.test_win\
+        # dows_backend_round_trips
+        import fcntl as _real_fcntl
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_socketd, "fcntl", None)
+        monkeypatch.setattr(_socketd, "msvcrt", _FakeMsvcrt)
+
+        first = acquire_singleton_lock(root)
+        assert first.is_ok
+        second = acquire_singleton_lock(root)
+        assert second.is_err
+        assert second.danger_err == DaemonError.AlreadyRunning
+        first.danger_ok.close()
+
+        third = acquire_singleton_lock(root)
+        assert third.is_ok, (
+            "windows backend release-on-close did not free the lock for "
+            "the next caller"
+        )
+        third.danger_ok.close()
+
+
 class TestDispatchRequest:
     def test_known_method_ok(self, root: Path) -> None:
         # frob:tests \

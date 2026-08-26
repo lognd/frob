@@ -359,6 +359,7 @@ touch) still latches exactly as before T-2805.
 <!-- frob:describes src/frob/testing/_coverage_wait.py::tree_digest -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::shared_state_dir -->
 <!-- frob:describes src/frob/testing/_coverage_wait.py::SharedCoverageResult -->
+<!-- frob:describes src/frob/testing/_coverage_wait.py::CoverageLockUnavailable -->
 <!-- frob:describes src/frob/testing/_coverage_cache.py::load_file_cache -->
 <!-- frob:describes src/frob/testing/_coverage_cache.py::fill_from_cache -->
 <!-- frob:describes src/frob/testing/_coverage_cache.py::update_file_cache -->
@@ -487,6 +488,13 @@ def coverage_lock_path(root: Path) -> Path
     # The single-flight lock path (.frob/coverage.lock) run_coverage_wait
     # guards concurrent callers WITHIN one worktree with (the ORIGINAL,
     # per-worktree layer; unchanged by T-1095's outer, cross-worktree one).
+class CoverageLockUnavailable(RuntimeError)
+    # T-2952: raised by both the per-worktree and cross-worktree lock
+    # primitives when neither fcntl (POSIX) nor msvcrt (Windows) exists
+    # on this platform -- refuses to serialize concurrent coverage runs
+    # unlocked rather than silently degrading to a no-op. Replaces this
+    # module's former bare, unconditional `import fcntl` (which crashed
+    # the import of every caller, not just locking, on Windows).
 def tree_digest(snapshot: GraphSnapshot) -> str
     # T-1095: sha256 hex over `snapshot.file_hashes`' tracked *.py/*.rs/
     # *.ts/*.tsx entries, sorted by path -- identical tracked source (any

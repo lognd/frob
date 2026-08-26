@@ -441,6 +441,15 @@ lock`, called on every `run_socket_daemon` exit path -- clean idle
 shutdown, bind failure, or an exception) unlocks then closes the handle, so
 the next caller finds a clean slate.
 
+`fcntl` is POSIX-only (T-2952: this module used to `import fcntl`
+unconditionally at module scope, which crashed the import of every
+caller -- not just this lock -- on Windows). `acquire_singleton_lock`
+now tries `msvcrt.locking` as a genuine second backend on Windows (the
+same PLATFORM001-shaped fix T-2918/T-2934 applied to `frob.tickets
+._store` and `frob.app.ticket_runner._rapid_sweep`), and returns
+`Err(DaemonError.LockUnavailable)` -- never a silent unlocked no-op --
+only when neither `fcntl` nor `msvcrt` exists on the running platform.
+
 ### Socket location (T-2945)
 
 `socket_path(root)` does NOT live under `<root>/.frob/` -- it resolves to
@@ -691,6 +700,11 @@ alongside the existing idle-monitor and (T-1094) `WatchThread`:
   testing.run_coverage_wait`'s single-flight lock, a bare `make coverage`,
   or a future cross-worktree cache hit, T-1095) -- any write to the stamp
   file is treated as a legitimate freshness signal.
+
+`DaemonError` (re-described here, shared with the socket-daemon section
+above) gained a `LockUnavailable` value under T-2952: the single-instance
+guard's platform-backend refusal, unrelated to any subscribe/push
+behavior on this page.
 
 `_EventBus.subscribe` and `CoverageWatcher.start` each carry an explicit
 `frob:tests` edge (`TestEventBus.test_publish_reaches_all_subscribers` and
