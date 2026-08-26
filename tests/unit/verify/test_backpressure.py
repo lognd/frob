@@ -153,8 +153,9 @@ class TestEffectiveProfileOrStandard:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_ok_passes_through  # noqa: E501
-        import frob.tickets._profile as profile_mod
         from typani.result import Ok
+
+        import frob.tickets._profile as profile_mod
 
         monkeypatch.setattr(
             profile_mod, "effective_profile", lambda root: Ok(ProfileName.RAPID)
@@ -166,8 +167,9 @@ class TestEffectiveProfileOrStandard:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         # frob:tests tests/unit/verify/test_backpressure.py::TestEffectiveProfileOrStandard.test_err_falls_back_to_standard  # noqa: E501
-        import frob.tickets._profile as profile_mod
         from typani.result import Err
+
+        import frob.tickets._profile as profile_mod
 
         monkeypatch.setattr(
             profile_mod,
