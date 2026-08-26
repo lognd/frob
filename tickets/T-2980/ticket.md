@@ -14,10 +14,68 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/_lock.py
+- src/frob/_land.py
+- src/frob/_store.py
+- src/frob/_socketd.py
+- src/frob/_coverage_wait.py
+- src/frob/_reap.py
+- tests/conftest.py
+- pyproject.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/_lock.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_land.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_store.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_socketd.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_coverage_wait.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_reap.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/conftest.py
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-2980 CI hang bisect: candidate lock/socket/reap wait paths plus pytest
+    config'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
