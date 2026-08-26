@@ -170,6 +170,17 @@ tool-runner subprocess (ruff/ty/cmake/cargo/clang-tidy/clang-format/ctest/
 npx-driven tsc/eslint/prettier/vitest) without a redeploy or code change;
 unset it (or leave it unset) to re-enable.
 
+`guarded_subprocess_run` also defaults a text-mode call's decode codec
+(T-2953): `subprocess.run(text=True, ...)`/`universal_newlines=True`
+with no explicit `encoding=` falls back to the platform's default
+locale codec -- UTF-8 on Linux/macOS, but cp1252 (or another single-
+byte Windows code page) on Windows, where a byte a third-party tool
+(maturin/cargo/git/ty) can legitimately emit crashes the read with an
+uncatchable `UnicodeDecodeError`. `guarded_subprocess_run` now injects
+`encoding="utf-8"`/`errors="replace"` whenever text mode is requested
+without one, for every current and future caller, without needing a
+per-call-site fix.
+
 <!-- frob:invariant INV-019 -->
 
 ## Derived-state lock (T-0859)

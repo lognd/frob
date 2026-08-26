@@ -2,7 +2,7 @@
 id: T-2953
 title: 'Windows: natives build crashes with UnicodeDecodeError decoding maturin subprocess
   output (cp1252)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -25,7 +25,7 @@ scope:
 - tests/unit/test_process_guard.py
 - docs/modules/process.md
 - docs/modules/serve.md
-- tickets/T-draft-b211c944/**
+- tickets/T-2961/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -148,7 +148,7 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-b211c944/**
+  glob: tickets/T-2961/**
   reason: 'AFFECT001 closure for guarded_subprocess_run (docs/modules/process.md)
 
     and _source_head_sha (docs/modules/serve.md), plus the T-draft ticket
@@ -160,6 +160,13 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_injects_utf8_replace_when_text_true_and_no_encoding
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_injects_when_universal_newlines_true
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_never_overrides_explicit_encoding
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_never_overrides_explicit_errors
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_no_op_without_text_mode
+- tests/unit/test_process_guard.py::TestDefaultTextEncoding::test_guarded_subprocess_run_survives_the_reported_crash_byte
 designated_repro_test: null
 threat: null
 component: null

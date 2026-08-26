@@ -296,6 +296,8 @@ def _client_source_sha() -> str | None:
                     cwd=str(candidate),
                     capture_output=True,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     timeout=1.0,
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:

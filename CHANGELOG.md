@@ -385,6 +385,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2947: Land writes state=done and promotes drafts BEFORE the git merge succeeds: tip-drift leaves ledger-done with code absent from main
 - T-2950: frob status takes 5m41s: an adoption surface nobody will wait for, and it exceeds the 200s foreground budget
 - T-2952: Windows still cannot import frob: bare unconditional 'import fcntl' in _new_renumber.py/_socketd.py/_coverage_wait.py
+- T-2953: Windows: natives build crashes with UnicodeDecodeError decoding maturin subprocess output (cp1252)
 
 ## [0.530.0] - unreleased
 

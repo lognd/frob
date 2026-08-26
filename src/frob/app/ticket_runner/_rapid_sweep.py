@@ -2761,6 +2761,8 @@ def _discard_uncommitted_ticket_drop(root: Path, ticket_id: str) -> None:
         cwd=root,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=30,
     )
     if proc.returncode != 0:

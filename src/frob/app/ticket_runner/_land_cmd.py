@@ -3651,7 +3651,14 @@ def _ty_check_files(worktree: Path, py_files: list[str]):  # noqa: ANN201
         cmd += ["--python", str(venv_dir.resolve())]
     try:
         proc = subprocess.run(
-            cmd, cwd=worktree, capture_output=True, text=True, timeout=120, check=False
+            cmd,
+            cwd=worktree,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=120,
+            check=False,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None

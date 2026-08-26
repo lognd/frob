@@ -543,7 +543,12 @@ so there is nothing to gain recomputing it per RPC, only a git-spawn cost
 (measured ~2-4ms) to avoid paying on every single query. `None` on any
 resolution failure (no `.git` ancestor, or `git` itself failing/timing
 out) -- the client treats a missing/`None` `source_sha` as UNTRUSTED, per
-T-2884's fail-safe-to-stale posture, never as a match. `frob_shutdown`
+T-2884's fail-safe-to-stale posture, never as a match. Its internal
+`git rev-parse HEAD` subprocess call now decodes stdout as UTF-8 with
+`errors="replace"` explicitly (T-2953) rather than the platform locale
+codec, so a non-ASCII byte in the local git config/repo state cannot
+turn this best-effort lookup into an unhandled crash on Windows (cp1252
+default). `frob_shutdown`
 starts a short-lived helper thread that calls `server.shutdown()`
 (asynchronously -- calling it inline on the connection-handling thread
 would deadlock that thread against the very `serve_forever()` loop it is
