@@ -83,7 +83,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 50850d8a1b7b407f9dab685128ce7be0a3c5063b
 ---
 `frob doctor` (and most other frob commands) emit internal diagnostic logging
 to the terminal at default verbosity. Observed repeatedly this session on
