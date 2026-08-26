@@ -465,3 +465,160 @@ def test_recursive_grep_stays_quiet_when_scoped_to_a_subdirectory(tmp_path: Path
     _init_repo(root)
     result = _run_hook("grep -rn 'foo' src/frob/strata", home=home, cwd=root)
     assert result.stdout.strip() == ""
+
+
+# --- T-2927: must-stay-quiet fixtures for the 5 rules T-2908's audit found
+# missing one, closing the same test-coverage gap the other three rules
+# had before their fix. -------------------------------------------------
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_make_target_still_fires_at_command_position(tmp_path: Path):
+    """`make check` at real command position must still be blocked --
+    the baseline this rule's must-stay-quiet case (below) is measured
+    against."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("make check", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "uv run frob" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_make_target_stays_quiet_as_prose_in_a_commit_message(tmp_path: Path):
+    """T-2927: `make-target` has no dedicated negative pattern of its own,
+    but `_POS`'s command-position anchor (shared by every rule) already
+    keeps it quiet for a prose mention inside quoted text -- e.g. a git
+    commit message describing what changed. No test previously exercised
+    this for `make-target` specifically."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        'git commit -m "replace make check with frob check in CI"',
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_raw_linters_still_fires_at_command_position(tmp_path: Path):
+    """`ruff check .` at real command position must still be blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("ruff check .", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "uv run frob check" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_raw_linters_stays_quiet_as_prose_in_a_commit_message(tmp_path: Path):
+    """T-2927: same command-position-anchor coverage gap as `make-target`
+    -- a commit message mentioning `ruff check`/`mypy`/`ty` must not
+    trigger `raw-linters`."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        'git commit -m "fix the ruff check failures in ci"',
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_raw_coverage_still_fires_at_command_position(tmp_path: Path):
+    """`coverage run -m pytest` at real command position must still be
+    blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("coverage run -m pytest", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "uv run frob coverage" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_raw_coverage_stays_quiet_as_prose_in_a_commit_message(tmp_path: Path):
+    """T-2927: same command-position-anchor coverage gap -- a commit
+    message mentioning `coverage run` must not trigger `raw-coverage`."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        'git commit -m "stop running coverage run manually, use frob coverage"',
+        home=home,
+        cwd=root,
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_unscoped_pytest_still_fires_bare(tmp_path: Path):
+    """A bare `pytest` with no path/node-id/`.py` anywhere must still be
+    blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("pytest", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "uv run frob test" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_unscoped_pytest_stays_quiet_when_a_path_is_given(tmp_path: Path):
+    """T-2927: `unscoped-pytest` already carries a working negative
+    pattern (path/node-id/`.py` anywhere in the raw command) but no test
+    exercised the quiet path directly until now."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook(
+        "pytest tests/test_foo.py -q", home=home, cwd=root
+    )
+    assert result.stdout.strip() == ""
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_unscoped_symbol_search_still_fires_bare(tmp_path: Path):
+    """A bare `git grep foo` with no `-- <path>` scoping must still be
+    blocked."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook("git grep foo", home=home, cwd=root)
+    reason = _denial_reason(result)
+    assert reason is not None
+    assert "frob explore xref" in reason
+
+
+# frob:tests .claude/hooks/frob-suggest.py::main kind="integration"
+# frob:ticket T-2927
+def test_unscoped_symbol_search_stays_quiet_with_dash_dash_path(tmp_path: Path):
+    """T-2927: `unscoped-symbol-search` already carries a working negative
+    pattern (`-- <path>`) but the only prior coverage was an incidental
+    assertion inside a DIFFERENT rule's test
+    (`test_git_grep_piped_to_grep_is_not_blocked_by_new_rules`). This test
+    exercises the quiet path directly, on its own."""
+    home = tmp_path / "home"
+    root = tmp_path / "repo"
+    _init_repo(root)
+    result = _run_hook('git grep -n "foo" -- src/', home=home, cwd=root)
+    assert result.stdout.strip() == ""

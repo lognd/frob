@@ -1,7 +1,7 @@
 ---
 id: T-2927
 title: 'frob-suggest: add missing must-stay-quiet fixtures for 5 rules'
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-25'
@@ -19,6 +19,17 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/test_hook_frob_suggest.py::test_make_target_still_fires_at_command_position
+- tests/test_hook_frob_suggest.py::test_make_target_stays_quiet_as_prose_in_a_commit_message
+- tests/test_hook_frob_suggest.py::test_raw_linters_still_fires_at_command_position
+- tests/test_hook_frob_suggest.py::test_raw_linters_stays_quiet_as_prose_in_a_commit_message
+- tests/test_hook_frob_suggest.py::test_raw_coverage_still_fires_at_command_position
+- tests/test_hook_frob_suggest.py::test_raw_coverage_stays_quiet_as_prose_in_a_commit_message
+- tests/test_hook_frob_suggest.py::test_unscoped_pytest_still_fires_bare
+- tests/test_hook_frob_suggest.py::test_unscoped_pytest_stays_quiet_when_a_path_is_given
+- tests/test_hook_frob_suggest.py::test_unscoped_symbol_search_still_fires_bare
+- tests/test_hook_frob_suggest.py::test_unscoped_symbol_search_stays_quiet_with_dash_dash_path
 designated_repro_test: null
 threat: null
 component: null
