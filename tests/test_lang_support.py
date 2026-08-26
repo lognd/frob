@@ -69,6 +69,25 @@ class TestDeriveLanguageRegistry:
         assert registry["c"].facets["docblock"].state == FacetState.IMPLEMENTED
         assert registry["cpp"].facets["docblock"].state == FacetState.IMPLEMENTED
 
+    # frob:ticket T-2906
+    def test_bash_and_csharp_capability_dup_docblock_are_implemented(self) -> None:
+        """T-2906: bash and csharp each registered a real `frob.lang`
+        grammar/walker (T-1604/T-1600) but were not wired into the three
+        OTHER FACETS-axis subsystems -- real `LANGUAGES` entries in
+        `frob.vet._capability_registry`/`frob.dup._exhaustiveness` plus a
+        real DOC004 fenced-language bucket for each (bash's own
+        pre-existing `_CONSOLE_LANGS`, csharp's new `_CSHARP_LANGS`) close
+        the gap for real, not just via a reasoned KNOWN_GAP citation."""
+        registry = derive_language_registry()
+        for language in ("bash", "csharp"):
+            support = registry[language]
+            assert support.facets["capability"].state == FacetState.IMPLEMENTED
+            assert support.facets["dup"].state == FacetState.IMPLEMENTED
+            assert support.facets["docblock"].state == FacetState.IMPLEMENTED
+            # frob.arch's multi-language dispatch is a separate, already
+            # tracked epic (T-0329) -- not this ticket's scope.
+            assert support.facets["arch"].state == FacetState.KNOWN_GAP
+
 
 # frob:ticket T-0405
 # frob:ticket T-0406

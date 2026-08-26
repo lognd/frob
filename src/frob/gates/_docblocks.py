@@ -386,6 +386,10 @@ def doc004_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
                 violations.extend(
                     _c_include_violations(block, doc_path, doc_lines, root)
                 )
+            elif block.lang in _CSHARP_LANGS:
+                violations.extend(
+                    _csharp_using_violations(block, doc_path, doc_lines, root)
+                )
             elif block.lang in _CONSOLE_LANGS and console_sources:
                 violations.extend(
                     _console_command_violations(
@@ -907,6 +911,9 @@ from frob.gates._docblocks_refs import (  # noqa: E402
     _CONSOLE_LANGS as _CONSOLE_LANGS,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
+    _CSHARP_LANGS as _CSHARP_LANGS,
+)
+from frob.gates._docblocks_refs import (  # noqa: E402
     _PYTHON_LANGS as _PYTHON_LANGS,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
@@ -926,6 +933,9 @@ from frob.gates._docblocks_refs import (  # noqa: E402
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
     _console_trees as _console_trees,
+)
+from frob.gates._docblocks_refs import (  # noqa: E402
+    _csharp_using_violations as _csharp_using_violations,
 )
 from frob.gates._docblocks_refs import (  # noqa: E402
     _iter_fenced_blocks as _iter_fenced_blocks,

@@ -880,6 +880,97 @@ class TestVerdictCacheRulesFingerprintInvalidation:
         assert _cache.get_verdict(tmp_path, "d3", "d4", "r4", 0) == [0.5, []]
 
 
+class TestBashCsharpR1Fires:
+    """T-2906: `frob.dup._exhaustiveness.LANGUAGES` gained bash/csharp
+    entries -- this proves the REAL consumer (`find_clones`) actually
+    reaches bash/csharp files, not just the exhaustiveness bookkeeping.
+    Each pair is a large-enough (>40 token, DupConfig's default
+    min_tokens) renamed-function clone -- the r1 exact-copy-modulo-
+    identifier rung."""
+
+    @pytest.fixture()
+    def bash_snapshot(self, tmp_path):
+        body = (
+            "    local first_value=$1\n"
+            "    local second_value=$2\n"
+            "    local third_value=$3\n"
+            "    local total=0\n"
+            "    total=$(( total + first_value ))\n"
+            "    total=$(( total + second_value ))\n"
+            "    total=$(( total + third_value ))\n"
+            '    if [ "$total" -gt 100 ]; then\n'
+            '        echo "large: $total"\n'
+            "    else\n"
+            '        echo "small: $total"\n'
+            "    fi\n"
+            "    return 0\n"
+        )
+        _write(tmp_path, "a.sh", f"process_numbers() {{\n{body}}}\n")
+        _write(tmp_path, "b.sh", f"compute_total_amount() {{\n{body}}}\n")
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
+    def test_r1_fires_on_bash(self, bash_snapshot):
+        report = find_clones(bash_snapshot, DupConfig()).danger_ok
+        rungs = _rungs_for(report, "process_numbers", "compute_total_amount")
+        assert "r1" in rungs, (
+            f"expected r1 to fire on a byte-identical (renamed) bash "
+            f"function body; got rungs={rungs}, groups={report.groups!r}"
+        )
+
+    @pytest.fixture()
+    def csharp_snapshot(self, tmp_path):
+        body = (
+            "            int total = 0;\n"
+            "            total = total + first;\n"
+            "            total = total + second;\n"
+            "            total = total + third;\n"
+            "            if (total > 100)\n"
+            "            {\n"
+            "                return total * 2;\n"
+            "            }\n"
+            "            return total;\n"
+        )
+        _write(
+            tmp_path,
+            "A.cs",
+            "namespace Sample {\n"
+            "    public class Calc {\n"
+            "        public int ProcessNumbers(int first, int second, int third) {\n"
+            f"{body}"
+            "        }\n"
+            "    }\n"
+            "}\n",
+        )
+        _write(
+            tmp_path,
+            "B.cs",
+            "namespace Sample {\n"
+            "    public class Calc2 {\n"
+            "        public int ComputeTotalAmount(int first, int second, int third) {\n"
+            f"{body}"
+            "        }\n"
+            "    }\n"
+            "}\n",
+        )
+        cache = tmp_path / "graph-cache"
+        result = build_graph(tmp_path, cache)
+        assert result.is_ok, result.err
+        return result.danger_ok
+
+    # frob:tests src/frob/dup/_pipeline/_fingerprint.py::find_clones kind="unit"
+    def test_r1_fires_on_csharp(self, csharp_snapshot):
+        report = find_clones(csharp_snapshot, DupConfig()).danger_ok
+        rungs = _rungs_for(report, "ProcessNumbers", "ComputeTotalAmount")
+        assert "r1" in rungs, (
+            f"expected r1 to fire on a byte-identical (renamed) csharp "
+            f"method body; got rungs={rungs}, groups={report.groups!r}"
+        )
+
+
 class TestCoreAvailable:
     """The ImportError branch specifically, which is unreachable in a
     normal dev checkout where frob_core is actually built (the True path

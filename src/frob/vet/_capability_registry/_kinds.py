@@ -10,7 +10,21 @@ from __future__ import annotations
 #: every language the matrix reasons about. C and C++ share one bucket
 #: (`c-cpp`) since the dangerous idioms -- `system`/`popen`/`exec*`/
 #: `dlopen`/`strcpy`-family -- are identical C ABI surface in both.
-LANGUAGES: tuple[str, ...] = ("python", "typescript", "rust", "c-cpp", "kotlin")
+#: T-2906: bash and csharp added -- each gets real `_DangerousOperation`
+#: patterns for its highest-value idioms (exec/eval/fetch_url/env/fs) in
+#: `_dangerous_ops_other.py`, plus generated `CAPABILITY_MATRIX_EXCUSES`
+#: cells (`_new_adapter_matrix_excuses` in `_matrix.py`, mirrors `frob.
+#: dup._exhaustiveness._non_python_excuses`'s generated-not-hand-copied
+#: shape) for every kind that genuinely has no idiom in that language.
+LANGUAGES: tuple[str, ...] = (
+    "python",
+    "typescript",
+    "rust",
+    "c-cpp",
+    "kotlin",
+    "bash",
+    "csharp",
+)
 
 # frob:doc docs/modules/vet.md#public-api
 #: SINGLE-SOURCE enumeration of every reserved capability kind (T-0158).

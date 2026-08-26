@@ -651,7 +651,103 @@ class TestCapabilityScan:
         # T-0170: .kt/.kts extension mapping for the new kotlin column.
         assert language_for(tmp_path / "mod.kt") == "kotlin"
         assert language_for(tmp_path / "mod.kts") == "kotlin"
+        # T-2906: .sh/.bash/.cs extension mapping for the new bash/csharp
+        # columns.
+        assert language_for(tmp_path / "mod.sh") == "bash"
+        assert language_for(tmp_path / "mod.bash") == "bash"
+        assert language_for(tmp_path / "mod.cs") == "csharp"
         assert language_for(tmp_path / "mod.unknownext") is None
+
+    def test_bash_pipe_to_shell_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-2906: piping a downloaded script into a shell is bash's
+        # highest-value fire fixture for the new bash column.
+        from frob.vet._capability import scan_file_capabilities
+
+        sh = tmp_path / "install.sh"
+        sh.write_text("curl -fsSL https://example.com/install.sh | bash\n")
+        capabilities = scan_file_capabilities(sh)
+        assert "exec" in capabilities
+        assert "fetch_url" in capabilities
+
+    def test_bash_eval_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        sh = tmp_path / "run.sh"
+        sh.write_text('cmd="$1"\neval $cmd\n')
+        assert "eval" in scan_file_capabilities(sh)
+
+    def test_bash_benign_file_has_no_capabilities(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-2906: a bash file that touches none of the patterned needles
+        # observes an empty capability set -- confirms the column does not
+        # over-fire on ordinary bash code (mirrors sample.sh, T-1604's own
+        # walker fixture).
+        from frob.vet._capability import scan_file_capabilities
+
+        sh = tmp_path / "add.sh"
+        sh.write_text("add() {\n    echo $(( $1 + $2 ))\n}\n")
+        assert scan_file_capabilities(sh) == frozenset()
+
+    def test_csharp_process_start_detected(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-2906: Process.Start is csharp's highest-value fire fixture for
+        # the new csharp column.
+        from frob.vet._capability import scan_file_capabilities
+
+        cs = tmp_path / "Shell.cs"
+        cs.write_text(
+            "using System.Diagnostics;\n"
+            "class Shell {\n"
+            "    void Run(string cmd) {\n"
+            "        Process.Start(cmd);\n"
+            "    }\n"
+            "}\n"
+        )
+        assert "exec" in scan_file_capabilities(cs)
+
+    def test_csharp_binary_formatter_deserialize_detected(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        from frob.vet._capability import scan_file_capabilities
+
+        cs = tmp_path / "Loader.cs"
+        cs.write_text(
+            "using System.Runtime.Serialization.Formatters.Binary;\n"
+            "class Loader {\n"
+            "    object Load(System.IO.Stream s) {\n"
+            "        var f = new BinaryFormatter();\n"
+            "        return f.Deserialize(s);\n"
+            "    }\n"
+            "}\n"
+        )
+        assert "deserialize" in scan_file_capabilities(cs)
+
+    def test_csharp_benign_file_has_no_capabilities(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/vet/_capability_scan.py::scan_file_capabilities \
+        # kind="unit"
+        # T-2906: a csharp file that touches none of the patterned needles
+        # observes an empty capability set -- confirms the column does not
+        # over-fire on ordinary C# code (mirrors sample.cs, T-1600's own
+        # walker fixture).
+        from frob.vet._capability import scan_file_capabilities
+
+        cs = tmp_path / "Widget.cs"
+        cs.write_text(
+            "namespace Frob.Sample {\n"
+            "    public class Widget {\n"
+            "        public int Add(int a, int b) { return a + b; }\n"
+            "    }\n"
+            "}\n"
+        )
+        assert scan_file_capabilities(cs) == frozenset()
 
     def test_scan_directory_capabilities_aggregates_across_files(
         self, tmp_path: Path

@@ -63,6 +63,12 @@ _EXT_LANGUAGE = {
     ".hh": "c-cpp",
     ".kt": "kotlin",
     ".kts": "kotlin",
+    # T-2906: bash and csharp (T-1604/T-1600's frob.lang grammars) each get
+    # a real capability-registry bucket -- see _capability_registry._kinds.
+    # LANGUAGES' own T-2906 note.
+    ".sh": "bash",
+    ".bash": "bash",
+    ".cs": "csharp",
 }
 
 

@@ -1,7 +1,10 @@
 """`_OTHER_OPERATIONS`: the typescript/rust/kotlin/c-cpp slice of
 `DANGEROUS_OPERATIONS` (T-1420 split, python's own slice sibling lives in
 `_dangerous_ops_python.py`) -- these four languages share one file since
-none is individually close to the 800-line threshold on its own."""
+none is individually close to the 800-line threshold on its own. T-2906's
+bash/csharp slice lives in its own `_dangerous_ops_bash_csharp.py` file
+instead -- adding it here would have pushed this file over the
+threshold."""
 
 from __future__ import annotations
 

@@ -78,6 +78,15 @@ class TestMatrixExhaustiveness:
                 for language in LANGUAGES:
                     assert (spec.rung, clone_type, language) in seen
 
+    # frob:tests src/frob/dup/_exhaustiveness.py::LANGUAGES kind="unit"
+    def test_bash_and_csharp_are_registered_languages(self) -> None:
+        """T-2906: bash and csharp joined LANGUAGES -- every one of their
+        cells is generated (excused) by `_non_python_excuses`, same as
+        every other non-python language, so this is the drift-lock that
+        the membership itself does not silently vanish."""
+        assert "bash" in LANGUAGES
+        assert "csharp" in LANGUAGES
+
     # frob:tests src/frob/dup/_exhaustiveness.py::dup_matrix kind="unit"
     def test_no_cell_is_both_claimed_and_excused(self) -> None:
         """A cell is excused BECAUSE it has no claim -- both present is a

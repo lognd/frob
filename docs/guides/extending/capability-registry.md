@@ -12,7 +12,7 @@ top level (`from frob.vet._capability_registry import X`) -- every symbol
 below is re-exported through `__init__.py`, so callers never need to know
 which submodule actually defines it. Core symbols, and their current home:
 
-- `LANGUAGES: tuple[str, ...]` (`_kinds.py`) -- `("python", "typescript", "rust", "c-cpp", "kotlin")`.
+- `LANGUAGES: tuple[str, ...]` (`_kinds.py`) -- `("python", "typescript", "rust", "c-cpp", "kotlin", "bash", "csharp")`.
 - `CAPABILITY_KINDS: tuple[str, ...]` (`_kinds.py`) -- the vet-side
   capability vocabulary (net/fs/eval/env/ffi/install-hook/etc -- distinct
   from the threat catalog's CWE-sink vocabulary, see
@@ -22,9 +22,10 @@ which submodule actually defines it. Core symbols, and their current home:
   `safer_alternative`, `severity`, `needles`) built via the `_op(...)`
   helper (also `_schemas.py`).
 - `DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...]` (`_matrix.py`,
-  assembled from `_dangerous_ops_python.py`'s `_PYTHON_OPERATIONS` and
-  `_dangerous_ops_other.py`'s `_OTHER_OPERATIONS`) -- hundreds of entries,
-  one per known dangerous API/pattern per language.
+  assembled from `_dangerous_ops_python.py`'s `_PYTHON_OPERATIONS`,
+  `_dangerous_ops_other.py`'s `_OTHER_OPERATIONS`, and (T-2906)
+  `_dangerous_ops_bash_csharp.py`'s `_BASH_CSHARP_OPERATIONS`) --
+  hundreds of entries, one per known dangerous API/pattern per language.
 - `_MatrixExcuse` (`_schemas.py`, frozen: `capability_kind`, `language`,
   `reason`) and `CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...]`
   (`_matrix.py`) -- for (capability_kind, language) cells that are
@@ -45,11 +46,12 @@ separate pattern-table edit required.
 1. New dangerous operation: append an `_op(language=..., library=...,
    function_or_pattern=..., capability_kind=..., cwe_links=(...,),
    rationale=..., safer_alternative=..., severity=..., needles=(...,))`
-   call to `_PYTHON_OPERATIONS` in `_dangerous_ops_python.py` (python) or
+   call to `_PYTHON_OPERATIONS` in `_dangerous_ops_python.py` (python),
    `_OTHER_OPERATIONS` in `_dangerous_ops_other.py` (typescript/rust/
-   kotlin/c-cpp) -- both feed the combined `DANGEROUS_OPERATIONS` table in
-   `_matrix.py`. `needles` are the literal substrings the scanner matches
-   on.
+   kotlin/c-cpp), or `_BASH_CSHARP_OPERATIONS` in
+   `_dangerous_ops_bash_csharp.py` (bash/csharp, T-2906) -- all three feed
+   the combined `DANGEROUS_OPERATIONS` table in `_matrix.py`. `needles`
+   are the literal substrings the scanner matches on.
 2. Legitimately-empty (capability_kind, language) cell: append a
    `_MatrixExcuse(capability_kind=..., language=..., reason=...)` to
    `CAPABILITY_MATRIX_EXCUSES` (`_matrix.py`) instead of leaving the cell

@@ -17,6 +17,9 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict
 
 from frob.logging import get_logger
+from frob.vet._capability_registry._dangerous_ops_bash_csharp import (
+    _BASH_CSHARP_OPERATIONS,
+)
 from frob.vet._capability_registry._dangerous_ops_other import _OTHER_OPERATIONS
 from frob.vet._capability_registry._dangerous_ops_python import _PYTHON_OPERATIONS
 from frob.vet._capability_registry._kinds import CAPABILITY_KINDS, LANGUAGES
@@ -31,7 +34,7 @@ _log = get_logger(__name__)
 #: (T-1420 split) -- the matrix functions below need the whole table, not
 #: either half alone.
 DANGEROUS_OPERATIONS: tuple[_DangerousOperation, ...] = (
-    _PYTHON_OPERATIONS + _OTHER_OPERATIONS
+    _PYTHON_OPERATIONS + _OTHER_OPERATIONS + _BASH_CSHARP_OPERATIONS
 )
 
 # frob:doc docs/modules/vet.md#public-api
@@ -692,6 +695,156 @@ CAPABILITY_MATRIX_EXCUSES: tuple[_MatrixExcuse, ...] = (
 )
 
 
+# T-2906: bash and csharp's substantive (non-structural) excuses -- each
+# cell names the actual missing idiom or the honest un-surveyed gap, same
+# discipline as every hand-written excuse above; NOT auto-generated because
+# the reason genuinely differs per (kind, language) pair the way the
+# structural excuses below do not.
+_NEW_ADAPTER_SUBSTANTIVE_EXCUSES: tuple[_MatrixExcuse, ...] = (
+    _MatrixExcuse(
+        capability_kind="ffi",
+        language="bash",
+        reason="bash has no foreign-function-interface syntax of its own; "
+        "native-code loading is always done by a companion compiled "
+        "helper, which is scanned as its own language file",
+    ),
+    _MatrixExcuse(
+        capability_kind="install-hook",
+        language="bash",
+        reason="bash has no package-manager install-hook idiom analogous "
+        "to setuptools cmdclass/npm postinstall -- a package's own install "
+        "script is a plain bash file, already scanned by every other "
+        "patterned bash cell",
+    ),
+    _MatrixExcuse(
+        capability_kind="html_render",
+        language="bash",
+        reason="bash has no DOM/HTML templating primitive; HTML output "
+        "from a bash script always goes through an external tool, with no "
+        "per-tool survey done yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="sql",
+        language="bash",
+        reason="bash has no native SQL client; a script invokes an "
+        "external client binary (psql/mysql -e ...) whose SQL text is a "
+        "plain string argument -- no per-tool survey done yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="deserialize",
+        language="bash",
+        reason="bash has no native serialization-format primitive of its "
+        "own; deserialization always goes through an external tool (jq, "
+        "python -c, ...) already scanned as its own language",
+    ),
+    _MatrixExcuse(
+        capability_kind="client_storage",
+        language="bash",
+        reason="bash is not a browser runtime; no client-storage idiom "
+        "exists to pattern",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="bash",
+        reason="no per-language survey of embedded-script idioms (a "
+        "heredoc invoking another interpreter) has been done yet for bash",
+    ),
+    _MatrixExcuse(
+        capability_kind="process-control",
+        language="csharp",
+        reason="no per-language survey of Environment.Exit/Process.Kill-"
+        "equivalent idioms has been done yet (mirrors the typescript/rust/"
+        "c-cpp/kotlin process-control excuses above)",
+    ),
+    _MatrixExcuse(
+        capability_kind="install-hook",
+        language="csharp",
+        reason="no MSBuild/NuGet install-hook idiom (comparable to "
+        "setuptools cmdclass) has been surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="html_render",
+        language="csharp",
+        reason="no ASP.NET Razor/HttpUtility.HtmlEncode-equivalent "
+        "HTML-render idiom has been surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="sql",
+        language="csharp",
+        reason="no ADO.NET/Entity Framework raw-SQL idiom has been "
+        "surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="client_storage",
+        language="csharp",
+        reason="no per-language client-storage idiom (e.g. a Xamarin/MAUI "
+        "local-storage API) has been surveyed yet",
+    ),
+    _MatrixExcuse(
+        capability_kind="embedded_code",
+        language="csharp",
+        reason="no per-language survey of embedded-script idioms (e.g. "
+        "hosting a scripting engine) has been done yet for csharp",
+    ),
+)
+
+#: T-2906: kinds that are never a real per-language detection surface for
+#: ANY language (see the hand-written python/typescript/rust/c-cpp/kotlin
+#: excuses above for each one's own explanation: `net`/`net.connect`/
+#: `net.listen`/`env`/`env.read`/`env.write`/`fs`/`fs.read`/`fs.write` are
+#: retired bare kinds or dotted `_effects.py::_KIND_MAP`-only spellings,
+#: never emitted directly by any language's `DANGEROUS_OPERATIONS`
+#: entries) -- generated once per new adapter language rather than
+#: hand-copying the same five-language block a sixth and seventh time
+#: (mirrors `frob.dup._exhaustiveness._non_python_excuses`'s generated-
+#: not-hand-copied shape).
+_STRUCTURAL_KIND_REASONS: dict[str, str] = {
+    "net": "no scanner detection pattern of its own any more -- reclassified "
+    "to the precise net-connect/net-listen split (T-0771); survives only "
+    'as a legal coarse `may "net"` declaration spelling',
+    "net.connect": "dotted mode-qualified spelling, never emitted directly "
+    "by the scanner (only frob.strata._effects.py::_KIND_MAP produces it "
+    "from the raw net-connect scanner kind) -- registered only so "
+    "THREAT005's BenignCapability excuse kind is a known kind, not a "
+    "separate detection surface",
+    "net.listen": "see the net.connect excuse above, listen-side",
+    "net-mutate": "T-2464 (net verb-split) was a python-only pass; no "
+    "per-language HTTP-client verb survey has been done yet",
+    "env": "reclassified to the precise env-read/env-write split (T-0771); "
+    'survives only as a legal coarse `may "env"` declaration spelling',
+    "env.read": "dotted mode-qualified spelling, never emitted directly by "
+    "the scanner (only frob.strata._effects.py::_KIND_MAP produces it from "
+    "the raw env-read scanner kind) -- registered only so THREAT005's "
+    "BenignCapability excuse kind is a known kind, not a separate "
+    "detection surface",
+    "env.write": "see the env.read excuse above, write-side",
+    "fs": "`fs` is `_effects.py::_KIND_MAP`'s tier-2-normalized alias of "
+    "the scanner's `fs-write` kind; every actual detection pattern lives "
+    "under `fs-write`, not a separate detection surface",
+    "fs.read": "dotted mode-qualified spelling, never emitted directly by "
+    "the scanner (only frob.strata._effects.py::_KIND_MAP produces it from "
+    "the raw fs-read scanner kind) -- registered only so THREAT005's "
+    "BenignCapability excuse kind is a known kind, not a separate "
+    "detection surface",
+    "fs.write": "see the fs.read excuse above, write-side",
+}
+
+_NEW_ADAPTER_LANGUAGES: tuple[str, ...] = ("bash", "csharp")
+
+
+# frob:tests tests/test_capability_registry.py::TestMatrixExhaustiveness.test_no_unexcused_empty_cells  # noqa: E501
+def _new_adapter_matrix_excuses() -> tuple[_MatrixExcuse, ...]:
+    """`_STRUCTURAL_KIND_REASONS` x `_NEW_ADAPTER_LANGUAGES`, generated
+    rather than hand-copying the identical five-language block a sixth and
+    seventh time (T-2906) -- the same discipline `frob.dup._exhaustiveness.
+    _non_python_excuses` already uses for its own generated cells."""
+    return tuple(
+        _MatrixExcuse(capability_kind=kind, language=language, reason=reason)
+        for kind, reason in _STRUCTURAL_KIND_REASONS.items()
+        for language in _NEW_ADAPTER_LANGUAGES
+    )
+
+
 # T-0524: frob:doc removed -- capability_matrix (public, below) returns
 # this type and already carries the same docs/modules/vet.md#public-api
 # anchor (COV007).
@@ -717,7 +870,12 @@ def capability_matrix() -> tuple[_MatrixCell, ...]:
     `excused`, or -- if neither -- a gate failure the caller must surface.
     Deterministic order: kind-major, then `LANGUAGES` order."""
     excuse_by_key = {
-        (e.capability_kind, e.language): e for e in CAPABILITY_MATRIX_EXCUSES
+        (e.capability_kind, e.language): e
+        for e in (
+            *CAPABILITY_MATRIX_EXCUSES,
+            *_NEW_ADAPTER_SUBSTANTIVE_EXCUSES,
+            *_new_adapter_matrix_excuses(),
+        )
     }
     counts: dict[tuple[str, str], int] = {}
     for entry in DANGEROUS_OPERATIONS:

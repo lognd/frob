@@ -58,6 +58,16 @@ class TestMatrixExhaustiveness:
             assert entry.capability_kind in CAPABILITY_KINDS
             assert entry.language in LANGUAGES
 
+    # frob:tests src/frob/vet/_capability_registry/_kinds.py::LANGUAGES kind="unit"
+    def test_bash_and_csharp_are_registered_languages(self) -> None:
+        """T-2906: bash and csharp joined LANGUAGES with real patterned
+        entries, not an empty bucket riding on the exhaustiveness excuse
+        generator alone."""
+        assert "bash" in LANGUAGES
+        assert "csharp" in LANGUAGES
+        assert any(e.language == "bash" for e in DANGEROUS_OPERATIONS)
+        assert any(e.language == "csharp" for e in DANGEROUS_OPERATIONS)
+
     # frob:tests \
     # src/frob/vet/_capability_registry/_matrix.py::CAPABILITY_MATRIX_EXCUSES \
     # kind="unit"
@@ -392,6 +402,8 @@ _LANG_EXT: dict[str, str] = {
     "rust": ".rs",
     "c-cpp": ".c",
     "kotlin": ".kt",
+    "bash": ".sh",
+    "csharp": ".cs",
 }
 
 #: benign source per language guaranteed to contain none of this registry's
@@ -402,6 +414,8 @@ _BENIGN_SOURCE: dict[str, str] = {
     "rust": "let x: i32 = 1;\n",
     "c-cpp": "int x = 1;\n",
     "kotlin": "val x: Int = 1\n",
+    "bash": "x=1\necho $x\n",
+    "csharp": "class M { int Add(int a, int b) { return a + b; } }\n",
 }
 
 

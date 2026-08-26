@@ -102,6 +102,13 @@ _TS_LANGS = frozenset({"ts", "tsx", "js", "jsx", "javascript", "typescript"})
 _C_CPP_LANGS = frozenset({"c", "cpp", "c++", "cxx", "cc", "h", "hpp"})
 # frob:ticket T-1195
 _CONSOLE_LANGS = frozenset({"console", "bash", "sh", "shell"})
+# frob:ticket T-2906
+#: csharp fenced blocks -- no manifest namespace exists for C# here
+#: (unlike python's package, rust's crate, ts's package.json name), same
+#: gap C/C++ has, so `_csharp_using_violations` resolves the same way
+#: `_c_include_violations` does: against this repo's own tracked files,
+#: not a manifest-derived namespace set.
+_CSHARP_LANGS = frozenset({"csharp", "cs", "c#"})
 
 
 # ---------------------------------------------------------------------------
@@ -885,6 +892,63 @@ def _c_include_violations(
                 block.start_line,
                 tier="unbound",
                 detail="c/cpp #include of a project header is not anchored",
+            )
+        )
+    return violations
+
+
+# ---------------------------------------------------------------------------
+# C# reference resolution (T-2906)
+# ---------------------------------------------------------------------------
+
+# frob:ticket T-2906
+_CSHARP_USING_RE = re.compile(r"using\s+(?:static\s+)?([\w.]+)\s*;")
+
+
+# frob:ticket T-2906
+def _csharp_using_violations(
+    block: _FencedBlock, doc_path: str, doc_lines: list[str], root: Path
+) -> list[Violation]:
+    """UNBOUND-only for a `using X.Y.Z;` directive in a `csharp` fenced
+    block: C# has no manifest namespace analog frob reads today (unlike
+    python's package, rust's crate, ts's `package.json` name), so -- same
+    posture as `_c_include_violations` -- this never claims STALE (no
+    reliable resolver exists), only flags a `using` that plausibly names
+    THIS project's own code via the common C# convention that a namespace
+    mirrors its source directory structure (`Foo.Bar` sources typically
+    live under a `Foo/Bar/` or `Foo.Bar/` tree): if any tracked `.cs` file
+    path, normalized to dots, contains the dotted `using` target as a
+    substring, the reference is treated as project-internal and checked
+    for a nearby binding directive. A `using` naming a well-known BCL/
+    third-party namespace (`System.*`, `Microsoft.*`) never matches a
+    tracked path and is skipped, the same "skip anything not clearly this
+    project's own" posture the other three buckets take."""
+    violations: list[Violation] = []
+    window = _nearby_window(doc_lines, block)
+    waive_reason = _nearby_waive_reason(window)
+    tracked = _tracked_source_files(root)
+    dotted_tracked = frozenset(
+        p[: -len(".cs")].replace("/", ".") for p in tracked if p.endswith(".cs")
+    )
+    seen_project_ref = False
+    for match in _CSHARP_USING_RE.finditer(block.body):
+        target = match.group(1)
+        if target.startswith(("System", "Microsoft")):
+            continue
+        if any(target in candidate for candidate in dotted_tracked):
+            seen_project_ref = True
+    if not seen_project_ref:
+        return violations
+    if waive_reason is not None:
+        _log.debug("doc004: %s waived (%s): csharp block", doc_path, waive_reason)
+        return violations
+    if not _has_binding_directive(window):
+        violations.append(
+            _doc004_violation(
+                doc_path,
+                block.start_line,
+                tier="unbound",
+                detail="csharp using of a project namespace is not anchored",
             )
         )
     return violations

@@ -656,7 +656,8 @@ rung, which clone type(s) in the classic Roy/Cordy taxonomy (Type-1 exact,
 Type-2 renamed, Type-3 near-miss, Type-4 semantic) it is designed to
 catch. `dup_matrix()` cross-products every `(rung, clone_type)` pair that
 follows from `RUNG_SPECS` against every supported language
-(`LANGUAGES` -- python/typescript/rust/c/cpp); every resulting cell is
+(`LANGUAGES` -- python/typescript/rust/c/cpp/bash/csharp, the last two
+added by T-2906); every resulting cell is
 either `DUP_CLAIMS`-backed by a real, reused litmus fixture proving the
 rung fires on that language, or `DUP_MATRIX_EXCUSES`-backed by a specific
 written reason it does not (yet). `unclaimed_cells()` is the gate

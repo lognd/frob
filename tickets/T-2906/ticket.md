@@ -2,7 +2,7 @@
 id: T-2906
 title: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock
   facets)
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-25'
@@ -33,6 +33,7 @@ scope:
 - src/frob/vet/_capability_scan.py
 - tests/test_vet.py
 - tests/test_dup.py
+- src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -173,6 +174,28 @@ scope_changes:
   reason: real find_clones reachability tests for bash/csharp
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: src/frob/vet/_capability_registry/_dangerous_ops_bash_csharp.py
+  reason: split out of _dangerous_ops_other.py to stay under LARGE001's 800-line threshold
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/test_vet.py::TestCapabilityScan::test_bash_pipe_to_shell_detected
+- tests/test_vet.py::TestCapabilityScan::test_bash_eval_detected
+- tests/test_vet.py::TestCapabilityScan::test_bash_benign_file_has_no_capabilities
+- tests/test_vet.py::TestCapabilityScan::test_csharp_process_start_detected
+- tests/test_vet.py::TestCapabilityScan::test_csharp_binary_formatter_deserialize_detected
+- tests/test_vet.py::TestCapabilityScan::test_csharp_benign_file_has_no_capabilities
+- tests/test_vet.py::TestCapabilityScan::test_language_for_known_and_unknown_extensions
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_bash_and_csharp_are_registered_languages
+- tests/test_capability_registry.py::TestMatrixExhaustiveness::test_no_unexcused_empty_cells
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_bash_and_csharp_are_registered_languages
+- tests/test_dup_exhaustiveness.py::TestMatrixExhaustiveness::test_no_unclaimed_cells
+- tests/test_dup.py::TestBashCsharpR1Fires::test_r1_fires_on_bash
+- tests/test_dup.py::TestBashCsharpR1Fires::test_r1_fires_on_csharp
+- tests/test_gates.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_unanchored_warns
+- tests/test_gates.py::TestDoc004CsharpUsingDrift::test_using_of_tracked_namespace_anchored_passes
+- tests/test_lang_support.py::TestDeriveLanguageRegistry::test_bash_and_csharp_capability_dup_docblock_are_implemented
 designated_repro_test: null
 threat: null
 component: null

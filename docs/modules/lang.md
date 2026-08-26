@@ -597,6 +597,19 @@ today: every gap the T-0405 survey found (arch's typescript/rust/c
 branches, DOC004's c/cpp fenced-code bucket) is an explicit `KNOWN_GAP`
 naming its tracking ticket, not a silent hole.
 
+T-2906: bash and csharp (T-1604/T-1600's grammars) landed with only the
+`grammar` facet real -- `capability`/`dup`/`docblock` read as an
+unticketed `KNOWN_GAP` the moment their source files were tracked, so
+`KNOWN_GAP_TRACKING_TICKETS` briefly cited this ticket itself as the
+disclosed-but-not-yet-closed placeholder. T-2906 then did the real
+subsystem integration (bash/csharp joined `frob.vet._capability_registry.
+LANGUAGES` and `frob.dup._exhaustiveness.LANGUAGES` with real patterned
+entries, and `frob.gates._docblocks` gained a real csharp fenced-block
+bucket plus recognized bash's pre-existing console-command one) rather
+than leaving the citation in place -- both languages now read
+`IMPLEMENTED` on all three facets, `arch` remaining the one genuine,
+already-tracked T-0329 gap every other non-python/cpp language shares.
+
 ### Per-project conformance (LANG002/LANG003, T-0406)
 
 LANG001 only ever checks languages `frob.lang` has ALREADY registered a

@@ -17639,6 +17639,59 @@ class TestMergeCanonicalOrder:
         assert len(merged) == len(_ALL_GATES)
 
 
+class TestDoc004CsharpUsingDrift:
+    """T-2906: `csharp` fenced blocks -- `_csharp_using_violations` has no
+    manifest namespace to resolve against (unlike python's package, rust's
+    crate, ts's package.json name), so it mirrors `_c_include_violations`'s
+    tracked-file-existence posture: a `using X.Y` naming a dotted prefix of
+    a tracked `.cs` file's path is treated as project-internal."""
+
+    def test_using_of_tracked_namespace_unanchored_warns(
+        self, tmp_path: Path
+    ) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "Sample/Missing/Real.cs",
+            "namespace Sample.Missing {\n    public class Real {}\n}\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "```csharp\nusing Sample.Missing;\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        unbound = _by_rule(violations, "DOC004")
+        assert unbound
+        assert all(v.severity == Severity.ERROR for v in unbound)
+
+    def test_using_of_tracked_namespace_anchored_passes(
+        self, tmp_path: Path
+    ) -> None:
+        _git_init(tmp_path)
+        _write(
+            tmp_path,
+            "Sample/Missing/Real.cs",
+            "namespace Sample.Missing {\n    public class Real {}\n}\n",
+        )
+        _write(
+            tmp_path,
+            "docs/guide.md",
+            "<!-- frob:doc docs/guide.md -->\n\n"
+            "```csharp\nusing Sample.Missing;\n```\n",
+        )
+
+        subprocess.run(["git", "add", "-A"], cwd=tmp_path, check=True)
+        snapshot = _snapshot(tmp_path)
+        violations = doc004_gate(tmp_path, snapshot)
+
+        assert _by_rule(violations, "DOC004") == []
+
+
 class TestDoc004ConsoleCommandDrift:
     """T-0443: DOC004's console/bash `<prog> <subcommand>` tier is driven
     entirely by `frob.toml`'s `[[docblocks.commands]]` array -- `prog` plus
