@@ -18,6 +18,10 @@ scope:
 - src/frob/vet/_source.py
 - src/frob/vet/_ecosystem.py
 - src/frob/vet/_supplychain.py
+- tickets/T-draft-b8b8d1eb/**
+- tickets/T-draft-c6cb0e9a/**
+evidence_scope:
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,11 +52,28 @@ scope_changes:
   reason: closure warning was for pre-existing unrelated doc edges, not this change
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-b8b8d1eb/**
+  reason: sibling draft tickets filed from this ticket, need to be in scope for the
+    commit that files them
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-c6cb0e9a/**
+  reason: sibling draft tickets filed from this ticket, need to be in scope for the
+    commit that files them
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
+- tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
 designated_repro_test: null
 acceptance:
 - text: given the family's WARN codes, when frob check --json runs, then zero findings
     remain
-  evidence: []
+  evidence:
+  - tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
+  - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
   evidence: []
