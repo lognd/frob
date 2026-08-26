@@ -23,6 +23,8 @@ scope:
 - tickets/T-2916/ticket.md
 - tickets/archive/T-0450/ticket.md
 - tickets/T-2954/**
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -96,6 +98,8 @@ scope_changes:
   reason: the T-0450 archive-anomaly follow-up ticket this triage filed
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null
