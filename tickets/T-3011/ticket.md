@@ -24,6 +24,9 @@ scope:
 - src/frob/gates/_version_coupling.py
 - tests/unit/gates/test_version_coupling.py
 - tests/unit/test_doctor.py
+- docs/guides/install.md
+- docs/modules/cli.md
+- docs/guides/release.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +84,21 @@ scope_changes:
   glob: tests/unit/test_doctor.py
   reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
     gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/guides/install.md
+  reason: 'T-3011: doc edges for doctor.py touches + new release process doc'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'T-3011: doc edges for doctor.py touches + new release process doc'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/guides/release.md
+  reason: 'T-3011: doc edges for doctor.py touches + new release process doc'
   actor: logan
   at: '2026-08-26'
 triage_changes:
