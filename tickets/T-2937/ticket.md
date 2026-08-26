@@ -74,7 +74,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0d3b4db21c6f4b66c7663fd51914dbb5baa64ce8
 ---
 `frob ticket new` (the CLI verb, `frob.app.ticket_runner._new._new`) blocks
 for up to the full land-wait budget (currently up to ~313-500s observed,
