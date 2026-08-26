@@ -6,7 +6,7 @@ kind: feature
 origin: human
 created: '2026-08-25'
 priority: high
-parent: null
+parent: T-2920
 tier: ticket
 sprint: null
 runs_last: false
@@ -50,6 +50,13 @@ scope_changes:
   glob: tests/unit/strata/test_shrink.py
   reason: narrow to the new shrink module + its __init__ export + its own test file;
     CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2920
+  reason: child implementation ticket of the T-2920 shrink-only ratchet epic
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
