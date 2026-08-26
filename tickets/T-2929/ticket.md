@@ -58,7 +58,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 87e1feefec13d007e088df587705da8fc1bb6873
 ---
 MEASURED EVIDENCE:
   - `frob verify status` (2026-08-25, mid-drive) reported watermark age
