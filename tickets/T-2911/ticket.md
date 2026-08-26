@@ -23,6 +23,7 @@ scope:
 - tests/test_status.py
 - docs/modules/cli.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,11 @@ scope_changes:
 - op: add
   glob: design/frob.strata
   reason: declare exec capability via for new tests/test_status.py (SELFAUDIT001/SYS100)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: bump exec ratchet ceiling for new test_status.py subprocess call (SYS111)
   actor: logan
   at: '2026-08-26'
 triage_changes:
