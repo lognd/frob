@@ -2,7 +2,7 @@
 id: T-2953
 title: 'Windows: natives build crashes with UnicodeDecodeError decoding maturin subprocess
   output (cp1252)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -17,10 +17,107 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_guard.py
 - src/frob/natives/_build.py
+- src/frob/serve/_socketd.py
+- src/frob/app/_daemon_proxy.py
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/app/ticket_runner/_rapid_sweep.py
+- tests/unit/test_process_guard.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/_daemon_proxy.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_process_guard.py
+  reason: 'The class sweep (subprocess.run/Popen with text=True/universal_newlines=True
+
+    and no explicit encoding=) found 5 raw call sites outside
+
+    guarded_subprocess_run''s own seam; fixing the class (per coordinator
+
+    directive, not just the one call site in the traceback) requires
+
+    touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
