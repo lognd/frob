@@ -2,7 +2,7 @@
 id: T-2920
 title: 'Strata ratchet: shrink-only auto-tightening, capability escalation is always
   an error'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -18,6 +18,8 @@ scope:
 - src/frob/strata/_shrink.py
 - tests/unit/strata/test_shrink.py
 - docs/commands/sys.md
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -100,6 +102,13 @@ triage_changes:
     by the shrink-only ratchet design'
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds::test_capability_escalation_stays_an_error_and_shrink_does_not_widen
+- tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds::test_unbound_capability_file_stays_an_error_and_shrink_does_not_bind_it
+- tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_widening_functions_no_longer_exist_in_sync_may
+- tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_no_module_under_src_frob_defines_or_imports_a_widening_function
+- tests/test_gates.py::TestFixEngineTierA::test_sys100_core_violation_still_fires_and_is_not_auto_resolved
+- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
 designated_repro_test: null
 threat: null
 component: null
