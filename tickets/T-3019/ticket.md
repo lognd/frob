@@ -16,12 +16,17 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
-- src/frob/gates/__init__.py
 - design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/gates/__init__.py
+  reason: T-3014 holds lease on this file; fix confined to _refs.py and design/frob.strata
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: priority
   old_value: medium
