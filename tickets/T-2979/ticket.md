@@ -14,10 +14,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/logging/**
+- src/frob/__main__.py
+- docs/modules/logging.md
+- tests/unit/test_logging_module.py
+- tests/unit/test_main_entry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/logging/**
+  reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/__main__.py
+  reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/logging.md
+  reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_logging_module.py
+  reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_main_entry.py
+  reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
