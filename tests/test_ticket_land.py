@@ -6816,6 +6816,160 @@ class TestClaimDivergencePostMerge:
         assert result.is_ok
 
 
+# frob:ticket T-2913
+class TestSkipInlineClaimsReverifyUnderRapid:
+    """T-2913: under rapid profile, `land()` must skip its own inline
+    `check_gates`/`check_gate_findings` spawn (the 144-209s cost this
+    ticket measured and removed from the land critical path) -- and must
+    NOT skip it under any other profile, since the deferred post-land
+    sweep this relies on to still catch a regression is itself a
+    rapid-only relaxation (`_land_core_invoke`/`_land_post_merge_verify`,
+    `src/frob/app/ticket_runner/_land_cmd.py`)."""
+
+    def _make_closeable_with_divergent_claim(self, root: Path, ticket_id: str) -> None:
+        """Same shape as `TestClaimDivergencePostMerge._make_closeable_
+        with_claims`: a Done report claiming 0 gate errors, so a fresh
+        `check_gates` reporting a HIGHER count would normally refuse the
+        land (`ClaimDivergence`) -- the exact signal this test class uses
+        to prove whether `check_gates` was actually invoked at all."""
+        _make_closeable(root, ticket_id)
+        loaded = load_all(root)
+        ticket = loaded.danger_ok[ticket_id]
+        claims_block = (
+            "### Captured claims\n"
+            "- tests: 1 passed (from 1 evidence id(s))\n"
+            "- gates: 0 error(s), 0 warning(s), 0 waived"
+        )
+        ticket = ticket.model_copy(
+            update={"body": ticket.body + "\n" + claims_block + "\n"}
+        )
+        assert write_ticket(root, ticket).is_ok
+
+    def test_rapid_profile_skips_inline_check_gates_spawn(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn  # noqa: E501
+        """must-be-faster / must-still-catch, rapid side: a divergent
+        `check_gates` result (which `TestClaimDivergencePostMerge.
+        test_divergent_gate_errors_refuses_land` proves refuses the land
+        under the default profile) is never even CALLED under rapid, and
+        the land succeeds despite the divergence -- because rapid defers
+        that verification to the post-land sweep instead of paying for it
+        inline. This is the actual time savings T-2913 measured: the spawn
+        this counter stands in for is the 144-209s cost, never invoked."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "feature-rapid-skip", str(wt)], repo)
+        (wt / "frob.toml").write_text(
+            '[profile]\nprofile = "rapid"\noverride_ratchet = true\n'
+        )
+
+        created = new_ticket(wt, _spec("Rapid ticket with a divergent gate claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_divergent_claim(wt, tid)
+        _commit_all(wt, "advance rapid ticket with a divergent gate claim")
+
+        calls = []
+
+        def _spy_check_gates() -> tuple[int, int | None, int | None]:
+            calls.append(1)
+            return (3, 0, 0)
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=_spy_check_gates,
+        )
+
+        assert result.is_ok
+        assert calls == []
+
+    def test_non_rapid_profile_still_runs_inline_check_gates_spawn(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_non_rapid_profile_still_runs_inline_check_gates_spawn  # noqa: E501
+        """must-still-catch, non-rapid side: the SAME divergent claim,
+        the SAME spy, no `frob.toml` (default = standard profile) --
+        `check_gates` IS called and the land refuses, exactly as
+        `TestClaimDivergencePostMerge.test_divergent_gate_errors_refuses_
+        land` already established. Proves T-2913's change is profile-
+        gated, not a blanket skip."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-standard-no-skip", str(wt)], repo
+        )
+
+        created = new_ticket(wt, _spec("Standard ticket with a divergent gate claim"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_divergent_claim(wt, tid)
+        _commit_all(wt, "advance standard ticket with a divergent gate claim")
+
+        calls = []
+
+        def _spy_check_gates() -> tuple[int, int | None, int | None]:
+            calls.append(1)
+            return (3, 0, 0)
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=_spy_check_gates,
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.ClaimDivergence
+        assert calls == [1]
+
+    def test_unreadable_profile_config_fails_closed_and_still_runs_spawn(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_unreadable_profile_config_fails_closed_and_still_runs_spawn  # noqa: E501
+        """Fail-closed side: a malformed `frob.toml` makes `effective_
+        profile` return `Err`, which `_land_should_skip_inline_claims_
+        reverify` must treat as NOT-rapid (never skip) -- a broken
+        config can only make a land MORE thorough, never less. Same
+        divergent-claim/spy setup as the two tests above; this one
+        proves the `resolved.is_err` branch specifically, which the
+        rapid/non-rapid pair above never exercises (both always resolve
+        `Ok`)."""
+        wt = repo.parent / "wt"
+        _run(
+            ["git", "worktree", "add", "-b", "feature-unreadable-profile", str(wt)],
+            repo,
+        )
+        (wt / "frob.toml").write_text("[profile\nthis is not valid toml\n")
+
+        created = new_ticket(wt, _spec("Ticket with an unreadable profile config"))
+        assert created.is_ok
+        tid = created.danger_ok.id
+        self._make_closeable_with_divergent_claim(wt, tid)
+        _commit_all(wt, "advance ticket with an unreadable profile config")
+
+        calls = []
+
+        def _spy_check_gates() -> tuple[int, int | None, int | None]:
+            calls.append(1)
+            return (3, 0, 0)
+
+        result = land(
+            repo,
+            tid,
+            wt,
+            dry_run=False,
+            passed=lambda ids: frozenset(ids),
+            check_gates=_spy_check_gates,
+        )
+
+        assert result.is_err
+        assert result.danger_err == LandError.ClaimDivergence
+        assert calls == [1]
+
+
 class TestDoneReportThenLandRealClosuresEndToEnd:
     """T-0754 review round 2 fix #2: exercises the REAL production
     closures (`_run_tests_count_fn`/`_check_gates_summary_fn`/

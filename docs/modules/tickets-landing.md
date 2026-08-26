@@ -2892,3 +2892,37 @@ independently edited, a different, already-handled conflict kind
 (T-1914's sibling-ledger-merge path), not this function's concern. The
 landing ticket's own id is likewise excluded (its own worktree-vs-main
 divergence is the land itself, not a collision).
+
+## Inline claims reverify skipped under rapid (T-2913)
+
+`_land_should_skip_inline_claims_reverify(worktree)` answers whether
+`land()` should skip its own inline `check_gates`/`check_gate_findings`
+spawn -- a fresh, full `frob check --ticket <id> --json` re-run against
+the post-merge tree (T-0754/T-0846), measured at 144-241s wall-clock and
+the single largest line item on a typical land, held for that whole
+duration under `root`'s `_land_lock`. Under rapid profile
+(`LandProfileSettings.pre_commit_sweep_enabled` is `False`), this
+returns `True` and `land()` passes `None` for both callables instead of
+the real ones -- `_reverify_done_report_claims_post_merge` already
+treats `None` as a permissive, logged skip (T-0832's existing
+"unmeasured is not a pass" semantics), so no new code path was added at
+the comparison site, only a new reason to reach the existing one.
+
+This does not remove verification coverage under rapid: the deferred
+post-land sweep (T-1684, `spawn_deferred_post_land_sweep`) already runs
+UNCONDITIONALLY under rapid, regardless of whether this inline spawn
+ran, and already catches and attributes a regression via quarantine +
+T-1690 symbolic-reachability attribution -- see the T-2361 land's own
+two sweep-filed regression tickets (T-2898/T-2899) for a real instance
+of this pipeline working end-to-end. Skipping the inline spawn removes a
+REDUNDANT synchronous copy of a check the deferred pipeline was already
+going to perform after the commit was durable, not the check itself.
+
+Deliberately NOT applied to `check_gate_claims` (T-1410's separate,
+cheaper `--only gates` spawn for acceptance criteria shaped as gate-
+outcome claims) -- that was not the cost this ticket measured and stays
+unconditional in every profile.
+
+Best-effort, fail-closed: an unreadable profile config resolves to
+NOT-rapid (never skip), so a broken `frob.toml` can only make a land
+MORE thorough, never less.

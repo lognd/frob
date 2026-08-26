@@ -355,6 +355,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2900: wire or drop _parse_bash (bash raw-parse test helper)
 - T-2906: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock facets)
 - T-2908: frob-suggest: three nudge rules misfire and tax every agent call with a retry
+- T-2913: Rapid land still runs a full inline frob check on the land critical path, serialized under land.lock
 
 ## [0.530.0] - unreleased
 

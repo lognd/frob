@@ -2301,8 +2301,27 @@ def _land_locked(
         # docstring (`src/frob/app/ticket_runner/_verify.py`) for the full
         # account and the fix (`FROB_ALLOW_FULL_CHECK=1` in the spawn's
         # own child env, unconditionally).
+        # T-2913: rapid already lets the deferred post-land sweep
+        # (`spawn_deferred_post_land_sweep`, run unconditionally under
+        # rapid regardless of what is passed here) catch a regression
+        # AFTER the commit is durable -- skip the redundant INLINE
+        # `check_gates`/`check_gate_findings` spawn (the 144-209s cost
+        # this ticket measured) under that same profile instead of
+        # paying for it twice. See `_land_should_skip_inline_claims_
+        # reverify`'s own docstring for the full argument and why
+        # `check_gate_claims` (a separate, cheaper T-1410 spawn) is left
+        # untouched.
+        effective_check_gates = check_gates
+        effective_check_gate_findings = check_gate_findings
+        if _land_should_skip_inline_claims_reverify(worktree):
+            effective_check_gates = None
+            effective_check_gate_findings = None
         claims_check = _reverify_done_report_claims_post_merge(
-            worktree, ticket_id, passing_ids, check_gates, check_gate_findings
+            worktree,
+            ticket_id,
+            passing_ids,
+            effective_check_gates,
+            effective_check_gate_findings,
         )
         if claims_check.is_err:
             if did_merge:
@@ -3313,6 +3332,64 @@ def _land_is_rapid(worktree: Path, ticket_id: str) -> bool:
         return False
     record_rapid_debt(worktree, ticket_id, "land-evidence-scope-unbound")
     return True
+
+
+# frob:ticket T-2913
+# frob:doc \
+# docs/modules/tickets-landing.md#inline-claims-reverify-skipped-under-rapid-t-2913
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_rapid_profile_skips_inline_check_gates_spawn kind="integration"  # noqa: E501
+# frob:tests tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid.test_non_rapid_profile_still_runs_inline_check_gates_spawn kind="integration"  # noqa: E501
+def _land_should_skip_inline_claims_reverify(worktree: Path) -> bool:
+    """T-2913: whether `land()` should skip its own inline `check_gates`/
+    `check_gate_findings` spawn (T-0754/T-0846 -- a fresh, full `frob
+    check --ticket <id>` re-run against the post-merge tree, measured at
+    144-209s and the single largest line item on a typical land's
+    critical path, held for that whole duration under `root`'s
+    `_land_lock` -- see this module's own T-1344/T-2053 investigation on
+    `_shared_check_spawn_fn`, `src/frob/app/ticket_runner/_verify.py`,
+    which concluded no safe SHAPE change existed for the spawn itself:
+    `--only` narrows what T-0754 verifies, `--delta` does not reduce
+    wall-clock, and the gate cache structurally near-always misses on a
+    freshly-merged tree).
+
+    Rapid profile already accepts exactly this tradeoff for the OTHER
+    full-repo check on the land path: `_land_core_invoke`
+    (`_land_cmd.py`) skips `pre_commit_sweep` entirely under rapid and
+    instead lets the post-land unscoped sweep (T-1684,
+    `spawn_deferred_post_land_sweep`) run detached, AFTER the commit is
+    already durable, catching a regression via quarantine + T-1690
+    symbolic-reachability attribution rather than refusing the land
+    itself. That deferred sweep runs UNCONDITIONALLY under rapid --
+    `_land_post_merge_verify` (`_land_cmd.py`) spawns it regardless of
+    whether this function's caller supplied `check_gates`/`check_gate_
+    findings` -- so skipping THIS inline spawn too does not remove
+    verification coverage under rapid, it removes a REDUNDANT inline
+    copy of a check the deferred pipeline was already going to run
+    after the fact. Extending that same posture to this spawn, instead
+    of applying the T-1681-style debt-side-channel `_land_is_rapid`
+    above does (a different field, `evidence_scope_unbound_is_debt`,
+    for a different relaxation), needs its own resolver because
+    `pre_commit_sweep_enabled` -- not `evidence_scope_unbound_is_debt`
+    -- is the settings field that actually names this relaxation
+    (`LandProfileSettings`'s own docstring: "True for fortress/standard,
+    False for rapid").
+
+    Deliberately NOT applied to `check_gate_claims` (T-1410's SEPARATE
+    `frob check --only gates` spawn, `_land_gate_claims_fn`): that check
+    verifies a DIFFERENT claim (an acceptance criterion literally shaped
+    as "0 <RULE> findings under <glob>"), is far cheaper (`--only gates`,
+    not an unscoped full check), and was not the cost T-2913 measured.
+
+    Best-effort, same fail-closed posture as `_land_is_rapid`: an
+    unreadable profile resolves to NOT-rapid (never skip), so a broken
+    config can only make a land MORE thorough, never less."""
+    from frob.tickets._profile import effective_profile
+    from frob.verify import settings_for_profile
+
+    resolved = effective_profile(worktree)
+    if resolved.is_err:
+        return False
+    return not settings_for_profile(resolved.danger_ok).pre_commit_sweep_enabled
 
 
 def _validate_scope_covered_preflight(

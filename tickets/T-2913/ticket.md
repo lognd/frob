@@ -2,7 +2,7 @@
 id: T-2913
 title: Rapid land still runs a full inline frob check on the land critical path, serialized
   under land.lock
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -71,7 +71,13 @@ scope_changes:
     note'
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_divergent_gate_errors_refuses_land
+- tests/test_ticket_land.py::TestClaimDivergencePostMerge::test_matching_claims_land_succeeds
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_unreadable_profile_config_fails_closed_and_still_runs_spawn
+designated_repro_test: tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_rapid_profile_skips_inline_check_gates_spawn
 threat: null
 component: null
 anchor: false
