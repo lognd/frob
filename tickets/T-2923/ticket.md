@@ -21,6 +21,7 @@ scope:
 - src/frob/_cli_parsers/_misc.py
 - docs/commands/sys.md
 - design/frob.strata
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -78,6 +79,12 @@ scope_changes:
   reason: declaring fs.read/fs.write may grants for the new _shrink.py module -- SYS100
     fired on my own diff since the new module performs real fs.read/fs.write; declared
     by hand, never auto-widened
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: CLI dest sys_shrink_check needs wiring into the forwarding-layer field-copy
+    tuple (WIRE001/FLAGCOV001)
   actor: logan
   at: '2026-08-25'
 triage_changes:
