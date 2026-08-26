@@ -406,9 +406,14 @@ def _ensure_reduced_priority() -> None:
 def _lower_cpu_nice_priority() -> None:
     """The CPU-priority half of `_ensure_reduced_priority` (T-1695, ARCH103
     split): `os.nice(10)`, best-effort -- a platform with no `os.nice`
-    (non-POSIX) just logs and continues, never a crash."""
+    (non-POSIX) just logs and continues, never a crash. T-2961: `ty`
+    flags `os.nice` as unresolved on a Windows target -- already-correct
+    runtime behavior (the `except AttributeError` below is exactly the
+    guard for that), so this is a suppression of a true, already-handled
+    positive, not a real gap; nothing here needs a platform-check
+    rewrite."""
     try:
-        os.nice(10)
+        os.nice(10)  # ty: ignore[unresolved-attribute]
         _log.info("verify worker: lowered CPU nice priority by 10")
     except (AttributeError, OSError) as exc:
         _log.warning("verify worker: could not lower CPU nice priority: %s", exc)

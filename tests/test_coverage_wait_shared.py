@@ -9,6 +9,7 @@ DIFFERS never contend with (or leak a result to) each other at all.
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from pathlib import Path
@@ -281,6 +282,17 @@ class TestWorktreeLock:
     daemon (not a mock), per this file's own `TestCrossWorktreeSingleFlight`
     precedent."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_uses_daemon_lease_when_daemon_up(
         self, tmp_path: Path, monkeypatch
     ) -> None:

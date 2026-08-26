@@ -450,6 +450,26 @@ same PLATFORM001-shaped fix T-2918/T-2934 applied to `frob.tickets
 `Err(DaemonError.LockUnavailable)` -- never a silent unlocked no-op --
 only when neither `fcntl` nor `msvcrt` exists on the running platform.
 
+`DaemonError.PlatformUnsupported` (T-2961) is a SEPARATE, later failure
+mode from `LockUnavailable`: the lock primitive above is genuinely
+cross-platform (fcntl/msvcrt), but the daemon's actual TRANSPORT is
+not. `_DaemonServer` (the class `socketserver.ThreadingUnixStreamServer`
+backs) is only defined on non-Windows platforms -- unlike a function
+whose body can branch at runtime, a module-level class statement
+referencing a missing base attribute raises `AttributeError` the instant
+the module is IMPORTED, the same bug class as T-2952's bare `import
+fcntl`, just at class-definition time. A Windows placeholder class keeps
+the name `_DaemonServer` bound (so every type annotation elsewhere in
+this module still resolves, and `ty check` stays clean on every
+platform) but is never actually constructed: `run_socket_daemon` checks
+`sys.platform == "win32"` FIRST and returns
+`Err(DaemonError.PlatformUnsupported)` before ever reaching it.
+`send_request` (the client half) carries the identical guard, returning
+`Err(DaemonError.Unreachable)` -- the pre-existing, already-documented
+"cannot be reached" outcome -- before its own `socket.AF_UNIX` call. The
+daemon is a pure warm-cache optimization (see "CLI daemon proxy" below);
+this refusal is invisible to every caller except the log line.
+
 ### Socket location (T-2945)
 
 `socket_path(root)` does NOT live under `<root>/.frob/` -- it resolves to
@@ -851,6 +871,13 @@ and `frob map --json` (`frob_map`, T-1479) (see "Proxied commands"
 below); `outline`/`xref` remain the disclosed residual from T-0321's
 integration map, genuinely unwired -- see "Scope cut" below.
 
+`ProxyReason.PlatformUnsupported` (T-2961) is `query`'s Windows outcome:
+returned immediately, before `ensure_daemon`/`send_request` ever touch
+`socket.AF_UNIX`, and treated identically to every other `Err` by every
+one of the nine callers above -- fall back to in-process, nothing user-
+visible. `try_daemon_lease` (the one caller outside the nine, used by
+`frob.testing.run_coverage_wait`) carries the same guard.
+
 
 ### Decision tree
 
@@ -935,7 +962,7 @@ command.
 A unix socket file outlives the process that bound it, so its existence is
 never evidence a daemon is serving. `probe_daemon` establishes liveness the
 only way that is real -- a bounded connect-plus-answer round trip -- and
-reports one of five `DaemonLiveness` states, each with a distinct correct
+reports one of six `DaemonLiveness` states, each with a distinct correct
 response:
 
 | State | Meaning | Response |
@@ -945,6 +972,23 @@ response:
 | `Orphaned` | socket file present, connect refused | unlink it, then spawn |
 | `Wedged` | listening but no answer in budget | do NOT spawn a rival; run in-process |
 | `VersionSkew` | answered with a different version | graceful shutdown, then spawn |
+| `PlatformUnsupported` | running on Windows (T-2961) | never probe; never spawn |
+
+`PlatformUnsupported` short-circuits `probe_daemon` before it ever touches
+`socket.AF_UNIX` -- the daemon's whole transport
+(`socketserver.ThreadingUnixStreamServer` server-side, `AF_UNIX` client-
+side) has no Windows equivalent. `ensure_daemon` treats it the same as
+`Wedged` in spirit (return without spawning) but for a structural reason
+rather than a transient one: spawning `run_socket_daemon` on Windows would
+just pay a wasted subprocess launch for `run_socket_daemon`'s own
+`PlatformUnsupported` refusal (below). `query`/`try_daemon_lease` each
+carry their own top-of-function `sys.platform == "win32"` guard too --
+`ty check` resolves each function body independently of its callers, so
+the guard has to live at every site that references `socket.AF_UNIX`, not
+just the outermost one a human would read as "the" entry point. See the
+Windows-native-daemon-transport epic filed alongside T-2961 for whether
+this becomes a real backend (named pipes, loopback TCP+token, or an
+AF_UNIX-on-Windows hybrid) instead of a permanent refusal.
 
 The probe budget (`_PROBE_TIMEOUT_S`, 0.5s) is deliberately NOT
 `send_request`'s 10s query timeout. Budgeting a health check like a real

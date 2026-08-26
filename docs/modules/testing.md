@@ -795,9 +795,11 @@ explicit `frob_lease_release` before closing it, but the connection
 closing ALONE is also sufficient -- T-1097's server-side `finally` block
 frees every lease a disconnecting connection still held, so a crashed
 caller's lease is never stuck. `try_daemon_lease`'s `Err` (no daemon
-reachable, `FROB_NO_DAEMON=1`, or the lease request itself errored) falls
-back to `_coverage_lock` exactly as before this ticket -- the file lock
-is the daemonless fallback, not replaced. T-1095's cross-worktree shared-
+reachable, `FROB_NO_DAEMON=1`, the lease request itself errored, or
+`ProxyReason.PlatformUnsupported` on Windows -- T-2961, checked before
+`_LeaseConnection` ever touches `socket.AF_UNIX`) falls back to
+`_coverage_lock` exactly as before this ticket -- the file lock is the
+daemonless fallback, not replaced. T-1095's cross-worktree shared-
 state layer (`shared_state_dir`/`tree_digest`) is untouched either way: a
 daemon serves one worktree's own socket, not every worktree of the clone,
 so it is not a substitute for that cross-CLONE primitive.

@@ -1579,10 +1579,28 @@
       "actor": "logan",
       "at": "2026-08-26",
       "facet": "body",
+      "new_digest": "92051ccd7166a5531721675a0fa9aaf4a645360d74da8f6cfaa3bea05624f76a",
+      "old_digest": "497e98c2f6e44fbc64aeb5d1d32bc22ae8d54c06104f85053416ec64fb247df0",
+      "reason": "T-2961: added a top-of-function sys.platform == \"win32\" guard before\nsubscribe_and_wait's existing socket.AF_UNIX connect -- returns\nErr(DaemonError.Unreachable) immediately on Windows rather than\ncrashing, matching the function's own already-documented Unreachable\noutcome. The documented Timeout/Unreachable/Ok error-shape contract\nand behavior for every other platform are unchanged; re-verified\nagainst docs/modules/serve.md#subscribepush-events-t-1096's own text,\nwhich still accurately describes the function.\n",
+      "ref": "src/frob/serve/_events.py::subscribe_and_wait"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
       "new_digest": "5fc1dc80d18c6391b734d9286d208394a03438deeac48db297df3bbf730c27f5",
       "old_digest": "00916abf79c13d8c20c6834a000540e0e1381fdf676c12f042aff0ece4fe3306",
       "reason": "T-2944: added a WARNING log call to the existing sys.platform != \"linux\" early return in arm_parent_death_signal so the guard is loud in its own body (PLATFORM001 second shape); return value, conditions, and public contract are unchanged, so all dependent docs/tests remain accurate. (re-acked post-land after the pre-land frob.lock diff was dropped to resolve a CrossTicketLeakage refusal against T-2961.)",
       "ref": "src/frob/process/_reap.py::arm_parent_death_signal"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "c0035bbd8e239d6de4ab9409e62e1211c816f3f8e1a4abea8c6e513fee2ad6d7",
+      "old_digest": "c0035bbd8e239d6de4ab9409e62e1211c816f3f8e1a4abea8c6e513fee2ad6d7",
+      "reason": "T-2961: added a top-of-function sys.platform == \"win32\" guard before\nsubscribe_and_wait's existing socket.AF_UNIX connect -- returns\nErr(DaemonError.Unreachable) immediately on Windows rather than\ncrashing, matching the function's own already-documented Unreachable\noutcome. The documented Timeout/Unreachable/Ok error-shape contract\nand behavior for every other platform are unchanged; re-verified\nagainst docs/modules/serve.md#subscribepush-events-t-1096's own text,\nwhich still accurately describes the function.\n",
+      "ref": "src/frob/serve/_events.py::subscribe_and_wait"
     },
     {
       "actor": "logan",
@@ -2346,7 +2364,7 @@
       "ref": "src/frob/serve/_events.py::CoverageWatcher"
     },
     {
-      "digest": "497e98c2f6e44fbc64aeb5d1d32bc22ae8d54c06104f85053416ec64fb247df0",
+      "digest": "92051ccd7166a5531721675a0fa9aaf4a645360d74da8f6cfaa3bea05624f76a",
       "facet": "body",
       "ref": "src/frob/serve/_events.py::subscribe_and_wait"
     },

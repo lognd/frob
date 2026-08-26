@@ -7,6 +7,7 @@ and in-process answers must be byte-for-byte identical for a proxied query.
 from __future__ import annotations
 
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -69,6 +70,17 @@ class TestQuery:
         assert result.is_err
         assert result.danger_err is ProxyReason.Unreachable
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_live_daemon_hit(self, root: Path) -> None:
         # frob:tests tests/test_app_daemon_proxy.py::TestQuery.test_live_daemon_hit
         thread = _start_daemon(root)
@@ -79,6 +91,17 @@ class TestQuery:
         finally:
             _shutdown(root, thread)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_remote_error_falls_back(self, root: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestQuery.test_remote_error_falls_back
@@ -158,6 +181,17 @@ class TestEnsureDaemon:
         assert shutdown_calls == [root]
         assert spawned == [root]
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_version_handshake_end_to_end(self, root: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestEnsureDaemon.test_version_handshake_end_t\
@@ -219,6 +253,17 @@ class TestDifferentialParity:
     """T-0321's #1 safety invariant: daemon-served and in-process answers
     must be byte-for-byte identical for every proxied query shape."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_perf_hot_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_perf_hot_json_dae\
@@ -262,6 +307,17 @@ class TestDifferentialParity:
         # identical, not the diagnostic narration around it.
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_graph_affects_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_affects_jso\
@@ -311,6 +367,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_graph_query_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_graph_query_json_\
@@ -351,6 +418,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_doable_tickets_json_daemon_matches_in_process(
         self, tmp_path: Path
     ) -> None:
@@ -390,6 +468,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_check_delta_gates_only_json_daemon_matches_in_process(
         self, tmp_path: Path
     ) -> None:
@@ -450,6 +539,17 @@ class TestDifferentialParity:
             _json_tail(daemon_served.stdout)
         ) == _normalize_gate_timing(_json_tail(in_process.stdout))
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_touched_tests_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_touched_tests_jso\
@@ -502,6 +602,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_exports_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_exports_json_daem\
@@ -546,6 +657,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_stats_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_stats_json_daemon\
@@ -589,6 +711,17 @@ class TestDifferentialParity:
         assert daemon_served.returncode == 0, daemon_served.stderr
         assert _json_tail(daemon_served.stdout) == _json_tail(in_process.stdout)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_map_json_daemon_matches_in_process(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_app_daemon_proxy.py::TestDifferentialParity.test_map_json_daemon_m\

@@ -95,6 +95,10 @@ class DaemonLiveness(ErrorSet):
     Orphaned = "a socket file exists but nothing is listening on it"
     Wedged = "something is listening but did not answer a probe in budget"
     VersionSkew = "a daemon answered but reports a different frob version"
+    PlatformUnsupported = (
+        "the daemon's unix-socket transport has no Windows equivalent "
+        "(T-2961) -- never probed on this platform"
+    )
 
 
 # frob:ticket T-1377
@@ -119,7 +123,13 @@ def probe_daemon(
     Never raises: an unclassifiable failure reports `Wedged`, the
     conservative answer, because that is the one state where spawning a
     competing daemon makes things worse rather than better.
-    """
+
+    Returns `(DaemonLiveness.PlatformUnsupported, None)` immediately on
+    Windows (T-2961), before ever touching `socket.AF_UNIX` -- the
+    transport has no Windows equivalent, so this is a loud, typed
+    refusal, never a crash or a silent no-op."""
+    if sys.platform == "win32":
+        return (DaemonLiveness.PlatformUnsupported, None)
     from frob.serve import socket_path
 
     path = socket_path(root.resolve())
@@ -144,7 +154,13 @@ def probe_daemon(
 # FileNotFoundError, TimeoutError, OSError) is caught explicitly"
 def _ask_version_over_socket(path: Path, timeout_s: float) -> bytes | DaemonLiveness:
     """One bounded `frob_version` round trip: the raw reply bytes, or the
-    `DaemonLiveness` that the transport failure itself already proves."""
+    `DaemonLiveness` that the transport failure itself already proves.
+    `probe_daemon` (this function's only caller) already refuses before
+    ever reaching here on Windows (T-2961) -- this guard is defense in
+    depth for any future direct caller, and keeps `socket.AF_UNIX`
+    unreachable-on-win32 for `ty check`'s own platform-target analysis."""
+    if sys.platform == "win32":
+        return DaemonLiveness.PlatformUnsupported
     import socket as _socket
 
     try:
@@ -240,6 +256,10 @@ class ProxyReason(ErrorSet):
     Disabled = "the daemon is not enabled for this process (T-1379: opt-in)"
     Unreachable = "no live daemon socket answered for this root"
     RemoteError = "the daemon returned a JSON-RPC error for this query"
+    PlatformUnsupported = (
+        "the daemon's unix-socket transport has no Windows equivalent "
+        "(T-2961) -- falling back to in-process, same as any other Err"
+    )
 
 
 # frob:tests tests/unit/test_daemon_proxy_error_paths_t1457.py::TestClientVersion.test_unexpected_exception_falls_back_to_unknown  # noqa: E501
@@ -393,6 +413,11 @@ def ensure_daemon(root: Path) -> None:
     liveness, daemon_version = probe_daemon(root)
     if liveness is DaemonLiveness.Live:
         return
+    if liveness is DaemonLiveness.PlatformUnsupported:
+        # T-2961: no point spawning a daemon subprocess that would only
+        # refuse via run_socket_daemon's own PlatformUnsupported check --
+        # short-circuit here instead of paying that wasted spawn.
+        return
     if liveness is DaemonLiveness.Wedged:
         # Something IS holding the socket. Spawning a rival is exactly
         # wrong: `acquire_singleton_lock` refuses it, so every subsequent
@@ -459,10 +484,18 @@ def query(
     `Err` means "the caller must compute this in-process instead" -- never
     surfaced to the user as a daemon error, never a hang (T-1093 acceptance
     [1]): `send_request`'s own socket timeout bounds the worst case, and the
-    one retry below is itself bounded by `_SPAWN_GRACE_S`."""
+    one retry below is itself bounded by `_SPAWN_GRACE_S`.
+
+    Returns `Err(ProxyReason.PlatformUnsupported)` immediately on Windows
+    (T-2961), before ever calling `ensure_daemon`/`send_request` -- the
+    transport has no Windows equivalent, so this is a documented refusal
+    that every caller already treats identically to any other `Err`
+    (compute in-process instead)."""
     if not _daemon_enabled():
         _log.info("daemon_proxy: daemon disabled, computing %s in-process", method)
         return Err(ProxyReason.Disabled)
+    if sys.platform == "win32":
+        return Err(ProxyReason.PlatformUnsupported)
 
     from frob.serve import DaemonError, send_request
 
@@ -505,7 +538,18 @@ class _LeaseConnection:
     the same persistent-connection shape, not just a test."""
 
     def __init__(self, root: Path, *, timeout_s: float = 10.0) -> None:
-        """Connect once; every `call()` reuses the same socket."""
+        """Connect once; every `call()` reuses the same socket. Raises
+        `OSError` on Windows (T-2961) -- `AF_UNIX` has no cross-platform
+        server-side equivalent this daemon can bind, so this constructor
+        is not usable there; callers (`try_daemon_lease`) already refuse
+        before ever reaching this on win32, this is defense in depth for
+        any future direct caller."""
+        if sys.platform == "win32":
+            raise OSError(
+                "_LeaseConnection is not usable on Windows (T-2961) -- "
+                "the daemon's unix-socket transport has no Windows "
+                "equivalent"
+            )
         import socket as _socket
 
         from frob.serve import socket_path
@@ -567,13 +611,17 @@ def try_daemon_lease(
     promises). `Err(ProxyReason)` means no daemon is reachable, or the
     lease request itself errored -- the caller falls back to its own
     (e.g. file-lock) arbitration, exactly `query()`'s existing fallback
-    contract."""
+    contract. Returns `Err(ProxyReason.PlatformUnsupported)` immediately
+    on Windows (T-2961), before `_LeaseConnection` ever touches
+    `socket.AF_UNIX` -- same posture as `query()`."""
     # frob:waive SEC110 reason="T-1126: FROB_NO_DAEMON is the same boolean opt-out \
     # flag query() already carries this exact waiver for -- no confidential value, \
     # just a bypass switch"
     if not _daemon_enabled():
         _log.info("daemon_proxy: daemon disabled, bypassing daemon lease")
         return Err(ProxyReason.Disabled)
+    if sys.platform == "win32":
+        return Err(ProxyReason.PlatformUnsupported)
 
     ensure_daemon(root)
     try:

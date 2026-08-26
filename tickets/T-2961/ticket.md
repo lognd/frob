@@ -2,7 +2,7 @@
 id: T-2961
 title: 'Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer,
   os.nice)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -30,7 +30,7 @@ scope:
 - docs/modules/serve.md
 - docs/modules/testing.md
 - tests/test_app_daemon_proxy.py
-- tickets/T-draft-d2ddda57/**
+- tickets/T-2963/**
 - frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -175,7 +175,7 @@ scope_changes:
   glob: tests/test_app_daemon_proxy.py
   reason: 'tests/test_app_daemon_proxy.py: the 12 narrowly-targeted Windows skips
 
-    live here too. tickets/T-draft-d2ddda57/**: the Windows-native-daemon-
+    live here too. tickets/T-2963/**: the Windows-native-daemon-
 
     transport epic filed alongside this ticket.
 
@@ -183,10 +183,10 @@ scope_changes:
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-d2ddda57/**
+  glob: tickets/T-2963/**
   reason: 'tests/test_app_daemon_proxy.py: the 12 narrowly-targeted Windows skips
 
-    live here too. tickets/T-draft-d2ddda57/**: the Windows-native-daemon-
+    live here too. tickets/T-2963/**: the Windows-native-daemon-
 
     transport epic filed alongside this ticket.
 

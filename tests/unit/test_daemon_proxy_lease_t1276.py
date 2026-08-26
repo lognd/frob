@@ -19,6 +19,7 @@ branches, which the existing `TestEnsureDaemon` class covers for
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from pathlib import Path
@@ -89,6 +90,17 @@ class TestDaemonLease:
         # test_daemon_proxy_error_paths_t1457.py::TestTryDaemonLeaseErrorPaths._opt_in.
         monkeypatch.setenv("FROB_DAEMON", "1")
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_round_trip_acquire_call_release_close(
         self, root: Path, monkeypatch
     ) -> None:

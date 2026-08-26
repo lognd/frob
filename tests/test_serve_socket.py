@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import multiprocessing
 import signal
+import sys
 import threading
 import time
 from pathlib import Path
@@ -262,6 +263,17 @@ class TestDispatchRequest:
         assert response["id"] == 2
         assert response["error"]["code"] == "unknown_method"
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_frob_version_reports_daemon_version(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestDispatchRequest.test_frob_version_reports_dae\
@@ -285,6 +297,17 @@ class TestDispatchRequest:
             assert shutdown.is_ok
             thread.join(timeout=5)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_frob_shutdown_stops_the_server(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestDispatchRequest.test_frob_shutdown_stops_the_\
@@ -311,6 +334,17 @@ class TestDispatchRequest:
 
 
 class TestRunSocketDaemon:
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_serves_one_request_then_idle_exits(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_\
@@ -342,6 +376,17 @@ class TestRunSocketDaemon:
             not _socketd.lock_path(root).exists() or True
         )  # lock file may remain, unlocked
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_contended_lock_is_err(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestRunSocketDaemon.test_contended_lock_is_err
@@ -353,6 +398,17 @@ class TestRunSocketDaemon:
         assert result.danger_err == DaemonError.AlreadyRunning
         held.danger_ok.close()
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_stale_socket_file_is_replaced(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestRunSocketDaemon.test_stale_socket_file_is_rep\
@@ -443,6 +499,17 @@ class TestShutdownReapsChildren:
     active multiprocessing child must both exit the daemon process
     promptly AND leave no child behind (T-1378 acceptance [0]/[1])."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_frob_shutdown_exits_and_reaps_within_budget(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_socket.py::TestShutdownReapsChildren.test_frob_shutdown_exit\

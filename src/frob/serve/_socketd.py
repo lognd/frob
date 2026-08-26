@@ -60,6 +60,7 @@ import queue
 import socket
 import socketserver
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -208,6 +209,12 @@ class DaemonError(ErrorSet):
     LockUnavailable = (
         "neither fcntl (POSIX) nor msvcrt (Windows) is available on this "
         "platform -- refusing to run unlocked (T-2952)"
+    )
+    PlatformUnsupported = (
+        "the socket daemon's transport (socketserver.ThreadingUnixStreamServer, "
+        "a POSIX-only unix-domain-socket server) has no Windows equivalent -- "
+        "refusing to start rather than crashing on import (T-2961); see the "
+        "filed transport-abstraction epic for a real Windows backend"
     )
     BindFailed = "the daemon unix socket could not be bound"
     UnknownMethod = "requested JSON-RPC method is not exposed by the daemon"
@@ -677,38 +684,73 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             self.wfile.flush()
 
 
-# frob:waive PII012 reason="T-2741: allow_reuse_address below is stdlib \
-# socketserver.BaseServer's own reuse-addr flag (SO_REUSEADDR); no relation to a \
-# person's contact address -- a name-only false-positive match on 'address'. Placed \
-# here (directly above the class, not above the assignment) because comment.following \
-# binds a class-attribute assignment to the NEXT def/class (_DaemonServer.__init__), \
-# never to the enclosing class itself or the assignment statement -- this position is \
-# the only one that resolves via_following to _DaemonServer, matching the violation's \
-# own enclosing_qualname symref exactly (T-2438 exact-match rule)"
-class _DaemonServer(socketserver.ThreadingUnixStreamServer):
-    """`ThreadingUnixStreamServer` bound to `socket_path(root)`, one
-    connection handled per thread, tagged with the `root` it serves and an
-    `_IdleTracker` every connection's requests feed."""
+# T-2961: `socketserver.ThreadingUnixStreamServer` (the unix-domain-socket
+# server base this class needs) is POSIX-only -- no cross-platform
+# equivalent exists in the standard library. Unlike the fcntl/msvcrt
+# pattern this repo uses for FUNCTIONS (T-2918/T-2934/T-2952/T-2953), a
+# CLASS statement referencing a missing base at module scope raises
+# `AttributeError` the instant this module is IMPORTED, not merely when
+# the daemon is used -- structurally the same bug class as a bare
+# `import fcntl`, just at class-definition time instead of import
+# statement time. Both branches bind the SAME name `_DaemonServer` (never
+# leaving it unbound on win32) so every annotation/reference elsewhere in
+# this module resolves on every platform, mirroring how `fcntl = None`
+# keeps that name bound rather than omitting it under `except ImportError`.
+if sys.platform != "win32":
 
-    daemon_threads = True
-    allow_reuse_address = True
+    # frob:waive PII012 reason="T-2741: allow_reuse_address below is stdlib \
+    # socketserver.BaseServer's own reuse-addr flag (SO_REUSEADDR); no relation to a \
+    # person's contact address -- a name-only false-positive match on 'address'. \
+    # Placed here (directly above the class, not above the assignment) because \
+    # comment.following binds a class-attribute assignment to the NEXT def/class \
+    # (_DaemonServer.__init__), never to the enclosing class itself or the assignment \
+    # statement -- this position is the only one that resolves via_following to \
+    # _DaemonServer, matching the violation's own enclosing_qualname symref exactly \
+    # (T-2438 exact-match rule)"
+    class _DaemonServer(socketserver.ThreadingUnixStreamServer):
+        """`ThreadingUnixStreamServer` bound to `socket_path(root)`, one
+        connection handled per thread, tagged with the `root` it serves and
+        an `_IdleTracker` every connection's requests feed. Only defined on
+        non-Windows platforms (T-2961) -- see the `else` branch below for
+        the Windows placeholder that keeps this name bound everywhere."""
 
-    def __init__(self, root: Path, sock_path: Path) -> None:
-        """Bind the unix socket at `sock_path` and stash `root` for
-        `_RequestHandler.handle` to dispatch against. `event_bus` (T-1096)
-        is imported locally, not at module level, to avoid a
-        `_socketd`<->`_events` import cycle -- `_events.subscribe_and_wait`
-        itself imports `DaemonError`/`socket_path` FROM this module, so
-        this module cannot also import `_events` at module scope."""
-        from frob.serve._events import _EventBus
+        daemon_threads = True
+        allow_reuse_address = True
 
-        self.root = root
-        self.idle_tracker = _IdleTracker()
-        self.event_bus = _EventBus()
-        # T-1097: one ResourceLeaseManager per daemon process, shared
-        # across every connection-handling thread.
-        self.lease_manager = ResourceLeaseManager()
-        super().__init__(str(sock_path), _RequestHandler, bind_and_activate=True)
+        def __init__(self, root: Path, sock_path: Path) -> None:
+            """Bind the unix socket at `sock_path` and stash `root` for
+            `_RequestHandler.handle` to dispatch against. `event_bus`
+            (T-1096) is imported locally, not at module level, to avoid a
+            `_socketd`<->`_events` import cycle -- `_events.subscribe_and_
+            wait` itself imports `DaemonError`/`socket_path` FROM this
+            module, so this module cannot also import `_events` at module
+            scope."""
+            from frob.serve._events import _EventBus
+
+            self.root = root
+            self.idle_tracker = _IdleTracker()
+            self.event_bus = _EventBus()
+            # T-1097: one ResourceLeaseManager per daemon process, shared
+            # across every connection-handling thread.
+            self.lease_manager = ResourceLeaseManager()
+            super().__init__(
+                str(sock_path), _RequestHandler, bind_and_activate=True
+            )
+
+else:  # pragma: no cover -- windows-only
+
+    class _DaemonServer:  # type: ignore[no-redef]
+        """Windows placeholder (T-2961): `run_socket_daemon` refuses with
+        `Err(DaemonError.PlatformUnsupported)` before ever constructing
+        this, so `__init__` here only exists so the name `_DaemonServer`
+        stays bound (and `ty check` stays clean) on every platform -- it
+        is never actually reached."""
+
+        def __init__(self, root: Path, sock_path: Path) -> None:
+            raise NotImplementedError(
+                "_DaemonServer is not constructible on Windows (T-2961) -- "
+                "run_socket_daemon must refuse before reaching this"
+            )
 
 
 # frob:waive EXHAUST003 reason="T-1402: EXHAUST001 narrowed to fire for an own \
@@ -814,7 +856,21 @@ def run_socket_daemon(cfg: SocketDaemonConfig) -> Result[None, DaemonError]:
     thread, then block in `serve_forever()` until the idle timeout fires.
     On the way out (normal idle exit or an exception) the socket file is
     removed and the lock released, so the next caller finds a clean slate.
-    """
+
+    Refuses immediately with `Err(DaemonError.PlatformUnsupported)` on
+    Windows (T-2961): the transport (`socketserver.ThreadingUnixStreamServer`)
+    has no cross-platform equivalent, so this is a loud, documented
+    refusal -- never a silent no-op -- matching this repo's established
+    PLATFORM001 posture (T-2918/T-2934/T-2952/T-2953). `_daemon_proxy.query`
+    already treats every `Err` from this path as "compute in-process
+    instead" (the daemon is a pure optimization, never load-bearing), so
+    this refusal is invisible to every caller except the log line."""
+    if sys.platform == "win32":
+        _log.warning(
+            "serve: socketd: refusing to start -- %s",
+            DaemonError.PlatformUnsupported.value,
+        )
+        return Err(DaemonError.PlatformUnsupported)
     root = cfg.root.resolve()
     lock_result = acquire_singleton_lock(root)
     if lock_result.is_err:
@@ -920,7 +976,14 @@ def send_request(
     one JSON-RPC request, read one JSON-RPC response line back, and unwrap
     it into a `Result` -- the shape a future CLI-side client (the next
     child ticket) will build on, and what `tests/test_serve_socket.py`
-    uses to exercise `run_socket_daemon` end-to-end over a real socket."""
+    uses to exercise `run_socket_daemon` end-to-end over a real socket.
+    Returns `Err(DaemonError.Unreachable)` immediately on Windows
+    (T-2961), before ever touching `socket.AF_UNIX` -- the daemon's
+    unix-socket transport has no Windows equivalent, so "unreachable" is
+    the accurate outcome; never a crash."""
+    if sys.platform == "win32":
+        _log.info("serve: socketd: client: unix-socket transport unavailable on win32")
+        return Err(DaemonError.Unreachable)
     sock_path = socket_path(root.resolve())
     try:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
