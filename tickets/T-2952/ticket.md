@@ -22,6 +22,7 @@ scope:
 - tests/test_serve_socket.py
 - docs/modules/serve.md
 - tickets/T-draft-3923b7dc/**
+- docs/modules/testing.md
 evidence_scope:
 - tests/unit/test_process_lock.py
 - tests/test_coverage_wait_shared.py
@@ -112,6 +113,17 @@ scope_changes:
     UnicodeDecodeError discovered while getting a real windows-latest CI
 
     run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'CoverageLockUnavailable (new public symbol) needs its frob:doc target
+
+    in scope for the T-2114 new-public-symbol doc/test gate to pass at
+
+    land time.
 
     '
   actor: logan
