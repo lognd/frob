@@ -15,8 +15,9 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/**
-scope_breadth_ack: false
-scope_breadth_ack_reason: null
+scope_breadth_ack: true
+scope_breadth_ack_reason: genuine epic-scale triage across ~20 groups spanning most
+  of src/frob/gates; package glob is the honest scope
 no_scope_declared: false
 no_scope_declared_reason: null
 designated_repro_test: null
