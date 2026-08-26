@@ -1,0 +1,1 @@
+{"actor": "logan", "at": "2026-08-26", "command": "ticket land --finish", "guard": "T-1715 worktree-in-use refusal", "reason": "T-2935 own work landed and verified; T-2920 (epic) deliberately left open pending T-2910/T-2911, no further code work pending in this worktree, tree confirmed clean", "target": "T-2935:/home/logan/projects/frob/.claude/worktrees/t2920-series"}
