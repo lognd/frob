@@ -19,7 +19,7 @@ from frob.refactor._resolve import module_to_path
 
 _log = get_logger(__name__)
 
-__all__ = ["apply_plan", "build_move_ops"]
+__all__ = ["apply_ops", "apply_plan", "build_move_ops"]
 
 
 # frob:doc docs/commands/refactor.md#build_move_ops
@@ -125,27 +125,32 @@ def _apply_ops_to_file(file_path: Path, ops: list[RewriteOp]) -> None:
     file_path.write_text(text, encoding="utf-8")
 
 
-# frob:doc docs/commands/refactor.md#apply_plan
+# frob:doc docs/commands/refactor.md#apply_ops
 # frob:tests tests/test_refactor.py::TestApplyPlan.test_apply_then_rollback_restores_tree  # noqa: E501
 # frob:tests tests/test_refactor.py::TestApplyPlan.test_overlapping_ops_refuse_before_write  # noqa: E501
-def apply_plan(repo_root: Path, plan: RefactorPlan) -> Result[None, RefactorError]:
-    """Splice every `RewriteOp` in `plan.all_ops` into its target file.
-    Groups ops per file first so a file touched by both a move-op and
-    several reference-ops gets exactly one rewritten version, not one
-    write per op.
+def apply_ops(
+    ops: tuple[RewriteOp, ...] | list[RewriteOp],
+) -> Result[None, RefactorError]:
+    """Splice every `RewriteOp` in `ops` into its target file. Groups ops
+    per file first so a file touched by several ops gets exactly one
+    rewritten version, not one write per op.
 
     Refuses with `Err(OverlappingRewrites)`, before a single byte is
     written, if any two line-span ops targeting the same file overlap or
     share a line range -- see `_find_overlapping_ops`'s docstring for why
     this specific hazard (two ops each computed against the ORIGINAL
     source, one silently clobbering the other on apply) cannot be allowed
-    through."""
+    through. T-2990: factored out of `apply_plan` (which now just calls
+    this with `plan.all_ops`) so `_module_transaction.py`'s module-move
+    pipeline reuses this exact apply mechanics instead of a second copy
+    -- this piece of the engine has nothing symbol-shaped about it, it
+    is a generic per-file line-span splicer."""
     by_file: dict[str, list[RewriteOp]] = {}
-    for op in plan.all_ops:
+    for op in ops:
         by_file.setdefault(op.file_path, []).append(op)
 
-    for file_path_str, ops in by_file.items():
-        overlap = _find_overlapping_ops(ops)
+    for file_path_str, file_ops in by_file.items():
+        overlap = _find_overlapping_ops(file_ops)
         if overlap is not None:
             a, b = overlap
             _log.error(
@@ -162,15 +167,27 @@ def apply_plan(repo_root: Path, plan: RefactorPlan) -> Result[None, RefactorErro
             return Err(RefactorError.OverlappingRewrites)
 
     try:
-        for file_path_str, ops in by_file.items():
-            _apply_ops_to_file(Path(file_path_str), ops)
+        for file_path_str, file_ops in by_file.items():
+            _apply_ops_to_file(Path(file_path_str), file_ops)
     except OSError as exc:
         _log.error("refactor.apply: failed writing during apply: %s", exc)
         return Err(RefactorError.ApplyFailed)
 
     _log.info(
         "refactor.apply: applied %d op(s) across %d file(s)",
-        len(plan.all_ops),
+        len(ops),
         len(by_file),
     )
     return Ok(None)
+
+
+# frob:doc docs/commands/refactor.md#apply_plan
+# frob:tests tests/test_refactor.py::TestApplyPlan.test_apply_then_rollback_restores_tree  # noqa: E501
+def apply_plan(repo_root: Path, plan: RefactorPlan) -> Result[None, RefactorError]:
+    """Splice every `RewriteOp` in `plan.all_ops` into its target file --
+    thin wrapper around `apply_ops` (T-2990) kept for the symbol
+    engine's existing call shape; `repo_root` is accepted for call-shape
+    parity with every other phase function but unused (every `RewriteOp`
+    already carries its own absolute `file_path`)."""
+    del repo_root
+    return apply_ops(plan.all_ops)

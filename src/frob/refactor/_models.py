@@ -54,6 +54,18 @@ class RefactorError(ErrorSet):
         "ranges in the same file; applying either would silently clobber the "
         "other"
     )
+    # frob:ticket T-2990
+    UnsupportedLanguage = (
+        "the target module's language has no registered move-module "
+        "reference-rewrite adapter (frob.refactor._module_lang) -- refused "
+        "rather than silently skipped or partially rewritten"
+    )
+    # frob:ticket T-2990
+    SurvivingReferences = (
+        "a move-module transaction applied and committed but a literal "
+        "occurrence of the old dotted module path still exists somewhere in "
+        "the repo -- a partial rename, rolled back"
+    )
 
 
 # frob:doc docs/commands/refactor.md#refactor-kind

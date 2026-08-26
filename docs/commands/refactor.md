@@ -55,6 +55,137 @@ recognizes the two rewrites as equivalent (same resulting name set, just
 possibly reordered) and collapses them to one op rather than tripping
 `apply_plan`'s overlapping-rewrite refusal.
 
+## Module-move verb (T-2990)
+
+```
+frob refactor move-module SOURCE_MODULE DEST_MODULE [--allow-existing-destination]
+```
+
+Moves or renames a whole MODULE (a `.py` FILE), as opposed to `move`/
+`rename`'s single-symbol scope. Operands here are bare dotted module
+paths (`frob.yaml_io`, no `:`) -- distinct from `move`/`rename`'s
+`MODULE:QUALNAME` symbol operands; see "Typed operands" below for why
+that distinction is enforced structurally, not just documented.
+
+`move-module` exists because a module rename is NOT the sum of N symbol
+moves: `import frob.yaml_io`/`from frob import yaml_io` reference the
+MODULE, which no symbol-scoped scan ever sees; a module-private symbol
+or `__all__` has no qualname to hang a symbol-move off; and N separate
+symbol moves leave an empty husk file that then has to be deleted by
+hand, losing git's own rename detection in the process. `move-module`
+instead performs a single `git mv` for the file itself (so `git log
+--follow`/blame keep working across the rename) plus a repo-wide
+reference rewrite pass, still inside the same commit-or-rollback
+transaction shape every other verb here uses.
+
+### Typed operands
+
+A symbol reference (`module:qualname`), a module reference (a bare
+dotted path), and a file path are three distinct operand KINDS
+(`frob.refactor._operands.OperandKind`) -- `classify_operand` parses a
+raw CLI string into one of the three by shape alone (a `/` or `\\`
+makes it PATH, a `:` makes it SYMBOL, a valid dotted-identifier chain
+with neither makes it MODULE) before any verb-specific logic runs.
+`move`/`rename` accept SYMBOL only; `move-module` accepts MODULE only;
+a mismatch refuses with `OperandError.WrongOperandKind`, tree
+untouched, rather than the shared rewrite engine guessing at what a raw
+string like an image asset path was supposed to mean (the concrete
+example the ticket's own acceptance names: an `attachments` directory
+holding `img.jpg`, spelled here without a joining slash so this mention
+does not itself look like a file-path pointer to a non-existent tracked
+file). The destination
+half is validated further (`validate_module_destination`): every
+`.`-separated segment must be a real Python identifier, the mapped path
+must land inside the repo's declared source root and end in `.py`, and
+-- absent `--allow-existing-destination` -- the destination must not
+already exist. Every one of these is a pure check with no filesystem
+write; a refusal here leaves the tree byte-identical, not rolled back.
+
+### Per-language seam (T-2996 plug-in point)
+
+`frob refactor` today assumes Python throughout -- `move`/`rename`'s
+own `--help` says "move/rename a Python symbol", and nothing in this
+package branches on language. `move-module` is the first place that
+changes: `frob.refactor._module_lang` is the ONE module that decides
+"what counts as a reference to this module, and how is it spelled" for
+a given language, dispatched by `adapter_for(language)` where
+`language` comes from `frob.lang.language_for_extension` (the same
+extension table every other `frob.lang` consumer shares -- no second
+per-language table here). Only `"python"` is registered
+(`_module_scan_python.scan_python_module_references`); a module in any
+other language refuses loudly with `RefactorError.UnsupportedLanguage`
+at Resolve time (`_module_resolve.resolve_module`) rather than being
+silently skipped or partially rewritten. Everything else in the
+module-move pipeline -- operand typing, destination validation, `git
+mv`, the transaction/rollback shape, and the Verify-phase post-
+conditions -- is language-agnostic and imports nothing from
+`_module_lang`/`_module_scan_python` by name; adding a language means
+registering one new adapter function there, nothing else in this
+package changes. T-2996 (not this ticket) owns actually adding more
+languages and the cross-module support matrix.
+
+### Python reference-kind inventory
+
+`_module_scan_python.scan_python_module_references` walks every `.py`
+file and rewrites, symbolically (AST node comparison, never a text
+prefix match -- see "Prefix-collision guard" below):
+
+- `import old.module[ as x]` -- the import statement, plus (unaliased
+  only) every `old.module.symbol`-shaped attribute-chain usage
+  elsewhere in the file.
+- `from old.pkg import old_leaf[ as x]` -- the "from PARENT import
+  MODULE" shape; reuses `_scan._rename_usages` (the SAME helper
+  `move`/`rename`'s own symbol engine uses for this identical bare-name-
+  rebind problem) for any unaliased usage-site rewrite.
+- `from old.module import name[, ...]` -- only the module half changes.
+- A relative form of either shape above, resolved to an absolute
+  dotted path first; re-expressed as relative again when the importing
+  file's own package is unchanged relative to the destination, else
+  converted to an absolute import (always correct regardless of how
+  far the move changes package depth).
+- A literal `importlib.import_module("old.module")`/
+  `__import__("old.module")` string argument -- rewritten in place. Any
+  OTHER argument to either call (computed, an f-string, a variable) is
+  out of static-AST scope and is neither guessed at nor silently
+  dropped -- it is simply not a shape this scanner can see, matching
+  `scan_references`'s own "unresolved, never silently dropped" posture
+  for what it cannot mechanically rewrite.
+
+Non-Python surfaces -- `frob.toml` dotted `module`/`module:symbol`
+config values, `design/**/*.strata` `code=` bindings, `frob:doc`/
+`frob:tests`/`frob:ticket` path citations (both inside `.py` comments
+and in `tickets/**/ticket.md`), ticket `scope` globs, and `docs/**/*.md`
+prose -- are handled once per module move by
+`_module_prose.scan_module_path_citations`, independent of source
+language (these are keyed on the module's own PATH, not on any
+language-specific import syntax).
+
+### Prefix-collision guard
+
+Every match in `_module_scan_python.py` compares a FULL dotted-name
+SEGMENT LIST for exact equality (`_dotted_attribute_chain`/
+`_prefix_node`), never a string prefix -- `frob.yaml_io` never matches
+`frob.yaml_io_extra` or `frob.yaml_iomodel`. `_module_prose.py`'s text
+scan enforces the same guarantee via an explicit word-boundary check
+(`_token_spans`): the character immediately before and after a literal
+match must not be an identifier character (or, for a file-path token,
+`/`), so a sibling module's name embedding the old name as a substring
+is never touched, and neither is a prose mention that merely contains
+the token as part of a longer word.
+
+### Verify: no surviving references
+
+Beyond the three shared Verify-phase post-conditions (import
+resolution, `pytest --collect-only`, `frob check --delta` --
+`_commit.run_verify_outcomes`, shared with `move`/`rename`), `move-
+module` runs one post-condition of its own:
+`_module_transaction._verify_no_surviving_references` `git grep -c`s
+the whole tracked tree for the OLD dotted module path after the
+transaction has applied and committed. Any hit rolls the transaction
+back -- a partial rename (something no reference-kind scan above
+caught) is exactly the failure mode this verb's whole design exists to
+prevent, so it is a hard gate, not a disclosed-only warning.
+
 ## Transaction model
 
 1. **Resolve** -- `frob.refactor.resolve_symbol` parses the source
@@ -210,6 +341,8 @@ failure is reported as `Ok(RefactorReport(success=False, rolled_back=True,
 <!-- frob:describes src/frob/refactor/_resolve.py::resolve_symbol -->
 <!-- frob:describes src/frob/refactor/_scan.py::scan_references -->
 <!-- frob:describes src/frob/refactor/_apply.py::apply_plan -->
+<!-- frob:describes src/frob/refactor/_module_transaction.py::run_move_module -->
+<!-- frob:describes src/frob/refactor/_module_transaction.py::build_module_plan -->
 
 ```python
 # frob/refactor/_transaction.py
@@ -510,3 +643,119 @@ own chunk actually committed, in order.
 above. Chunks `symbols`, then plans/applies/verifies/commits-or-rolls-
 back each chunk in order as its own transaction, stopping the moment one
 chunk fails.
+
+<a id="operandkind"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::OperandKind -->
+**`OperandKind`**: the three operand shapes a raw CLI argument
+classifies into -- SYMBOL, MODULE, PATH -- see "Typed operands" above.
+
+<a id="operanderror"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::OperandError -->
+**`OperandError`**: operand-shape refusals, distinct from
+`RefactorError` (a pipeline-phase failure) -- `WrongOperandKind`,
+`InvalidDestination`, `DestinationExists`.
+
+<a id="moduleref"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::ModuleRef -->
+**`ModuleRef`**: a dotted Python module path operand -- the MODULE
+operand kind, distinct from `SymbolRef`.
+
+<a id="classify_operand"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::classify_operand -->
+**`classify_operand`**: classifies a raw CLI string into an
+`OperandKind` by shape alone -- see "Typed operands" above.
+
+<a id="parse_symbol_operand"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::parse_symbol_operand -->
+**`parse_symbol_operand`**: parses a SYMBOL operand, refusing anything
+MODULE- or PATH-shaped -- `move`/`rename`'s own operand gate.
+
+<a id="parse_module_operand"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::parse_module_operand -->
+**`parse_module_operand`**: parses a MODULE operand, refusing anything
+SYMBOL- or PATH-shaped -- `move-module`'s own operand gate.
+
+<a id="validate_module_destination"></a>
+<!-- frob:describes src/frob/refactor/_operands.py::validate_module_destination -->
+**`validate_module_destination`**: validates a `ModuleRef` as a legal
+Python module destination before any write -- see "Typed operands"
+above.
+
+<a id="resolvedmodule"></a>
+<!-- frob:describes src/frob/refactor/_module_resolve.py::ResolvedModule -->
+**`ResolvedModule`**: the module-verb Resolve phase's output -- a
+`ModuleRef` pinned to a real file and its `frob.lang` language label.
+
+<a id="resolve_module"></a>
+<!-- frob:describes src/frob/refactor/_module_resolve.py::resolve_module -->
+**`resolve_module`**: the module-verb Resolve phase entry point --
+confirms the file exists and its language has a registered `move-
+module` adapter, else `Err(UnsupportedLanguage)`. See "Per-language
+seam" above.
+
+<a id="adapter_for"></a>
+<!-- frob:describes src/frob/refactor/_module_lang.py::adapter_for -->
+**`adapter_for`**: the registered `ModuleReferenceScanner` for a
+`frob.lang` language label, or `None` -- see "Per-language seam" above.
+
+<a id="supported_languages"></a>
+<!-- frob:describes src/frob/refactor/_module_lang.py::supported_languages -->
+**`supported_languages`**: every language with a registered
+`move-module` adapter today (`frozenset({"python"})`).
+
+<a id="scan_python_module_references"></a>
+<!-- frob:describes src/frob/refactor/_module_scan_python.py::scan_python_module_references -->
+**`scan_python_module_references`**: the Python `move-module` adapter's
+whole reference-kind inventory -- see "Python reference-kind inventory"
+above.
+
+<a id="scan_module_path_citations"></a>
+<!-- frob:describes src/frob/refactor/_module_prose.py::scan_module_path_citations -->
+**`scan_module_path_citations`**: the shared, language-independent
+non-Python-surface scan (`frob.toml`, `.strata`, docs, tickets) -- see
+"Python reference-kind inventory" above (non-Python surfaces
+paragraph) and "Prefix-collision guard" above.
+
+<a id="moduleplan"></a>
+<!-- frob:describes src/frob/refactor/_module_transaction.py::ModulePlan -->
+**`ModulePlan`**: the full module-move rewrite plan, the module-verb
+mirror of `RefactorPlan` -- no `move_ops` field, since the move itself
+is a single `git mv`, not line-span splices.
+
+<a id="modulerefactorreport"></a>
+<!-- frob:describes src/frob/refactor/_module_transaction.py::ModuleRefactorReport -->
+**`ModuleRefactorReport`**: the disclosed report for a `move-module`
+transaction -- the module-verb mirror of `RefactorReport`.
+
+<a id="build_module_plan"></a>
+<!-- frob:describes src/frob/refactor/_module_transaction.py::build_module_plan -->
+**`build_module_plan`**: the module-verb Plan phase entry point --
+resolves the source, validates the destination, and dispatches to the
+source language's adapter plus the shared non-Python citation scan.
+
+<a id="run_move_module"></a>
+<!-- frob:describes src/frob/refactor/_module_transaction.py::run_move_module -->
+**`run_move_module`**: the full `move-module` pipeline in one call --
+Resolve+Plan, Apply, `git mv`, commit, Verify (including "no surviving
+references"), commit-or-rollback. See "Module-move verb" above.
+
+<a id="commit_wip"></a>
+<!-- frob:describes src/frob/refactor/_commit.py::commit_wip -->
+**`commit_wip`**: `git add -A` + `git commit` one WIP commit, resetting
+hard to a given pre-sha on either step failing -- factored out of
+`_transaction.py` (T-2990) so `move-module` shares the exact same
+commit-or-reset mechanics as `move`/`rename`/`split`.
+
+<a id="run_verify_outcomes"></a>
+<!-- frob:describes src/frob/refactor/_commit.py::run_verify_outcomes -->
+**`run_verify_outcomes`**: runs the three shared Verify-phase post-
+conditions against a given touched-files set -- factored out of
+`_transaction.py` (T-2990) for the same reason as `commit_wip`.
+
+<a id="apply_ops"></a>
+<!-- frob:describes src/frob/refactor/_apply.py::apply_ops -->
+**`apply_ops`**: the Apply phase's per-file line-span splice mechanics,
+operating on a plain list of `RewriteOp`s rather than a `RefactorPlan`
+-- factored out of `apply_plan` (T-2990, which is now a thin wrapper
+around this) so `move-module` reuses it directly instead of a second
+copy; this piece of the engine has nothing symbol-shaped about it.

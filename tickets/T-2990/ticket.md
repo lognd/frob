@@ -2,7 +2,7 @@
 id: T-2990
 title: 'frob refactor has no module/file move verb: symbol-scoped only, so a module
   rename falls back to hand-editing imports'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -66,6 +66,39 @@ body_changes:
   at: '2026-08-26'
   old_length: 5027
   new_length: 10111
+evidence:
+- tests/test_refactor.py::TestOperands::test_classifies_symbol_module_and_path
+- tests/test_refactor.py::TestOperands::test_parse_symbol_operand_refuses_module_shaped
+- tests/test_refactor.py::TestOperands::test_parse_module_operand_refuses_symbol_shaped
+- tests/test_refactor.py::TestOperands::test_validate_destination_refuses_non_identifier_segment
+- tests/test_refactor.py::TestOperands::test_validate_destination_refuses_existing_module
+- tests/test_refactor.py::TestOperands::test_validate_destination_refuses_non_py_shaped_path_operand
+- tests/test_refactor.py::TestOperands::test_validate_destination_stays_inside_source_root
+- tests/test_refactor.py::TestResolveModule::test_resolves_python_module
+- tests/test_refactor.py::TestResolveModule::test_refuses_missing_module
+- tests/test_refactor.py::TestResolveModule::test_refuses_unsupported_language
+- tests/test_refactor.py::TestModuleLang::test_python_has_an_adapter
+- tests/test_refactor.py::TestModuleLang::test_unregistered_language_has_no_adapter
+- tests/test_refactor.py::TestModuleLang::test_supported_languages_is_python_only
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_plain_import
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_aliased_import
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_from_package_import_module
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_from_module_import_name
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_relative_import
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_init_reexport
+- tests/test_refactor.py::TestModuleScanPython::test_rewrites_dynamic_import_module
+- tests/test_refactor.py::TestModuleScanPython::test_leaves_prefix_colliding_sibling_untouched
+- tests/test_refactor.py::TestModuleProse::test_rewrites_frob_toml_dotted_ref
+- tests/test_refactor.py::TestModuleProse::test_leaves_prefix_colliding_sibling_untouched
+- tests/test_refactor.py::TestModuleProse::test_leaves_unrelated_prose_untouched
+- tests/test_refactor.py::TestCommit::test_commit_wip_commits_and_returns_sha
+- tests/test_refactor.py::TestCommit::test_commit_wip_resets_on_git_failure
+- tests/test_refactor.py::TestCommit::test_run_verify_outcomes_runs_requested_checks
+- tests/test_refactor.py::TestBuildModulePlan::test_plan_includes_reference_ops
+- tests/test_refactor.py::TestBuildModulePlan::test_refuses_unsupported_language
+- tests/test_refactor.py::TestRunMoveModule::test_move_module_succeeds_and_commits
+- tests/test_refactor.py::TestRunMoveModule::test_move_module_uses_git_mv
+- tests/test_refactor.py::TestRunMoveModule::test_move_module_rolls_back_on_verify_failure
 designated_repro_test: null
 threat: null
 component: null

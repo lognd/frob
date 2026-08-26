@@ -7,28 +7,43 @@ import subprocess
 from pathlib import Path
 
 from frob.refactor import (
+    ModuleRef,
+    OperandError,
+    OperandKind,
     RefactorError,
     RefactorKind,
     SymbolRef,
+    adapter_for,
     apply_plan,
+    build_module_plan,
     build_plan,
     build_reexport_shim_op,
     carry_lock_acks,
     chunk_symbols,
+    classify_operand,
     extend_span_for_attached_directives,
+    parse_module_operand,
+    parse_symbol_operand,
+    resolve_module,
     resolve_rename_dest_collision,
     resolve_symbol,
+    run_move_module,
     run_refactor,
     run_split,
     scan_directive_carriers,
     scan_doc_anchor_carriers,
     scan_docs_prose_mentions,
     scan_evidence_citations,
+    scan_module_path_citations,
     scan_pii_allowlist_carrier,
+    scan_python_module_references,
     scan_python_prose_mentions,
     scan_references,
     scan_registry_citations,
+    supported_languages,
+    validate_module_destination,
 )
+from frob.refactor._commit import commit_wip, run_verify_outcomes
 from frob.refactor._resolve import module_to_path
 
 
@@ -1949,3 +1964,540 @@ class TestRunSplit:
         )
         assert result.is_err
         assert result.danger_err == RefactorError.DirtyWorkingTree
+
+
+class TestOperands:
+    def test_classifies_symbol_module_and_path(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestOperands.test_classifies_symbol_module_and_path
+        assert classify_operand("app.mod:run") == OperandKind.SYMBOL
+        assert classify_operand("app.mod") == OperandKind.MODULE
+        assert classify_operand("attachments/img.jpg") == OperandKind.PATH
+        assert classify_operand("app:run") == OperandKind.SYMBOL
+
+    def test_parse_symbol_operand_refuses_module_shaped(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestOperands.test_parse_symbol_operand_refuses_module\
+        # _shaped
+        result = parse_symbol_operand("app.mod")
+        assert result.is_err
+        assert result.danger_err == OperandError.WrongOperandKind
+
+        path_result = parse_symbol_operand("attachments/img.jpg")
+        assert path_result.is_err
+        assert path_result.danger_err == OperandError.WrongOperandKind
+
+    def test_parse_module_operand_refuses_symbol_shaped(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestOperands.test_parse_module_operand_refuses_symbol\
+        # _shaped
+        result = parse_module_operand("app:run")
+        assert result.is_err
+        assert result.danger_err == OperandError.WrongOperandKind
+
+        path_result = parse_module_operand("attachments/img.jpg")
+        assert path_result.is_err
+        assert path_result.danger_err == OperandError.WrongOperandKind
+
+    def test_validate_destination_refuses_non_identifier_segment(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestOperands.test_validate_destination_refuses_non_identifier_segment  # noqa: E501
+        root = _repo(tmp_path)
+        result = validate_module_destination(root, ModuleRef(module="pkg.123bad"))
+        assert result.is_err
+        assert result.danger_err == OperandError.InvalidDestination
+
+    def test_validate_destination_refuses_existing_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestOperands.test_validate_destination_refuses_existi\
+        # ng_module
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/existing.py", "x = 1\n")
+        result = validate_module_destination(root, ModuleRef(module="pkg.existing"))
+        assert result.is_err
+        assert result.danger_err == OperandError.DestinationExists
+
+        allowed = validate_module_destination(
+            root, ModuleRef(module="pkg.existing"), allow_existing=True
+        )
+        assert allowed.is_ok
+
+    def test_validate_destination_refuses_non_py_shaped_path_operand(self):
+        # T-2990 acceptance: `app:run -> attachments/img.jpg` must never parse
+        # far enough to reach destination validation at all.
+        result = parse_module_operand("attachments/img.jpg")
+        assert result.is_err
+        assert result.danger_err == OperandError.WrongOperandKind
+
+    def test_validate_destination_stays_inside_source_root(self, tmp_path):
+        # A dotted-identifier chain has no `/` or `..` -- it structurally
+        # cannot express a path outside the mapped source root; every
+        # destination this parses lands under `src/`.
+        root = _repo(tmp_path)
+        _write(root, "src/.keep", "")
+        result = validate_module_destination(root, ModuleRef(module="a.b.c.d"))
+        assert result.is_ok
+        assert result.danger_ok.is_relative_to(root / "src")
+
+
+class TestResolveModule:
+    def test_resolves_python_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestResolveModule.test_resolves_python_module
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.py", "x = 1\n")
+        result = resolve_module(root, ModuleRef(module="pkg.mod"))
+        assert result.is_ok
+        assert result.danger_ok.language == "python"
+
+    def test_refuses_missing_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestResolveModule.test_refuses_missing_module
+        root = _repo(tmp_path)
+        result = resolve_module(root, ModuleRef(module="pkg.absent"))
+        assert result.is_err
+        assert result.danger_err == RefactorError.TargetNotFound
+
+    def test_refuses_unsupported_language(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestResolveModule.test_refuses_unsupported_language
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/mod.ts", "export const x = 1;\n")
+        result = resolve_module(root, ModuleRef(module="pkg.mod"))
+        assert result.is_err
+        assert result.danger_err == RefactorError.UnsupportedLanguage
+
+
+class TestModuleLang:
+    def test_python_has_an_adapter(self):
+        # frob:tests tests/test_refactor.py::TestModuleLang.test_python_has_an_adapter
+        assert adapter_for("python") is not None
+
+    def test_unregistered_language_has_no_adapter(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleLang.test_unregistered_language_has_no_adap\
+        # ter
+        assert adapter_for("typescript") is None
+        assert adapter_for("rust") is None
+
+    def test_supported_languages_is_python_only(self):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleLang.test_supported_languages_is_python_only
+        assert supported_languages() == frozenset({"python"})
+
+
+class TestModuleScanPython:
+    def test_rewrites_plain_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_plain_import
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "import pkg.old_mod\n\ndef use():\n    return pkg.old_mod.fn()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, aliases, unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        assert aliases == []
+        assert unresolved == []
+        texts = {op.new_text for op in ops}
+        assert "import pkg.new_mod" in texts
+        assert any("pkg.new_mod.fn()" in t for t in texts)
+
+    def test_rewrites_aliased_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_aliased_import
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "import pkg.old_mod as om\n\ndef use():\n    return om.fn()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        assert len(ops) == 1
+        assert ops[0].new_text == "import pkg.new_mod as om"
+
+    def test_rewrites_from_package_import_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_package_impor\
+        # t_module
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from pkg import old_mod\n\ndef use():\n    return old_mod.fn()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        texts = {op.new_text for op in ops}
+        assert "from pkg import new_mod" in texts
+        assert any("new_mod.fn()" in t for t in texts)
+
+    def test_rewrites_from_module_import_name(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_from_module_import\
+        # _name
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from pkg.old_mod import fn\n\ndef use():\n    return fn()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        assert len(ops) == 1
+        assert ops[0].new_text == "from pkg.new_mod import fn"
+
+    def test_rewrites_relative_import(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_relative_import
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from . import old_mod\n\ndef use():\n    return old_mod.fn()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        texts = {op.new_text for op in ops}
+        assert "from . import new_mod" in texts
+
+    def test_rewrites_init_reexport(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_init_reexport
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(root, "src/pkg/__init__.py", "from .old_mod import fn\n")
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        texts = {(op.file_path, op.new_text) for op in ops}
+        assert any(
+            path.endswith("__init__.py") and text == "from .new_mod import fn"
+            for path, text in texts
+        )
+
+    def test_rewrites_dynamic_import_module(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_rewrites_dynamic_import_mod\
+        # ule
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "import importlib\n\ndef use():\n"
+            "    return importlib.import_module('pkg.old_mod')\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        assert any("pkg.new_mod" in op.new_text for op in ops)
+
+    def test_leaves_prefix_colliding_sibling_untouched(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleScanPython.test_leaves_prefix_colliding_sibling_untouched  # noqa: E501
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(root, "src/pkg/old_mod_extra.py", "def sibling():\n    return 2\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "import pkg.old_mod_extra\n\ndef use():\n"
+            "    return pkg.old_mod_extra.sibling()\n",
+        )
+        resolved = resolve_module(root, ModuleRef(module="pkg.old_mod")).danger_ok
+        ops, _aliases, _unresolved = scan_python_module_references(
+            root, resolved, ModuleRef(module="pkg.new_mod")
+        )
+        assert ops == []
+
+
+class TestModuleProse:
+    def test_rewrites_frob_toml_dotted_ref(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleProse.test_rewrites_frob_toml_dotted_ref
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "frob.toml",
+            '[gates]\nknown_keys = "frob.yaml_io:fast_yaml_loader"\n',
+        )
+        ops, unresolved = scan_module_path_citations(
+            root,
+            "frob.yaml_io",
+            "frob.yamlio",
+            "src/frob/yaml_io.py",
+            "src/frob/yamlio.py",
+        )
+        assert unresolved == []
+        assert len(ops) == 1
+        assert ops[0].new_text == 'known_keys = "frob.yamlio:fast_yaml_loader"'
+
+    def test_leaves_prefix_colliding_sibling_untouched(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleProse.test_leaves_prefix_colliding_sibling_untouched  # noqa: E501
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "frob.toml",
+            '[gates]\nsibling = "frob.yaml_io_extra:thing"\n',
+        )
+        ops, _unresolved = scan_module_path_citations(
+            root,
+            "frob.yaml_io",
+            "frob.yamlio",
+            "src/frob/yaml_io.py",
+            "src/frob/yamlio.py",
+        )
+        assert ops == []
+
+    def test_leaves_unrelated_prose_untouched(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestModuleProse.test_leaves_unrelated_prose_untouched
+        root = _repo(tmp_path)
+        _write(
+            root,
+            "docs/notes.md",
+            "This module handles YAML I/O generally, nothing dotted here.\n",
+        )
+        ops, _unresolved = scan_module_path_citations(
+            root,
+            "frob.yaml_io",
+            "frob.yamlio",
+            "src/frob/yaml_io.py",
+            "src/frob/yamlio.py",
+        )
+        assert ops == []
+
+
+class TestCommit:
+    def test_commit_wip_commits_and_returns_sha(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestCommit.test_commit_wip_commits_and_returns_sha
+        root = _repo(tmp_path)
+        _write(root, "a.txt", "1\n")
+        _commit_all(root, "init")
+        pre_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        _write(root, "a.txt", "2\n")
+        result = commit_wip(root, "wip: test", pre_sha)
+        assert result.is_ok
+        assert result.danger_ok != ""
+        assert result.danger_ok != pre_sha
+
+    def test_commit_wip_resets_on_git_failure(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestCommit.test_commit_wip_resets_on_git_failure
+        root = _repo(tmp_path)
+        _write(root, "a.txt", "1\n")
+        _commit_all(root, "init")
+        pre_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        # An empty commit message with no staged changes fails `git
+        # commit` (nothing to commit) -- exercises the reset-on-failure
+        # path without needing to break `git` itself.
+        result = commit_wip(root, "wip: nothing changed", pre_sha)
+        assert result.is_err
+        assert result.danger_err == RefactorError.GitError
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        assert head == pre_sha
+
+    def test_run_verify_outcomes_runs_requested_checks(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestCommit.test_run_verify_outcomes_runs_requested_ch\
+        # ecks
+        root = _repo(tmp_path)
+        good = _write(root, "src/pkg/good.py", "x = 1\n")
+        outcomes = run_verify_outcomes(
+            root,
+            [good],
+            run_pytest_collect=False,
+            run_check_delta=False,
+            pytest_scope_touched_only=True,
+        )
+        assert len(outcomes) == 1
+        assert outcomes[0].name == "import_resolution"
+        assert outcomes[0].passed is True
+
+
+class TestBuildModulePlan:
+    def test_plan_includes_reference_ops(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestBuildModulePlan.test_plan_includes_reference_ops
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from pkg.old_mod import fn\n\ndef use():\n    return fn()\n",
+        )
+        result = build_module_plan(
+            root, ModuleRef(module="pkg.old_mod"), ModuleRef(module="pkg.new_mod")
+        )
+        assert result.is_ok
+        plan = result.danger_ok
+        assert len(plan.reference_ops) == 1
+        assert plan.destination_path.endswith("new_mod.py")
+
+    def test_refuses_unsupported_language(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestBuildModulePlan.test_refuses_unsupported_language
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/old_mod.ts", "export const x = 1;\n")
+        result = build_module_plan(
+            root, ModuleRef(module="pkg.old_mod"), ModuleRef(module="pkg.new_mod")
+        )
+        assert result.is_err
+        assert result.danger_err == RefactorError.UnsupportedLanguage
+
+
+class TestRunMoveModule:
+    def test_move_module_succeeds_and_commits(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunMoveModule.test_move_module_succeeds_and_commi\
+        # ts
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from pkg.old_mod import fn\n\ndef use():\n    return fn()\n",
+        )
+        _commit_all(root, "init")
+
+        result = run_move_module(
+            root,
+            ModuleRef(module="pkg.old_mod"),
+            ModuleRef(module="pkg.new_mod"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is True
+        assert report.rolled_back is False
+        assert not (root / "src/pkg/old_mod.py").exists()
+        assert (root / "src/pkg/new_mod.py").exists()
+        user_text = (root / "src/pkg/user.py").read_text(encoding="utf-8")
+        assert "from pkg.new_mod import fn" in user_text
+
+    def test_move_module_uses_git_mv(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunMoveModule.test_move_module_uses_git_mv
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        _commit_all(root, "init")
+
+        result = run_move_module(
+            root,
+            ModuleRef(module="pkg.old_mod"),
+            ModuleRef(module="pkg.new_mod"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.commit_sha is not None
+        show = subprocess.run(
+            ["git", "show", "--stat", report.commit_sha],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        assert "old_mod.py => new_mod.py" in show or "rename" in show.lower()
+
+    def test_move_module_rolls_back_on_verify_failure(self, tmp_path):
+        # frob:tests \
+        # tests/test_refactor.py::TestRunMoveModule.test_move_module_rolls_back_on_verify_failure  # noqa: E501
+        root = _repo(tmp_path)
+        _write(root, "src/pkg/__init__.py", "")
+        _write(root, "src/pkg/old_mod.py", "def fn():\n    return 1\n")
+        # A dangling reference this scanner cannot see (a computed
+        # `getattr`-style dynamic access) plus a DIFFERENT already-broken
+        # import elsewhere is overkill; instead force a verify failure by
+        # pointing the destination outside of what import_resolution can
+        # parse -- write a second file whose only import references the
+        # OLD module absolutely in a form `_module_scan_python` does not
+        # rewrite (an `exec`-based dynamic string it cannot detect at
+        # all), so after the move that file's import is left dangling and
+        # `verify_import_resolution` catches it.
+        _write(
+            root,
+            "src/pkg/user.py",
+            "from pkg.old_mod import fn\n\ndef use():\n    return fn()\n",
+        )
+        _commit_all(root, "init")
+
+        # Sabotage: after planning, the plan's own reference_ops would
+        # normally fix pkg/user.py -- instead verify the ROLLBACK path
+        # fires when `run_check_delta`/pytest is asked for but the repo
+        # has no natives/deps reachable (skip_check_delta below keeps
+        # this deterministic) by forcing the surviving-references gate
+        # to fail: rename the destination to something that still
+        # contains the old dotted path as a substring is not possible
+        # (guarded), so instead assert rollback fires by making the
+        # apply phase see an UNRESOLVED usage the scanner cannot rewrite
+        # (a genuinely dangling import elsewhere) that
+        # import_resolution's post-condition then catches.
+        _write(root, "src/pkg/broken_user.py", "from pkg.old_mod import missing_name\n")
+        _commit_all(root, "add broken user")
+
+        result = run_move_module(
+            root,
+            ModuleRef(module="pkg.old_mod"),
+            ModuleRef(module="pkg.new_mod"),
+            run_pytest_collect=False,
+            run_check_delta=False,
+        )
+        assert result.is_ok
+        report = result.danger_ok
+        assert report.success is False
+        assert report.rolled_back is True
+        assert (root / "src/pkg/old_mod.py").exists()
+        assert not (root / "src/pkg/new_mod.py").exists()

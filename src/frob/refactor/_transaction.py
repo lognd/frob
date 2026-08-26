@@ -17,6 +17,7 @@ from typani.result import Result
 from frob.logging import get_logger
 from frob.refactor._alias_policy import resolve_rename_dest_collision
 from frob.refactor._apply import apply_plan, build_move_ops
+from frob.refactor._commit import commit_wip, run_verify_outcomes
 from frob.refactor._directives import (
     carry_lock_acks,
     extend_span_for_attached_directives,
@@ -45,11 +46,6 @@ from frob.refactor._repointer import (
 )
 from frob.refactor._resolve import module_to_path, resolve_symbol
 from frob.refactor._scan import scan_references
-from frob.refactor._verify import (
-    verify_check_delta,
-    verify_import_resolution,
-    verify_pytest_collect,
-)
 
 _log = get_logger(__name__)
 
@@ -332,22 +328,12 @@ def _commit_plan(
     destination: SymbolRef,
     pre_sha: str,
 ) -> Result[str, RefactorError]:
-    """`git add -A` + `git commit` the applied plan as one WIP commit;
-    `git reset --hard pre_sha` and `Err(GitError)` on either step
-    failing. Split out of `run_refactor` to keep it under the ARCH001
-    line budget.
-    """
-    commit_result = git(repo_root, "add", "-A")
-    if commit_result.is_err or commit_result.danger_ok.returncode != 0:
-        git(repo_root, "reset", "--hard", pre_sha)
-        return Err(RefactorError.GitError)
+    """Build this transaction's WIP commit message and delegate to
+    `_commit.commit_wip` (T-2990: factored out so `_module_transaction.
+    py`'s module-move pipeline shares the identical commit-or-reset
+    shape rather than a second copy)."""
     commit_msg = f"wip(refactor): {kind.value} {source.dotted} -> {destination.dotted}"
-    commit_result = git(repo_root, "commit", "-m", commit_msg)
-    if commit_result.is_err or commit_result.danger_ok.returncode != 0:
-        git(repo_root, "reset", "--hard", pre_sha)
-        return Err(RefactorError.GitError)
-    commit_sha_result = current_sha(repo_root)
-    return Ok(commit_sha_result.danger_ok if commit_sha_result.is_ok else "")
+    return commit_wip(repo_root, commit_msg, pre_sha)
 
 
 def _run_verify(
@@ -357,21 +343,16 @@ def _run_verify(
     run_check_delta: bool,
     pytest_scope_touched_only: bool,
 ) -> list[VerifyOutcome]:
-    """Run the three Verify-phase post-conditions the design doc
-    specifies (import resolution, pytest collection, `frob check
-    --delta`), each individually skippable by the caller's own flags.
-    Split out of `run_refactor` to keep it under the ARCH001 line
-    budget.
-    """
-    outcomes: list[VerifyOutcome] = [
-        verify_import_resolution(list(plan.touched_files), repo_root=repo_root)
-    ]
-    if run_pytest_collect:
-        targets = list(plan.touched_files) if pytest_scope_touched_only else None
-        outcomes.append(verify_pytest_collect(repo_root, targets=targets))
-    if run_check_delta:
-        outcomes.append(verify_check_delta(repo_root))
-    return outcomes
+    """Delegate to `_commit.run_verify_outcomes` with this plan's own
+    touched-files set (T-2990: the three Verify-phase post-conditions
+    are kind-agnostic and now shared with `_module_transaction.py`)."""
+    return run_verify_outcomes(
+        repo_root,
+        list(plan.touched_files),
+        run_pytest_collect,
+        run_check_delta,
+        pytest_scope_touched_only,
+    )
 
 
 def _resolve_and_plan(

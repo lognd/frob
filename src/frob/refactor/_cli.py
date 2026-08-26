@@ -20,6 +20,12 @@ from pathlib import Path
 
 from frob.logging import get_logger
 from frob.refactor._models import RefactorKind, SymbolRef
+from frob.refactor._module_transaction import run_move_module
+from frob.refactor._operands import (
+    ModuleRef,
+    parse_module_operand,
+    parse_symbol_operand,
+)
 from frob.refactor._split import DEFAULT_CHUNK_SIZE, run_split
 from frob.refactor._transaction import run_refactor
 from frob.render import Renderer
@@ -30,11 +36,30 @@ __all__ = ["add_refactor_parser", "run_refactor_command"]
 
 
 def _parse_ref(text: str) -> SymbolRef:
-    """Parse a `pkg.mod:qualname` CLI argument into a `SymbolRef`."""
-    module, _, qualname = text.partition(":")
-    if not qualname:
-        raise argparse.ArgumentTypeError(f"expected MODULE:QUALNAME, got {text!r}")
-    return SymbolRef(module=module, qualname=qualname)
+    """Parse a `pkg.mod:qualname` CLI argument into a `SymbolRef`,
+    through the typed operand gate (T-2990) -- a bare module or a
+    file-path-shaped argument is refused here with the exact same
+    message a caller would get from `parse_symbol_operand` directly."""
+    result = parse_symbol_operand(text)
+    if result.is_err:
+        raise argparse.ArgumentTypeError(
+            f"expected MODULE:QUALNAME (a symbol operand), got {text!r}: "
+            f"{result.danger_err.value}"
+        )
+    return result.danger_ok
+
+
+def _parse_module_ref(text: str) -> ModuleRef:
+    """Parse a bare dotted module path CLI argument into a `ModuleRef`
+    through the typed operand gate (T-2990) -- a `module:qualname` or
+    file-path-shaped argument is refused here, not silently accepted."""
+    result = parse_module_operand(text)
+    if result.is_err:
+        raise argparse.ArgumentTypeError(
+            f"expected a dotted MODULE path (no ':'), got {text!r}: "
+            f"{result.danger_err.value}"
+        )
+    return result.danger_ok
 
 
 # frob:doc docs/commands/refactor.md#cli
@@ -112,6 +137,31 @@ def add_refactor_parser(sub: argparse._SubParsersAction) -> None:
     )
     sp.set_defaults(_refactor_kind=None)
 
+    mp = refactor_sub.add_parser(
+        "move-module",
+        help="move/rename a whole module (a .py file), rewriting every reference",
+    )
+    mp.add_argument("source", type=_parse_module_ref, help="dotted MODULE (no ':')")
+    mp.add_argument(
+        "destination", type=_parse_module_ref, help="dotted MODULE (no ':')"
+    )
+    mp.add_argument(
+        "--allow-existing-destination",
+        action="store_true",
+        help="allow a destination module that already exists (default: refused)",
+    )
+    mp.add_argument(
+        "--full-repo-collect",
+        action="store_true",
+        help=("run pytest --collect-only over the whole repo, not just touched files"),
+    )
+    mp.add_argument(
+        "--skip-check-delta",
+        action="store_true",
+        help=("skip the frob check --delta post-condition (for fast local iteration)"),
+    )
+    mp.set_defaults(_refactor_kind=None)
+
 
 def _split_args_to_kwargs(args: argparse.Namespace) -> dict:
     """Translate a parsed `frob refactor split` namespace into `run_split`'s
@@ -180,15 +230,65 @@ def _run_split_command(args: argparse.Namespace) -> int:
     return 0 if report.success else 1
 
 
+def _render_module_report(renderer: Renderer, report) -> None:
+    """Print a `ModuleRefactorReport`'s disclosed shape -- the same
+    per-op/per-outcome rendering `run_refactor_command` does for a
+    symbol move/rename, at module granularity."""
+    renderer.line(
+        f"refactor move-module: {report.plan.source.ref.module} -> "
+        f"{report.plan.destination.module}: success={report.success}"
+    )
+    for op in report.plan.reference_ops:
+        renderer.line(f"  rewrite: {op.file_path}:{op.start_line}: {op.reason}")
+    for item in report.plan.unresolved:
+        renderer.line(f"  unresolved: {item}")
+    for outcome in report.verify_outcomes:
+        status = "PASS" if outcome.passed else "FAIL"
+        skip_note = f" ({len(outcome.skipped)} skipped)" if outcome.skipped else ""
+        renderer.line(f"  [{status}] {outcome.name}{skip_note}")
+
+
+def _run_move_module_command(args: argparse.Namespace) -> int:
+    """Execute a parsed `frob refactor move-module` invocation and print
+    the disclosed report; returns the process exit code (0 success, 1
+    refused/rolled-back), mirroring `run_refactor_command`'s own shape
+    for `move`/`rename`."""
+    repo_root = Path.cwd()
+    result = run_move_module(
+        repo_root,
+        source=args.source,
+        destination=args.destination,
+        run_pytest_collect=True,
+        run_check_delta=not args.skip_check_delta,
+        pytest_scope_touched_only=not args.full_repo_collect,
+        allow_existing=args.allow_existing_destination,
+    )
+    if result.is_err:
+        print(
+            f"refactor move-module refused: {result.danger_err.value}", file=sys.stderr
+        )
+        return 1
+
+    report = result.danger_ok
+    _render_module_report(Renderer.for_stream(sys.stdout), report)
+    if report.rolled_back:
+        print(f"rolled back to {report.pre_sha}", file=sys.stderr)
+        return 1
+    return 0 if report.success else 1
+
+
 # frob:doc docs/commands/refactor.md#cli
 # frob:tests \
 # tests/test_refactor.py::TestCli.test_run_refactor_command_reports_refusal_exit_code
 def run_refactor_command(args: argparse.Namespace) -> int:
-    """Execute a parsed `frob refactor move`/`rename`/`split` invocation
-    and print the disclosed report; returns the process exit code (0
-    success, 1 refused/rolled-back)."""
-    if getattr(args, "refactor_subcommand", None) == "split":
+    """Execute a parsed `frob refactor move`/`rename`/`split`/
+    `move-module` invocation and print the disclosed report; returns the
+    process exit code (0 success, 1 refused/rolled-back)."""
+    subcommand = getattr(args, "refactor_subcommand", None)
+    if subcommand == "split":
         return _run_split_command(args)
+    if subcommand == "move-module":
+        return _run_move_module_command(args)
 
     repo_root = Path.cwd()
     result = run_refactor(
