@@ -194,7 +194,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 1187b9da934ab85cd97a9f725d5a18566aae7831
 ---
 Root cause investigation for T-2893 (post-land sweep regression, COV004
 findings on 10 attachment paths under archived tickets T-2195/T-2197/
