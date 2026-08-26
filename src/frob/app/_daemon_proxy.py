@@ -50,7 +50,10 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import socket as _socket_types
 
 from typani import ErrorSet
 from typani.result import Err, Ok, Result
@@ -536,6 +539,18 @@ class _LeaseConnection:
     py`'s own `_RawClient` test scaffold, promoted to production code
     here since a real caller (`frob.testing.run_coverage_wait`) now needs
     the same persistent-connection shape, not just a test."""
+
+    # T-2981: declared here, unconditionally, rather than left to be
+    # inferred from the `self._sock = ...` assignment in `__init__` below.
+    # `__init__` raises `OSError` up front on `sys.platform == "win32"`
+    # (T-2961), so under a Windows-target type check the assignment itself
+    # is statically unreachable -- the checker never sees an attribute
+    # named `_sock` at all, and `call()`/`close()` below (which run
+    # unconditionally, on every platform, in source text) come back
+    # `unresolved-attribute`. A bare class-level annotation fixes the
+    # attribute's declared type independent of which branch of `__init__`
+    # a given platform target considers reachable.
+    _sock: _socket_types.socket
 
     def __init__(self, root: Path, *, timeout_s: float = 10.0) -> None:
         """Connect once; every `call()` reuses the same socket. Raises
