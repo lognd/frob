@@ -17,10 +17,21 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - src/frob/serve/_socketd.py
 - src/frob/testing/_coverage_wait.py
+evidence_scope:
+- tests/unit/test_process_lock.py
+- tests/test_coverage_wait_shared.py
+- tests/test_serve_socket.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_windows_backend_round_trips
+- tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips
 designated_repro_test: null
 threat: null
 component: null
