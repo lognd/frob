@@ -2,7 +2,7 @@
 id: T-2906
 title: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock
   facets)
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-25'
