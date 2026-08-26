@@ -56,11 +56,35 @@ degrades completely silently (no log, no raise) rather than merely
 logging (`_scan_platform_string_guards`), and a bare, unconditional
 module-top-level `import <restricted-module>` with no guard idiom at
 all (`_scan_bare_restricted_imports`, the T-2952 regression class).
+
+T-2951 adds a fourth shape: a platform-restricted attribute (a
+`_PLATFORM_RESTRICTED_MODULES` module's attribute, or a POSIX-only
+`signal.SIG*` name) referenced somewhere Python evaluates
+UNCONDITIONALLY at import/class/def time rather than lazily inside a
+function BODY -- a `def` statement's own default argument value, a
+module-level or class-body constant assignment, or a decorator call's
+keyword argument (`_scan_import_time_platform_evals`). This is the
+exact shape T-2936 fixed by hand
+(`arm_parent_death_signal(sig: int = signal.SIGKILL)`, a default value
+computed once when the `def` itself executes, crashing the import on
+Windows before the function's own platform guard ever ran) -- neither
+the original `X is None` scan nor either T-2944 shape caught it, since
+there was no guard of any kind to inspect. An attribute reached only
+through one arm of an `ast.IfExp` ("a ternary") is treated as guarded
+(Python evaluates only the chosen branch), matching this rule's
+existing "guard means SOMETHING conditional stands between the
+platform-restricted read and unconditional import-time evaluation"
+posture; a `def`/`Assign` nested inside a real `if`/`try` block at
+module or class scope is guarded for the same reason (conditional
+execution of the whole statement) and is out of this scan's population
+by construction -- it only walks the Module's and every unconditionally-
+reachable `ClassDef`'s own direct body.
 """
 
 # frob:ticket T-0471
 # frob:ticket T-2919
 # frob:ticket T-2944
+# frob:ticket T-2951
 from __future__ import annotations
 
 import ast
@@ -589,6 +613,138 @@ def _scan_bare_restricted_imports(tree: ast.Module) -> tuple[_PlatformSite, ...]
     return tuple(sites)
 
 
+# frob:ticket T-2951
+#: POSIX-only `signal` module attribute names that do not exist on
+#: Windows (CPython's own `signal` docs mark these Unix-only) -- unlike
+#: `fcntl`/`termios`/etc, the `signal` module itself imports fine on
+#: every platform, so the whole-module `_PLATFORM_RESTRICTED_MODULES`
+#: check does not catch a bare `signal.SIGKILL`; this is the exact
+#: attribute T-2936's own crash used.
+_POSIX_ONLY_SIGNAL_ATTRS = frozenset(
+    {
+        "SIGKILL",
+        "SIGSTOP",
+        "SIGHUP",
+        "SIGQUIT",
+        "SIGUSR1",
+        "SIGUSR2",
+        "SIGCHLD",
+        "SIGCONT",
+        "SIGTSTP",
+        "SIGTTIN",
+        "SIGTTOU",
+        "SIGWINCH",
+        "SIGALRM",
+        "SIGVTALRM",
+        "SIGPROF",
+        "SIGPIPE",
+    }
+)
+
+
+# frob:ticket T-2951
+def _restricted_attr_dotted_name(node: ast.expr) -> str | None:
+    """The dotted `module.ATTR` text of `node` if it is an `ast.Attribute`
+    read of a platform-restricted primitive -- either any attribute of a
+    whole `_PLATFORM_RESTRICTED_MODULES` module (`fcntl.flock` ->
+    `"fcntl.flock"`), or one of the POSIX-only `signal.SIG*` names
+    (`_POSIX_ONLY_SIGNAL_ATTRS`). `None` for anything else, including a
+    bare `Name` or an attribute chain not rooted at a matching module."""
+    if not isinstance(node, ast.Attribute):
+        return None
+    dotted = _dotted_prefix(node)
+    if dotted is None or "." not in dotted:
+        return None
+    module_part, _, attr_part = dotted.rpartition(".")
+    if module_part in _PLATFORM_RESTRICTED_MODULES:
+        return dotted
+    if module_part == "signal" and attr_part in _POSIX_ONLY_SIGNAL_ATTRS:
+        return dotted
+    return None
+
+
+# frob:ticket T-2951
+def _restricted_attrs_unguarded(expr: ast.expr) -> tuple[str, ...]:
+    """Every platform-restricted attribute (`_restricted_attr_dotted_
+    name`) reachable from `expr` WITHOUT passing through an `ast.IfExp`
+    branch first -- Python evaluates only the chosen `IfExp` arm, so an
+    attribute nested inside one (`signal.SIGKILL if sys.platform !=
+    "win32" else None`) is not unconditionally evaluated at import time
+    and must stay quiet (the module docstring's must-stay-quiet
+    fixture)."""
+    found: list[str] = []
+
+    def visit(node: ast.AST, guarded: bool) -> None:
+        if isinstance(node, ast.IfExp):
+            visit(node.test, guarded)
+            visit(node.body, True)
+            visit(node.orelse, True)
+            return
+        if isinstance(node, ast.Attribute):
+            name = _restricted_attr_dotted_name(node)
+            if name and not guarded:
+                found.append(name)
+        for child in ast.iter_child_nodes(node):
+            visit(child, guarded)
+
+    visit(expr, False)
+    return tuple(found)
+
+
+# frob:ticket T-2951
+def _unconditional_body_blocks(body: list[ast.stmt]) -> list[list[ast.stmt]]:
+    """`body` itself, plus the `.body` of every `ClassDef` reachable from
+    it WITHOUT passing through an `if`/`try`/function boundary -- the set
+    of statement lists whose OWN top-level statements are guaranteed to
+    execute unconditionally at import time (a `def`/`Assign` nested
+    inside a real `if sys.platform != ...:` block is guarded by that
+    block's own conditional execution and is deliberately never yielded
+    here)."""
+    blocks = [body]
+    for stmt in body:
+        if isinstance(stmt, ast.ClassDef):
+            blocks.extend(_unconditional_body_blocks(stmt.body))
+    return blocks
+
+
+# frob:ticket T-2951
+def _scan_import_time_platform_evals(tree: ast.Module) -> tuple[_PlatformSite, ...]:
+    """T-2951's fourth PLATFORM001 shape: a platform-restricted attribute
+    referenced in a `def`'s default argument value, a module-level or
+    class-body constant assignment, or a decorator call's keyword
+    argument -- anywhere Python evaluates the expression once, at
+    import/class/def time, rather than lazily inside a function body a
+    caller might never invoke on the wrong platform. This is the exact
+    shape T-2936 fixed by hand
+    (`arm_parent_death_signal(sig: int = signal.SIGKILL)`); see the
+    module docstring for why an `ast.IfExp`-guarded reference and a
+    statement nested inside a real `if`/`try` block both stay quiet."""
+    sites: list[_PlatformSite] = []
+    for block in _unconditional_body_blocks(tree.body):
+        for stmt in block:
+            if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                defaults = [d for d in stmt.args.defaults if d is not None]
+                defaults += [d for d in stmt.args.kw_defaults if d is not None]
+                for default in defaults:
+                    for name in _restricted_attrs_unguarded(default):
+                        sites.append(_PlatformSite(default.lineno, (name,)))
+                for deco in stmt.decorator_list:
+                    if not isinstance(deco, ast.Call):
+                        continue
+                    for kw in deco.keywords:
+                        if kw.value is None:
+                            continue
+                        for name in _restricted_attrs_unguarded(kw.value):
+                            sites.append(_PlatformSite(kw.value.lineno, (name,)))
+            elif isinstance(stmt, ast.Assign):
+                for name in _restricted_attrs_unguarded(stmt.value):
+                    sites.append(_PlatformSite(stmt.value.lineno, (name,)))
+            elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+                for name in _restricted_attrs_unguarded(stmt.value):
+                    sites.append(_PlatformSite(stmt.value.lineno, (name,)))
+    return tuple(sites)
+
+
 def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str]:
     """The subset of `guard_names` that `test` compares to `None` --
     handles a single `X is None` as well as an `X is None and Y is
@@ -760,6 +916,43 @@ def _platform001_violation(rel_path: str, site: _PlatformSite) -> Violation:
 
 
 # frob:enforces CHK-GATE-PLATFORM001
+# frob:ticket T-2951
+def _platform001_import_time_violation(rel_path: str, site: _PlatformSite) -> Violation:
+    """The PLATFORM001 `Violation` for one platform-restricted attribute
+    evaluated at import/class/def time (`_scan_import_time_platform_
+    evals`, T-2951 shape 4)."""
+    name = site.names[0]
+    _log.warning(
+        "PLATFORM001: %s:%d `%s` is evaluated unconditionally at "
+        "import/class/def time, not inside a function body",
+        rel_path,
+        site.lineno,
+        name,
+    )
+    return Violation(
+        rule="PLATFORM001",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=site.lineno,
+        message=(
+            f"PLATFORM001: {rel_path}:{site.lineno} `{name}` is a "
+            f"platform-restricted attribute referenced in a default "
+            f"argument, module/class-level constant, or decorator "
+            f"keyword argument -- Python evaluates this unconditionally "
+            f"at import/class/def time (T-2936: `def f(sig=signal."
+            f"SIGKILL):` crashed the whole module's import on Windows "
+            f"before any function-body guard ran), not lazily inside a "
+            f"function body a caller might never invoke on the wrong "
+            f"platform. Guard it (`X if sys.platform != \"win32\" else "
+            f"None`, or move the reference inside the function body "
+            f'behind a real guard), or `frob:waive PLATFORM001 '
+            f'reason="..."` if this platform genuinely always provides '
+            f"`{name}`"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-PLATFORM001
 # frob:ticket T-2944
 def _platform001_string_violation(rel_path: str, site: _PlatformSite) -> Violation:
     """The PLATFORM001 `Violation` for one silent platform-STRING degrade
@@ -817,10 +1010,6 @@ def _platform001_bare_import_violation(rel_path: str, site: _PlatformSite) -> Vi
     )
 
 
-# frob:doc docs/modules/gates.md#walk001-unpruned-traversal-t-0471
-# frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
-# frob:tests tests/test_walk_lint_gate.py::TestHelper.test_helper_call_is_silent
-# frob:tests tests/test_walk_lint_gate.py::TestSelfMatchExclusion.test_own_files_not_scanned  # noqa: E501
 # frob:doc \
 # docs/modules/gates.md#platform001-posix-only-primitive-degrades-silently-t-2919
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_warn_and_continue_fires  # noqa: E501
@@ -831,10 +1020,20 @@ def _platform001_bare_import_violation(rel_path: str, site: _PlatformSite) -> Vi
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_real_platform_branch_is_quiet  # noqa: E501
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_bare_import_fires  # noqa: E501
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_guarded_import_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_default_arg_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_module_constant_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_class_attribute_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_decorator_kwarg_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_guarded_default_arg_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_ternary_guarded_constant_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_if_guarded_def_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_body_reference_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval.test_gate_fires_end_to_end  # noqa: E501
 # frob:invariant INV-005
 # invariant spec: [INV-005](invariants/INV-005.md)
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole WALK001 pass; the documented behavior is unchanged, so docs/modules/gates.md#walk001-unpruned-traversal-t-0471 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 # frob:ticket T-2944
+# frob:ticket T-2951
 def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
     """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471)
     and PLATFORM001 (docs/modules/gates.md#platform001-posix-only-
@@ -874,6 +1073,10 @@ def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
             violations.extend(
                 _platform001_bare_import_violation(rel_path, site)
                 for site in _scan_bare_restricted_imports(tree)
+            )
+            violations.extend(
+                _platform001_import_time_violation(rel_path, site)
+                for site in _scan_import_time_platform_evals(tree)
             )
         except Exception:
             # One file's AST shape confusing the walk-site scanner must

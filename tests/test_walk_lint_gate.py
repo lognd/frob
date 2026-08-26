@@ -13,6 +13,7 @@ from pathlib import Path
 
 from frob.gates._walk_lint import (
     _scan_bare_restricted_imports,
+    _scan_import_time_platform_evals,
     _scan_platform_guards,
     _scan_platform_string_guards,
     _scan_python_walks,
@@ -524,3 +525,144 @@ class TestPlatform001BareImport:
     def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
         _assert_single_platform001_hit(tmp_path, self._BARE_IMPORT_SRC)
+
+
+# frob:ticket T-2951
+class TestPlatform001ImportTimeEval:
+    """T-2951's fourth PLATFORM001 shape: a platform-restricted attribute
+    evaluated unconditionally at import/class/def time (a default
+    argument, a module/class-level constant, or a decorator keyword
+    argument) rather than lazily inside a function body -- the exact
+    shape T-2936 fixed by hand and neither `TestPlatform001` nor either
+    T-2944 shape catches (there is no guard of any kind to inspect)."""
+
+    #: Must-fire fixture: a byte-for-byte MODEL of T-2936's own pre-fix
+    #: `src/frob/process/_reap.py::arm_parent_death_signal` shape -- a
+    #: POSIX-only `signal.SIGKILL` bound as a default argument value,
+    #: evaluated once when the `def` itself executes.
+    _DEFAULT_ARG_SRC = (
+        "import signal\n"
+        "\n"
+        "def arm_parent_death_signal(sig: int = signal.SIGKILL) -> None:\n"
+        "    pass\n"
+    )
+
+    #: Must-stay-quiet fixture: T-2936's own post-fix shape -- the
+    #: default is a real, always-available value; the restricted
+    #: attribute is only read (if at all) inside the function BODY.
+    _FIXED_DEFAULT_ARG_SRC = (
+        "import signal\n"
+        "\n"
+        "def arm_parent_death_signal(sig: int | None = None) -> None:\n"
+        "    pass\n"
+    )
+
+    _MODULE_CONSTANT_SRC = "import signal\n\n_SIG = signal.SIGKILL\n"
+
+    #: Must-stay-quiet fixture: the same constant, but guarded by a
+    #: ternary whose test picks the safe branch on the wrong platform --
+    #: Python evaluates only the chosen `IfExp` arm, so `signal.SIGKILL`
+    #: is never reached at all when `sys.platform == "win32"`.
+    _GUARDED_MODULE_CONSTANT_SRC = (
+        "import sys\n"
+        "import signal\n"
+        "\n"
+        '_SIG = signal.SIGKILL if sys.platform != "win32" else None\n'
+    )
+
+    _CLASS_ATTRIBUTE_SRC = (
+        "import signal\n\nclass Config:\n    KILL_SIGNAL = signal.SIGKILL\n"
+    )
+
+    _DECORATOR_KWARG_SRC = (
+        "import signal\n"
+        "import atexit\n"
+        "\n"
+        "@atexit.register\n"
+        "def _cleanup(sig=signal.SIGKILL) -> None:\n"
+        "    pass\n"
+    )
+
+    #: Must-stay-quiet fixture: the whole `def` is nested inside a real
+    #: `if sys.platform != "win32":` block, so it (and its default) is
+    #: never executed at all on the wrong platform -- the statement's OWN
+    #: conditional execution is the guard, distinct from an `IfExp`.
+    _IF_GUARDED_DEF_SRC = (
+        "import sys\n"
+        "import signal\n"
+        "\n"
+        'if sys.platform != "win32":\n'
+        "\n"
+        "    def arm(sig=signal.SIGKILL) -> None:\n"
+        "        pass\n"
+    )
+
+    #: Must-stay-quiet fixture: `signal.SIGKILL` is only read inside a
+    #: function BODY (never a default/module/class-level constant), the
+    #: exact "evaluated lazily, only if actually called" shape this rule
+    #: must never flag.
+    _BODY_REFERENCE_SRC = (
+        "import signal\n\ndef send_kill(pid: int) -> None:\n"
+        "    import os\n\n    os.kill(pid, signal.SIGKILL)\n"
+    )
+
+    # frob:ticket T-2951
+    def test_default_arg_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._DEFAULT_ARG_SRC)
+        sites = _scan_import_time_platform_evals(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("signal.SIGKILL",)
+
+    # frob:ticket T-2951
+    def test_module_constant_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._MODULE_CONSTANT_SRC)
+        sites = _scan_import_time_platform_evals(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("signal.SIGKILL",)
+
+    # frob:ticket T-2951
+    def test_class_attribute_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._CLASS_ATTRIBUTE_SRC)
+        sites = _scan_import_time_platform_evals(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("signal.SIGKILL",)
+
+    # frob:ticket T-2951
+    def test_decorator_kwarg_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._DECORATOR_KWARG_SRC)
+        sites = _scan_import_time_platform_evals(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("signal.SIGKILL",)
+
+    # frob:ticket T-2951
+    def test_guarded_default_arg_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._FIXED_DEFAULT_ARG_SRC)
+        assert _scan_import_time_platform_evals(tree) == ()
+
+    # frob:ticket T-2951
+    def test_ternary_guarded_constant_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._GUARDED_MODULE_CONSTANT_SRC)
+        assert _scan_import_time_platform_evals(tree) == ()
+
+    # frob:ticket T-2951
+    def test_if_guarded_def_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._IF_GUARDED_DEF_SRC)
+        assert _scan_import_time_platform_evals(tree) == ()
+
+    # frob:ticket T-2951
+    def test_body_reference_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals
+        tree = ast.parse(self._BODY_REFERENCE_SRC)
+        assert _scan_import_time_platform_evals(tree) == ()
+
+    # frob:ticket T-2951
+    def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        _assert_single_platform001_hit(tmp_path, self._DEFAULT_ARG_SRC)

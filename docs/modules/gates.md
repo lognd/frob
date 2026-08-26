@@ -4505,6 +4505,7 @@ always names the remedy: route through `frob.excludes.iter_files` /
 ### PLATFORM001 POSIX-only primitive degrades silently (T-2919)
 
 <!-- frob:describes src/frob/gates/_walk_lint.py::_scan_platform_guards -->
+<!-- frob:describes src/frob/gates/_walk_lint.py::_scan_import_time_platform_evals -->
 <!-- frob:describes src/frob/gates/_walk_lint.py::walk_lint_gate -->
 
 `frob.gates._walk_lint` -- rides alongside WALK001 in the SAME
@@ -4622,6 +4623,64 @@ a blanket AST rule cannot statically tell "backs a safety refusal" from
 "advisory/best-effort by design," and attempting one would have
 false-positived on legitimate code in this same file. Filed as its own
 scoped follow-up rather than guessed at here.
+
+**T-2951: a fourth shape -- import-time evaluation with no guard of any
+kind.** All three shapes above look for SOME conditional construct (a
+`try`, an `if`) and classify its body. T-2936 fixed a real crash by hand
+that had no guard at all to classify: `src/frob/process/_reap.py::
+arm_parent_death_signal(sig: int = signal.SIGKILL)` bound a POSIX-only
+attribute as a `def`'s DEFAULT ARGUMENT value -- evaluated once, when
+the `def` statement itself executes (at module import time), crashing
+the import of the whole module before the function's own platform guard
+(shape 2, above) ever ran. Neither the original `X is None` scan nor
+either T-2944 shape caught this, because there was nothing shaped like a
+guard to inspect; the ABSENCE of a guard at `def`-evaluation time WAS
+the bug.
+
+`_scan_import_time_platform_evals` closes this: it walks the Module's
+own top-level statements plus the body of every `ClassDef` reachable
+from there WITHOUT passing through an `if`/`try`/function boundary
+(`_unconditional_body_blocks` -- these are exactly the statement lists
+guaranteed to execute unconditionally at import time), and for every
+`def`'s default argument value, decorator-call keyword argument, or
+module/class-level constant assignment found there, flags any
+`_restricted_attr_dotted_name` match: an attribute of a whole
+`_PLATFORM_RESTRICTED_MODULES` module (`fcntl.flock`, any attribute --
+the whole module is platform-restricted), or one of a fixed POSIX-only
+`signal.SIG*` name list (`_POSIX_ONLY_SIGNAL_ATTRS`: `SIGKILL`,
+`SIGSTOP`, `SIGHUP`, `SIGQUIT`, `SIGUSR1`, `SIGUSR2`, `SIGCHLD`,
+`SIGCONT`, `SIGTSTP`, `SIGTTIN`, `SIGTTOU`, `SIGWINCH`, `SIGALRM`,
+`SIGVTALRM`, `SIGPROF`, `SIGPIPE` -- unlike `fcntl`/`termios`/etc, the
+`signal` module itself imports fine on every platform, so only specific
+attributes are restricted).
+
+Two guard shapes stay deliberately quiet, both because Python itself
+never evaluates the restricted attribute unconditionally in either
+case: an attribute reached only through one arm of an `ast.IfExp`
+("ternary") -- `signal.SIGKILL if sys.platform != "win32" else None` --
+since Python evaluates only the chosen branch
+(`_restricted_attrs_unguarded`'s own guarded-descent tracking); and a
+`def`/`Assign` nested inside a real `if`/`try` block at module or class
+scope, which `_unconditional_body_blocks` never yields in the first
+place (the whole statement's own conditional execution is the guard).
+A restricted attribute read only inside a function BODY (never a
+default/module/class-level constant) is out of this scan's population
+entirely -- that is ordinary lazy evaluation, the shape this rule exists
+to distinguish FROM the bug.
+
+Fixtures lock all eight directions in `tests/test_walk_lint_gate.py::
+TestPlatform001ImportTimeEval`: `test_default_arg_fires` (T-2936's own
+pre-fix shape, byte-for-byte), `test_module_constant_fires`,
+`test_class_attribute_fires`, `test_decorator_kwarg_fires` (must-fire,
+one per position named in the ticket); `test_guarded_default_arg_is_
+quiet` (T-2936's own post-fix `sig: int | None = None` shape),
+`test_ternary_guarded_constant_is_quiet` (the `IfExp`-guarded constant),
+`test_if_guarded_def_is_quiet` (the whole `def` nested inside a real
+`if sys.platform != "win32":` block), `test_body_reference_is_quiet`
+(a function-body-only read) -- all four must-stay-quiet twins named in
+the ticket. Repo-wide `PLATFORM001` count was 0 both before and after
+adding this shape (T-2936's real site was already fixed by hand before
+this rule existed to catch it) -- zero new findings to triage.
 
 ### EXCL001 (T-0465)
 

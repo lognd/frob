@@ -2,7 +2,7 @@
 id: T-2951
 title: 'PLATFORM001 gap: does not catch platform-restricted attributes evaluated at
   import/def time (default args, module/class constants, decorator kwargs)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -28,6 +28,16 @@ scope_changes:
   reason: T-2951 documents the new PLATFORM001 shape 4 in the gate catalog
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_default_arg_fires
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_module_constant_fires
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_class_attribute_fires
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_decorator_kwarg_fires
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_guarded_default_arg_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_ternary_guarded_constant_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_if_guarded_def_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_body_reference_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001ImportTimeEval::test_gate_fires_end_to_end
 designated_repro_test: null
 threat: null
 component: null
