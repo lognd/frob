@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_ticket_leases.py
 - docs/modules/tickets-landing.md
 - tests/test_tickets_new_gate_rule_acceptance.py
+- tests/test_ticket_leases.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,11 @@ scope_changes:
 - op: add
   glob: tests/test_tickets_new_gate_rule_acceptance.py
   reason: correct the evidence-file glob to a real test file
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_ticket_leases.py
+  reason: confirm malformed directive fixed (no-op if already present)
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
