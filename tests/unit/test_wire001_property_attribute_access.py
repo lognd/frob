@@ -153,3 +153,48 @@ class TestWire001PropertyAttributeAccess:
         queue = TicketQueue(tickets={})
         violations = wire_gate(tmp_path, snap, diff, queue)
         assert any(v.rule == "WIRE001" and "Thing.run" in v.message for v in violations)
+
+    # frob:ticket T-2610
+    def test_property_read_as_keyword_argument_value_is_not_flagged(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttr\
+        # ibuteAccess.test_property_read_as_keyword_argument_value_is_not_flagged
+        """T-2610: the exact real production shape that forced the
+        `GateRunReplay.age_s` waiver (`src/frob/gates/_gate_cache.py`) --
+        a fresh `@property` read via plain attribute access used AS a
+        keyword argument's VALUE (`_label_replay(..., age_s=replay.age_s)`
+        in `frob.check._python`), not just a bare log-call positional
+        argument. `property_access_pattern` (T-2746) is unconditional on
+        surrounding syntax -- it matches `something.short` wherever it
+        appears, so this shape was already rescued by that fix; this test
+        pins the specific shape down as a permanent regression guard
+        rather than leaving it to the more generic
+        `test_property_read_via_attribute_access_is_not_flagged` case
+        above to accidentally cover forever."""
+        _write(
+            tmp_path,
+            "src/d.py",
+            "from __future__ import annotations\n\n\n"
+            "class Stamp:\n"
+            "    def __init__(self) -> None:\n"
+            '        self._seconds = 1.0\n\n'
+            "    @property\n"
+            "    def seconds(self) -> float:\n"
+            "        return self._seconds\n\n\n"
+            "def _label(*, seconds: float) -> str:\n"
+            '    return f"age={seconds}"\n\n\n'
+            "def describe(stamp: Stamp) -> str:\n"
+            "    return _label(seconds=stamp.seconds)\n",
+        )
+        snap = _snapshot(tmp_path)
+        record = next(
+            r for r in snap.symbols.values() if r.id.qualname.endswith("Stamp.seconds")
+        )
+        diff = Diff(base="x", hunks=(Hunk(file="src/d.py", span=record.span),))
+        queue = TicketQueue(tickets={})
+        violations = wire_gate(tmp_path, snap, diff, queue)
+        assert not any(
+            v.rule == "WIRE001" and "Stamp.seconds" in v.message for v in violations
+        )

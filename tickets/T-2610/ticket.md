@@ -1,7 +1,7 @@
 ---
 id: T-2610
 title: WIRE001 resolver misses @property attribute reads as real callers
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'

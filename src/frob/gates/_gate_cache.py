@@ -931,6 +931,11 @@ def _replay_fingerprint(root: Path) -> str | None:
 # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
 # frob:ticket T-2585
 # frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
+# frob:waive AFFECT001 reason="T-2610 only removed a now-redundant WIRE001 waiver \
+# comment on age_s (the underlying gap it documented was already fixed generically by \
+# T-2746) -- no behavior or public-contract change, so \
+# docs/modules/serve.md#whole-run-replay-t-2585's whole-run-replay description needs \
+# no update" follow_up=""
 class GateRunReplay:
     """One persisted whole-gates-run verdict (T-2585): the exact
     `ToolResult` list a prior `_run_gates` call produced for a matching
@@ -945,11 +950,14 @@ class GateRunReplay:
 
     # frob:doc docs/modules/serve.md#whole-run-replay-t-2585
     # frob:tests tests/test_gate_cache.py::TestRunReplay.test_unchanged_tree_replays
-    # frob:waive WIRE001 follow_up="T-2610" reason="read via plain attribute access \
-    # (replay.age_s) in frob.check._python._label_replay, a real production caller -- \
-    # the resolver's call-graph only follows call-expression syntax, not property \
-    # attribute reads, so a genuinely wired property reads as unwired; follow-up \
-    # tracks extending WIRE001's resolver to cover this"
+    # T-2610: the WIRE001 waiver this property carried is now redundant --
+    # T-2746 landed a generic property-attribute-access resolver fix
+    # (`frob.gates._wire._is_property`/`property_access_pattern`) that
+    # already covers this exact shape (`replay.age_s` read both as a bare
+    # log-call argument and as a keyword-argument value in
+    # `frob.check._python._label_replay`); measured directly with the
+    # waiver removed (`uv run frob check --only wire`) -- zero WIRE001
+    # findings at this symbol.
     @property
     def age_s(self) -> float:
         """Seconds since this verdict was computed -- callers surface this

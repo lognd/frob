@@ -153,6 +153,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2603: three ledger-write patterns across two disjoint verb sets plus a special case: one table with a declared per-verb strategy
 - T-2604: quarantine re-raises on findings already owned by an open ticket, forcing synchronous lands fleet-wide every sweep
 - T-2606: waiver reasons promising a follow-up ticket should be enforced
+- T-2610: WIRE001 resolver misses @property attribute reads as real callers
 - T-2611: core.autocrlf=true puts CRLF in every source file, silently breaking any length or byte-level measurement
 - T-2612: every waiver citing a LIVE lease has an expired premise: 0 of 12 named tickets still hold one
 - T-2613: Sync docs/modules/gates.md frob:enumerates member list (DOCENUM001, includes MILE003)
