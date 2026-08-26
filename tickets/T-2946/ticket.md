@@ -1,7 +1,7 @@
 ---
 id: T-2946
 title: Burn TICK004/TICK007 to zero via real ticket-queue triage, then promote
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
