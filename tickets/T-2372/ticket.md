@@ -68,8 +68,15 @@ acceptance:
 
     on unrelated backlog tickets, split out as T-2946, not claimed here.'
   evidence: []
-- text: given the family's gate module, when its severity is read, then it is ERROR
-    not WARNING
+- text: 'given TICK011''s gate module, when its severity is read, then it is
+
+    ERROR not WARNING -- confirmed promoted and takes effect (a fresh
+
+    unbudgeted frob check --only tickets run produces zero TICK011 output
+
+    at any severity). TICK004/TICK007 remain WARN, deliberately not
+
+    promoted while their own counts are nonzero (T-2946).'
   evidence: []
 acceptance_amendments:
 - op: replace
@@ -94,6 +101,32 @@ acceptance_amendments:
     (the ticket''s original wider family) require real ticket-queue triage
 
     on unrelated backlog tickets, split out as T-2946, not claimed here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: replace
+  index: 1
+  old_text: given the family's gate module, when its severity is read, then it is
+    ERROR not WARNING
+  new_text: 'given TICK011''s gate module, when its severity is read, then it is
+
+    ERROR not WARNING -- confirmed promoted and takes effect (a fresh
+
+    unbudgeted frob check --only tickets run produces zero TICK011 output
+
+    at any severity). TICK004/TICK007 remain WARN, deliberately not
+
+    promoted while their own counts are nonzero (T-2946).'
+  reason: 'given TICK011''s gate module, when its severity is read, then it is
+
+    ERROR not WARNING -- confirmed promoted and takes effect (a fresh
+
+    unbudgeted frob check --only tickets run produces zero TICK011 output
+
+    at any severity). TICK004/TICK007 remain WARN, deliberately not
+
+    promoted while their own counts are nonzero (T-2946).
 
     '
   actor: logan
