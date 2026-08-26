@@ -303,6 +303,17 @@ class TestArmParentDeathSignal:
 
     def test_self_kills_on_missed_reparent_race(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
+        # T-2930: this exercises the Linux-only self-kill logic PAST the
+        # `sys.platform != "linux"` guard via mocked `getppid`/`ctypes.
+        # CDLL`, same as `test_self_kills_when_already_reparented_before_
+        # entry` below -- it must pin `sys.platform` itself (matching
+        # `test_returns_false_off_linux`'s own deliberate pin the other
+        # direction) or this unconditionally short-circuits to `False` on
+        # any CI runner that is not actually Linux (measured: 156-failure
+        # macOS run, T-2917 PR#1), never reaching the mocked machinery at
+        # all -- a test-only gap, not a product defect (the function's
+        # real, documented, non-Linux behavior is exactly `return False`).
+        monkeypatch.setattr(sys, "platform", "linux")
         ppid_sequence = iter([111, 222])
         monkeypatch.setattr(os, "getppid", lambda: next(ppid_sequence))
         killed: list[tuple[int, int]] = []
@@ -335,6 +346,9 @@ class TestArmParentDeathSignal:
         # This is exactly the mechanism T-2880's failure log identified
         # as the gap T-2849 left open; reproduced here without a real
         # fork/exec race by making BOTH getppid() reads return 1.
+        # T-2930: pin `sys.platform` so this reaches the mocked machinery
+        # on any runner -- see the sibling test above for the full why.
+        monkeypatch.setattr(sys, "platform", "linux")
         monkeypatch.setattr(os, "getppid", lambda: 1)
         killed: list[tuple[int, int]] = []
         monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
