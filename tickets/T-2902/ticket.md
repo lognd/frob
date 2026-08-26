@@ -2,7 +2,7 @@
 id: T-2902
 title: 'post-land sweep regression from T-2891, T-1604: 5 new (rule, file) identit(ies),
   5 finding(s) (DOC006, DOC008, LANG003)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-25'
