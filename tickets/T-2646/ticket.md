@@ -63,7 +63,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 3cb9f604fac997817848b00d05beab757b5add62
 ---
 This repo currently carries 938 local branches against 35 worktrees
 (measured during T-2629, 2026-08-19) -- branches outnumber worktrees
