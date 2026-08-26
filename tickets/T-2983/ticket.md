@@ -15,9 +15,9 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/gh_io.py
-- tests/test_gh_io.py
-- docs/modules/gh_io.md
+- src/frob/ghio.py
+- tests/test_ghio.py
+- docs/modules/ghio.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +39,36 @@ scope_changes:
   glob: docs/modules/gh_io.md
   reason: 'greenfield gh_io seam module: typed Result-returning gh subprocess seam
     per T-2982 part 1'
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: src/frob/gh_io.py
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: tests/test_gh_io.py
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: docs/modules/gh_io.md
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/ghio.py
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_ghio.py
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/ghio.md
+  reason: rename gh_io -> ghio per owner naming correction (matches gitio convention)
   actor: logan
   at: '2026-08-26'
 triage_changes:
