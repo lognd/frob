@@ -11,6 +11,7 @@ blocked_by:
 - T-2955
 - T-2956
 - T-2966
+- T-2970
 parent: T-0969
 tier: ticket
 sprint: null
