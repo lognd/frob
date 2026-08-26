@@ -22,7 +22,6 @@ scope:
 - tests/test_hook_tool_call_telemetry.py
 - tests/test_stats_agentic.py
 - docs/modules/stats.md
-- docs/modules/app.md
 - src/frob/stats/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -77,6 +76,11 @@ scope_changes:
 - op: add
   glob: src/frob/stats/__init__.py
   reason: 'T-2912: re-export new ToolCallShape model'
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: docs/modules/app.md
+  reason: 'T-2912: unused, no edit needed to app.md'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
