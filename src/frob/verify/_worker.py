@@ -493,8 +493,8 @@ VerifyFn = Callable[[Path, str], "frozenset[tuple[str, str]] | None"]
 def _default_verify_fn(
     root: Path, commit_sha: str
 ) -> frozenset[tuple[str, str]] | None:
-    """The production `VerifyFn`: one unscoped, budget-bounded `frob check`
-    at `root`'s CURRENT tree state (deferred import -- `frob.verify` must
+    """The production `VerifyFn`: one unscoped, UNBUDGETED `frob check` at
+    `root`'s CURRENT tree state (deferred import -- `frob.verify` must
     not import `frob.app`/`frob.gates` at module scope, the same cycle-
     avoidance rule `frob.testing._coverage_refresh` already documents for
     an identical deferred-import shape). `commit_sha` is accepted for
@@ -502,10 +502,28 @@ def _default_verify_fn(
     check always measures whatever `root` currently has checked out, which
     the caller has already arranged to be `commit_sha` by construction (the
     daemon only calls this against its own live checkout, never a detached
-    ref)."""
+    ref).
+
+    T-3001: `full=True` -- deliberately NOT the `--budget`-bounded call
+    `_land_cmd`'s own inline land-sweep callers use. Every caller of
+    `run_coalesced_verification` (this function's only caller) is either
+    a human/coordinator who typed `frob verify now` and already decided
+    to wait, or a detached, `ionice`-idle background process nobody is
+    waiting on synchronously (the watermark drain, the daemon, the
+    backpressure debouncer) -- none of them are racing a land's own
+    wall-clock deadline the way `_pre_commit_unscoped_error_sweep`/
+    `_post_land_unscoped_error_sweep` are. A `--budget` ceiling derived
+    from a possibly-contended sample window can be smaller than the real
+    (still finite) work under sustained fleet load; T-1703 correctly
+    turns that truncation into `None` (never a partial answer), which
+    then NEVER advances the watermark -- see this module's own top-of-
+    file docstring and `docs/modules/tickets-verify-sweep.md`'s "Resource
+    budget" section for the vicious cycle this closes. Measured
+    uncontended full-check cost on this repo (2026-08-26): ~333s, well
+    inside `_land_cmd._FULL_CHECK_TIMEOUT_S`'s 1800s hard ceiling."""
     from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
 
-    return _unscoped_error_findings(root, commit_sha)
+    return _unscoped_error_findings(root, commit_sha, full=True)
 
 
 def _findings_digest(findings: frozenset[tuple[str, str]]) -> str:

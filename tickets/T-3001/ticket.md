@@ -2,7 +2,7 @@
 id: T-3001
 title: 'Verification debt can never drain under fleet load: the budgeted verify run
   truncates, reports Unmeasurable, and retries forever'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -82,6 +82,9 @@ scope_changes:
     alongside its existing test class in this file
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_omits_budget_flag_and_sets_allow_full_check_env
+- tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode::test_full_mode_default_is_false_preserves_prior_budgeted_behavior
 designated_repro_test: null
 threat: null
 component: null

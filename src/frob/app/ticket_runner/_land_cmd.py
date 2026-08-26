@@ -613,15 +613,65 @@ _UNSCOPED_NO_TICKET_STRUCTURAL_NOISE_RULE_IDS = frozenset({"PRE001", "SCOPE001"}
 # exact private spawn-and-parse helper's own contract, same T-0524/T-0529 per-function \
 # architecture-doc precedent every other COV007 waiver in this repo already carries -- \
 # not accidental drift onto a private helper"
+#: T-3001: the `subprocess.run` hard ceiling for a `full=True` call --
+#: NOT a `--budget` value (a full run passes no `--budget` flag at all),
+#: purely a last-resort guard against a genuinely wedged `frob check`
+#: process (the T-2991 orphan-child class is a DIFFERENT defect; this
+#: number exists so a hang there cannot also hang the caller of THIS
+#: function forever). Measured full unbudgeted cost on this repo,
+#: uncontended, is ~333s (2026-08-26) -- 1800s is generous headroom for
+#: real fleet contention, not a value tuned to fit any particular
+#: caller's own deadline the way `_POST_LAND_SWEEP_BUDGET_S` is.
+_FULL_CHECK_TIMEOUT_S = 1800
+
+
+def _unscoped_check_spawn_args(
+    root: Path,
+    *,
+    budget: int | None,
+    env: dict[str, str] | None,
+    full: bool,
+) -> tuple[list[str], dict[str, str] | None, int]:
+    """T-3001 (ARCH001 split out of `_unscoped_error_findings`): resolve
+    the `argv`/`env`/timeout triple for one spawned `frob check --json`,
+    branching exactly once on `full` -- see `_unscoped_error_findings`'s
+    own docstring for the full `full=True` vs `full=False` contract this
+    implements. No behavior change from inlining this at the prior call
+    site."""
+    import os
+
+    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
+
+    argv = [_python_for_tree(root), "-m", "frob", "check", "--json"]
+    if full:
+        # T-3001: no `--budget` at all -- see this function's own
+        # docstring for why a bounded ceiling is pure downside for a
+        # caller not racing a land's wall clock.
+        spawn_env = dict(env) if env is not None else dict(os.environ)
+        spawn_env["FROB_ALLOW_FULL_CHECK"] = "1"
+        return argv, spawn_env, _FULL_CHECK_TIMEOUT_S
+
+    if budget is None:
+        # T-2715: derive from root's own measured stage timing rather
+        # than a hardcoded constant -- see `_POST_LAND_SWEEP_BUDGET_S`'s
+        # comment for why a frozen number drifted stale.
+        budget = _derive_post_land_sweep_budget_s(
+            root, default=_POST_LAND_SWEEP_BUDGET_S
+        )
+    argv += ["--budget", str(budget)]
+    return argv, env, budget + 60
+
+
 def _unscoped_error_findings(
     root: Path,
     ticket_id: str,
     *,
     budget: int | None = None,
     env: dict[str, str] | None = None,
+    full: bool = False,
 ) -> frozenset[tuple[str, str]] | None:
-    """Spawn an UNSCOPED, `--budget`-bounded `frob check --json` in `root`
-    and parse the `(rule_id, file)` error-identity set from it, reusing
+    """Spawn an UNSCOPED `frob check --json` in `root` and parse the
+    `(rule_id, file)` error-identity set from it, reusing
     `_parse_error_findings_from_stdout` (T-0846's shared parser -- no
     second hand-typed copy of the `## Errors` section format).
 
@@ -629,6 +679,28 @@ def _unscoped_error_findings(
     ceiling from `root`'s own measured stage timing via `derive_post_land_
     sweep_budget_s` instead of a frozen constant -- pass an explicit `int`
     only to override that (e.g. a test pinning a specific value).
+
+    T-3001: `full=True` (default `False`, every pre-existing caller
+    unaffected) drops `--budget` entirely and runs the bare unchunked
+    check instead, with `FROB_ALLOW_FULL_CHECK=1` set on the spawned
+    process (bypassing T-0627's foreground-agent refusal, which exists to
+    protect a dispatched sub-agent's ~120s wall clock -- not applicable
+    here) and a `_FULL_CHECK_TIMEOUT_S` hard ceiling in place of
+    `budget + 60`. This is for callers that are NOT racing a land's own
+    wall-clock deadline: `frob verify now` (a human/coordinator who
+    already decided to wait) and the detached, `ionice`-idle watermark
+    drain child (nobody is waiting on it synchronously at all). Those
+    two are exactly the case T-1703 and this ticket's own incident
+    describe: a `--budget` ceiling derived from a possibly-contended
+    sample window can be smaller than the real (still finite, still
+    completing) work under sustained fleet load, and a truncated result
+    is `None` (T-1703) -- zero value, discarded, retried forever. Neither
+    caller needs a wall-clock cap for its OWN sake, so removing the
+    artificial one removes the only thing that was truncating them.
+    `_pre_commit_unscoped_error_sweep`/`_post_land_unscoped_error_sweep`
+    (genuinely inline in `frob ticket land`'s own deadline) and
+    `land_parity_findings` are UNCHANGED -- they keep `full=False`
+    (the default) because THEY do need to fit inside a bounded window.
 
     Unlike
     `_check_gate_findings_fn`, this deliberately passes NO `--ticket`: the
@@ -677,36 +749,23 @@ def _unscoped_error_findings(
     import subprocess
 
     from frob.app import ticket_runner as _ticket_runner
-    from frob.app._check_chunking import _derive_post_land_sweep_budget_s
 
-    if budget is None:
-        # T-2715: derive from root's own measured stage timing rather
-        # than a hardcoded constant -- see `_POST_LAND_SWEEP_BUDGET_S`'s
-        # comment for why a frozen number drifted stale.
-        budget = _derive_post_land_sweep_budget_s(
-            root, default=_POST_LAND_SWEEP_BUDGET_S
-        )
+    argv, spawn_env, timeout_s = _unscoped_check_spawn_args(
+        root, budget=budget, env=env, full=full
+    )
 
     spawn_kwargs: dict[str, object] = {
         "cwd": root,
         "capture_output": True,
         "text": True,
-        "timeout": budget + 60,
+        "timeout": timeout_s,
         "check": False,
     }
-    if env is not None:
-        spawn_kwargs["env"] = env
+    if spawn_env is not None:
+        spawn_kwargs["env"] = spawn_env
     try:
         guarded = _ticket_runner.guarded_subprocess_run(
-            [
-                _python_for_tree(root),
-                "-m",
-                "frob",
-                "check",
-                "--budget",
-                str(budget),
-                "--json",
-            ],
+            argv,
             **spawn_kwargs,
         )
     except subprocess.TimeoutExpired:
@@ -714,11 +773,12 @@ def _unscoped_error_findings(
         # contract was never actually implemented -- TimeoutExpired escaped
         # to main()'s top-level handler and crashed the whole land.
         _log.warning(
-            "ticket land: %s unscoped post-land sweep timed out after %ds -- "
+            "ticket land: %s unscoped %s sweep timed out after %ds -- "
             "skipping the sweep (unmeasured, not zero); run `frob check` by "
             "hand to verify main's error floor",
             ticket_id,
-            budget + 60,
+            "full" if full else "post-land",
+            timeout_s,
         )
         return None
     if guarded.is_err:

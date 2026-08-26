@@ -325,6 +325,31 @@ calls `frob.verify.advance_watermark`. There is no flag to remember to
 check -- the only textual path to `advance_watermark` in this file is the
 final branch of a chain no `None` result can fall through to.
 
+**The default `verify_fn` runs UNBUDGETED (T-3001).** `_default_verify_fn`
+calls `_unscoped_error_findings(root, commit_sha, full=True)` -- no
+`--budget` flag at all, `FROB_ALLOW_FULL_CHECK=1` set on the spawned
+check, bounded only by `_land_cmd._FULL_CHECK_TIMEOUT_S`'s 1800s hard
+ceiling. This closed a real vicious cycle a coordinator hit directly: a
+`--budget` ceiling derived from `.frob/check-budget-timing*.json`'s own
+recent-sample window is, by construction, a measurement of *recent* wall
+clock -- under SUSTAINED fleet contention (not a one-off spike) every
+sample in that window can be inflated together, and even a generous
+headroom multiplier over an inflated-but-still-too-small window can land
+below the real (still finite) time the work needs under that same load.
+The result was `Unmeasurable` (T-1703, correctly -- a truncated run is
+never a partial answer), which never advances the watermark, which means
+the very next wake repeats the same truncation against a now-larger
+backlog: debt that cannot drain precisely when the fleet is busiest, with
+no self-healing path. Every caller of `run_coalesced_verification`
+(`frob verify now`'s human/coordinator who already decided to wait; the
+detached, `ionice`-idle watermark drain child nobody is waiting on
+synchronously; the daemon and backpressure debouncer, both already gated
+by this section's lease/memory ceilings before they ever call in) is
+racing nothing but its own patience -- unlike `_land_cmd`'s inline
+pre-commit/post-land sweeps, which stay `--budget`-bounded because THEY
+must fit inside a land's own wall-clock deadline. Measured uncontended
+full-check cost on this repo (2026-08-26): ~333s.
+
 **Four possible outcomes**, distinguished by `WorkerOutcome.status`:
 
 - `"empty"` -- nothing queued, `verify_fn` never even called.

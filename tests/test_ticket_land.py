@@ -11438,6 +11438,84 @@ class TestUnscopedErrorFindingsExcludesNoTicketNoise:
         assert result == frozenset()
 
 
+class TestUnscopedErrorFindingsFullMode:
+    """T-3001: `full=True` drops `--budget` entirely and sets
+    `FROB_ALLOW_FULL_CHECK=1` -- the fix for the vicious cycle where a
+    `--budget` ceiling derived from a contention-inflated sample window
+    truncated the verify drain's own check, which is `Unmeasurable`
+    (T-1703) and can never advance the watermark."""
+
+    def test_full_mode_omits_budget_flag_and_sets_allow_full_check_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode.test_full_mode_o\
+        # mits_budget_flag_and_sets_allow_full_check_env
+        from frob.app import ticket_runner
+
+        captured: dict[str, Any] = {}
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            captured["argv"] = list(argv)
+            captured["env"] = k.get("env")
+            captured["timeout"] = k.get("timeout")
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout=self._json_payload_ok(),
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        from frob.app.ticket_runner._land_cmd import (
+            _FULL_CHECK_TIMEOUT_S,
+            _unscoped_error_findings,
+        )
+
+        result = _unscoped_error_findings(tmp_path, "T-0001", full=True)
+
+        assert result == frozenset()
+        assert "--budget" not in captured["argv"]
+        assert captured["env"]["FROB_ALLOW_FULL_CHECK"] == "1"
+        assert captured["timeout"] == _FULL_CHECK_TIMEOUT_S
+
+    @staticmethod
+    def _json_payload_ok() -> str:
+        """An empty-but-measured `frob check --json` payload -- no
+        findings, no `BUDGET001` deferral marker."""
+        return json.dumps({"results": [{"tool": "gate-summary", "diagnostics": []}]})
+
+    def test_full_mode_default_is_false_preserves_prior_budgeted_behavior(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_land.py::TestUnscopedErrorFindingsFullMode.test_full_mode_d\
+        # efault_is_false_preserves_prior_budgeted_behavior
+        from frob.app import ticket_runner
+
+        captured: dict[str, Any] = {}
+
+        def _fake(argv: list[str], **k: Any) -> Result[ProcResult, Any]:
+            captured["argv"] = list(argv)
+            return Ok(
+                ProcResult(
+                    argv=tuple(argv),
+                    returncode=0,
+                    stdout=self._json_payload_ok(),
+                    stderr="",
+                )
+            )
+
+        monkeypatch.setattr(ticket_runner, "guarded_subprocess_run", _fake)
+        from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
+
+        _unscoped_error_findings(tmp_path, "T-0001")
+
+        assert "--budget" in captured["argv"]
+
+
 class TestUnscopedErrorFindingsRecordsBudgetDeferral:
     """T-2456: a `--budget`-truncated `_unscoped_error_findings` call must
     not just return `None` (T-1703's existing unmeasurable contract,
