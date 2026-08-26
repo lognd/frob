@@ -8,7 +8,7 @@ origin: human
 created: '2026-08-25'
 priority: high
 parent: null
-tier: ticket
+tier: epic
 sprint: null
 runs_last: false
 milestone: null
@@ -18,6 +18,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: epic
+  reason: 'user corrected the premise: auto-deriving may=/code= makes the ceiling
+    equal whatever the code does, defeating the shrink-the-interface purpose; superseded
+    by the shrink-only ratchet design'
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
