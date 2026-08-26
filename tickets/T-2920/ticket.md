@@ -114,7 +114,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 0f5ea3224a36b8e01f148a7daad8731503825b60
 ---
 Strata's `may=` list is a CEILING and its `code=` globs are an ownership
 partition. Both exist to forcibly SHRINK the interface. An earlier proposal on
