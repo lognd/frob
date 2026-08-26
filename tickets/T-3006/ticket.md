@@ -2,7 +2,7 @@
 id: T-3006
 title: 'Multi-modal strata redesign: behaviour/implementation/configuration split,
   VHDL entity-architecture model (T-3004 section 5)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -16,7 +16,6 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - strata-core/src/parse/**
-- design/entity_arch/**
 - tests/unit/strata/entity_arch/**
 - docs/strata/entity_architecture.md
 - tests/unit/test_lang_strata_entity_arch.py
@@ -108,6 +107,13 @@ scope_changes:
     for this first slice).
 
     '
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: design/entity_arch/**
+  reason: moved worked-example fixtures under tests/unit/strata/entity_arch instead
+    -- design/ is rglob-scanned live by frob check sys stages against the real repo,
+    and a fixture with a nonexistent code= path would pollute that floor
   actor: logan
   at: '2026-08-26'
 triage_changes:
