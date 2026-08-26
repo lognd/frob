@@ -15,12 +15,8 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/strata/_sync_may.py
 - src/frob/strata/_shrink.py
-- tests/unit/strata/test_sync_may.py
 - tests/unit/strata/test_shrink.py
-- src/frob/gates/_fix_engine.py
-- src/frob/gates/_fix_engine_sync.py
 - docs/commands/sys.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -69,6 +65,30 @@ scope_changes:
 - op: add
   glob: docs/commands/sys.md
   reason: closing note for frob shrink CLI docs if the epic needs a last-mile note
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: src/frob/strata/_sync_may.py
+  reason: this cleanup work moved to its own child ticket T-2935, which now owns these
+    files; the epic itself stays open pending T-2910/T-2911
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: tests/unit/strata/test_sync_may.py
+  reason: this cleanup work moved to its own child ticket T-2935, which now owns these
+    files; the epic itself stays open pending T-2910/T-2911
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: src/frob/gates/_fix_engine.py
+  reason: this cleanup work moved to its own child ticket T-2935, which now owns these
+    files; the epic itself stays open pending T-2910/T-2911
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: this cleanup work moved to its own child ticket T-2935, which now owns these
+    files; the epic itself stays open pending T-2910/T-2911
   actor: logan
   at: '2026-08-26'
 triage_changes:
