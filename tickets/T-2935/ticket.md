@@ -6,7 +6,7 @@ kind: docs
 origin: human
 created: '2026-08-26'
 priority: medium
-parent: null
+parent: T-2920
 tier: ticket
 sprint: null
 runs_last: false
@@ -53,6 +53,14 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_fix_engine_sync.py
   reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2920
+  reason: 'child of the T-2920 shrink-only ratchet epic: deletes the last dead widening
+    code the epic''s own acceptance criteria depend on'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
