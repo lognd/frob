@@ -19,6 +19,8 @@ scope:
 - src/frob/app/_daemon_proxy.py
 - docs/modules/serve.md
 - docs/modules/testing.md
+evidence_scope:
+- tests/test_serve_socket.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +55,8 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 4219
+evidence:
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
 designated_repro_test: null
 threat: null
 component: null
