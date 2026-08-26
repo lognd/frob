@@ -210,6 +210,12 @@ body_changes:
   at: '2026-08-26'
   old_length: 3427
   new_length: 4417
+- mode: append
+  reason: T-2993 proof run
+  actor: logan
+  at: '2026-08-26'
+  old_length: 4416
+  new_length: 4613
 evidence:
 - tests/test_serve_events.py::TestSubscribeAndWait::test_no_daemon_is_unreachable
 - tests/test_coverage_wait_shared.py::TestWorktreeLock::test_falls_back_to_file_lock_when_no_daemon
@@ -302,3 +308,7 @@ windows-latest CI run at T-2952/T-2953's own land time as this chain's
 established acceptance pattern, attempted again here (PR #4, run
 32944685482) but blocked before reaching ty check by an unrelated,
 already-filed pre-existing defect on main (T-2960)."
+
+<!-- narrative-moved:/tmp/narr_proof/demo.py:3:T-2961 -->
+Unlike the fcntl/msvcrt pattern used for FUNCTIONS (T-2918/T-2934/
+T-2952/T-2953), a CLASS statement referencing a missing base at module

@@ -2,7 +2,7 @@
 id: T-2993
 title: 'Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology
   in code, still being written'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -25,7 +25,7 @@ scope:
 - docs/commands/narrative.md
 - src/frob/narrative
 - tickets/T-2961/ticket.md
-- tickets/T-draft-eef32050/ticket.md
+- tickets/T-3014/ticket.md
 - tickets/archive/T-0001/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
@@ -88,21 +88,21 @@ scope_changes:
 - op: add
   glob: tickets/T-2961/ticket.md
   reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
-    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-3014
     is this ticket own WIRE001/SYS003 follow-up
   actor: logan
   at: '2026-08-26'
 - op: add
-  glob: tickets/T-draft-eef32050/ticket.md
+  glob: tickets/T-3014/ticket.md
   reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
-    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-3014
     is this ticket own WIRE001/SYS003 follow-up
   actor: logan
   at: '2026-08-26'
 - op: add
   glob: tickets/archive/T-0001/ticket.md
   reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
-    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-3014
     is this ticket own WIRE001/SYS003 follow-up
   actor: logan
   at: '2026-08-26'
@@ -114,6 +114,12 @@ triage_changes:
     narrative'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGate::test_must_fire_long_archaeology_block
+- tests/test_narrative_blocks.py::TestNarrativeBlocksGate::test_socketd_t2961_block_stays_quiet_at_default_threshold
+- tests/test_narrative_migrate.py::TestMigrateBlockSplit::test_load_bearing_sentence_stays_when_named_as_keep
+- tests/test_narrative_migrate.py::TestIdempotency::test_marker_already_present_refuses_as_already_migrated
+- tests/test_narrative_migrate.py::TestNarrativeIntegration::test_frob_narrative_move_dry_run_via_subprocess
 designated_repro_test: null
 threat: null
 component: null

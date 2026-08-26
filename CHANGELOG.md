@@ -408,6 +408,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2985: gh_io part 3: CI result validity -- classify each outcome STILL VALID / STALE / UNKNOWN against the affects graph, never render stale as green
 - T-2986: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id> vs recorded tickets/<id> path)
 - T-2990: frob refactor has no module/file move verb: symbol-scoped only, so a module rename falls back to hand-editing imports
+- T-2993: Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology in code, still being written
 - T-3001: Verification debt can never drain under fleet load: the budgeted verify run truncates, reports Unmeasurable, and retries forever
 - T-3005: strata-core graph kernel: generic typed nodes, typed edges, closure, level constraints, cycle detection (see T-3004 section 4)
 

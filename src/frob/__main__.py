@@ -606,6 +606,37 @@ def _dispatch_refactor(argv: list[str]) -> None:
     _sys.exit(run_refactor_command(refactor_args))
 
 
+# frob:ticket T-2993
+# frob:waive DUP001 reason="deliberate structural duplicate of _dispatch_refactor \
+# immediately above -- both are the same direct-dispatch-verb shape this file already \
+# repeats 4 times (bind/agent/worktree/refactor) for a runner returning a raw exit \
+# code instead of run(AppConfig); extracting a shared helper here would require \
+# editing _dispatch_refactor's own body, which is refactor/'s live work area this \
+# drive, not this ticket's scope"
+def _dispatch_narrative(argv: list[str]) -> None:
+    """`frob narrative ...` (T-2993) -- dispatched directly, mirroring
+    `_dispatch_refactor` immediately above: `frob.narrative._cli.
+    run_narrative_command` takes a parsed `argparse.Namespace` and returns
+    an exit code directly, the same non-uniform shape `run_refactor_
+    command` uses, for the same reason -- see that function's docstring.
+    Author-invoked only; never called from `land` (T-2994's own doctrine:
+    land may CHECK, never REWRITE)."""
+    import sys as _sys
+
+    # frob:waive SYS003 reason="mirrors the identical cli -> refactor import two \
+    # functions above (_dispatch_refactor) -- the Flow declaration lives in \
+    # design/frob.strata, which was T-2986-leased for this ticket's whole work window; \
+    # tracked by the same follow-up as the WIRE001/SELFAUDIT001 waivers on \
+    # frob.gates._narrative_blocks" follow_up="T-3014"
+    from frob.narrative._cli import add_narrative_parser, run_narrative_command
+
+    narrative_parser = argparse.ArgumentParser(prog="frob")
+    narrative_sub = narrative_parser.add_subparsers(dest="subcommand")
+    add_narrative_parser(narrative_sub)
+    narrative_args = narrative_parser.parse_args(argv)
+    _sys.exit(run_narrative_command(narrative_args))
+
+
 # frob:ticket T-2443
 def _dispatch_default(argv: list[str]) -> None:
     """Every subcommand NOT special-cased ahead of `_build_parser` in
@@ -681,6 +712,8 @@ def _dispatch(argv: list[str]) -> None:
         _dispatch_release_publish(argv)
     elif argv and argv[0] == "refactor":
         _dispatch_refactor(argv)
+    elif argv and argv[0] == "narrative":
+        _dispatch_narrative(argv)
     else:
         _dispatch_default(argv)
 

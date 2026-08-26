@@ -486,6 +486,11 @@ gate_rule_entries:
     name: "SEC-CVE-FINGERPRINT-001 is a live, enforced gate rule"
     disposition: "handled_by:SEC-CVE-FINGERPRINT-001"
     cross_refs: []
+  - id: "CHK-GATE-NARR001"
+    fixability: "manual"
+    name: "NARR001 is a live, enforced gate rule"
+    disposition: "handled_by:NARR001"
+    cross_refs: []
 
   - id: "CHK-GATE-INV005"
     fixability: "manual"
