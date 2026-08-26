@@ -14,18 +14,35 @@ ticket_land.py`, which T-2114/T-2118 hold a lease on this session.
 
 from __future__ import annotations
 
-import fcntl
+import importlib
 import json
 import os
 import subprocess
 from pathlib import Path
+from types import ModuleType
 from unittest.mock import patch
+
+import pytest
 
 from frob.tickets._land_git_ops import (
     _land_repair_marker_path,
     reclaim_orphaned_squash_residue,
 )
 from frob.tickets._leases import LAND_LOCK_REL
+
+# frob:ticket T-3003
+# Same posix-only degradation `frob.tickets._leases`/`frob.tickets._land`
+# already document and rely on (see their own T-0577/T-1619 notes):
+# `reclaim_orphaned_squash_residue`'s live-lock probe itself degrades to a
+# no-op on a platform without `fcntl`, so the ONE test below that depends
+# on actually holding a real advisory lock
+# (`test_does_not_touch_a_live_lands_own_staging`) is skipped on such a
+# platform rather than failing collection for the whole module.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
 
 
 def _run(argv: list[str], cwd: Path) -> subprocess.CompletedProcess:
@@ -111,6 +128,14 @@ class TestReclaimOrphanedSquashResidue:
         assert (root / "committed.txt").read_text() == "committed\n"
 
     # frob:tests tests/unit/test_land_squash_residue_reclaim.py::TestReclaimOrphanedSquashResidue.test_does_not_touch_a_live_lands_own_staging kind="unit"  # noqa: E501
+    @pytest.mark.skipif(
+        fcntl is None,
+        reason=(
+            "T-1619/T-0577: the live-lock probe this test exercises "
+            "itself degrades to a no-op without fcntl, so there is no "
+            "real advisory lock on this platform to hold"
+        ),
+    )
     def test_does_not_touch_a_live_lands_own_staging(self, tmp_path: Path) -> None:
         """Safety property this ticket's own 'do not fix it this way'
         section demands: a GENUINELY live land (simulated by holding
@@ -118,6 +143,7 @@ class TestReclaimOrphanedSquashResidue:
         never be reset out from under it, no matter how dirty `root`
         looks -- distinguishing live from dead is the whole point, not an
         afterthought."""
+        assert fcntl is not None  # narrows for the type checker; skipif guards runtime
         root = _seed_root(tmp_path)
         _simulate_orphaned_squash_stage(root)
 

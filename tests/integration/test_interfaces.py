@@ -98,6 +98,13 @@ class TestInterfaces:
 
     def test_cycle_cli(self, project: Path) -> None:
         # frob:tests src/frob/cycle kind="integration"
+        # `frob cycle` resolves its project root by walking up for a
+        # pyproject.toml or a git repository -- neither exists under the
+        # bare `project` fixture on ANY platform (not a Windows-specific
+        # gap; reproduces identically on Linux), so root resolution fails
+        # before import measurement ever runs. A `pyproject.toml` marker
+        # is enough to resolve the root without needing a real git repo.
+        (project / "pyproject.toml").write_text("[project]\nname = \"pkg\"\n")
         result = _frob(["cycle", "src"], cwd=project)
         assert result.returncode == 0
 

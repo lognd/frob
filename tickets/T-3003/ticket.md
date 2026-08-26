@@ -2,7 +2,7 @@
 id: T-3003
 title: 'Windows now reaches the Test stage: 19 failures across 7 files, clustered
   in test_cli_check and test_rule_id_scan_branches'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

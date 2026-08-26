@@ -42,8 +42,8 @@ class TestFleetIntegration:
 
         manifest = tmp_path / "fleet.toml"
         manifest.write_text(
-            f'[[repo]]\nname = "repo-a"\npath = "{repo_a}"\n\n'
-            f'[[repo]]\nname = "repo-b"\npath = "{repo_b}"\n'
+            f'[[repo]]\nname = "repo-a"\npath = "{repo_a.as_posix()}"\n\n'
+            f'[[repo]]\nname = "repo-b"\npath = "{repo_b.as_posix()}"\n'
         )
 
         result = subprocess.run(
@@ -75,7 +75,9 @@ class TestFleetIntegrationJson:
         _init_repo(repo_a)
 
         manifest = tmp_path / "fleet.toml"
-        manifest.write_text(f'[[repo]]\nname = "repo-a"\npath = "{repo_a}"\n')
+        manifest.write_text(
+            f'[[repo]]\nname = "repo-a"\npath = "{repo_a.as_posix()}"\n'
+        )
 
         result = subprocess.run(
             FROB

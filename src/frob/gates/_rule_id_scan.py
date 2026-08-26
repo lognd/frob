@@ -265,6 +265,12 @@ def _scan_file_for_rule_literals(
             const_refs.setdefault(ref_m.group(1), f"{rel_path}:{lineno}")
 
 
+# frob:ticket T-3003
+# frob:waive AFFECT001 reason="T-3003: internal-only Windows portability fix \
+# (relative_to().as_posix() instead of str(relative_to())) -- the doc describes \
+# scan_emitted_rule_ids's contract/purpose, not its path-separator formatting; \
+# docs/modules/gates.md#gaterule001-t-2448 is unaffected and its own lease is held by \
+# T-2993 (a concurrent, unrelated ticket)"
 # frob:doc docs/modules/gates.md#gaterule001-t-2448
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_missing_scanned_base_directory_is_skipped_not_an_error  # noqa: E501
 # frob:tests tests/gates/test_rule_id_scan_branches.py::TestScanEmittedRuleIdsBranches.test_unresolved_const_ref_is_left_out  # noqa: E501
@@ -300,9 +306,8 @@ def scan_emitted_rule_ids(repo_root: Path) -> dict[str, str]:
                 # `"RULE_ID"` in the module docstring) -- it emits no
                 # `Violation`s itself and is excluded from its own scan.
                 continue
-            _scan_file_for_rule_literals(
-                path, str(path.relative_to(repo_root)), found, const_values, const_refs
-            )
+            rel = path.relative_to(repo_root).as_posix()
+            _scan_file_for_rule_literals(path, rel, found, const_values, const_refs)
 
     # Resolve every `rule=CONST_NAME` reference to the constant's assigned
     # string value and fold it into `found` -- a constant referenced but
@@ -381,7 +386,8 @@ def scan_candidate_rule_id_literals(repo_root: Path) -> dict[str, str]:
                 continue
             code_part = _INLINE_COMMENT_STRIP.sub("", line)
             for m in _CANDIDATE_RULE_ID_PATTERN.finditer(code_part):
-                found.setdefault(m.group(1), f"{path.relative_to(repo_root)}:{lineno}")
+                rel = path.relative_to(repo_root).as_posix()
+                found.setdefault(m.group(1), f"{rel}:{lineno}")
     return found
 
 
