@@ -32,6 +32,7 @@ scope:
 - src/frob/vet/_capability_core.py
 - src/frob/vet/_capability_scan.py
 - tests/test_vet.py
+- tests/test_dup.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -165,6 +166,11 @@ scope_changes:
 - op: add
   glob: tests/test_vet.py
   reason: capability scan positive/negative control tests for bash and csharp
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_dup.py
+  reason: real find_clones reachability tests for bash/csharp
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
