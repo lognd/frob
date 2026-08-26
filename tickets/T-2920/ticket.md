@@ -2,7 +2,7 @@
 id: T-2920
 title: 'Strata ratchet: shrink-only auto-tightening, capability escalation is always
   an error'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -14,6 +14,11 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/strata/_sync_may.py
+- src/frob/strata/_shrink.py
+- tests/unit/strata/test_sync_may.py
+- tests/unit/strata/test_shrink.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -21,6 +26,31 @@ no_scope_declared_reason: tier=epic rollup per T-2920's own design doc; actual i
   lands via child tickets (frob sys shrink, escalation-is-error enforcement, frob
   sys init, and a sibling ticket unwiring the pre-existing _sync_may.py auto-widening
   Tier-A fix in gates/)
+scope_changes:
+- op: add
+  glob: src/frob/strata/_sync_may.py
+  reason: 'close-out: delete _sync_may.py''s now-dead widening functions (no importer
+    left after T-2922), extend the no-widening-path proof to a real repo-wide property'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/strata/_shrink.py
+  reason: 'close-out: delete _sync_may.py''s now-dead widening functions (no importer
+    left after T-2922), extend the no-widening-path proof to a real repo-wide property'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_sync_may.py
+  reason: 'close-out: delete _sync_may.py''s now-dead widening functions (no importer
+    left after T-2922), extend the no-widening-path proof to a real repo-wide property'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_shrink.py
+  reason: 'close-out: delete _sync_may.py''s now-dead widening functions (no importer
+    left after T-2922), extend the no-widening-path proof to a real repo-wide property'
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: tier
   old_value: ticket
