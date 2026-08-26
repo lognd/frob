@@ -1,7 +1,7 @@
 ---
 id: T-2952
 title: 'Windows still cannot import frob: bare unconditional ''import fcntl'' in _new_renumber.py/_socketd.py/_coverage_wait.py'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -17,10 +17,112 @@ scope:
 - src/frob/tickets/_new_renumber.py
 - src/frob/serve/_socketd.py
 - src/frob/testing/_coverage_wait.py
+- tests/unit/test_process_lock.py
+- tests/test_coverage_wait_shared.py
+- tests/test_serve_socket.py
+- docs/modules/serve.md
+- tickets/T-draft-3923b7dc/**
+evidence_scope:
+- tests/unit/test_process_lock.py
+- tests/test_coverage_wait_shared.py
+- tests/test_serve_socket.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_process_lock.py
+  reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
+
+    touching the test files covering each of the three source files, plus
+
+    the docs/modules/serve.md AFFECT001 closure for DaemonError and
+
+    acquire_singleton_lock, and the T-draft ticket filed for the unrelated
+
+    UnicodeDecodeError discovered while getting a real windows-latest CI
+
+    run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_coverage_wait_shared.py
+  reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
+
+    touching the test files covering each of the three source files, plus
+
+    the docs/modules/serve.md AFFECT001 closure for DaemonError and
+
+    acquire_singleton_lock, and the T-draft ticket filed for the unrelated
+
+    UnicodeDecodeError discovered while getting a real windows-latest CI
+
+    run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
+
+    touching the test files covering each of the three source files, plus
+
+    the docs/modules/serve.md AFFECT001 closure for DaemonError and
+
+    acquire_singleton_lock, and the T-draft ticket filed for the unrelated
+
+    UnicodeDecodeError discovered while getting a real windows-latest CI
+
+    run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
+
+    touching the test files covering each of the three source files, plus
+
+    the docs/modules/serve.md AFFECT001 closure for DaemonError and
+
+    acquire_singleton_lock, and the T-draft ticket filed for the unrelated
+
+    UnicodeDecodeError discovered while getting a real windows-latest CI
+
+    run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-3923b7dc/**
+  reason: 'Regression coverage for the fcntl/msvcrt platform-backend fix requires
+
+    touching the test files covering each of the three source files, plus
+
+    the docs/modules/serve.md AFFECT001 closure for DaemonError and
+
+    acquire_singleton_lock, and the T-draft ticket filed for the unrelated
+
+    UnicodeDecodeError discovered while getting a real windows-latest CI
+
+    run past the import step.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_process_lock.py::TestSharedIdCounterPlatformBackends::test_windows_backend_round_trips
+- tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/test_coverage_wait_shared.py::TestCoverageLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/test_serve_socket.py::TestAcquireSingletonLockPlatformBackends::test_windows_backend_round_trips
 designated_repro_test: null
 threat: null
 component: null
