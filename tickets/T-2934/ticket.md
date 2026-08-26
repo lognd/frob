@@ -109,7 +109,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b27acd298865becfb1a3a399ed031631eb3ab2b2
 ---
 T-2919's new PLATFORM001 gate (frob.gates._walk_lint) fired 5 real,
 pre-existing warn-and-continue findings on this repo's own source the
