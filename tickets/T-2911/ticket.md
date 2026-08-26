@@ -2,7 +2,7 @@
 id: T-2911
 title: 'frob status: show movement (burned/promoted/closed) so a large finding count
   does not read as no progress'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-08-25'
@@ -90,6 +90,16 @@ triage_changes:
     by the shrink-only ratchet design'
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/test_status.py::TestComputeFindingsMovement::test_must_not_invent_missing_baseline
+- tests/test_status.py::TestComputeFindingsMovement::test_must_not_invent_stale_baseline
+- tests/test_status.py::TestComputeFindingsMovement::test_must_not_invent_no_current_run
+- tests/test_status.py::TestComputeFindingsMovement::test_must_show_healed_and_introduced
+- tests/test_status.py::TestComputeFindingsMovement::test_must_show_pure_healing_is_positive_net
+- tests/test_status.py::TestComputeFindingsMovement::test_honest_zero_when_nothing_moved
+- tests/test_status.py::TestFindingsMovementModel::test_defaults_are_unmeasured_shaped
+- tests/test_status.py::TestBuildStatusReportIntegration::test_no_baseline_reports_unmeasured_findings
+- tests/test_status.py::TestBuildStatusReportIntegration::test_stamped_baseline_with_no_tree_change_is_a_real_zero
 designated_repro_test: null
 threat: null
 component: null

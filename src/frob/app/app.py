@@ -49,6 +49,7 @@ _RUNNER_MODULE_NAMES = (
     "scaffold_runner",
     "serve_runner",
     "stats_runner",
+    "status_runner",
     "sys_runner",
     "test_runner",
     "ticket_runner",
@@ -109,6 +110,7 @@ _SUBCOMMAND_RUNNER_NAMES: dict[Subcommand, str] = {
     Subcommand.natives: "natives_runner",
     Subcommand.coverage: "coverage_runner",
     Subcommand.verify: "verify_runner",
+    Subcommand.status: "status_runner",
     Subcommand.claude: "claude_runner",
 }
 """Every subcommand handled by a uniform `*_runner.run(AppConfig)` entry point,
@@ -217,6 +219,8 @@ def _import_runner_module(name: str):  # noqa: ANN201 -- returns a module object
         import frob.app.serve_runner as module
     elif name == "stats_runner":
         import frob.app.stats_runner as module
+    elif name == "status_runner":
+        import frob.app.status_runner as module
     elif name == "sys_runner":
         import frob.app.sys_runner as module
     elif name == "test_runner":

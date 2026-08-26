@@ -305,6 +305,8 @@ _PATH_FIELDS = (
     "coverage_path",
     # frob:ticket T-1697
     "verify_path",
+    # frob:ticket T-2911
+    "status_path",
     # frob:ticket T-2004
     # Measured, real gap -- see the _STRING_FIELDS T-2004 comment above
     # for the finding this closes.
@@ -375,6 +377,8 @@ _LIST_FIELDS = (
     # frob:ticket T-1697
     "verify_dispose_filed",
     "verify_dispose_dismissed",
+    # frob:ticket T-2911
+    "status_only",
 )
 
 # frob:ticket T-2387
@@ -546,6 +550,9 @@ _BOOL_FLAGS = (
     "verify_json",
     # frob:ticket T-2217
     "verify_dispose_retire_unidentifiable",
+    # frob:ticket T-2911
+    "status_json",
+    "status_no_tickets",
     # frob:ticket T-2004
     # Measured, real gaps -- see the _STRING_FIELDS T-2004 comment above
     # for the finding this closes. `ticket_doable_show_anchors` and

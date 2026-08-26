@@ -413,6 +413,33 @@ any persisted ratchet state; `downgrade` explicitly clears a persisted
 rapid-to-standard auto-ratchet -- the ONLY way back once ratcheted,
 never automatic.
 
+## `frob status` (T-2911)
+
+`frob status [--path DIR] [--json] [--only GATE] [--no-tickets]` is a
+delta-first movement summary: findings HEALED/INTRODUCED since the last
+`frob check --stamp-baseline` stamp, verification lag against the T-1686
+watermark, and ticket landing velocity -- built so a large absolute
+finding count does not read as "no progress" on its own (a newcomer
+seeing a four-figure `frob check` warning count has no way to tell that
+number is shrinking without this).
+
+Reuses three existing stores as its single sources of truth, adding no
+parallel counter: `.frob/baseline` (`frob.gates.load_baseline`/
+`is_baseline_stale`/`violation_fingerprint` -- the exact identity `--delta`
+already uses), `frob.app.verify_runner.build_status` (the same function
+`frob verify status` calls), and `frob.tickets.ticket_flow` (the same
+function `frob ticket flow` calls).
+
+**Findings-movement honesty rule**: a missing OR stale baseline reports
+`measured: false` with an explicit reason, never a fabricated delta --
+motivated directly by a real incident where a 53-commit-stale watermark
+produced a confident-but-wrong result elsewhere in this repo's own
+history. `--only` selects which gate(s) to scan for the current side of
+the diff (default: the same `gates-fast` stage group `frob check --only
+gates-fast` already defines); `--no-tickets` skips the ticket-flow
+section, which mines the WHOLE ledger's git history and is the single
+most expensive part of this command.
+
 ## frob quality
 
 `frob quality {check,test,dup,arch,bind,cycle,mutate,perf} ...` is a
@@ -522,6 +549,7 @@ byte-fresh against a live regeneration (`generate_cli_command_table`,
 | `frob scaffold` | scaffold a new project from a template |
 | `frob serve` | MCP stdio adapter exposing frob's enforcement queries as tools |
 | `frob stats` | delivery measurement: queue health + commit cadence |
+| `frob status` | delta-first movement summary: findings burned/introduced since the last baseline, verification lag, ticket landing velocity -- reuses frob check --stamp-baseline/frob verify status/frob ticket flow's own data, invents no new counter |
 | `frob sync-skills` | bidirectionally sync agents/ and skills/ into ~/.claude (T-2241) -- replaces the old Makefile sync-skills: bash recipe |
 | `frob sys` | strata design-model applications (plan, doc, export, ...) |
 | `frob test` | select and run tests for the touched set (or --all) |

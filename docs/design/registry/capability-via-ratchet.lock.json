@@ -45,11 +45,6 @@
       "reason": "T-2877: SYS111 measured this pair above its committed ceiling of 3; the new site is src/frob/process/_reap.py, added by T-2849's forkserver leak fix -- a genuine new env.read call (os.environ.get(FORKSERVER_ARM_PDEATHSIG_ENV)), not a moved one, so bumping the ceiling to the current measured count is correct rather than a via-repoint.",
       "ticket": "T-2877"
     },
-    "core::ffi": {
-      "accepted_count": 1,
-      "reason": "T-2877: first via-scoped ffi grant for core -- T-2849's via-less, unjustified `may \"ffi\"` grant is converted to a precise via-list naming src/frob/process/_reap.py (the sole ffi call site in this node, measured by scanning every file the node's code globs cover), so this ratchet pair has no prior baseline; baselining it at the one genuine site.",
-      "ticket": "T-2877"
-    },
     "core::env.write": {
       "accepted_count": 1,
       "reason": "T-2001 auto-baseline: this land's own diff grew env.write on core from 0 to 1 site(s) (fix_sys111_capability_ratchet_sync)",
@@ -64,6 +59,11 @@
       "accepted_count": 3,
       "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
       "ticket": "T-1628"
+    },
+    "core::ffi": {
+      "accepted_count": 1,
+      "reason": "T-2877: first via-scoped ffi grant for core -- T-2849's via-less, unjustified `may \"ffi\"` grant is converted to a precise via-list naming src/frob/process/_reap.py (the sole ffi call site in this node, measured by scanning every file the node's code globs cover), so this ratchet pair has no prior baseline; baselining it at the one genuine site.",
+      "ticket": "T-2877"
     },
     "core::fs.read": {
       "accepted_count": 34,
@@ -186,9 +186,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 198,
-      "reason": "T-2910: tests/unit/strata/test_bootstrap.py and tests/unit/test_app_runners_batch7.py's _git_init_and_track helpers declare a real subprocess.run([\"git\", ...]) exec site (frob sys init's own tests need a real git index for tracked_files); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
-      "ticket": "T-2910"
+      "accepted_count": 199,
+      "reason": "T-2911+T-2910: merged during a real land-time conflict -- tests/test_status.py (T-2911) and tests/unit/strata/test_bootstrap.py + tests/unit/test_app_runners_batch7.py (T-2910) each add a genuine subprocess.run([\"git\", ...]) exec site, growing exec on testsuite from 197 to 199 site(s) total; confirmed by reading design/frob.strata's own merged via-list count.",
+      "ticket": "T-2911"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

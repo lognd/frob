@@ -79,6 +79,7 @@ from ._reporting import (
     _add_profile_parser,
     _add_registry_parser,
 )
+from ._status import _add_status_parser
 from ._ticket import (
     _add_ticket_attach_and_lifecycle_end_parsers,
     _add_ticket_close_parser,
@@ -195,6 +196,7 @@ __all__ = [
     "_add_ticket_scope_parser",
     "_add_ticket_sprint_parser",
     "_add_ticket_tier_parser",
+    "_add_status_parser",
     "_add_verify_parser",
     "_add_vet_parser",
     "_add_worktree_parser",

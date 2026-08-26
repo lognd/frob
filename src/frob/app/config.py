@@ -173,6 +173,12 @@ class Subcommand(str, enum.Enum):
     # `downgrade_profile_ratchet` had no caller for (T-1575's own
     # WIRE001-waived follow-up).
     profile = "profile"
+    # frob:ticket T-2911
+    # T-2911: delta-first movement summary (findings burned/introduced
+    # since the last stamped baseline, verification lag, ticket landing
+    # velocity) -- reuses frob.gates._baseline/frob.app.verify_runner/
+    # frob.tickets.ticket_flow, adds no new counting mechanism of its own.
+    status = "status"
 
 
 # frob:doc docs/modules/app.md#config
@@ -1014,6 +1020,18 @@ class AppConfig(BaseModel):
     #: path that can, since --file-ticket/--dismiss's RULE:FILE:LINE
     #: addressing can never key one.
     verify_dispose_retire_unidentifiable: bool = False
+
+    # status (T-2911): delta-first movement summary.
+    status_path: Path | None = None
+    status_json: bool = False
+    #: gate ids to scan for the findings-movement section (default: the
+    #: existing "gates-fast" stage group frob.check._STAGE_GROUPS already
+    #: defines -- no new grouping invented). Repeatable.
+    status_only: list[str] = []
+    #: skip the ticket-flow section entirely (frob.tickets.ticket_flow
+    #: mines the WHOLE ledger's git history, so it is the single most
+    #: expensive part of `frob status` on a large/old repo).
+    status_no_tickets: bool = False
 
     # release
     release_command: str | None = None  # stamp|check
