@@ -1,7 +1,7 @@
 ---
 id: T-2952
 title: 'Windows still cannot import frob: bare unconditional ''import fcntl'' in _new_renumber.py/_socketd.py/_coverage_wait.py'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
