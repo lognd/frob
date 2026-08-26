@@ -24,6 +24,9 @@ scope:
 - docs/modules/gates.md
 - docs/commands/narrative.md
 - src/frob/narrative
+- tickets/T-2961/ticket.md
+- tickets/T-draft-eef32050/ticket.md
+- tickets/archive/T-0001/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +83,27 @@ scope_changes:
   glob: src/frob/narrative
   reason: 'SCOPE002: TestNarrativeIntegration covers the bare src/frob/narrative interface
     path, not matched by the src/frob/narrative/** glob'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2961/ticket.md
+  reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    is this ticket own WIRE001/SYS003 follow-up
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-eef32050/ticket.md
+  reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    is this ticket own WIRE001/SYS003 follow-up
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-0001/ticket.md
+  reason: T-2994 constraint 3 required proving the archived-ticket-body-append route
+    (T-0001) and the migration verb end-to-end (T-2961) against the real ledger; T-draft-eef32050
+    is this ticket own WIRE001/SYS003 follow-up
   actor: logan
   at: '2026-08-26'
 triage_changes:
