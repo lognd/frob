@@ -2,7 +2,7 @@
 id: T-3001
 title: 'Verification debt can never drain under fleet load: the budgeted verify run
   truncates, reports Unmeasurable, and retries forever'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -22,6 +22,7 @@ scope:
 - tests/unit/verify/test_worker.py
 - tests/unit/verify/test_backpressure.py
 - tests/unit/app/test_check_chunking.py
+- src/frob/app/ticket_runner/_land_cmd.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,12 @@ scope_changes:
 - op: add
   glob: tests/unit/app/test_check_chunking.py
   reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: unscoped-check helper needs a full/unbudgeted mode for the detached drain
+    and frob verify now
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
