@@ -31,6 +31,7 @@ scope:
 - docs/modules/testing.md
 - tests/test_app_daemon_proxy.py
 - tickets/T-draft-d2ddda57/**
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -188,6 +189,15 @@ scope_changes:
     live here too. tickets/T-draft-d2ddda57/**: the Windows-native-daemon-
 
     transport epic filed alongside this ticket.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: frob.lock
+  reason: 'frob.lock was written by the frob ack call closing DRIFT001 for
+
+    subscribe_and_wait.
 
     '
   actor: logan
