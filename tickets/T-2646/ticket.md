@@ -2,7 +2,7 @@
 id: T-2646
 title: 938 stale local branches are accumulated debt -- needs a stranded-work analysis
   before pruning
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-19'
@@ -19,8 +19,8 @@ scope:
 - scripts/branch_stranded_work_analysis.py
 - docs/audits/branch-stranded-work-2026-08-25.md
 - tests/unit/test_branch_stranded_work_analysis.py
-- tickets/T-draft-c0911158/ticket.md
-- tickets/T-draft-2b8f8ae4/ticket.md
+- tickets/T-2915/ticket.md
+- tickets/T-2914/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -44,15 +44,20 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-c0911158/ticket.md
+  glob: tickets/T-2915/ticket.md
   reason: tickets filed from this worktree during T-2646's analysis
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-2b8f8ae4/ticket.md
+  glob: tickets/T-2914/ticket.md
   reason: tickets filed from this worktree during T-2646's analysis
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/test_branch_stranded_work_analysis.py::TestClassifyBranch::test_merged_when_ancestor
+- tests/unit/test_branch_stranded_work_analysis.py::TestClassifyBranch::test_ticket_done_when_all_ids_terminal
+- tests/unit/test_branch_stranded_work_analysis.py::TestClassifyBranch::test_stranded_when_ticket_not_terminal
+- tests/unit/test_branch_stranded_work_analysis.py::TestClassifyBranch::test_stranded_when_no_ticket_signal_but_real_diff
 designated_repro_test: null
 threat: null
 component: null

@@ -181,6 +181,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2639: Wire WAIVE009 into frob check + document in gates.md
 - T-2641: clean up stray changelog.d/T-2593.md fragment left by the T-2615 bug
 - T-2645: unlanded-branch directive parsing uses a temp-file round trip per candidate
+- T-2646: 938 stale local branches are accumulated debt -- needs a stranded-work analysis before pruning
 - T-2647: unused _LEDGER_TRANSACTIONAL_VERBS import raises quarantine and forces synchronous lands fleet-wide
 - T-2651: fleet_status enumerates leases from worktrees, so a leaked lease with no worktree is invisible -- the exact case that matters
 - T-2653: post-land sweep regression from T-2638: 45 new (rule, file) identit(ies), 71 finding(s) (ARCH103, COV001, COV003, COV004)
