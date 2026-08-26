@@ -2,7 +2,7 @@
 id: T-2915
 title: Re-run branch stranded-work classification with the real directive parser,
   not bare regex
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -16,10 +16,23 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - scripts/branch_stranded_work_analysis.py
+- tests/unit/test_branch_stranded_work_analysis.py
+- docs/audits/branch-stranded-work-2026-08-25.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/unit/test_branch_stranded_work_analysis.py
+  reason: the fix's own tests and the audit doc it updates
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/audits/branch-stranded-work-2026-08-25.md
+  reason: the fix's own tests and the audit doc it updates
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
