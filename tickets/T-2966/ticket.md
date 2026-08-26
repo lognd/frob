@@ -164,7 +164,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: cc1c0b85d965b7b15d81608457f2927a69b67085
 ---
 Residue from T-2956's triage: 23 of the 27 unaccounted src/frob/gates
 frob-dup groups still need a disposition applied (decision only
