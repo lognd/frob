@@ -112,8 +112,48 @@ def guarded_subprocess_run(
         )
         return Err(ProcessGuardError.ExecDisabled)
     _log.debug("process: spawning %r", list(args))
+    kwargs = _default_text_encoding(kwargs)
     proc = subprocess.run(args, **kwargs)  # type: ignore[call-overload]  # ty: ignore[no-matching-overload]
     return Ok(proc)
+
+
+# frob:tests \
+# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_utf8_replace_when_text_true_and_no_encoding
+# frob:tests \
+# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_when_universal_newlines_true
+# frob:tests \
+# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_encoding
+# frob:tests \
+# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_errors
+# frob:tests \
+# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_no_op_without_text_mode
+def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
+    """T-2953: when a caller asks for text mode (`text=True` or the older
+    `universal_newlines=True`) without naming an explicit `encoding=`,
+    `subprocess` falls back to `locale.getpreferredencoding()` -- UTF-8 on
+    Linux/macOS, but cp1252 (or another single-byte Windows code page) on
+    Windows. Every byte this repo's own subprocess targets (`maturin`,
+    `cargo`, `git`, `ty`, ...) can legitimately emit is NOT guaranteed
+    ASCII (a unicode path, a non-English commit message, a compiler
+    diagnostic quoting a source token) even though this repo's OWN written
+    files are ASCII-only by house rule -- that rule governs what WE write,
+    not the third-party tool output we decode. Left unset, a single
+    unmappable byte raises `UnicodeDecodeError` deep inside `subprocess`'s
+    reader thread, which the caller cannot catch (T-2953: this crashed
+    `frob natives build`'s maturin call on Windows, before the native
+    extension was even built). Defaults to `encoding="utf-8"` with
+    `errors="replace"` -- decode failures degrade to `\ufffd` replacement
+    characters in the captured text rather than crashing the whole
+    subprocess call; a garbled byte in a diagnostic is a real, survivable
+    degradation, an unhandled exception before the diagnostic is even
+    returned is not. Never overrides a caller's own explicit `encoding=`
+    or `errors=`."""
+    text_mode = bool(kwargs.get("text")) or bool(kwargs.get("universal_newlines"))
+    if text_mode and "encoding" not in kwargs:
+        kwargs = dict(kwargs)
+        kwargs["encoding"] = "utf-8"
+        kwargs.setdefault("errors", "replace")
+    return kwargs
 
 
 __all__ = [

@@ -17,6 +17,7 @@ from frob.process._guard import (
     EXEC_KILL_SWITCH_ENV,
     NET_KILL_SWITCH_ENV,
     ProcessGuardError,
+    _default_text_encoding,
     exec_enabled,
     guarded_subprocess_run,
     net_enabled,
@@ -87,6 +88,67 @@ class TestGuardedSubprocessRun:
         )
         assert result.is_ok
         assert result.danger_ok.stdout.strip() == "hi"
+
+
+# frob:ticket T-2953
+class TestDefaultTextEncoding:
+    """T-2953: `subprocess.run(text=True, ...)` with no explicit
+    `encoding=` falls back to the platform's default locale codec --
+    UTF-8 on Linux/macOS, but cp1252 (or another Windows code page) on
+    Windows -- so a byte a third-party tool (maturin/cargo/git/ty) can
+    legitimately emit crashes the read with an uncatchable
+    UnicodeDecodeError deep inside subprocess's own reader thread. This
+    crashed `frob natives build`'s maturin call on windows-latest CI
+    before the native extension was even built."""
+
+    def test_injects_utf8_replace_when_text_true_and_no_encoding(self) -> None:
+        result = _default_text_encoding({"text": True, "capture_output": True})
+        assert result["encoding"] == "utf-8"
+        assert result["errors"] == "replace"
+
+    def test_injects_when_universal_newlines_true(self) -> None:
+        result = _default_text_encoding({"universal_newlines": True})
+        assert result["encoding"] == "utf-8"
+        assert result["errors"] == "replace"
+
+    def test_never_overrides_explicit_encoding(self) -> None:
+        result = _default_text_encoding({"text": True, "encoding": "latin-1"})
+        assert result["encoding"] == "latin-1"
+        assert "errors" not in result
+
+    def test_never_overrides_explicit_errors(self) -> None:
+        result = _default_text_encoding({"text": True, "errors": "strict"})
+        assert result["encoding"] == "utf-8"
+        assert result["errors"] == "strict"
+
+    def test_no_op_without_text_mode(self) -> None:
+        result = _default_text_encoding({"capture_output": True})
+        assert "encoding" not in result
+        assert "errors" not in result
+
+    def test_guarded_subprocess_run_survives_the_reported_crash_byte(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """End-to-end regression for the exact byte
+        (`UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f`)
+        windows-latest CI reported: a real subprocess emitting that byte
+        on stdout must not raise, and the captured text must be a real
+        `str` (never `None`, which is what crashed the pydantic
+        `CrateBuildResult` model downstream in `frob.natives._build`)."""
+        monkeypatch.delenv(EXEC_KILL_SWITCH_ENV, raising=False)
+        result = guarded_subprocess_run(
+            [
+                "python3",
+                "-c",
+                "import sys; sys.stdout.buffer.write(bytes([0x8f])); sys.stdout.buffer.flush()",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.is_ok
+        proc = result.danger_ok
+        assert isinstance(proc.stdout, str)
+        assert proc.stdout != ""
 
 
 # frob:ticket T-0200
