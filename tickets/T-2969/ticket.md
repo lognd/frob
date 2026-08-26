@@ -183,7 +183,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: c3d0fee4a757437b03a926f557e0b708f87516ce
 ---
 Found while working T-2943 (macOS git returncode=128 cluster). The
 concrete confirmed root cause for tests/system/test_cli_cycle.py (9 of
