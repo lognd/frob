@@ -18,7 +18,6 @@ scope:
 - src/frob/strata/_bootstrap.py
 - src/frob/app/sys_runner.py
 - src/frob/app/config.py
-- docs/commands/sys.md
 - tests/unit/strata/test_bootstrap.py
 - tests/unit/test_app_runners_batch7.py
 - design/frob.strata
@@ -85,6 +84,13 @@ scope_changes:
   reason: T-2911 holds a live lease on this shared file; land already verified this
     diff is entirely T-2910-authored via --allow-cross-ticket, narrowing declared
     scope only to unblock the start->in-progress transition
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: docs/commands/sys.md
+  reason: T-2920 (parent epic) holds a live lease on this shared doc file; land already
+    verified this diff is entirely T-2910-authored via --allow-cross-ticket, narrowing
+    declared scope only to unblock the start->in-progress transition
   actor: logan
   at: '2026-08-26'
 triage_changes:
