@@ -20,6 +20,7 @@ scope:
 - docs/design/refactor-verb.md
 - tests/**/test_refactor*.py
 - tests/**/refactor/**
+- tests/test_refactor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +49,11 @@ scope_changes:
 - op: add
   glob: tests/**/refactor/**
   reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_refactor.py
+  reason: existing refactor test file, scope closure
   actor: logan
   at: '2026-08-26'
 body_changes:
