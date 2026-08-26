@@ -2778,6 +2778,9 @@
 {"commit": "66676af3d3be20dd14d139f2ba42c60f2ed3807d", "skipped": "land-evidence-scope-unbound", "ticket": "T-2935"}
 {"commit": "66676af3d3be20dd14d139f2ba42c60f2ed3807d", "skipped": "land-evidence-scope-unbound", "ticket": "T-2935"}
 {"commit": "4ac4e905b4066680db75c9a317a79d9e1a9200c7", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2935"}
+{"commit": "b858b50996fef1d5c3bf81291bc8b970811e1855", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2372"}
+{"commit": "b858b50996fef1d5c3bf81291bc8b970811e1855", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2372"}
+{"commit": "94ba4010a997d8f36f0b9ca835a7080599c448d4", "skipped": "close-rel001-preflight-skipped", "ticket": "T-2372"}
 {"commit": "4226ada7cf10b16dfa24e14cdf68695621cce9d3", "skipped": "land-evidence-scope-unbound", "ticket": "T-2911"}
 {"commit": "d35b1153b95ff379da3d12bfde3858c285534135", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2911"}
 {"commit": "a0ece40e28616418e49ccf6d1be6f52d73cfa43e", "skipped": "land-evidence-scope-unbound", "ticket": "T-2927"}
@@ -2797,3 +2800,4 @@
 {"commit": "6907d31aea489c3510525caeca1098e0cdebebeb", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2945"}
 {"commit": "2bee4ee1f618962a70f39464c7f701e9168fadf6", "skipped": "land-evidence-scope-unbound", "ticket": "T-2936"}
 {"commit": "04ecdd3d4bd0b38d87921a973035907acc4baf4f", "skipped": "post-land-unscoped-sweep-deferred", "ticket": "T-2936"}
+{"commit": "dd0e5ab3fe457e6e515a55a7e18ad250b360a8a9", "skipped": "land-evidence-scope-unbound", "ticket": "T-2372"}

@@ -670,12 +670,24 @@ def _tick006_phantom_filing(
 #: follow-up pass"), T-0321's close (the serve RPC gap "not yet ticketed
 #: as its own item"), T-1140, T-1150 (see tickets-archive.md for their
 #: exact wording; the phrases below cover the shape all five share).
+#: T-2372: the bare `\bresidue\b`/`\bresidual\b` word-only entry VIOLATED
+#: this module's own "not a bare trigger" design rule and was the ENTIRE
+#: false-positive population of a fresh repo-wide measurement -- 9 of 9
+#: live TICK011 findings the day this was fixed used "residue"/"residual"
+#: as an ordinary English noun/adjective with no disclosure meaning at
+#: all ("no residue", "residual risk", "squash residue", a function named
+#: `reclaim_orphaned_squash_residue`, TICK011's own rule prose quoting
+#: itself). Narrowed to the one shape that IS a genuine disclosure
+#: convention in this ledger's own Done reports: "Residue:"/"Residual:"
+#: used as a paragraph's OWN LEADING LABEL (colon-terminated), the same
+#: heading style "NOT DONE, deliberately:" already uses elsewhere in this
+#: file's own precedent citations -- never a mid-sentence occurrence.
 _TICK011_DISCLOSURE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bleft (?:for|as) a follow-?up\b", re.I),
     re.compile(r"\bnot yet ticketed\b", re.I),
     re.compile(r"\bnot ticketed\b", re.I),
     re.compile(r"\bdeferred (?:to|as|for) a follow-?up\b", re.I),
-    re.compile(r"\b(?:residue|residual)\b", re.I),
+    re.compile(r"\bresidu(?:e|al)\s*:", re.I),
     re.compile(r"\bscope cut\b", re.I),
     re.compile(r"\bcut (?:from|for) (?:this|the) (?:pass|scope|ticket)\b", re.I),
 )
@@ -763,57 +775,35 @@ def _tick011_in_active_window(ticket_id: str, floor: int) -> bool:
     return num is None or num >= floor
 
 
-#: Calibrating this rule against the LIVE repo ledger (T-1129's own
-#: obligation: "frob's own ledger findings fixed or dispositioned in the
-#: same land") found bare "residue"/"residual" is a term of art in this
-#: codebase's own engineering vocabulary meaning "remaining FINDING
-#: count" ("7 residual", "WARN residue", "REG010 residue", "gate:WAIVE
-#: residue", "5-error residue" -- all real T-1111 Done-report text), never
-#: disclosed leftover SCOPE. The shared shape: the word immediately
-#: before "residue"/"residual" is a technical token (a bare number, an
-#: ALL-CAPS/rule-id-shaped word, or a `namespace:RULE`-shaped identifier)
-#: rather than ordinary prose. Excluding on that token shape (not a fixed
-#: digit-lookback) is what actually clears the real false positives found.
-# frob:waive PII012 reason="'token' here means a lexical word/substring from a Done \
-# report's own prose (a whitespace-delimited chunk this rule checks the shape of), not \
-# a credential/auth token -- a name-signature false positive, same class as \
-# frob.gates._docptr's own existing PII012 waiver for its unrelated lexical-token \
-# vocabulary"
-_TICK011_TECHNICAL_TOKEN_RE = re.compile(r"[A-Z]{2,}|:|\d")
-
-
-# frob:waive PII012 reason="'token' here means a lexical word/substring from a Done \
-# report's own prose, not a credential/auth token -- see _TICK011_TECHNICAL_TOKEN_RE's \
-# own waiver for the same false-positive class"
-def _tick011_preceded_by_technical_token(text: str, start: int) -> bool:
-    """Whether the whitespace-delimited word immediately before `text[
-    start:]` looks like a technical token (a digit, a `namespace:NAME`
-    colon, or 2+ consecutive uppercase letters) rather than ordinary
-    prose -- see `_TICK011_TECHNICAL_TOKEN_RE`'s comment for the real
-    false positives this excludes."""
-    before = text[:start].rstrip()
-    word = before.rsplit(maxsplit=1)[-1] if before else ""
-    return bool(_TICK011_TECHNICAL_TOKEN_RE.search(word))
+#: T-2372: this module used to also carry `_TICK011_TECHNICAL_TOKEN_RE`/
+#: `_tick011_preceded_by_technical_token`, a lookback heuristic that
+#: excluded a bare "residue"/"residual" hit preceded by a technical token
+#: ("7 residual", "REG010 residue", ...) -- this codebase's own "remaining
+#: finding count" idiom, not a disclosure of leftover scope. T-2372
+#: measured that heuristic against a fresh repo-wide TICK011 run and
+#: found the underlying bare-word pattern (`\bresidue\b`/`\bresidual\b`,
+#: this module's own `_TICK011_DISCLOSURE_PATTERNS`) was STILL the entire
+#: false-positive population even with the lookback active -- 9 of 9 live
+#: findings that day used "residue"/"residual" as ordinary prose the
+#: lookback's own token-shape heuristic could not recognize either
+#: ("squash residue", "residual risk", a function literally named
+#: `reclaim_orphaned_squash_residue`). Narrowing the pattern itself to a
+#: colon-labeled heading form ("Residue:"/"Residual:", see
+#: `_TICK011_DISCLOSURE_PATTERNS`'s own comment) fixes the root cause and
+#: makes the lookback unreachable (a colon-suffixed match never equals
+#: bare `"residue"`/`"residual"`) -- deleted along with its now-dead call
+#: site rather than left as an unreachable branch.
 
 
 # frob:ticket T-1129
 def _tick011_disclosure_hits(text: str) -> tuple[re.Match[str], ...]:
     """Every `_TICK011_DISCLOSURE_PATTERNS` match in `text`, in document
-    order, EXCLUDING a bare "residue"/"residual" hit immediately preceded
-    by a technical token (`_tick011_preceded_by_technical_token`) -- this
-    codebase's own "remaining finding count" idiom, not a disclosure of
-    leftover scope -- the candidate disclosure occurrences
+    order -- the candidate disclosure occurrences
     `_tick011_disclosed_cuts_without_ticket` checks for a nearby
     citation."""
-    hits = []
-    for pattern in _TICK011_DISCLOSURE_PATTERNS:
-        for m in pattern.finditer(text):
-            if m.group(0).lower() in (
-                "residue",
-                "residual",
-            ) and _tick011_preceded_by_technical_token(text, m.start()):
-                continue
-            hits.append(m)
+    hits = [
+        m for pattern in _TICK011_DISCLOSURE_PATTERNS for m in pattern.finditer(text)
+    ]
     return tuple(sorted(hits, key=lambda m: m.start()))
 
 
@@ -904,8 +894,16 @@ def _tick011_first_uncited_disclosure(
         if any(tid in known_ids for tid in _TICK006_ID_RE.findall(vicinity)):
             continue
         return Violation(
+            # T-2372: promoted WARN -> ERROR once the repo-wide TICK011
+            # burn-down reached zero findings (the false-positive bare
+            # "residue"/"residual" trigger this module's own T-2372 note
+            # documents was the entire live population) -- an
+            # advisory-only disclosed-cut check lets new unticketed
+            # scope cuts silently reaccumulate, the same REF001/REF002/
+            # TICK004 precedent (T-2369) already established for this
+            # repo's other WARN-to-ERROR promotions.
             rule="TICK011",
-            severity=Severity.WARN,
+            severity=Severity.ERROR,
             file="tickets.md",
             line=0,
             message=(

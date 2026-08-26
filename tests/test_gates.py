@@ -18911,7 +18911,7 @@ class TestTick011DisclosedCutWithoutTicket:
         violations = tickets_gate(tmp_path, self._queue(ticket))
         tick011 = [v for v in violations if v.rule == "TICK011"]
         assert len(tick011) == 1
-        assert tick011[0].severity == Severity.WARN
+        assert tick011[0].severity == Severity.ERROR
         assert "T-0001" in tick011[0].message
 
     def test_not_yet_ticketed_with_no_citation_fires(self, tmp_path: Path) -> None:
@@ -18982,11 +18982,41 @@ class TestTick011DisclosedCutWithoutTicket:
         violations = tickets_gate(tmp_path, self._queue(ticket))
         assert len([v for v in violations if v.rule == "TICK011"]) == 1
 
+    # frob:ticket T-2372
+    def test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2372's designated repro: the real T-2552 shape ("...26 of
+        26, no residue -- but they were NOT one idiom") is ordinary
+        prose with NO technical token before "residue" at all (just the
+        word "no") -- the OLD bare-word pattern plus its technical-token
+        lookback could not exclude this, and it fired as a false
+        positive; the narrowed colon-labeled-heading pattern never
+        matches a mid-sentence, non-labeled occurrence like this one at
+        all, fixing it structurally rather than by extending the
+        lookback's own token-shape list."""
+        ticket = _ticket(
+            ticket_id="T-0013",
+            body=(
+                "## Done report\n\n"
+                "26 of 26 call sites were reachable, no residue -- but "
+                "they were NOT one idiom.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
     def test_numeric_count_residual_is_not_a_disclosure(self, tmp_path: Path) -> None:
         """T-1111's real Done report shape, found while calibrating this
         rule against the live ledger: "7 residual, not the filed 2" is a
         FINDING-COUNT ("N residual"), not disclosed deferred work -- must
-        not fire."""
+        not fire. T-2372: the bare word "residual" mid-sentence never
+        matches `_TICK011_DISCLOSURE_PATTERNS`'s colon-labeled-heading
+        form at all any more, so this is now a no-op at the pattern
+        level rather than the technical-token lookback T-1111 originally
+        added (deleted, T-2372, once measurement showed the lookback
+        itself was not enough -- see the module-level T-2372 note above
+        `_tick011_disclosure_hits`)."""
         ticket = _ticket(
             ticket_id="T-0008",
             body=(
@@ -18999,10 +19029,12 @@ class TestTick011DisclosedCutWithoutTicket:
         assert not any(v.rule == "TICK011" for v in violations)
 
     def test_rule_id_shaped_residue_is_not_a_disclosure(self, tmp_path: Path) -> None:
-        """Another real T-1111 shape: "gate:WAIVE residue" and "REG010
-        residue" -- a rule-id/namespace-shaped word directly before
-        "residue", not a bare number -- must also not fire (the broader
-        technical-token exclusion, not just a digit lookback)."""
+        """Another real T-1111 shape: "gate:WAIVE residue" -- a
+        rule-id/namespace-shaped word directly before "residue", not a
+        bare number -- must also not fire. T-2372: same as the sibling
+        test above, this is a mid-sentence bare occurrence with no
+        trailing colon, so the narrowed pattern never matches it in the
+        first place."""
         ticket = _ticket(
             ticket_id="T-0009",
             body=(
@@ -19012,6 +19044,48 @@ class TestTick011DisclosedCutWithoutTicket:
             ),
         )
         violations = tickets_gate(tmp_path, self._queue(ticket))
+        assert not any(v.rule == "TICK011" for v in violations)
+
+    # frob:ticket T-2372
+    def test_residue_heading_label_with_no_citation_still_fires(
+        self, tmp_path: Path
+    ) -> None:
+        """T-2372's must-still-fire control: "Residue:" used as a
+        genuine paragraph-leading disclosure label (this ledger's own
+        real convention, see the T-2556 archived incident this ticket
+        found and repaired) with no citation nearby -- the narrowed
+        pattern must still catch the real disclosure shape, not just
+        stop matching everything."""
+        ticket = _ticket(
+            ticket_id="T-0010",
+            body=(
+                "## Done report\n\n"
+                "Residue: the hook's own header comment still names a "
+                "subcommand that does not exist.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(ticket))
+        tick011 = [v for v in violations if v.rule == "TICK011"]
+        assert len(tick011) == 1
+        assert tick011[0].severity == Severity.ERROR
+
+    # frob:ticket T-2372
+    def test_residue_heading_label_with_citation_immediately_after_is_silent(
+        self, tmp_path: Path
+    ) -> None:
+        """The same label shape as above, but with a real citation
+        immediately after the colon (this ticket's own repair shape for
+        T-2556) -- must not fire."""
+        followup = _ticket(ticket_id="T-0012", body="## Description\nx\n")
+        reporter = _ticket(
+            ticket_id="T-0011",
+            body=(
+                "## Done report\n\n"
+                "Residue: filed as T-0012 (done). The hook's own header "
+                "comment still names a subcommand that does not exist.\n"
+            ),
+        )
+        violations = tickets_gate(tmp_path, self._queue(followup, reporter))
         assert not any(v.rule == "TICK011" for v in violations)
 
     # frob:tests \

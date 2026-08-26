@@ -504,8 +504,10 @@ _KNOWN_GATE_RULES = frozenset(
         # _tick011_disclosed_cuts_without_ticket) -- a Done report's prose
         # admits deferred/cut work (a conservative disclosure-phrase scan,
         # T-1085/T-0321/T-1140/T-1150's incidents) with no ticket id
-        # resolving nearby and no explicit no-ticket-needed reason. WARN,
-        # first turn-on.
+        # resolving nearby and no explicit no-ticket-needed reason.
+        # T-2372: promoted WARN -> ERROR once the repo-wide burn-down
+        # reached zero findings (matching REF001/REF002/TICK004's own
+        # T-2369 precedent for this repo's WARN-to-ERROR promotions).
         "TICK011",
         # T-1259: LEDGERV1001 (frob.gates._tickets_gate's
         # _ledgerv1001_violations) -- a repo still on ledger v1 (monofile

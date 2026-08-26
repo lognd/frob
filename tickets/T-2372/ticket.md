@@ -1,7 +1,7 @@
 ---
 id: T-2372
 title: Burn TICK004/TICK007/TICK011 WARN gates to zero, then promote to error
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -67,7 +67,8 @@ acceptance:
     (the ticket''s original wider family) require real ticket-queue triage
 
     on unrelated backlog tickets, split out as T-2946, not claimed here.'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
 - text: 'given TICK011''s gate module, when its severity is read, then it is
 
     ERROR not WARNING -- confirmed promoted and takes effect (a fresh
@@ -77,7 +78,8 @@ acceptance:
     at any severity). TICK004/TICK007 remain WARN, deliberately not
 
     promoted while their own counts are nonzero (T-2946).'
-  evidence: []
+  evidence:
+  - tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
 acceptance_amendments:
 - op: replace
   index: 0

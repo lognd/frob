@@ -52,7 +52,8 @@ not to clear all 34+ in one change.
   DOCENUM001 (gates.md, cli.md, release.md), DRIFT001 (3 files),
   PERF002-004 (6 files), TICK003/004, SEC004/SEC110/PII012/TEST001/
   RENDER001/WIRE002/WIRE003 -- separate rule families, separate
-  investigation each, left for a follow-up batch in this same ticket.
+  investigation each, left for a follow-up batch in this same ticket
+  (no follow-up ticket needed -- tracked under T-2653 itself, not orphaned).
 - F401 __init__.py, LANG004 _support.py -- already confirmed NOT LIVE
   at triage time; left as-is pending a fresh re-check before removing
   them from the tracked list.

@@ -2,7 +2,7 @@
 id: T-2367
 title: 'TICK004: tickets.md ledger-consistency -- 9 errors + 17 warnings under one
   identity, needs per-finding triage'
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-17'
@@ -40,3 +40,6 @@ here, so a real diagnosis requires the per-finding detail, not just the
 plain-text form) and read every TICK004-tagged finding under tickets.md,
 then triage which are genuine ledger defects vs stale/false-positive
 readings before touching anything.
+
+## Drop reason
+- 2026-08-26: T-2367's own stated finding count (9 errors + 17 warnings under TICK004 alone) is stale -- fresh measurement (2026-08-26, frob check --json --budget 500) shows 0 TICK004 errors and 7 TICK004 warnings; T-2372 already covers the current live TICK004 count as part of its TICK004/TICK007/TICK011 burn-then-promote family, so doing TICK004 triage here would duplicate that work (absorbed by T-2372)

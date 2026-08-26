@@ -66,9 +66,10 @@ common git dir, so rewriting it mid-fleet would change hook behaviour under
 every running agent. It refreshes from the fixed template on the next
 `frob scaffold apply`.
 
-Residue: the hook's own header comment and `_managed.py`'s `_OURS_MARKER` both
-name `frob scaffold install-worktree-lease-hook`, which is not a real
-subcommand (`frob scaffold` exposes list/apply/new/pool). The identical stale
+Residue: filed as T-2565 (done). The hook's own header comment and
+`_managed.py`'s `_OURS_MARKER` both name `frob scaffold
+install-worktree-lease-hook`, which is not a real subcommand (`frob
+scaffold` exposes list/apply/new/pool). The identical stale
 text in this ticket's own body fired DOC006 as an ERROR and had to be fixed
 before this could land. Left alone here because the two strings are a matched
 pair used to recognise frob-owned hooks and `_managed.py` is out of scope --
