@@ -1,7 +1,7 @@
 ---
 id: T-2610
 title: WIRE001 resolver misses @property attribute reads as real callers
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -15,10 +15,29 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_wire.py
+- src/frob/gates/_gate_cache.py
+- tests/unit/test_wire001_property_attribute_access.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_gate_cache.py
+  reason: T-2746 already landed the generic WIRE001 property-attribute-access resolver
+    fix; measured the sole remaining beneficiary is the GateRunReplay.age_s waiver
+    at _gate_cache.py (follow_up=T-2610), and the repro control belongs beside T-2746's
+    own test file per its own precedent
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_wire001_property_attribute_access.py
+  reason: T-2746 already landed the generic WIRE001 property-attribute-access resolver
+    fix; measured the sole remaining beneficiary is the GateRunReplay.age_s waiver
+    at _gate_cache.py (follow_up=T-2610), and the repro control belongs beside T-2746's
+    own test file per its own precedent
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
