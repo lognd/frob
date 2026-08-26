@@ -42,13 +42,6 @@ scope_changes:
   actor: logan
   at: '2026-08-05'
 evidence:
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_no_drift_reports_clean
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_widens_existing_via_list
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_inserts_new_grant_when_none_declared
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_no_design_files_reports_empty
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_bad_design_file_propagates_load_error
-- tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_ambiguous_code_binding_propagates_as_error
-- tests/unit/strata/test_sync_may.py::TestApplySyncMay::test_writes_only_changed_files
 - tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
 designated_repro_test: null
 evidence_changes:
@@ -138,6 +131,195 @@ evidence_changes:
     '
   actor: logan
   at: '2026-08-25'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_no_drift_reports_clean
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_widens_existing_via_list
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_inserts_new_grant_when_none_declared
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_no_design_files_reports_empty
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_bad_design_file_propagates_load_error
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayReport::test_ambiguous_code_binding_propagates_as_error
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestApplySyncMay::test_writes_only_changed_files
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 threat: null
 component: null
 anchor: false

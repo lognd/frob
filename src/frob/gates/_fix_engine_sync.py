@@ -370,14 +370,12 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 # legitimate and is not affected by this removal at all.
 #
 # `frob.strata._sync_may`'s `apply_sync_may`/`sync_may_report`/
-# `apply_sync_may_extended`/`sync_may_extended_report` writer functions
-# these two handlers called are intentionally left in place in
-# `src/frob/strata/_sync_may.py` for now -- that module is inside the
-# concurrent T-2920 ticket's own declared scope, and deleting it from
-# here would risk an ImportError racing that ticket's own in-flight
-# edits. They are dead code after this change; removing them is this
-# same ticket's follow-up commit, once T-2920's own use of that file (if
-# any) is confirmed clear.
+# `apply_sync_may_extended`/`sync_may_extended_report`/
+# `WholeNodeMayGrantDiff` writer functions these two handlers called are
+# DELETED (T-2920, once this ticket's own land confirmed zero remaining
+# importers) -- `src/frob/strata/_sync_may.py` now holds only the shared
+# `.strata` body-span scanner (`node_body_span`) `frob.strata._shrink`
+# (T-2923) still uses; see that module's own T-2920 docstring.
 # ---------------------------------------------------------------------------
 
 

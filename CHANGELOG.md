@@ -368,6 +368,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2923: frob sys shrink: tighten unobserved may= capabilities, never widen
 - T-2928: WIRE001 and REF002 both MISS provably dead symbols: measured 1-of-3 detector hit rate on a controlled deletion
 - T-2929: rapid verification debt drifts silently and poisons attribution (post-land sweep files false regressions on a stale baseline)
+- T-2935: Delete _sync_may.py's dead SYS100 auto-widening functions
 - T-2937: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted ticket on timeout
 
 ## [0.530.0] - unreleased

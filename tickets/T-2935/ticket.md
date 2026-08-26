@@ -1,7 +1,7 @@
 ---
 id: T-2935
 title: Delete _sync_may.py's dead SYS100 auto-widening functions
-state: queued
+state: done
 kind: docs
 origin: human
 created: '2026-08-26'
@@ -63,6 +63,11 @@ triage_changes:
     code the epic''s own acceptance criteria depend on'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/strata/test_sync_may.py::TestNodeBodySpan::test_flat_body_returns_closing_brace_line
+- tests/unit/strata/test_sync_may.py::TestNodeBodySpan::test_nested_braces_do_not_close_early
+- tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_widening_functions_no_longer_exist_in_sync_may
+- tests/unit/strata/test_shrink.py::TestNoWideningPathRepoWide::test_no_module_under_src_frob_defines_or_imports_a_widening_function
 designated_repro_test: null
 threat: null
 component: null

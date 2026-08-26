@@ -300,3 +300,89 @@ class TestNoWideningPath:
                 imported.update(alias.name for alias in node.names)
         assert imported == {"node_body_span"}
         assert not (imported & forbidden)
+
+
+# frob:ticket T-2935
+class TestNoWideningPathRepoWide:
+    """T-2920's epic-level closing proof: the SCOPED claim
+    `TestNoWideningPath` above makes ("this module never calls a
+    widening function") is now extended to the real repo-wide property
+    the epic actually needs -- no auto-widening path exists ANYWHERE in
+    this repo, not just absent from `_shrink.py`'s own surface. This was
+    NOT provable when T-2923 landed, because `frob.strata._sync_may`'s
+    widening functions (`sync_may_report`/`apply_sync_may`/
+    `sync_may_extended_report`/`apply_sync_may_extended`/
+    `WholeNodeMayGrantDiff`) still existed and were still wired into
+    `TIER_A_HANDLERS` (T-2922 unwired the caller; this ticket, T-2920,
+    then confirmed zero remaining importers and deleted the functions
+    themselves from `_sync_may.py`). The property is now trivially and
+    permanently true because the functions do not exist at all -- this
+    test guards against their reintroduction, which is the actual
+    must-not-regress risk once a ratchet's own teeth have been restored."""
+
+    def test_widening_functions_no_longer_exist_in_sync_may(self):
+        """The five deleted names are gone from `_sync_may`'s public
+        surface entirely -- not merely unimported, unreachable."""
+        import frob.strata._sync_may as sync_may_mod
+
+        deleted_names = {
+            "sync_may_report",
+            "apply_sync_may",
+            "sync_may_extended_report",
+            "apply_sync_may_extended",
+            "WholeNodeMayGrantDiff",
+        }
+        present = deleted_names & set(dir(sync_may_mod))
+        assert present == set(), (
+            f"widening function(s) reintroduced into _sync_may: {present}"
+        )
+        assert set(sync_may_mod.__all__) == {"node_body_span"}
+
+    def test_no_module_under_src_frob_defines_or_imports_a_widening_function(
+        self,
+    ):
+        """Repo-wide AST walk (grammar-based, not lexical -- this
+        module's own docstrings mention these names in prose, which a
+        substring scan would false-positive on): no `.py` file under
+        `src/frob` DEFINES a function with one of the deleted names, and
+        no file IMPORTS one of them from anywhere. This is the actual
+        epic-wide `must-not-regress` proof T-2923's own Done report
+        explicitly disclosed as unmet -- now provable because the only
+        caller (T-2922) and the functions themselves (T-2920) are both
+        gone."""
+        import ast
+
+        repo_root = Path(__file__).resolve().parents[3]
+        src_frob = repo_root / "src" / "frob"
+        assert src_frob.is_dir(), f"expected {src_frob} to exist"
+
+        forbidden = {
+            "sync_may_report",
+            "apply_sync_may",
+            "sync_may_extended_report",
+            "apply_sync_may_extended",
+            "WholeNodeMayGrantDiff",
+        }
+        offenders: list[str] = []
+        for path in sorted(src_frob.rglob("*.py")):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError, SyntaxError):
+                continue
+            for node in ast.walk(tree):
+                name = None
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    name = node.name
+                elif isinstance(node, ast.ImportFrom):
+                    for alias in node.names:
+                        if alias.name in forbidden:
+                            offenders.append(
+                                f"{path.relative_to(repo_root)}: imports {alias.name}"
+                            )
+                    continue
+                if name in forbidden:
+                    offenders.append(f"{path.relative_to(repo_root)}: defines {name}")
+        assert offenders == [], (
+            "a widening function was reintroduced somewhere in src/frob: "
+            f"{offenders}"
+        )

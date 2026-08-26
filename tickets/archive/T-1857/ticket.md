@@ -10,17 +10,105 @@ parent: null
 tier: ticket
 sprint: null
 runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
 scope:
 - src/frob/strata/_sync_may.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
 evidence:
-- tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_no_drift_reports_clean
-- tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_inserts_whole_node_grant_for_extended_kind
-- tests/unit/strata/test_sync_may.py::TestApplySyncMayExtended::test_writes_only_changed_files
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
 designated_repro_test: null
+evidence_changes:
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_no_drift_reports_clean
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestSyncMayExtendedReport::test_inserts_whole_node_grant_for_extended_kind
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- old_node: tests/unit/strata/test_sync_may.py::TestApplySyncMayExtended::test_writes_only_changed_files
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2920 (the shrink-only ratchet epic, unblocked once T-2922 unwired the
+
+    last caller) deleted _sync_may.py''s SYS100 core+extended may= auto-
+
+    widening writer entirely -- the feature this evidence tested. There is
+
+    no successor test to rebind to, since the widening functionality itself
+
+    is gone by design (a node''s may= ceiling must never be auto-widened;
+
+    T-1623/T-1628''s policy is superseded). Rebound to the same fallback
+
+    T-1870/T-1774/T-2922 already used for this identical shape (a deleted
+
+    feature''s evidence with no natural surviving pytest surface,
+
+    docs/guides/agent-playbook.md section 5): the CLI-dispatch integration
+
+    test, tests/system/test_frob_self_model.py''s own model-file existence
+
+    check.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 threat: null
 component: null
+anchor: false
+anchor_reason: null
+land_commit: null
 ---
 main's unscoped `frob check --only lint` (ty) is red with 3 errors, all in
 this file, all traced to T-1545's `sync_may_extended_report`/

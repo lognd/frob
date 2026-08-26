@@ -908,10 +908,10 @@ def _tick006_refile_for_ticket(
 # other declared-surface change. The two callees this wrapper combined
 # (`fix_sys100_may_via_union`, `fix_sys100_extended_whole_node_grant`)
 # are deleted from `_fix_engine_sync.py` in the same change; their
-# writer, `frob.strata._sync_may`, is intentionally left in place for a
-# concurrent ticket (T-2920, the shrink-only ratchet rework) to avoid an
-# ImportError, and is deleted in a follow-up commit within this same
-# ticket once that dependency clears.
+# writer, `frob.strata._sync_may`, was left in place for one commit to
+# avoid racing T-2920's own concurrent work, and is now ALSO deleted
+# (T-2935 confirmed zero remaining importers and removed it -- see
+# `_sync_may.py`'s own T-2920 docstring).
 
 
 #: One rule id -> one Tier-A handler, uniform `(root, snapshot, queue) ->
@@ -936,12 +936,12 @@ def _tick006_refile_for_ticket(
 #: at all, see `_FROB_DIRECTIVE_MARKER_RE`, so the two never actually
 #: collide on the same physical line in practice -- the ordering is
 #: still fixed explicitly rather than left to dict insertion accident).
-#: SYS100 (T-1531) is a pure `.strata` text rewrite (same category as
-#: DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing the
-#: `frob.strata._sync_may` writer; wiring it here (rather than only a
-#: pre-land-only special-case call site) is what makes the POST-land
-#: unscoped sweep (`_land_cmd.py::_sweep_apply_tier_a_and_commit`) able
-#: to auto-repair it too. T-1870: SYS104 (the `interface=` sibling of
+#: SYS100 (T-1531) used to be a pure `.strata` text rewrite (same
+#: category as DOC007/DOC002/INV006-carry/FMT001/REG010/REL002) reusing
+#: the `frob.strata._sync_may` writer -- deleted by T-2922/T-2920 (see
+#: `_fix_sys100_both_cases`'s own T-2922 comment above): a node's `may=`
+#: ceiling must never be auto-widened, so SYS100 has NO Tier-A handler
+#: any more, on purpose. T-1870: SYS104 (the `interface=` sibling of
 #: this same category) is deliberately NOT wired here any more -- deleted
 #: entirely, along with its writer and every other `interface=` mutation
 #: path, per an explicit owner directive that no code path may
