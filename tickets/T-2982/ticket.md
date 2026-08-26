@@ -8,7 +8,7 @@ origin: human
 created: '2026-08-26'
 priority: high
 parent: null
-tier: ticket
+tier: epic
 sprint: null
 runs_last: false
 milestone: null
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: tier
+  old_value: ticket
+  new_value: epic
+  reason: 'T-2982 decomposition: seam, reporting, validity'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
