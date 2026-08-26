@@ -5,7 +5,7 @@ state: queued
 kind: feature
 origin: human
 created: '2026-08-25'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -17,6 +17,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: T-2913 removed the inline gate-count claim re-verification under rapid and
+    nothing deferred restores that property; scoping the spawn to the merge delta
+    is the path that makes it cheap enough to run again, so this is the restoration
+    ticket, not an optimization
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
