@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,12 @@ scope_changes:
     (_leaked_hits_for_candidate) -- a sibling that only declares scope over a path
     but never actually committed a change to it must not misattribute a hit for that
     path'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2948: doc anchor for _check_cross_ticket_leakage/_leaked_hits_for_candidate
+    that this fix touches'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
