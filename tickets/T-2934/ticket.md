@@ -26,6 +26,9 @@ scope:
 - tests/unit/test_process_lock.py
 - tests/test_ticket_land.py
 - tests/unit/test_ticket_store.py
+- docs/modules/tickets-data-storage.md
+- docs/modules/tickets.md
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +74,24 @@ scope_changes:
 - op: add
   glob: tests/unit/test_ticket_store.py
   reason: ledger_lock msvcrt backend + loud refusal tests
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: affects()-closure docs for ledger_lock/derived_state_lock, plus frob ack
+    writing frob.lock
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets.md
+  reason: affects()-closure docs for ledger_lock/derived_state_lock, plus frob ack
+    writing frob.lock
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: frob.lock
+  reason: affects()-closure docs for ledger_lock/derived_state_lock, plus frob ack
+    writing frob.lock
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
