@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8e7582a81aa42d3363fe8a8c16fa6605860363c2
 ---
 _parse_bash (src/frob/lang/_walk_bash.py, added under T-1604) is a raw
 tree-sitter parse helper with no production caller -- frob.lang.__init__'s
