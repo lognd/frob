@@ -10,6 +10,7 @@ priority: high
 blocked_by:
 - T-2955
 - T-2956
+- T-2966
 parent: T-0969
 tier: ticket
 sprint: null
