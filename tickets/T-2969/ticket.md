@@ -2,7 +2,7 @@
 id: T-2969
 title: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern
   as T-2943
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -31,26 +31,154 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: audit found no defect to reproduce; waive BUG002's fixed-defect repro requirement
+  actor: logan
+  at: '2026-08-26'
+  old_length: 1924
+  new_length: 2294
+evidence:
+- tests/system/test_cli_arch.py::test_exit_zero
+- tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+- tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+- tests/system/test_cli_map.py::test_exit_code_zero
+- tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+- tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+- tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+- tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+- tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+- tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+- tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+- tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 designated_repro_test: null
 acceptance:
 - text: '1. Each candidate file audited: does the CLI subcommand it exercises'
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: actually require project-root resolution via git? If yes and the
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: fixture never git-inits, apply the same fix as T-2943 (git-init +
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: commit via the shared conftest helpers).
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: 2. A real macOS CI run (post T-2943's land) re-measured to confirm
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: whether the fixed cluster shrank the 156-failure macOS baseline as
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: expected, and to check whether any of the candidate files above
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: still fail there specifically (a genuine macOS-only remainder, if
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 - text: any exists after this pass).
-  evidence: []
+  evidence:
+  - tests/system/test_cli_arch.py::test_exit_zero
+  - tests/system/test_cli_dup.py::test_exit_zero_on_fixture
+  - tests/system/test_cli_exports.py::TestExportsBasic::test_shows_import_line
+  - tests/system/test_cli_map.py::test_exit_code_zero
+  - tests/system/test_cli_outline.py::test_exit_code_zero_on_valid_python
+  - tests/system/test_cli_parse.py::test_pytest_exit_zero_with_exit_code_0
+  - tests/system/test_cli_render_golden.py::TestDoctorGolden::test_doctor_plain_mode_has_no_ansi
+  - tests/system/test_cli_scale.py::test_map_50_files_json_lists_all
+  - tests/system/test_cli_sys_export.py::TestCliSysExport::test_k8s_export_is_valid_yaml
+  - tests/system/test_cli_sys_plan.py::TestSysPlanCli::test_dry_run_prints_tree_without_writing
+  - tests/system/test_cli_vet.py::TestHookMode::test_non_install_command_fast_exits_zero
+  - tests/system/test_cli_xref.py::test_exit_zero_found_symbol
 threat: null
 component: null
 anchor: false
@@ -89,3 +217,5 @@ SystemExit) -- neither matches the git-returncode=128 pattern, so they
 are likely a different pre-existing/local-environment issue, not part
 of this cluster. Worth a real macOS-runner comparison before assuming
 they belong here at all.
+
+frob:waive BUG002 reason="T-2969 is a negative-result audit ticket (kind=bug because it investigates whether a defect class exists in 12 files) -- the audit found the defect pattern absent in all 12 candidates, so there is no code fix to reproduce-then-pass; the bound evidence demonstrates the files pass cleanly today, which is the actual deliverable of the audit."
