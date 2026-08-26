@@ -7,7 +7,7 @@ kind: ux
 origin: human
 created: '2026-08-25'
 priority: high
-parent: T-2907
+parent: T-2920
 tier: ticket
 sprint: null
 runs_last: false
@@ -24,6 +24,14 @@ triage_changes:
   new_value: T-2907
   reason: 'T-2907 strata redesign: bootstrap and progress-surface are children of
     the derive-not-declare program'
+  actor: logan
+  at: '2026-08-25'
+- field: parent
+  old_value: T-2907
+  new_value: T-2920
+  reason: 'user corrected the premise: auto-deriving may=/code= makes the ceiling
+    equal whatever the code does, defeating the shrink-the-interface purpose; superseded
+    by the shrink-only ratchet design'
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
