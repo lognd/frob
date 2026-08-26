@@ -14,10 +14,78 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- docs/guides/agent-playbook.md
+- docs/guides/agent-playbook-appendix.md
+- docs/audits/test005-zero-classification-t1418.md
+- src/frob/tickets/_worktree_sweep.py
+- .claude/hooks/sync-claude-config.py
+- .claude/refs/frob.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/guides/agent-playbook-appendix.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/audits/test005-zero-classification-t1418.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/tickets/_worktree_sweep.py
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: .claude/refs/frob.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/guides/agent-playbook.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/guides/agent-playbook-appendix.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/audits/test005-zero-classification-t1418.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/tickets/_worktree_sweep.py
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: .claude/hooks/sync-claude-config.py
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: .claude/refs/frob.md
+  reason: split playbook into hot-path checklist + appendix, update all references
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
