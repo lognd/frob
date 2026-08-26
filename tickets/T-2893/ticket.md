@@ -2,7 +2,7 @@
 id: T-2893
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2875):
   13 new (rule, file) identit(ies), 12 finding(s) (COV004, DOC006)'
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-25'
@@ -55,10 +55,22 @@ findings:
   - tickets/T-2884/ticket.md
 - - DOC006
   - tickets/T-2886/ticket.md
+evidence_scope:
+- tests/test_docptr_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: 'BUG002 waiver: doc-fix ticket has no reproducible code defect, evidence
+    is necessarily confirmatory'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 5430
+  new_length: 5809
+evidence:
+- tests/test_docptr_gate.py::TestDoc006Waive::test_waive_suppresses
 designated_repro_test: null
 threat: null
 component: null
@@ -103,3 +115,5 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - DOC006  tickets/T-2886/ticket.md  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+frob:waive BUG002 reason="this is a ledger/doc correction filed as kind=bug (two DOC006 findings fixed via frob:waive comments on illustrative/historical references); there is no code defect to reproduce with a failing-at-parent test, so the bound evidence is confirmatory by nature -- it demonstrates the frob:waive DOC006 mechanism this fix relies on, not a behavior change"
