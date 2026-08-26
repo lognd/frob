@@ -2,7 +2,7 @@
 id: T-2991
 title: frob subprocess children spawned by system tests can be orphaned when their
   pytest worker is killed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -34,6 +34,9 @@ scope_changes:
     its existing test class in this file
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup::test_timeout_kills_the_whole_process_group_not_just_the_direct_child
+- tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup::test_run_arms_pdeathsig_and_uses_a_new_session
 designated_repro_test: null
 threat: null
 component: null

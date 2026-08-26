@@ -2,9 +2,13 @@
 Shared helpers for system (CLI end-to-end) tests.
 """
 
+import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
+
+from frob.process._reap import arm_parent_death_signal
 
 FROB = [sys.executable, "-m", "frob"]
 FIXTURES = Path(__file__).parent.parent / "fixtures"
@@ -84,31 +88,113 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
     naming the command and the budget, rather than letting a bare
     `subprocess.TimeoutExpired` (or, absent any timeout at all, an
     indefinite hang with no traceback) stand in for it.
-    """
-    import os
 
+    T-2991: T-2980 closed the HANG, but not the ORPHAN it uncovered.
+    Two independent gaps, both closed here, matching the two ways a
+    system test's `frob` subprocess child was measured surviving this
+    process:
+
+    1. **`preexec_fn=arm_parent_death_signal`**: arms `PR_SET_PDEATHSIG
+       (SIGKILL)` on the freshly-forked child, before `exec`, using the
+       SAME helper `frob.gates`'s own forkserver-helper self-arming
+       already relies on (T-2849) -- no second implementation of "die
+       with my parent" in this repo. This is the defense for the HARD
+       kill: pytest-timeout's thread method calls `os._exit(1)` on the
+       whole worker process on outer-timeout expiry (T-2980's own
+       docstring), which never runs this function's `except` block at
+       all -- nothing in Python ever gets a chance to kill the child,
+       so only a kernel-level "my parent just died" signal can. Imported
+       at MODULE scope (not inside `run()`) deliberately: `preexec_fn`
+       runs in the child between `fork()` and `exec()`, and doing
+       anything beyond a already-imported, already-resolved callable
+       there risks deadlocking on an import lock some other thread holds
+       at fork time (pytest-timeout's own timeout thread being exactly
+       such a thread in this process).
+    2. **`start_new_session=True` + `os.killpg` on `TimeoutExpired`**:
+       `subprocess.run`'s own default timeout handling calls `.kill()`
+       on ONLY the tracked child pid -- never its descendants. A `frob`
+       invocation that itself spawns further children (a chunked
+       `check`'s own subprocess calls, a `multiprocessing.forkserver`
+       pool) leaves those completely unsignaled on an ordinary,
+       run()-detected timeout, the exact "grandchildren spawned by a
+       forkserver" gap this ticket's own plan named. `start_new_session`
+       puts the child (and, by default inheritance, everything IT
+       spawns that does not `setsid` itself) into its OWN process
+       group headed by that child's pid; `os.killpg` on `TimeoutExpired`
+       reaches every member of that group in one signal, not just the
+       one pid `Popen` tracks.
+
+    Neither mechanism alone is sufficient (case 1 has nothing to say
+    about grandchildren case 2 has nothing to say about a hard kill
+    this function's own code never runs for) -- see
+    `arm_parent_death_signal`'s own docstring and
+    `docs/modules/process.md#forkserver-reaping-t-2443` for the wider
+    PDEATHSIG context this reuses rather than reinvents.
+    """
     base_env = {
         k: v for k, v in os.environ.items() if k not in ("FROB_AGENT", "FROB_WORKTREE")
     }
     merged_env = base_env | env if env else base_env
     effective_timeout = DEFAULT_RUN_TIMEOUT_S if timeout is None else timeout
+
+    # T-2991: `preexec_fn`/`start_new_session`/`os.killpg` are POSIX-only
+    # (`Popen(preexec_fn=...)` raises outright on win32; this repo's CI
+    # matrix includes windows-latest) -- PDEATHSIG has no Windows
+    # equivalent anyway (`arm_parent_death_signal` itself already
+    # degrades to a no-op there), so Windows keeps the pre-T-2991
+    # `subprocess.run` shape unchanged rather than a fix that cannot
+    # apply on that platform.
+    if sys.platform == "win32":
+        try:
+            return subprocess.run(
+                FROB + list(args),
+                capture_output=True,
+                text=True,
+                input=input,
+                cwd=cwd,
+                env=merged_env,
+                timeout=effective_timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"system-test run() timed out after {effective_timeout}s waiting "
+                f"on {FROB + list(args)!r} (T-2980: this command either hung, or "
+                "legitimately needs longer -- pass an explicit timeout= at the "
+                "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
+            ) from exc
+
+    proc = subprocess.Popen(
+        FROB + list(args),
+        stdin=subprocess.PIPE if input is not None else None,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=cwd,
+        env=merged_env,
+        start_new_session=True,
+        preexec_fn=arm_parent_death_signal,
+    )
     try:
-        return subprocess.run(
-            FROB + list(args),
-            capture_output=True,
-            text=True,
-            input=input,
-            cwd=cwd,
-            env=merged_env,
-            timeout=effective_timeout,
-        )
+        stdout, stderr = proc.communicate(input=input, timeout=effective_timeout)
     except subprocess.TimeoutExpired as exc:
+        # T-2991: kill the WHOLE process group, not just `proc` itself --
+        # see this function's own docstring, point 2. Best-effort: the
+        # group (or individual members of it) may already be gone by the
+        # time this runs, which is success, not failure, so
+        # ProcessLookupError is swallowed same as `Popen.kill()` already
+        # does internally.
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait()
         raise RuntimeError(
             f"system-test run() timed out after {effective_timeout}s waiting on "
             f"{FROB + list(args)!r} (T-2980: this command either hung, or "
             "legitimately needs longer -- pass an explicit timeout= at the "
             "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
         ) from exc
+    return subprocess.CompletedProcess(proc.args, proc.returncode, stdout, stderr)
 
 
 def git(*args: str, cwd: Path) -> None:

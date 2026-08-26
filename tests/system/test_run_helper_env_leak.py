@@ -8,11 +8,30 @@ tests simulate an end user invoking the CLI directly, never a dispatched
 agent.
 """
 
+import os
+import sys
+import time
 from pathlib import Path
 
 import pytest
 
+import tests.system.conftest as _conftest_mod
+from frob.process._reap import arm_parent_death_signal
 from tests.system.conftest import DEFAULT_RUN_TIMEOUT_S, git, git_init_and_config, run
+
+
+def _pid_alive(pid: int) -> bool:
+    """`True` iff `pid` still names a live process -- `os.kill(pid, 0)`
+    sends no signal, only checks existence/permission (POSIX-only, same
+    as the T-2991 fix itself)."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
 
 PY_SOURCE = "def add(x: int, y: int) -> int:\n    return x + y\n"
 
@@ -100,3 +119,93 @@ class TestRunHelperDefaultTimeout:
         # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_expiry_raises_a_named_loud_error  # noqa: E501
         with pytest.raises(RuntimeError, match="timed out after"):
             run("--help", timeout=0.01)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="T-2991's process-group/PDEATHSIG fix is POSIX-only"
+)
+class TestRunHelperOrphanCleanup:
+    """T-2991: `run()`'s subprocess child must not leave orphaned
+    descendants behind on a `TimeoutExpired` -- the deeper defect T-2980's
+    hang fix uncovered (see `run()`'s own docstring for the two
+    independent mechanisms: `preexec_fn=arm_parent_death_signal` for a
+    hard kill of `run()` itself never running its own `except` block, and
+    `start_new_session`/`os.killpg` for a grandchild `subprocess.run`'s
+    own default timeout kill never reaches)."""
+
+    #: A minimal stand-in for "a `frob` invocation that spawns its own
+    #: child" (a chunked `check`'s subprocess calls, a forkserver pool)
+    #: -- writes the grandchild's pid to `sys.argv[1]` the instant it is
+    #: spawned, then sleeps well past every timeout this test uses, same
+    #: shape as `run()`'s real `python -m frob` target.
+    _HELPER_SRC = (
+        "import subprocess, sys, time\n"
+        "child = subprocess.Popen([sys.executable, '-c', 'import time; "
+        "time.sleep(300)'])\n"
+        "with open(sys.argv[1], 'w') as f:\n"
+        "    f.write(str(child.pid))\n"
+        "time.sleep(300)\n"
+    )
+
+    # frob:ticket T-2991
+    def test_timeout_kills_the_whole_process_group_not_just_the_direct_child(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_tim\
+        # eout_kills_the_whole_process_group_not_just_the_direct_child
+        helper = tmp_path / "helper.py"
+        helper.write_text(self._HELPER_SRC)
+        pidfile = tmp_path / "grandchild.pid"
+        monkeypatch.setattr(_conftest_mod, "FROB", [sys.executable, str(helper)])
+
+        with pytest.raises(RuntimeError, match="timed out after"):
+            run(str(pidfile), timeout=2.0)
+
+        deadline = time.monotonic() + 5.0
+        while not pidfile.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert pidfile.exists(), "helper never wrote its grandchild's pid in time"
+        grandchild_pid = int(pidfile.read_text())
+
+        # Give the SIGKILL a moment to actually reap the process (killpg
+        # delivers the signal immediately; the kernel's own bookkeeping
+        # is not instantaneous).
+        deadline = time.monotonic() + 5.0
+        while _pid_alive(grandchild_pid) and time.monotonic() < deadline:
+            time.sleep(0.1)
+
+        assert not _pid_alive(grandchild_pid), (
+            f"grandchild pid={grandchild_pid} survived run()'s TimeoutExpired -- "
+            "the process-group kill did not reach it"
+        )
+
+    # frob:ticket T-2991
+    def test_run_arms_pdeathsig_and_uses_a_new_session(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests \
+        # tests/system/test_run_helper_env_leak.py::TestRunHelperOrphanCleanup.test_run\
+        # _arms_pdeathsig_and_uses_a_new_session
+        """Unlike the end-to-end kill test above, this pins the exact
+        `Popen` kwargs `run()` passes -- so a future refactor that
+        silently drops `preexec_fn`/`start_new_session` (e.g. "simplify"
+        back to a bare `subprocess.run`) fails here even if it happens
+        not to matter for this one helper script's timing."""
+        import subprocess as _subprocess
+
+        captured: dict[str, object] = {}
+        real_popen = _subprocess.Popen
+
+        class _RecordingPopen(real_popen):
+            def __init__(self, *args, **kwargs):
+                captured.update(kwargs)
+                super().__init__(*args, **kwargs)
+
+        monkeypatch.setattr(_subprocess, "Popen", _RecordingPopen)
+
+        with pytest.raises(RuntimeError, match="timed out after"):
+            run("--help", timeout=0.01)
+
+        assert captured.get("preexec_fn") is arm_parent_death_signal
+        assert captured.get("start_new_session") is True

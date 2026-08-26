@@ -409,6 +409,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2986: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id> vs recorded tickets/<id> path)
 - T-2989: Rename frob.yamlio to frob.yamlio for io-seam naming consistency (via frob refactor, not hand-edits)
 - T-2990: frob refactor has no module/file move verb: symbol-scoped only, so a module rename falls back to hand-editing imports
+- T-2991: frob subprocess children spawned by system tests can be orphaned when their pytest worker is killed
 - T-2993: Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology in code, still being written
 - T-3001: Verification debt can never drain under fleet load: the budgeted verify run truncates, reports Unmeasurable, and retries forever
 - T-3003: Windows now reaches the Test stage: 19 failures across 7 files, clustered in test_cli_check and test_rule_id_scan_branches
