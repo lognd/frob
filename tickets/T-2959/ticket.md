@@ -2,7 +2,7 @@
 id: T-2959
 title: 'T-1382 parent mislink: T-2384/T-2891/T-2892 are parented under it but are
   portability work, making a 0%-done epic read as 100% complete'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
