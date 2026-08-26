@@ -2,7 +2,7 @@
 id: T-3007
 title: 'V-model spec graph as strata instances: requirement/spec/design/component
   nodes with paired verification levels (T-3004 sections 1-2)'
-state: queued
+state: in-progress
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -21,6 +21,7 @@ scope:
 - strata-core/Cargo.toml
 - docs/strata/graph.md
 - docs/strata/vmodel.md
+- docs/strata/kernel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,18 @@ scope_changes:
   glob: docs/strata/vmodel.md
   reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
     the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/kernel.md
+  reason: 'AFFECT001: strata_core pymodule fn touched, its affects-closure doc is
+    docs/strata/kernel.md#strata-core'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/kernel.md
+  reason: 'AFFECT001: strata_core pymodule fn touched, its affects-closure doc is
+    docs/strata/kernel.md#strata-core'
   actor: logan
   at: '2026-08-26'
 triage_changes:
