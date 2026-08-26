@@ -51,7 +51,12 @@ scope_changes:
   reason: 'T-2948: dedicated CrossTicketLeakage regression test module'
   actor: logan
   at: '2026-08-26'
-designated_repro_test: null
+evidence:
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_actively_worked_but_never_touched_the_overlapping_path_does_not_block
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_actively_worked_and_genuinely_touched_the_overlapping_path_still_refuses
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_refuses_when_sibling_ticket_still_open
+- tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_declaring_broad_scope_but_untouched_does_not_block
+designated_repro_test: tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage::test_sibling_actively_worked_but_never_touched_the_overlapping_path_does_not_block
 threat: null
 component: null
 anchor: false

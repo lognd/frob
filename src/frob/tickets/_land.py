@@ -4125,8 +4125,126 @@ def _effective_leakage_scope(
     return other.scope
 
 
+# frob:ticket T-2948
+def _sibling_branch_ref(root: Path, other_id: str) -> str | None:
+    """T-2948: `other_id`'s own live branch name, if a cross-worktree
+    lease (`read_all_leases`, the SAME side-channel `_effective_leakage_
+    scope` already reads) records one -- used to check whether that
+    branch has a REAL, pending change to a specific overlapping path,
+    not just whether `other_id`'s declared scope glob happens to match
+    it. `None` when no live lease is recorded for `other_id` (an
+    unresolvable branch is never treated as evidence either way -- the
+    caller's own None-means-keep-the-hit posture handles that)."""
+    for lease in read_all_leases(root):
+        if lease.ticket_id == other_id and lease.branch:
+            return lease.branch
+    return None
+
+
+# frob:ticket T-2948
+def _sibling_branch_touched_path(root: Path, branch: str, path: str) -> bool | None:
+    """T-2948: whether `branch` (an OTHER, still-open ticket's own live
+    branch) carries a REAL, pending change to `path` relative to `root`'s
+    CURRENT `HEAD`.
+
+    The T-2948 gap this closes: `_leaked_hits_for_candidate`'s hit list
+    was computed purely from `other`'s DECLARED scope glob matching
+    `changed_paths`, gated only by "was `other_id`'s ledger record
+    touched AT ALL since the fork" (T-1390) -- a real, active sibling
+    ticket that happens to declare a broad scope covering a path it has
+    never itself edited still misattributed a hit for that exact path.
+    Comparing `branch`'s own blob for `path` against what `root`'s
+    CURRENT tip already commits answers the narrower, correct question:
+    does `other_id`'s own branch carry a pending edit to THIS path, or
+    is the overlap a declaration only?
+
+    `git show <ref>:<path>` fails (non-zero) when `path` does not exist
+    at `<ref>` at all -- NOT the same as "exists and is empty" -- so
+    existence on each side is tracked explicitly rather than collapsing
+    a failure to the same `None` an unreadable branch gets:
+
+    - Both sides have `path` with IDENTICAL content: `other`'s branch
+      never diverged from root for this path -- `False`, the real T-2948
+      incident shape (a PRE-EXISTING file every candidate's fork already
+      carries unchanged; `other`'s declared scope covers it, but its own
+      branch never edited it).
+    - Both have `path` with DIFFERENT content: `True`, a genuine overlap
+      by direct comparison.
+    - `other` HAS `path` but `root` lacks it: `other`'s branch carries
+      real content at a path root has never seen -- `True`, a genuine
+      overlap regardless of what the landing branch's own version says.
+    - Any other shape (`other` lacks `path` at all, whether or not `root`
+      has it -- including the case where NEITHER side has ever seen
+      `path`, e.g. a file only the LANDING branch is newly adding):
+      `None`, deliberately conservative and NEVER downgrades a hit. A
+      brand-new path's true origin cannot be told apart, from these two
+      refs alone, from content that reached the landing branch via some
+      OTHER route entirely (the exact shape `test_refuses_when_sibling_
+      ticket_still_open` covers: held_id's ledger record and a copy of
+      its file both appear on the landing branch, but held_id's own real
+      branch never carries the file at all -- a real leak this per-path
+      narrowing must never exempt just because the file is new to both
+      refs). Only a `path` `other`'s branch verifiably resolves is ever
+      eligible to exempt a hit.
+
+    `branch` itself unreadable (the whole `git show` call errors, not
+    just a not-found path) also returns `None` -- fails toward keeping
+    the existing (stricter) behavior unchanged, exactly `_ledger_ticket_
+    at_merge_base`'s own None-means-changed posture, applied per PATH
+    instead of per ticket record."""
+    other_blob = run_argv(["git", "-C", str(root), "show", f"{branch}:{path}"])
+    root_blob = run_argv(["git", "-C", str(root), "show", f"HEAD:{path}"])
+    if other_blob.is_err or root_blob.is_err:
+        return None
+    if other_blob.danger_ok.returncode != 0:
+        return None
+    if root_blob.danger_ok.returncode != 0:
+        return True
+    return other_blob.danger_ok.stdout != root_blob.danger_ok.stdout
+
+
+# frob:ticket T-2948
+def _drop_hits_other_branch_never_touched(
+    root: Path, landing_id: str, other_id: str, hits: list[str]
+) -> list[str]:
+    """`_leaked_hits_for_candidate`'s own ARCH001 split -- the T-2948
+    per-path narrowing: a declared scope hit alone is not enough even
+    once we know `other_id` was genuinely worked SOMEWHERE on this
+    branch (`_leaked_hits_for_candidate`'s own T-1390 ledger-moved check
+    only proves activity, not that THIS path specifically was touched).
+    When `other_id`'s own live branch is resolvable (`_sibling_branch_
+    ref`), drop any hit path `_sibling_branch_touched_path` reports as
+    `False` (its branch carries NO real change to it relative to root's
+    current tip) -- a pure declared-scope overlap, never a real edit.
+    `None` (unresolvable branch, or an ambiguous per-path read) never
+    drops a hit -- this can only ever narrow an existing refusal, never
+    widen a gap."""
+    branch = _sibling_branch_ref(root, other_id)
+    if branch is None:
+        return hits
+    kept: list[str] = []
+    for path in hits:
+        touched = _sibling_branch_touched_path(root, branch, path)
+        if touched is False:
+            _log.info(
+                "land: %s cross-ticket leakage check exempting %s's "
+                "scope hit on %s (T-2948: %s's own branch %s carries NO "
+                "real change to this path relative to root's current tip "
+                "-- a declared scope overlap, never an actual edit)",
+                landing_id,
+                other_id,
+                path,
+                other_id,
+                branch,
+            )
+            continue
+        kept.append(path)
+    return kept
+
+
 # frob:ticket T-1390
 # frob:ticket T-1855
+# frob:ticket T-2948
 def _leaked_hits_for_candidate(
     root: Path,
     worktree: Path,
@@ -4208,6 +4326,11 @@ def _leaked_hits_for_candidate(
     hits = kept
     if not hits:
         return None
+
+    hits = _drop_hits_other_branch_never_touched(root, landing_id, other_id, hits)
+    if not hits:
+        return None
+
     base_ticket = _ledger_ticket_at_merge_base(worktree, base_ref, other_id)
     if base_ticket is not None and base_ticket == other:
         _log.info(

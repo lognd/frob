@@ -193,8 +193,96 @@ def _unstage_index_only(root: Path) -> Result[None, LandError]:
     return Ok(None)
 
 
+# frob:ticket T-2947
+def _restore_modified_tracked_worktree_content(root: Path) -> tuple[str, ...]:
+    """T-2947: after `_unstage_index_only` resets `root`'s INDEX to match
+    HEAD, a TRACKED file this land's own squash-merge modified still has
+    its edited bytes sitting in the WORKING TREE -- `git reset` (bare,
+    mixed) deliberately never touches working-tree content, only the
+    index (`_unstage_index_only`'s own docstring). For an ordinary
+    bystander file that is a merely a cosmetic leftover. For a ticket
+    ledger file (`tickets/T-####/ticket.md`, `tickets.md`) it is the
+    single most dangerous shape this repo's land pipeline can produce:
+    the squash-merge write already promoted the ticket to `state: done`
+    (and any draft ids to real ones) INTO THAT WORKING-TREE FILE before
+    the drift was ever detected, and every v2-mode reader of `root`'s
+    ticket store reads these files directly OFF DISK, never through `git
+    show` -- so the moment `_refuse_drift_but_unstage` returns, any
+    caller that treats `root`'s live ticket files as ground truth
+    observes `state: done` and a promoted draft id for work that is,
+    per `git log`, NOT an ancestor of `root`'s actual (drifted) HEAD.
+    This is the exact T-2947 incident: a land refused with `GitFailed:
+    refused to unwind` under this drift path left `state: done` legible
+    on disk while `git show main:...` carried none of the code, and drafts
+    recorded as promoted were absent from main entirely.
+
+    Restores every TRACKED, MODIFIED-or-deleted path (git status
+    porcelain's working-tree column not blank and not `?`) to whatever
+    `root`'s CURRENT `HEAD` actually is via `git checkout HEAD -- <path>`
+    -- deliberately `HEAD`, resolved fresh at call time (the now-drifted,
+    concurrent-commit-carrying tip), never the stale `pre_land_tip`, so
+    this can never re-litigate or destroy the concurrent commit that
+    caused the drift; it only ever makes a TRACKED file's on-disk bytes
+    match what is ALREADY correctly committed there. A brand-new,
+    untracked file this land staged (`?? path`) is left exactly alone --
+    matching `_unstage_index_only`'s own T-1740 precedent (an untracked
+    leftover is inert: it is not part of ANY committed ledger read, so it
+    cannot manufacture a false `state: done`) -- restoring it would mean
+    deleting a file nothing else needs to touch, which is not this
+    function's job. Best-effort: a `git checkout` failure for a given
+    batch is logged and returns whatever the read-back status shows,
+    never silently claims success it cannot verify. Returns the sorted
+    tuple of paths this function actually asked git to restore (empty if
+    there was nothing tracked-and-modified to restore)."""
+    modified_tracked = _modified_tracked_worktree_paths(root)
+    if not modified_tracked:
+        return ()
+    checkout = run_argv(
+        ["git", "-C", str(root), "checkout", "HEAD", "--", *modified_tracked]
+    )
+    if checkout.is_err or checkout.danger_ok.returncode != 0:
+        _log.error(
+            "land: could not restore %d modified tracked path(s) in %s "
+            "to HEAD after a drift-refused unwind (%s) -- these paths' "
+            "ON-DISK content may still disagree with git history: %s",
+            len(modified_tracked),
+            root,
+            checkout.danger_err
+            if checkout.is_err
+            else checkout.danger_ok.stderr.strip(),
+            modified_tracked,
+        )
+        return ()
+    return modified_tracked
+
+
+# frob:ticket T-2947
+def _modified_tracked_worktree_paths(root: Path) -> tuple[str, ...]:
+    """T-2947: `_restore_modified_tracked_worktree_content`'s own ARCH001
+    split -- the porcelain-parsing half. A TRACKED path counts (worktree
+    status column non-blank, e.g. `M`/`D`) while an untracked path
+    (`??`) never does, matching `_unstage_index_only`'s own T-1740
+    precedent that an untracked leftover is inert and left alone. Empty
+    on any git failure (best-effort, never raises)."""
+    status = run_argv(["git", "-C", str(root), "status", "--porcelain"])
+    if status.is_err or status.danger_ok.returncode != 0:
+        return ()
+    modified_tracked: list[str] = []
+    for line in status.danger_ok.stdout.splitlines():
+        if not line.strip() or line.startswith("??"):
+            continue
+        if line[1] == " ":
+            continue
+        path = line[3:].strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        modified_tracked.append(path)
+    return tuple(sorted(set(modified_tracked)))
+
+
 # frob:ticket T-0907
 # frob:ticket T-1740
+# frob:ticket T-2947
 def _refuse_drift_but_unstage(
     root: Path, pre_land_tip: str, current_tip: str, ticket_id: str
 ) -> LandError:
@@ -205,7 +293,18 @@ def _refuse_drift_but_unstage(
     staged squash content can never ride into someone else's next `git
     commit` (the 2026-08-07 T-1688 incident) even though a full `reset
     --hard` here is unsafe (it could destroy the concurrent commit that
-    caused the drift). Always returns `LandError.GitFailed`."""
+    caused the drift). Always returns `LandError.GitFailed`.
+
+    T-2947: ALSO restores any TRACKED file's working-tree content back to
+    (the now-current, post-drift) HEAD via `_restore_modified_tracked_
+    worktree_content` -- unstaging the index alone leaves a MODIFIED
+    tracked file's edited bytes sitting on disk, which for a ticket
+    ledger file this land's own squash already wrote `state: done`
+    into is exactly the T-2947 incident: a false `done` legible to any
+    on-disk reader while `git show HEAD:...` (correctly) shows nothing of
+    the sort. Restoring only ever moves a tracked file's content to match
+    HEAD -- it can never destroy the concurrent commit that caused the
+    drift, since it reads that exact same HEAD as its source."""
     unstaged = _unstage_index_only(root)
     if unstaged.is_err:
         _log.warning(
@@ -215,6 +314,21 @@ def _refuse_drift_but_unstage(
             root,
             unstaged.danger_err,
         )
+    restored = _restore_modified_tracked_worktree_content(root)
+    if restored:
+        _log.warning(
+            "land: %s restored %d modified TRACKED path(s) in %s to HEAD "
+            "after the drift refusal below (T-2947: a modified tracked "
+            "file's on-disk content survives a bare unstage -- for a "
+            "ticket ledger file this land's own squash already wrote "
+            "`state: done` into, that is a false done state legible to "
+            "any on-disk reader; restored to what HEAD actually commits): "
+            "%s",
+            ticket_id,
+            len(restored),
+            root,
+            restored,
+        )
     # Name exactly what this refusal leaves behind, rather than a bare
     # pointer to "inspect by hand" -- a prior incident this same
     # disclosure practice already closed once left four files staged
@@ -222,7 +336,9 @@ def _refuse_drift_but_unstage(
     # them via a separate `git status` before they could even start
     # cleaning up. T-1740: by this point the index has already been
     # unstaged above, so `leftover_lines` here reports WORKING-TREE
-    # state only -- genuinely nothing left staged.
+    # state only. T-2947: and, by this point, any modified TRACKED
+    # content has ALSO been restored to HEAD -- genuinely nothing left
+    # but untracked leftovers (T-1740's own inert-by-construction case).
     leftover = run_argv(["git", "-C", str(root), "status", "--porcelain"])
     leftover_lines = (
         [line for line in leftover.danger_ok.stdout.splitlines() if line.strip()]
@@ -234,11 +350,13 @@ def _refuse_drift_but_unstage(
         "run's recorded pre-land tip is %s (drift detected mid-staging, "
         "T-0907) -- NOT hard-resetting (a blind reset here could destroy "
         "the concurrent commit that caused the drift), but the INDEX has "
-        "been unstaged (T-1740) so nothing land itself staged can ride "
-        "into someone else's next commit; inspect `git -C %s reflog` and "
+        "been unstaged (T-1740) and any modified tracked content restored "
+        "to HEAD (T-2947) so nothing land itself staged -- including a "
+        "false ledger state -- can ride into someone else's next commit "
+        "or be mistaken for durable state; inspect `git -C %s reflog` and "
         "`git -C %s log --oneline -5` by hand before retrying. "
         "Working-tree state remaining in %s (%d path(s), index already "
-        "clear): %s",
+        "clear, tracked content already restored): %s",
         ticket_id,
         root,
         current_tip,

@@ -7967,6 +7967,119 @@ class TestVerifiedResetRoot:
         assert (repo / "new_staged.txt").exists()
 
 
+# frob:ticket T-2947
+class TestDriftRefusalRestoresModifiedTrackedContent:
+    """T-2947: the real incident -- a drift-refused land used to leave a
+    MODIFIED TRACKED file's edited bytes sitting in root's working tree
+    after `_unstage_index_only` (a bare `git reset` never touches
+    working-tree content, only the index). For an ordinary bystander
+    file that is cosmetic; for a ticket LEDGER file the squash already
+    wrote `state: done` into before drift was detected, it is a false
+    `done` legible to any on-disk reader while `git show HEAD:...`
+    (correctly) shows nothing of the sort -- reproduces the real
+    `GitFailed: refused to unwind` failure, not an approximation."""
+
+    def test_must_fire_modified_tracked_ledger_file_restored_to_head(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_fire_modified_tracked_ledger_file_restored_to_head  # noqa: E501
+        """Reproduces the exact T-2947 shape: a TRACKED ticket ledger file
+        (already committed with `state: queued`) is modified in-place by
+        this land's own squash (simulating the finalize write promoting
+        it to `state: done`) and staged, matching a real `git merge
+        --squash --no-commit` -- then a concurrent sibling land advances
+        `root`'s real HEAD past this run's recorded `pre_land_tip`. Must-
+        fire: after the drift refusal, the ledger file's ON-DISK content
+        must show the COMMITTED (pre-squash) state, never the staged
+        `done` text -- the false-done incident this ticket closes."""
+        ledger = repo / "tickets.md"
+        ledger.write_text("T-9001 state=queued\n")
+        _commit_all(repo, "seed ledger at queued")
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        # A concurrent, unrelated sibling land commits and advances HEAD
+        # past `pre` FIRST -- reproducing the actual race timeline: this
+        # run captured `pre_land_tip` before it started its own long-
+        # running squash-merge/staging, and the sibling's commit lands
+        # (through the same shared root's working directory, serialized
+        # by the OTHER land holding the lock ahead of this one resuming)
+        # BEFORE this run's own squash gets around to staging its content
+        # against what was, at capture time, believed to still be the
+        # current tip. The sibling never touches `tickets.md` -- only its
+        # own file.
+        (repo / "sibling.txt").write_text("a real concurrent land\n")
+        _run(["git", "add", "sibling.txt"], repo)
+        _run(
+            ["git", "commit", "-q", "-m", "concurrent sibling land advances main"],
+            repo,
+        )
+        drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        assert drifted_tip != pre
+
+        # THIS run's own squash-merge now stages its finalize write (the
+        # promotion to `done`) against the working tree it still holds --
+        # exactly what `_squash_and_splice_ledger[_v2]` does before the
+        # final commit, and exactly why the drift is only discovered by
+        # `_verified_reset_root` AFTER this staging has already happened.
+        ledger.write_text("T-9001 state=done\n")
+        _run(["git", "add", "tickets.md"], repo)
+
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
+
+        assert result.is_err
+        assert result.danger_err == LandError.GitFailed
+        # The concurrent commit survives -- never reset.
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
+        # The must-fire assertion: the ledger's ON-DISK content must NOT
+        # show the staged `done` text -- it must match what HEAD actually
+        # commits (still `queued`, since the sibling never touched it).
+        assert ledger.read_text() == "T-9001 state=queued\n"
+        assert "done" not in ledger.read_text()
+        # Nothing left staged either (T-1740's existing guarantee).
+        staged = _run(["git", "diff", "--cached", "--name-only"], repo).stdout.strip()
+        assert staged == ""
+
+    def test_must_still_pass_untracked_leftover_is_not_touched(
+        self, repo: Path
+    ) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_must_still_pass_untracked_leftover_is_not_touched  # noqa: E501
+        """A brand-new, never-committed file this land staged (T-1740's
+        own precedent) is left alone exactly as before -- it cannot
+        manufacture a false ledger read, so restoring it would only mean
+        destroying content nothing else needs touched."""
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        (repo / "new_file.txt").write_text("a genuinely new file\n")
+        _run(["git", "add", "new_file.txt"], repo)
+        (repo / "concurrent.txt").write_text("a real concurrent commit\n")
+        _commit_all(repo, "advance main past the recorded pre-land tip")
+        drifted_tip = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
+
+        assert result.is_err
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == drifted_tip
+        assert (repo / "new_file.txt").read_text() == "a genuinely new file\n"
+
+    def test_no_drift_no_restore_needed(self, repo: Path) -> None:
+        # frob:tests tests/test_ticket_land.py::TestDriftRefusalRestoresModifiedTrackedContent.test_no_drift_no_restore_needed  # noqa: E501
+        """Must-still-pass: the ordinary, no-drift path is completely
+        unaffected by this fix -- `_verified_reset_root` still succeeds
+        and fully hard-resets when there is no concurrent drift."""
+        tracked = repo / "tracked.txt"
+        tracked.write_text("original\n")
+        _commit_all(repo, "seed tracked file")
+        pre = _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
+        tracked.write_text("staged but never committed\n")
+        _run(["git", "add", "tracked.txt"], repo)
+
+        result = _land_git_ops_mod._verified_reset_root(repo, pre, "T-TEST")
+
+        assert result.is_ok, result.err
+        assert _run(["git", "rev-parse", "HEAD"], repo).stdout.strip() == pre
+        assert tracked.read_text() == "original\n"
+        assert _status_ignoring_frob(repo) == ""
+
+
 # frob:ticket T-1740
 class TestDescribeRootDirtNamesStagedState:
     """T-1740: `DirtyMain`'s message used to say only "uncommitted

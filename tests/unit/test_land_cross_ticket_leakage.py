@@ -304,6 +304,123 @@ class TestCrossTicketLeakage:
         assert (repo / "src" / "fix.py").exists()
         assert (repo / "src" / "fix.py").exists()
 
+    # frob:ticket T-2948
+    def test_sibling_actively_worked_but_never_touched_the_overlapping_path_does_not_block(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_actively_worked_but_never_touched_the_overlapping_path_does_not_block  # noqa: E501
+        """T-2948 must-fire: the real 2026-08-26 incident shape -- unlike
+        `test_sibling_declaring_broad_scope_but_untouched_does_not_block`
+        above (T-1390's case: the sibling's own ledger record NEVER moves
+        at all), `held_id` here IS genuinely `IN_PROGRESS` with real
+        commits of its own, in a DIFFERENT worktree (its own branch is
+        independent of the landing branch, matching a cross-agent
+        dispatch, not a shared series) -- but its own committed changes
+        never touch `src/shared.py`, a PRE-EXISTING file (already on
+        `main` before either ticket forked, matching the real incident:
+        `tests/unit/test_process_reap.py` already existed; T-1608/1609/
+        1661/2936/2944 never edited it) that the landing ticket now
+        modifies and `held_id`'s DECLARED scope (`src/**`) also covers.
+        A genuinely active sibling with a broad, honest scope declaration
+        must not misattribute a hit for a path it never itself edited."""
+        (repo / "src" / "shared.py").write_text("# pre-existing, shared file\n")
+        _commit_all(repo, "seed src/shared.py, already on main")
+
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-t2948-a", str(wt)], repo)
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "other-agent-t2948-a", str(wt2)], repo)
+
+        held = new_ticket(wt2, _spec("Actively worked, broad scope", scope=("src/**",)))
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(wt2, held_id, TicketState.PLANNED).is_ok
+        # Leases held_id to wt2's own branch (other-agent-t2948-a).
+        assert transition(wt2, held_id, TicketState.IN_PROGRESS).is_ok
+        (wt2 / "src").mkdir(exist_ok=True)
+        (wt2 / "src" / "held.py").write_text(
+            "# held_id's OWN real work, in its own worktree -- never "
+            "touches shared.py\n"
+        )
+        _commit_all(wt2, f"{held_id}: real work, only touches held.py")
+
+        # held_id's ledger entry, as it now reads on ITS OWN worktree,
+        # is also visible on the LANDING worktree -- the same way a live
+        # lease/ledger snapshot ordinarily propagates fleet-wide, without
+        # implying held_id's own file changes are present on this branch.
+        held_ticket = load_all(wt2).danger_ok[held_id]
+        assert write_ticket(wt, held_ticket).is_ok
+        _commit_all(wt, f"seed {held_id}'s ledger record onto the landing worktree")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/shared.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src" / "shared.py").write_text(
+            "# independent fix to the pre-existing shared file\n"
+        )
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_ok, result.err
+        assert "independent fix" in (repo / "src" / "shared.py").read_text()
+        # held_id's own real work never landed (it is a DIFFERENT
+        # worktree's still-open ticket, not this land's business) --
+        # only the disjoint fix did.
+        assert not (repo / "src" / "held.py").exists()
+
+    # frob:ticket T-2948
+    def test_sibling_actively_worked_and_genuinely_touched_the_overlapping_path_still_refuses(  # noqa: E501
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_sibling_actively_worked_and_genuinely_touched_the_overlapping_path_still_refuses  # noqa: E501
+        """T-2948 must-still-refuse: the mirror of the must-fire case
+        directly above -- `held_id` is the SAME broad-scope, actively
+        worked, DIFFERENT-worktree sibling, but this time its OWN commit
+        genuinely ALSO edits `src/fix.py` (a real overlap, not just a
+        declared one). The per-path narrowing must never let a genuine
+        cross-ticket contamination through -- this must still refuse
+        exactly as before T-2948."""
+        wt = repo.parent / "wt"
+        _run(["git", "worktree", "add", "-b", "series-t2948-b", str(wt)], repo)
+        wt2 = repo.parent / "wt2"
+        _run(["git", "worktree", "add", "-b", "other-agent-t2948-b", str(wt2)], repo)
+
+        held = new_ticket(wt2, _spec("Actively worked, broad scope", scope=("src/**",)))
+        assert held.is_ok
+        held_id = held.danger_ok.id
+        assert transition(wt2, held_id, TicketState.PLANNED).is_ok
+        assert transition(wt2, held_id, TicketState.IN_PROGRESS).is_ok
+        (wt2 / "src").mkdir(exist_ok=True)
+        (wt2 / "src" / "held.py").write_text("# held_id's own real work\n")
+        (wt2 / "src" / "fix.py").write_text(
+            "# held_id ALSO genuinely edits fix.py in its own worktree -- "
+            "a real overlap\n"
+        )
+        _commit_all(wt2, f"{held_id}: real work, ALSO genuinely touches fix.py")
+
+        held_ticket = load_all(wt2).danger_ok[held_id]
+        assert write_ticket(wt, held_ticket).is_ok
+        _commit_all(wt, f"seed {held_id}'s ledger record onto the landing worktree")
+
+        landing = new_ticket(wt, _spec("Independent fix", scope=("src/fix.py",)))
+        assert landing.is_ok
+        landing_id = landing.danger_ok.id
+        _make_closeable(wt, landing_id)
+        (wt / "src").mkdir(exist_ok=True)
+        (wt / "src" / "fix.py").write_text("# independent fix, overwrites held_id's\n")
+        _commit_all(wt, f"{landing_id}: independent fix")
+
+        result = land(repo, landing_id, wt, dry_run=False)
+
+        assert result.is_err
+        assert result.danger_err == LandError.CrossTicketLeakage
+        assert not (repo / "src" / "fix.py").exists()
+        assert not (repo / "src" / "held.py").exists()
+
     # frob:tests \
     # tests/unit/test_land_cross_ticket_leakage.py::TestCrossTicketLeakage.test_queued_\
     # sibling_scope_overlap_does_not_block
