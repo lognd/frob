@@ -73,7 +73,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 436c32845f796c35cba320206947cf12e632d127
 ---
 T-2922 unwired the only caller of frob.strata._sync_may's SYS100 core+
 extended may= auto-widening writer (sync_may_report/apply_sync_may/
