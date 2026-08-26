@@ -18,6 +18,16 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: set
+  reason: 'record the owner directives: reuse the existing move machinery where it
+    is genuinely shared rather than forking it, and require typed validated operands
+    so a symbol-to-filepath move like app:run to attachments/img.jpg is structurally
+    inexpressible'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 5027
+  new_length: 10111
 designated_repro_test: null
 threat: null
 component: null
@@ -113,3 +123,87 @@ ACCEPTANCE
 - Failure mid-move rolls back to a clean tree.
 - Proven end-to-end by using the new verb to perform T-2989 (`frob.yaml_io` ->
   `frob.yamlio`), with `git grep -c "yaml_io"` returning 0 afterwards.
+
+REUSE THE EXISTING `move` MACHINERY -- yes, and here is the shape.
+
+The owner asked whether the existing `move` verb can be reused. It should be,
+but NOT by naively composing N symbol-moves. The distinction matters:
+
+REUSE (these are the hard parts, they exist, they are tested, and duplicating
+them would violate this repo's own no-duplication rule -- two copies of a
+rewrite rule is a bug waiting to desync):
+  - the reference-rewriting engine that `move` already uses to find and rewrite
+    every call site;
+  - `--alias-conflict` policy handling;
+  - the transaction/rollback in `src/frob/refactor/_transaction.py`;
+  - the `frob check --delta` post-condition and the pytest-collect check;
+  - `--full-repo-collect` / `--skip-check-delta` flag semantics, so the new verb
+    behaves like its siblings rather than inventing its own contract.
+Factor the shared core so both verbs call it. Do not fork it.
+
+DO NOT simply loop `move` over every symbol. A module move is not the sum of its
+symbol moves, and the gap is exactly where the bugs would live:
+  - `import frob.yaml_io` and `from frob import yaml_io` reference the MODULE,
+    not any symbol in it. A symbol-by-symbol loop never sees them.
+  - Module-private symbols (`_coverage_tracer_active` in the T-2989 case) are not
+    part of a public-surface move but must travel with the file.
+  - The module docstring, `__all__`, and any module-level side effects have no
+    symbol to hang off.
+  - N symbol moves leave an empty husk that then has to be deleted separately;
+    git then records delete+create and rename detection is lost, so blame and
+    history stop following the file. Prefer `git mv` for the file itself so
+    history survives, then rewrite references.
+  - The non-Python references listed above (frob.toml dotted `module:symbol`
+    values, `.strata` `code=` globs, `frob:doc`/`frob:tests` path citations,
+    ticket `scope` globs) are keyed on the MODULE PATH. A symbol move does not
+    change a file path and so has no reason to touch them; a module move does
+    and must.
+
+So: new verb, module-aware, delegating to the shared rewrite core for the parts
+that are genuinely the same. If on inspection the existing core turns out to be
+too symbol-shaped to factor cleanly, say so with specifics rather than forcing
+it -- a bad abstraction shared between two verbs is worse than two clear
+implementations, and that is a judgement worth reporting rather than guessing at.
+
+OPERAND SEMANTICS -- TYPED, VALIDATED, AND REFUSED LOUDLY. This is a direct
+requirement from the owner and it is the main risk created by sharing machinery
+between the verbs. Today `move` takes `MODULE:QUALNAME -> MODULE:QUALNAME`. A
+module verb takes a different operand kind. If both funnel into one shared core
+without typed operands, nothing structurally prevents nonsense like:
+
+    frob refactor move app:run attachments/img.jpg
+
+-- a symbol reference on the left, an arbitrary file path on the right. That
+must be IMPOSSIBLE to express, not merely unlikely to be typed.
+
+Required:
+- Operand kinds are DISTINCT TYPES, not strings: a symbol reference
+  (`module:qualname`), a module reference (dotted path), and a file path are
+  three different things. Parse each operand into its kind up front and let the
+  type system carry it, rather than passing raw strings into a shared rewriter
+  that guesses.
+- Each verb DECLARES the operand kinds it accepts, and mismatches are refused
+  with a named, typed error naming both the expected and the received kind.
+  `move` (symbol) must reject a module or file operand; the module verb must
+  reject a `module:qualname` operand. Per the house rule these are recoverable
+  user errors, so they are Result values, not exceptions and not tracebacks.
+- The DESTINATION must be validated as a legal Python module location before
+  anything is written: inside a declared source root, an importable package
+  path, a `.py` file, and a valid Python identifier per path segment. A
+  destination under `attachments/`, a non-`.py` extension, a path outside the
+  source roots, or a segment that is not a valid identifier is refused.
+- Collision is refused, not silently merged: a destination module that already
+  exists must error unless an explicit policy flag says otherwise, consistent
+  with how `--alias-conflict` already handles the symbol case.
+- Refusal happens BEFORE any file is touched. A validation failure must leave
+  the tree byte-identical -- not roll back, simply never start.
+
+Must-not-fire fixtures required for each of these, because a guard with no
+must-fire case is indistinguishable from an absent guard:
+  - symbol operand given to the module verb -> refused, tree untouched;
+  - module operand given to `move` -> refused, tree untouched;
+  - destination with a non-`.py` extension (the `attachments/img.jpg` shape)
+    -> refused, tree untouched;
+  - destination outside the declared source roots -> refused;
+  - destination path segment that is not a valid Python identifier -> refused;
+  - destination module already exists -> refused absent an explicit policy flag.
