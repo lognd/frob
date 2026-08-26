@@ -6,8 +6,6 @@ kind: feature
 origin: human
 created: '2026-08-05'
 priority: low
-blocked_by:
-- T-1599
 parent: T-1597
 tier: ticket
 sprint: post-1.0
