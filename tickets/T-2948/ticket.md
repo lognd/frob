@@ -2,7 +2,7 @@
 id: T-2948
 title: DirtyMain owner classifier blames a sibling ticket that merely declares overlapping
   scope, blocking the ticket actually being landed
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,6 +18,7 @@ scope:
 - src/frob/tickets/_land.py
 - tests/test_ticket_land.py
 - docs/modules/tickets-landing.md
+- tests/unit/test_land_cross_ticket_leakage.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,11 @@ scope_changes:
   glob: docs/modules/tickets-landing.md
   reason: 'T-2948: doc anchor for _check_cross_ticket_leakage/_leaked_hits_for_candidate
     that this fix touches'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_land_cross_ticket_leakage.py
+  reason: 'T-2948: dedicated CrossTicketLeakage regression test module'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
