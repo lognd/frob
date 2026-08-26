@@ -14,10 +14,61 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_narrative_blocks.py
+- src/frob/narrative/**
+- src/frob/__main__.py
+- docs/design/registry/check-coverage.yaml
+- tests/test_narrative_blocks.py
+- tests/test_narrative_migrate.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_narrative_blocks.py
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/narrative/**
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/__main__.py
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/design/registry/check-coverage.yaml
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_narrative_blocks.py
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_narrative_migrate.py
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2993 detector (NARR001) + migration verb (frob narrative move) + fixtures;
+    gates/__init__.py wiring deferred, leased by T-2986
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
