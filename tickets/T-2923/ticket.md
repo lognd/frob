@@ -14,12 +14,44 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/strata/**
-- design/**
+- src/frob/strata/_shrink.py
+- src/frob/strata/__init__.py
+- tests/unit/strata/test_shrink.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/strata/**
+  reason: narrow to the new shrink module + its __init__ export + its own test file;
+    CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+- op: remove
+  glob: design/**
+  reason: narrow to the new shrink module + its __init__ export + its own test file;
+    CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/strata/_shrink.py
+  reason: narrow to the new shrink module + its __init__ export + its own test file;
+    CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/strata/__init__.py
+  reason: narrow to the new shrink module + its __init__ export + its own test file;
+    CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/strata/test_shrink.py
+  reason: narrow to the new shrink module + its __init__ export + its own test file;
+    CLI wiring already covered by the ticket's implicit_scope grant
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
