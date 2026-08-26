@@ -7,8 +7,6 @@ kind: feature
 origin: human
 created: '2026-08-25'
 priority: high
-blocked_by:
-- T-2922
 parent: null
 tier: epic
 sprint: null
