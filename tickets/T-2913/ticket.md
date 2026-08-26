@@ -20,6 +20,7 @@ scope:
 - tests/unit/test_ticket_runner_gate_findings.py
 - tests/test_ticket_land.py
 - docs/modules/tickets-landing.md
+- src/frob/tickets/_land_verify.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -60,6 +61,14 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: 'T-2913: touched symbols in _verify.py/_land.py doc into tickets-landing.md'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/tickets/_land_verify.py
+  reason: 'T-2913: land() call site needs to conditionally skip calling check_gates/check_gate_findings
+    under rapid profile by passing None,None -- the actual mutation lands in _land.py
+    at the call site, but this file''s caller-contract doc needs a matching frob:doc
+    note'
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
