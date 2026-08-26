@@ -14,10 +14,54 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/graph/vmodel.rs
+- strata-core/src/graph/mod.rs
+- strata-core/src/lib.rs
+- strata-core/Cargo.toml
+- docs/strata/graph.md
+- docs/strata/vmodel.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/graph/vmodel.rs
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/graph/mod.rs
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/lib.rs
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/Cargo.toml
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/graph.md
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/strata/vmodel.md
+  reason: 'T-3007: V-model schema+closure rules as a strata-core graph consumer, plus
+    the PyO3 surface it needs'
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
