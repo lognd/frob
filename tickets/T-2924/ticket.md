@@ -13,10 +13,30 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/ticket_runner/_land_cmd.py
+- src/frob/app/ticket_runner/_verify.py
+- tests/unit/app/ticket_runner/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/ticket_runner/_land_cmd.py
+  reason: 'ticket text: scope named files plus tests for the new --only selection'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/ticket_runner/_verify.py
+  reason: 'ticket text: scope named files plus tests for the new --only selection'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/app/ticket_runner/**
+  reason: 'ticket text: scope named files plus tests for the new --only selection'
+  actor: logan
+  at: '2026-08-25'
 triage_changes:
 - field: priority
   old_value: medium
