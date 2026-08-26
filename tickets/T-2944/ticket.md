@@ -21,6 +21,7 @@ scope:
 - tests/unit/test_process_reap.py
 - tests/unit/test_land_finish_guard.py
 - docs/modules/process.md
+- docs/modules/gates.md
 evidence_scope:
 - tests/test_walk_lint_gate.py
 scope_breadth_ack: false
@@ -34,6 +35,15 @@ scope_changes:
     section to move alongside arm_parent_death_signal''s body change (a WARNING log
     added to the sys.platform guard, T-2944''s Part 1 fix); needed to satisfy the
     affects()-closure gate.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/gates.md
+  reason: 'AFFECT001 requires docs/modules/gates.md''s PLATFORM001 section to move
+    alongside walk_lint_gate''s body change (the two new PLATFORM001 detection shapes,
+    T-2944 Part 1); needed to satisfy the affects()-closure gate.
 
     '
   actor: logan
