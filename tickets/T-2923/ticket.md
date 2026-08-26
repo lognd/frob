@@ -19,6 +19,7 @@ scope:
 - tests/unit/strata/test_shrink.py
 - src/frob/app/sys_runner.py
 - src/frob/_cli_parsers/_misc.py
+- docs/commands/sys.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -64,6 +65,11 @@ scope_changes:
   glob: src/frob/_cli_parsers/_misc.py
   reason: CLI wiring for the new frob sys shrink verb lives in these two files, alongside
     the implicit __main__.py/config.py/ticket_runner grant
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/commands/sys.md
+  reason: documenting the new frob sys shrink verb
   actor: logan
   at: '2026-08-25'
 triage_changes:
