@@ -2,7 +2,7 @@
 id: T-2983
 title: 'gh_io part 1: typed gh seam with named failure modes (no gh, no auth, no GitHub
   remote, rate limit, empty-log-on-failed-job)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -78,6 +78,12 @@ triage_changes:
   reason: 'T-2982 decomposition: seam, reporting, validity'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_ghio.py::TestPreflight::test_success
+- tests/test_ghio.py::TestJobLog::test_empty_log_for_a_failed_job_is_named
+- tests/test_ghio.py::TestJobLog::test_truncated_log_for_cancelled_run
+- tests/test_ghio.py::TestPreflight::test_no_gh_no_auth_no_remote_never_crashes
+- tests/test_ghio.py::TestPreflightIntegration::test_real_subprocess_seam_against_a_fake_gh_binary
 designated_repro_test: null
 threat: null
 component: null
