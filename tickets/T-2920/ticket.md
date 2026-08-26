@@ -21,6 +21,7 @@ scope:
 - tests/unit/strata/test_shrink.py
 - src/frob/gates/_fix_engine.py
 - src/frob/gates/_fix_engine_sync.py
+- docs/commands/sys.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: true
@@ -63,6 +64,11 @@ scope_changes:
   glob: src/frob/gates/_fix_engine_sync.py
   reason: these files' own comments predicted and now must reflect the _sync_may.py
     widening-function deletion this ticket performs
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/sys.md
+  reason: closing note for frob shrink CLI docs if the epic needs a last-mile note
   actor: logan
   at: '2026-08-26'
 triage_changes:
