@@ -6,6 +6,30 @@ convention). It centralizes the `dictConfig` init, a plain formatter, a
 below-level filter for stdout, ANSI color helpers, and a context manager for
 temporarily silencing stdout-bound log noise around `--json` output.
 
+## Default verbosity (T-2979)
+
+The stdout handler's default level is `INFO`, not `DEBUG` -- subprocess-
+spawn traces (`gitio: spawning ...`, `process: spawning ...`), cache-hit
+notices (`tickets: v2 index cache hit`), and staleness probes
+(`is_baseline_stale: ...`) are logged at DEBUG throughout the codebase and
+are hidden from a default interactive run as a result. Nothing was deleted
+-- three ways to get them back, all equivalent:
+
+- `frob -v ...` / `frob --verbose ...` (global flag, must appear before the
+  subcommand, same as `--color`/`--no-color`)
+- `FROB_VERBOSE=1` (the same escape hatch `quiet_query_stdout` already used
+  for its 8 human-mode query runners, T-2582 -- `-v` sets this env var)
+- `FROB_LOG_LEVEL=<name>` for an explicit level (e.g. `INFO`) rather than
+  the `-v` default of full `DEBUG`
+
+WARNING and above (gate findings, `[FAST_EXIT1]`/`[REDUNDANT_RERUN]`/
+`[REPEATED_FAILURE]` footgun tips, and every other warning/error) keep
+their current default prominence -- this only re-levels DEBUG-only
+diagnostic chatter. `--json`/non-TTY machine paths are unaffected: they
+already route through `quiet_stdout_logs()`/`quiet_query_stdout()`
+unconditionally suppressing to WARNING for the duration of the payload
+write, regardless of the base handler level.
+
 ## Usage
 
 <!-- frob:waive DOC004 reason="the symbols this block imports (get_logger, quiet_stdout_logs, paint, should_color) are each frob:describes-anchored in the Public API section immediately below -- DOC004's nearby-directive window only looks at preceding lines, not a following section, T-0436" -->

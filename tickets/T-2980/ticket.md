@@ -2,7 +2,7 @@
 id: T-2980
 title: 'ubuntu-latest CI hangs in the Test step for 2+ hours: no green baseline exists
   on any platform'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -24,6 +24,7 @@ scope:
 - tests/conftest.py
 - pyproject.toml
 - tests/system/conftest.py
+- tests/system/test_run_helper_env_leak.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -82,12 +83,22 @@ scope_changes:
   reason: 'T-2980 fix: unbounded run() default hides infinite hang'
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: tests/system/test_run_helper_env_leak.py
+  reason: 'T-2980 fix: add regression test for run() default timeout'
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout::test_run_default_timeout_is_bounded_not_none
+- tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout::test_run_expiry_raises_a_named_loud_error
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_strips_dispatch_agent_env_vars
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_explicit_env_can_still_set_frob_agent
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f0f5927cd0b17fb499db9b56935b893bcd3df332
 ---
 First CI run of main after the push (run 32968539246, job 98176563537,
 ubuntu-latest) sat on the `Test` step for over two hours without completing.

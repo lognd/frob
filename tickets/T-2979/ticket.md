@@ -2,7 +2,7 @@
 id: T-2979
 title: 'Default output is debug spam: gitio/process spawn traces drown the result
   on nearly every command'
-state: in-progress
+state: done
 kind: ux
 origin: human
 created: '2026-08-26'
@@ -64,12 +64,26 @@ scope_changes:
     its json/usage siblings do
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_no_flag_or_env_var_is_none
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_dash_v_in_argv_is_debug
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_dash_dash_verbose_in_argv_is_debug
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_frob_verbose_env_var_is_debug
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_frob_log_level_env_var_is_parsed
+- tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_unrecognized_frob_log_level_is_none_not_a_crash
+- tests/unit/test_logging_module.py::test_config_toml_stdout_default_level_is_info_not_debug
+- tests/unit/test_main_entry.py::TestVerboseFlag::test_dash_v_sets_debug_env_var
+- tests/unit/test_main_entry.py::TestVerboseFlag::test_dash_dash_verbose_sets_debug_env_var
+- tests/unit/test_main_entry.py::TestVerboseFlag::test_no_verbose_flag_leaves_env_var_untouched
+- tests/unit/test_main_entry.py::TestVerboseFlag::test_existing_explicit_frob_log_level_is_not_clobbered
+- tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_path_raises_stdout_handlers_to_warning_by_default
+- tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose
 designated_repro_test: null
 threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 50850d8a1b7b407f9dab685128ce7be0a3c5063b
 ---
 `frob doctor` (and most other frob commands) emit internal diagnostic logging
 to the terminal at default verbosity. Observed repeatedly this session on

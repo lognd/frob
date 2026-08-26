@@ -9,14 +9,51 @@ from pathlib import Path
 FROB = [sys.executable, "-m", "frob"]
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
+#: T-2980: the DEFAULT `run()` timeout, applied whenever a caller does not
+#: pass its own `timeout=`. Before this, `timeout=None` meant "wait
+#: forever" -- one such call (`test_ticket_readiness_is_not_an_arch001_finding`
+#: spawning `frob check --only arch` with no timeout) hung the ubuntu-latest
+#: CI job for 2+ hours with no traceback, and a repo-wide sweep
+#: (`git grep -h "run(" -- tests/system/*.py | grep -vc "timeout="`) found
+#: 468 other call sites with the same exposure.
+#:
+#: The mechanism, confirmed by local reproduction (minimal `-n`/
+#: `--dist=loadgroup` fixture, not just theory): `pyproject.toml`'s outer
+#: `--timeout=120 --timeout-method=thread` does NOT save you here. On
+#: expiry it calls `os._exit(1)` on the whole worker process (see
+#: `pytest_timeout.timeout_timer`) -- a hard kill that orphans the
+#: worker's own subprocess child (this reproduces the exact
+#: "Terminate orphan process" cleanup lines GitHub Actions printed for
+#: the real incident) rather than raising inside the test. Worse, under
+#: `--dist=loadgroup` (this repo's `addopts`), xdist's controller reacts
+#: to "node down" by REDISPATCHING the same item to a fresh worker --
+#: which wedges on the same unbounded wait and dies the same way,
+#: consuming one worker after another until none are left, at which
+#: point the run never terminates. `faulthandler_timeout = 100` only
+#: dumps a diagnostic stack partway through this; it kills nothing.
+#:
+#: A timeout enforced INSIDE `run()` sidesteps the whole chain: expiry
+#: raises a normal Python exception in the test itself, the worker
+#: survives, xdist reports one FAILED test and moves on -- no kill, no
+#: orphan, no redispatch loop. Chosen deliberately less than
+#: `pyproject.toml`'s outer `--timeout=120` wall clock so this bound
+#: fires first. Still generous enough that a real (loaded, 2-core) CI
+#: runner's `frob check` does not flake on a slow-but-healthy run. A
+#: test whose command legitimately needs longer passes its own explicit
+#: `timeout=` at the call site.
+DEFAULT_RUN_TIMEOUT_S = 100
+
 
 # frob:ticket T-0627
 # frob:ticket T-0880
 # frob:ticket T-0909
+# frob:ticket T-2980
 # frob:tests tests/system/test_cli_check.py::TestCheckAgentRefusal.test_bare_check_refuses_under_frob_agent  # noqa: E501
 # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak.test_run_strips_dispatch_agent_env_vars  # noqa: E501
 # frob:tests tests/system/test_cli_check.py::TestFrobTomlCheckDefaults.test_check_skip_from_frob_toml  # noqa: E501
 # frob:tests tests/system/test_cli_ticket.py::TestTicketNewNonInteractive.test_new_does_not_prompt_or_hang_without_a_tty  # noqa: E501
+# frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_default_timeout_is_bounded_not_none  # noqa: E501
+# frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_expiry_raises_a_named_loud_error  # noqa: E501
 def run(*args, input=None, cwd=None, env=None, timeout=None):
     """Run the `frob` CLI as a subprocess and capture its result (T-0364:
     the one shared entry point every system test dispatches through).
@@ -41,6 +78,12 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
     block on a TTY prompt) can route through this shared helper too,
     instead of hand-rolling their own `subprocess.run` call and losing the
     env-stripping above.
+
+    T-2980: when `timeout` is not given, `DEFAULT_RUN_TIMEOUT_S` applies --
+    NEVER `None` (wait forever). Expiry raises a named `RuntimeError`
+    naming the command and the budget, rather than letting a bare
+    `subprocess.TimeoutExpired` (or, absent any timeout at all, an
+    indefinite hang with no traceback) stand in for it.
     """
     import os
 
@@ -48,15 +91,24 @@ def run(*args, input=None, cwd=None, env=None, timeout=None):
         k: v for k, v in os.environ.items() if k not in ("FROB_AGENT", "FROB_WORKTREE")
     }
     merged_env = base_env | env if env else base_env
-    return subprocess.run(
-        FROB + list(args),
-        capture_output=True,
-        text=True,
-        input=input,
-        cwd=cwd,
-        env=merged_env,
-        timeout=timeout,
-    )
+    effective_timeout = DEFAULT_RUN_TIMEOUT_S if timeout is None else timeout
+    try:
+        return subprocess.run(
+            FROB + list(args),
+            capture_output=True,
+            text=True,
+            input=input,
+            cwd=cwd,
+            env=merged_env,
+            timeout=effective_timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"system-test run() timed out after {effective_timeout}s waiting on "
+            f"{FROB + list(args)!r} (T-2980: this command either hung, or "
+            "legitimately needs longer -- pass an explicit timeout= at the "
+            "call site rather than raising DEFAULT_RUN_TIMEOUT_S)"
+        ) from exc
 
 
 def git(*args: str, cwd: Path) -> None:

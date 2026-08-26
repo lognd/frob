@@ -2,7 +2,7 @@
 id: T-2951
 title: 'PLATFORM001 gap: does not catch platform-restricted attributes evaluated at
   import/def time (default args, module/class constants, decorator kwargs)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -17,10 +17,17 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_walk_lint.py
 - tests/test_walk_lint_gate.py
+- docs/modules/gates.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/gates.md
+  reason: T-2951 documents the new PLATFORM001 shape 4 in the gate catalog
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null

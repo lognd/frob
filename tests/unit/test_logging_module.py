@@ -13,7 +13,7 @@ from frob.graph import build_graph
 from frob.logging import get_logger, quiet_stdout_logs
 from frob.logging.color import paint, should_color
 from frob.logging.filter import _BelowLevelFilter
-from frob.logging.logger import _under_pytest
+from frob.logging.logger import _resolve_stdout_level_override, _under_pytest
 from frob.testing import CollectedTests
 from frob.tickets import TicketQueue
 
@@ -158,6 +158,92 @@ def test_quiet_stdout_logs_raises_and_restores_level():
         assert handler.level == logging.DEBUG
     finally:
         root.removeHandler(handler)
+
+
+# frob:ticket T-2979
+class TestResolveStdoutLevelOverride:
+    """`_resolve_stdout_level_override` (T-2979): the DEBUG-chatter
+    escape hatch behind `-v`/`--verbose`/`FROB_VERBOSE=1`/
+    `FROB_LOG_LEVEL=<name>`, and the must-still-default-to-None case that
+    proves the default handler level (config.toml's `INFO`, not `DEBUG`)
+    is not silently overridden for a plain invocation."""
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_no_flag_o\
+    # r_env_var_is_none
+    def test_no_flag_or_env_var_is_none(self, monkeypatch):
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+        assert _resolve_stdout_level_override() is None
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_dash_v_in\
+    # _argv_is_debug
+    def test_dash_v_in_argv_is_debug(self, monkeypatch):
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        monkeypatch.setattr(sys, "argv", ["frob", "-v", "doctor"])
+        assert _resolve_stdout_level_override() == logging.DEBUG
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_dash_dash\
+    # _verbose_in_argv_is_debug
+    def test_dash_dash_verbose_in_argv_is_debug(self, monkeypatch):
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        monkeypatch.setattr(sys, "argv", ["frob", "--verbose", "doctor"])
+        assert _resolve_stdout_level_override() == logging.DEBUG
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_frob_verb\
+    # ose_env_var_is_debug
+    def test_frob_verbose_env_var_is_debug(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        monkeypatch.setenv("FROB_VERBOSE", "1")
+        assert _resolve_stdout_level_override() == logging.DEBUG
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_frob_log_\
+    # level_env_var_is_parsed
+    def test_frob_log_level_env_var_is_parsed(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.setenv("FROB_LOG_LEVEL", "info")
+        assert _resolve_stdout_level_override() == logging.INFO
+
+    # frob:tests \
+    # tests/unit/test_logging_module.py::TestResolveStdoutLevelOverride::test_unrecogni\
+    # zed_frob_log_level_is_none_not_a_crash
+    def test_unrecognized_frob_log_level_is_none_not_a_crash(self, monkeypatch):
+        monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.setenv("FROB_LOG_LEVEL", "not-a-real-level")
+        assert _resolve_stdout_level_override() is None
+
+
+# frob:ticket T-2979
+# frob:tests tests/unit/test_logging_module.py::test_config_toml_stdout_default_level_is_info_not_debug  # noqa: E501
+def test_config_toml_stdout_default_level_is_info_not_debug():
+    """T-2979 must-still-show fixture, config half: the stdout handler's
+    configured DEFAULT level in `config.toml` is `INFO` -- DEBUG-level
+    diagnostics (`gitio: spawning ...`, `process: spawning ...`, `tickets:
+    v2 index cache hit`, `is_baseline_stale: ...`) are re-levelled below
+    the default view, but WARNING/ERROR (and the `-v`/`FROB_VERBOSE=1`/
+    `FROB_LOG_LEVEL` escape hatch back to DEBUG) are untouched -- reads
+    the actual shipped config.toml, not a copy, so this regresses for
+    real if the default is ever silently lowered back to DEBUG."""
+    import tomllib
+
+    config_path = Path(__file__).resolve().parents[2] / "src/frob/logging/config.toml"
+    cfg = tomllib.loads(config_path.read_text())
+    assert cfg["handlers"]["stdout"]["level"] == "INFO"
+    # WARNING/ERROR must still reach stdout at the default (below_warning
+    # filter only excludes WARNING+; a stderr handler at WARNING covers
+    # those) -- this is the must-still-show guarantee: nothing above INFO
+    # was ever silenced by this ticket.
+    assert cfg["handlers"]["stderr"]["level"] == "WARNING"
 
 
 def test_lazy_handler_stream_properties_have_a_doc_edge(tmp_path):

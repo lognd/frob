@@ -2,7 +2,7 @@
 id: T-2986
 title: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id>
   vs recorded tickets/<id> path)
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-26'
@@ -17,16 +17,166 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/tickets
 - src/frob/gates/__init__.py
+- tests/test_ticket_land.py
+- tickets/archive/T-2195/**
+- tickets/archive/T-2197/**
+- tickets/archive/T-2244/**
+- tickets/archive/T-2328/**
+- tickets/archive/T-2350/**
+- tickets/archive/T-2543/**
+- docs/design/ledger-v2.md
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2195/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2197/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2244/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2328/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2350/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2543/**
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/design/ledger-v2.md
+  reason: 'COV004 fix requires: the regression test (tests/test_ticket_land.py),
+
+    repairing the 6 archived tickets whose attachments[].path was stale
+
+    (tickets/archive/T-2195, T-2197, T-2244, T-2328, T-2350, T-2543), and
+
+    documenting the one narrow content-rewrite exception in
+
+    docs/design/ledger-v2.md''s existing "Archive as git mv" section (AFFECT001
+
+    doc-anchor closure for the touched TestArchiveV2 class).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_ticket_land.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
 designated_repro_test: null
 acceptance:
 - text: Given a done ticket with a recorded attachment (path + sha256) is archived
     via `frob ticket archive`, when `frob check --only docblocks` or `--only coverage`
     (COV004) runs afterward, then no COV004 violation fires for that ticket's attachment.
-  evidence: []
+  evidence:
+  - tests/test_ticket_land.py::TestArchiveV2::test_archived_ticket_attachment_still_resolves_for_cov004
 threat: null
 component: null
 anchor: false

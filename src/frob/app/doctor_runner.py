@@ -51,7 +51,36 @@ def run(cfg: AppConfig) -> None:
             sys.exit(1)
         return
 
-    report = run_diagnosis()
+    _run_plain(cfg, run_diagnosis)
+
+
+# frob:ticket T-2979
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_\
+# path_raises_stdout_handlers_to_warning_by_default
+# frob:tests \
+# tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_plain_\
+# path_leaves_stdout_handlers_alone_under_frob_verbose
+def _run_plain(cfg: AppConfig, run_diagnosis) -> None:  # noqa: ANN001
+    """`run`'s plain (human, non-`--json`, non-`--usage`) path -- extracted
+    out of `run` to keep it under ARCH001's 60-line threshold (same move
+    as `_print_orphaned_land_lock_disclosure` below). `run_diagnosis()`
+    used to be called unwrapped here -- unlike its `doctor_json` sibling
+    in `run`, which already wraps the equivalent call. Every `frob.lang.
+    parse_file` invocation `run_diagnosis`'s scaffold-conformance check
+    makes logs an INFO "parsed ...: language=... symbols=N comments=N"
+    line (per `quiet_stdout_logs`'s own module docstring), so the plain
+    path was printing dozens of those ahead of the actual report (T-2979).
+    `quiet_query_stdout` (not the unconditional `quiet_stdout_logs`) is
+    used deliberately: this is a human-mode default, so `-v`/
+    `FROB_VERBOSE=1` must still restore the chatter, matching every other
+    human-mode runner (T-2582). The report itself is rendered below via
+    `Renderer`, never via the logger, so quieting this call cannot hide
+    any of the real result."""
+    from frob.logging.quiet import quiet_query_stdout
+
+    with quiet_query_stdout():
+        report = run_diagnosis()
 
     r = Renderer.for_stream(
         sys.stdout, color_flag=cfg.color, no_color_flag=cfg.no_color

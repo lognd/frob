@@ -15,7 +15,11 @@ show_level = true
 [handlers.stdout]
 class = "frob.logging.handler._LazyStdoutHandler"
 formatter = "stdout_fmt"
-level = "DEBUG"
+# T-2979: default is INFO, not DEBUG -- gitio/process spawn traces,
+# "v2 index cache hit", "is_baseline_stale" etc. are all logged at DEBUG
+# (frob.logging.logger._init applies FROB_LOG_LEVEL to raise this back to
+# DEBUG when the operator asks for it). Nothing was deleted, only re-levelled.
+level = "INFO"
 filters = ["below_warning"]
 
 [handlers.stderr]
