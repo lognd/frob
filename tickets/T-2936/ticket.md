@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/process/_reap.py
 - docs/modules/process.md
+- src/frob/gates/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +31,12 @@ scope_changes:
 - op: add
   glob: docs/modules/process.md
   reason: doc anchors for touched symbols
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: remove now-unnecessary explicit signal.SIGKILL call-site arg, defer to the
+    safe internal default
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
