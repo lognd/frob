@@ -14,10 +14,54 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/status.py
+- src/frob/app/status_runner.py
+- src/frob/_cli_parsers/_status.py
+- src/frob/_cli_parsers/_misc.py
+- src/frob/__main__.py
+- tests/test_status.py
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/status.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/status_runner.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/_cli_parsers/_status.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/__main__.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_status.py
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/cli.md
+  reason: 'new frob status subcommand: findings/verify/ticket movement summary'
+  actor: logan
+  at: '2026-08-25'
 triage_changes:
 - field: parent
   old_value: null
