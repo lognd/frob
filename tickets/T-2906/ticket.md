@@ -29,6 +29,8 @@ scope:
 - docs/modules/gates.md
 - docs/modules/lang.md
 - docs/guides/extending/capability-registry.md
+- src/frob/vet/_capability_core.py
+- src/frob/vet/_capability_scan.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -145,6 +147,18 @@ scope_changes:
 - op: add
   glob: docs/guides/extending/capability-registry.md
   reason: capability registry extension guide
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/vet/_capability_core.py
+  reason: extension->language table and scan-file lang detection live here, needed
+    for real bash/csharp reachability
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/vet/_capability_scan.py
+  reason: extension->language table and scan-file lang detection live here, needed
+    for real bash/csharp reachability
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
