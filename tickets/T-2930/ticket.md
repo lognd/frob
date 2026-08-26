@@ -33,6 +33,14 @@ scope_changes:
     a sys.platform pin'
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'T-2930: land refused BUG002 (confirmatory-only) since this ticket''s actual
+    fix is test-only with no production behavior change'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 2157
+  new_length: 2992
 evidence:
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_on_missed_reparent_race
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_when_already_reparented_before_entry
@@ -76,3 +84,17 @@ Full raw list is in the run's log (gh api repos/lognd/frob/actions/jobs/98032723
 grep for "^2026.*FAILED " to reproduce the 156-line list. Triage into
 either PLATFORM001-fixable (T-2919's own gate should then catch the
 primitive) or genuine macOS-only test bugs, and file/fix accordingly.
+
+T-2930's own fix is test-only: tests/unit/test_process_reap.py's two
+PDEATHSIG self-kill tests were missing a sys.platform pin, so they
+short-circuited on any non-Linux runner before reaching their mocked
+machinery. The fix adds monkeypatch.setattr(sys, "platform", "linux")
+to both tests -- no production code in src/frob/process/_reap.py
+changed at all. There is no behavior for a mutation-kill test to prove
+here: the "defect" was entirely in the test's own setup, not in
+arm_parent_death_signal's real logic, which was already correct and
+already covered (test_arms_successfully_on_linux,
+test_returns_false_off_linux). BUG002's confirmatory-only concern
+(evidence that passes at both parent and fix, proving nothing) does
+not apply in the usual sense since there is no diff-touched production
+code for a mutant to touch at all.
