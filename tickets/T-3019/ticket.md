@@ -2,7 +2,7 @@
 id: T-3019
 title: frob check fires spurious REF001/PRE001/SCOPE001 on any clean project; frob
   check is not repo-clean on main
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_refs.py
 - tests/unit/gates/test_refs.py
 - tests/test_refs_gate.py
+- src/frob/check/_python.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -43,6 +44,13 @@ scope_changes:
 - op: add
   glob: tests/test_refs_gate.py
   reason: scope closure requires test edge for _native_stub_pairs/ref_gate
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/check/_python.py
+  reason: 'root cause of PRE001/SCOPE001 spurious findings: uv run ruff invoked with
+    the target project as implicit uv-run cwd creates an untracked uv.lock as a side
+    effect, which the diff-driven gates then see as a real touched file'
   actor: logan
   at: '2026-08-26'
 triage_changes:
