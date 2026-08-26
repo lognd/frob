@@ -13,10 +13,48 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/strata/_sync_may.py
+- src/frob/strata/_shrink.py
+- tests/unit/strata/test_sync_may.py
+- tests/unit/strata/test_shrink.py
+- src/frob/gates/_fix_engine.py
+- src/frob/gates/_fix_engine_sync.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_sync_may.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/strata/_shrink.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_sync_may.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/strata/test_shrink.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_fix_engine.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_fix_engine_sync.py
+  reason: matches the already-committed T-2920 cleanup work this ticket now tracks
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
