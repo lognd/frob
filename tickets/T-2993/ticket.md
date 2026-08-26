@@ -2,7 +2,7 @@
 id: T-2993
 title: 'Ticket-narrative comment blocks: 1728 blocks / 11116 lines of T-id archaeology
   in code, still being written'
-state: queued
+state: in-progress
 kind: docs
 origin: human
 created: '2026-08-26'
