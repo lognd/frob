@@ -172,7 +172,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 378debe711c9997c9dd468e5fa479d779f1c4597
 ---
 MEASURED via a real windows-latest CI run on T-2952's PR
 (https://github.com/lognd/frob/pull/2, run 32938258727, job
