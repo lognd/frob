@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - src/frob/tickets/_land_verify.py
+- docs/modules/tickets-verify-sweep.md
+- tests/unit/test_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -32,6 +34,16 @@ scope_changes:
   glob: src/frob/tickets/_land_verify.py
   reason: 'T-2938: wire deferred post-land claim-divergence re-verification into the
     rapid sweep (_rapid_sweep.py), reusing _land_verify.py comparison helpers'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'T-2938: doc for the moved check + its unit test coverage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_rapid_sweep.py
+  reason: 'T-2938: doc for the moved check + its unit test coverage'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
