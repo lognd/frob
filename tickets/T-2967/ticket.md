@@ -70,3 +70,6 @@ root) with a symlink/lookup from the project's own .frob/ directory, or
 (b) falling back gracefully (skip the daemon fast path, same
 correctness, no crash) when the resolved socket path exceeds the
 platform's sun_path limit.
+
+## Failure log
+- 2026-08-26 attempt 1: dispatched as T-2967 by id mismatch; actual content is macOS AF_UNIX sun_path length limit, not the exit-code-contract mismatch task briefed (that is T-2968); no work done on this ticket's scope, returning to queue untouched

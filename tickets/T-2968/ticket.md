@@ -1,7 +1,7 @@
 ---
 id: T-2968
 title: 'test_cli_cycle.py: 3 exit-code assertions predate cycle-found=1 CLI contract'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,18 +19,37 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+evidence:
+- tests/system/test_cli_cycle.py::test_cycle_exit_one
+- tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+- tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 designated_repro_test: null
 acceptance:
 - text: 1. test_cycle_exit_zero, test_deep_cycle_exit_zero,
-  evidence: []
+  evidence:
+  - tests/system/test_cli_cycle.py::test_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 - text: test_suggest_cycle_exit_zero updated to assert the CLI's documented
-  evidence: []
+  evidence:
+  - tests/system/test_cli_cycle.py::test_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 - text: exit code for a real cycle (1), or renamed/reworked if their intent
-  evidence: []
+  evidence:
+  - tests/system/test_cli_cycle.py::test_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 - text: was actually to assert something else.
-  evidence: []
+  evidence:
+  - tests/system/test_cli_cycle.py::test_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 - text: 2. All three pass locally.
-  evidence: []
+  evidence:
+  - tests/system/test_cli_cycle.py::test_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_deep_cycle_exit_one
+  - tests/system/test_cli_cycle.py::test_suggest_cycle_exit_one
 threat: null
 component: null
 anchor: false

@@ -65,14 +65,18 @@ def test_no_cycle_exit_zero(no_cycle_dir):
     assert r.returncode == 0
 
 
-def test_cycle_exit_zero(cycle_dir):
+def test_cycle_exit_one(cycle_dir):
+    # T-2968: frob.app.cycle_runner.run's own docstring documents exit 1
+    # (not 0) when a real cycle is found -- this fixture deliberately
+    # contains one, so the CLI's contract-correct exit code is 1.
     r = run("cycle", str(cycle_dir))
-    assert r.returncode == 0
+    assert r.returncode == 1
 
 
-def test_deep_cycle_exit_zero(deep_cycle_dir):
+def test_deep_cycle_exit_one(deep_cycle_dir):
+    # T-2968: see test_cycle_exit_one's comment -- same contract.
     r = run("cycle", str(deep_cycle_dir))
-    assert r.returncode == 0
+    assert r.returncode == 1
 
 
 # ---------------------------------------------------------------------------
@@ -123,9 +127,11 @@ def test_deep_cycle_mentions_all_three(deep_cycle_dir):
 # ---------------------------------------------------------------------------
 
 
-def test_suggest_cycle_exit_zero(cycle_dir):
+def test_suggest_cycle_exit_one(cycle_dir):
+    # T-2968: --suggest does not change the exit-code contract -- a real
+    # cycle still exits 1, matching cycle_runner.run's documented contract.
     r = run("cycle", str(cycle_dir), "--suggest")
-    assert r.returncode == 0
+    assert r.returncode == 1
 
 
 def test_suggest_output_contains_suggest(cycle_dir):
