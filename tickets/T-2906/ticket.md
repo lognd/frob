@@ -16,10 +16,107 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/lang/_support.py
+- src/frob/vet/_capability_registry/*.py
+- src/frob/dup/_exhaustiveness.py
+- src/frob/gates/_docblocks*.py
+- tests/test_capability_registry.py
+- tests/test_dup_exhaustiveness.py
+- tests/test_gates.py
+- tests/test_lang_support.py
+- tests/fixtures/lang/*
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/vet/_capability_registry/*.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/dup/_exhaustiveness.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/gates/_docblocks*.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_capability_registry.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_dup_exhaustiveness.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_gates.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_lang_support.py
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/fixtures/lang/*
+  reason: 'Ticket body requires real subsystem integration in frob.vet._capability_registry,
+    frob.dup._exhaustiveness, and frob.gates._docblocks (option a), not just the citation
+    (option b) already landed by T-1604/T-1600. Widening from the ticket''s declared
+    lang/_support.py-only scope to the exact consumer files that must change for real
+    wiring, plus their tests and the existing bash/csharp fixtures.
+
+    '
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
