@@ -11911,6 +11911,7 @@ class TestDocanchorGate:
 # frob:ticket T-1531
 # frob:ticket T-1763
 # frob:ticket T-2865
+# frob:ticket T-2922
 class TestFixEngineTierA:
     """`frob.gates._fix_engine`'s Tier-A deterministic --fix handlers
     (T-1138): DOC007 dotted-form rewrite, DOC002 unique-anchor-slug
@@ -12124,97 +12125,110 @@ class TestFixEngineTierA:
     # declared public-symbol surface; see docs/modules/gates.md's T-1870
     # note.
 
-    # -- acceptance: SYS100 core may-via union (T-1531) ----------------------
+    # -- acceptance: SYS100 auto-widening REMOVED (T-2922) -------------------
+    #
+    # T-1531/T-1545's `fix_sys100_may_via_union`/`fix_sys100_extended_
+    # whole_node_grant` (and their acceptance tests that used to live
+    # here) are deleted -- they silently widened a node's declared `may=`
+    # ceiling to match observed capability use, which is the exact
+    # ratchet-with-no-teeth T-2922 exists to remove. See src/frob/gates/
+    # _fix_engine_sync.py's "SYS100 auto-widening -- REMOVED" comment
+    # block for the full rationale and the T-1623/T-1628 supersession
+    # note. The two tests below are this ticket's own proof pair: SYS100
+    # the DETECTOR must still fire (must-still-fire), and running the
+    # Tier-A fix engine must no longer make that finding disappear
+    # (must-not-auto-resolve) -- for both the CORE (`via`-list) and
+    # EXTENDED (whole-node) capability shapes T-1531/T-1545 used to cover.
 
-    # frob:ticket T-1531
-    def test_sys100_may_via_union_applies_via_apply_tier_a_fixes(
+    # frob:ticket T-2922
+    def test_sys100_core_violation_still_fires_and_is_not_auto_resolved(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes
+        # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+        # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+        # SELFAUDIT001's fold only fires against a `root` that LOOKS like
+        # this repo (`src/frob/...`, `_selfaudit_violations`'s own
+        # precondition -- same shape TestSelfAuditGate's tests already use
+        # a few thousand lines below this class), so this test mirrors
+        # that shape rather than an arbitrary `api/` layout.
+        from frob.gates import apply_tier_a_fixes, sys_gate
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
-        (root / "api").mkdir(parents=True)
-        (root / "api" / "net.py").write_text(
-            "requests.get('https://x')\n", encoding="utf-8"
+        (root / "src" / "frob" / "widget").mkdir(parents=True)
+        (root / "src" / "frob" / "widget" / "_io.py").write_text(
+            "import requests\nrequests.get('x')\n", encoding="utf-8"
         )
         (root / "design").mkdir()
-        (root / "design" / "api.strata").write_text(
-            'module api\nnode Api : trusted {\n    code "api/**";\n}\n',
-            encoding="utf-8",
+        design_text = (
+            'module m\nnode widget : trusted {\n    code "src/frob/widget/**";\n}\n'
         )
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        sys100_applied = [a for a in applied if a.rule == "SYS100"]
-        assert len(sys100_applied) == 1
-        assert "api/net.py" in sys100_applied[0].detail
+        (root / "design" / "m.strata").write_text(design_text, encoding="utf-8")
 
-        rewritten = (root / "design" / "api.strata").read_text(encoding="utf-8")
-        assert 'may "net.connect" via "api/net.py";' in rewritten
-
-    # frob:ticket T-1531
-    def test_sys100_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "api").mkdir(parents=True)
-        (root / "api" / "net.py").write_text(
-            "requests.get('https://x')\n", encoding="utf-8"
+        # must-still-fire: the undeclared net.connect use is a real SYS100
+        # finding (folded into SELFAUDIT001) before any fix engine runs.
+        before = sys_gate(root, self._snap(root))
+        before_selfaudit = [v for v in before if v.rule == "SELFAUDIT001"]
+        assert before_selfaudit, "SELFAUDIT001 must fold a SYS100 finding"
+        assert any("SYS100" in v.message for v in before_selfaudit), (
+            "SYS100 must fire on an undeclared capability -- detection is "
+            "unaffected by T-2922"
         )
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        assert not [a for a in applied if a.rule == "SYS100"]
 
-    # frob:ticket T-1545
-    def test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes(
+        # must-not-auto-resolve: apply_tier_a_fixes must not touch the
+        # declaration, and the SYS100 finding must still be there after.
+        applied = apply_tier_a_fixes(root, self._snap(root), TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "SYS100"], (
+            "no Tier-A handler may silently widen a may= grant any more"
+        )
+        rewritten = (root / "design" / "m.strata").read_text(encoding="utf-8")
+        assert rewritten == design_text, "the ceiling must be untouched"
+        after = sys_gate(root, self._snap(root))
+        after_selfaudit = [v for v in after if v.rule == "SELFAUDIT001"]
+        assert any("SYS100" in v.message for v in after_selfaudit), (
+            "SYS100 must still fire identically after a Tier-A fix pass"
+        )
+
+    # frob:ticket T-2922
+    def test_sys100_extended_violation_still_fires_and_is_not_auto_resolved(
         self, tmp_path: Path
     ) -> None:
-        # frob:tests \
-        # src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes
+        # frob:tests src/frob/gates/_fix_engine.py::apply_tier_a_fixes kind="unit"
+        # frob:tests src/frob/gates/_sys.py::sys_gate kind="unit"
+        from frob.gates import apply_tier_a_fixes, sys_gate
         from frob.tickets import TicketQueue
 
         root = tmp_path / "repo"
-        (root / "danger").mkdir(parents=True)
-        (root / "danger" / "run.py").write_text(
+        (root / "src" / "frob" / "danger").mkdir(parents=True)
+        (root / "src" / "frob" / "danger" / "_run.py").write_text(
             "def f(x):\n    return eval(x)\n", encoding="utf-8"
         )
         (root / "design").mkdir()
-        (root / "design" / "danger.strata").write_text(
-            'module danger\nnode Danger : trusted {\n    code "danger/**";\n}\n',
-            encoding="utf-8",
+        design_text = (
+            'module m\nnode danger : trusted {\n    code "src/frob/danger/**";\n}\n'
         )
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        sys100_applied = [a for a in applied if a.rule == "SYS100"]
-        assert len(sys100_applied) == 1
-        assert "eval" in sys100_applied[0].detail
+        (root / "design" / "m.strata").write_text(design_text, encoding="utf-8")
 
-        rewritten = (root / "design" / "danger.strata").read_text(encoding="utf-8")
-        assert 'may "eval";' in rewritten
-
-    # frob:ticket T-1545
-    def test_sys100_extended_no_design_dir_is_a_no_op(self, tmp_path: Path) -> None:
-        # frob:tests \
-        # src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant \
-        # kind="unit"
-        from frob.gates import apply_tier_a_fixes
-        from frob.tickets import TicketQueue
-
-        root = tmp_path / "repo"
-        (root / "danger").mkdir(parents=True)
-        (root / "danger" / "run.py").write_text(
-            "def f(x):\n    return eval(x)\n", encoding="utf-8"
+        before = sys_gate(root, self._snap(root))
+        before_selfaudit = [v for v in before if v.rule == "SELFAUDIT001"]
+        assert before_selfaudit, "SELFAUDIT001 must fold a SYS100 finding"
+        assert any("SYS100" in v.message for v in before_selfaudit), (
+            "SYS100 EXTENDED must fire on an undeclared eval use -- "
+            "detection is unaffected by T-2922"
         )
-        snapshot = self._snap(root)
-        applied = apply_tier_a_fixes(root, snapshot, TicketQueue(tickets={}))
-        assert not [a for a in applied if a.rule == "SYS100"]
+
+        applied = apply_tier_a_fixes(root, self._snap(root), TicketQueue(tickets={}))
+        assert not [a for a in applied if a.rule == "SYS100"], (
+            "no Tier-A handler may silently insert a whole-node may= grant "
+            "any more"
+        )
+        rewritten = (root / "design" / "m.strata").read_text(encoding="utf-8")
+        assert rewritten == design_text, "the ceiling must be untouched"
+        after = sys_gate(root, self._snap(root))
+        after_selfaudit = [v for v in after if v.rule == "SELFAUDIT001"]
+        assert any("SYS100" in v.message for v in after_selfaudit), (
+            "SYS100 EXTENDED must still fire identically after a Tier-A fix pass"
+        )
 
     # -- acceptance [2]: TICK002 draft renumber -----------------------------
 
@@ -13614,6 +13628,7 @@ class TestTierAAutofixCrashSafety:
 # frob:ticket T-1341
 # frob:ticket T-1763
 # frob:ticket T-1924
+# frob:ticket T-2922
 class TestFixEngineTierABatch2:
     """`frob.gates._fix_engine`'s Tier-A batch-2 `--fix` handlers
     (T-1261): fmt/registry-regen/release-sync/WAIVE004. Each is a
@@ -13982,6 +13997,7 @@ class TestFixEngineTierABatch2:
     def test_tier_a_handlers_dict_covers_every_batch_rule(self) -> None:
         # frob:tests src/frob/gates/_fix_engine.py::TIER_A_HANDLERS kind="unit"
         # frob:ticket T-1341
+        # frob:ticket T-2922
         from frob.gates._fix_engine import TIER_A_HANDLERS
 
         assert set(TIER_A_HANDLERS) == {
@@ -13993,7 +14009,11 @@ class TestFixEngineTierABatch2:
             "REL002",
             "TICK002",
             "WAIVE004",
-            "SYS100",  # T-1531
+            # T-2922: SYS100 (T-1531/T-1545) is deleted from this dict --
+            # it silently widened a node's may= ceiling to match observed
+            # behavior; see src/frob/gates/_fix_engine_sync.py's "SYS100
+            # auto-widening -- REMOVED" comment block. SYS100 the
+            # detector is unaffected; only the auto-fix is gone.
             # T-1870: SYS104 (T-1531) is deleted from this dict along with
             # the rest of the sync-interface machinery, per an explicit
             # owner directive that no code path may auto-update declared

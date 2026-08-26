@@ -5835,79 +5835,56 @@ insert `//`, `.py` inserts `#`, an unrecognized suffix inserts
 nothing).
 
 <a id="sys100sys104-strata-declaration-auto-fix-t-1531"></a>
-### SYS100 `.strata` declaration auto-fix (T-1531)
+### SYS100 `.strata` declaration auto-widening -- REMOVED (T-2922, supersedes T-1531/T-1545/T-1623/T-1628)
 
-<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_may_via_union -->
-<!-- frob:describes src/frob/gates/_fix_engine_sync.py::fix_sys100_extended_whole_node_grant -->
-<!-- frob:describes src/frob/strata/_sync_may.py::sync_may_report -->
-<!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may -->
-<!-- frob:describes src/frob/strata/_sync_may.py::sync_may_extended_report -->
-<!-- frob:describes src/frob/strata/_sync_may.py::apply_sync_may_extended -->
-<!-- frob:describes src/frob/strata/_sync_may.py::WholeNodeMayGrantDiff -->
+T-1531/T-1545 wired two Tier-A handlers (`fix_sys100_may_via_union`,
+`fix_sys100_extended_whole_node_grant`, dispatched together via
+`_fix_sys100_both_cases` under the single `TIER_A_HANDLERS["SYS100"]`
+key) that, on observing a file or node exercise an undeclared capability,
+silently EDITED the node's `may=` declaration to grant it -- widening the
+`via` list for the CORE net/fs-write/exec case, or inserting a bare
+via-less whole-node grant for the EXTENDED eval/process-control/ffi/...
+case. T-1623/T-1628 accepted this as deliberate policy at the time.
 
-Every real land refusal on 2026-08-04 traced back to one of a small set
-of `.strata` declaration classes, each hand-fixed with the same
-deterministic recipe repeatedly -- exactly the shape `TIER_A_HANDLERS`
-already exists to close mechanically. T-1531 wired SYS100's two cases in:
+**T-2922 (security, critical) deletes both handlers and their
+`TIER_A_HANDLERS` entry entirely, on the user's explicit instruction,
+because a node's `may=` list exists specifically as a CEILING on what its
+code is allowed to do.** An auto-fix that raises the ceiling to match
+whatever the code already does turns the declaration into a passive
+restatement of behavior rather than a constraint on it -- a ratchet with
+no teeth. This is a genuine policy reversal, not a bug fix: T-1623/T-1628
+is superseded, not found wrong after the fact.
 
-- **`fix_sys100_may_via_union`**: SYS100's CORE case (net/fs-write/exec,
-  `_effects.py::check_capability_conformance`'s per-file `via` join,
-  T-1440) had no writer at all -- `frob.strata._sync_may` (this ticket)
-  is the new one: for every observed effect with no `may "<kind>" via
-  [...]` grant covering its file, it widens the existing `via` list
-  (sorted union) or inserts a brand-new via-scoped grant line -- measure
-  via the real check, edit `.strata` text in place, never re-serialize.
-- **`fix_sys100_extended_whole_node_grant` (T-1545)**: SYS100's EXTENDED
-  case (eval/process-control/ffi/install-hook/sql/deserialize/
-  html_render/fetch_url/client_storage, `_selfconform.py::
-  _extended_kind_violations`) fires per-NODE with no per-file evidence at
-  all -- there is no single file a writer could add to a `via` list
-  without guessing which of a node's many bound files actually exercises
-  the capability (T-1137's own never-guess-at-a-fix posture forbids
-  that). Resolution: `frob.strata._sync_may.sync_may_extended_report`/
-  `apply_sync_may_extended` insert a bare, VIA-LESS `may "<kind>";` grant
-  instead -- the deliberately conservative whole-node shape, strictly
-  broader (never narrower, never a wrong per-file guess) than any `via`
-  entry could be. A human reviewing the diff can hand-narrow it to a
-  `via` list later if the broad grant is worth tightening; the auto-fix's
-  job is only to make the declaration truthful (SYS100 stops firing).
-  `TIER_A_HANDLERS["SYS100"]` runs BOTH fixers (`_fix_sys100_both_cases`,
-  CORE first since it can narrow to a real `via` list, EXTENDED second)
-  since they resolve disjoint violation shapes under the same rule id.
+What is UNCHANGED: SYS100 the DETECTOR
+(`frob.strata._selfconform`/`check_self_conformance`, folded into
+`sys_gate`'s SELFAUDIT001) still fires, unwaived, on any undeclared
+capability use -- detection got strictly LOUDER by this change, since a
+finding can no longer be silently resolved by an automatic edit. Dropping
+a capability that is declared but never observed (the SHRINKING
+direction) remains fully legitimate and untouched -- only auto-WIDENING
+is forbidden. A human must now widen a `may=` grant by hand, subject to
+ordinary code review, the same as any other declared-surface change.
+Proof (must-still-fire / must-not-auto-resolve pair):
+`tests/test_gates.py::TestFixEngineTierA::
+test_sys100_core_violation_still_fires_and_is_not_auto_resolved` and
+`::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved`.
 
-Both handlers follow the same `(root: Path) -> list[FixApplied]` shape as
-every other pure-`.strata`-rewrite handler in this module (each reads the
-design tree itself, same as `fix_reg010_registry_sync`/
-`fix_rel002_release_sync`) and are no-ops (empty list, nothing written)
-when `root` has no `design/` directory at
-all, or when their respective `sync_*_report` call errors (a design file
-that fails to parse, an ambiguous code binding) -- logged and skipped,
-never raised, matching every other handler's "an auto-fix convenience is
-never a hard precondition" posture. Being registered in
-`TIER_A_HANDLERS` means both are automatically wired into EVERY existing
-Tier-A call site with zero further plumbing -- `_land_cmd.py`'s pre-land
-absorption step, its pre-commit unscoped sweep
-(`_pre_commit_unscoped_error_sweep`), AND its post-land unscoped sweep
-(`_post_land_unscoped_error_sweep`) all call `apply_tier_a_fixes`
-already; T-1545 needed no changes to `src/frob/app/ticket_runner/
-_land_cmd.py` at all.
-
-T-1924: both handlers used to also declare an unused, non-Optional
-`snapshot: GraphSnapshot` parameter purely for `TIER_A_HANDLERS`
-dispatch-shape uniformity, immediately `del`-ed in the body -- the same
-too-strict-for-purpose shape T-1911 fixed on
-`fix_fmt001_directive_wrap`/`fix_e501_merge_introduced`. Dropped
-entirely (never retyped to `GraphSnapshot | None`); `_fix_sys100_both_
-cases`, the `TIER_A_HANDLERS["SYS100"]` lambda wrapper, no longer takes
-or forwards a `snapshot` to either callee.
+`frob.strata._sync_may` (the writer both deleted handlers called --
+`sync_may_report`/`apply_sync_may`/`sync_may_extended_report`/
+`apply_sync_may_extended`/`WholeNodeMayGrantDiff`) is left in place for
+now, deliberately: it sits inside the concurrent T-2920 shrink-only
+ratchet rework's own declared scope (`src/frob/strata/**`), and this
+ticket avoids racing that work with an ImportError. It is dead code as
+of this change; its removal is a documented follow-up once T-2920's own
+use of that file (if any) is confirmed clear.
 
 T-1870 (owner directive: no code path may auto-update declared
-public-symbol surface) deleted SYS104's own writer/handler
-(`fix_sys104_interface_union`, <!-- frob:waive DOC006 reason="deliberately historical -- deleted by T-1870, per an explicit owner directive that no code path may auto-update declared public-symbol surface, as this same sentence explains" -->`frob.strata._sync_interface`) that used
-to be documented in this section alongside SYS100's -- `interface=` is
-no longer synced by anything, including at land time; SYS100's `may=`
-capability sync (documented above) is a DIFFERENT, deliberate, live
-mechanism and is unaffected.
+public-symbol surface) had already deleted SYS104's own writer/handler
+(`fix_sys104_interface_union`, <!-- frob:waive DOC006 reason="deliberately historical -- deleted by T-1870, per an explicit owner directive that no code path may auto-update declared public-symbol surface, as this same sentence explains" -->`frob.strata._sync_interface`) -- `interface=`
+was already unsynced by anything, including at land time, before T-2922.
+T-2922 extends the same "no code path may silently rewrite a declared
+surface to match observed reality" principle from `interface=` to
+`may=`.
 
 **SYS112 (T-2503/T-2523): ambient (via-less) grants require a reason.**
 A via-less `may "ATOM";` (no `via` trailer) is the AMBIENT form of a
@@ -5932,17 +5909,20 @@ field to live in -- the same "read the raw source" posture
 
 **`fix_sys111_capability_ratchet_sync` (T-2001)**: the capability-ratchet
 lock (`docs/design/registry/capability-via-ratchet.lock.json`, SYS111,
-`frob.strata._effects.capability_ratchet_violations`) is the sibling
-half of the SYS100 obligation `fix_sys100_may_via_union`/`fix_sys100_
-extended_whole_node_grant` above already self-heal: widening a node's
-`may ... via [...]` grant in `design/frob.strata` satisfies SYS100/SYS104
-but used to leave the ratchet's committed ceiling stale, so the breach
-surfaced on a LATER, unrelated land's SYS111 check instead of the one
-that actually caused it -- measured twice in one hour (T-1977, T-1665)
-before this handler existed. The same "one of N parallel bookkeeping
-obligations self-heals, its sibling does not" shape `fix_docenum001_
-enumerates_sync` (T-1974) already closed for `docs/modules/gates.md`'s
-rule-catalog anchor.
+`frob.strata._effects.capability_ratchet_violations`) was built as the
+sibling half of the (now-deleted, T-2922) SYS100 auto-widening handlers
+above: widening a node's `may ... via [...]` grant in `design/frob.strata`
+satisfied SYS100/SYS104 but used to leave the ratchet's committed ceiling
+stale, so the breach surfaced on a LATER, unrelated land's SYS111 check
+instead of the one that actually caused it -- measured twice in one hour
+(T-1977, T-1665) before this handler existed. T-2922: with the SYS100
+auto-widener gone, this handler's own growth-attribution ordinarily finds
+nothing new to bump; it is NOT deleted, since a human-authored `may=`
+widening (still a legitimate, explicit action) can still grow the
+via-site count and still needs its ratchet ceiling re-baselined the same
+way. The same "one of N parallel bookkeeping obligations self-heals, its
+sibling does not" shape `fix_docenum001_enumerates_sync` (T-1974) already
+closed for `docs/modules/gates.md`'s rule-catalog anchor.
 
 Registered in `TIER_A_HANDLERS` immediately AFTER `SYS100` (dict order
 is call order, `apply_tier_a_fixes`'s own docstring) so its CURRENT-side

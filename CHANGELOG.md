@@ -360,6 +360,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2913: Rapid land still runs a full inline frob check on the land critical path, serialized under land.lock
 - T-2914: WIRE002: T-2645's WIRE001 waiver on _unlanded.py::_remove_scratch_file missing follow_up
 - T-2917: CI runs ubuntu-latest only: add windows-latest and macos-latest to the matrix so platform regressions are detectable at all
+- T-2922: Unwire the live may= auto-WIDENING Tier-A fixer: capability escalation is silently rubber-stamped today
 - T-2923: frob sys shrink: tighten unobserved may= capabilities, never widen
 - T-2929: rapid verification debt drifts silently and poisons attribution (post-land sweep files false regressions on a stale baseline)
 

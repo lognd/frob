@@ -36,11 +36,125 @@ evidence:
 - tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_already_in_sync_is_a_no_op
 - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_resyncs_pyproject_and_uv_lock_from_manifest
 - tests/test_gates.py::TestFixEngineTierABatch2::test_rel002_already_in_sync_touches_nothing
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes
-- tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_no_design_dir_is_a_no_op
+- tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
 designated_repro_test: tests/test_gates.py::TestFixEngineTierABatch2::test_reg010_files_missing_entries_and_reverifies_clean
+evidence_changes:
+- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_may_via_union_applies_via_apply_tier_a_fixes
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
+
+    and their entire acceptance-test surface -- the SYS100 auto-widening
+
+    policy this ticket''s evidence tested is deleted, not renamed, per an
+
+    explicit owner directive that a may= grant may never be silently
+
+    widened to match observed capability use (supersedes T-1623/T-1628).
+
+    There is no successor test to rebind to, since the feature itself is
+
+    gone. Rebound to the playbook''s own designated fallback for a citation
+
+    with no natural surviving pytest surface (docs/guides/agent-playbook.md
+
+    section 5''s precedent, the same one T-1870/T-1774 already used for the
+
+    identical shape when SYS104''s writer was deleted): the CLI-dispatch
+
+    integration test, tests/system/test_frob_self_model.py''s own
+
+    model-file existence check.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_no_design_dir_is_a_no_op
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
+
+    and their entire acceptance-test surface -- the SYS100 auto-widening
+
+    policy this ticket''s evidence tested is deleted, not renamed, per an
+
+    explicit owner directive that a may= grant may never be silently
+
+    widened to match observed capability use (supersedes T-1623/T-1628).
+
+    There is no successor test to rebind to, since the feature itself is
+
+    gone. Rebound to the playbook''s own designated fallback for a citation
+
+    with no natural surviving pytest surface (docs/guides/agent-playbook.md
+
+    section 5''s precedent, the same one T-1870/T-1774 already used for the
+
+    identical shape when SYS104''s writer was deleted): the CLI-dispatch
+
+    integration test, tests/system/test_frob_self_model.py''s own
+
+    model-file existence check.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
+
+    and their entire acceptance-test surface -- the SYS100 auto-widening
+
+    policy this ticket''s evidence tested is deleted, not renamed, per an
+
+    explicit owner directive that a may= grant may never be silently
+
+    widened to match observed capability use (supersedes T-1623/T-1628).
+
+    There is no successor test to rebind to, since the feature itself is
+
+    gone. Rebound to the playbook''s own designated fallback for a citation
+
+    with no natural surviving pytest surface (docs/guides/agent-playbook.md
+
+    section 5''s precedent, the same one T-1870/T-1774 already used for the
+
+    identical shape when SYS104''s writer was deleted): the CLI-dispatch
+
+    integration test, tests/system/test_frob_self_model.py''s own
+
+    model-file existence check.
+
+    '
+  actor: logan
+  at: '2026-08-25'
+- old_node: tests/test_gates.py::TestFixEngineTierA::test_sys100_extended_no_design_dir_is_a_no_op
+  new_node: tests/system/test_frob_self_model.py::TestFrobSelfModel::test_model_file_exists
+  reason: 'T-2922 deleted fix_sys100_may_via_union/fix_sys100_extended_whole_node_grant
+
+    and their entire acceptance-test surface -- the SYS100 auto-widening
+
+    policy this ticket''s evidence tested is deleted, not renamed, per an
+
+    explicit owner directive that a may= grant may never be silently
+
+    widened to match observed capability use (supersedes T-1623/T-1628).
+
+    There is no successor test to rebind to, since the feature itself is
+
+    gone. Rebound to the playbook''s own designated fallback for a citation
+
+    with no natural surviving pytest surface (docs/guides/agent-playbook.md
+
+    section 5''s precedent, the same one T-1870/T-1774 already used for the
+
+    identical shape when SYS104''s writer was deleted): the CLI-dispatch
+
+    integration test, tests/system/test_frob_self_model.py''s own
+
+    model-file existence check.
+
+    '
+  actor: logan
+  at: '2026-08-25'
 threat: null
 component: null
 anchor: false

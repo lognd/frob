@@ -61,8 +61,6 @@ from frob.gates._fix_engine_sync import (
     fix_docenum001_enumerates_sync,
     fix_reg010_registry_sync,
     fix_rel002_release_sync,
-    fix_sys100_extended_whole_node_grant,
-    fix_sys100_may_via_union,
     fix_sys111_capability_ratchet_sync,
     fix_waive004_stale_waiver,
 )
@@ -891,23 +889,29 @@ def _tick006_refile_for_ticket(
 # ---------------------------------------------------------------------------
 
 
-# frob:ticket T-1545
-# frob:ticket T-1924
-def _fix_sys100_both_cases(root: Path) -> list[FixApplied]:
-    """SYS100 has two disjoint fixers (T-1531 CORE, T-1545 EXTENDED) that
-    both resolve findings under the same rule id -- run both and
-    concatenate rather than let a dict literal's single `"SYS100"` key
-    silently drop one. `fix_sys100_may_via_union` runs first (its
-    per-file `via` widen is the more targeted fix; running it before the
-    whole-node EXTENDED insertion means a file that already tripped a
-    CORE widening this same pass does not also need a broader EXTENDED
-    grant re-derived against stale text). T-1924: both callees dropped
-    their unused `snapshot` parameter, so this wrapper no longer takes
-    or forwards one either."""
-    return [
-        *fix_sys100_may_via_union(root),
-        *fix_sys100_extended_whole_node_grant(root),
-    ]
+# frob:ticket T-2922
+# T-2922/T-2920: `_fix_sys100_both_cases` (T-1531 CORE + T-1545 EXTENDED,
+# unified per T-1924) used to widen a node's `may=` declaration to cover
+# whatever undeclared capability SYS100 observed the code exercising.
+# That is deleted, not merely disabled: a node's `may=` list is a CEILING
+# a human declares on what its code is ALLOWED to do, and an auto-fix
+# that edits the ceiling to match observed behavior makes the ceiling
+# meaningless -- it can never say no. T-1623/T-1628 deliberately put this
+# auto-widening in place as accepted policy at the time; T-2922/T-2920
+# reverse that decision on the user's explicit instruction (the SYS111
+# capability-via-ratchet lock this same module still syncs was built
+# BECAUSE of this widening's failure mode -- see this file's own T-2001
+# docstring below). SYS100 the DETECTOR is unaffected: `frob.strata.
+# _selfconform`/`sys_gate` still fires exactly as before, unwaived, on
+# any undeclared capability use. Only the silent auto-capitulation is
+# gone -- a human must now widen a `may=` grant by hand, the same as any
+# other declared-surface change. The two callees this wrapper combined
+# (`fix_sys100_may_via_union`, `fix_sys100_extended_whole_node_grant`)
+# are deleted from `_fix_engine_sync.py` in the same change; their
+# writer, `frob.strata._sync_may`, is intentionally left in place for a
+# concurrent ticket (T-2920, the shrink-only ratchet rework) to avoid an
+# ImportError, and is deleted in a follow-up commit within this same
+# ticket once that dependency clears.
 
 
 #: One rule id -> one Tier-A handler, uniform `(root, snapshot, queue) ->
@@ -999,9 +1003,10 @@ TIER_A_HANDLERS: dict[
     "REL002": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
         fix_rel002_release_sync(root)
     ),
-    "SYS100": lambda root, snapshot, queue, ticket_id, merge_target_ids: (
-        _fix_sys100_both_cases(root)
-    ),
+    # T-2922: SYS100 deliberately has NO Tier-A handler any more -- see
+    # this file's own T-2922 docstring above `_fix_sys100_both_cases`
+    # used to sit at (now deleted). SYS100 still fires as an unwaived
+    # gate finding; it is simply never silently auto-resolved.
     # frob:ticket T-2001
     # Runs immediately after SYS100 (dict order, `apply_tier_a_fixes`'
     # own docstring): the ratchet-sync handler's BEFORE-vs-CURRENT

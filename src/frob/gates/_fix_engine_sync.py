@@ -6,13 +6,17 @@ residue burndown): `_fix_engine_text` keeps the LINE-scoped handlers
 source line a `Violation` already names; every handler in THIS module
 instead resolves its fix by SYNCING one generated/derived artifact back
 to its source of truth -- REG010/REL002 (registry <-> gate-rule-id and
-release notes sync), SYS100 (`.strata` `may=` grant text rewrites via
-`frob.strata._sync_may`'s writer), COV002 (insert a `frob:ticket`
+release notes sync), SYS111 (`capability-via-ratchet.lock.json`
+re-baselining, T-2001), COV002 (insert a `frob:ticket`
 directive above an unbound symbol), DOCENUM001 (T-1974, a `frob:
 enumerates` doc anchor's `members=` claim resynced from the real
 collection literal it targets, reusing `frob.gates._docenum`'s own AST
 resolution), and WAIVE004 (remove a waiver already proven dead by a
-fresh gate run). `TIER_A_HANDLERS` in
+fresh gate run). T-2922: SYS100 (`.strata` `may=` grant text auto-
+widening via `frob.strata._sync_may`'s writer) used to be in this list
+too -- removed as a security fix, not a relocation; see the "SYS100
+auto-widening -- REMOVED" comment block further down this file for the
+full rationale. `TIER_A_HANDLERS` in
 `_fix_engine` imports every public `fix_*` symbol from both this module
 and `_fix_engine_text` and dispatches through the same uniform `(root,
 snapshot, queue, ticket_id) -> list[FixApplied]` call shape every handler
@@ -57,7 +61,7 @@ the false registry row was the narrower, more consistent fix.
 # docstring already documents its seam -- sibling of the _fix_engine_text split \
 # (T-1646), this module holds every Tier-A handler that resolves its fix by SYNCING a \
 # generated/derived artifact back to its source of truth \
-# (REG010/REL002/SYS100/COV002/DOCENUM001/WAIVE004), as opposed to _fix_engine_text's \
+# (REG010/REL002/SYS111/COV002/DOCENUM001/WAIVE004), as opposed to _fix_engine_text's \
 # line-scoped rewrites or _fix_engine.py's graph-driven handlers. The three-way split \
 # was already drawn deliberately at T-1646; there is no further natural boundary \
 # within this family."
@@ -229,7 +233,9 @@ def fix_docenum001_enumerates_sync(
     rewrite the doc line's `members=` attribute to match, in place,
     rather than requiring a hand edit at land time -- the "detector in
     one module, fixer in a sibling module" split `fix_reg010_registry_
-    sync` above and `_sync_may`'s SYS100 fixer both already use. Covers
+    sync` above already uses (T-2922: `_sync_may`'s SYS100 fixer, the
+    other precedent this used to cite, is deleted -- see this file's
+    "SYS100 auto-widening -- REMOVED" comment block). Covers
     EVERY `frob:enumerates` edge in the graph, not only the gates.md
     rule-catalog anchor that motivated this fix (T-1227's own shape
     list is anchor-agnostic), so this closes the whole class rather
@@ -321,122 +327,58 @@ def fix_rel002_release_sync(root: Path) -> list[FixApplied]:
 
 
 # ---------------------------------------------------------------------------
-# SYS100 core (T-1531): a net/fs-write/exec effect observed in a file with
-# no `may "<kind>" via [...]` grant covering it -- widen (or create) the
-# grant's `via` list to include the observed file, sorted union, via the
-# `frob.strata._sync_may` writer (module docstring there: SYS100's
-# EXTENDED case, eval/process-control/ffi/..., has no per-file evidence to
-# add and is deliberately NOT handled here).
+# SYS100 auto-widening -- REMOVED (T-2922, security-critical, blocks epic
+# T-2920). Two handlers used to live here: `fix_sys100_may_via_union`
+# (T-1531 CORE, per-file `via`-list widening) and `fix_sys100_extended_
+# whole_node_grant` (T-1545 EXTENDED, whole-node grant insertion for
+# eval/process-control/ffi/... kinds with no per-file evidence to narrow
+# to). Both did the same wrong thing: when frob's own SYS100 self-
+# conformance check observed a file exercising a capability its node's
+# `may=` declaration did not grant, they edited the DECLARATION to grant
+# it. A node's `may=` list exists specifically as a CEILING a human
+# places on what its code is allowed to do -- an auto-fix that silently
+# raises the ceiling to match whatever the code already does is a ratchet
+# with no teeth; the ceiling becomes a restatement of behavior, never a
+# constraint on it.
+#
+# T-1623/T-1628 put this auto-widening in place as a deliberate, accepted
+# policy at the time (T-1531's/T-1545's own docstrings, now deleted along
+# with them, said so explicitly). T-2922/T-2920 SUPERSEDE that decision
+# on the user's explicit instruction: the shrink-only ratchet rework
+# (T-2920, `src/frob/strata/**` + `design/**`) establishes that a `may=`
+# grant may only ever be narrowed automatically, never widened, and this
+# ticket removes the one live code path that violated that going forward.
+# The SYS111 capability-via-ratchet-lock sync just below this comment
+# (`fix_sys111_capability_ratchet_sync`, T-2001) was itself built BECAUSE
+# of this widening's failure mode (T-1977/T-1665: a SYS100 auto-widening
+# would satisfy SYS100/SYS104 while leaving the ratchet lock's committed
+# ceiling stale) -- it is UNAFFECTED by this removal beyond becoming a
+# structural no-op wherever its own growth-attribution finds nothing new
+# to bump, since SYS100 no longer produces any growth for it to sync.
+#
+# SYS100 the DETECTOR is NOT touched by this ticket and must not be:
+# `frob.strata._selfconform`/`sys_gate`'s production entrypoint still
+# fires SYS100 (and SELFAUDIT001's fold of it) exactly as before, unwaived,
+# on any undeclared capability use -- see
+# tests/test_gates.py::TestFixEngineTierA::
+# test_sys100_core_violation_still_fires_and_is_not_auto_resolved and
+# ::test_sys100_extended_violation_still_fires_and_is_not_auto_resolved
+# for the must-still-fire / must-not-auto-resolve proof pair. Only the
+# silent auto-capitulation is gone: a human must now widen a `may=` grant
+# by hand, the same as any other declared-surface change, and dropping a
+# declared-but-unused capability (the SHRINKING direction) remains fully
+# legitimate and is not affected by this removal at all.
+#
+# `frob.strata._sync_may`'s `apply_sync_may`/`sync_may_report`/
+# `apply_sync_may_extended`/`sync_may_extended_report` writer functions
+# these two handlers called are intentionally left in place in
+# `src/frob/strata/_sync_may.py` for now -- that module is inside the
+# concurrent T-2920 ticket's own declared scope, and deleting it from
+# here would risk an ImportError racing that ticket's own in-flight
+# edits. They are dead code after this change; removing them is this
+# same ticket's follow-up commit, once T-2920's own use of that file (if
+# any) is confirmed clear.
 # ---------------------------------------------------------------------------
-
-
-# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_may_via_union_applies_via_apply_tier_a_fixes  # noqa: E501
-# frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_sys100_no_design_dir_is_a_no_op
-# frob:ticket T-1531
-# frob:ticket T-1924
-def fix_sys100_may_via_union(root: Path) -> list[FixApplied]:
-    """Tier-A fix (T-1531): widen a node's `may "<kind>" via [...]` grant
-    (or insert a brand-new via-scoped grant) to cover a file
-    `check_capability_conformance` (SYS100 core) observed exercising an
-    already-granted capability kind outside its declared `via` surface --
-    `frob.strata._sync_may.sync_may_report`/`apply_sync_may`, this
-    handler's own writer (T-1531, module docstring there for the scope
-    cut: SYS100 EXTENDED is not handled). A design root that does not
-    resolve is logged and treated as no fixes applied. T-1924: dropped
-    the unused `snapshot` parameter this handler never read (T-1911's
-    dispatch-shape fix, applied here)."""
-    from frob.strata._sync_may import apply_sync_may, sync_may_report
-
-    if not (root / "design").is_dir():
-        return []
-    report = sync_may_report(root, "design")
-    if report.is_err:
-        _log.warning("tier-a fixes: SYS100 sync-may skipped: %s", report.danger_err)
-        return []
-    result = report.danger_ok
-    if not result.has_drift:
-        return []
-    written = apply_sync_may(root, result)
-    applied: list[FixApplied] = []
-    for file_result in result.files:
-        if file_result.path not in written:
-            continue
-        for diff in file_result.diffs:
-            verb = "created" if diff.created else "widened"
-            applied.append(
-                FixApplied(
-                    rule="SYS100",
-                    file=file_result.path,
-                    line=0,
-                    detail=(
-                        f"node {diff.node} may {diff.kind!r} via {verb} "
-                        f"+{','.join(diff.added_files)}"
-                    ),
-                )
-            )
-    return applied
-
-
-# ---------------------------------------------------------------------------
-# SYS100 extended (T-1545): eval/process-control/ffi/install-hook/sql/
-# deserialize/html_render/fetch_url/client_storage -- no per-file evidence,
-# so `frob.strata._sync_may.sync_may_extended_report` inserts a
-# deliberately conservative WHOLE-NODE (via-less) `may "<kind>";` grant
-# instead of guessing a `via` file (T-1531's `fix_sys100_may_via_union`
-# CORE case, above, is the only handler that can narrow to a `via` list at
-# all -- see that module's docstring for why EXTENDED structurally
-# cannot).
-# ---------------------------------------------------------------------------
-
-
-# frob:doc docs/modules/gates.md#sys100sys104-strata-declaration-auto-fix-t-1531
-# frob:tests tests/test_gates.py::TestFixEngineTierA.test_sys100_extended_whole_node_grant_applies_via_apply_tier_a_fixes  # noqa: E501
-# frob:tests \
-# tests/test_gates.py::TestFixEngineTierA.test_sys100_extended_no_design_dir_is_a_no_op
-# frob:ticket T-1545
-# frob:ticket T-1924
-def fix_sys100_extended_whole_node_grant(root: Path) -> list[FixApplied]:
-    """Tier-A fix (T-1545): insert a bare, via-less `may "<kind>";` grant
-    for a node `_extended_kind_violations` (SYS100 EXTENDED) observed
-    exercising an undeclared eval/process-control/ffi/... capability --
-    `frob.strata._sync_may.sync_may_extended_report`/
-    `apply_sync_may_extended`, this handler's own writer (module
-    docstring there for the deliberately-conservative whole-node
-    rationale: EXTENDED carries no per-file evidence to narrow a `via`
-    list to). A design root that does not resolve is logged and treated
-    as no fixes applied. T-1924: dropped the unused `snapshot` parameter
-    this handler never read (T-1911's dispatch-shape fix, applied
-    here)."""
-    from frob.strata._sync_may import apply_sync_may_extended, sync_may_extended_report
-
-    if not (root / "design").is_dir():
-        return []
-    report = sync_may_extended_report(root, "design")
-    if report.is_err:
-        _log.warning(
-            "tier-a fixes: SYS100 extended sync-may skipped: %s", report.danger_err
-        )
-        return []
-    result = report.danger_ok
-    if not result.has_drift:
-        return []
-    written = apply_sync_may_extended(root, result)
-    applied: list[FixApplied] = []
-    for file_result in result.files:
-        if file_result.path not in written:
-            continue
-        for diff in file_result.diffs:
-            applied.append(
-                FixApplied(
-                    rule="SYS100",
-                    file=file_result.path,
-                    line=0,
-                    detail=f"node {diff.node} may {diff.kind!r} (whole-node grant)",
-                )
-            )
-    return applied
 
 
 # COV002 (T-1548): a changed symbol with no `frob:ticket` edge to an open
@@ -1132,13 +1074,19 @@ def _waive004_target_rule(message: str) -> str | None:
 
 # ---------------------------------------------------------------------------
 # SYS111 (T-2001): the capability-via-ratchet lock (`docs/design/registry/
-# capability-via-ratchet.lock.json`) is the sibling half of the SYS100
-# obligation `fix_sys100_may_via_union`/`fix_sys100_extended_whole_node_
-# grant` above already self-heal (`design/frob.strata`'s own via-lists) --
-# widening a node's grant there satisfies SYS100/SYS104 but leaves the
-# ratchet's committed ceiling stale, so the breach surfaces on a LATER,
-# unrelated land's SYS111 check instead of this one. Measured twice in one
-# hour (T-1977, T-1665) before this handler existed.
+# capability-via-ratchet.lock.json`) was built as the sibling half of the
+# now-DELETED SYS100 auto-widening handlers (T-1531/T-1545, removed by
+# T-2922 -- see this file's "SYS100 auto-widening -- REMOVED" comment
+# block above): those handlers widened a node's grant in `design/
+# frob.strata`'s own via-lists, satisfying SYS100/SYS104 while leaving
+# this ratchet's committed ceiling stale, so the breach surfaced on a
+# LATER, unrelated land's SYS111 check instead of the one that caused it.
+# Measured twice in one hour (T-1977, T-1665) before this handler existed.
+# T-2922: with the SYS100 auto-widener gone, this handler's own
+# growth-attribution finds nothing new to bump in the ordinary case --
+# it is not deleted, since a human-authored `may=` widening (still a
+# legitimate, explicit action) can still grow the via-site count and
+# still needs its ratchet ceiling re-baselined the same way.
 # ---------------------------------------------------------------------------
 
 
@@ -1266,11 +1214,15 @@ def fix_sys111_capability_ratchet_sync(root: Path) -> list[FixApplied]:
     """Tier-A fix (T-2001): re-baseline `capability-via-ratchet.lock.json`'s
     `accepted_count` for exactly the `(node, atom)` pairs whose scoped
     via-list site count GREW between this land's own git-committed parent
-    (`_capability_counts_at_head`) and the CURRENT working tree -- run
-    AFTER `fix_sys100_may_via_union`/`fix_sys100_extended_whole_node_grant`
-    in `TIER_A_HANDLERS`' declared order, so the current-side count
-    already reflects whatever those two just widened in `design/
-    frob.strata`.
+    (`_capability_counts_at_head`) and the CURRENT working tree.
+    T-2922: this used to run AFTER `fix_sys100_may_via_union`/`fix_
+    sys100_extended_whole_node_grant` in `TIER_A_HANDLERS`' declared
+    order specifically so the current-side count reflected whatever
+    those two had just widened in `design/frob.strata` -- both are now
+    deleted (SYS100 no longer auto-widens anything), so in the ordinary
+    case there is nothing left for THIS pass to have caused; growth can
+    still come from a human-authored `may=` widening committed before
+    this land, which this handler still correctly attributes and syncs.
 
     Never bumps unconditionally to whatever is currently observed --
     that would turn the ratchet into a no-op that ratifies any growth,
