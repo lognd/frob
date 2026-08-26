@@ -2,7 +2,7 @@
 id: T-2953
 title: 'Windows: natives build crashes with UnicodeDecodeError decoding maturin subprocess
   output (cp1252)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
