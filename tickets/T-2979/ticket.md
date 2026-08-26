@@ -2,7 +2,7 @@
 id: T-2979
 title: 'Default output is debug spam: gitio/process spawn traces drown the result
   on nearly every command'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-26'
@@ -20,6 +20,8 @@ scope:
 - docs/modules/logging.md
 - tests/unit/test_logging_module.py
 - tests/unit/test_main_entry.py
+- src/frob/app/doctor_runner.py
+- tests/unit/test_doctor_runner_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -48,6 +50,18 @@ scope_changes:
 - op: add
   glob: tests/unit/test_main_entry.py
   reason: relevel gitio/process spawn traces from default stdout to DEBUG-gated
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/doctor_runner.py
+  reason: doctor plain path never wrapped run_diagnosis() in quiet_stdout_logs like
+    its json/usage siblings do
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_doctor_runner_t1276.py
+  reason: doctor plain path never wrapped run_diagnosis() in quiet_stdout_logs like
+    its json/usage siblings do
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
