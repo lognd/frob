@@ -20,6 +20,7 @@ scope:
 - tests/test_refs_gate.py
 - src/frob/check/_python.py
 - tests/unit/test_check.py
+- tests/system/test_cli_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,12 @@ scope_changes:
 - op: add
   glob: tests/unit/test_check.py
   reason: test coverage for the cwd fix in _run_ruff/_ruff_format_result
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/test_cli_check.py
+  reason: the failing system tests (T-3019's own repro list) live here; fixing them
+    requires editing the shared _make_project fixture
   actor: logan
   at: '2026-08-26'
 triage_changes:
