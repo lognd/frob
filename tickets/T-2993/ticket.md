@@ -23,6 +23,7 @@ scope:
 - tests/test_narrative_migrate.py
 - docs/modules/gates.md
 - docs/commands/narrative.md
+- src/frob/narrative
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -73,6 +74,12 @@ scope_changes:
 - op: add
   glob: docs/commands/narrative.md
   reason: T-2993 doc page for the new frob narrative verb + NARR001 detector
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/narrative
+  reason: 'SCOPE002: TestNarrativeIntegration covers the bare src/frob/narrative interface
+    path, not matched by the src/frob/narrative/** glob'
   actor: logan
   at: '2026-08-26'
 triage_changes:
