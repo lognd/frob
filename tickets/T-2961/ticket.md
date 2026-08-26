@@ -2,7 +2,7 @@
 id: T-2961
 title: 'Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer,
   os.nice)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,10 +19,123 @@ scope:
 - src/frob/serve/_events.py
 - src/frob/serve/_socketd.py
 - src/frob/verify/_worker.py
+- tests/test_serve_socket.py
+- tests/test_serve_events.py
+- tests/test_serve_leases.py
+- tests/unit/test_daemon_proxy_lease_t1276.py
+- tests/test_coverage_wait_shared.py
+- tests/unit/verify/test_worker.py
+- tests/test_serve_daemon.py
+- src/frob/serve/_daemon.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_serve_events.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_serve_leases.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_daemon_proxy_lease_t1276.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_coverage_wait_shared.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_serve_daemon.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/serve/_daemon.py
+  reason: 'Widening scope for the test files the platform-guard fix''s own
+
+    regression tests live in (narrowly-targeted Windows skips) plus
+
+    src/frob/serve/_daemon.py (a probable-under-capture dependency
+
+    run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
