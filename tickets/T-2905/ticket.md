@@ -34,7 +34,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 356088ed40db8f5d9106232315ef250c75502602
 ---
 _parse_csharp (src/frob/lang/_walk_csharp.py, added under T-1600) is a
 raw tree-sitter parse helper with no production caller -- frob.lang.
