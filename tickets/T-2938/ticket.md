@@ -60,7 +60,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: b99dd0c2ff579a4df7bca012ba320f6e40ef840d
 ---
 T-2913 removed the inline `frob check --ticket` spawn from the rapid land path
 (measured 241.59s at 115% CPU, on EVERY land regardless of profile). That was
