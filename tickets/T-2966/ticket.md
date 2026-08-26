@@ -1,7 +1,7 @@
 ---
 id: T-2966
 title: 'frob-dup: finish src/frob/gates cluster triage (23 residue groups)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -15,11 +15,140 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/**
+- src/frob/arch/_mayraise.py
+- src/frob/arch/_exceptions.py
+- src/frob/dup/_rules.py
+- src/frob/lang/_common.py
+- src/frob/doctor.py
+- src/frob/strata/_waive.py
+- src/frob/deploy/_generate.py
+- src/frob/scaffold/_managed.py
+- src/frob/app/ticket_runner/_close_cmd.py
+- src/frob/testing/_collect_cpp.py
+- src/frob/tickets/_new_renumber.py
+- src/frob/app/ticket_runner/_waive_audit.py
+- src/frob/vet/_scan.py
+- src/frob/vet/_scan_violations.py
+- src/frob/perf/_redundancy.py
+- src/frob/perf/_sketch_store.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: genuine epic-scale triage across ~20 groups spanning most
   of src/frob/gates; package glob is the honest scope
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/arch/_mayraise.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/arch/_exceptions.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/dup/_rules.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/lang/_common.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/doctor.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/strata/_waive.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/deploy/_generate.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/scaffold/_managed.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_close_cmd.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/testing/_collect_cpp.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/tickets/_new_renumber.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/ticket_runner/_waive_audit.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_scan_violations.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_redundancy.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/perf/_sketch_store.py
+  reason: cross-package frob-dup groups involving src/frob/gates require full-fragment
+    waiver coverage in the sibling file too, or the group stays unaccounted; T-2966
+    scope-widened to the minimal sibling set
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 acceptance:
 - text: given the 23 residue groups this ticket's body lists, when triaged and dispositioned
