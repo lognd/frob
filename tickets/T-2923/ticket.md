@@ -20,6 +20,7 @@ scope:
 - src/frob/app/sys_runner.py
 - src/frob/_cli_parsers/_misc.py
 - docs/commands/sys.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -70,6 +71,13 @@ scope_changes:
 - op: add
   glob: docs/commands/sys.md
   reason: documenting the new frob sys shrink verb
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: design/frob.strata
+  reason: declaring fs.read/fs.write may grants for the new _shrink.py module -- SYS100
+    fired on my own diff since the new module performs real fs.read/fs.write; declared
+    by hand, never auto-widened
   actor: logan
   at: '2026-08-25'
 triage_changes:
