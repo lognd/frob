@@ -18,7 +18,6 @@ scope:
 - src/frob/vet/_source.py
 - src/frob/vet/_ecosystem.py
 - src/frob/vet/_supplychain.py
-- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +41,11 @@ scope_changes:
 - op: add
   glob: docs/modules/vet.md
   reason: 'closure: existing frob:doc edges in touched files point here'
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: docs/modules/vet.md
+  reason: closure warning was for pre-existing unrelated doc edges, not this change
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
