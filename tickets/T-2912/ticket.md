@@ -23,6 +23,7 @@ scope:
 - tests/test_stats_agentic.py
 - docs/modules/stats.md
 - docs/modules/app.md
+- src/frob/stats/__init__.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -71,6 +72,11 @@ scope_changes:
 - op: add
   glob: docs/modules/app.md
   reason: 'T-2912: doc anchors for new histogram fields'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/stats/__init__.py
+  reason: 'T-2912: re-export new ToolCallShape model'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
