@@ -98,6 +98,13 @@ scope_changes:
   reason: the T-0450 archive-anomaly follow-up ticket this triage filed
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'BUG002: this ticket is queue triage, not a reproducible code defect'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 1422
+  new_length: 1780
 evidence:
 - tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
@@ -133,3 +140,5 @@ zero (T-2372's own body explicitly forbids promoting before the burn --
 it reds the tree). Re-measure with `frob check --json --only tickets`
 before starting and before claiming done, per T-2372's own measurement
 discipline.
+
+frob:waive BUG002 reason="T-2946 is real ticket-queue triage (per-finding TICK004/TICK007 disposition), not a code defect -- there is no code path to reproduce as a failing-then-passing test; the one code artifact of this pass is a follow-up ticket (T-2954) filed for a separate, undispatched gap. Standard done-report/evidence discipline applies instead."
