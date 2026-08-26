@@ -7,7 +7,7 @@ kind: feature
 origin: human
 created: '2026-08-26'
 priority: high
-parent: null
+parent: T-2982
 tier: ticket
 sprint: null
 runs_last: false
@@ -18,6 +18,13 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: parent
+  old_value: null
+  new_value: T-2982
+  reason: 'T-2982 decomposition: seam, reporting, validity'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
