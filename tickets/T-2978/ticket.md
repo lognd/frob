@@ -2,7 +2,7 @@
 id: T-2978
 title: 'Long-running commands show no live progress: no phase, no unit count, no elapsed
   time on a TTY'
-state: queued
+state: done
 kind: ux
 origin: human
 created: '2026-08-26'
@@ -84,6 +84,12 @@ scope_changes:
     follow-up)
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_check.py::TestCollectResultsProgressCallback::test_on_task_done_fires_once_per_task_with_final_total
+- tests/unit/test_check.py::TestCollectResultsProgressCallback::test_results_stay_in_submission_order_regardless_of_callback
+- tests/unit/test_check.py::TestCollectResultsProgressCallback::test_no_callback_matches_pre_t2978_behavior_exactly
+- tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_progress_returns_none
+- tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_updates_progress_with_language_qualified_label
 designated_repro_test: null
 threat: null
 component: null

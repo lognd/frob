@@ -581,6 +581,13 @@ def _python_skip_flags(
     }
 
 
+#: T-2978: one enabled check task, paired with the short label a TTY
+#: progress line reports it under ("ruff"/"ty"/"gates"/...) -- these are
+#: the SAME names `--only`/`skips` already use, so the progress line and
+#: the rest of `frob check`'s own vocabulary never diverge.
+_NamedTask = tuple[str, Callable[[], "ToolResult | list[ToolResult] | None"]]
+
+
 def _python_tasks(
     root: Path,
     *,
@@ -592,8 +599,9 @@ def _python_tasks(
     skips: dict[str, bool],
     delta: bool = False,
     no_cache: bool = False,
-) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
-    """The enabled per-tool jobs for a Python check run.
+) -> list[_NamedTask]:
+    """The enabled per-tool jobs for a Python check run, each paired with
+    its progress-line label (T-2978).
 
     T-1346: `no_cache` reaches `_run_gates` unchanged -- see its own
     docstring for the default-on gate-cache behavior this threads through.
@@ -602,7 +610,7 @@ def _python_tasks(
     def wanted(name: str) -> bool:
         return only is None or name in only
 
-    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
+    tasks: list[_NamedTask] = []
     # T-2320: the "ruff" --only/stage name still selects the combined job
     # (both sub-invocations run in the SAME task/thread, same as before
     # T-2320) -- only the skip decision is now independent per half, via
@@ -611,34 +619,40 @@ def _python_tasks(
     # `--skip-ruff-check`/`--skip-ruff-format`, not via `--only`.
     if (not skips["ruff_check"] or not skips["ruff_format"]) and wanted("ruff"):
         tasks.append(
-            lambda: _run_ruff(
-                root,
-                ruff_args,
-                skip_check=skips["ruff_check"],
-                skip_format=skips["ruff_format"],
+            (
+                "ruff",
+                lambda: _run_ruff(
+                    root,
+                    ruff_args,
+                    skip_check=skips["ruff_check"],
+                    skip_format=skips["ruff_format"],
+                ),
             )
         )
     if not skips["ty"] and wanted("ty"):
-        tasks.append(lambda: _run_ty(root))
+        tasks.append(("ty", lambda: _run_ty(root)))
     if not skips["cycle"] and wanted("cycle"):
-        tasks.append(lambda: _run_cycle(root))
+        tasks.append(("cycle", lambda: _run_cycle(root)))
     if not skips["dup"] and wanted("dup"):
-        tasks.append(lambda: _run_dup(root))
+        tasks.append(("dup", lambda: _run_dup(root)))
     if not skips["arch"] and wanted("arch"):
-        tasks.append(lambda: _run_arch(root))
+        tasks.append(("arch", lambda: _run_arch(root)))
     if not skips["bind"] and wanted("bind"):
-        tasks.append(lambda: _run_bind(root))
+        tasks.append(("bind", lambda: _run_bind(root)))
     if not skips["exports"] and wanted("exports"):
-        tasks.append(lambda: _run_exports(root))
+        tasks.append(("exports", lambda: _run_exports(root)))
     if not skips["gates"] and wanted("gates"):
         tasks.append(
-            lambda: _run_gates(
-                root,
-                ticket=ticket,
-                base=base,
-                gates=gate_only,
-                delta=delta,
-                no_cache=no_cache,
+            (
+                "gates",
+                lambda: _run_gates(
+                    root,
+                    ticket=ticket,
+                    base=base,
+                    gates=gate_only,
+                    delta=delta,
+                    no_cache=no_cache,
+                ),
             )
         )
     return tasks
@@ -651,12 +665,38 @@ def _python_tasks(
 
 
 def _run_tasks_concurrently(
-    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]],
+    tasks: list[_NamedTask],
+    *,
+    on_task_done: Callable[[str, int, int], None] | None = None,
 ) -> list[ToolResult]:
-    """Run `tasks` in a `ThreadPoolExecutor` and flatten results, dropping Nones."""
-    results: list[ToolResult] = []
+    """Run `tasks` in a `ThreadPoolExecutor` and flatten results, dropping
+    Nones.
+
+    T-2978: `on_task_done` (default `None`, every pre-existing caller
+    unaffected) is called `(label, done_count, total)` as each task
+    ACTUALLY finishes -- real completion order, watched via
+    `as_completed` on the side -- but the final `results` list is still
+    assembled in the ORIGINAL submission order (`tasks`' own order), not
+    completion order: `frob check --json`'s result ordering is part of
+    its byte-identical output contract and must not become run-to-run
+    nondeterministic just because a progress line now watches completion
+    live. The caller (`check_runner`'s TTY `Progress`) is a no-op off a
+    TTY, so this callback is cheap and side-effect-free on every non-
+    interactive path."""
+    total = len(tasks)
+    done = 0
+    by_future: dict[concurrent.futures.Future, str] = {}
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fn) for fn in tasks]
+        futures = []
+        for label, fn in tasks:
+            fut = executor.submit(fn)
+            by_future[fut] = label
+            futures.append(fut)
+        if on_task_done is not None:
+            for future in concurrent.futures.as_completed(list(by_future)):
+                done += 1
+                on_task_done(by_future[future], done, total)
+        results: list[ToolResult] = []
         for future in futures:
             val = future.result()
             if val is None:
@@ -689,9 +729,13 @@ def _restore_stdout_log_levels(
 
 
 def _collect_results(
-    tasks: list[Callable[[], ToolResult | list[ToolResult] | None]],
+    tasks: list[_NamedTask],
+    *,
+    on_task_done: Callable[[str, int, int], None] | None = None,
 ) -> list[ToolResult]:
     """Run `tasks` in parallel and flatten their results, dropping Nones.
+    `on_task_done` (T-2978) passes straight through to
+    `_run_tasks_concurrently`; see its own docstring.
 
     T-0122: some check-stage tools (`frob.arch.analyze_project`,
     `frob.dup.find_duplicates`) briefly raise the shared, process-global
@@ -711,7 +755,7 @@ def _collect_results(
     stdout_handlers = _stdout_log_handlers()
     saved_levels = [h.level for h in stdout_handlers]
     try:
-        return _run_tasks_concurrently(tasks)
+        return _run_tasks_concurrently(tasks, on_task_done=on_task_done)
     finally:
         _restore_stdout_log_levels(stdout_handlers, saved_levels)
 
@@ -738,6 +782,7 @@ def run_check(
     base: str | None = None,
     delta: bool = False,
     no_cache: bool = False,
+    on_task_done: Callable[[str, int, int], None] | None = None,
 ) -> CheckResult:
     """Quality gate for Python projects: ruff, ty, cycle/dup/arch/bind, gates, etc.
 
@@ -753,6 +798,12 @@ def run_check(
     T-2320: `skip_ruff_check`/`skip_ruff_format` independently skip just
     one of the two ruff sub-stages; `skip_ruff` (unchanged) still skips
     both. See `_python_skip_flags`'s docstring for how the three combine.
+
+    T-2978: `on_task_done` (default `None`) is an optional live-progress
+    hook, `(label, done_count, total)`, called as each of ruff/ty/cycle/
+    dup/arch/bind/exports/gates actually finishes -- see
+    `_run_tasks_concurrently`'s own docstring. Every existing caller
+    (every one before this ticket) passes nothing and is unaffected.
     """
     skips = _python_skip_flags(
         skip_ruff=skip_ruff,
@@ -775,6 +826,7 @@ def run_check(
         base=base,
         delta=delta,
         no_cache=no_cache,
+        on_task_done=on_task_done,
     )
 
 
@@ -788,9 +840,11 @@ def _run_check_with_skips(
     base: str | None,
     delta: bool,
     no_cache: bool = False,
+    on_task_done: Callable[[str, int, int], None] | None = None,
 ) -> CheckResult:
     """`run_check`'s task-selection and execution tail, once its many
-    `skip_*` flags have been collapsed into `skips`."""
+    `skip_*` flags have been collapsed into `skips`. `on_task_done`
+    (T-2978) passes straight through to `_collect_results`."""
     # T-0859: hold a SHARED `derived_state_lock` for the run's entire
     # duration -- precheck through the last stage's read -- so a second
     # frob process's EXCLUSIVE writer cannot rewrite `.frob` between this
@@ -840,7 +894,10 @@ def _run_check_with_skips(
                 delta=delta,
                 no_cache=no_cache,
             )
-            return CheckResult(path=str(root), results=_collect_results(tasks))
+            return CheckResult(
+                path=str(root),
+                results=_collect_results(tasks, on_task_done=on_task_done),
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -926,20 +983,26 @@ def _cpp_post_build_tasks(
     base: str | None = None,
     delta: bool = False,
     no_cache: bool = False,
-) -> list[Callable[[], ToolResult | list[ToolResult] | None]]:
-    """The enabled post-build job callables for a CMake C/C++ check run."""
-    post_build: list[Callable[[], ToolResult | list[ToolResult] | None]] = []
+) -> list[_NamedTask]:
+    """The enabled post-build jobs for a CMake C/C++ check run, each paired
+    with its label (T-2978: matches `_python_tasks`'s `_NamedTask` shape --
+    `_run_tasks_concurrently`/`_collect_results` are shared across every
+    language's task list now)."""
+    post_build: list[_NamedTask] = []
     if not skip_clang_tidy:
-        post_build.append(lambda: _run_clang_tidy_cmake(root, bdir))
+        post_build.append(("clang-tidy", lambda: _run_clang_tidy_cmake(root, bdir)))
     if not skip_clang_format:
-        post_build.append(lambda: _run_clang_format(root))
+        post_build.append(("clang-format", lambda: _run_clang_format(root)))
     if not skip_tests:
         _valgrind = valgrind
-        post_build.append(lambda: _run_ctest(bdir, valgrind=_valgrind))
+        post_build.append(("ctest", lambda: _run_ctest(bdir, valgrind=_valgrind)))
     if not skip_gates:
         post_build.append(
-            lambda: _run_gates(
-                root, ticket=ticket, base=base, delta=delta, no_cache=no_cache
+            (
+                "gates",
+                lambda: _run_gates(
+                    root, ticket=ticket, base=base, delta=delta, no_cache=no_cache
+                ),
             )
         )
     return post_build

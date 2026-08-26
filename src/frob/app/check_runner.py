@@ -239,14 +239,24 @@ def _warn_if_polyglot(root: Path, chosen: str, others: list[str]) -> None:
 
 
 # frob:ticket T-1445
-def _dispatch_check_cpp(cfg: AppConfig, root: Path):
+def _dispatch_check_cpp(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None
+):
     """Run `run_check_cpp` with `cfg`'s C++-toolchain skip flags and gate selectors.
 
     T-0608: `check_skip_gates`/`check_ticket`/`check_base`/`check_delta` were
     silently dropped here (only `_dispatch_check_python` threaded them),
     so CLI-level `--ticket`/`--base`/`--delta`/`--skip-gates` scoping was
     ignored for C++ repos even though `run_check_cpp` (T-0554) accepts them.
-    """
+
+    T-2978: `progress` is accepted (for a uniform `_DISPATCH_BY_TYPE` call
+    signature) but not yet wired -- `run_check_cpp` has no `on_task_done`
+    hook of its own yet (only the Python stage's `run_check` does); a
+    C++/Rust/TypeScript repo still sees only the outer per-language
+    progress line `_run_all_detected` already draws. Live per-task
+    progress for the other three toolchains is real remaining scope, not
+    silently dropped -- see the ticket's Done report for the filed
+    follow-up id."""
     return run_check_cpp(
         root,
         build_dir=cfg.check_build_dir,
@@ -264,12 +274,14 @@ def _dispatch_check_cpp(cfg: AppConfig, root: Path):
 
 
 # frob:ticket T-1445
-def _dispatch_check_rust(cfg: AppConfig, root: Path):
+def _dispatch_check_rust(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None
+):
     """Run `run_check_rust` with `cfg`'s Rust-toolchain skip flags and gate selectors.
 
     T-0608: see `_dispatch_check_cpp`'s docstring -- the same gap applied
-    here for Rust repos.
-    """
+    here for Rust repos. T-2978: `progress` likewise accepted-but-not-yet-
+    wired -- see `_dispatch_check_cpp`'s docstring."""
     return run_check_rust(
         root,
         skip_check=cfg.check_skip_cargo_check,
@@ -286,13 +298,13 @@ def _dispatch_check_rust(cfg: AppConfig, root: Path):
 
 
 # frob:ticket T-1445
-def _dispatch_check_ts(cfg: AppConfig, root: Path):
+def _dispatch_check_ts(cfg: AppConfig, root: Path, *, progress: Progress | None = None):
     """Run `run_check_ts` with `cfg`'s TypeScript-toolchain skip flags and
     gate selectors.
 
     T-0608: see `_dispatch_check_cpp`'s docstring -- the same gap applied
-    here for TypeScript repos.
-    """
+    here for TypeScript repos. T-2978: `progress` likewise accepted-but-
+    not-yet-wired -- see `_dispatch_check_cpp`'s docstring."""
     return run_check_ts(
         root,
         skip_tsc=cfg.check_skip_tsc,
@@ -308,8 +320,12 @@ def _dispatch_check_ts(cfg: AppConfig, root: Path):
 
 
 # frob:ticket T-1445
-def _dispatch_check_python(cfg: AppConfig, root: Path):
-    """Run `run_check` with `cfg`'s Python-toolchain skip flags and gate selectors."""
+def _dispatch_check_python(
+    cfg: AppConfig, root: Path, *, progress: Progress | None = None
+):
+    """Run `run_check` with `cfg`'s Python-toolchain skip flags and gate
+    selectors. `progress` (T-2978, a no-op off a TTY) is wired to
+    `run_check`'s `on_task_done` -- see `_task_progress_callback`."""
     return run_check(
         root,
         skip_ruff=cfg.check_skip_ruff,
@@ -327,7 +343,36 @@ def _dispatch_check_python(cfg: AppConfig, root: Path):
         base=cfg.check_base,
         delta=cfg.check_delta,
         no_cache=cfg.check_no_cache,
+        on_task_done=_task_progress_callback(progress, "python"),
     )
+
+
+# frob:ticket T-2978
+# frob:tests \
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_progress_r\
+# eturns_none
+# frob:tests \
+# tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_updates_progres\
+# s_with_language_qualified_label
+def _task_progress_callback(
+    progress: Progress | None, project_type: str
+) -> Callable[[str, int, int], None] | None:
+    """Build the `(label, done, total)` callback `run_check`'s
+    `on_task_done` expects, closing over `progress` (T-2978): `None` when
+    `progress` is `None` (the `--json`/non-TTY path, which never opens a
+    real `Progress` at all -- see `_run_stages_and_report`), so this adds
+    literally nothing to that path beyond one `is None` branch already
+    present in `_dispatch_check_python`'s own call. `project_type` is
+    folded into the label (`check: python: gates`) so a polyglot repo's
+    interleaved per-language task completions stay distinguishable on the
+    one shared progress line."""
+    if progress is None:
+        return None
+
+    def _on_task_done(label: str, done: int, total: int) -> None:
+        progress.update(f"check: {project_type}: {label}", done, total)
+
+    return _on_task_done
 
 
 _DISPATCH_BY_TYPE = {
@@ -369,15 +414,18 @@ def _unknown_project_type_result(root: Path, project_type: str) -> CheckResult:
 # frob:ticket T-0546
 # frob:tests \
 # tests/integration/test_interfaces.py::TestInterfaces.test_main_cli_dispatches
-def _dispatch_check(cfg: AppConfig, root: Path, project_type: str) -> CheckResult:
+def _dispatch_check(
+    cfg: AppConfig, root: Path, project_type: str, *, progress: Progress | None = None
+) -> CheckResult:
     """Run the language-appropriate check stack for `project_type`, or a
     loud CHECK001 error `CheckResult` when `project_type` has no
     dispatchable stage (T-0404 finding 6) -- never a silent Python
-    fallback."""
+    fallback. `progress` (T-2978) passes straight through to whichever
+    `_dispatch_check_*` this resolves to."""
     dispatch = _DISPATCH_BY_TYPE.get(project_type)
     if dispatch is None:
         return _unknown_project_type_result(root, project_type)
-    return dispatch(cfg, root)
+    return dispatch(cfg, root, progress=progress)
 
 
 # frob:ticket T-0229
@@ -428,7 +476,9 @@ def _run_all_detected(
         ):
             results.append(_unchanged_skip_result(project_type))
         else:
-            results.extend(_dispatch_check(cfg, root, project_type).results)
+            results.extend(
+                _dispatch_check(cfg, root, project_type, progress=progress).results
+            )
         if progress is not None:
             progress.update(f"check: {project_type}", i + 1, total)
     return CheckResult(path=str(root), results=results)
@@ -861,7 +911,7 @@ def _run_pinned_stage(
     _warn_if_polyglot(root, project_type, others)
     if progress is not None:
         progress.update(f"check: {project_type}", 0, total)
-    result = _dispatch_check(cfg, root, project_type)
+    result = _dispatch_check(cfg, root, project_type, progress=progress)
     if progress is not None:
         progress.update(f"check: {project_type}", 1, total)
     if others:

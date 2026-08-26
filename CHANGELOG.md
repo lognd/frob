@@ -398,6 +398,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2969: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern as T-2943
 - T-2970: frob-dup: narrow the tests/ renamed-detector threshold (fixture-repetition false positives)
 - T-2977: post-land sweep regression from an unattributed source (sweep spawned by T-2966): 2 new (rule, file) identit(ies), 2 finding(s) (F401)
+- T-2978: Long-running commands show no live progress: no phase, no unit count, no elapsed time on a TTY
 - T-2979: Default output is debug spam: gitio/process spawn traces drown the result on nearly every command
 - T-2980: ubuntu-latest CI hangs in the Test step for 2+ hours: no green baseline exists on any platform
 - T-2983: gh_io part 1: typed gh seam with named failure modes (no gh, no auth, no GitHub remote, rate limit, empty-log-on-failed-job)

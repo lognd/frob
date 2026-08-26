@@ -1431,3 +1431,45 @@ class TestSkipUnchangedLanguage:
         assert "typescript" not in out
         assert "rust" not in out
         assert "cpp" not in out
+
+
+# frob:ticket T-2978
+class TestTaskProgressCallback:
+    """`_task_progress_callback` (T-2978): builds the `(label, done,
+    total)` hook `run_check`'s `on_task_done` expects, closing over a
+    `Progress` and a language label."""
+
+    def test_none_progress_returns_none(self) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_none_pr\
+        # ogress_returns_none
+        from frob.app.check_runner import _task_progress_callback
+
+        assert _task_progress_callback(None, "python") is None
+
+    def test_updates_progress_with_language_qualified_label(self) -> None:
+        # frob:tests \
+        # tests/unit/test_app_runners_batch6.py::TestTaskProgressCallback::test_updates\
+        # _progress_with_language_qualified_label
+        import io
+
+        from frob.app.check_runner import _task_progress_callback
+        from frob.render import Renderer
+
+        stream = io.StringIO()
+        r = Renderer.for_stream(stream, color_flag="never")
+        progress = r.write.progress("frob check")
+        cb = _task_progress_callback(progress, "python")
+        assert cb is not None
+        calls: list[tuple[str, int, int]] = []
+
+        def _spy(label: str, current: int, total: int) -> None:
+            calls.append((label, current, total))
+
+        # Progress.update is a real no-op off a TTY (io.StringIO never
+        # reports isatty()=True), so the observable contract here is
+        # WHICH label/counts the callback forwards, not the terminal
+        # bytes -- spy on Progress.update itself instead.
+        progress.update = _spy  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
+        cb("gates", 3, 8)
+        assert calls == [("check: python: gates", 3, 8)]

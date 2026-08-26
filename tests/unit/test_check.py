@@ -23,6 +23,9 @@ from frob.check import (
 )
 from frob.process.parsers.common import Diagnostic, ToolResult
 
+#: T-2978: matches `frob.check._NamedTask` -- shortens the annotations below.
+_NamedTask = tuple[str, Callable[[], "ToolResult | list[ToolResult] | None"]]
+
 
 class TestCheckResultCounts:
     def test_total_errors_sums_across_results(self) -> None:
@@ -1363,10 +1366,10 @@ class TestCollectResultsLogLevelRace:
             # interleaving mechanics: after _collect_results returns, the
             # level must equal what it was before the batch ran no matter
             # how the tasks raced.
-            tasks: list[Callable[[], ToolResult | list[ToolResult] | None]] = [
-                lambda: (racy_quiet(0.05, 0.0)(), None)[1],
-                lambda: (racy_quiet(0.0, 0.05)(), None)[1],
-                lambda: (racy_quiet(0.02, 0.02)(), None)[1],
+            tasks: list[_NamedTask] = [
+                ("a", lambda: (racy_quiet(0.05, 0.0)(), None)[1]),
+                ("b", lambda: (racy_quiet(0.0, 0.05)(), None)[1]),
+                ("c", lambda: (racy_quiet(0.02, 0.02)(), None)[1]),
             ]
             before = handler.level
             _collect_results(tasks)
@@ -1390,10 +1393,62 @@ class TestCollectResultsLogLevelRace:
                 handler.setLevel(logging.WARNING)
 
             before = handler.level
-            _collect_results([lambda: (flip_and_leave_stuck(), None)[1]])
+            _collect_results([("a", lambda: (flip_and_leave_stuck(), None)[1])])
             assert handler.level == before
         finally:
             root_logger.removeHandler(handler)
+
+
+# frob:ticket T-2978
+class TestCollectResultsProgressCallback:
+    """`_collect_results`/`_run_tasks_concurrently`'s `on_task_done`
+    (T-2978): fires once per task as it actually finishes, and -- the
+    property that matters most -- never reorders the returned `results`
+    list, which `frob check --json` depends on staying deterministic."""
+
+    def test_on_task_done_fires_once_per_task_with_final_total(self) -> None:
+        # frob:tests \
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_on_task_do\
+        # ne_fires_once_per_task_with_final_total
+        calls: list[tuple[str, int, int]] = []
+        tasks: list[_NamedTask] = [
+            ("a", lambda: ToolResult(tool="a")),
+            ("b", lambda: ToolResult(tool="b")),
+            ("c", lambda: ToolResult(tool="c")),
+        ]
+        _collect_results(
+            tasks, on_task_done=lambda label, d, t: calls.append((label, d, t))
+        )
+        assert len(calls) == 3
+        assert {label for label, _d, _t in calls} == {"a", "b", "c"}
+        assert [t for _label, _d, t in calls] == [3, 3, 3]
+        assert sorted(d for _label, d, _t in calls) == [1, 2, 3]
+
+    def test_results_stay_in_submission_order_regardless_of_callback(self) -> None:
+        # frob:tests \
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_results_st\
+        # ay_in_submission_order_regardless_of_callback
+        # "b" finishes fastest (no sleep), "a" slowest -- a completion-
+        # order bug would put "b" before "a" in the returned list.
+        tasks: list[_NamedTask] = [
+            ("a", lambda: (time.sleep(0.05), ToolResult(tool="a"))[1]),
+            ("b", lambda: ToolResult(tool="b")),
+            ("c", lambda: (time.sleep(0.02), ToolResult(tool="c"))[1]),
+        ]
+        result = _collect_results(tasks, on_task_done=lambda *_a: None)
+        assert [r.tool for r in result] == ["a", "b", "c"]
+
+    def test_no_callback_matches_pre_t2978_behavior_exactly(self) -> None:
+        # frob:tests \
+        # tests/unit/test_check.py::TestCollectResultsProgressCallback::test_no_callbac\
+        # k_matches_pre_t2978_behavior_exactly
+        tasks: list[_NamedTask] = [
+            ("a", lambda: ToolResult(tool="a")),
+            ("b", lambda: None),
+            ("c", lambda: [ToolResult(tool="c1"), ToolResult(tool="c2")]),
+        ]
+        result = _collect_results(tasks)
+        assert [r.tool for r in result] == ["a", "c1", "c2"]
 
 
 class TestCheckBuildsGraphOnce:
@@ -1481,7 +1536,7 @@ class TestDerivedStateLockWiring:
 
         stage_states: list[bool] = []
 
-        def fake_collect(tasks: object) -> list[object]:
+        def fake_collect(tasks: object, *, on_task_done: object = None) -> list[object]:
             stage_states.append(spy.held)
             return []
 
