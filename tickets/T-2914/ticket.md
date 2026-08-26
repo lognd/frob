@@ -2,7 +2,7 @@
 id: T-2914
 title: 'WIRE002: T-2645''s WIRE001 waiver on _unlanded.py::_remove_scratch_file missing
   follow_up'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'

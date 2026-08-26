@@ -505,9 +505,11 @@ def _scratch_file_for_suffix(suffix: str) -> str:
     return path
 
 
-# frob:waive WIRE001 reason="only caller is atexit.register(_remove_scratch_file, \
-# path) in _scratch_file_for_suffix -- a dynamic registration the call-graph resolver \
-# cannot see, not a dead symbol"
+# frob:waive WIRE001 follow_up="T-2931" reason="only caller is \
+# atexit.register(_remove_scratch_file, path) in _scratch_file_for_suffix -- a dynamic \
+# registration the call-graph resolver cannot see, not a dead symbol; T-2931 tracks \
+# generalizing WIRE001's dynamic-dispatch exemption to recognize this pattern so this \
+# per-site waiver becomes unnecessary"
 def _remove_scratch_file(path: str) -> None:
     """`atexit` cleanup for one `_scratch_file_for_suffix` entry -- best
     effort, a missing scratch file at interpreter exit is not an error."""
