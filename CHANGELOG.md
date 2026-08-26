@@ -357,6 +357,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2906: wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks (capability/dup/docblock facets)
 - T-2908: frob-suggest: three nudge rules misfire and tax every agent call with a retry
 - T-2913: Rapid land still runs a full inline frob check on the land critical path, serialized under land.lock
+- T-2923: frob sys shrink: tighten unobserved may= capabilities, never widen
 - T-2929: rapid verification debt drifts silently and poisons attribution (post-land sweep files false regressions on a stale baseline)
 
 ## [0.530.0] - unreleased

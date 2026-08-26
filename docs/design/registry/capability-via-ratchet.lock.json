@@ -146,14 +146,14 @@
       "ticket": "T-1628"
     },
     "stratamod::fs.read": {
-      "accepted_count": 9,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 10,
+      "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (real fs.read sites in shrink_report's design-file loader/scanner); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+      "ticket": "T-2923"
     },
     "stratamod::fs.write": {
-      "accepted_count": 3,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 4,
+      "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (apply_shrink's real fs.write site, Path.write_text); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+      "ticket": "T-2923"
     },
     "stratamod::net.connect": {
       "accepted_count": 1,
@@ -216,9 +216,9 @@
       "ticket": "T-1628"
     },
     "testsuite::net": {
-      "accepted_count": 12,
-      "reason": "T-1628 initial baseline: current measured site count at ratchet introduction time, not a fresh justification for any individual grant",
-      "ticket": "T-1628"
+      "accepted_count": 13,
+      "reason": "T-2923: tests/unit/strata/test_shrink.py declares this grant (real requests.get(...) needle literals exercising the net.connect observation these fixtures need); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
+      "ticket": "T-2923"
     },
     "testsuite::net-mutate": {
       "accepted_count": 1,
@@ -312,5 +312,20 @@
     }
   },
   "generated_by": "T-1628",
-  "schema_version": 1
+  "schema_version": 1,
+  "stratamod::fs.read": {
+    "accepted_count": 10,
+    "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (real fs.read sites in shrink_report's design-file loader/scanner); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+    "ticket": "T-2923"
+  },
+  "stratamod::fs.write": {
+    "accepted_count": 4,
+    "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (apply_shrink's real fs.write site, Path.write_text); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+    "ticket": "T-2923"
+  },
+  "testsuite::net": {
+    "accepted_count": 13,
+    "reason": "T-2923: tests/unit/strata/test_shrink.py declares this grant (real requests.get(...) needle literals exercising the net.connect observation these fixtures need); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
+    "ticket": "T-2923"
+  }
 }

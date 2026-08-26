@@ -373,3 +373,46 @@ residue rather than force them into this ticket's own scope:
 - `threats`: needs a real join from `ThreatViolation.node` to a
   boundary's flow endpoints that does not exist anywhere yet.
 
+
+## `frob sys shrink` (T-2923)
+
+<a id="frob-sys-shrink-t-2923"></a>
+
+Part of the T-2920 shrink-only ratchet epic: `may=` is a CEILING on what
+a node's code is permitted to do, and this is the ONLY verb in this
+group that ever writes a `.strata` file's declared surface -- and the
+ONLY direction it ever writes in. `frob sys shrink` drops a `may`
+capability atom a node declares but the scanner never observes anywhere
+in that node's own `code=`-bound files (SYS101). It never widens
+anything: capability escalation (a node's code performing a capability
+its `may=` does not grant, SYS100) stays a hard error everywhere in this
+repo's gates, with no flag on this command that could ever auto-sync it.
+It also never binds an unbound capability-bearing file (SYS103) to any
+node -- that stays a hard error requiring a human to place the file, on
+purpose, since auto-binding would erase the signal that a new,
+uncategorised, capability-bearing file entered the system.
+
+```
+frob sys shrink                # drop stale grants, write the result
+frob sys shrink --check        # report what would be dropped, write nothing
+frob sys shrink /path/to/repo  # a different repo root
+```
+
+A declared capability that is only PARTIALLY stale -- the same kind
+declared via two different `via` scopes, only one of which is actually
+stale -- is left untouched entirely rather than guessed at; re-deriving
+the per-via join correctly would duplicate `frob.strata._selfconform`'s
+own logic and risk drifting from it. Narrow that case by hand.
+
+### CLI wiring
+
+<!-- frob:describes src/frob/app/sys_runner.py::_run_shrink -->
+
+### See also
+
+`frob.strata._sync_may` implements the OPPOSITE, WIDENING direction for
+SYS100 (auto-adding a `may` grant to match an observed-but-undeclared
+capability) -- T-1531/T-1545 policy that T-2920 explicitly reverses;
+T-2922 unwires that module's live caller. `shrink` shares no code with
+it beyond a read-only brace-depth text-scanning helper
+(`node_body_span`).

@@ -1086,9 +1086,10 @@ class AppConfig(BaseModel):
     mutate_json: bool = False
 
     # sys (T-0084 plan; T-0085 doc; T-0086 export; T-0115 audit; T-1480
-    # trace; T-1925 threats; capacity is a later phase-5 ticket, not yet
-    # landed -- `check` was deliberately dropped, T-1926)
+    # trace; T-1925 threats; T-1927 capacity; T-2923 shrink -- `check` was
+    # deliberately dropped, T-1926)
     sys_command: str | None = None  # plan|doc|export|audit|trace|threats|capacity
+    # |shrink -- see the block comment above for verb-by-verb detail
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
@@ -1102,6 +1103,11 @@ class AppConfig(BaseModel):
     sys_threats_boundary: str | None = None
     # T-1927: `frob sys capacity [--population N]` -- optional population scale.
     sys_capacity_population: float | None = None
+    # T-2923: `frob sys shrink [--check]` -- drop SYS101 declared-but-
+    # never-observed may capabilities; --check reports without writing.
+    # This is the ONLY .strata-writing sys verb and the ONLY direction it
+    # ever writes: shrink-only, never widening (T-2920 epic).
+    sys_shrink_check: bool = False
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)

@@ -475,6 +475,8 @@ _BOOL_FLAGS = (
     "sys_apply",
     # frob:ticket T-1480
     "sys_trace_through_barriers",
+    # frob:ticket T-2923
+    "sys_shrink_check",
     "ticket_dry_run",
     # frob:ticket T-1561
     "ticket_evidence_archived",

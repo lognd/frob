@@ -678,17 +678,22 @@ def _add_serve_parser(sub) -> None:
 # other cross-package DEAD001 waivers (T-1024 precedent)"
 def _add_sys_parser(sub) -> None:
     """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
-    (T-0085), `export` (T-0086), `trace` (T-1480), `threats` (T-1925), and
-    `capacity` (T-1927) today -- every roadmap-phase-5 verb (docs/strata/
-    roadmap.md "CLI surface (target)") now exists -- extend this parser
-    with one more `sys_sub.add_parser` per future verb, never replace it.
-    `audit` (T-0115) is the checking counterpart to `doc`; `check` was
-    deliberately dropped from the target list (T-1926) as a duplicate of
-    `audit`."""
+    (T-0085), `export` (T-0086), `trace` (T-1480), `threats` (T-1925),
+    `capacity` (T-1927), and `shrink` (T-2923) today -- every roadmap-
+    phase-5 verb (docs/strata/roadmap.md "CLI surface (target)") now
+    exists -- extend this parser with one more `sys_sub.add_parser` per
+    future verb, never replace it. `audit` (T-0115) is the checking
+    counterpart to `doc`; `check` was deliberately dropped from the
+    target list (T-1926) as a duplicate of `audit`. `shrink` is
+    DELIBERATELY the only verb in this group that ever WRITES a `.strata`
+    file's declared surface, and only ever in the shrink direction (T-2920
+    epic): dropping a `may` capability atom this repo's own scanner never
+    observes. It has no flag that widens anything."""
     # -- sys -------------------------------------------------------------------
     # frob:ticket T-0167
     # frob:ticket T-1925
     # frob:ticket T-1927
+    # frob:ticket T-2923
     sys_p = sub.add_parser(
         "sys",
         help="strata design-model applications (plan, doc, export, ...)",
@@ -701,6 +706,7 @@ def _add_sys_parser(sub) -> None:
     _add_sys_trace_parser(sys_sub)
     _add_sys_threats_parser(sys_sub)
     _add_sys_capacity_parser(sys_sub)
+    _add_sys_shrink_parser(sys_sub)
 
 
 _SYS_EPILOG = (
@@ -835,6 +841,30 @@ def _add_sys_capacity_parser(sys_sub) -> None:
         default=None,
         help="scale the model's own declared `users` demand linearly to "
         "this population before checking capacity",
+    )
+
+
+# frob:ticket T-2923
+def _add_sys_shrink_parser(sys_sub) -> None:
+    """Register `frob sys shrink [--check] [path]` (T-2923, child of the
+    T-2920 shrink-only ratchet epic): the ONLY `.strata`-writing verb in
+    this group, and the ONLY direction it ever writes in is dropping a
+    declared-but-never-observed `may` capability atom (SYS101). There is
+    no widening flag here, on purpose -- capability escalation (SYS100)
+    stays a hard error everywhere in this repo's gates, never auto-synced
+    by this or any other verb."""
+    sys_shrink_p = sys_sub.add_parser(
+        "shrink",
+        help="drop declared-but-never-observed may capabilities (SYS101) "
+        "-- the only shrink-only auto-tightening direction (T-2920); "
+        "never widens anything",
+    )
+    sys_shrink_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_shrink_p.add_argument(
+        "--check",
+        dest="sys_shrink_check",
+        action="store_true",
+        help="report what would be dropped without writing any file",
     )
 
 

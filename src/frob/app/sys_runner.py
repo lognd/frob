@@ -95,6 +95,7 @@ from frob.strata import (
 )
 from frob.strata._multifile import elaborate_merged
 from frob.strata._parse import parse_module
+from frob.strata._shrink import apply_shrink, shrink_report
 from frob.tickets import load_all, new_ticket
 from frob.tickets._models import Origin, TicketSpec
 from frob.vet._capability_registry import (
@@ -1151,13 +1152,82 @@ def _run_capacity(cfg: AppConfig) -> None:
         sys.exit(1)
 
 
+# ---------------------------------------------------------------------------
+# shrink (T-2923, child of the T-2920 shrink-only ratchet epic)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-2923
+def _print_shrink_report(report) -> bool:  # noqa: ANN001
+    """Print `shrink_report`'s result via the ordinary logger (matching
+    `_print_capacity_report`'s own plain-`_log` style, not `Renderer`):
+    every dropped grant, and every kind left untouched because it was
+    only partially stale. Returns True when nothing needed shrinking (a
+    clean/no-op run), matching this module's other `_print_*_report`
+    helpers' `proved`-style boolean-return convention."""
+    any_drops = False
+    for f in report.files:
+        for drop in f.drops:
+            any_drops = True
+            _log.warning(
+                "shrink: %s node=%s kind=%r -- declared but never "
+                "observed, dropping",
+                f.path,
+                drop.node,
+                drop.kind,
+            )
+    for skip in report.skipped:
+        _log.info(
+            "shrink: node=%s kind=%r is only partially stale (%d of %d "
+            "declared instances) -- left untouched, narrow by hand",
+            skip.node,
+            skip.kind,
+            skip.stale_instances,
+            skip.declared_instances,
+        )
+    if not any_drops and not report.skipped:
+        _log.info("shrink: nothing to tighten -- every declared capability is observed")
+    return not any_drops
+
+
+# frob:ticket T-2923
+def _run_shrink(cfg: AppConfig) -> None:
+    """`frob sys shrink [--check] [path]`: the ONLY `.strata`-writing sys
+    verb, and the ONLY direction it ever writes in is dropping a
+    declared-but-never-observed `may` capability atom (SYS101) -- see
+    `frob.strata._shrink`'s own module docstring for the full T-2920
+    design this implements. `--check` reports the same findings without
+    writing anything (mirrors `frob fmt --check`'s own report-only
+    posture)."""
+    root = _resolve_design_root(cfg, "shrink")
+    design_dir = _design_dir(root)
+    result = shrink_report(root, design_dir)
+    if result.is_err:
+        _log.error("sys shrink: %s", result.danger_err)
+        sys.exit(1)
+    report = result.danger_ok
+    _print_shrink_report(report)
+    if cfg.sys_shrink_check:
+        if report.has_drift:
+            _log.info("sys shrink --check: drift found, run without --check to apply")
+        return
+    if not report.has_drift:
+        return
+    written = apply_shrink(root, report)
+    _log.info("sys shrink: wrote %d file(s): %s", len(written), list(written))
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
+# frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
 # frob:waive AFFECT001 reason="the host.md/reliability.md anchors document the SYS2xx \
 # resource-contention/REL2xx reliability CHECKS run() dispatches into (audit's own \
-# machinery); docs/commands/sys.md's own drift is tracked by a filed follow-up (draft \
-# T-draft-84b54204, out of this ticket's declared scope) rather than hand-patched here"
+# machinery), unchanged by this diff; docs/commands/sys.md's own PRE-EXISTING drift is \
+# tracked by a filed follow-up (draft T-draft-84b54204, out of this ticket's declared \
+# scope) rather than hand-patched here -- this diff's OWN new shrink dispatch is \
+# separately documented via the new frob:doc anchor just added above, not folded into \
+# that pre-existing waiver"
 # frob:ticket T-0084
 # frob:ticket T-0085
 # frob:ticket T-0086
@@ -1165,18 +1235,22 @@ def _run_capacity(cfg: AppConfig) -> None:
 # frob:ticket T-1480
 # frob:ticket T-1925
 # frob:ticket T-1927
+# frob:ticket T-2923
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
     `export` (T-0086), `audit` (T-0115), `trace` (T-1480), `threats`
-    (T-1925), and `capacity` (T-1927) all exist today -- every roadmap-
-    phase-5 verb (docs/strata/roadmap.md "CLI surface (target)") is now
-    wired; extend this dispatch with any future verb, never replace it.
-    `check` was deliberately dropped from the target CLI surface rather
-    than built (T-1926: it would duplicate `audit`). T-1870:
-    `sync-interface` (T-1150) used to be a branch here; deleted along with
-    its writer, per an explicit owner directive that no code path may
-    auto-update declared public-symbol surface."""
+    (T-1925), `capacity` (T-1927), and `shrink` (T-2923) all exist today
+    -- every roadmap-phase-5 verb (docs/strata/roadmap.md "CLI surface
+    (target)") is now wired; extend this dispatch with any future verb,
+    never replace it. `check` was deliberately dropped from the target
+    CLI surface rather than built (T-1926: it would duplicate `audit`).
+    T-1870: `sync-interface` (T-1150) used to be a branch here; deleted
+    along with its writer, per an explicit owner directive that no code
+    path may auto-update declared public-symbol surface -- `shrink`
+    (T-2923, T-2920 epic) is DIFFERENT: it only ever DROPS a declared-but-
+    never-observed `may` capability, the sole safe auto-tightening
+    direction, never widens anything."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
@@ -1198,5 +1272,10 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "capacity":
         _run_capacity(cfg)
         return
-    _log.error("usage: frob sys <plan|doc|export|audit|trace|threats|capacity> ...")
+    if cfg.sys_command == "shrink":
+        _run_shrink(cfg)
+        return
+    _log.error(
+        "usage: frob sys <plan|doc|export|audit|trace|threats|capacity|shrink> ..."
+    )
     sys.exit(1)

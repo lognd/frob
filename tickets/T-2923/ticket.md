@@ -1,7 +1,7 @@
 ---
 id: T-2923
 title: 'frob sys shrink: tighten unobserved may= capabilities, never widen'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -101,6 +101,18 @@ triage_changes:
   reason: child implementation ticket of the T-2920 shrink-only ratchet epic
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants::test_drops_declared_but_never_observed_capability
+- tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants::test_no_drift_when_everything_observed
+- tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants::test_partially_stale_kind_is_left_untouched
+- tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants::test_apply_shrink_writes_only_changed_files
+- tests/unit/strata/test_shrink.py::TestShrinkReportDropsStaleGrants::test_check_only_report_never_writes
+- tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds::test_capability_escalation_stays_an_error_and_shrink_does_not_widen
+- tests/unit/strata/test_shrink.py::TestShrinkNeverWidensOrBinds::test_unbound_capability_file_stays_an_error_and_shrink_does_not_bind_it
+- tests/unit/strata/test_shrink.py::TestNoWideningPath::test_module_has_no_widen_or_bind_named_symbol
+- tests/unit/strata/test_shrink.py::TestNoWideningPath::test_shrink_report_signature_has_no_widening_parameter
+- tests/unit/strata/test_shrink.py::TestNoWideningPath::test_apply_shrink_signature_has_no_widening_parameter
+- tests/unit/strata/test_shrink.py::TestNoWideningPath::test_this_module_never_imports_sync_may_widening_functions
 designated_repro_test: null
 threat: null
 component: null

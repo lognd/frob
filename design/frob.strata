@@ -585,8 +585,8 @@ node stratamod : trusted {
     // (`_threat.py`) reads a consuming repo's `frob.toml` -- a real,
     // observed `fs.write`/`fs.read` site (`Path.open("rb")`/`tomllib.load`),
     // not previously exercised anywhere else in this package.
-    may "fs.write" via "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_threat.py";
-    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform_surface_rules.py", "src/frob/strata/_sync_may.py";
+    may "fs.write" via "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_shrink.py", "src/frob/strata/_threat.py";
+    may "fs.read" via "src/frob/strata/_code_binding.py", "src/frob/strata/_design_load.py", "src/frob/strata/_effects.py", "src/frob/strata/_mode_conformance.py", "src/frob/strata/_native_staleness.py", "src/frob/strata/_obligation_proof.py", "src/frob/strata/_reliability.py", "src/frob/strata/_selfconform_surface_rules.py", "src/frob/strata/_shrink.py", "src/frob/strata/_sync_may.py";
     may "net.connect" via "src/frob/strata/_threat_catalog_benign.py";
 }
 
@@ -1467,7 +1467,7 @@ node testsuite : trusted {
     // `net.connect` atom -- the narrower kind expands to a strict subset
     // of what this bare declaration already covers, so a standalone atom
     // for it is never mutation-audit load-bearing.
-    may "net" via "tests/test_app_daemon_proxy.py", "tests/test_capability_registry.py", "tests/test_gates.py", "tests/test_policy.py", "tests/test_serve_leases.py", "tests/test_vet.py", "tests/unit/perf/test_advisories.py", "tests/unit/strata/test_effects.py", "tests/unit/strata/test_selfconform.py", "tests/unit/strata/test_sync_may.py", "tests/unit/strata/test_threat.py", "tests/unit/test_arch.py";
+    may "net" via "tests/test_app_daemon_proxy.py", "tests/test_capability_registry.py", "tests/test_gates.py", "tests/test_policy.py", "tests/test_serve_leases.py", "tests/test_vet.py", "tests/unit/perf/test_advisories.py", "tests/unit/strata/test_effects.py", "tests/unit/strata/test_selfconform.py", "tests/unit/strata/test_shrink.py", "tests/unit/strata/test_sync_may.py", "tests/unit/strata/test_threat.py", "tests/unit/test_arch.py";
     // T-2464: TestNetMutateVerbSplit's own fire fixtures contain real
     // `requests.post(`/`httpx.delete(` needle literals (proving the new
     // net-mutate split actually fires), the same self-conformance
