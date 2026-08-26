@@ -333,6 +333,12 @@ instead of cleaning up after it:
   before this function's own platform guard ever ran once. Measured for
   real via T-2917's windows-latest CI job: `frob --help` itself crashed
   in 54s, at `uv run frob natives build`'s own import of this module.
+  T-2944: the `sys.platform != "linux"` guard's own body now logs a
+  WARNING before returning `False`, so the degrade is loud from this
+  function itself (not only from its caller,
+  `_arm_forkserver_helper_pdeathsig_if_requested`, which already warned)
+  -- closing a gap PLATFORM001's static scan flagged: a silent guard is
+  invisible to it even when a caller elsewhere happens to log.
 - The trap this closes: a `forkserver`-spawned WORKER's real OS parent is
   the persistent forkserver HELPER process, not the `frob check`
   launcher (workers are raw `fork()`ed from the helper, never `exec`ed,

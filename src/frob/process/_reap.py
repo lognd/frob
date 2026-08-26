@@ -131,6 +131,7 @@ FORKSERVER_ARM_PDEATHSIG_ENV = "FROB_FORKSERVER_ARM_PDEATHSIG"
 
 # frob:doc docs/modules/process.md#forkserver-reaping-t-2443
 # frob:ticket T-2849
+# frob:ticket T-2944
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_arms_successfully_on_linux  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
@@ -202,6 +203,18 @@ def arm_parent_death_signal(sig: int | None = None) -> bool:
     every worker (direct child of the HELPER, not the launcher) is
     signalled in turn."""
     if sys.platform != "linux":
+        # T-2944: log HERE, in this guard's own body, not only at the
+        # call site -- `_arm_forkserver_helper_pdeathsig_if_requested`
+        # already warns on a `False` return, but PLATFORM001's static
+        # scan cannot see across call sites, and a future caller with no
+        # such lucky log would ship this exact silent-degrade shape
+        # completely undetected.
+        _log.warning(
+            "process: arm_parent_death_signal: PR_SET_PDEATHSIG has no "
+            "equivalent on %s -- forkserver orphan-reaping via parent-death "
+            "signal is disabled on this platform (T-2944)",
+            sys.platform,
+        )
         return False
     if sig is None:
         sig = signal.SIGKILL

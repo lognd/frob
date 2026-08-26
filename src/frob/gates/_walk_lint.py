@@ -1,3 +1,13 @@
+# frob:waive LARGE001 reason="T-2944: this file crossed the 800-line threshold adding \
+# two more PLATFORM001 shapes (a silent platform-string guard scan, a bare-restricted- \
+# import scan) alongside the existing WALK001 scan and the original PLATFORM001 `X is \
+# None` scan. WALK001 and PLATFORM001 ARE a genuine seam (two independently- testable \
+# AST scans sharing this file only for one-pass-over-the-tree convenience, not because \
+# they are the same concern) -- a real split is the right fix, but a new module was \
+# outside T-2944's declared scope (src/frob/gates/_walk_lint.py, \
+# src/frob/process/_reap.py, src/frob/tickets/_leases.py, two test files); filed as \
+# its own scoped ticket (T-2962, renumbers on land) rather than expanding \
+# T-2944's scope or leaving this undocumented"
 """WALK001: gate against unpruned filesystem traversals (T-0471,
 docs/modules/gates.md#walk001-unpruned-traversal-t-0471).
 
@@ -39,10 +49,18 @@ Linux-only CI (T-2917's own finding: this repo's CI ran ubuntu-latest
 only until this same ticket series added Windows/macOS). PLATFORM001
 generalizes that ONE incident into a repo-wide static check so the NEXT
 POSIX-only primitive someone adds cannot ship the same silent gap.
+
+T-2944 widened PLATFORM001 to two more shapes the original `X is None`
+scan missed: a `sys.platform`/`os.name`/`platform.system()` guard that
+degrades completely silently (no log, no raise) rather than merely
+logging (`_scan_platform_string_guards`), and a bare, unconditional
+module-top-level `import <restricted-module>` with no guard idiom at
+all (`_scan_bare_restricted_imports`, the T-2952 regression class).
 """
 
 # frob:ticket T-0471
 # frob:ticket T-2919
+# frob:ticket T-2944
 from __future__ import annotations
 
 import ast
@@ -440,6 +458,133 @@ def _platform_guard_names(tree: ast.Module) -> frozenset[str]:
     return frozenset(names)
 
 
+# frob:ticket T-2944
+#: T-2944 shape 2: `sys.platform`/`os.name` reads (`_dotted_prefix`);
+#: `platform.system()` (a call) is matched inline below.
+_PLATFORM_STRING_EXPRS = frozenset({"sys.platform", "os.name"})
+
+
+# frob:ticket T-2944
+def _is_platform_string_read(node: ast.expr) -> bool:
+    """Whether `node` reads the platform as a string (`sys.platform`,
+    `os.name`, or a bare `platform.system()` call)."""
+    if _dotted_prefix(node) in _PLATFORM_STRING_EXPRS:
+        return True
+    return (
+        isinstance(node, ast.Call)
+        and not node.args
+        and not node.keywords
+        and _dotted_prefix(node.func) == "platform.system"
+    )
+
+
+# frob:ticket T-2944
+def _is_platform_string_guard_test(test: ast.expr) -> bool:
+    """Whether `test` is `<platform-string> (!=|==) "<literal>"` --
+    T-2944 shape 2 (`_reap.py:204`). A bare `ast.Compare` only -- a
+    `BoolOp` combining it with something else (`reap_orphaned_
+    forkservers`'s `sys.platform == "win32" or not proc.is_dir()`) is
+    real branching logic, not this rule's target."""
+    if not isinstance(test, ast.Compare):
+        return False
+    if len(test.ops) != 1 or not isinstance(test.ops[0], (ast.Eq, ast.NotEq)):
+        return False
+    if len(test.comparators) != 1:
+        return False
+    comparator = test.comparators[0]
+    if not (
+        isinstance(comparator, ast.Constant) and isinstance(comparator.value, str)
+    ):
+        return False
+    return _is_platform_string_read(test.left)
+
+
+# frob:ticket T-2944
+# frob:waive DUP001 reason="T-2944: the structural clone detector matches this against \
+# _print_fuzz_results/_near_duplicate_cluster/_assumption_ledger_lines purely on the \
+# generic shape (iterate a small list, isinstance/attr checks, return a bool/subset) \
+# -- those three are semantically unrelated (fuzz-result logging, near-duplicate \
+# cluster formation, assumption-ledger rendering); there is no shared abstraction to \
+# extract with a platform-guard-body no-op check"
+def _is_degrade_body(body: list[ast.stmt]) -> bool:
+    """Whether an `If.body` is a pure "return falsy, do nothing else"
+    (or bare `pass`) no-op -- real platform-specific WORK that merely
+    doesn't log/raise (`_coverage_refresh.py`'s win32 `taskkill` branch)
+    must stay quiet. Ignores a leading string-literal "comment"
+    statement, then requires exactly one real statement left."""
+    real_stmts = [
+        stmt
+        for stmt in body
+        if not (
+            isinstance(stmt, ast.Expr)
+            and isinstance(stmt.value, ast.Constant)
+            and isinstance(stmt.value.value, str)
+        )
+    ]
+    if len(real_stmts) != 1:
+        return False
+    stmt = real_stmts[0]
+    if isinstance(stmt, ast.Pass):
+        return True
+    if not isinstance(stmt, ast.Return):
+        return False
+    value = stmt.value
+    if value is None:
+        return True
+    if isinstance(value, ast.Constant):
+        return value.value is None or value.value is False
+    if isinstance(value, (ast.List, ast.Tuple, ast.Set)):
+        return not value.elts
+    if isinstance(value, ast.Dict):
+        return not value.keys
+    return False
+
+
+# frob:ticket T-2944
+def _scan_platform_string_guards(tree: ast.Module) -> tuple[_PlatformSite, ...]:
+    """Every silent platform-string no-op degrade (T-2944 shape 2) --
+    body is `_is_degrade_body`-shaped and neither `_guard_is_loud` nor
+    `_guard_logs`. Checks the guard's OWN body only, never a caller
+    elsewhere: `arm_parent_death_signal`'s guard is caught here even
+    though its caller happens to log, since this scan cannot see across
+    call sites and a future guard with no lucky caller needs catching."""
+    sites: list[_PlatformSite] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        if not _is_platform_string_guard_test(node.test):
+            continue
+        if _guard_is_loud(node.body) or _guard_logs(node.body):
+            continue
+        if not _is_degrade_body(node.body):
+            continue
+        sites.append(_PlatformSite(node.lineno, ("<platform-string>",)))
+    return tuple(sites)
+
+
+# frob:ticket T-2944
+def _scan_bare_restricted_imports(tree: ast.Module) -> tuple[_PlatformSite, ...]:
+    """Every module-TOP-LEVEL `import X` (never nested in a `try:`)
+    naming a `_PLATFORM_RESTRICTED_MODULES` module -- T-2944 shape 3,
+    the T-2952 regression class (`_new_renumber.py` et al's bare
+    `import fcntl`); this scan is the regression guard."""
+    guarded_import_ids = {
+        id(stmt)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Try)
+        for stmt in node.body
+        if isinstance(stmt, ast.Import)
+    }
+    sites: list[_PlatformSite] = []
+    for stmt in tree.body:
+        if not isinstance(stmt, ast.Import) or id(stmt) in guarded_import_ids:
+            continue
+        for alias in stmt.names:
+            if alias.name in _PLATFORM_RESTRICTED_MODULES:
+                sites.append(_PlatformSite(stmt.lineno, (alias.name,)))
+    return tuple(sites)
+
+
 def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str]:
     """The subset of `guard_names` that `test` compares to `None` --
     handles a single `X is None` as well as an `X is None and Y is
@@ -610,6 +755,64 @@ def _platform001_violation(rel_path: str, site: _PlatformSite) -> Violation:
     )
 
 
+# frob:enforces CHK-GATE-PLATFORM001
+# frob:ticket T-2944
+def _platform001_string_violation(rel_path: str, site: _PlatformSite) -> Violation:
+    """The PLATFORM001 `Violation` for one silent platform-STRING degrade
+    (`_scan_platform_string_guards`, T-2944 shape 2)."""
+    _log.warning(
+        "PLATFORM001: %s:%d a platform-string guard degrades silently "
+        "instead of refusing loudly",
+        rel_path,
+        site.lineno,
+    )
+    return Violation(
+        rule="PLATFORM001",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=site.lineno,
+        message=(
+            f"PLATFORM001: {rel_path}:{site.lineno} a `sys.platform`/"
+            f"`os.name`/`platform.system()` guard returns a falsy/no-op "
+            f"value with no raise and no log in its OWN body (T-2944) -- "
+            f"a caller elsewhere that logs is invisible to this scan; "
+            f"declare a real fallback, refuse LOUDLY, or log in the "
+            f'guard itself, or `frob:waive PLATFORM001 reason="..."` if '
+            f"this is a structured-error return this scan cannot see"
+        ),
+    )
+
+
+# frob:enforces CHK-GATE-PLATFORM001
+# frob:ticket T-2944
+def _platform001_bare_import_violation(rel_path: str, site: _PlatformSite) -> Violation:
+    """The PLATFORM001 `Violation` for one bare unconditional import of a
+    platform-restricted module (`_scan_bare_restricted_imports`, T-2944
+    shape 3 -- the T-2952 regression class)."""
+    module_name = site.names[0]
+    _log.warning(
+        "PLATFORM001: %s:%d bare unconditional `import %s` has no "
+        "platform guard at all",
+        rel_path,
+        site.lineno,
+        module_name,
+    )
+    return Violation(
+        rule="PLATFORM001",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=site.lineno,
+        message=(
+            f"PLATFORM001: {rel_path}:{site.lineno} bare unconditional "
+            f"`import {module_name}` has no platform guard -- crashes the "
+            f"IMPORT of this module on any platform lacking `{module_name}` "
+            f"(T-2952); guard with `try: import {module_name} / except "
+            f"ImportError: {module_name} = None`, or `frob:waive "
+            f'PLATFORM001 reason="..."` if never imported cross-platform'
+        ),
+    )
+
+
 # frob:doc docs/modules/gates.md#walk001-unpruned-traversal-t-0471
 # frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
 # frob:tests tests/test_walk_lint_gate.py::TestHelper.test_helper_call_is_silent
@@ -619,9 +822,15 @@ def _platform001_violation(rel_path: str, site: _PlatformSite) -> Violation:
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_warn_and_continue_fires  # noqa: E501
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_loud_refusal_is_quiet  # noqa: E501
 # frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_no_platform_probe_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_silent_string_guard_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_logged_string_guard_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001StringGuard.test_real_platform_branch_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_bare_import_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001BareImport.test_guarded_import_is_quiet  # noqa: E501
 # frob:invariant INV-005
 # invariant spec: [INV-005](invariants/INV-005.md)
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole WALK001 pass; the documented behavior is unchanged, so docs/modules/gates.md#walk001-unpruned-traversal-t-0471 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
+# frob:ticket T-2944
 def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
     """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471)
     and PLATFORM001 (docs/modules/gates.md#platform001-posix-only-
@@ -653,6 +862,14 @@ def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
             violations.extend(
                 _platform001_violation(rel_path, site)
                 for site in _scan_platform_guards(tree)
+            )
+            violations.extend(
+                _platform001_string_violation(rel_path, site)
+                for site in _scan_platform_string_guards(tree)
+            )
+            violations.extend(
+                _platform001_bare_import_violation(rel_path, site)
+                for site in _scan_bare_restricted_imports(tree)
             )
         except Exception:
             # One file's AST shape confusing the walk-site scanner must

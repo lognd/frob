@@ -2,7 +2,7 @@
 id: T-2944
 title: PLATFORM001 misses sys.platform-string guards; /proc-only worktree-liveness
   scan is permissive on macOS/Windows
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'

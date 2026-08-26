@@ -12,7 +12,9 @@ import subprocess
 from pathlib import Path
 
 from frob.gates._walk_lint import (
+    _scan_bare_restricted_imports,
     _scan_platform_guards,
+    _scan_platform_string_guards,
     _scan_python_walks,
     walk_lint_gate,
 )
@@ -38,6 +40,27 @@ def _init_repo(root: Path) -> None:
 def _commit(root: Path, message: str = "commit") -> None:
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", message)
+
+
+# frob:ticket T-2944
+def _assert_single_platform001_hit(tmp_path: Path, src: str) -> None:
+    """Shared end-to-end body for `TestPlatform001`/`TestPlatform001
+    StringGuard`/`TestPlatform001BareImport`'s own `test_gate_fires_
+    end_to_end` (DUP001): write `src` as the sole file of a synthetic
+    tracked repo and assert `walk_lint_gate` fires PLATFORM001 exactly
+    once, on that file."""
+    _init_repo(tmp_path)
+    pkg = tmp_path / "src" / "frob"
+    pkg.mkdir(parents=True)
+    (pkg / "__init__.py").write_text("")
+    (pkg / "offender.py").write_text(src)
+    _commit(tmp_path)
+
+    violations = walk_lint_gate(tmp_path)
+
+    platform_hits = [v for v in violations if v.rule == "PLATFORM001"]
+    assert len(platform_hits) == 1
+    assert platform_hits[0].file == "src/frob/offender.py"
 
 
 class TestRglob:
@@ -183,6 +206,7 @@ class TestSelfMatchExclusion:
         assert violations == ()
 
 
+# frob:ticket T-2944
 class TestPlatform001:
     """PLATFORM001 (T-2919): a POSIX/Windows-only primitive's absence
     guard must declare a cross-platform path or refuse loudly, never
@@ -278,20 +302,10 @@ class TestPlatform001:
         tree = ast.parse(src)
         assert _scan_platform_guards(tree) == ()
 
+    # frob:ticket T-2944
     def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
-        _init_repo(tmp_path)
-        pkg = tmp_path / "src" / "frob"
-        pkg.mkdir(parents=True)
-        (pkg / "__init__.py").write_text("")
-        (pkg / "offender.py").write_text(self._WARN_AND_CONTINUE_SRC)
-        _commit(tmp_path)
-
-        violations = walk_lint_gate(tmp_path)
-
-        platform_hits = [v for v in violations if v.rule == "PLATFORM001"]
-        assert len(platform_hits) == 1
-        assert platform_hits[0].file == "src/frob/offender.py"
+        _assert_single_platform001_hit(tmp_path, self._WARN_AND_CONTINUE_SRC)
 
     def test_gate_stays_quiet_on_properly_guarded_module(self, tmp_path: Path) -> None:
         # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
@@ -366,3 +380,147 @@ class TestPlatform001:
         )
         tree = ast.parse(src)
         assert len(_scan_platform_guards(tree)) == 1
+
+
+# frob:ticket T-2944
+class TestPlatform001StringGuard:
+    """T-2944's second PLATFORM001 shape: a `sys.platform`/`os.name`/
+    `platform.system()` guard that returns a falsy/no-op value with no
+    raise and no log anywhere in its own body -- distinct from
+    `TestPlatform001`'s existing `X is None` import-availability
+    population."""
+
+    #: Must-fire fixture: a byte-for-byte MODEL of `src/frob/process/
+    #: _reap.py::arm_parent_death_signal`'s real, still-live shape
+    #: (T-2944) -- `if sys.platform != "linux": return False`, no log,
+    #: no raise, in the guard's own body (its actual caller happens to
+    #: log a WARNING on the `False` return, but that is invisible to
+    #: this single-function static scan by design -- see
+    #: `_scan_platform_string_guards`'s own docstring).
+    _SILENT_STRING_GUARD_SRC = (
+        "import sys\n"
+        "\n"
+        "def arm_parent_death_signal(sig=None):\n"
+        "    if sys.platform != 'linux':\n"
+        "        return False\n"
+        "    return True\n"
+    )
+
+    #: Must-stay-quiet fixture #1: the identical shape, but the guard's
+    #: OWN body logs before returning -- the legitimate "loud enough"
+    #: version.
+    _LOGGED_STRING_GUARD_SRC = (
+        "import sys\n"
+        "\n"
+        "def arm_parent_death_signal(sig=None):\n"
+        "    if sys.platform != 'linux':\n"
+        "        _log.warning('pdeathsig is a no-op on this platform')\n"
+        "        return False\n"
+        "    return True\n"
+    )
+
+    #: Must-stay-quiet fixture #2: a real cross-platform BRANCH (both
+    #: arms do genuine work), modeled on `src/frob/testing/
+    #: _coverage_refresh.py`'s own `if sys.platform == "win32": taskkill
+    #: ... else: killpg ...` -- multi-statement bodies with real calls,
+    #: not a single falsy return/no-op, so `_is_degrade_body` must not
+    #: match either arm even though neither logs or raises.
+    _REAL_BRANCH_SRC = (
+        "import subprocess\n"
+        "import sys\n"
+        "\n"
+        "def kill_process_group(proc):\n"
+        "    if sys.platform == 'win32':\n"
+        "        subprocess.run(['taskkill', '/PID', str(proc.pid), '/T', '/F'])\n"
+        "        subprocess.run(['echo', 'done'])\n"
+        "    else:\n"
+        "        subprocess.run(['kill', str(proc.pid)])\n"
+        "        subprocess.run(['echo', 'done'])\n"
+    )
+
+    # frob:ticket T-2944
+    def test_silent_string_guard_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
+        tree = ast.parse(self._SILENT_STRING_GUARD_SRC)
+        sites = _scan_platform_string_guards(tree)
+        assert len(sites) == 1
+        assert sites[0].lineno == 4
+
+    # frob:ticket T-2944
+    def test_logged_string_guard_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
+        tree = ast.parse(self._LOGGED_STRING_GUARD_SRC)
+        assert _scan_platform_string_guards(tree) == ()
+
+    # frob:ticket T-2944
+    def test_real_platform_branch_is_quiet(self) -> None:
+        """A real cross-platform fallback branch (both arms do genuine
+        work) must not be mistaken for a permissive no-op degrade."""
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
+        tree = ast.parse(self._REAL_BRANCH_SRC)
+        assert _scan_platform_string_guards(tree) == ()
+
+    # frob:ticket T-2944
+    def test_boolop_guard_is_quiet(self) -> None:
+        """`src/frob/process/_reap.py`'s own `sys.platform == "win32" or
+        not proc.is_dir():` combined-test guards (real, documented
+        structural no-ops) must not fire -- only a bare `Compare` test
+        matches this shape, deliberately excluding a `BoolOp`."""
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_string_guards
+        src = (
+            "import sys\n"
+            "from pathlib import Path\n"
+            "\n"
+            "def reap(proc=Path('/proc')):\n"
+            "    if sys.platform == 'win32' or not proc.is_dir():\n"
+            "        return []\n"
+            "    return [1]\n"
+        )
+        tree = ast.parse(src)
+        assert _scan_platform_string_guards(tree) == ()
+
+    # frob:ticket T-2944
+    def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        _assert_single_platform001_hit(tmp_path, self._SILENT_STRING_GUARD_SRC)
+
+
+# frob:ticket T-2944
+class TestPlatform001BareImport:
+    """T-2944's third PLATFORM001 shape: a bare, unconditional module-
+    top-level `import X` of a platform-restricted module -- the T-2952
+    regression class (`src/frob/tickets/_new_renumber.py` et al, before
+    their fix)."""
+
+    #: Must-fire fixture: T-2952's own pre-fix
+    #: `src/frob/tickets/_new_renumber.py:31` shape.
+    _BARE_IMPORT_SRC = "import fcntl\n\ndef lock(fd):\n    fcntl.flock(fd, 1)\n"
+
+    #: Must-stay-quiet fixture: the standard guarded idiom this repo's
+    #: other ~10 platform-optional call sites already use.
+    _GUARDED_IMPORT_SRC = (
+        "fcntl = None\n"
+        "try:\n"
+        "    import fcntl\n"
+        "except ImportError:\n"
+        "    fcntl = None\n"
+    )
+
+    # frob:ticket T-2944
+    def test_bare_import_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_bare_restricted_imports
+        tree = ast.parse(self._BARE_IMPORT_SRC)
+        sites = _scan_bare_restricted_imports(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("fcntl",)
+
+    # frob:ticket T-2944
+    def test_guarded_import_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_bare_restricted_imports
+        tree = ast.parse(self._GUARDED_IMPORT_SRC)
+        assert _scan_bare_restricted_imports(tree) == ()
+
+    # frob:ticket T-2944
+    def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        _assert_single_platform001_hit(tmp_path, self._BARE_IMPORT_SRC)

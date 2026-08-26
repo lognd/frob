@@ -4578,6 +4578,51 @@ narrowing fixed) plus a control (`test_no_platform_probe_is_quiet`)
 proving an unrelated optional-
 dependency probe (`z3`) never anchors this rule at all.
 
+**T-2944: two more shapes.** The above only ever anchored on the `try:
+import X / except ImportError: X = None` idiom -- it had zero
+visibility into a `sys.platform`-shaped guard or an unguarded import.
+Measured directly: `src/frob/process/_reap.py::arm_parent_death_
+signal`'s `if sys.platform != "linux": return False` fired PLATFORM001
+zero times before this addition, despite being a real silent platform
+degrade (its caller happened to log, invisibly to this file-local AST
+scan). Two more scans now ride the same `walk_lint_gate` pass:
+
+- **Shape 2 -- silent platform-STRING guard** (`_scan_platform_string_
+  guards`): an `if <sys.platform|os.name|platform.system()> (!=|==)
+  "<literal>":` guard whose body is a pure no-op degrade
+  (`_is_degrade_body` -- a bare `return <falsy>`/`pass`, nothing else)
+  and neither logs nor refuses loudly IN ITS OWN BODY. Deliberately
+  requires a bare `ast.Compare` test (a `BoolOp` combining it with
+  something else, e.g. `reap_orphaned_forkservers`'s own `sys.platform
+  == "win32" or not proc.is_dir()`, is real branching logic, not this
+  rule's target) and a single-statement body (real cross-platform WORK
+  that merely doesn't log/raise, e.g. `_coverage_refresh.py`'s win32
+  `taskkill` branch, must stay quiet). Fixtures: `TestPlatform001String
+  Guard.test_silent_string_guard_fires` (must-fire, `arm_parent_death_
+  signal`'s real shape), `test_logged_string_guard_is_quiet`/
+  `test_real_platform_branch_is_quiet`/`test_boolop_guard_is_quiet`
+  (must-stay-quiet).
+- **Shape 3 -- bare unconditional restricted-module import**
+  (`_scan_bare_restricted_imports`): a module-TOP-LEVEL `import X`
+  (never nested in a `try:`) naming a `_PLATFORM_RESTRICTED_MODULES`
+  module -- the T-2952 regression class (`_new_renumber.py`/
+  `_socketd.py`/`_coverage_wait.py`'s pre-fix bare `import fcntl`,
+  which crashed the whole module's IMPORT on Windows). Fixtures:
+  `TestPlatform001BareImport.test_bare_import_fires` (must-fire) /
+  `test_guarded_import_is_quiet` (must-stay-quiet, the standard
+  guarded idiom).
+
+Investigated but deliberately NOT given a new shape: `src/frob/tickets/
+_leases.py::scan_for_live_worktree_process`'s `/proc`-only degrade
+(returns `None`, permissive). Its shape is structurally identical to
+two REAL, legitimate, explicitly-documented sites in this same repo
+(`reap_orphaned_forkservers`'s "structural no-op, not a degraded scan"
+comment; `count_running_checks`'s documented advisory-only contract) --
+a blanket AST rule cannot statically tell "backs a safety refusal" from
+"advisory/best-effort by design," and attempting one would have
+false-positived on legitimate code in this same file. Filed as its own
+scoped follow-up rather than guessed at here.
+
 ### EXCL001 (T-0465)
 
 <!-- frob:describes src/frob/gates/_exclude_hazard.py::exclude_hazard_gate -->
