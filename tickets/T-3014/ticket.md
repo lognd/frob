@@ -67,7 +67,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 8c37df7326eb319e304789ea9f16b9ad622f0fce
 ---
 T-2993 built NARR001 (frob.gates._narrative_blocks.narrative_blocks_gate) and
 proved it via direct-call fixtures (must-fire + must-stay-quiet + the
