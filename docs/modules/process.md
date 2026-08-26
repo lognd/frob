@@ -312,6 +312,16 @@ instead of cleaning up after it:
   signal the instant that process's DIRECT OS parent dies, by any means
   including `SIGKILL` -- including a self-kill fallback for the narrow
   fork/prctl race window where the parent exits between the two calls.
+  T-2936: `sig` defaults to `None`, resolved to `signal.SIGKILL` only
+  AFTER the function's own `sys.platform != "linux"` guard passes -- the
+  pre-T-2936 signature (`sig: int = signal.SIGKILL`) bound that default
+  at MODULE LOAD (a default argument is evaluated once, when the `def`
+  statement itself runs), crashing the IMPORT of `frob.process._reap`
+  -- and therefore every module that imports it -- on Windows
+  (`signal.SIGKILL` does not exist there) with an `AttributeError`,
+  before this function's own platform guard ever ran once. Measured for
+  real via T-2917's windows-latest CI job: `frob --help` itself crashed
+  in 54s, at `uv run frob natives build`'s own import of this module.
 - The trap this closes: a `forkserver`-spawned WORKER's real OS parent is
   the persistent forkserver HELPER process, not the `frob check`
   launcher (workers are raw `fork()`ed from the helper, never `exec`ed,

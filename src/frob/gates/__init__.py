@@ -37,7 +37,6 @@ import logging
 import multiprocessing
 import os
 import re
-import signal
 import time
 import tomllib
 from collections.abc import Callable, Mapping, Sequence
@@ -7544,7 +7543,13 @@ def _worker_arm_pdeathsig() -> None:
     behavior for that one worker, never blocks the pool from starting."""
     from frob.process._reap import arm_parent_death_signal
 
-    arm_parent_death_signal(signal.SIGKILL)
+    # T-2936: no explicit signal.SIGKILL arg -- arm_parent_death_signal's
+    # own default now resolves it internally, after its own platform
+    # guard, never at this call site (which would otherwise import-time
+    # bind `signal` module state at call time here too, just less
+    # dangerously since this line only runs inside a worker-init
+    # callback, never at import).
+    arm_parent_death_signal()
 
 
 # frob:ticket T-0767

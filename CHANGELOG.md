@@ -374,6 +374,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2930: Triage macOS-only pytest failures found via T-2917 CI matrix (156 failures, non-fcntl/prctl remainder)
 - T-2934: Fix 5 real PLATFORM001 findings: fcntl warn-and-continue in _lock.py/_land.py/_land_git_ops.py/_store.py
 - T-2935: Delete _sync_may.py's dead SYS100 auto-widening functions
+- T-2936: frob does not IMPORT on Windows: signal.SIGKILL evaluated as a default arg at module load crashes in 54s before any test runs
 - T-2937: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted ticket on timeout
 - T-2938: Move ClaimDivergence re-verification onto the deferred post-land queue instead of scoping it inline
 - T-2945: AF_UNIX socket path too long on macOS: relocate daemon.sock off deep project-root paths

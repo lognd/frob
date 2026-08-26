@@ -362,6 +362,46 @@ class TestArmParentDeathSignal:
         assert result is True
         assert killed == [(os.getpid(), signal.SIGTERM)]
 
+    def test_default_arg_is_not_evaluated_at_def_time(self) -> None:
+        """T-2936: `arm_parent_death_signal`'s default for `sig` MUST be a
+        platform-neutral sentinel (`None`), never `signal.SIGKILL` bound
+        directly in the `def` line -- a default argument value is
+        computed exactly once, when the `def` statement itself executes
+        at MODULE LOAD, so `sig: int = signal.SIGKILL` crashed the
+        IMPORT of this whole module on Windows (`signal.SIGKILL` does
+        not exist there) with an `AttributeError`, before this
+        function's own body -- including its own `sys.platform !=
+        "linux"` guard -- ever ran once. This inspects the function's
+        real `__defaults__` tuple directly: it is the one place a
+        crash-on-import regression here is provably impossible to miss,
+        since evaluating this assertion at all already proves the `def`
+        statement itself imported cleanly."""
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_default_arg_is_not_evaluated_at_def_time  # noqa: E501
+        assert arm_parent_death_signal.__defaults__ == (None,)
+
+    def test_sig_none_resolves_to_sigkill_only_after_the_platform_guard(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The `None` sentinel must still behave exactly like the old
+        `signal.SIGKILL` default on the one platform where SIGKILL
+        exists -- resolving late must not silently change behavior for
+        every existing Linux caller that relies on the default."""
+        # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_sig_none_resolves_to_sigkill_only_after_the_platform_guard  # noqa: E501
+        if sys.platform != "linux":
+            pytest.skip("PR_SET_PDEATHSIG is Linux-only")
+        monkeypatch.setattr(os, "getppid", lambda: 1)
+        killed: list[tuple[int, int]] = []
+        monkeypatch.setattr(os, "kill", lambda pid, sig: killed.append((pid, sig)))
+
+        class _FakeLibc:
+            def prctl(self, *args: object) -> int:
+                return 0
+
+        monkeypatch.setattr(_reap.ctypes, "CDLL", lambda *a, **k: _FakeLibc())
+        result = arm_parent_death_signal()
+        assert result is True
+        assert killed == [(os.getpid(), signal.SIGKILL)]
+
 
 # frob:ticket T-2849
 class TestArmForkserverHelperPdeathsigIfRequested:
@@ -372,22 +412,31 @@ class TestArmForkserverHelperPdeathsigIfRequested:
     def test_noop_without_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_noop_without_env_var  # noqa: E501
         monkeypatch.delenv(FORKSERVER_ARM_PDEATHSIG_ENV, raising=False)
-        called: list[int] = []
+        called: list[None] = []
         monkeypatch.setattr(
-            _reap, "arm_parent_death_signal", lambda sig: called.append(sig) or True
+            _reap, "arm_parent_death_signal", lambda: called.append(None) or True
         )
         _arm_forkserver_helper_pdeathsig_if_requested()
         assert called == []
 
     def test_arms_when_env_var_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """T-2936: the call site passes NO explicit `sig` argument any
+        more -- `arm_parent_death_signal` resolves its own safe default
+        internally, after its own platform guard, rather than the caller
+        binding `signal.SIGKILL` (the crash-on-Windows-import shape this
+        ticket fixed) itself."""
         # frob:tests tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested.test_arms_when_env_var_set  # noqa: E501
         monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
-        called: list[int] = []
-        monkeypatch.setattr(
-            _reap, "arm_parent_death_signal", lambda sig: called.append(sig) or True
-        )
+        called = 0
+
+        def _fake() -> bool:
+            nonlocal called
+            called += 1
+            return True
+
+        monkeypatch.setattr(_reap, "arm_parent_death_signal", _fake)
         _arm_forkserver_helper_pdeathsig_if_requested()
-        assert called == [signal.SIGKILL]
+        assert called == 1
 
     def test_success_logs_nothing_at_all(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
@@ -399,7 +448,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
         # process) -- reproduced for real while validating this fix. The
         # success path must stay silent.
         monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
-        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig: True)
+        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig=None: True)
         with caplog.at_level("DEBUG", logger="frob.process._reap"):
             _arm_forkserver_helper_pdeathsig_if_requested()
         assert caplog.records == []
@@ -413,7 +462,7 @@ class TestArmForkserverHelperPdeathsigIfRequested:
         # stdout]'s below_warning filter explicitly excludes it, so this
         # never contaminates --json stdout the way a DEBUG log would.
         monkeypatch.setenv(FORKSERVER_ARM_PDEATHSIG_ENV, "1")
-        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig: False)
+        monkeypatch.setattr(_reap, "arm_parent_death_signal", lambda sig=None: False)
         with caplog.at_level("WARNING", logger="frob.process._reap"):
             _arm_forkserver_helper_pdeathsig_if_requested()
         assert len(caplog.records) == 1

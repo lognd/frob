@@ -134,8 +134,20 @@ FORKSERVER_ARM_PDEATHSIG_ENV = "FROB_FORKSERVER_ARM_PDEATHSIG"
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_arms_successfully_on_linux  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_self_kills_on_missed_reparent_race  # noqa: E501
 # frob:tests tests/unit/test_process_reap.py::TestArmParentDeathSignal.test_returns_false_off_linux  # noqa: E501
-def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
-    """Arm `PR_SET_PDEATHSIG(sig)` (T-2849) on the CALLING process via
+def arm_parent_death_signal(sig: int | None = None) -> bool:
+    """T-2936: `sig` defaults to `None`, resolved to `signal.SIGKILL`
+    ONLY after the `sys.platform != "linux"` check below passes -- a
+    default argument is evaluated once, at MODULE LOAD, when the `def`
+    statement itself runs; `sig: int = signal.SIGKILL` crashed the
+    IMPORT of this whole module on Windows (no `signal.SIGKILL` there
+    at all) with an `AttributeError`, before a single line of this
+    function's own body -- including its own platform guard -- ever ran.
+    Every downstream import of `frob.process` (and everything that
+    imports IT) failed with it; `frob --help` itself crashed. Measured
+    for real via T-2917's windows-latest CI job (54s to failure, at
+    `uv run frob natives build`'s own import of this module).
+
+    Arm `PR_SET_PDEATHSIG(sig)` (T-2849) on the CALLING process via
     `ctypes`' libc `prctl(2)`: the kernel delivers `sig` to this process
     the instant its DIRECT OS parent terminates, by ANY means including
     `SIGKILL` -- this is what makes the mechanism uncatchable-parent-death
@@ -191,6 +203,8 @@ def arm_parent_death_signal(sig: int = signal.SIGKILL) -> bool:
     signalled in turn."""
     if sys.platform != "linux":
         return False
+    if sig is None:
+        sig = signal.SIGKILL
     try:
         libc = ctypes.CDLL(None, use_errno=True)
     except OSError:
@@ -283,7 +297,7 @@ def _arm_forkserver_helper_pdeathsig_if_requested() -> None:
     surfaces on stderr without contaminating JSON stdout."""
     # frob:waive SEC110 reason="boolean forkserver-arm marker, not a secret"
     if os.environ.get(FORKSERVER_ARM_PDEATHSIG_ENV) == "1":
-        if not arm_parent_death_signal(signal.SIGKILL):
+        if not arm_parent_death_signal():
             _log.warning(
                 "process: forkserver helper pid=%d could not arm "
                 "PR_SET_PDEATHSIG -- launcher-death leak NOT closed for this run "

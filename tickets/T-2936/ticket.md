@@ -2,7 +2,7 @@
 id: T-2936
 title: 'frob does not IMPORT on Windows: signal.SIGKILL evaluated as a default arg
   at module load crashes in 54s before any test runs'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
