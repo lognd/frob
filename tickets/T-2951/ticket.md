@@ -43,7 +43,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 7dd2deef7ac8934d3e4c0cf0c248d6b5c48050e7
 ---
 T-2936 fixed a real crash-on-Windows-import bug: `src/frob/process/
 _reap.py`'s `arm_parent_death_signal(sig: int = signal.SIGKILL)` bound
