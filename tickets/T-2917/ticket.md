@@ -2,7 +2,7 @@
 id: T-2917
 title: 'CI runs ubuntu-latest only: add windows-latest and macos-latest to the matrix
   so platform regressions are detectable at all'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -33,7 +33,11 @@ scope_changes:
     and macos-latest (T-2917 repro)'
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_includes_windows_and_macos
+- tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_matrix_is_fail_fast_false
+designated_repro_test: tests/test_ci_workflow_matrix.py::TestCiBuildMatrixCoversAllThreePlatforms::test_build_job_declares_a_matrix_strategy
 threat: null
 component: null
 anchor: false
