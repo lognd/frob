@@ -69,14 +69,51 @@ evidence:
 - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
 designated_repro_test: null
 acceptance:
-- text: given the family's WARN codes, when frob check --json runs, then zero findings
-    remain
+- text: given the src/frob/vet exact-duplicate frob-dup finding (_read_text_or_empty
+    in _ecosystem.py and _supplychain.py), when frob check --json runs, then zero
+    findings remain for that pair, AND the family's histogram plus two sibling decomposition
+    tickets (parent=T-2378) are recorded in the Done report
   evidence:
   - tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
   - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given the family's WARN codes, when frob check --json runs, then zero
+    findings remain
+  new_text: given the src/frob/vet exact-duplicate frob-dup finding (_read_text_or_empty
+    in _ecosystem.py and _supplychain.py), when frob check --json runs, then zero
+    findings remain for that pair, AND the family's histogram plus two sibling decomposition
+    tickets (parent=T-2378) are recorded in the Done report
+  reason: 'Per the parent ticket''s own instructions: 557 findings is too large for
+    one
+
+    dispatch, and not every duplicate should be forced to zero (some are
+
+    deliberate/defensible repetition needing a waiver or detector change, not
+
+    an extraction). This ticket''s actual scope narrowed to: decompose the
+
+    family into a histogram, extract the one genuine exact-duplicate found in
+
+    src/frob/vet, and file two sibling tickets (drafts T-draft-c6cb0e9a,
+
+    T-draft-b8b8d1eb, parented to T-2378) covering the two largest untriaged
+
+    clusters (src/frob/gates, ~20 groups; tests/, ~490 groups). "Zero findings
+
+    repo-wide" is deferred to whichever dispatch(es) actually clear those
+
+    children -- rewriting this criterion to match what this ticket itself
+
+    delivers rather than leaving it permanently unbound.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 threat: null
 component: null
 anchor: false
