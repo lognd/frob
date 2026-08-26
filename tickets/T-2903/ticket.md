@@ -2,7 +2,7 @@
 id: T-2903
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2645):
   1 new (rule, file) identit(ies), 1 finding(s) (WIRE002)'
-state: in-progress
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-25'
@@ -64,3 +64,6 @@ follow_up", commit 4c5feadc6, landed 2026-08-25 23:30:44) already fixed
 exactly this finding, before this triage started. Re-measurement
 confirms clean. Dropping as absorbed by the already-landed fix rather
 than duplicating it.
+
+## Drop reason
+- 2026-08-26: WIRE002 finding already fixed by landed T-2914; re-measured clean on current main, see ticket body for details (absorbed by T-2914)
