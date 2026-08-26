@@ -6244,8 +6244,9 @@ UNRESOLVED (not a mix of UNRESOLVED-and-clean, the ordinary case this
 contract already covers) rendered identically to a genuine clean pass --
 the counting/rendering contract above was upheld at the data level (the
 count was always there, correctly named) but not at the coarse icon a
-human skims. `docs/commands/check.md#tool-summary-pass--fail--unres-
-t-2891` documents the fix: a third `UNRES` icon for exactly the
+human skims.
+`docs/commands/check.md#tool-summary-pass--fail--unres-t-2891` documents
+the fix: a third `UNRES` icon for exactly the
 all-UNRESOLVED shape. This is a RENDERING-only change -- `exit_code`,
 `total_errors`, and every counting rule above are unchanged; UNRESOLVED
 still never fails `frob check` by itself, mixed UNRESOLVED-and-real-

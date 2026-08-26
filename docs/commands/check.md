@@ -474,7 +474,7 @@ JSON output (`--json`) includes the full structured `CheckResult` with per-tool
 The `## Tool summary` table's per-line icon is `pass` (green), `FAIL` (red),
 or a third state, `UNRES` (yellow), reserved for one specific shape: a
 `gate:<FAMILY>` line whose entire `ToolResult` is
-[UNRESOLVED](gates.md#unresolved-t-1664) -- zero errors, zero warnings, and
+[UNRESOLVED](../modules/gates.md#unresolved-t-1664) -- zero errors, zero warnings, and
 every diagnostic UNRESOLVED (T-1664's `Severity.UNRESOLVED`). This is the
 opt-in-schema-not-declared shape the `*SCHEMA`/`FLAGCOV` gate families
 report when a project's `frob.toml` omits their `known_keys` declaration
