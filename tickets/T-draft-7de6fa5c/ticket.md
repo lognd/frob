@@ -2,7 +2,7 @@
 id: T-draft-7de6fa5c
 title: rapid verification debt drifts silently and poisons attribution (post-land
   sweep files false regressions on a stale baseline)
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -19,6 +19,7 @@ scope:
 - tests/unit/test_rapid_sweep.py
 - docs/modules/tickets-verify-sweep.md
 - rapid-debt.jsonl
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -42,6 +43,11 @@ scope_changes:
 - op: add
   glob: rapid-debt.jsonl
   reason: new debt-kind write and its doc anchor
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes doc-drift acknowledgements to frob.lock
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
