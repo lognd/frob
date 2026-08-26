@@ -95,14 +95,23 @@ from typani.result import Err, Ok, Result
 
 from frob.logging import get_logger
 
-# T-2595: same posix-only degradation as `frob.tickets._land`'s own
-# `_land_lock` -- degrades to a documented no-op (see `_baseline_lock`'s
-# docstring) on a platform without `fcntl`, rather than failing import.
+# T-2595/T-2918: `fcntl` is POSIX-only. `_baseline_lock` used to degrade
+# to a logged NO-OP for the whole runtime of a process without it (i.e.
+# every Windows process, unconditionally, not just under rare contention)
+# -- T-2918 replaced that with a genuine `msvcrt.locking`-based lock on
+# Windows (see `_baseline_lock`'s docstring), so `msvcrt` is imported here
+# as the second of the two real platform backends.
 fcntl: ModuleType | None
 try:
     fcntl = importlib.import_module("fcntl")
 except ImportError:  # pragma: no cover -- posix-only in this repo's CI
     fcntl = None
+
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
 
 if TYPE_CHECKING:
     # frob:ticket T-2312
@@ -584,53 +593,111 @@ def _baseline_lock_path(root: Path) -> Path:
     return root / _BASELINE_LOCK_REL
 
 
+# frob:ticket T-2918
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#baseline-lock-posixwindows-backends-loud-refusal\
+# -otherwise-t-2595t-2918
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
+class BaselineLockUnavailable(RuntimeError):
+    """T-2918: raised by `_baseline_lock` when NEITHER `fcntl` (POSIX) nor
+    `msvcrt` (Windows) is importable on this interpreter -- there is no
+    known advisory-lock primitive to use at all. This is a loud refusal,
+    never a silent no-op: proceeding unlocked here would let two
+    concurrent sweeps race the read-decide-write of the rolling baseline
+    for the lock's ENTIRE unbounded lifetime (not the rare, brief window
+    `_baseline_lock`'s timeout-exceeded branch accepts under real
+    contention), which is exactly the silent-corruption shape T-2918 was
+    filed to close. If this ever fires in practice it means a THIRD
+    platform family with neither primitive is now in scope -- add a real
+    backend for it here rather than reaching for a wider except."""
+
+
 # frob:ticket T-2595
+# frob:ticket T-2918
 # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_serializes_two_concurrent_holders  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_fcntl_degrades_to_unlocked  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_windows_backend_serializes_two_concurrent_holders  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
 @contextmanager
 def _baseline_lock(
     root: Path, *, timeout: float = _BASELINE_LOCK_TIMEOUT_S
 ) -> Iterator[None]:
-    """T-2595: exclusive, cross-process lock around ONLY the tiny read-
-    decide-write of the rolling baseline -- never around the multi-minute
-    `frob check` that produces the findings being written. Same mechanism
-    as `_land.py`'s `_land_lock` (`fcntl.flock` on a dedicated file under
-    `.frob/`, degrading to a logged no-op on a platform without `fcntl`,
-    e.g. non-POSIX), deliberately NOT the same lock file -- serializing
+    """T-2595/T-2918: exclusive, cross-process lock around ONLY the tiny
+    read-decide-write of the rolling baseline -- never around the
+    multi-minute `frob check` that produces the findings being written.
+    Same mechanism as `_land.py`'s `_land_lock` (a dedicated lock file
+    under `.frob/`), deliberately NOT the same lock file -- serializing
     sweeps against an in-flight `land()` would defeat T-1684's entire
     point of keeping them off the land critical path.
 
-    A blocking `flock` (not `_land_lock`'s poll-with-holder-logging
-    dance) is enough here: the critical section is a few milliseconds of
-    file I/O plus one `git merge-base --is-ancestor` call, so contention
-    is rare and brief, and unlike a land there is no interactive human
-    waiting on the other end to name. Still timeout-bounded (`timeout`,
-    default `_BASELINE_LOCK_TIMEOUT_S`) rather than an unbounded wait, in
-    case a holder is genuinely wedged -- on timeout, this degrades to
-    proceeding WITHOUT the lock (logged at WARNING) rather than raising
-    and losing this sweep's findings entirely; the CAS ancestry check the
-    caller performs under (or without) the lock is the actual correctness
-    guarantee, this lock only narrows the race window against an ORDINARY
-    concurrent sweep, so degrading to unlocked on a stuck lock is a
-    reduced guarantee, never a silent corruption."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "rapid sweep: _baseline_lock: fcntl unavailable on this "
-            "platform, lock is a NO-OP -- concurrent sweep writes against "
-            "%s are not serialized here",
-            root,
+    Two real backends, tried in this order:
+
+    - POSIX (`fcntl.flock`): the original T-2595 implementation.
+    - Windows (`msvcrt.locking`): T-2918's addition. `msvcrt.locking`
+      locks a byte RANGE of an open file rather than the whole
+      descriptor, so the lock file is seeded with one byte on first use
+      and every lock/unlock call always targets exactly that byte at
+      offset 0 (seeking back to it after each `locking()` call, since
+      `locking()` also advances the file position). `LK_NBLCK` (non-
+      blocking) mirrors `fcntl`'s `LOCK_NB` so the same poll-with-timeout
+      loop below drives both backends identically; `PermissionError` is
+      what `msvcrt.locking` raises for "already locked", `OSError`'s
+      Windows-specific subclass, so the shared `except OSError` catches
+      it the same way it catches `fcntl.flock`'s `OSError`.
+
+    If NEITHER primitive is importable, this RAISES `BaselineLockUnavailable`
+    instead of proceeding unlocked (T-2918) -- see that exception's own
+    docstring for why an unconditional platform-wide no-op is a different,
+    worse risk than the bounded contention-timeout degrade below.
+
+    A blocking-with-retry poll (not `_land_lock`'s poll-with-holder-
+    logging dance) is enough here: the critical section is a few
+    milliseconds of file I/O plus one `git merge-base --is-ancestor`
+    call, so contention is rare and brief, and unlike a land there is no
+    interactive human waiting on the other end to name. Still
+    timeout-bounded (`timeout`, default `_BASELINE_LOCK_TIMEOUT_S`)
+    rather than an unbounded wait, in case a holder is genuinely wedged
+    -- on timeout, this degrades to proceeding WITHOUT the lock (logged
+    at WARNING) rather than raising and losing this sweep's findings
+    entirely; the CAS ancestry check the caller performs under (or
+    without) the lock is the actual correctness guarantee, this lock
+    only narrows the race window against an ORDINARY concurrent sweep
+    that is ALREADY holding it, so degrading to unlocked on a stuck lock
+    is a reduced guarantee, never a silent corruption -- unlike the
+    platform-wide no-op T-2918 removed, this branch only fires when a
+    real lock exists and is contended, not merely absent."""
+    if fcntl is None and msvcrt is None:  # pragma: no cover -- via monkeypatch
+        raise BaselineLockUnavailable(
+            f"rapid sweep: _baseline_lock: neither fcntl (POSIX) nor "
+            f"msvcrt (Windows) is available on this platform -- refusing "
+            f"to proceed unlocked against {root}, since an unconditional "
+            f"platform-wide no-op would race concurrent sweep writes for "
+            f"this lock's entire lifetime, not just under rare, brief "
+            f"contention (T-2918)"
         )
-        yield
-        return
     path = _baseline_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    if msvcrt is not None and fcntl is None:  # pragma: no cover -- windows-only
+        # `os.O_BINARY` only exists on Windows; `getattr` keeps this branch
+        # importable (though never taken) on POSIX for testability.
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+    else:
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
     deadline = time.monotonic() + timeout
     acquired = False
     try:
         while True:
             try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                if fcntl is not None:
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                else:  # pragma: no cover -- windows-only
+                    assert msvcrt is not None
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
                 acquired = True
                 break
             except OSError:
@@ -648,7 +715,12 @@ def _baseline_lock(
         yield
     finally:
         if acquired:
-            fcntl.flock(fd, fcntl.LOCK_UN)
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            else:  # pragma: no cover -- windows-only
+                assert msvcrt is not None
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
         os.close(fd)
 
 

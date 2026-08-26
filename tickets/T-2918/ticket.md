@@ -2,7 +2,7 @@
 id: T-2918
 title: 'Advisory locks degrade to a logged NO-OP without fcntl: concurrent lands/sweeps
   are unserialized on Windows'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'

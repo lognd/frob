@@ -307,13 +307,72 @@ class TestBaselineLock:
     """T-2595: the lock guards only the tiny read-decide-write, never the
     multi-minute check that produces a sweep's findings."""
 
-    def test_no_fcntl_degrades_to_unlocked(
+    def test_no_lock_primitive_refuses_loudly(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_fcntl_degrades_to_unlocked  # noqa: E501
-        from frob.app.ticket_runner._rapid_sweep import _baseline_lock
+        """T-2918: neither fcntl (POSIX) nor msvcrt (Windows) available
+        must RAISE, never silently proceed unlocked -- the platform-wide
+        NO-OP this replaces raced every concurrent sweep for the whole
+        lock's lifetime, not just under rare, brief contention."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_no_lock_primitive_refuses_loudly  # noqa: E501
+        from frob.app.ticket_runner._rapid_sweep import (
+            BaselineLockUnavailable,
+            _baseline_lock,
+        )
 
         monkeypatch.setattr(_rapid_sweep, "fcntl", None)
+        monkeypatch.setattr(_rapid_sweep, "msvcrt", None)
+        with pytest.raises(BaselineLockUnavailable):
+            with _baseline_lock(tmp_path):
+                pass
+
+    def test_windows_backend_serializes_two_concurrent_holders(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2918: the msvcrt backend is exercised on Linux CI via a fake
+        module standing in for the real Windows-only `msvcrt` -- it
+        implements just enough of `locking`'s byte-range-lock contract
+        (backed by a real `fcntl.flock` under the hood) to prove the
+        `_baseline_lock` code path that only ever runs for real on
+        Windows: acquire, contend, timeout-degrade, release."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestBaselineLock.test_windows_backend_serializes_two_concurrent_holders  # noqa: E501
+        import fcntl as _fcntl
+
+        from frob.app.ticket_runner._rapid_sweep import _baseline_lock
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _fcntl.flock(fd, _fcntl.LOCK_UN)
+                    return
+                try:
+                    _fcntl.flock(fd, _fcntl.LOCK_EX | _fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_rapid_sweep, "fcntl", None)
+        monkeypatch.setattr(_rapid_sweep, "msvcrt", _FakeMsvcrt)
+
+        lock_path = tmp_path / ".frob" / "rapid-sweep-baseline.lock"
+        lock_path.parent.mkdir(parents=True)
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR, 0o644)
+        os.write(fd, b"\0")
+        _fcntl.flock(fd, _fcntl.LOCK_EX)
+        try:
+            entered = False
+            with _baseline_lock(tmp_path, timeout=0.2):
+                entered = True
+            assert entered is True
+        finally:
+            _fcntl.flock(fd, _fcntl.LOCK_UN)
+            os.close(fd)
+
+        # And a real, uncontended acquire/release round-trip on the fake
+        # backend actually enters the critical section.
         entered = False
         with _baseline_lock(tmp_path):
             entered = True

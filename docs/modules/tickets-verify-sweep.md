@@ -1457,6 +1457,32 @@ determined from staged content)" -- a deliberate refusal to report a
 plausible-but-wrong ticket id (the T-1795/T-1799 incident this guards
 against was exactly a confident wrong guess).
 
+### Baseline lock: POSIX/Windows backends, loud refusal otherwise (T-2595/T-2918)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::BaselineLockUnavailable -->
+
+`_baseline_lock` (T-2595) is the exclusive, cross-process lock around the
+tiny read-decide-write of the rolling baseline (`_write_baseline_cas`
+above); it does not guard the multi-minute `frob check` that produces the
+findings being written. It has two real backends: `fcntl.flock` on POSIX
+(Linux, macOS), and `msvcrt.locking` on Windows (T-2918) -- the latter
+locks a one-byte range of the lock file rather than the whole descriptor,
+since `msvcrt` has no whole-file advisory lock primitive.
+
+Before T-2918, a platform with neither `fcntl` nor `msvcrt` importable
+(there is currently no such platform among the three this repo ships CI
+for) degraded to an unconditional, unbounded, logged-but-silent no-op --
+every write on that platform ran completely unserialized against
+concurrent sweeps for as long as the process lived. T-2918 replaced that
+with `BaselineLockUnavailable`, a loud refusal: if neither backend is
+importable, `_baseline_lock` raises instead of proceeding. This is
+distinct from, and stricter than, the still-existing timeout-degrade
+path (a REAL lock exists and is contended past `timeout`) -- that one
+still proceeds unlocked and logs a warning, because `_write_baseline_cas`'s
+own CAS ancestry check is a real (if narrower) correctness backstop
+against an ordinary, brief contention window; there is no such backstop
+against a platform that never had a lock primitive to begin with.
+
 ### Phantom deleted-path findings and baseline-clobber detection (T-2571)
 
 <!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_files_deleted_between -->
