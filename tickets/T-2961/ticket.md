@@ -29,6 +29,8 @@ scope:
 - src/frob/serve/_daemon.py
 - docs/modules/serve.md
 - docs/modules/testing.md
+- tests/test_app_daemon_proxy.py
+- tickets/T-draft-d2ddda57/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -164,6 +166,28 @@ scope_changes:
     _socketd.py) -- each gained a Windows platform-refusal branch and
 
     needs its describing doc touched.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'tests/test_app_daemon_proxy.py: the 12 narrowly-targeted Windows skips
+
+    live here too. tickets/T-draft-d2ddda57/**: the Windows-native-daemon-
+
+    transport epic filed alongside this ticket.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-d2ddda57/**
+  reason: 'tests/test_app_daemon_proxy.py: the 12 narrowly-targeted Windows skips
+
+    live here too. tickets/T-draft-d2ddda57/**: the Windows-native-daemon-
+
+    transport epic filed alongside this ticket.
 
     '
   actor: logan
