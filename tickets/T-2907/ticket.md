@@ -2,7 +2,7 @@
 id: T-2907
 title: 'Strata redesign: derive the code/may tables, declare only intent, make every
   strata break an error'
-state: queued
+state: dropped
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -33,3 +33,5 @@ anchor: false
 anchor_reason: null
 land_commit: null
 ---
+## Drop reason
+- 2026-08-25: user corrected the premise: auto-deriving may=/code= makes the ceiling equal whatever the code does, defeating the shrink-the-interface purpose; superseded by the shrink-only ratchet design (absorbed by T-2920)
