@@ -64,6 +64,14 @@ scope_changes:
     commit that files them
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: pure refactor, no intended behavior change; BUG002 confirmatory-only finding
+    is expected here
+  actor: logan
+  at: '2026-08-26'
+  old_length: 932
+  new_length: 1293
 evidence:
 - tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
 - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
@@ -156,3 +164,5 @@ Closure is two-part per the epic (T-0969): (1) zero frob-dup WARN findings,
 verified the same way, AND (2) frob-dup's dup-detection promoted from warning
 to error severity for the categories burned down. Do not promote a category
 still carrying findings.
+
+frob:no-behavior-change reason="pure extract-shared-function refactor: moved a byte-identical _read_text_or_empty from _ecosystem.py and _supplychain.py into _source.py and imported it from both call sites; no logic, control flow, or error handling changed at either call site -- this is the frob-dup exact-duplicate finding's fix itself, not a behavior fix"
