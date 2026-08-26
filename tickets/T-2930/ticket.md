@@ -2,7 +2,7 @@
 id: T-2930
 title: Triage macOS-only pytest failures found via T-2917 CI matrix (156 failures,
   non-fcntl/prctl remainder)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
