@@ -2,7 +2,7 @@
 id: T-2981
 title: windows-latest CI fails at Typecheck on main after passing native build, both
   cargo suites and lint
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,9 @@ scope:
 - src/frob/app/_daemon_proxy.py
 - docs/modules/serve.md
 - docs/modules/testing.md
+evidence_scope:
+- tests/test_serve_socket.py
+- tests/unit/test_daemon_proxy_lease_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -53,6 +56,17 @@ body_changes:
   at: '2026-08-26'
   old_length: 0
   new_length: 4219
+- mode: append
+  reason: T-2981 is a typing-only fix with no runtime behavior change; BUG002 requires
+    either a real repro or this directive, and a real repro is impossible for a pure
+    type-checker finding
+  actor: logan
+  at: '2026-08-26'
+  old_length: 4218
+  new_length: 5534
+evidence:
+- tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
 designated_repro_test: null
 threat: null
 component: null
@@ -124,3 +138,5 @@ FOLLOW-ON WORTH CONSIDERING (file separately, do not scope-creep this ticket):
 every platform-conditional branch in the repo has this same blind spot under a
 single-platform type check. A CI step that runs `ty` with an explicit Windows
 target from Linux would catch this class before it reaches a Windows runner.
+
+frob:no-behavior-change reason="T-2981 is a typing/structure-only fix: it declares a Protocol (_DaemonServerLike) and a class-level attribute annotation (_LeaseConnection._sock) so ty check resolves the daemon server's attribute surface identically on every sys.platform target. No runtime code path, branch, or behavior changes on any platform -- run_socket_daemon's Windows refusal and the real POSIX _DaemonServer class body are both untouched. The defect this ticket fixes is a CI type-checker diagnostic (14 unresolved-attribute findings under a Windows-target ty check), not a runtime bug reachable by any test -- there is no runtime path to make a pytest test fail at main and pass at the fix, since nothing at runtime changed. The evidence bound (tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits, tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close) is a regression guard proving the touched runtime paths still work identically, matching this directive's own must-still-pass requirement. The real proof of the fix is `uv run ty check --python-platform win32 src` going from 14 diagnostics to 0, reported in the Done report -- not a pytest repro, because the defect is a type-checker finding, not a runtime one."
