@@ -2,7 +2,7 @@
 id: T-2945
 title: 'AF_UNIX socket path too long on macOS: relocate daemon.sock off deep project-root
   paths'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -15,11 +15,60 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- src/frob/serve/_socketd.py;src/frob/app/_daemon_proxy.py;docs/modules/serve.md;tests/test_serve_socket.py;tests/test_app_daemon_proxy.py
+- src/frob/serve/_socketd.py
+- src/frob/app/_daemon_proxy.py
+- docs/modules/serve.md
+- tests/test_serve_socket.py
+- tests/test_app_daemon_proxy.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: remove
+  glob: src/frob/serve/_socketd.py;src/frob/app/_daemon_proxy.py;docs/modules/serve.md;tests/test_serve_socket.py;tests/test_app_daemon_proxy.py
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/serve/_socketd.py
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/_daemon_proxy.py
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_serve_socket.py
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_app_daemon_proxy.py
+  reason: 'T-2945: fix a malformed single-glob scope entry (semicolon-joined instead
+    of five separate globs) filed by mistake in T-2930''s triage'
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_serve_socket.py::TestSocketPath::test_short_regardless_of_root_depth
+- tests/test_serve_socket.py::TestSocketPath::test_normal_depth_root_still_works
+- tests/test_serve_socket.py::TestSocketPath::test_stable_for_the_same_root
+- tests/test_serve_socket.py::TestSocketPath::test_distinct_roots_get_distinct_paths
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_dead_socket_file_is_orphaned
+- tests/test_app_daemon_proxy.py::TestProbeDaemon::test_silent_listener_is_wedged
+- tests/test_app_daemon_proxy.py::TestProbeDaemonVersion::test_matching_version_is_live
 designated_repro_test: null
 threat: null
 component: null

@@ -48,6 +48,78 @@ def root(tmp_path: Path) -> Path:
     return tmp_path
 
 
+# frob:ticket T-2945
+class TestSocketPath:
+    """T-2945: `socket_path` must return a short, bindable path
+    regardless of how deep the project root is checked out -- the actual
+    defect that broke 28 of 156 macOS-only pytest failures in the T-2917
+    CI matrix (`OSError: AF_UNIX path too long`, `sockaddr_un.sun_path`
+    capped at 104 bytes on macOS / 108 on Linux)."""
+
+    def test_short_regardless_of_root_depth(self, tmp_path: Path) -> None:
+        # frob:tests tests/test_serve_socket.py::TestSocketPath.test_short_regardless_of_root_depth  # noqa: E501
+        # Build a root deep enough that the OLD scheme
+        # (`<root>/.frob/daemon.sock`) would overflow sun_path on EITHER
+        # platform -- the must-fire case this test exists to guard.
+        deep_root = tmp_path
+        for i in range(6):
+            deep_root = deep_root / (f"segment-{'x' * 20}-{i}")
+        deep_root.mkdir(parents=True)
+        old_style_path = deep_root / ".frob" / "daemon.sock"
+        assert len(str(old_style_path).encode("utf-8")) > 108, (
+            "test setup is broken: this root is not actually deep enough "
+            "to have tripped the old defect"
+        )
+
+        new_path = socket_path(deep_root)
+        assert len(str(new_path).encode("utf-8")) < 100
+
+        # The real regression guard: an actual AF_UNIX bind must SUCCEED
+        # at the relocated path, not just be short on paper.
+        import socket as _socket_module
+
+        sock = _socket_module.socket(
+            _socket_module.AF_UNIX, _socket_module.SOCK_STREAM
+        )
+        try:
+            sock.bind(str(new_path))
+        finally:
+            sock.close()
+            new_path.unlink(missing_ok=True)
+
+    def test_normal_depth_root_still_works(self, root: Path) -> None:
+        # frob:tests tests/test_serve_socket.py::TestSocketPath.test_normal_depth_root_still_works  # noqa: E501
+        # Must-stay-quiet control: an ordinary, shallow test root (the
+        # shape every other test in this file already uses) must keep
+        # producing a valid, bindable path -- this fix must not be a
+        # net-new failure mode for the common case.
+        new_path = socket_path(root)
+        import socket as _socket_module
+
+        sock = _socket_module.socket(
+            _socket_module.AF_UNIX, _socket_module.SOCK_STREAM
+        )
+        try:
+            sock.bind(str(new_path))
+        finally:
+            sock.close()
+            new_path.unlink(missing_ok=True)
+
+    def test_stable_for_the_same_root(self, root: Path) -> None:
+        # frob:tests tests/test_serve_socket.py::TestSocketPath.test_stable_for_the_same_root  # noqa: E501
+        assert socket_path(root) == socket_path(root)
+
+    def test_distinct_roots_get_distinct_paths(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests tests/test_serve_socket.py::TestSocketPath.test_distinct_roots_get_distinct_paths  # noqa: E501
+        root_a = tmp_path / "a"
+        root_b = tmp_path / "b"
+        root_a.mkdir()
+        root_b.mkdir()
+        assert socket_path(root_a) != socket_path(root_b)
+
+
 class TestAcquireSingletonLock:
     def test_first_caller_wins(self, root: Path) -> None:
         # frob:tests \

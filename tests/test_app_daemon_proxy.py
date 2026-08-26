@@ -699,7 +699,7 @@ class TestProbeDaemon:
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
 
         root = self._socket_dir(tmp_path)
-        path = root / ".frob" / "daemon.sock"
+        path = socket_path(root)
         # Bind (creating the file), then close WITHOUT listening/accepting.
         sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
         sock.bind(str(path))
@@ -719,7 +719,7 @@ class TestProbeDaemon:
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
 
         root = self._socket_dir(tmp_path)
-        path = root / ".frob" / "daemon.sock"
+        path = socket_path(root)
         server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
         server.bind(str(path))
         server.listen(1)
@@ -739,7 +739,7 @@ class TestProbeDaemon:
         from frob.app._daemon_proxy import probe_daemon
 
         root = self._socket_dir(tmp_path)
-        path = root / ".frob" / "daemon.sock"
+        path = socket_path(root)
         server = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
         server.bind(str(path))
         server.listen(1)
@@ -765,7 +765,7 @@ class TestProbeDaemon:
         )
 
         root = self._socket_dir(tmp_path)
-        path = root / ".frob" / "daemon.sock"
+        path = socket_path(root)
         sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
         sock.bind(str(path))
         sock.close()
@@ -837,7 +837,7 @@ class TestProbeDaemonVersion:
         )
 
         (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
-        path = tmp_path / ".frob" / "daemon.sock"
+        path = socket_path(tmp_path)
         server, thread = self._serve_one_version(path, _client_version())
         try:
             liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
@@ -853,7 +853,7 @@ class TestProbeDaemonVersion:
         from frob.app._daemon_proxy import DaemonLiveness, probe_daemon
 
         (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
-        path = tmp_path / ".frob" / "daemon.sock"
+        path = socket_path(tmp_path)
         server, thread = self._serve_one_version(path, "0.0.0-stale")
         try:
             liveness, version = probe_daemon(tmp_path, timeout_s=2.0)
@@ -876,7 +876,7 @@ class TestProbeDaemonVersion:
         )
 
         (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
-        path = tmp_path / ".frob" / "daemon.sock"
+        path = socket_path(tmp_path)
         server, thread = self._serve_one_version(
             path, _client_version(), source_sha="deadbeef-stale-source"
         )
@@ -903,7 +903,7 @@ class TestProbeDaemonVersion:
         )
 
         (tmp_path / ".frob").mkdir(parents=True, exist_ok=True)
-        path = tmp_path / ".frob" / "daemon.sock"
+        path = socket_path(tmp_path)
         server, thread = self._serve_one_version(
             path, _client_version(), source_sha=None
         )

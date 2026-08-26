@@ -52,6 +52,7 @@ from __future__ import annotations
 import errno
 import fcntl
 import functools
+import hashlib
 import json
 import multiprocessing
 import os
@@ -59,6 +60,7 @@ import queue
 import socket
 import socketserver
 import subprocess
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -84,7 +86,23 @@ DEFAULT_IDLE_TIMEOUT_S = 600.0
 _IDLE_POLL_INTERVAL_S = 5.0
 
 _LOCK_REL = Path(".frob") / "daemon.lock"
-_SOCKET_REL = Path(".frob") / "daemon.sock"
+
+# frob:ticket T-2945
+#: Prefix for the relocated short-path socket filename (`_short_socket_
+#: filename`) -- kept short and distinctive so a stray file under the
+#: system temp dir is recognizably this daemon's, not a collision with
+#: some other tool's own `<hash>.sock`.
+_SHORT_SOCKET_PREFIX = "frob-"
+
+#: Length (in hex chars) of the truncated root-path digest
+#: `_short_socket_filename` uses -- 16 hex chars is 64 bits of a SHA-256
+#: digest, far more collision resistance than this single-machine,
+#: modest-project-count use case needs, while keeping the full socket
+#: filename (`frob-<16 hex>.sock`, 26 bytes) short enough that even a
+#: worst-case system temp dir prefix leaves comfortable headroom under
+#: `sun_path`'s 104-byte (macOS) / 108-byte (Linux) hard limit -- the
+#: defect this module exists to fix (T-2945).
+_SHORT_SOCKET_DIGEST_LEN = 16
 
 # frob:ticket T-1378
 # How long to wait for a lingering multiprocessing child (forkserver,
@@ -192,11 +210,46 @@ def lock_path(root: Path) -> Path:
     return root / _LOCK_REL
 
 
+# frob:ticket T-2945
+def _short_socket_filename(resolved_root: Path) -> str:
+    """`frob-<16 hex digest of resolved_root>.sock` -- the fixed-length,
+    project-root-independent filename `socket_path` binds to a system
+    temp directory instead of the project root itself (T-2945). Deriving
+    it purely from `resolved_root` (never from any process-lifetime
+    state) is what lets every caller -- the daemon binding the socket,
+    a client connecting to it, `_remove_stale_socket` cleaning one up --
+    independently compute the identical path for the identical root with
+    no coordination needed, exactly like the old `<root>/.frob/
+    daemon.sock` scheme did."""
+    digest = hashlib.sha256(str(resolved_root).encode("utf-8")).hexdigest()
+    return f"{_SHORT_SOCKET_PREFIX}{digest[:_SHORT_SOCKET_DIGEST_LEN]}.sock"
+
+
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092
 # frob:tests tests/test_serve_socket.py::TestRunSocketDaemon.test_serves_one_request_then_idle_exits kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestSocketPath.test_short_regardless_of_root_depth kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestSocketPath.test_stable_for_the_same_root kind="unit"  # noqa: E501
+# frob:tests tests/test_serve_socket.py::TestSocketPath.test_distinct_roots_get_distinct_paths kind="unit"  # noqa: E501
 def socket_path(root: Path) -> Path:
-    """The per-project-root unix domain socket: `<root>/.frob/daemon.sock`."""
-    return root / _SOCKET_REL
+    """The per-project-root unix domain socket. T-2945: previously
+    `<root>/.frob/daemon.sock`, which inherits the project root's own
+    path depth -- fine on Linux's flatter tmp paths, but macOS's
+    `sockaddr_un.sun_path` is only 104 bytes and macOS temp/CI paths are
+    routinely deep enough on their own (`/private/var/folders/<hash>/
+    <hash>/T/...`) that adding a project subtree on top overflows it,
+    breaking `AF_UNIX` bind/connect outright (measured: 28 of 156
+    macOS-only pytest failures in the T-2917 CI matrix, all `OSError:
+    AF_UNIX path too long`). The socket file now lives at
+    `<system temp dir>/frob-<16 hex digest of root>.sock`
+    (`_short_socket_filename`) instead -- independent of the project
+    root's own depth, so this holds regardless of platform or how deep a
+    project happens to be checked out. `lock_path` (the single-instance
+    guard, an ordinary file with no `sun_path`-shaped length limit)
+    deliberately stays at `<root>/.frob/daemon.lock` -- unaffected by
+    this defect and unchanged, so per-root singleton-lock discovery
+    keeps working exactly as before."""
+    resolved = root.resolve()
+    return Path(tempfile.gettempdir()) / _short_socket_filename(resolved)
 
 
 # frob:doc docs/modules/serve.md#socket-daemon-t-1092

@@ -441,10 +441,30 @@ lock`, called on every `run_socket_daemon` exit path -- clean idle
 shutdown, bind failure, or an exception) unlocks then closes the handle, so
 the next caller finds a clean slate.
 
+### Socket location (T-2945)
+
+`socket_path(root)` does NOT live under `<root>/.frob/` -- it resolves to
+`<system temp dir>/frob-<16 hex digest of the resolved root>.sock`.
+`sockaddr_un.sun_path` is capped at 104 bytes on macOS (108 on Linux);
+binding under the project root inherited that root's own path depth, and
+macOS's own temp/CI paths are routinely deep enough on their own
+(`/private/var/folders/<hash>/<hash>/T/...`) that adding a project
+subtree on top overflowed the limit outright (measured: 28 of 156
+macOS-only pytest failures in the T-2917 CI matrix, all `OSError: AF_UNIX
+path too long`). The relocated path is a deterministic, root-only
+function -- no shared state, no registry -- so the daemon binding it, a
+client connecting to it, and `_remove_stale_socket` cleaning one up all
+independently derive the identical path for the identical root, exactly
+as the old `<root>/.frob/daemon.sock` scheme did. `lock_path` (an
+ordinary file, not a unix-domain socket, so it has no `sun_path`-shaped
+length limit) is UNCHANGED and stays at `<root>/.frob/daemon.lock` --
+per-root singleton-lock discovery is unaffected by this relocation.
+
 ### Protocol
 
 One JSON object per newline-delimited line over the unix socket at
-`<root>/.frob/daemon.sock` (`socket_path`):
+`socket_path(root)` (see "Socket location" above -- no longer
+`<root>/.frob/daemon.sock`):
 
 ```
 --> {"id": 1, "method": "frob_doable_tickets", "params": {}}
