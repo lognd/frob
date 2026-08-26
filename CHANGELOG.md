@@ -359,6 +359,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2909: Agent cold-start: split agent-playbook.md into a hot-path checklist plus an appendix
 - T-2910: frob sys init: derive a starting strata model so a new repo gets value on day one
 - T-2911: frob status: show movement (burned/promoted/closed) so a large finding count does not read as no progress
+- T-2912: Instrument agent tool-call histograms to target token cost at measured hotspots
 - T-2913: Rapid land still runs a full inline frob check on the land critical path, serialized under land.lock
 - T-2914: WIRE002: T-2645's WIRE001 waiver on _unlanded.py::_remove_scratch_file missing follow_up
 - T-2915: Re-run branch stranded-work classification with the real directive parser, not bare regex

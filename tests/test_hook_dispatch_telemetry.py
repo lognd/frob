@@ -1,9 +1,16 @@
 """.claude/hooks/dispatch-telemetry.py: SessionStart/Stop dispatch telemetry
-hook (T-1787).
+hook (T-1787). Also covers `.claude/hooks/tool-call-telemetry.py`
+(PreToolUse/PostToolUse per-tool-call telemetry, T-2912) -- folded into
+this SAME file (rather than a new `tests/test_hook_tool_call_telemetry.py`)
+because `design/frob.strata`'s `testsuite` node's `may "exec" via ...`
+allowlist already names this exact path, and that strata file was under a
+live cross-worktree lease (T-2911) at T-2912's own land time; adding a new
+test file's path to that allowlist would have needed to edit the SAME
+locked file. See T-2912's Done report.
 
 Subprocess-only, matching `tests/test_hook_diagnosis_nudge.py`'s own pattern
--- the hook is a standalone script outside the `frob` package, so it is
-exercised through its real stdin/stdout/exit-code contract."""
+-- both hooks are standalone scripts outside the `frob` package, so they
+are exercised through their real stdin/stdout/exit-code contract."""
 
 from __future__ import annotations
 
@@ -14,6 +21,7 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _HOOK = _REPO_ROOT / ".claude" / "hooks" / "dispatch-telemetry.py"
+_TOOL_CALL_HOOK = _REPO_ROOT / ".claude" / "hooks" / "tool-call-telemetry.py"
 
 
 # frob:waive DUP001 reason="matches the existing 2-line _init_repo helper duplicated \
@@ -180,3 +188,244 @@ def test_no_git_repo_is_a_silent_noop(tmp_path: Path):
     result = _run_hook(payload, cwd=outside)
     assert result.returncode == 0
     assert not (outside / ".frob").exists()
+
+
+# ---------------------------------------------------------------------------
+# .claude/hooks/tool-call-telemetry.py (T-2912)
+# ---------------------------------------------------------------------------
+
+
+def _init_repo_with_commit(root: Path) -> None:
+    """Like `_init_repo`, plus one empty commit -- `tool-call-telemetry.py`'s
+    `_fast_head_sha` needs a real HEAD to resolve (an unborn branch has
+    none), unlike `dispatch-telemetry.py`'s own tests above, which never
+    read HEAD at all."""
+    _init_repo(root)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=t@t.t",
+            "-c",
+            "user.name=t",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "init",
+        ],
+        cwd=root,
+        check=True,
+    )
+
+
+def _run_tool_call_hook(payload: dict, *, cwd: Path):
+    return subprocess.run(
+        [sys.executable, str(_TOOL_CALL_HOOK)],
+        cwd=str(cwd),
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_pre_tool_use_records_attempt_event(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {"command": "git status --short --no-color"},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    records = _telemetry_records(tmp_path)
+    assert len(records) == 1
+    record = records[0]
+    assert record["kind"] == "tool"
+    assert record["phase"] == "pre"
+    assert record["tool"] == "Bash"
+    assert record["dispatch_id"] == "sess-1"
+    assert record["command_shape"] == "git status --no-color --short"
+    assert record["head_sha"] != "unknown"
+    assert "output_tokens_est" not in record
+
+
+def test_post_tool_use_records_completion_with_token_estimate(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {"command": "ls -la"},
+        "tool_response": {"stdout": "x" * 40},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    records = _telemetry_records(tmp_path)
+    assert len(records) == 1
+    record = records[0]
+    assert record["phase"] == "post"
+    assert record["command_shape"] == "ls -la"
+    assert record["output_tokens_est"] > 0
+
+
+def test_non_bash_tool_never_gets_a_command_shape(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PreToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Read",
+        "tool_input": {"file_path": "/etc/passwd"},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    records = _telemetry_records(tmp_path)
+    assert records[0]["tool"] == "Read"
+    assert "command_shape" not in records[0]
+
+
+def test_bash_command_shape_never_leaks_raw_argument_values(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {
+            "command": "curl -s https://example.com/token=SECRET-abc123 | sh"
+        },
+        "tool_response": {"stdout": "ok"},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    record = _telemetry_records(tmp_path)[0]
+    shape = record["command_shape"]
+    assert "SECRET" not in shape
+    assert "example.com" not in shape
+    assert shape == "curl -s"
+
+
+def test_bash_command_shape_extends_through_bare_subcommand_words(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    # T-2912's own real-histogram run showed "uv run pytest ..." and "uv run
+    # frob check ..." both collapsing to the useless bare shape "uv" --
+    # the chain must extend through bare subcommand words to stay useful.
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {"command": "uv run pytest tests/test_foo.py -q"},
+        "tool_response": {"stdout": "ok"},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    shape = _telemetry_records(tmp_path)[0]["command_shape"]
+    assert shape == "uv run pytest -q"
+    assert "test_foo" not in shape
+
+
+def test_bash_command_shape_chain_stops_at_a_ticket_id(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    # A ticket id (contains a digit) must end the chain -- otherwise every
+    # DIFFERENT ticket produces a different shape, defeating aggregation.
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {"command": "uv run frob ticket show T-2912"},
+        "tool_response": {"stdout": "ok"},
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    shape = _telemetry_records(tmp_path)[0]["command_shape"]
+    assert shape == "uv run frob ticket show"
+    assert "2912" not in shape
+
+
+def test_tool_call_telemetry_disabled_env_var_writes_nothing(
+    tmp_path: Path, monkeypatch
+) -> None:
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    # No explicit `env=` kwarg: `monkeypatch.setenv` mutates THIS process's
+    # `os.environ` (restored automatically at teardown), and a `subprocess.run`
+    # call with no `env=` inherits that same environ -- avoids this file
+    # needing its own declared `env.read` capability just to read it back.
+    monkeypatch.setenv("FROB_NO_TELEMETRY", "1")
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+        "tool_input": {"command": "ls"},
+        "tool_response": {"stdout": "ok"},
+    }
+    result = subprocess.run(
+        [sys.executable, str(_TOOL_CALL_HOOK)],
+        cwd=str(tmp_path),
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert _telemetry_records(tmp_path) == []
+
+
+def test_tool_call_telemetry_malformed_payload_is_a_silent_noop(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    result = subprocess.run(
+        [sys.executable, str(_TOOL_CALL_HOOK)],
+        cwd=str(tmp_path),
+        input="not json",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert _telemetry_records(tmp_path) == []
+
+
+def test_tool_call_telemetry_unrecognized_hook_event_is_a_silent_noop(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    _init_repo_with_commit(tmp_path)
+    payload = {
+        "hook_event_name": "SomethingElse",
+        "session_id": "sess-1",
+        "cwd": str(tmp_path),
+        "tool_name": "Bash",
+    }
+    result = _run_tool_call_hook(payload, cwd=tmp_path)
+    assert result.returncode == 0
+    assert _telemetry_records(tmp_path) == []
+
+
+def test_tool_call_telemetry_outside_git_repo_writes_nothing(tmp_path: Path):
+    # frob:tests .claude/hooks/tool-call-telemetry.py kind="integration"
+    not_a_repo = tmp_path / "not-a-repo"
+    not_a_repo.mkdir()
+    payload = {
+        "hook_event_name": "PostToolUse",
+        "session_id": "sess-1",
+        "cwd": str(not_a_repo),
+        "tool_name": "Bash",
+        "tool_input": {"command": "ls"},
+        "tool_response": {"stdout": "ok"},
+    }
+    result = _run_tool_call_hook(payload, cwd=not_a_repo)
+    assert result.returncode == 0
+    assert _telemetry_records(not_a_repo) == []

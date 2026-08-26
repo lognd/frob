@@ -27,6 +27,7 @@ def test_empty_stream_yields_zeroed_report(tmp_path: Path):
     assert report.retread_candidates == ()
     assert report.ticket_cycle_times == ()
     assert report.tool_tokens == ()
+    assert report.tool_call_histogram == ()
 
 
 def test_category_time_buckets_by_subcommand(tmp_path: Path):
@@ -146,6 +147,127 @@ def test_tool_tokens_sums_output_tokens_per_tool(tmp_path: Path):
     assert by_tool["Bash"].total_tokens == 150
     assert by_tool["Bash"].call_count == 2
     assert by_tool["Read"].total_tokens == 10
+
+
+def test_tool_call_histogram_counts_completed_calls_by_shape(tmp_path: Path):
+    # frob:tests src/frob/stats/_agentic.py::agentic_report
+    _write(
+        tmp_path,
+        [
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "pre",
+                "command_shape": "git status",
+                "head_sha": "aaa1111",
+                "iso_ts": "2026-08-26T00:00:00.000Z",
+            },
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "post",
+                "command_shape": "git status",
+                "head_sha": "aaa1111",
+                "output_tokens_est": 10,
+                "iso_ts": "2026-08-26T00:00:01.000Z",
+            },
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "pre",
+                "command_shape": "git status",
+                "head_sha": "aaa1111",
+                "iso_ts": "2026-08-26T00:00:02.000Z",
+            },
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "post",
+                "command_shape": "git status",
+                "head_sha": "aaa1111",
+                "output_tokens_est": 5,
+                "iso_ts": "2026-08-26T00:00:03.000Z",
+            },
+        ],
+    )
+    report = agentic_report(tmp_path)
+    assert len(report.tool_call_histogram) == 1
+    shape = report.tool_call_histogram[0]
+    assert shape.tool == "Bash"
+    assert shape.command_shape == "git status"
+    assert shape.call_count == 2
+    assert shape.output_tokens_total == 15
+    # Both completed calls ran at the SAME head_sha: the second is a
+    # measured rerun-at-unchanged-tree-state.
+    assert shape.rerun_same_tree_count == 1
+    assert shape.blocked_count == 0
+    # Completed-only aggregates must not double-count the "pre" attempts.
+    by_tool = {t.tool: t for t in report.tool_tokens}
+    assert by_tool["Bash"].call_count == 2
+
+
+def test_tool_call_histogram_counts_unmatched_pre_as_blocked(tmp_path: Path):
+    # frob:tests src/frob/stats/_agentic.py::agentic_report
+    _write(
+        tmp_path,
+        [
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "pre",
+                "command_shape": "git stash",
+                "head_sha": "bbb2222",
+                "iso_ts": "2026-08-26T00:00:00.000Z",
+            },
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "pre",
+                "command_shape": "git status",
+                "head_sha": "bbb2222",
+                "iso_ts": "2026-08-26T00:00:01.000Z",
+            },
+            {
+                "kind": "tool",
+                "dispatch_id": "d1",
+                "tool": "Bash",
+                "phase": "post",
+                "command_shape": "git status",
+                "head_sha": "bbb2222",
+                "output_tokens_est": 1,
+                "iso_ts": "2026-08-26T00:00:02.000Z",
+            },
+        ],
+    )
+    report = agentic_report(tmp_path)
+    by_shape = {(s.tool, s.command_shape): s for s in report.tool_call_histogram}
+    blocked = by_shape[("Bash", "git stash")]
+    assert blocked.blocked_count == 1
+    assert blocked.call_count == 0
+    completed = by_shape[("Bash", "git status")]
+    assert completed.call_count == 1
+    assert completed.blocked_count == 0
+
+
+def test_tool_call_histogram_legacy_phaseless_events_count_as_completed(
+    tmp_path: Path,
+):
+    # frob:tests src/frob/stats/_agentic.py::agentic_report
+    _write(
+        tmp_path,
+        [{"kind": "tool", "tool": "Bash", "output_tokens_est": 100}],
+    )
+    report = agentic_report(tmp_path)
+    assert len(report.tool_call_histogram) == 1
+    shape = report.tool_call_histogram[0]
+    assert shape.call_count == 1
+    assert shape.command_shape is None
 
 
 def test_malformed_lines_are_skipped_not_raised(tmp_path: Path):

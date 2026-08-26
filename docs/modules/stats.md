@@ -130,6 +130,17 @@ The derived numbers `agentic_report` alone could not produce:
   time), ordered 1-based per worktree -- the exact cold-start-vs-resume
   comparison the incident could not settle.
 
+`AgenticReport.tool_call_histogram` (T-2912): a `(tool, command_shape)`
+histogram over `.claude/hooks/tool-call-telemetry.py`'s `kind="tool"`
+events -- `ToolCallShape.call_count` (which shapes dominate COUNT, the
+number `dispatch_cost_report`'s "cost is linear in tool-call count"
+finding is about), `blocked_count` (a `PreToolUse` attempt with no
+matching completion -- the general-purpose form of "land cost is
+dominated by refusals, not timeouts"), and `rerun_same_tree_count` (a
+completion at a `head_sha` already seen for that same shape -- the
+general-purpose form of the existing `REDUNDANT_RERUN` CLI footgun,
+which only ever covered `frob` subcommand invocations).
+
 ## Public API
 
 <!-- frob:describes src/frob/stats/__init__.py::TicketStats -->
@@ -144,6 +155,7 @@ The derived numbers `agentic_report` alone could not produce:
 <!-- frob:describes src/frob/stats/_agentic.py::RetreadCandidate -->
 <!-- frob:describes src/frob/stats/_agentic.py::TicketCycleTime -->
 <!-- frob:describes src/frob/stats/_agentic.py::ToolTokens -->
+<!-- frob:describes src/frob/stats/_agentic.py::ToolCallShape -->
 <!-- frob:describes src/frob/stats/_agentic.py::agentic_report -->
 <!-- frob:describes src/frob/stats/_agentic.py::DispatchRecord -->
 <!-- frob:describes src/frob/stats/_agentic.py::MarginalRunDelta -->

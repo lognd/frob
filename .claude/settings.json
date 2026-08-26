@@ -36,6 +36,17 @@
             "statusMessage": "root-write-guard"
           }
         ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/tool-call-telemetry.py",
+            "timeout": 10,
+            "statusMessage": "tool-call-telemetry"
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -101,6 +112,17 @@
             "command": "python3 /home/logan/projects/frob/.claude/hooks/root-cleanliness-detector.py",
             "timeout": 10,
             "statusMessage": "root-cleanliness-detector"
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/logan/projects/frob/.claude/hooks/tool-call-telemetry.py",
+            "timeout": 10,
+            "statusMessage": "tool-call-telemetry"
           }
         ]
       }

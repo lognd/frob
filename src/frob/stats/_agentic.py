@@ -1,9 +1,10 @@
 """`frob stats --agentic`: non-gated aggregation over `.frob/telemetry.jsonl`
 (T-0178). Report-only, like the rest of `frob.stats` -- no rule ids, nothing
 here fails a gate. Reads whatever the CLI-timing hook (`frob.app.telemetry`)
-and the Claude Code PostToolUse hook script (`scripts/frob-telemetry-hook`)
-have appended to the shared stream and turns it into a breakdown a human can
-use to decide what to speed up next.
+and the Claude Code PreToolUse/PostToolUse hook script
+(`.claude/hooks/tool-call-telemetry.py`, T-2912) have appended to the shared
+stream and turns it into a breakdown a human can use to decide what to
+speed up next.
 """
 
 from __future__ import annotations
@@ -113,6 +114,32 @@ class ToolTokens(BaseModel):
 
 
 # frob:doc docs/modules/stats.md#public-api
+# frob:tests tests/test_stats_agentic.py::test_tool_call_histogram_counts_completed_calls_by_shape  # noqa: E501
+# frob:tests tests/test_stats_agentic.py::test_tool_call_histogram_counts_unmatched_pre_as_blocked  # noqa: E501
+class ToolCallShape(BaseModel):
+    """One `(tool, command_shape)` bucket from the `kind="tool"` stream
+    (T-2912): how many times it completed, how many attempts never got a
+    matching completion (`blocked_count` -- a `PreToolUse` denial or a call
+    that never finished), how many completions re-ran at a `head_sha`
+    already seen for this same shape (`rerun_same_tree_count` -- the
+    general-purpose form of the existing `REDUNDANT_RERUN` footgun, which
+    only ever covered `frob` CLI invocations), and cumulative estimated
+    output tokens. `command_shape` is `None` for every non-`Bash` tool
+    (`.claude/hooks/tool-call-telemetry.py` never shape-normalizes their
+    arguments) and for a `Bash` call whose verb could not be extracted
+    safely."""
+
+    model_config = ConfigDict(frozen=True)
+
+    tool: str
+    command_shape: str | None
+    call_count: int
+    blocked_count: int
+    rerun_same_tree_count: int
+    output_tokens_total: int
+
+
+# frob:doc docs/modules/stats.md#public-api
 class AgenticReport(BaseModel):
     """The full `frob stats --agentic` snapshot: time and token breakdowns
     over the local, non-gated telemetry stream."""
@@ -125,6 +152,7 @@ class AgenticReport(BaseModel):
     retread_candidates: tuple[RetreadCandidate, ...]
     ticket_cycle_times: tuple[TicketCycleTime, ...]
     tool_tokens: tuple[ToolTokens, ...]
+    tool_call_histogram: tuple[ToolCallShape, ...]
 
 
 def _load_events(root: Path) -> list[dict[str, Any]]:
@@ -579,7 +607,7 @@ def dispatch_cost_report(root: Path) -> DispatchCostReport:
     existing `--json` path."""
     events = _load_events(root)
     dispatch_events = [e for e in events if e.get("kind") == "dispatch"]
-    tool_events = [e for e in events if e.get("kind") == "tool"]
+    tool_events = _completed_tool_events(events)
     ticket_events = [e for e in events if e.get("kind") == "ticket"]
 
     dispatches = _dispatch_records(dispatch_events, tool_events, ticket_events)
@@ -592,8 +620,26 @@ def dispatch_cost_report(root: Path) -> DispatchCostReport:
     )
 
 
+def _completed_tool_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every `kind="tool"` event that represents a COMPLETED call -- i.e.
+    every event with no `phase` field at all (the pre-T-2912 shape, which
+    only ever recorded completions) plus every `phase="post"` event
+    (T-2912's `.claude/hooks/tool-call-telemetry.py`). `phase="pre"`
+    events are attempts, not completions, and must be excluded here so a
+    blocked/retried call is not double-counted as two calls' worth of cost
+    -- `_tool_call_histogram` (below) is where `phase="pre"` events earn
+    their keep, for retry/blocked detection specifically."""
+    return [
+        e
+        for e in events
+        if e.get("kind") == "tool" and e.get("phase") != "pre"
+    ]
+
+
 def _tool_tokens(tool_events: list[dict[str, Any]]) -> tuple[ToolTokens, ...]:
-    """Cumulative estimated output tokens per harness tool name, descending."""
+    """Cumulative estimated output tokens per harness tool name, descending.
+    `tool_events` must already be completed-only (see
+    `_completed_tool_events`)."""
     totals: Counter[str] = Counter()
     counts: Counter[str] = Counter()
     for ev in tool_events:
@@ -604,6 +650,115 @@ def _tool_tokens(tool_events: list[dict[str, Any]]) -> tuple[ToolTokens, ...]:
         ToolTokens(tool=tool, total_tokens=totals[tool], call_count=counts[tool])
         for tool in sorted(totals, key=lambda t: -totals[t])
     )
+
+
+# frob:ticket T-2912
+class _ToolCallTally:
+    """Mutable accumulator for `_tool_call_histogram` (T-2912), split out
+    so that function stays a thin orchestrator: one `Counter`/`set` bundle
+    per `(tool, command_shape)` key for `call_count`, `blocked_count`,
+    `rerun_same_tree_count`, and cumulative `output_tokens_est`."""
+
+    def __init__(self) -> None:
+        self.call_count: Counter[tuple[str, str | None]] = Counter()
+        self.blocked_count: Counter[tuple[str, str | None]] = Counter()
+        self.rerun_count: Counter[tuple[str, str | None]] = Counter()
+        self.token_total: Counter[tuple[str, str | None]] = Counter()
+        self.seen_heads: defaultdict[tuple[str, str | None], set[str]] = defaultdict(
+            set
+        )
+
+    def _record_blocked(self, key: tuple[str, str | None]) -> None:
+        """One `phase="pre"` attempt at `key` with no matching completion."""
+        self.blocked_count[key] += 1
+
+    def _record_completed(
+        self, key: tuple[str, str | None], ev: dict[str, Any]
+    ) -> None:
+        """One completed call at `key`: tallies tokens and detects a rerun
+        at a `head_sha` already seen for this same `key`."""
+        self.call_count[key] += 1
+        self.token_total[key] += int(ev.get("output_tokens_est", 0))
+        head = ev.get("head_sha")
+        if isinstance(head, str) and head and head != "unknown":
+            if head in self.seen_heads[key]:
+                self.rerun_count[key] += 1
+            self.seen_heads[key].add(head)
+
+    def _shapes(self) -> tuple[ToolCallShape, ...]:
+        """Every accumulated key as a `ToolCallShape`, descending by
+        `call_count`."""
+        keys = set(self.call_count) | set(self.blocked_count)
+        out = [
+            ToolCallShape(
+                tool=tool,
+                command_shape=shape,
+                call_count=self.call_count[(tool, shape)],
+                blocked_count=self.blocked_count[(tool, shape)],
+                rerun_same_tree_count=self.rerun_count[(tool, shape)],
+                output_tokens_total=self.token_total[(tool, shape)],
+            )
+            for tool, shape in keys
+        ]
+        return tuple(sorted(out, key=lambda s: -s.call_count))
+
+
+def _accumulate_dispatch_tool_events(
+    tally: _ToolCallTally, evs: list[dict[str, Any]]
+) -> None:
+    """One dispatch's worth of `evs` (already `iso_ts`-sorted), folded into
+    `tally` -- the sequential pre/post pairing rule `_tool_call_histogram`
+    documents, split out purely to keep that function's own body short."""
+    pending_pre: tuple[str, str | None] | None = None
+    for ev in evs:
+        key = (str(ev.get("tool", "unknown")), ev.get("command_shape"))
+        if ev.get("phase") == "pre":
+            if pending_pre is not None:
+                tally._record_blocked(pending_pre)
+            pending_pre = key
+            continue
+        pending_pre = None
+        tally._record_completed(key, ev)
+    if pending_pre is not None:
+        tally._record_blocked(pending_pre)
+
+
+def _tool_call_histogram(
+    raw_tool_events: list[dict[str, Any]],
+) -> tuple[ToolCallShape, ...]:
+    """Per-`(tool, command_shape)` histogram (T-2912) over the RAW
+    `kind="tool"` stream, both phases -- this is the one place `phase="pre"`
+    events get used, to answer the three questions
+    `_tool_tokens`/`dispatch_cost_report` cannot: which shapes dominate call
+    COUNT, how many attempts of a shape were blocked/never completed, and
+    how many completions re-ran at a `head_sha` already seen for that same
+    shape.
+
+    Pairing is sequential per `dispatch_id` (events are grouped, then
+    sorted by `iso_ts`, then folded by `_accumulate_dispatch_tool_events`):
+    a `phase="pre"` event is presumed matched by the very next event for
+    that dispatch if it is a `phase="post"`; if instead ANOTHER
+    `phase="pre"` (or the dispatch's own event stream ends) follows
+    without an intervening `phase="post"`, the first `pre` is counted as
+    `blocked_count` for its own `(tool, command_shape)` -- a real completed
+    call always produces its `post` event immediately after its own `pre`
+    in a single-threaded agent session, so an unmatched `pre` is exactly a
+    denied-then-abandoned or denied-then-retried-as-a-different-shape
+    attempt. A `phase`-less legacy event (pre-T-2912 stream shape) is
+    treated as a completed call directly, matching `_completed_tool_events`.
+    """
+    by_dispatch: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for ev in raw_tool_events:
+        by_dispatch[str(ev.get("dispatch_id", "unknown"))].append(ev)
+
+    tally = _ToolCallTally()
+    for evs in by_dispatch.values():
+        # frob:waive PERF004 reason="each iteration sorts a DIFFERENT dispatch's own \
+        # event list -- there is nothing to hoist, this is N independent sorts of N \
+        # disjoint lists, not one list re-sorted N times"
+        ordered = sorted(evs, key=lambda e: e.get("iso_ts") or "")
+        _accumulate_dispatch_tool_events(tally, ordered)
+    return tally._shapes()
 
 
 # frob:doc docs/modules/stats.md#public-api
@@ -617,7 +772,8 @@ def agentic_report(root: Path, *, top_n: int = 10) -> AgenticReport:
     events = _load_events(root)
     cli_events = [e for e in events if e.get("kind") == "cli"]
     ticket_events = [e for e in events if e.get("kind") == "ticket"]
-    tool_events = [e for e in events if e.get("kind") == "tool"]
+    raw_tool_events = [e for e in events if e.get("kind") == "tool"]
+    tool_events = _completed_tool_events(events)
 
     return AgenticReport(
         event_count=len(events),
@@ -626,6 +782,7 @@ def agentic_report(root: Path, *, top_n: int = 10) -> AgenticReport:
         retread_candidates=_retread_candidates(cli_events),
         ticket_cycle_times=_ticket_cycle_times(ticket_events),
         tool_tokens=_tool_tokens(tool_events),
+        tool_call_histogram=_tool_call_histogram(raw_tool_events),
     )
 
 
@@ -638,6 +795,7 @@ __all__ = [
     "RetreadCandidate",
     "TicketCycleTime",
     "TimeSink",
+    "ToolCallShape",
     "ToolTokens",
     "agentic_report",
     "dispatch_cost_report",

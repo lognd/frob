@@ -76,6 +76,31 @@ def _agentic_ticket_and_token_lines(report) -> list[str]:  # noqa: ANN001
     return lines
 
 
+# frob:ticket T-2912
+def _agentic_tool_call_histogram_lines(report) -> list[str]:  # noqa: ANN001
+    """The `(tool, command_shape)` call-count histogram (T-2912): which
+    shapes dominate call COUNT, how many attempts of each shape were
+    blocked/never completed, and how many completions re-ran at a
+    `head_sha` already seen for that shape -- the measured version of what
+    T-2909/T-2908 previously had to infer from a hand-tallied session."""
+    lines = ["", "tool-call histogram, by (tool, command shape) (T-2912):"]
+    if not report.tool_call_histogram:
+        lines.append(
+            "  (no kind=\"tool\" phase events recorded yet -- "
+            ".claude/hooks/tool-call-telemetry.py wires PreToolUse/PostToolUse)"
+        )
+        return lines
+    for shape in report.tool_call_histogram:
+        label = shape.command_shape if shape.command_shape else shape.tool
+        lines.append(
+            f"  {shape.tool} [{label}]: {shape.call_count} call(s), "
+            f"{shape.blocked_count} blocked/incomplete, "
+            f"{shape.rerun_same_tree_count} rerun-at-same-tree, "
+            f"~{shape.output_tokens_total} tokens"
+        )
+    return lines
+
+
 # frob:ticket T-1787
 def _dispatch_cost_lines(report) -> list[str]:  # noqa: ANN001
     """The T-1724 dispatch-cost-report section of the `--agentic` text
@@ -148,6 +173,7 @@ def _run_agentic(cfg: AppConfig) -> None:
     lines += _agentic_time_lines(report)
     lines += _agentic_retread_lines(report)
     lines += _agentic_ticket_and_token_lines(report)
+    lines += _agentic_tool_call_histogram_lines(report)
     lines += _dispatch_cost_lines(dispatch_cost_report(root))
     Renderer.for_stream(sys.stdout).line("\n".join(lines))
 

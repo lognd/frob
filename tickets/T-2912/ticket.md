@@ -1,7 +1,7 @@
 ---
 id: T-2912
 title: Instrument agent tool-call histograms to target token cost at measured hotspots
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -95,6 +95,20 @@ scope_changes:
     instead'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_hook_dispatch_telemetry.py::test_pre_tool_use_records_attempt_event
+- tests/test_hook_dispatch_telemetry.py::test_post_tool_use_records_completion_with_token_estimate
+- tests/test_hook_dispatch_telemetry.py::test_non_bash_tool_never_gets_a_command_shape
+- tests/test_hook_dispatch_telemetry.py::test_bash_command_shape_never_leaks_raw_argument_values
+- tests/test_hook_dispatch_telemetry.py::test_bash_command_shape_extends_through_bare_subcommand_words
+- tests/test_hook_dispatch_telemetry.py::test_bash_command_shape_chain_stops_at_a_ticket_id
+- tests/test_hook_dispatch_telemetry.py::test_tool_call_telemetry_disabled_env_var_writes_nothing
+- tests/test_hook_dispatch_telemetry.py::test_tool_call_telemetry_malformed_payload_is_a_silent_noop
+- tests/test_hook_dispatch_telemetry.py::test_tool_call_telemetry_unrecognized_hook_event_is_a_silent_noop
+- tests/test_hook_dispatch_telemetry.py::test_tool_call_telemetry_outside_git_repo_writes_nothing
+- tests/test_stats_agentic.py::test_tool_call_histogram_counts_completed_calls_by_shape
+- tests/test_stats_agentic.py::test_tool_call_histogram_counts_unmatched_pre_as_blocked
+- tests/test_stats_agentic.py::test_tool_call_histogram_legacy_phaseless_events_count_as_completed
 designated_repro_test: null
 threat: null
 component: null

@@ -163,6 +163,47 @@ renders the resulting `frob.stats.dispatch_cost_report` join
 (`_dispatch_cost_lines`, `src/frob/app/stats_runner.py`) in addition to the
 existing `--json` path.
 
+## Tool-call telemetry (T-2912)
+
+T-1724 built `frob.stats._agentic.dispatch_cost_report` and
+`agentic_report`'s `tool_tokens` field to read `kind="tool"` events, but
+left the write side unwired -- every per-agent cost figure this repo has
+published (the ~1,446-tokens-per-call model behind T-2909/T-2908) came
+from hand-tallying a session transcript, not from this stream.
+`.claude/hooks/tool-call-telemetry.py`, registered as BOTH a `PreToolUse`
+and a `PostToolUse` hook matching every tool (`.claude/settings.json`), is
+the write side: it appends one `kind="tool"` event per phase per tool
+call, using the session's own `session_id` as `dispatch_id` (joinable
+against `kind="dispatch"` boundary events the same way `kind="cli"`/
+`kind="ticket"` events already are).
+
+Each event carries `tool` (the harness tool name), `phase` (`"pre"` for an
+attempt, `"post"` for a completion), `head_sha` (a fast, subprocess-free
+short HEAD read -- see the hook's own `_fast_head_sha` docstring for why
+this does NOT reuse `tree_hash`'s `git rev-parse` spawn at this call
+frequency), and, for a `Bash` call only, `command_shape`: the first
+pipeline segment's verb plus its bare flag tokens, never the raw command
+text (a `Bash` command can carry secrets, tokens, or file contents inline
+-- see the hook's own docstring for the exact filtering rule). `phase="post"`
+additionally carries `output_tokens_est`, sized the same `len/4` way
+`estimate_tokens` already does.
+
+`frob.stats._agentic._tool_call_histogram` aggregates both phases into a
+`ToolCallShape` per `(tool, command_shape)`: `call_count` (which shapes
+dominate call COUNT), `blocked_count` (a `phase="pre"` attempt with no
+matching `phase="post"` before the dispatch's next attempt -- a
+`PreToolUse` denial or an abandoned call; the general-purpose version of
+"land cost is dominated by refusals, not timeouts"), and
+`rerun_same_tree_count` (a completion at a `head_sha` already seen for
+that same shape -- the general-purpose version of the existing
+`REDUNDANT_RERUN` footgun below, which only ever covered `frob` CLI
+invocations). `_completed_tool_events` excludes `phase="pre"` events from
+every cost aggregate (`tool_tokens`, `dispatch_cost_report`'s
+`output_tokens_delta`/`tool_call_count`) so an attempt-then-completion
+pair is never double-counted as two calls' worth of cost. <!-- frob:waive DOC006 reason="FROB_STATS_AGENTIC env-var trigger, not a real argparse flag -- see this same file's line 71 and docs/modules/stats.md#agentic-timetoken-profiling---agentic-t-0178" -->`frob stats --agentic`'s plain-text output renders the histogram
+(`_agentic_tool_call_histogram_lines`, `src/frob/app/stats_runner.py`) in
+addition to the `--json` path.
+
 ## Rule-level gate firing counts (T-1939)
 
 `frob.telemetry` (a separate, gate-facing sibling of `frob.app.telemetry`
