@@ -896,6 +896,74 @@ class TestAssertNewPublicSymbolsHaveDocAndTestEdges:
             repo, "T-2114", None
         )  # must not raise
 
+    # frob:ticket T-2609
+    def test_a_decorated_new_class_with_directives_above_decorator_not_refused(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocA\
+        # ndTestEdges.test_a_decorated_new_class_with_directives_above_decorator_not_re\
+        # fused
+        # T-2609's DESIGNATED REPRO (BUG002): `ast.ClassDef.lineno` for a
+        # decorated class is the `class` keyword's own line, never the
+        # decorator's -- `_public_top_level_defs` used that line
+        # unconditionally, so `_frob_directive_block`'s upward walk from
+        # it hit the `@dataclass(frozen=True)` decorator line immediately
+        # (not a comment) and stopped, reading an EMPTY directive block
+        # regardless of what sat above the decorator. This is the exact
+        # `GateRunReplay`-shaped placement (directives directly above the
+        # decorator) accepted everywhere else in this repo -- must NOT
+        # refuse the land.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        new_file = repo / "src" / "decorated.py"
+        new_file.write_text(
+            "from dataclasses import dataclass\n\n\n"
+            "# frob:doc docs/modules/example.md#brand-new-decorated-class\n"
+            "# frob:tests tests/test_example.py::test_brand_new_decorated_class\n"
+            "@dataclass(frozen=True)\n"
+            "class BrandNewDecoratedClass:\n"
+            "    value: int\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+            repo, "T-2609", frozenset({"src/decorated.py"})
+        )  # must not raise
+
+    # frob:ticket T-2609
+    def test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_control(
+        self, repo: Path
+    ) -> None:
+        # frob:tests \
+        # tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocA\
+        # ndTestEdges.test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_\
+        # control
+        # Must-still-pass control: the decorator-lineno offset only moves
+        # WHERE the directive-block search starts -- a genuinely
+        # undocumented decorated symbol (nothing above the decorator
+        # either) still refuses exactly like an undecorated one does.
+        from frob.app.ticket_runner._land_cmd import (
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land,
+        )
+
+        new_file = repo / "src" / "decorated_undocumented.py"
+        new_file.write_text(
+            "from dataclasses import dataclass\n\n\n"
+            "@dataclass(frozen=True)\n"
+            "class BrandNewUndocumentedDecoratedClass:\n"
+            "    value: int\n"
+        )
+        _run(["git", "add", "-A"], repo)
+
+        with pytest.raises(SystemExit) as exc_info:
+            _assert_new_public_symbols_have_doc_and_test_edge_pre_land(
+                repo, "T-2609", frozenset({"src/decorated_undocumented.py"})
+            )
+        assert exc_info.value.code == 1
+
     # frob:ticket T-2114
     def test_cli_land_end_to_end_refuses_a_worktree_with_a_new_undocumented_symbol(
         self, repo: Path

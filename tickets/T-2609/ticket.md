@@ -1,7 +1,7 @@
 ---
 id: T-2609
 title: land-time new-public-symbol doc/test-edge check does not offset for decorators
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-19'
@@ -27,7 +27,30 @@ scope_changes:
     TestAssertNewPublicSymbolsHaveDocAndTestEdges class
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_class_with_directives_above_decorator_not_refused
+- tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_control
+designated_repro_test: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_class_with_directives_above_decorator_not_refused
+designated_repro_changes:
+- old_value: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_public_class_with_directives_above_the_decorator_does_not_refuse
+  new_value: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_class_with_directives_above_decorator_not_refused
+  reason: reordered commits so test-alone precedes fix commit, enabling a real FAILED_AT_PARENT
+    verdict instead of the earlier forced designation
+  actor: logan
+  at: '2026-08-25'
+evidence_changes:
+- old_node: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_public_class_with_directives_above_the_decorator_does_not_refuse
+  new_node: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_class_with_directives_above_decorator_not_refused
+  reason: 'T-2609: shortened test method name for FMT001 (frob:tests directive line
+    length)'
+  actor: logan
+  at: '2026-08-25'
+- old_node: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_public_function_with_no_edges_still_refuses_positive_control
+  new_node: tests/test_ticket_work_and_land_finish.py::TestAssertNewPublicSymbolsHaveDocAndTestEdges::test_a_decorated_new_symbol_with_no_edges_still_refuses_positive_control
+  reason: 'T-2609: shortened test method name for FMT001 (frob:tests directive line
+    length)'
+  actor: logan
+  at: '2026-08-25'
 threat: null
 component: null
 anchor: false

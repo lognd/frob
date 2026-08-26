@@ -3748,13 +3748,29 @@ def _is_generated_or_test_path(worktree: Path, rel_path: str) -> bool:
 
 
 # frob:ticket T-2114
+# frob:ticket T-2609
 def _public_top_level_defs(source: str) -> dict[str, int]:
-    """Name -> 1-indexed def/class line number for every PUBLIC (does not
-    start with `_`) top-level `def`/`async def`/`class` in `source`, or
-    `{}` if `source` does not parse as Python at all (a syntax error is
-    someone else's problem to catch -- this check degrades to a no-op,
-    never a crash, matching every other touched-set guard's fail-open
-    posture in this module).
+    """Name -> 1-indexed directive-search line number for every PUBLIC
+    (does not start with `_`) top-level `def`/`async def`/`class` in
+    `source`, or `{}` if `source` does not parse as Python at all (a
+    syntax error is someone else's problem to catch -- this check
+    degrades to a no-op, never a crash, matching every other touched-set
+    guard's fail-open posture in this module).
+
+    T-2609: for a DECORATED def/class, the line returned is the FIRST
+    decorator's own `lineno`, not `node.lineno` (which `ast` always sets
+    to the `def`/`class` keyword's own line, one or more lines BELOW the
+    decorator(s)) -- `_frob_directive_block` walks upward from this line
+    looking for a contiguous comment run, and for a decorated symbol the
+    line directly above `def`/`class` is the decorator itself, not a
+    comment, so the walk always stopped immediately regardless of what
+    directives sat above the decorator. This mirrors `frob.lang`'s own
+    `_walk_python._effective_node`, which peels a tree-sitter
+    `decorated_definition` node the identical way for the identical
+    reason (directive-to-symbol binding must start at the decorator, not
+    the keyword) -- same fix shape, ported to this module's separate
+    `ast`-based text scan rather than sharing `frob.lang`'s tree-sitter
+    substrate.
 
     Deliberately TOP-LEVEL ONLY, not a full symbol walk: a small, cheap,
     diff-scoped check (T-2114 generalizes T-1907's touched-file shape, not
@@ -3770,7 +3786,10 @@ def _public_top_level_defs(source: str) -> dict[str, int]:
     for node in tree.body:
         if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
             if not node.name.startswith("_"):
-                defs[node.name] = node.lineno
+                lineno = node.lineno
+                if node.decorator_list:
+                    lineno = node.decorator_list[0].lineno
+                defs[node.name] = lineno
     return defs
 
 
