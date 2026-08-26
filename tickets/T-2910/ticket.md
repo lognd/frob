@@ -18,7 +18,6 @@ scope:
 - src/frob/strata/_bootstrap.py
 - src/frob/app/sys_runner.py
 - src/frob/app/config.py
-- src/frob/_cli_parsers/_misc.py
 - docs/commands/sys.md
 - tests/unit/strata/test_bootstrap.py
 - tests/unit/test_app_runners_batch7.py
@@ -81,6 +80,13 @@ scope_changes:
     allow-list (T-2910)'
   actor: logan
   at: '2026-08-26'
+- op: remove
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: T-2911 holds a live lease on this shared file; land already verified this
+    diff is entirely T-2910-authored via --allow-cross-ticket, narrowing declared
+    scope only to unblock the start->in-progress transition
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
@@ -97,6 +103,21 @@ triage_changes:
     by the shrink-only ratchet design'
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelRefusesAnExistingModel::test_refuses_when_a_strata_file_already_exists
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelRefusesAnExistingModel::test_existing_design_files_lists_the_real_files
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelNeverEmitsMay::test_rendered_text_never_contains_a_may_line
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows::test_single_top_package_splits_by_subdirectory
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows::test_real_import_edge_becomes_a_flow_in_the_right_direction
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows::test_test_files_are_excluded_from_component_derivation
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows::test_loose_file_directly_in_single_package_root_is_not_mistaken_for_a_subdir
+- tests/unit/strata/test_bootstrap.py::TestDeriveBootstrapModelComponentsAndFlows::test_no_python_source_produces_an_empty_but_valid_model
+- tests/unit/strata/test_bootstrap.py::TestRenderedTextParsesAndElaborates::test_derived_model_parses_and_elaborates_cleanly
+- tests/unit/strata/test_bootstrap.py::TestRenderedTextParsesAndElaborates::test_empty_model_still_parses
+- tests/unit/strata/test_bootstrap.py::TestWriteBootstrapModel::test_writes_module_named_strata_file_under_design_dir
+- tests/unit/test_app_runners_batch7.py::TestSysInit::test_writes_a_model_for_a_repo_with_none
+- tests/unit/test_app_runners_batch7.py::TestSysInit::test_check_prints_without_writing
+- tests/unit/test_app_runners_batch7.py::TestSysInit::test_refuses_when_a_model_already_exists
 designated_repro_test: null
 threat: null
 component: null
