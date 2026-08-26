@@ -391,6 +391,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2955: frob-dup: triage tests/ duplicate cluster (~490 groups)
 - T-2956: frob-dup: triage src/frob/gates renamed-duplicate cluster (20 groups)
 - T-2961: Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer, os.nice)
+- T-2969: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern as T-2943
 
 ## [0.530.0] - unreleased
 

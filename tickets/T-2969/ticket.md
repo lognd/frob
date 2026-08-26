@@ -2,7 +2,7 @@
 id: T-2969
 title: Audit remaining test_cli_*.py fixtures for the same missing-git-init pattern
   as T-2943
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
