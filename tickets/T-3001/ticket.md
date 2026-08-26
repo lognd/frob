@@ -24,6 +24,7 @@ scope:
 - tests/unit/app/test_check_chunking.py
 - src/frob/app/ticket_runner/_land_cmd.py
 - docs/modules/tickets-landing.md
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -73,6 +74,12 @@ scope_changes:
 - op: add
   glob: docs/modules/tickets-landing.md
   reason: _unscoped_error_findings doc anchor for the new full/unbudgeted mode
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_ticket_land.py
+  reason: test for the new full=True unbudgeted mode of _unscoped_error_findings,
+    alongside its existing test class in this file
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
