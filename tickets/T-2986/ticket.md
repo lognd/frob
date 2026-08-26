@@ -26,6 +26,7 @@ scope:
 - tickets/archive/T-2543/**
 - docs/design/ledger-v2.md
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 evidence_scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
@@ -173,6 +174,11 @@ scope_changes:
   glob: design/frob.strata
   reason: 'SELFAUDIT001 fix: declare fs.read/fs.write for src/frob/tickets/_archive.py''s
     new direct file I/O in _rewrite_moved_attachment_paths'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet bump for _archive.py's newly declared fs.read/fs.write
   actor: logan
   at: '2026-08-26'
 evidence:
