@@ -68,8 +68,7 @@ the ticket's own named risk).
 
 from __future__ import annotations
 
-from tree_sitter import Node, Tree
-from tree_sitter_language_pack import get_parser
+from tree_sitter import Node
 
 from frob.lang._common import (
     _body_skip,
@@ -80,9 +79,6 @@ from frob.lang._common import (
     _span_of,
 )
 from frob.lang._models import RawSymbol, SymbolKind
-
-# tree-sitter-language-pack's grammar name for C# (tree-sitter-c-sharp).
-_GRAMMAR_NAME = "csharp"
 
 # frob:ticket T-1600
 # frob:doc docs/modules/lang.md#per-language-walker-notes
@@ -97,21 +93,6 @@ COMMENT_TYPES = frozenset({"comment"})
 _CONTAINER_DECLS = frozenset(
     {"class_declaration", "struct_declaration", "interface_declaration"}
 )
-
-
-# frob:ticket T-1600
-# frob:waive WIRE001 follow_up="T-2905" reason="deliberately test-only, same \
-# posture as kotlin's parse_kotlin (T-0613) and bash's _parse_bash (T-1604, T-2900) \
-# before their own dispatch wiring landed -- frob.lang.__init__'s _parse dispatch \
-# loads every tree-sitter grammar through its own generic get_parser(grammar_name) \
-# chokepoint, so this helper has no production call site to wire; kept only so this \
-# module's own tests can exercise the parse step in isolation from the full \
-# _walk_csharp walk"
-def _parse_csharp(source: bytes) -> Tree:
-    """Parse C# source bytes into a tree-sitter `Tree` via the language
-    pack's bundled `tree-sitter-c-sharp` grammar."""
-    parser = get_parser(_GRAMMAR_NAME)
-    return parser.parse(source)
 
 
 def _cs_has_modifier(node: Node, keyword: str) -> bool:

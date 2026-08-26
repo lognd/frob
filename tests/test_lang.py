@@ -757,11 +757,20 @@ class TestCSharp:
     interface members implicitly public."""
 
     # frob:ticket T-1600
+    # frob:ticket T-2905
     def test_parse_csharp_produces_a_tree(self) -> None:
-        # frob:tests src/frob/lang/_walk_csharp.py::_parse_csharp
-        from frob.lang._walk_csharp import _parse_csharp
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp kind="unit"
+        # T-2905: `_parse_csharp` was a test-only wrapper around
+        # `get_parser(_GRAMMAR_NAME)` with no production caller of its own
+        # (frob.lang.__init__'s `_parse` dispatch loads every grammar
+        # through its own generic `get_parser` chokepoint, never through
+        # this module) -- deleted rather than invented a caller; this test
+        # calls `get_parser` directly, the same primitive the deleted
+        # helper wrapped.
+        from tree_sitter_language_pack import get_parser
 
-        tree = _parse_csharp(b"public class Greet {}\n")
+        parser = get_parser("csharp")
+        tree = parser.parse(b"public class Greet {}\n")
         assert tree.root_node.type == "compilation_unit"
         assert any(c.type == "class_declaration" for c in tree.root_node.children)
 
