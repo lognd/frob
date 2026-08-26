@@ -305,3 +305,64 @@ class TestPlatform001:
         violations = walk_lint_gate(tmp_path)
 
         assert not any(v.rule == "PLATFORM001" for v in violations)
+
+    #: T-2934: the real false positive measured on
+    #: `frob.tickets._land_git_ops.reclaim_orphaned_squash_residue` --
+    #: logs, then takes a typed `Ok(False)` exit (typani convention)
+    #: instead of continuing as if the missing primitive did not matter.
+    #: This MUST stay quiet.
+    _TYPED_RESULT_REFUSAL_SRC = (
+        "import importlib\n"
+        "from typani import Ok\n"
+        "\n"
+        "_fcntl = None\n"
+        "try:\n"
+        "    _fcntl = importlib.import_module('fcntl')\n"
+        "except ImportError:\n"
+        "    _fcntl = None\n"
+        "\n"
+        "def reclaim(root):\n"
+        "    if _fcntl is None:\n"
+        "        _log.warning('cannot safely reclaim without fcntl')\n"
+        "        return Ok(False)\n"
+        "    return Ok(True)\n"
+    )
+
+    def test_typed_result_refusal_is_quiet(self) -> None:
+        """T-2934: `return Ok(False)` (a real, controlled abort) must not
+        fire -- only a plain `return`/fallthrough with no typed
+        constructor is a true warn-and-continue."""
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        tree = ast.parse(self._TYPED_RESULT_REFUSAL_SRC)
+        assert _scan_platform_guards(tree) == ()
+
+    def test_typed_err_refusal_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        src = self._TYPED_RESULT_REFUSAL_SRC.replace(
+            "from typani import Ok", "from typani import Err"
+        ).replace("return Ok(False)", "return Err('unavailable')")
+        tree = ast.parse(src)
+        assert _scan_platform_guards(tree) == ()
+
+    def test_plain_return_with_no_typed_constructor_still_fires(self) -> None:
+        """Guards against over-narrowing: a bare `return`/`return None`
+        with no `Ok`/`Err` wrapper is NOT a typed exit and must still
+        fire -- this is exactly `_WARN_AND_CONTINUE_SRC`'s own shape,
+        re-asserted here as a negative control on the narrowing itself."""
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        src = (
+            "import importlib\n"
+            "\n"
+            "fcntl = None\n"
+            "try:\n"
+            "    fcntl = importlib.import_module('fcntl')\n"
+            "except ImportError:\n"
+            "    fcntl = None\n"
+            "\n"
+            "def f():\n"
+            "    if fcntl is None:\n"
+            "        _log.warning('degraded')\n"
+            "        return\n"
+        )
+        tree = ast.parse(src)
+        assert len(_scan_platform_guards(tree)) == 1

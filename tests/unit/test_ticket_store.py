@@ -1221,6 +1221,63 @@ class TestLedgerLock:
         )
 
 
+# frob:ticket T-2934
+class TestLedgerLockPlatformBackends:
+    """T-2934: `ledger_lock`'s msvcrt (Windows) backend and its loud
+    refusal (`TicketLockUnavailable`) when neither `fcntl` nor `msvcrt`
+    exists -- the same PLATFORM001-shaped fix T-2918 applied to
+    `_baseline_lock`."""
+
+    def test_no_lock_primitive_refuses_loudly(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
+        import frob.tickets._store as _store_mod
+
+        monkeypatch.setattr(_store_mod, "fcntl", None)
+        monkeypatch.setattr(_store_mod, "msvcrt", None)
+        with pytest.raises(_store_mod.TicketLockUnavailable):
+            with ledger_lock(tmp_path):
+                pass
+
+    def test_windows_backend_round_trips(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The msvcrt backend is exercised on Linux CI via a fake module
+        standing in for the real Windows-only `msvcrt`, backed by real
+        `fcntl.flock` under the hood."""
+        # frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_windows_backend_round_trips  # noqa: E501
+        import fcntl as _real_fcntl
+
+        import frob.tickets._store as _store_mod
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_store_mod, "fcntl", None)
+        monkeypatch.setattr(_store_mod, "msvcrt", _FakeMsvcrt)
+
+        entered = False
+        with ledger_lock(tmp_path):
+            entered = True
+        assert entered is True
+        entered = False
+        with ledger_lock(tmp_path):
+            entered = True
+        assert entered is True
+
+
 # frob:ticket T-0458
 class TestReplaceDoneReportSection:
     def test_appends_when_absent(self) -> None:

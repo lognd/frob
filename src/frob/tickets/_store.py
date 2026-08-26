@@ -52,6 +52,7 @@ import re
 import shutil
 import tempfile
 import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from pathlib import Path
@@ -86,16 +87,67 @@ from frob.tickets._store_migrate import (
 from frob.yaml_io import _coverage_tracer_active as _coverage_tracer_active_impl
 from frob.yaml_io import fast_yaml_loader
 
-# T-0458: `fcntl` is posix-only; `ledger_lock` degrades to a documented
-# no-op (see its docstring) on a platform without it, rather than failing
-# import outright.
+# T-0458/T-2934: `fcntl` is posix-only. `ledger_lock`/`_flock_path` used
+# to degrade to an unconditional, unbounded, logged-but-silent no-op on
+# a platform without it -- the same PLATFORM001-shaped bug T-2918 fixed
+# in `frob.app.ticket_runner._rapid_sweep._baseline_lock`. Now tries
+# `msvcrt` (Windows) as a second real backend, and raises
+# `TicketLockUnavailable` (a loud refusal) only when NEITHER exists --
+# concurrent, unserialized ticket-ledger writers is exactly the silent-
+# corruption class this repo's own ledger-integrity doctrine treats as
+# unacceptable (never hand-edit tickets.md; a lost write here is the
+# same shape).
 fcntl: ModuleType | None
 try:
     fcntl = importlib.import_module("fcntl")
 except ImportError:  # pragma: no cover -- posix-only in this repo's CI
     fcntl = None
 
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
+
 _log = get_logger(__name__)
+
+
+# frob:doc docs/modules/tickets.md#public-api
+# frob:tests tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
+class TicketLockUnavailable(RuntimeError):
+    """T-2934: raised by `ledger_lock`/`_flock_path` when neither `fcntl`
+    (POSIX) nor `msvcrt` (Windows) is importable -- there is no known
+    advisory-lock primitive on this platform. A loud refusal, never a
+    silent no-op: proceeding unlocked would reopen the exact ledger
+    read-modify-write race `ledger_lock`'s own docstring says it exists
+    to make structurally impossible (T-0465's duplicate-id incident),
+    for as long as this process runs, not just under brief contention."""
+
+
+def _msvcrt_acquire_blocking(fd: int) -> None:  # pragma: no cover -- windows-only
+    """Block (polling) until an exclusive `msvcrt.locking` byte-range
+    lock on `fd`'s first byte is acquired -- mirrors `frob.process.
+    _lock._msvcrt_acquire_blocking`'s identical shape (kept as a local
+    copy rather than a cross-component import: `frob.tickets` and
+    `frob.process` deliberately never share a lock FILE per this
+    module's own `ledger_lock`/`_land_lock`-distinctness precedent, and
+    the same posture extends to not adding a new cross-component import
+    edge for a ~10-line primitive)."""
+    assert msvcrt is not None
+    while True:
+        try:
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(0.05)
+
+
+def _msvcrt_release(fd: int) -> None:  # pragma: no cover -- windows-only
+    """Release the byte-range lock `_msvcrt_acquire_blocking` took."""
+    assert msvcrt is not None
+    os.lseek(fd, 0, os.SEEK_SET)
+    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
 _FRONTMATTER_RE = re.compile(r"\A---\n(.*?\n)---\n(.*)\Z", re.DOTALL)
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -245,23 +297,21 @@ def ledger_lock(root: Path) -> Iterator[None]:
     allocation race (T-0465's duplicate T-0427) and a lost concurrent
     Done-report edit structurally impossible rather than merely unlikely.
 
-    Uses `fcntl.flock` on `.frob/tickets.lock` (POSIX). On a platform
-    without `fcntl` this degrades to a documented no-op (logged at WARNING,
-    not silently pretended to be locked) -- a real Windows named-pipe/lock
-    equivalent is the T-0458 phase-2 daemon-pipe follow-up, not built here.
-    Re-entrant per thread (see `_lock_local`) so a locked primitive called
+    Uses `fcntl.flock` on `.frob/tickets.lock` (POSIX) or, on Windows,
+    `msvcrt.locking` (T-2934). If NEITHER primitive exists, raises
+    `TicketLockUnavailable` rather than the pre-T-2934 silent
+    unconditional no-op. Re-entrant per thread (see `_lock_local`) so a
+    locked primitive called
     from inside an already-locked caller in the SAME thread does not
     deadlock; a different thread or process still blocks on the real OS
     lock.
     """
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "tickets: ledger_lock: fcntl unavailable on this platform, "
-            "lock is a NO-OP (T-0458 phase-2 tracks a real cross-platform "
-            "primitive) -- concurrent writers are NOT serialized here"
+    if fcntl is None and msvcrt is None:
+        raise TicketLockUnavailable(
+            f"tickets: ledger_lock: neither fcntl (POSIX) nor msvcrt "
+            f"(Windows) is available on this platform -- refusing to "
+            f"proceed unlocked against {root} (T-2934)"
         )
-        yield
-        return
 
     path = _lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -285,15 +335,30 @@ def ledger_lock(root: Path) -> Iterator[None]:
                 held[key] = (fd, depth - 1)
         return
 
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
+    windows_backend = msvcrt is not None and fcntl is None
+    if windows_backend:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+        _msvcrt_acquire_blocking(fd)
+    else:
+        assert fcntl is not None
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(fd, fcntl.LOCK_EX)
     held[key] = (fd, 1)
     _log.debug("tickets: ledger_lock acquired (%s)", path)
     try:
         yield
     finally:
         del held[key]
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if windows_backend:  # pragma: no cover -- windows-only
+            _msvcrt_release(fd)
+        else:
+            assert fcntl is not None
+            fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         _log.debug("tickets: ledger_lock released (%s)", path)
 
@@ -351,17 +416,15 @@ def _flock_path(path: Path) -> Iterator[None]:
     build on (T-1253): exclusive, blocking, cross-process, re-entrant per
     thread via `_fine_lock_local` (mirrors `ledger_lock`'s own re-entrancy
     bookkeeping, kept in a separate dict so the two primitive families never
-    share a key namespace). Degrades to a documented no-op on a platform
-    without `fcntl`, matching `ledger_lock`'s and `derived_state_lock`'s same
-    fallback -- never silently pretends to be locked."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "tickets: %s: fcntl unavailable on this platform, lock is a "
-            "NO-OP -- concurrent writers are NOT serialized here",
-            path,
+    share a key namespace). Uses `fcntl.flock` (POSIX) or `msvcrt.locking`
+    (Windows, T-2934); raises `TicketLockUnavailable` if neither exists,
+    never silently pretends to be locked."""
+    if fcntl is None and msvcrt is None:
+        raise TicketLockUnavailable(
+            f"tickets: {path}: neither fcntl (POSIX) nor msvcrt (Windows) "
+            f"is available on this platform -- refusing to proceed "
+            f"unlocked (T-2934)"
         )
-        yield
-        return
 
     path.parent.mkdir(parents=True, exist_ok=True)
     key = str(path)
@@ -386,15 +449,30 @@ def _flock_path(path: Path) -> Iterator[None]:
                 held[key] = (fd, depth - 1)
         return
 
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX)
+    windows_backend = msvcrt is not None and fcntl is None
+    if windows_backend:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+        _msvcrt_acquire_blocking(fd)
+    else:
+        assert fcntl is not None
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(fd, fcntl.LOCK_EX)
     held[key] = (fd, 1)
     _log.debug("tickets: fine-grained lock acquired (%s)", path)
     try:
         yield
     finally:
         del held[key]
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if windows_backend:  # pragma: no cover -- windows-only
+            _msvcrt_release(fd)
+        else:
+            assert fcntl is not None
+            fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         _log.debug("tickets: fine-grained lock released (%s)", path)
 

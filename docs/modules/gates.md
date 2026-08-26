@@ -4549,23 +4549,33 @@ Detection is AST-based, three steps:
    top-level `sys.exit(...)`/`os._exit(...)` call (T-2918's own
    `BaselineLockUnavailable` shape).
 
-**Disclosed gap (v1):** a genuine typani `return Err(...)` structured-
-error refusal is real and common in this codebase but is NOT recognized
-as "loud" by this detector -- distinguishing it from an ordinary silent
-early `return` needs resolving the enclosing function's declared return
-type, out of scope for this single-pass AST scan (the same class of
-disclosed limitation WALK001/PORT001 already carry for their own
-detectors). Such a site legitimately trips PLATFORM001 and needs a
-`frob:waive PLATFORM001 reason="..."` naming the real Result-typed
-refusal, rather than this detector inventing a second, unsound heuristic
-to chase it.
+**T-2934 narrowing (was a v1 disclosed gap):** `_guard_is_loud` now
+also treats a `return Ok(...)`/`return Err(...)` (typani's two Result
+constructors, bare or dotted) as loud -- a real false positive was
+measured on `frob.tickets._land_git_ops.reclaim_orphaned_squash_
+residue`'s actual `if _fcntl is None: _log.warning(...); return
+Ok(False)`: that function's whole job is deciding whether a mutation is
+SAFE, and `Ok(False)` there is a genuine, visible, controlled abort of
+the risky operation -- not "proceeded as if the missing primitive did
+not matter" the way `_baseline_lock`'s pre-T-2918 bug did. Per this
+project's own stated preference ("if any turns out to be a false
+positive, say so and narrow the gate rather than waiving it"), the fix
+was to the DETECTOR, not a `frob:waive` on the finding. A plain
+`return`/bare fallthrough with no `Ok`/`Err` wrapper is still NOT
+treated as loud and still fires -- narrowing to accept typed exits does
+not weaken the original must-fire shape (re-asserted directly as a
+negative control, `test_plain_return_with_no_typed_constructor_still_
+fires`).
 
-Two fixtures lock both directions in `tests/test_walk_lint_gate.py::
+Fixtures lock all three directions in `tests/test_walk_lint_gate.py::
 TestPlatform001` (`test_warn_and_continue_fires` / `test_gate_fires_end_
 to_end` for the must-fire shape lifted byte-for-byte from `_baseline_
 lock`'s pre-T-2918 form; `test_loud_refusal_is_quiet` / `test_gate_stays_
-quiet_on_properly_guarded_module` for its post-fix shape) plus a control
-(`test_no_platform_probe_is_quiet`) proving an unrelated optional-
+quiet_on_properly_guarded_module` for its post-fix raise-based shape;
+`test_typed_result_refusal_is_quiet` / `test_typed_err_refusal_is_quiet`
+for the `_land_git_ops.py`-shaped `Ok`/`Err` false positive this
+narrowing fixed) plus a control (`test_no_platform_probe_is_quiet`)
+proving an unrelated optional-
 dependency probe (`z3`) never anchors this rule at all.
 
 ### EXCL001 (T-0465)

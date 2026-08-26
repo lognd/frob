@@ -31,6 +31,7 @@ from __future__ import annotations
 import importlib
 import os
 import threading
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -38,16 +39,71 @@ from types import ModuleType
 
 from frob.logging import get_logger
 
-# T-0859: `fcntl` is posix-only; `derived_state_lock` degrades to a
-# documented no-op (see its docstring) on a platform without it, mirroring
-# `frob.tickets._store.ledger_lock`'s T-0458 precedent.
+# T-0859/T-2934: `fcntl` is posix-only. `derived_state_lock` used to
+# degrade to an unconditional, unbounded, logged-but-silent no-op on any
+# platform without it -- the same PLATFORM001-shaped bug T-2918 fixed in
+# `frob.app.ticket_runner._rapid_sweep._baseline_lock`. Now tries
+# `msvcrt` (Windows) as a second real backend, and raises
+# `DerivedStateLockUnavailable` (a loud refusal) only when NEITHER
+# primitive exists.
 fcntl: ModuleType | None
 try:
     fcntl = importlib.import_module("fcntl")
 except ImportError:  # pragma: no cover -- posix-only in this repo's CI
     fcntl = None
 
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
+
 _log = get_logger(__name__)
+
+
+# frob:doc docs/modules/process.md#public-api
+# frob:tests tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends.test_no_lock_primitive_refuses_loudly  # noqa: E501
+class DerivedStateLockUnavailable(RuntimeError):
+    """T-2934: raised by `derived_state_lock` when neither `fcntl`
+    (POSIX) nor `msvcrt` (Windows) is importable -- there is no known
+    advisory-lock primitive on this platform at all. A loud refusal,
+    never a silent no-op: `.frob`'s derived artifacts (`cache.db`,
+    `dup.db`, `baseline`, ...) are shared, concurrently-mutated state
+    across every `frob` process in a checkout; proceeding unlocked would
+    reopen exactly the TOCTOU race this module's own docstring says it
+    exists to close, for as long as this process runs, not just under
+    brief contention."""
+
+
+def _msvcrt_acquire_blocking(fd: int) -> None:  # pragma: no cover -- windows-only
+    """Block (polling) until an exclusive `msvcrt.locking` byte-range
+    lock on `fd`'s first byte is acquired -- `msvcrt` has no shared/read
+    lock mode at all, so `derived_state_lock`'s Windows backend takes an
+    EXCLUSIVE lock regardless of the caller's requested `exclusive`
+    value (a documented, deliberate conservative-concurrency tradeoff:
+    readers block each other too on Windows, which is safe, just less
+    parallel than POSIX's real shared-lock semantics -- see that
+    function's own docstring). Mirrors `frob.app.ticket_runner.
+    _rapid_sweep`'s T-2918 `msvcrt.locking` retry-loop shape, but
+    unbounded (no `timeout`): `fcntl.flock` without `LOCK_NB` also
+    blocks indefinitely, and this Windows backend must match that
+    semantics rather than the OTHER, timeout-bounded `_baseline_lock`
+    T-2918 fixed."""
+    assert msvcrt is not None
+    while True:
+        try:
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            time.sleep(0.05)
+
+
+def _msvcrt_release(fd: int) -> None:  # pragma: no cover -- windows-only
+    """Release the byte-range lock `_msvcrt_acquire_blocking` took."""
+    assert msvcrt is not None
+    os.lseek(fd, 0, os.SEEK_SET)
+    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
 
 #: The advisory lock file `derived_state_lock` holds, relative to a
 #: checkout's `root` -- distinct from `frob.tickets._store._LOCK_REL`
@@ -250,10 +306,14 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
     applied to `.frob` the way `frob.tickets._store.ledger_lock` (T-0458)
     already applies a single-writer `LOCK_EX` to the ticket ledger.
 
-    Uses `fcntl.flock` on `.frob/derived.lock` (POSIX). On a platform
-    without `fcntl` this degrades to a documented no-op (logged at
-    WARNING, not silently pretended to be locked) -- mirroring
-    `ledger_lock`'s same fallback. Re-entrant per thread and per exact
+    Uses `fcntl.flock` on `.frob/derived.lock` (POSIX) or, on Windows,
+    `msvcrt.locking` (T-2934) -- always EXCLUSIVE on the Windows backend
+    regardless of the requested `exclusive` mode, since `msvcrt` has no
+    shared/read-lock primitive at all (a documented, deliberate
+    conservative-concurrency tradeoff: readers block each other too on
+    Windows). If NEITHER primitive exists, raises
+    `DerivedStateLockUnavailable` (T-2934) rather than the pre-T-2934
+    silent unconditional no-op. Re-entrant per thread and per exact
     `exclusive` value (see `_lock_local`): a second `with
     derived_state_lock(root, exclusive=X)` in the SAME thread, requesting
     the SAME mode, is a no-op re-entry; requesting the OPPOSITE mode while
@@ -262,14 +322,12 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
     downgrade is not supported and would either deadlock against the
     thread's own held lock or silently violate the mode it already holds).
     """
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "process: derived_state_lock: fcntl unavailable on this "
-            "platform, lock is a NO-OP (mirrors ledger_lock's T-0458 "
-            "fallback) -- concurrent frob processes are NOT serialized here"
+    if fcntl is None and msvcrt is None:
+        raise DerivedStateLockUnavailable(
+            f"process: derived_state_lock: neither fcntl (POSIX) nor "
+            f"msvcrt (Windows) is available on this platform -- refusing "
+            f"to proceed unlocked against {root} (T-2934)"
         )
-        yield
-        return
 
     path = _derived_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -313,8 +371,18 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
                 held[key] = (fd, held_exclusive, depth - 1)
         return
 
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
+    if msvcrt is not None and fcntl is None:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+        _msvcrt_acquire_blocking(fd)
+    else:
+        assert fcntl is not None
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(fd, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
     held[key] = (fd, exclusive, 1)
     with _process_registry_lock:
         _process_held_counts[registry_key] = (
@@ -329,7 +397,10 @@ def derived_state_lock(root: Path, *, exclusive: bool) -> Iterator[None]:
         yield
     finally:
         del held[key]
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if fcntl is not None:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        else:  # pragma: no cover -- windows-only
+            _msvcrt_release(fd)
         os.close(fd)
         with _process_registry_lock:
             remaining = _process_held_counts.get(registry_key, 0) - 1

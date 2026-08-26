@@ -10809,6 +10809,77 @@ class TestLandLockHolderMetadataAndTimeout:
         )
 
 
+# frob:ticket T-2934
+class TestLandLockPlatformBackends:
+    """T-2934: `_land_lock`'s msvcrt (Windows) backend and its loud
+    refusal (`LandLockTimeout(root, None)`) when neither `fcntl` nor
+    `msvcrt` exists -- the same PLATFORM001-shaped fix T-2918 applied to
+    `_baseline_lock`, reusing `land()`'s own existing typed error rather
+    than inventing a second exception for "no lock primitive at all"."""
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockPlatformBackends.test_no_lock_primitive_ra\
+    # ises_land_lock_timeout
+    def test_no_lock_primitive_raises_land_lock_timeout(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from frob.tickets._land import LandLockTimeout, _land_lock
+
+        monkeypatch.setattr(_land_mod, "fcntl", None)
+        monkeypatch.setattr(_land_mod, "msvcrt", None)
+        with pytest.raises(LandLockTimeout) as excinfo:
+            with _land_lock(tmp_path):
+                pass  # pragma: no cover -- must never be reached
+        assert excinfo.value.holder is None
+
+    # frob:tests \
+    # tests/test_ticket_land.py::TestLandLockPlatformBackends.test_windows_backend_roun\
+    # d_trips
+    def test_windows_backend_round_trips(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The msvcrt backend is exercised on Linux CI via a fake module
+        standing in for the real Windows-only `msvcrt`, backed by real
+        `fcntl.flock` under the hood -- proves the control flow (byte
+        seeded, acquire, holder metadata written, release) the real
+        backend only ever runs for real on Windows."""
+        import fcntl as _real_fcntl
+        import json
+
+        from frob.tickets._land import _LAND_LOCK_REL, _land_lock
+
+        class _FakeMsvcrt:
+            LK_NBLCK = 1
+            LK_UNLCK = 2
+
+            @staticmethod
+            def locking(fd: int, mode: int, _nbytes: int) -> None:
+                if mode == _FakeMsvcrt.LK_UNLCK:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_UN)
+                    return
+                try:
+                    _real_fcntl.flock(fd, _real_fcntl.LOCK_EX | _real_fcntl.LOCK_NB)
+                except OSError as exc:
+                    raise PermissionError(str(exc)) from exc
+
+        monkeypatch.setattr(_land_mod, "fcntl", None)
+        monkeypatch.setattr(_land_mod, "msvcrt", _FakeMsvcrt)
+
+        entered = False
+        with _land_lock(tmp_path):
+            entered = True
+            content = (tmp_path / _LAND_LOCK_REL).read_text()
+        assert entered is True
+        assert json.loads(content)["pid"] == os.getpid()
+
+        # A second, independent acquire/release round-trip must also
+        # succeed -- proves release genuinely happened.
+        entered = False
+        with _land_lock(tmp_path):
+            entered = True
+        assert entered is True
+
+
 # frob:ticket T-2774
 class TestLandLockWaitBudgetFromDeclaredDeadline:
     """T-2774: `_resolve_land_lock_wait_budget_s` bounds the land.lock

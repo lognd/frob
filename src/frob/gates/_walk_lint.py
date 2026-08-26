@@ -467,20 +467,57 @@ def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str
     return frozenset()
 
 
+#: T-2934: typani's two Result constructors -- a `return Ok(...)`/
+#: `return Err(...)` is a STRUCTURED, typed exit distinct from falling
+#: through to whatever the normal-success code path does, matching this
+#: repo's dominant error-handling convention (see `~/.claude/refs/
+#: typani.md`, "PREFER pydantic and typani"). `_guard_is_loud` treats
+#: either constructor as loud: measured false positive on
+#: `frob.tickets._land_git_ops.reclaim_orphaned_squash_residue`'s real
+#: `if _fcntl is None: _log.warning(...); return Ok(False)` -- that
+#: function's whole job is "decide whether it is SAFE to mutate", and
+#: `Ok(False)` there means "decided no, on purpose, logged" (a real,
+#: visible, controlled abort of the risky operation), not "proceeded as
+#: if the missing primitive did not matter" the way `_baseline_lock`'s
+#: pre-T-2918 bug did. `Err(...)` is the more obviously-loud half of the
+#: same pair; `Ok(...)` earns the same treatment because the discriminator
+#: PLATFORM001 actually cares about is "did the guard body take an
+#: explicit, typed exit instead of continuing normal flow", not "did it
+#: specifically signal failure" -- a plain `return None`/bare `return`/
+#: fallthrough is NOT a typed exit and still fires (see the must-fire
+#: fixture, `TestPlatform001._WARN_AND_CONTINUE_SRC`, which returns
+#: `None` with no such constructor).
+_TYPED_EXIT_RESULT_CONSTRUCTORS = frozenset({"Ok", "Err"})
+
+
+def _is_typed_result_return(node: ast.stmt) -> bool:
+    """Whether `node` is a `return Ok(...)`/`return Err(...)` (bare name
+    or dotted, e.g. `typani.Ok(...)`) -- see `_TYPED_EXIT_RESULT_
+    CONSTRUCTORS`'s own docstring for why this counts as loud."""
+    if not isinstance(node, ast.Return) or node.value is None:
+        return False
+    if not isinstance(node.value, ast.Call):
+        return False
+    func = node.value.func
+    name = func.id if isinstance(func, ast.Name) else _attr_name(func)
+    return name in _TYPED_EXIT_RESULT_CONSTRUCTORS
+
+
 def _guard_is_loud(body: list[ast.stmt]) -> bool:
     """Whether a platform-guard `If.body` refuses LOUDLY: contains a
-    `raise` anywhere, or a top-level `sys.exit(...)`/`os._exit(...)`
-    call -- the two shapes this rule accepts as "declared, not silent"
-    (T-2918's own `BaselineLockUnavailable` fix uses the first). A
-    `return`/typani `Err(...)` convention is real and common in this
-    repo but not detected here (v1, disclosed gap: distinguishing a
-    structured error return from an ordinary silent early-return needs
-    knowing the enclosing function's declared return type, which this
-    single-pass AST scan does not resolve) -- such a site can still
-    trip PLATFORM001 and needs a `frob:waive` with the honest reason,
-    matching this repo's usual best-effort-detector posture (WALK001/
-    PORT001's own disclosed gaps)."""
+    `raise` anywhere, a top-level `sys.exit(...)`/`os._exit(...)` call,
+    or a `return Ok(...)`/`return Err(...)` typed exit (T-2934,
+    `_TYPED_EXIT_RESULT_CONSTRUCTORS`) -- the shapes this rule accepts
+    as "declared, not silent" (T-2918's own `BaselineLockUnavailable`
+    fix uses the first). A plain `return`/fallthrough with no typed
+    constructor is still NOT loud -- distinguishing a genuinely
+    structured exit from an ordinary silent one is exactly the line
+    T-2934 measured a real false positive on and narrowed this
+    function to draw correctly, rather than papering over it with a
+    `frob:waive` on the first real site this brand-new rule found."""
     for stmt in body:
+        if _is_typed_result_return(stmt):
+            return True
         for node in ast.walk(stmt):
             if isinstance(node, ast.Raise):
                 return True

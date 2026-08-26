@@ -1525,20 +1525,26 @@
       "actor": "logan",
       "at": "2026-08-26",
       "facet": "body",
+      "new_digest": "14f7e04747c37a69506ff9a94c95e1b65d28dfc352fb4c3783d263823b74394e",
+      "old_digest": "9c9b0b646ed4af20d4c07fc8c65947b27f54dcc594790c65eab67f27d8f5f307",
+      "reason": "T-2934: re-verified docs/modules/process.md's derived-state-lock section and public-api list both describe the new msvcrt backend and DerivedStateLockUnavailable refusal accurately",
+      "ref": "src/frob/process/_lock.py::derived_state_lock",
       "new_digest": "37ea62f44deaf228782e91d42cda4639f966e927b4c22415136752b3d0fa715b",
       "old_digest": "a0a43eff3c9eca92bbcebd25afb50e57d659638682599b131dce25ce7d06f860",
       "reason": "T-2938: docstring/body updated to describe the new unconditional _check_claim_divergence_post_land call; behavior of the rest of the function (baseline compare/file/rebaseline) is unchanged, re-verified by the existing + new unit tests in this same change",
-      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
-    },
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"    },
     {
       "actor": "logan",
       "at": "2026-08-26",
       "facet": "sig",
+      "new_digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "old_digest": "00d14cd626641cb9c8da9c671be7e34ee5ac0af415e3262f0e55c030d701f834",
+      "reason": "T-2934: re-verified docs/modules/process.md's derived-state-lock section and public-api list both describe the new msvcrt backend and DerivedStateLockUnavailable refusal accurately",
+      "ref": "src/frob/process/_lock.py::derived_state_lock",
       "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
       "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
       "reason": "T-2938: docstring/body updated to describe the new unconditional _check_claim_divergence_post_land call; behavior of the rest of the function (baseline compare/file/rebaseline) is unchanged, re-verified by the existing + new unit tests in this same change",
-      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
-    }
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"    }
   ],
   "entries": [
     {
@@ -2247,7 +2253,7 @@
       "ref": "src/frob/process/_lock.py::_process_already_holds"
     },
     {
-      "digest": "9c9b0b646ed4af20d4c07fc8c65947b27f54dcc594790c65eab67f27d8f5f307",
+      "digest": "14f7e04747c37a69506ff9a94c95e1b65d28dfc352fb4c3783d263823b74394e",
       "facet": "body",
       "ref": "src/frob/process/_lock.py::derived_state_lock"
     },

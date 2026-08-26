@@ -120,14 +120,26 @@ from frob.tickets._models import (
 from frob.tickets._provisional import is_draft_id
 from frob.tickets._store import _TICKET_ID_RE, _parse_ticket_file, _store_mode, load_all
 
-# T-0577: same posix-only degradation as `frob.tickets._store`'s
-# `ledger_lock` -- `_land_lock` degrades to a documented no-op (see its
-# docstring) on a platform without `fcntl`, rather than failing import.
+# T-0577/T-2934: same posix-only degradation as `frob.tickets._store`'s
+# `ledger_lock` -- `_land_lock` used to degrade to a documented no-op
+# (an unconditional, unbounded, logged-but-silent no-op on a platform
+# without `fcntl`, the same PLATFORM001-shaped bug T-2918 fixed
+# elsewhere) rather than failing import. Now tries `msvcrt` (Windows) as
+# a second real backend, and raises `LandLockTimeout(root, None)` (T-2934
+# -- reusing the SAME typed error `land()` already catches for the
+# genuinely-contended-lock timeout case, rather than inventing a second
+# exception type for "no lock primitive at all") when NEITHER exists.
 fcntl: ModuleType | None
 try:
     fcntl = importlib.import_module("fcntl")
 except ImportError:  # pragma: no cover -- posix-only in this repo's CI
     fcntl = None
+
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
 
 _log = get_logger(__name__)
 
@@ -616,10 +628,12 @@ def _land_lock(
 ) -> Iterator[None]:
     """Exclusive, cross-process lock serializing every `land()` call
     against `root` (T-0577) -- see `land`'s docstring for why this closes
-    the REL001 version-bump-collision incident class. Degrades to a
-    documented no-op (logged at WARNING) on a platform without `fcntl`,
-    matching `frob.tickets._store.ledger_lock`'s same documented
-    degradation.
+    the REL001 version-bump-collision incident class. Uses `fcntl.flock`
+    (POSIX) or `msvcrt.locking` (Windows, T-2934); if neither primitive
+    exists, raises `LandLockTimeout(root, None)` immediately (T-2934) --
+    the pre-T-2934 behavior degraded to an unconditional, unbounded,
+    logged-but-silent no-op instead, the same PLATFORM001-shaped bug
+    T-2918 fixed elsewhere.
 
     T-1515: no longer an unbounded blocking `flock` -- polls a NON-
     blocking `flock` attempt every `_LAND_LOCK_POLL_S`, logging (once,
@@ -646,25 +660,33 @@ def _land_lock(
     blocked by a dead holder (the kernel already freed the `flock`), so
     this is disclosure, not a new code path that bypasses the lock; an
     AMBIGUOUS or genuinely-alive prior holder never logs this line."""
-    if fcntl is None:  # pragma: no cover -- posix-only in this repo's CI
-        _log.warning(
-            "land: _land_lock: fcntl unavailable on this platform, lock is "
-            "a NO-OP -- concurrent `land()` calls against %s are NOT "
-            "serialized here",
-            root,
-        )
-        yield
-        return
+    if fcntl is None and msvcrt is None:
+        raise LandLockTimeout(root, None)
     import time as _time
 
     path = _land_lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+    windows_backend = msvcrt is not None and fcntl is None
+    if windows_backend:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+    else:
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
     deadline = _time.monotonic() + timeout
     logged_holder = False
     while True:
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if windows_backend:  # pragma: no cover -- windows-only
+                assert msvcrt is not None
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+            else:
+                assert fcntl is not None
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             break
         except OSError:
             if not logged_holder:
@@ -717,7 +739,13 @@ def _land_lock(
     try:
         yield
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if windows_backend:  # pragma: no cover -- windows-only
+            assert msvcrt is not None
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            assert fcntl is not None
+            fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
         _log.debug("land: _land_lock released (%s)", path)
 

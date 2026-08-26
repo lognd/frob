@@ -1,7 +1,7 @@
 ---
 id: T-2934
 title: 'Fix 5 real PLATFORM001 findings: fcntl warn-and-continue in _lock.py/_land.py/_land_git_ops.py/_store.py'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -94,7 +94,17 @@ scope_changes:
     writing frob.lock
   actor: logan
   at: '2026-08-26'
-designated_repro_test: null
+evidence:
+- tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_process_lock.py::TestDerivedStateLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_ticket_land.py::TestLandLockPlatformBackends::test_no_lock_primitive_raises_land_lock_timeout
+- tests/test_ticket_land.py::TestLandLockPlatformBackends::test_windows_backend_round_trips
+- tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_no_lock_primitive_refuses_loudly
+- tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_windows_backend_round_trips
+- tests/test_walk_lint_gate.py::TestPlatform001::test_typed_result_refusal_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001::test_typed_err_refusal_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001::test_plain_return_with_no_typed_constructor_still_fires
+designated_repro_test: tests/unit/test_ticket_store.py::TestLedgerLockPlatformBackends::test_no_lock_primitive_refuses_loudly
 threat: null
 component: null
 anchor: false

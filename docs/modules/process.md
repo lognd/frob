@@ -42,6 +42,7 @@ case a tool by name.
 <!-- frob:describes src/frob/process/_guard.py::guarded_subprocess_run -->
 <!-- frob:describes src/frob/process/_lock.py::_derived_lock_path -->
 <!-- frob:describes src/frob/process/_lock.py::derived_state_lock -->
+<!-- frob:describes src/frob/process/_lock.py::DerivedStateLockUnavailable -->
 
 ```python
 # frob/process/parsers/common.py -- the shared result shapes every parser below produces
@@ -188,14 +189,21 @@ this module (see this ticket's Done report for what still needs it).
 ```python
 # frob/process/_lock.py -- cross-process reader/writer lock over .frob
 def derived_state_lock(root: Path, *, exclusive: bool) -> ContextManager[None]
-    # Shared (reader) or exclusive (writer) flock on root/.frob/derived.lock;
-    # no-op with a WARNING log on a platform without fcntl.
+    # Shared (reader) or exclusive (writer) lock on root/.frob/derived.lock:
+    # fcntl.flock on POSIX, msvcrt.locking (always exclusive) on Windows
+    # (T-2934); raises DerivedStateLockUnavailable if neither exists.
 ```
 
-Mirrors `frob.tickets._store.ledger_lock` (T-0458): same fcntl-posix-only
-primitive, same documented no-op fallback, same per-thread re-entrancy
-bookkeeping -- applied to `.frob`'s derived state instead of the ticket
-ledger.
+Mirrors `frob.tickets._store.ledger_lock` (T-0458): same per-thread
+re-entrancy bookkeeping, applied to `.frob`'s derived state instead of the
+ticket ledger. T-2934 replaced the old unconditional, logged-but-silent
+no-op on a platform without `fcntl` with two real backends: `msvcrt.
+locking` on Windows (always EXCLUSIVE regardless of the requested mode --
+`msvcrt` has no shared/read-lock primitive at all, a documented
+conservative-concurrency tradeoff), and a loud `DerivedStateLockUnavailable`
+refusal on any platform with neither primitive -- see `frob.gates.
+_walk_lint`'s PLATFORM001 rule (docs/modules/gates.md#platform001-posix-
+only-primitive-degrades-silently-t-2919), which found this exact site.
 
 `derived_state_write_lock` (T-0918) is the reentrancy-aware writer entry
 point `frob.dup.find_clones`/`frob.graph.build_graph` call: it consults a

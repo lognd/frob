@@ -1152,9 +1152,11 @@ def ledger_lock(root: Path) -> Iterator[None]
     # the SAME thread is a no-op re-entry, not a deadlock) so a locked
     # primitive called from inside an already-locked caller is safe;
     # cross-thread/cross-process callers still block on the real OS lock.
-    # Degrades to a documented, logged no-op on a platform without fcntl
-    # (non-POSIX; a real cross-platform primitive is T-0458's named
-    # phase-2 daemon-pipe follow-up). Example:
+    # Uses fcntl.flock (POSIX) or msvcrt.locking (Windows, T-2934);
+    # raises TicketLockUnavailable if neither primitive exists, rather
+    # than the pre-T-2934 unconditional, logged-but-silent no-op --
+    # frob.gates._walk_lint's PLATFORM001 rule found this exact site.
+    # Example:
     #   with ledger_lock(root):
     #       ticket_id = _allocate_and_check_ticket_id(root)  # read max id
     #       write_ticket(root, ticket)                       # claim it

@@ -145,6 +145,7 @@ just this repo's. A `root` whose package name cannot be resolved from
 <!-- frob:describes src/frob/tickets/_evidence.py::compute_changed_lines -->
 <!-- frob:describes src/frob/tickets/_evidence.py::base_ref_resolvable -->
 <!-- frob:describes src/frob/tickets/_store.py::ledger_lock -->
+<!-- frob:describes src/frob/tickets/_store.py::TicketLockUnavailable -->
 <!-- frob:describes src/frob/tickets/_scope.py::mutate_scope -->
 <!-- frob:describes src/frob/tickets/_setters.py::set_priority -->
 <!-- frob:describes src/frob/tickets/__init__.py::_doable_sort_key -->
