@@ -17,6 +17,8 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/serve/**
 - src/frob/app/_daemon_proxy.py
+- docs/modules/serve.md
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -30,6 +32,16 @@ scope_changes:
 - op: add
   glob: src/frob/app/_daemon_proxy.py
   reason: windows typecheck fix scoped to daemon server + proxy
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: doc edges referenced by scoped symbols
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/testing.md
+  reason: doc edges referenced by scoped symbols
   actor: logan
   at: '2026-08-26'
 body_changes:
