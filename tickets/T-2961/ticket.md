@@ -2,7 +2,7 @@
 id: T-2961
 title: 'Windows: ty check fails on POSIX-only stdlib attrs (socket.AF_UNIX, socketserver.ThreadingUnixStreamServer,
   os.nice)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
