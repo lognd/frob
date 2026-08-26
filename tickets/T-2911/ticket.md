@@ -2,7 +2,7 @@
 id: T-2911
 title: 'frob status: show movement (burned/promoted/closed) so a large finding count
   does not read as no progress'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-25'
@@ -22,6 +22,7 @@ scope:
 - src/frob/__main__.py
 - tests/test_status.py
 - docs/modules/cli.md
+- design/frob.strata
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +63,11 @@ scope_changes:
   reason: 'new frob status subcommand: findings/verify/ticket movement summary'
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: design/frob.strata
+  reason: declare exec capability via for new tests/test_status.py (SELFAUDIT001/SYS100)
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
