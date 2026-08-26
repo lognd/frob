@@ -1,7 +1,7 @@
 ---
 id: T-2609
 title: land-time new-public-symbol doc/test-edge check does not offset for decorators
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-19'
