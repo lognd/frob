@@ -24,6 +24,7 @@ scope:
 - tests/conftest.py
 - pyproject.toml
 - tests/system/conftest.py
+- tests/system/test_run_helper_env_leak.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -80,6 +81,11 @@ scope_changes:
 - op: add
   glob: tests/system/conftest.py
   reason: 'T-2980 fix: unbounded run() default hides infinite hang'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/test_run_helper_env_leak.py
+  reason: 'T-2980 fix: add regression test for run() default timeout'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
