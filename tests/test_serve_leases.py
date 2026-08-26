@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import socket
+import sys
 import threading
 import time
 from pathlib import Path
@@ -158,6 +159,17 @@ def _shutdown(root: Path, thread: threading.Thread) -> None:
 class TestLeaseRpc:
     """T-1097 acceptance [0]: real socket clients serialize on a lease."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_second_client_blocks_until_first_releases(self, root: Path) -> None:
         # frob:tests \
         # tests/test_serve_leases.py::TestLeaseRpc.test_second_client_blocks_until_firs\
@@ -198,6 +210,17 @@ class TestLeaseRpc:
         finally:
             _shutdown(root, thread)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_explicit_release_frees_the_slot_for_the_next_waiter(
         self, root: Path
     ) -> None:
@@ -227,6 +250,17 @@ class TestConnectionCrashReleasesLease:
     """T-1097 acceptance [1]: a crashed/disconnected client's lease is
     released automatically, with no daemon restart needed."""
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_closing_connection_without_explicit_release_frees_the_lease(
         self, root: Path
     ) -> None:

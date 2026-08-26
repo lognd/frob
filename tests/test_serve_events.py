@@ -4,9 +4,12 @@ stream layered over the T-1092 socket daemon.
 
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from pathlib import Path
+
+import pytest
 
 from frob.serve._events import DaemonError, _EventBus, subscribe_and_wait
 from frob.serve._socketd import SocketDaemonConfig, run_socket_daemon, send_request
@@ -83,6 +86,17 @@ def _start_daemon(root: Path, idle_timeout_s: float = 5.0) -> threading.Thread:
 
 
 class TestSubscribeAndWait:
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_receives_graph_changed_after_edit(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_graph_changed_\
@@ -106,6 +120,17 @@ class TestSubscribeAndWait:
         assert results[0].is_ok
         thread.join(timeout=15)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_times_out_with_no_matching_event(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestSubscribeAndWait.test_times_out_with_no_match\
@@ -132,6 +157,17 @@ class TestSubscribeAndWait:
         assert result.is_err
         assert result.danger_err == DaemonError.Unreachable
 
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason=(
+            "T-2961: the daemon's unix-socket transport (socketserver."
+            "ThreadingUnixStreamServer) has no Windows equivalent -- "
+            "run_socket_daemon refuses loudly rather than crashing, so this "
+            "test's real-daemon assertions cannot hold on win32. See the "
+            "Windows-native-daemon-transport epic filed alongside T-2961 "
+            "for the tracked follow-up."
+        ),
+    )
     def test_receives_coverage_fresh_on_stamp_write(self, tmp_path: Path) -> None:
         # frob:tests \
         # tests/test_serve_events.py::TestSubscribeAndWait.test_receives_coverage_fresh\
