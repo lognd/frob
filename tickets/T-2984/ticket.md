@@ -2,7 +2,7 @@
 id: T-2984
 title: 'gh_io part 2: structured CI failure reporting -- typed run/job/step/test-node
   records, clustered by signature, no raw log grepping'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -51,6 +51,18 @@ triage_changes:
   reason: 'T-2982 decomposition: seam, reporting, validity'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_ci_report.py::TestParsePytestLog::test_parses_named_failures
+- tests/test_ci_report.py::TestParsePytestLog::test_clean_run_is_no_failures
+- tests/test_ci_report.py::TestParsePytestLog::test_no_result_line_is_not_recoverable
+- tests/test_ci_report.py::TestParsePytestLog::test_truncated_with_no_evidence_is_not_recoverable
+- tests/test_ci_report.py::TestParsePytestLog::test_never_reports_clean_for_a_truncated_run_with_apparent_result
+- tests/test_ci_report.py::TestBuildJobReport::test_clean_job
+- tests/test_ci_report.py::TestBuildJobReport::test_failures_clustered
+- tests/test_ci_report.py::TestBuildJobReport::test_empty_log_propagates_gherror
+- tests/test_ci_report.py::TestBuildRunReport::test_all_jobs_reported
+- tests/test_ci_report.py::TestBuildRunReport::test_one_job_log_failure_degrades_not_aborts
+- tests/test_ci_report.py::test_test_failure_model_is_frozen
 designated_repro_test: null
 threat: null
 component: null

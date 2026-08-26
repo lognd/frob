@@ -402,6 +402,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2979: Default output is debug spam: gitio/process spawn traces drown the result on nearly every command
 - T-2980: ubuntu-latest CI hangs in the Test step for 2+ hours: no green baseline exists on any platform
 - T-2983: gh_io part 1: typed gh seam with named failure modes (no gh, no auth, no GitHub remote, rate limit, empty-log-on-failed-job)
+- T-2984: gh_io part 2: structured CI failure reporting -- typed run/job/step/test-node records, clustered by signature, no raw log grepping
 
 ## [0.530.0] - unreleased
 
