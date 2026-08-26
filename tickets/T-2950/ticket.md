@@ -21,6 +21,7 @@ scope:
 - docs/modules/cli.md
 - src/frob/app/config.py
 - src/frob/app/_config_external.py
+- src/frob/_cli_parsers/_status.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -76,6 +77,11 @@ scope_changes:
   glob: src/frob/app/_config_external.py
   reason: CLI-flag forwarding for --tickets/status_tickets requires touching AppConfig
     and its external-forwarding field list
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/_cli_parsers/_status.py
+  reason: add --tickets flag to the frob status CLI parser
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
