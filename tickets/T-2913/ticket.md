@@ -19,6 +19,7 @@ scope:
 - src/frob/tickets/_land.py
 - tests/unit/test_ticket_runner_gate_findings.py
 - tests/test_ticket_land.py
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -54,6 +55,11 @@ scope_changes:
     under rapid profile (the ~144-209s critical-path cost); defer to the already-existing
     T-1684 post-land sweep + T-1690 attribution + quarantine pipeline, which already
     runs unconditionally under rapid regardless of check_gates'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: 'T-2913: touched symbols in _verify.py/_land.py doc into tickets-landing.md'
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
