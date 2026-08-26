@@ -163,11 +163,7 @@ import ast
 import tomllib
 from pathlib import Path
 
-from frob.gates._detector_scope import (
-    DETECTOR_PACKAGE_ROOTS,
-    is_detector_package_file,
-    tracked_gate_files,
-)
+from frob.gates._detector_scope import DETECTOR_PACKAGE_ROOTS, tracked_gate_files
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
 from frob.logging import get_logger
