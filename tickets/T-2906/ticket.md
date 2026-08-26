@@ -24,6 +24,10 @@ scope:
 - tests/test_gates.py
 - tests/test_lang_support.py
 - tests/fixtures/lang/*
+- docs/modules/dup.md
+- docs/modules/vet.md
+- docs/modules/gates.md
+- docs/modules/lang.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -115,6 +119,26 @@ scope_changes:
     wiring, plus their tests and the existing bash/csharp fixtures.
 
     '
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/dup.md
+  reason: docs for the modules whose registries change
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/vet.md
+  reason: docs for the modules whose registries change
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/gates.md
+  reason: docs for the modules whose registries change
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/modules/lang.md
+  reason: docs for the modules whose registries change
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
