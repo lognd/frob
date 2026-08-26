@@ -2,7 +2,7 @@
 id: T-2943
 title: 'macOS: git subprocess returncode=128 in test fixtures - 100+ system/CLI test
   failures, root cause unconfirmed'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -16,6 +16,7 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gitio.py
+- tests/system/test_cli_cycle.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,31 @@ scope_changes:
     are already tracked by their own tickets (T-1608/1609/1661/2616/2802/2856) and
     this ticket''s job is root-causing the shared gitio failure, not owning every
     test file'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/test_cli_cycle.py
+  reason: 'Root cause investigation (real CI log evidence, run 32920399634 job
+
+    98032723003, plus local repro on Linux) shows the git-returncode=128
+
+    cluster''s git.gitio.py behavior is CORRECT (repo_root() returns
+
+    Err(NotARepo) as designed, no crash). The actual defect is in
+
+    tests/system/test_cli_cycle.py: its fixtures never git-init or write a
+
+    pyproject.toml into tmp_path, so `frob cycle <tmp_path>` (whose T-2588
+
+    root-resolution contract requires a resolvable project root) correctly
+
+    exits 2 -- and this reproduces identically on Linux right now, not just
+
+    macOS, falsifying the safe.directory hypothesis entirely. Adding the
+
+    test file so the actual fix (git-init the fixtures) can land.
+
+    '
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
