@@ -8,7 +8,6 @@ origin: human
 created: '2026-08-26'
 priority: high
 blocked_by:
-- T-2956
 - T-2966
 - T-2970
 parent: T-0969
