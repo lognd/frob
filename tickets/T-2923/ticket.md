@@ -22,6 +22,7 @@ scope:
 - docs/commands/sys.md
 - design/frob.strata
 - src/frob/app/_config_external.py
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -85,6 +86,12 @@ scope_changes:
   glob: src/frob/app/_config_external.py
   reason: CLI dest sys_shrink_check needs wiring into the forwarding-layer field-copy
     tuple (WIRE001/FLAGCOV001)
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet ceiling raise for the fs.read/fs.write/net via-lists this
+    ticket's new files genuinely grew
   actor: logan
   at: '2026-08-25'
 triage_changes:
