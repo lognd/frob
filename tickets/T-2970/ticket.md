@@ -39,7 +39,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: f5738e4de64b6fccd6962f846cb2c3398c8dd579
 ---
 T-2955's triage of the tests/ frob-dup cluster (479 unaccounted
 groups, unscoped, measured 2026-08-26) spot-checked 4 large/varied
