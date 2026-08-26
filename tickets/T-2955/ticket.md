@@ -1,7 +1,7 @@
 ---
 id: T-2955
 title: 'frob-dup: triage tests/ duplicate cluster (~490 groups)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
