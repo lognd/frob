@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import os
 import re
 from pathlib import Path
 from typing import NoReturn
@@ -354,6 +355,22 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="disable ANSI color (shorthand for --color=never)",
     )
+    # T-2979: global verbosity flag -- default output shows the result plus
+    # warnings/errors only; -v/--verbose (or FROB_LOG_LEVEL=DEBUG) restores
+    # the full gitio/process spawn-trace and cache-hit diagnostic stream.
+    # The actual effect is applied by `_apply_verbose_env_override` before
+    # `main` dispatches (so it reaches every subcommand, including the
+    # direct-dispatch ones below that never build this parser) -- this
+    # registration exists so `-v`/`--verbose` shows up in `--help` and so
+    # argparse does not reject it as an unrecognized option.
+    p.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="show internal diagnostic logging (gitio/process spawn traces, "
+        "cache-hit notices) normally kept at DEBUG; same effect as "
+        "FROB_VERBOSE=1 (or FROB_LOG_LEVEL=<name> for a specific level)",
+    )
     sub = p.add_subparsers(dest="subcommand")
     _add_analysis_subparsers(sub)
     _add_workflow_subparsers(sub)
@@ -455,6 +472,7 @@ def main() -> None:
 
     from frob.process import install_sigterm_reaper
 
+    _apply_verbose_env_override(_sys.argv[1:])
     install_sigterm_reaper()
     try:
         _dispatch(_sys.argv[1:])
@@ -612,6 +630,28 @@ def _dispatch_default(argv: list[str]) -> None:
         )
     cfg = AppConfig.from_external(args, pyproject)
     App(cfg)()
+
+
+# frob:ticket T-2979
+# frob:doc docs/modules/logging.md#public-api
+# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_v_sets_debug_env_var  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_dash_verbose_sets_debug_env_var  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_no_verbose_flag_leaves_env_var_untouched  # noqa: E501
+# frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_existing_explicit_frob_log_level_is_not_clobbered  # noqa: E501
+def _apply_verbose_env_override(argv: list[str]) -> None:
+    """Set `FROB_VERBOSE=1` when `-v`/`--verbose` is present in `argv`
+    (T-2979). Runs by RAW ARGV SCAN, before `_build_parser`/`_dispatch`,
+    so it takes effect uniformly for every subcommand -- including the
+    direct-dispatch verbs (`bind`/`agent`/`worktree`/`sync-skills`/
+    `refactor`) that bypass the main argparse tree entirely and would
+    otherwise never see this flag. `FROB_VERBOSE` (not a new env var) is
+    reused deliberately -- see `frob.logging.logger`'s module docstring
+    comment for why. Never overrides an already-set `FROB_VERBOSE`/
+    `FROB_LOG_LEVEL` (an explicit env var from the caller wins)."""
+    if "FROB_VERBOSE" in os.environ or "FROB_LOG_LEVEL" in os.environ:
+        return
+    if "-v" in argv or "--verbose" in argv:
+        os.environ["FROB_VERBOSE"] = "1"
 
 
 # frob:ticket T-0355

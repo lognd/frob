@@ -297,6 +297,44 @@ class TestLazyLogHandlers:
         assert "msg" in live.getvalue()
 
 
+class TestVerboseFlag:
+    """`_apply_verbose_env_override` (T-2979): the global `-v`/`--verbose`
+    argv scan that sets `FROB_VERBOSE=1` before `main` dispatches, so the
+    flag reaches every subcommand -- including the direct-dispatch verbs
+    that bypass the main argparse tree entirely."""
+
+    def test_dash_v_sets_debug_env_var(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_v_sets_debug_env_var  # noqa: E501
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        main_module._apply_verbose_env_override(["-v", "doctor"])
+        assert main_module.os.environ["FROB_VERBOSE"] == "1"
+
+    def test_dash_dash_verbose_sets_debug_env_var(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_dash_dash_verbose_sets_debug_env_var  # noqa: E501
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        main_module._apply_verbose_env_override(["doctor", "--verbose"])
+        assert main_module.os.environ["FROB_VERBOSE"] == "1"
+
+    def test_no_verbose_flag_leaves_env_var_untouched(self, monkeypatch) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_no_verbose_flag_leaves_env_var_untouched  # noqa: E501
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+        main_module._apply_verbose_env_override(["doctor"])
+        assert "FROB_VERBOSE" not in main_module.os.environ
+
+    def test_existing_explicit_frob_log_level_is_not_clobbered(
+        self, monkeypatch
+    ) -> None:
+        # frob:tests tests/unit/test_main_entry.py::TestVerboseFlag.test_existing_explicit_frob_log_level_is_not_clobbered  # noqa: E501
+        monkeypatch.delenv("FROB_VERBOSE", raising=False)
+        monkeypatch.setenv("FROB_LOG_LEVEL", "ERROR")
+        main_module._apply_verbose_env_override(["-v", "doctor"])
+        assert main_module.os.environ["FROB_LOG_LEVEL"] == "ERROR"
+        assert "FROB_VERBOSE" not in main_module.os.environ
+
+
 # frob:ticket T-1571
 class TestGroupedHelpFormatter:
     """`frob --help` (T-1571, acceptance[0] on T-1238): the root parser's

@@ -2,12 +2,57 @@ from __future__ import annotations
 
 import logging
 import logging.config
+import os
 import sys
 import tomllib
 from pathlib import Path
 
 _CONFIG_PATH = Path(__file__).parent / "config.toml"
 _initialized = False
+
+# T-2979: the documented escape hatch back to full DEBUG chatter
+# (`gitio: spawning ...`, `process: spawning ...`, `tickets: v2 index
+# cache hit`, `is_baseline_stale: ...` and friends) -- see also `frob`'s
+# global `-v`/`--verbose` flag, which sets `FROB_VERBOSE` before any
+# logger is first touched (src/frob/__main__.py). `FROB_VERBOSE=1` is
+# reused deliberately rather than inventing a second knob: T-2582 already
+# wired it through `frob.logging.quiet.quiet_query_stdout` as the escape
+# hatch for 8 human-mode query runners (debt/deprecated/exports/fleet/
+# gitlog/mutate/outline/xref), which unconditionally suppress stdout-bound
+# INFO/DEBUG to WARNING otherwise -- `-v` needs to disarm THAT suppression
+# too, not just raise the base handler level, or it would restore
+# nothing for any of those 8 commands. `FROB_LOG_LEVEL=<name>` is also
+# read, for a caller who wants a specific level (e.g. `INFO`) rather than
+# the `-v` default of full `DEBUG`.
+_VERBOSE_ENV_VAR = "FROB_VERBOSE"
+_LOG_LEVEL_ENV_VAR = "FROB_LOG_LEVEL"
+
+
+def _resolve_stdout_level_override() -> int | None:
+    """Resolve the stdout handler's DEBUG-chatter override level from
+    `-v`/`--verbose` in `sys.argv`, `FROB_VERBOSE=1` (-> DEBUG, same
+    effect), or `FROB_LOG_LEVEL=<name>` (an explicit level name); `None`
+    if none apply -- an unrecognized `FROB_LOG_LEVEL` value is a silent
+    no-op, not a crash, since this runs before any diagnostic channel
+    exists to report a malformed env var through.
+
+    `sys.argv` is checked directly here, NOT via `frob.__main__`'s own
+    argument parsing (T-2979): `_init` can fire from a module-level
+    `get_logger(__name__)` call reached by an import chain BEFORE
+    `frob.__main__.main` ever runs its own argv scan -- `_init` caches
+    `_initialized` permanently on first call, so a later env-var write
+    from `main` would already be too late. `sys.argv` itself is populated
+    by the interpreter before any user code runs at all, so reading it
+    directly here is the only ordering-independent source of truth."""
+    if "-v" in sys.argv or "--verbose" in sys.argv:
+        return logging.DEBUG
+    if os.environ.get(_VERBOSE_ENV_VAR) == "1":
+        return logging.DEBUG
+    raw = os.environ.get(_LOG_LEVEL_ENV_VAR)
+    if not raw:
+        return None
+    level = logging.getLevelName(raw.strip().upper())
+    return level if isinstance(level, int) else None
 
 
 def _under_pytest() -> bool:
@@ -55,6 +100,18 @@ def _init() -> None:
         cfg["root"]["handlers"] = []
     logging.config.dictConfig(cfg)
     _initialized = True
+    # T-2979: apply the FROB_LOG_LEVEL override (if any) AFTER dictConfig
+    # so it wins over config.toml's default -- this is the single place
+    # every entry point (CLI dispatch, direct library import, a test)
+    # converges on, so the override applies regardless of which `frob`
+    # subcommand or code path runs first.
+    override = _resolve_stdout_level_override()
+    if override is not None:
+        from frob.logging.handler import _LazyStdoutHandler
+
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, _LazyStdoutHandler):
+                handler.setLevel(override)
 
 
 # frob:doc docs/modules/logging.md#public-api

@@ -15,6 +15,8 @@ empty string, never the literal word "None").
 from __future__ import annotations
 
 import json
+import logging
+import sys
 from typing import Any
 
 import pytest
@@ -97,6 +99,88 @@ class TestDoctorRunnerHealthy:
             json.loads(r.message) for r in caplog.records if r.message.startswith("{")
         )
         assert payload["healthy"] is True
+
+
+# frob:ticket T-2979
+class TestDoctorRunnerPlainPathQuieted:
+    """T-2979: `run`'s plain (human, non-`--json`) path now wraps
+    `run_diagnosis()` in `quiet_query_stdout()`, matching its `doctor_json`
+    sibling -- previously it was the one path in this file left unwrapped,
+    so an INFO-level log line emitted from inside `run_diagnosis` leaked
+    onto stdout ahead of the real report by default. Asserted by handler
+    level (not stdout text) because frob's own root StreamHandlers are
+    skipped under pytest (T-1621) -- `quiet_query_stdout`/`quiet_stdout_
+    logs` act on the handler list directly, so `_stdout_handler_levels()`
+    is the effect that is actually observable in-process."""
+
+    def _install_probe_handler(self):
+        """Add a real stdout `StreamHandler` to root (T-1621: frob's own
+        root handlers are skipped under pytest, so `quiet_query_stdout`/
+        `quiet_stdout_logs` would otherwise have nothing to act on inside
+        this test process) -- mirrors `test_quiet_stdout_logs_raises_and_
+        restores_level`'s own pattern in `tests/unit/test_logging_module.py`."""
+        from frob.logging.handler import _LazyStdoutHandler
+
+        handler = _LazyStdoutHandler()
+        handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(handler)
+        return handler
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_pl\
+    # ain_path_raises_stdout_handlers_to_warning_by_default
+    def test_plain_path_raises_stdout_handlers_to_warning_by_default(
+        self, monkeypatch
+    ) -> None:
+        import frob.doctor as doctor_mod
+
+        root = logging.getLogger()
+        handler = self._install_probe_handler()
+        levels_seen_inside: list[int] = []
+        try:
+
+            def _run_diagnosis_records_levels():
+                levels_seen_inside.append(handler.level)
+                return _report(healthy=True, remediation=None)
+
+            monkeypatch.delenv("FROB_VERBOSE", raising=False)
+            monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+            monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+            monkeypatch.setattr(
+                doctor_mod, "run_diagnosis", _run_diagnosis_records_levels
+            )
+            doctor_runner.run(_cfg())
+        finally:
+            root.removeHandler(handler)
+        assert levels_seen_inside == [logging.WARNING]
+
+    # frob:tests \
+    # tests/unit/test_doctor_runner_t1276.py::TestDoctorRunnerPlainPathQuieted::test_pl\
+    # ain_path_leaves_stdout_handlers_alone_under_frob_verbose
+    def test_plain_path_leaves_stdout_handlers_alone_under_frob_verbose(
+        self, monkeypatch
+    ) -> None:
+        import frob.doctor as doctor_mod
+
+        root = logging.getLogger()
+        handler = self._install_probe_handler()
+        levels_seen_inside: list[int] = []
+        try:
+
+            def _run_diagnosis_records_levels():
+                levels_seen_inside.append(handler.level)
+                return _report(healthy=True, remediation=None)
+
+            monkeypatch.setenv("FROB_VERBOSE", "1")
+            monkeypatch.delenv("FROB_LOG_LEVEL", raising=False)
+            monkeypatch.setattr(sys, "argv", ["frob", "doctor"])
+            monkeypatch.setattr(
+                doctor_mod, "run_diagnosis", _run_diagnosis_records_levels
+            )
+            doctor_runner.run(_cfg())
+        finally:
+            root.removeHandler(handler)
+        assert levels_seen_inside == [logging.DEBUG]
 
 
 class TestDoctorRunnerUnhealthy:
