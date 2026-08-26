@@ -16,6 +16,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - .claude/hooks/frob-suggest.py
 - tests/test_hook_frob_suggest.py
+- docs/guides/claude-hooks.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -29,6 +30,11 @@ scope_changes:
 - op: add
   glob: tests/test_hook_frob_suggest.py
   reason: fix three misfiring nudge rules and add must-stay-quiet fixtures
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/guides/claude-hooks.md
+  reason: frob:doc target for frob-suggest.py::main
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
