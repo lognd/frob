@@ -42,13 +42,14 @@ fresh?" check.
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
+import importlib
 import json
 import os
 import time
 from contextlib import contextmanager
 from pathlib import Path
+from types import ModuleType
 from typing import Iterator
 
 from pydantic import BaseModel
@@ -66,6 +67,32 @@ from frob.gitio import git_common_dir
 from frob.graph import GraphSnapshot, build_graph, load_graph
 from frob.logging import get_logger
 from frob.process._guard import guarded_subprocess_run
+
+# T-2952: `fcntl` is POSIX-only. This module used to `import fcntl`
+# unconditionally at module scope, crashing the import of every caller
+# on Windows -- the same PLATFORM001-shaped bug T-2918/T-2934 fixed
+# elsewhere (`frob.tickets._store`, `frob.app.ticket_runner
+# ._rapid_sweep`). Mirrors those exactly: a real `msvcrt.locking`-based
+# backend on Windows, `CoverageLockUnavailable` (a loud refusal) only
+# when NEITHER exists -- never a silent no-op.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
+
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
+
+
+class CoverageLockUnavailable(RuntimeError):
+    """Raised when neither `fcntl` (POSIX) nor `msvcrt` (Windows) exists
+    on this platform -- refusing to serialize concurrent coverage runs
+    unlocked rather than silently degrading to no-op (T-2952)."""
+
 
 _log = get_logger(__name__)
 
@@ -119,26 +146,66 @@ def coverage_lock_path(root: Path) -> Path:
 
 
 @contextmanager
+def _flock_path(path: Path, label: str) -> Iterator[None]:
+    """Shared exclusive, blocking, cross-process `flock`-on-a-dotfile
+    primitive both `_coverage_lock` and `_shared_coverage_lock` build on
+    (T-2952), mirroring `frob.tickets._store.ledger_lock`'s fcntl/msvcrt
+    pair: a real `msvcrt.locking`-based backend on Windows, and
+    `CoverageLockUnavailable` (a loud refusal) only when neither `fcntl`
+    nor `msvcrt` exists -- never a silent no-op."""
+    if fcntl is None and msvcrt is None:
+        raise CoverageLockUnavailable(
+            f"testing: {path}: neither fcntl (POSIX) nor msvcrt (Windows) "
+            f"is available on this platform -- refusing to serialize "
+            f"{label} unlocked (T-2952)"
+        )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    windows_backend = msvcrt is not None and fcntl is None
+    if windows_backend:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+        assert msvcrt is not None
+        while True:
+            try:
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                break
+            except OSError:
+                time.sleep(0.05)
+    else:
+        assert fcntl is not None
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(fd, fcntl.LOCK_EX)
+    try:
+        _log.debug("coverage_wait: %s lock acquired (%s)", label, path)
+        yield
+    finally:
+        if windows_backend:  # pragma: no cover -- windows-only
+            assert msvcrt is not None
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            assert fcntl is not None
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
+        _log.debug("coverage_wait: %s lock released (%s)", label, path)
+
+
+@contextmanager
 def _coverage_lock(root: Path) -> Iterator[None]:
     """Exclusive, blocking, cross-process lock serializing coverage runs
     under `root` (T-0322 single-flight), mirroring `frob.tickets._store
     .ledger_lock`'s `fcntl.flock`-on-a-dotfile pattern -- a second concurrent
     caller blocks here instead of independently re-running the full suite.
-    Degrades to a documented no-op on a non-POSIX platform (same tradeoff
-    `ledger_lock` accepts), logged at WARNING rather than silently pretended
-    to be locked.
+    Raises `CoverageLockUnavailable` on a platform with neither `fcntl`
+    nor `msvcrt` (T-2952) rather than silently pretending to be locked.
     """
-    path = coverage_lock_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        _log.debug("coverage_wait: lock acquired (%s)", path)
+    with _flock_path(coverage_lock_path(root), "lock"):
         yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-        _log.debug("coverage_wait: lock released (%s)", path)
 
 
 # frob:tests tests/test_coverage_wait_shared.py::TestWorktreeLock.test_uses_daemon_lease_when_daemon_up kind="unit"  # noqa: E501
@@ -253,18 +320,10 @@ def _shared_coverage_lock(root: Path, digest: str) -> Iterator[None]:
     coverage runs that share `digest` (T-1095) -- the outer layer above
     `_coverage_lock`'s per-worktree lock. Same `flock`-on-a-dotfile shape,
     just keyed by content digest under `shared_state_dir` instead of by
-    worktree path."""
-    path = _shared_lock_path(root, digest)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        _log.debug("coverage_wait: shared lock acquired (%s)", path)
+    worktree path. Raises `CoverageLockUnavailable` on a platform with
+    neither `fcntl` nor `msvcrt` (T-2952)."""
+    with _flock_path(_shared_lock_path(root, digest), "shared lock"):
         yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-        _log.debug("coverage_wait: shared lock released (%s)", path)
 
 
 # frob:doc docs/modules/testing.md#public-api

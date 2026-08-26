@@ -28,11 +28,13 @@ established, now just from a different caller module.
 
 from __future__ import annotations
 
-import fcntl
+import importlib
 import os
 import re
+import time
 from datetime import date
 from pathlib import Path
+from types import ModuleType
 
 from typani.result import Err, Ok, Result
 
@@ -51,6 +53,7 @@ from frob.tickets._models import (
 )
 from frob.tickets._provisional import mint_draft_id, on_default_branch
 from frob.tickets._store import (
+    TicketLockUnavailable,
     _store_mode,
     allocator_lock,
     archive_path,
@@ -67,6 +70,26 @@ from frob.tickets._store import (
     write_ticket,
 )
 from frob.tickets._worktree_guard import enforce_worktree_lease
+
+# T-2952: `fcntl` is POSIX-only. This module used to `import fcntl`
+# unconditionally at module scope, which crashed the import of every
+# caller (not just the shared-counter path) on Windows -- the same
+# PLATFORM001-shaped bug T-2918/T-2934 fixed elsewhere in `frob.tickets`
+# and `frob.app.ticket_runner`. Mirrors `frob.tickets._store`'s own
+# fcntl/msvcrt pair exactly: a real `msvcrt.locking`-based backend on
+# Windows, and `TicketLockUnavailable` (a loud refusal) only when
+# NEITHER exists -- never a silent no-op.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
+
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
 
 # T-1103: shared "frob.tickets" logger name kept explicit (not get_logger(__name__),
 # which would read "frob.tickets._new_renumber") -- several tests filter caplog
@@ -245,10 +268,35 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
     path = _shared_id_counter_path(root)
     if path is None:
         return _next_ticket_id(existing)
+    if fcntl is None and msvcrt is None:
+        raise TicketLockUnavailable(
+            f"tickets: {path}: neither fcntl (POSIX) nor msvcrt (Windows) "
+            f"is available on this platform -- refusing to allocate a "
+            f"shared ticket id unlocked (T-2952)"
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
-    try:
+    windows_backend = msvcrt is not None and fcntl is None
+    if windows_backend:  # pragma: no cover -- windows-only
+        fd = os.open(
+            str(path), os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644
+        )
+        if os.fstat(fd).st_size < 1:
+            os.write(fd, b"\0")
+            os.fsync(fd)
+        assert msvcrt is not None
+        while True:
+            try:
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+                break
+            except OSError:
+                time.sleep(0.05)
+    else:
+        assert fcntl is not None
+        fd = os.open(str(path), os.O_CREAT | os.O_RDWR, 0o644)
         fcntl.flock(fd, fcntl.LOCK_EX)
+    try:
+        os.lseek(fd, 0, os.SEEK_SET)
         raw = os.read(fd, 64).decode("utf-8", errors="replace").strip()
         counter_max = int(raw) if raw.isdigit() else 0
         new_max = max(counter_max, _max_ticket_number(existing)) + 1
@@ -257,7 +305,13 @@ def _next_ticket_id_shared(root: Path, existing: dict[str, Ticket]) -> str:
         os.write(fd, f"{new_max}\n".encode("utf-8"))
         os.fsync(fd)
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if windows_backend:  # pragma: no cover -- windows-only
+            assert msvcrt is not None
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            assert fcntl is not None
+            fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
     _log.info(
         "tickets: allocated T-%04d from the shared id counter at %s", new_max, path

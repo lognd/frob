@@ -50,9 +50,9 @@ Three pieces:
 from __future__ import annotations
 
 import errno
-import fcntl
 import functools
 import hashlib
+import importlib
 import json
 import multiprocessing
 import os
@@ -64,6 +64,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from types import ModuleType
 from typing import IO, Any, Callable
 
 from pydantic import BaseModel
@@ -74,6 +75,26 @@ from frob.logging import get_logger
 from frob.serve import _tools
 from frob.serve._leases import DEFAULT_LEASE_CAPACITY, ResourceLeaseManager
 from frob.serve._watch import WatchThread
+
+# T-2952: `fcntl` is POSIX-only. This module used to `import fcntl`
+# unconditionally at module scope, crashing the import of every caller
+# on Windows -- the same PLATFORM001-shaped bug T-2918/T-2934 fixed
+# elsewhere (`frob.tickets._store`, `frob.app.ticket_runner
+# ._rapid_sweep`, `frob.testing._coverage_wait`). Mirrors those exactly:
+# a real `msvcrt.locking`-based backend on Windows, and
+# `DaemonError.AlreadyRunning`-adjacent loud refusal (via a raised
+# `RuntimeError`) only when NEITHER exists -- never a silent no-op.
+fcntl: ModuleType | None
+try:
+    fcntl = importlib.import_module("fcntl")
+except ImportError:  # pragma: no cover -- posix-only in this repo's CI
+    fcntl = None
+
+msvcrt: ModuleType | None
+try:
+    msvcrt = importlib.import_module("msvcrt")
+except ImportError:  # pragma: no cover -- windows-only in this repo's CI
+    msvcrt = None
 
 _log = get_logger(__name__)
 
@@ -182,6 +203,10 @@ class DaemonError(ErrorSet):
     return."""
 
     AlreadyRunning = "another process already holds the single-instance lock"
+    LockUnavailable = (
+        "neither fcntl (POSIX) nor msvcrt (Windows) is available on this "
+        "platform -- refusing to run unlocked (T-2952)"
+    )
     BindFailed = "the daemon unix socket could not be bound"
     UnknownMethod = "requested JSON-RPC method is not exposed by the daemon"
     MalformedRequest = "request line was not valid JSON-RPC-shaped JSON"
@@ -268,14 +293,28 @@ def acquire_singleton_lock(root: Path) -> Result[IO[Any], DaemonError]:
     other one receives `Err(DaemonError.AlreadyRunning)` immediately, never
     both. The returned file object must be kept open (not garbage
     collected, not closed) for as long as this process wants to remain the
-    singleton daemon -- closing it (or process exit) releases the lock."""
+    singleton daemon -- closing it (or process exit) releases the lock.
+    Returns `Err(DaemonError.LockUnavailable)` on a platform with neither
+    `fcntl` nor `msvcrt` (T-2952), never a silent unlocked no-op; uses a
+    real `msvcrt.locking`-based backend on Windows."""
+    if fcntl is None and msvcrt is None:
+        _log.error(
+            "serve: socketd: neither fcntl nor msvcrt available -- refusing "
+            "to acquire the singleton lock unlocked"
+        )
+        return Err(DaemonError.LockUnavailable)
     path = lock_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
     handle = path.open("a+")
     try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        else:  # pragma: no cover -- windows-only
+            assert msvcrt is not None
+            os.lseek(handle.fileno(), 0, os.SEEK_SET)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
     except OSError as exc:
-        if exc.errno not in (errno.EACCES, errno.EAGAIN):
+        if fcntl is not None and exc.errno not in (errno.EACCES, errno.EAGAIN):
             _log.error("serve: socketd: lock acquire failed unexpectedly: %s", exc)
             raise
         handle.close()
@@ -289,7 +328,12 @@ def _release_singleton_lock(handle: IO[Any]) -> None:
     """Release a lock `acquire_singleton_lock` returned: unlock then close
     the handle -- the mirror operation, always called on daemon shutdown."""
     try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        if fcntl is not None:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        else:  # pragma: no cover -- windows-only
+            assert msvcrt is not None
+            os.lseek(handle.fileno(), 0, os.SEEK_SET)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
     finally:
         handle.close()
     _log.info("serve: socketd: lock released (pid=%d)", os.getpid())
