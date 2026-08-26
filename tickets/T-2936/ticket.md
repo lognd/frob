@@ -2,7 +2,7 @@
 id: T-2936
 title: 'frob does not IMPORT on Windows: signal.SIGKILL evaluated as a default arg
   at module load crashes in 54s before any test runs'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -45,7 +45,17 @@ scope_changes:
   reason: update fixtures + add must-fire/must-stay-quiet import-time repro tests
   actor: logan
   at: '2026-08-26'
-designated_repro_test: null
+- op: add
+  glob: docs/modules/process.md
+  reason: affects()-closure doc for arm_parent_death_signal / _arm_forkserver_helper_pdeathsig_if_requested
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_default_arg_is_not_evaluated_at_def_time
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_sig_none_resolves_to_sigkill_only_after_the_platform_guard
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_noop_without_env_var
+- tests/unit/test_process_reap.py::TestArmForkserverHelperPdeathsigIfRequested::test_arms_when_env_var_set
+designated_repro_test: tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_default_arg_is_not_evaluated_at_def_time
 threat: null
 component: null
 anchor: false
