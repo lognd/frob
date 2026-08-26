@@ -23,6 +23,7 @@ scope:
 - tests/unit/strata/test_bootstrap.py
 - tests/unit/test_app_runners_batch7.py
 - design/frob.strata
+- docs/design/registry/capability-via-ratchet.lock.json
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +67,11 @@ scope_changes:
 - op: add
   glob: design/frob.strata
   reason: new stratamod->gates flow + fs.write/exec effects introduced by T-2910
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/design/registry/capability-via-ratchet.lock.json
+  reason: SYS111 ratchet ceiling bump for new fs.write/exec sites introduced by T-2910
   actor: logan
   at: '2026-08-25'
 triage_changes:
