@@ -14,10 +14,18 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/_walk_lint.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/gates/_walk_lint.py
+  reason: PLATFORM001 detector rides alongside WALK gate
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
