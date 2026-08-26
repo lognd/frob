@@ -2,7 +2,7 @@
 id: T-2919
 title: 'PLATFORM001 gate: every POSIX-only primitive must declare a cross-platform
   path or refuse LOUDLY, never warn-and-continue'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'
@@ -44,6 +44,12 @@ scope_changes:
   reason: register PLATFORM001 in _KNOWN_GATE_RULES
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_walk_lint_gate.py::TestPlatform001::test_warn_and_continue_fires
+- tests/test_walk_lint_gate.py::TestPlatform001::test_loud_refusal_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001::test_no_platform_probe_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001::test_gate_fires_end_to_end
+- tests/test_walk_lint_gate.py::TestPlatform001::test_gate_stays_quiet_on_properly_guarded_module
 designated_repro_test: null
 threat: null
 component: null

@@ -362,6 +362,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2915: Re-run branch stranded-work classification with the real directive parser, not bare regex
 - T-2917: CI runs ubuntu-latest only: add windows-latest and macos-latest to the matrix so platform regressions are detectable at all
 - T-2918: Advisory locks degrade to a logged NO-OP without fcntl: concurrent lands/sweeps are unserialized on Windows
+- T-2919: PLATFORM001 gate: every POSIX-only primitive must declare a cross-platform path or refuse LOUDLY, never warn-and-continue
 - T-2922: Unwire the live may= auto-WIDENING Tier-A fixer: capability escalation is silently rubber-stamped today
 - T-2923: frob sys shrink: tighten unobserved may= capabilities, never widen
 - T-2928: WIRE001 and REF002 both MISS provably dead symbols: measured 1-of-3 detector hit rate on a controlled deletion

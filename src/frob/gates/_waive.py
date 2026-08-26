@@ -189,6 +189,7 @@ def _dsl001_violations(snapshot: GraphSnapshot) -> tuple[Violation, ...]:
 # frob:ticket T-1784
 # frob:ticket T-1782
 # frob:ticket T-2580
+# frob:ticket T-2919
 _KNOWN_GATE_RULES = frozenset(
     {
         "COV001",
@@ -675,6 +676,10 @@ _KNOWN_GATE_RULES = frozenset(
         "NEGEXIST001",
         # T-0471: unpruned filesystem traversal (frob.gates._walk_lint).
         "WALK001",
+        # T-2919: a POSIX/Windows-only primitive's absence guard logs and
+        # silently proceeds instead of declaring a real fallback or
+        # refusing loudly (frob.gates._walk_lint).
+        "PLATFORM001",
         # T-2344: a gate rule constructed from raw text without a symref/
         # AST binding is itself a finding (frob.gates._lexical_selfcheck).
         "LEXCHECK001",

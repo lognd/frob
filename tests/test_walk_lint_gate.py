@@ -11,7 +11,11 @@ import ast
 import subprocess
 from pathlib import Path
 
-from frob.gates._walk_lint import _scan_python_walks, walk_lint_gate
+from frob.gates._walk_lint import (
+    _scan_platform_guards,
+    _scan_python_walks,
+    walk_lint_gate,
+)
 
 
 def _git(root: Path, *args: str) -> None:
@@ -177,3 +181,127 @@ class TestSelfMatchExclusion:
         violations = walk_lint_gate(tmp_path)
 
         assert violations == ()
+
+
+class TestPlatform001:
+    """PLATFORM001 (T-2919): a POSIX/Windows-only primitive's absence
+    guard must declare a cross-platform path or refuse loudly, never
+    warn-and-continue -- the exact shape T-2918 fixed in
+    `_rapid_sweep.py::_baseline_lock`."""
+
+    #: The "warn-and-continue" fixture: this is a byte-for-byte MODEL of
+    #: `_baseline_lock`'s shape BEFORE T-2918 -- a real platform-optional
+    #: primitive whose absence guard logs a warning and proceeds as if
+    #: nothing were wrong. This MUST fire.
+    _WARN_AND_CONTINUE_SRC = (
+        "import importlib\n"
+        "from contextlib import contextmanager\n"
+        "\n"
+        "fcntl = None\n"
+        "try:\n"
+        "    fcntl = importlib.import_module('fcntl')\n"
+        "except ImportError:\n"
+        "    fcntl = None\n"
+        "\n"
+        "@contextmanager\n"
+        "def acquire(path):\n"
+        "    if fcntl is None:\n"
+        "        _log.warning('lock is a NO-OP on this platform')\n"
+        "        yield\n"
+        "        return\n"
+        "    fd = _open(path)\n"
+        "    fcntl.flock(fd, fcntl.LOCK_EX)\n"
+        "    try:\n"
+        "        yield\n"
+        "    finally:\n"
+        "        fcntl.flock(fd, fcntl.LOCK_UN)\n"
+    )
+
+    #: The "loud refusal" fixture: T-2918's OWN real fix shape --
+    #: identical probe, but the absence guard raises instead of logging
+    #: and falling through. This MUST stay quiet.
+    _LOUD_REFUSAL_SRC = (
+        "import importlib\n"
+        "from contextlib import contextmanager\n"
+        "\n"
+        "fcntl = None\n"
+        "try:\n"
+        "    fcntl = importlib.import_module('fcntl')\n"
+        "except ImportError:\n"
+        "    fcntl = None\n"
+        "\n"
+        "msvcrt = None\n"
+        "try:\n"
+        "    msvcrt = importlib.import_module('msvcrt')\n"
+        "except ImportError:\n"
+        "    msvcrt = None\n"
+        "\n"
+        "class LockUnavailable(RuntimeError):\n"
+        "    pass\n"
+        "\n"
+        "@contextmanager\n"
+        "def acquire(path):\n"
+        "    if fcntl is None and msvcrt is None:\n"
+        "        raise LockUnavailable('no lock primitive on this platform')\n"
+        "    yield\n"
+    )
+
+    def test_warn_and_continue_fires(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        tree = ast.parse(self._WARN_AND_CONTINUE_SRC)
+        sites = _scan_platform_guards(tree)
+        assert len(sites) == 1
+        assert sites[0].names == ("fcntl",)
+
+    def test_loud_refusal_is_quiet(self) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        tree = ast.parse(self._LOUD_REFUSAL_SRC)
+        assert _scan_platform_guards(tree) == ()
+
+    def test_no_platform_probe_is_quiet(self) -> None:
+        """A module with no restricted-module try/except-ImportError probe
+        at all has nothing for PLATFORM001 to anchor on, regardless of
+        what its `if X is None:` guards do."""
+        # frob:tests src/frob/gates/_walk_lint.py::_scan_platform_guards
+        src = (
+            "z3 = None\n"
+            "try:\n"
+            "    import z3\n"
+            "except ImportError:\n"
+            "    z3 = None\n"
+            "\n"
+            "def f():\n"
+            "    if z3 is None:\n"
+            "        _log.warning('z3 unavailable, skipping SMT check')\n"
+            "        return\n"
+        )
+        tree = ast.parse(src)
+        assert _scan_platform_guards(tree) == ()
+
+    def test_gate_fires_end_to_end(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        _init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        (pkg / "offender.py").write_text(self._WARN_AND_CONTINUE_SRC)
+        _commit(tmp_path)
+
+        violations = walk_lint_gate(tmp_path)
+
+        platform_hits = [v for v in violations if v.rule == "PLATFORM001"]
+        assert len(platform_hits) == 1
+        assert platform_hits[0].file == "src/frob/offender.py"
+
+    def test_gate_stays_quiet_on_properly_guarded_module(self, tmp_path: Path) -> None:
+        # frob:tests src/frob/gates/_walk_lint.py::walk_lint_gate
+        _init_repo(tmp_path)
+        pkg = tmp_path / "src" / "frob"
+        pkg.mkdir(parents=True)
+        (pkg / "__init__.py").write_text("")
+        (pkg / "guarded.py").write_text(self._LOUD_REFUSAL_SRC)
+        _commit(tmp_path)
+
+        violations = walk_lint_gate(tmp_path)
+
+        assert not any(v.rule == "PLATFORM001" for v in violations)

@@ -21,9 +21,28 @@ scans the same way, for the same reason: a lexical/regex scan over
 `rglob(` would both over- and under-fire on multi-line calls, aliased
 imports, and string content that merely mentions the word, where a real
 `ast.Call` match does not).
+
+PLATFORM001 (T-2919, docs/modules/gates.md#platform001-posix-only-
+primitive-degrades-silently-t-2919) rides alongside WALK001 in this same
+module -- same "one raw AST scan over `src/frob/**/*.py`, one static
+mistake-class check" shape, same file (not a new dispatch-table stage;
+`walk_lint_gate` below returns both rule ids' violations from one pass,
+mirroring how NEGEXIST001 rides the "docblocks" stage). T-2917/T-2918
+measured the shape directly: `frob.tickets._land`'s and `frob.app.
+ticket_runner._rapid_sweep`'s `fcntl`-degrade sites all followed the same
+`try: import fcntl / except ImportError: fcntl = None` convention, then
+an `if fcntl is None:` guard that logged a WARNING and silently
+proceeded as if nothing were wrong -- a real Windows-vs-POSIX
+correctness gap (T-2918's own fix) that no test or type checker could
+have caught, because both branches type-check and both branches pass a
+Linux-only CI (T-2917's own finding: this repo's CI ran ubuntu-latest
+only until this same ticket series added Windows/macOS). PLATFORM001
+generalizes that ONE incident into a repo-wide static check so the NEXT
+POSIX-only primitive someone adds cannot ship the same silent gap.
 """
 
 # frob:ticket T-0471
+# frob:ticket T-2919
 from __future__ import annotations
 
 import ast
@@ -304,19 +323,278 @@ def _tracked_python_files(root: Path) -> tuple[str, ...]:
     return tracked_python_files_for_gate(root, log_prefix="walk_lint_gate")
 
 
+#: Standard-library module names PLATFORM001 treats as "may not exist on
+#: this interpreter/platform" -- POSIX-only (`fcntl`, `termios`, `tty`,
+#: `pwd`, `grp`, `resource`, `posix`) and Windows-only (`msvcrt`,
+#: `winreg`, `_winapi`) alike, matching `frob.app.ticket_runner.
+#: _rapid_sweep`'s own T-2918 pairing of the two. Deliberately NOT
+#: third-party optional-dependency names (`z3`, `tree_sitter`, ...) --
+#: those follow the identical `try/except ImportError` shape for a
+#: wholly different reason (an optional extra, not a platform gap) and
+#: are out of this rule's population by design.
+_PLATFORM_RESTRICTED_MODULES = frozenset(
+    {
+        "fcntl",
+        "termios",
+        "tty",
+        "pwd",
+        "grp",
+        "resource",
+        "posix",
+        "msvcrt",
+        "winreg",
+        "_winapi",
+    }
+)
+
+#: Logging-call attribute names PLATFORM001 treats as "this guard body
+#: observably logged something" -- if a guard degrades with none of
+#: these AND no loud exit either, that is a separate, worse silent-no-op
+#: shape this v1 does not attempt to detect (see `_guard_is_loud`'s
+#: docstring for the disclosed gap).
+_LOG_CALL_ATTRS = frozenset({"warning", "warn", "error", "critical", "info", "debug"})
+
+
+def _restricted_import_names(try_body: list[ast.stmt]) -> frozenset[str]:
+    """Local names a `Try.body` (one candidate try-block) binds to one of
+    `_PLATFORM_RESTRICTED_MODULES`, via either `import X [as name]` or
+    `name = importlib.import_module("X")` -- the two shapes this repo's
+    own fcntl/msvcrt degrade sites use (T-2918's own `_rapid_sweep.py`
+    uses the second form)."""
+    names: set[str] = set()
+    for stmt in try_body:
+        if isinstance(stmt, ast.Import):
+            # frob:waive PERF003 reason="PERF003's pattern-match flags any nested loop plus equality/membership check regardless of the inner collection's type; `_PLATFORM_RESTRICTED_MODULES` is already a frozenset (O(1) membership), and `try_body`/`stmt.names` are both a single small statement/alias list (a handful of items at most, one try-block's own body) -- there is no larger collection to index into"  # noqa: E501
+            for alias in stmt.names:
+                if alias.name in _PLATFORM_RESTRICTED_MODULES:
+                    names.add(alias.asname or alias.name)
+        elif (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+            and isinstance(stmt.value, ast.Call)
+            and _dotted_prefix(stmt.value.func) == "importlib.import_module"
+        ):
+            literal = _first_arg_literal(stmt.value)
+            if literal in _PLATFORM_RESTRICTED_MODULES:
+                names.add(stmt.targets[0].id)
+    return frozenset(names)
+
+
+def _handles_import_error(handler: ast.ExceptHandler) -> bool:
+    """Whether `handler` catches `ImportError` (bare name or a tuple
+    that includes it) -- a bare `except:` is deliberately NOT treated as
+    matching here, since that shape already has its own, unrelated gate
+    concerns and this rule only cares about the specific platform-
+    availability-probe idiom."""
+    if handler.type is None:
+        return False
+    if isinstance(handler.type, ast.Name):
+        return handler.type.id == "ImportError"
+    if isinstance(handler.type, ast.Tuple):
+        return any(
+            isinstance(elt, ast.Name) and elt.id == "ImportError"
+            for elt in handler.type.elts
+        )
+    return False
+
+
+def _none_bound_names(
+    handler_body: list[ast.stmt], candidates: frozenset[str]
+) -> set[str]:
+    """The subset of `candidates` that `handler_body` (an `except
+    ImportError:` block) assigns `= None`, confirming the try/except
+    pair really is the platform-probe degrade idiom and not an unrelated
+    `except ImportError` that happens to import one of the same module
+    names for some other reason."""
+    bound: set[str] = set()
+    for stmt in handler_body:
+        if (
+            isinstance(stmt, ast.Assign)
+            and len(stmt.targets) == 1
+            and isinstance(stmt.targets[0], ast.Name)
+            and stmt.targets[0].id in candidates
+            and isinstance(stmt.value, ast.Constant)
+            and stmt.value.value is None
+        ):
+            bound.add(stmt.targets[0].id)
+    return bound
+
+
+def _platform_guard_names(tree: ast.Module) -> frozenset[str]:
+    """Every local name in `tree` that PLATFORM001 treats as a platform-
+    optional primitive: bound to a restricted module in a `try:` block
+    whose `except ImportError:` handler sets it back to `None` on
+    failure -- the exact shape this repo's own `fcntl`/`msvcrt` degrade
+    sites (T-2595/T-2918) use."""
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try):
+            continue
+        candidates = _restricted_import_names(node.body)
+        if not candidates:
+            continue
+        for handler in node.handlers:
+            if _handles_import_error(handler):
+                names |= _none_bound_names(handler.body, candidates)
+    return frozenset(names)
+
+
+def _is_none_names(test: ast.expr, guard_names: frozenset[str]) -> frozenset[str]:
+    """The subset of `guard_names` that `test` compares to `None` --
+    handles a single `X is None` as well as an `X is None and Y is
+    None [and ...]` chain (T-2918's own `if fcntl is None and msvcrt is
+    None:` shape, the "neither primitive" case). Returns an empty
+    frozenset when `test` matches no guard name at all, which callers
+    treat as "not a platform-availability guard"."""
+    if isinstance(test, ast.Compare):
+        if (
+            isinstance(test.left, ast.Name)
+            and test.left.id in guard_names
+            and len(test.ops) == 1
+            and isinstance(test.ops[0], ast.Is)
+            and len(test.comparators) == 1
+            and isinstance(test.comparators[0], ast.Constant)
+            and test.comparators[0].value is None
+        ):
+            return frozenset({test.left.id})
+        return frozenset()
+    if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.And):
+        hit: set[str] = set()
+        for value in test.values:
+            hit |= _is_none_names(value, guard_names)
+        return frozenset(hit)
+    return frozenset()
+
+
+def _guard_is_loud(body: list[ast.stmt]) -> bool:
+    """Whether a platform-guard `If.body` refuses LOUDLY: contains a
+    `raise` anywhere, or a top-level `sys.exit(...)`/`os._exit(...)`
+    call -- the two shapes this rule accepts as "declared, not silent"
+    (T-2918's own `BaselineLockUnavailable` fix uses the first). A
+    `return`/typani `Err(...)` convention is real and common in this
+    repo but not detected here (v1, disclosed gap: distinguishing a
+    structured error return from an ordinary silent early-return needs
+    knowing the enclosing function's declared return type, which this
+    single-pass AST scan does not resolve) -- such a site can still
+    trip PLATFORM001 and needs a `frob:waive` with the honest reason,
+    matching this repo's usual best-effort-detector posture (WALK001/
+    PORT001's own disclosed gaps)."""
+    for stmt in body:
+        for node in ast.walk(stmt):
+            if isinstance(node, ast.Raise):
+                return True
+            if isinstance(node, ast.Call) and _dotted_prefix(node.func) in (
+                "sys.exit",
+                "os._exit",
+            ):
+                return True
+    return False
+
+
+def _guard_logs(body: list[ast.stmt]) -> bool:
+    """Whether `body` contains a call shaped like `<anything>.<level>(...)`
+    for a level in `_LOG_CALL_ATTRS` -- the observable half of "warn-and-
+    continue" (module logger convention `_log.warning(...)` throughout
+    this codebase, matched on the attribute name alone since resolving
+    the receiver to an actual `logging.Logger` instance is out of scope
+    for a single-pass AST scan, same posture `_pii_structural` already
+    takes for its own attribute-name heuristics)."""
+    for stmt in body:
+        for node in ast.walk(stmt):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr in _LOG_CALL_ATTRS
+            ):
+                return True
+    return False
+
+
+@dataclass(frozen=True)
+class _PlatformSite:
+    """One PLATFORM001 finding site: the guard's line and the primitive
+    name(s) it tested for absence."""
+
+    lineno: int
+    names: tuple[str, ...]
+
+
+def _scan_platform_guards(tree: ast.Module) -> tuple[_PlatformSite, ...]:
+    """Every `if <platform-optional-name> is None [and ...]:` guard in
+    `tree` whose body logs (module docstring's warn-and-continue shape)
+    but never refuses loudly (`_guard_is_loud`) -- PLATFORM001's actual
+    findings."""
+    guard_names = _platform_guard_names(tree)
+    if not guard_names:
+        return ()
+    sites: list[_PlatformSite] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.If):
+            continue
+        hit = _is_none_names(node.test, guard_names)
+        if not hit:
+            continue
+        if _guard_logs(node.body) and not _guard_is_loud(node.body):
+            # frob:waive PERF004 reason="sorted(hit) sorts a 1-2-element set (the platform-optional names one `if X is None [and Y is None]:` test names) at most once per matched guard site across a whole file's AST walk -- not a hot loop, and the call exists only so `_PlatformSite.names` has a deterministic tuple order for the Violation message/tests"  # noqa: E501
+            sites.append(_PlatformSite(node.lineno, tuple(sorted(hit))))
+    return tuple(sites)
+
+
+# frob:enforces CHK-GATE-PLATFORM001
+def _platform001_violation(rel_path: str, site: _PlatformSite) -> Violation:
+    """The PLATFORM001 `Violation` for one warn-and-continue platform
+    guard (module docstring)."""
+    names = " and ".join(f"`{n}` is None" for n in site.names)
+    _log.warning(
+        "PLATFORM001: %s:%d guard on %s logs and proceeds unlocked/unguarded "
+        "instead of refusing loudly",
+        rel_path,
+        site.lineno,
+        names,
+    )
+    return Violation(
+        rule="PLATFORM001",
+        severity=Severity.WARN,
+        file=rel_path,
+        line=site.lineno,
+        message=(
+            f"PLATFORM001: {rel_path}:{site.lineno} a guard on {names} logs a "
+            f"warning and then proceeds as if the missing primitive did not "
+            f"matter -- a POSIX/Windows-only primitive with no other "
+            f"platform available must either declare a real cross-platform "
+            f"path (a second backend, an `elif` branch trying another "
+            f"primitive) or refuse LOUDLY (`raise`, `sys.exit`), never "
+            f'warn-and-continue (T-2918); `frob:waive PLATFORM001 '
+            f'reason="..."` if this is a real structured-error return this '
+            f"detector's AST scan cannot see (module docstring's disclosed "
+            f"gap)"
+        ),
+    )
+
+
 # frob:doc docs/modules/gates.md#walk001-unpruned-traversal-t-0471
 # frob:tests tests/test_walk_lint_gate.py::TestRglob.test_raw_rglob_fires
 # frob:tests tests/test_walk_lint_gate.py::TestHelper.test_helper_call_is_silent
 # frob:tests tests/test_walk_lint_gate.py::TestSelfMatchExclusion.test_own_files_not_scanned  # noqa: E501
+# frob:doc \
+# docs/modules/gates.md#platform001-posix-only-primitive-degrades-silently-t-2919
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_warn_and_continue_fires  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_loud_refusal_is_quiet  # noqa: E501
+# frob:tests tests/test_walk_lint_gate.py::TestPlatform001.test_no_platform_probe_is_quiet  # noqa: E501
 # frob:invariant INV-005
 # invariant spec: [INV-005](invariants/INV-005.md)
 # frob:waive AFFECT001 reason="T-1371 only widens internal exception handling so one bad file cannot abort the whole WALK001 pass; the documented behavior is unchanged, so docs/modules/gates.md#walk001-unpruned-traversal-t-0471 needs no update -- doc edits are owned by the concurrent T-1372 DOC006 drain, out of this ticket's scope"  # noqa: E501
 def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
-    """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471):
-    every git-tracked `src/frob/**/*.py` file scanned for a raw recursive
+    """WALK001 (docs/modules/gates.md#walk001-unpruned-traversal-t-0471)
+    and PLATFORM001 (docs/modules/gates.md#platform001-posix-only-
+    primitive-degrades-silently-t-2919, T-2919): every git-tracked
+    `src/frob/**/*.py` file scanned, in one pass, for a raw recursive
     traversal call that bypasses `frob.excludes`' shared prune-aware
-    helpers. Self-excludes this module and `frob/excludes.py` (module
-    docstring)."""
+    helpers (WALK001) and for a POSIX/Windows-only primitive's absence
+    guard that logs and silently proceeds instead of declaring a real
+    fallback or refusing loudly (PLATFORM001). Self-excludes this module
+    and `frob/excludes.py` (module docstring)."""
     root = Path(root)
     violations: list[Violation] = []
     scanned = 0
@@ -335,11 +613,16 @@ def walk_lint_gate(root: Path) -> tuple[Violation, ...]:
             violations.extend(
                 _walk001_violation(rel_path, site) for site in _scan_python_walks(tree)
             )
+            violations.extend(
+                _platform001_violation(rel_path, site)
+                for site in _scan_platform_guards(tree)
+            )
         except Exception:
             # One file's AST shape confusing the walk-site scanner must
-            # not abort the whole WALK001 pass over every OTHER tracked
-            # file (EXHAUST001/EXHAUST002, T-1371) -- same "skip just this
-            # one" posture as the parse-failure branch above.
+            # not abort the whole WALK001/PLATFORM001 pass over every
+            # OTHER tracked file (EXHAUST001/EXHAUST002, T-1371) -- same
+            # "skip just this one" posture as the parse-failure branch
+            # above.
             _log.debug("walk_lint_gate: skipping unscannable %s", rel_path)
 
     _log.info(
