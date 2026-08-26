@@ -1,7 +1,7 @@
 ---
 id: T-2958
 title: frob ticket archive can strand a non-terminal ticket with no restore path (T-0450)
-state: queued
+state: dropped
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -78,3 +78,6 @@ accept an archived-ticket flag the way ticket evidence already accepts
 one for archived ids) -- left queued-in-archive in the meantime, since
 neither this repo's tooling nor its house rules give a safe way to
 correct it right now.
+
+## Drop reason
+- 2026-08-26: duplicate of T-2954: both were created from the same T-2946 triage follow-up draft and ended up with two real ids after a renumber race (mirrored to main once via 'frob ticket scope' during triage, then re-materialized at 'frob ticket land' time); T-2946's own Done report cites T-2954, so keeping that one and dropping this duplicate (absorbed by T-2954)
