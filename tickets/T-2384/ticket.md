@@ -7,7 +7,7 @@ kind: bug
 origin: human
 created: '2026-08-17'
 priority: high
-parent: T-1382
+parent: T-2964
 tier: epic
 sprint: null
 runs_last: false
@@ -32,6 +32,23 @@ triage_changes:
     sweep); re-parenting so the epic reads its true unmet goal instead of NEEDS CLOSE'
   actor: logan
   at: '2026-08-21'
+- field: parent
+  old_value: T-1382
+  new_value: T-2964
+  reason: 'T-2959: T-2384 (portability/schema-resolution work, tier=epic with its
+    own children T-2891/T-2892) was parented under T-1382 (Makefile decoupling epic,
+    unrelated topic -- T-1382''s own acceptance is entirely about replacing Makefile
+    workflows with frob subcommands). Because T-2384''s whole subtree is done, T-1382''s
+    rollup (frob ticket epic T-1382) read "3/3 done (100%)" even though T-1382''s
+    own three acceptance criteria are all still UNBOUND -- a false-complete signal
+    that had already caused the rot detector to suggest closing T-1382. Re-parenting
+    onto T-2964 (a new top-level epic that actually describes T-2384''s real subject:
+    cross-repo/multi-project portability of frob''s enforcement surface) so T-1382''s
+    rollup correctly reflects that its own work has not begun.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 body_changes:
 - mode: append
   reason: 'BUG002 front door (T-2393): epic closed on evidence bound to already-landed
