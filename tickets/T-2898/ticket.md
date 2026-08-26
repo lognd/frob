@@ -2,7 +2,7 @@
 id: T-2898
 title: 'post-land sweep regression from an unattributed source (sweep spawned by T-2361):
   1 new (rule, file) identit(ies), 2 finding(s) (I001)'
-state: queued
+state: dropped
 kind: bug
 origin: agent
 created: '2026-08-25'
@@ -43,3 +43,6 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - I001  /home/logan/projects/frob/tests/unit/verify/test_backpressure.py  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+## Drop reason
+- 2026-08-25: exact duplicate of T-2899: identical (rule, file) identity I001/tests/unit/verify/test_backpressure.py from the same blamed commit 7100396e8bf5f1beea1f6697cc29a4386b30b8bc, same body text -- fixed under T-2899 (absorbed by T-2899)
