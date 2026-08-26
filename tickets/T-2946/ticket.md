@@ -14,7 +14,14 @@ milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
-- tickets/*/ticket.md
+- tickets/T-0450/ticket.md
+- tickets/T-0969/ticket.md
+- tickets/T-1273/ticket.md
+- tickets/T-1382/ticket.md
+- tickets/T-2391/ticket.md
+- tickets/T-2501/ticket.md
+- tickets/T-2573/ticket.md
+- tickets/T-2916/ticket.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +31,51 @@ scope_changes:
   glob: tickets/*/ticket.md
   reason: per-ticket triage requires editing state/priority/sprint fields on the flagged
     tickets themselves
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  glob: tickets/*/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-0450/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-0969/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-1273/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-1382/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2391/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2501/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2573/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2916/ticket.md
+  reason: narrow to the specific TICK004/TICK007-flagged tickets under triage
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
