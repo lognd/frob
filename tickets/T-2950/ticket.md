@@ -14,10 +14,56 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/app/status_runner.py
+- src/frob/tickets/*ticket_flow*
+- tests/test_status.py
+- docs/modules/cli.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/app/status_runner.py
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/tickets/*ticket_flow*
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_status.py
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/cli.md
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/status_runner.py
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/tickets/*ticket_flow*
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_status.py
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/cli.md
+  reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
