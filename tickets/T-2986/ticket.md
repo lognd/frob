@@ -25,6 +25,7 @@ scope:
 - tickets/archive/T-2350/**
 - tickets/archive/T-2543/**
 - docs/design/ledger-v2.md
+- design/frob.strata
 evidence_scope:
 - tests/test_ticket_land.py
 scope_breadth_ack: false
@@ -166,6 +167,12 @@ scope_changes:
     doc-anchor closure for the touched TestArchiveV2 class).
 
     '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: design/frob.strata
+  reason: 'SELFAUDIT001 fix: declare fs.read/fs.write for src/frob/tickets/_archive.py''s
+    new direct file I/O in _rewrite_moved_attachment_paths'
   actor: logan
   at: '2026-08-26'
 evidence:
