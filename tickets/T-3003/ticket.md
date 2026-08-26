@@ -25,6 +25,7 @@ scope:
 - tests/system/test_cli_doctor.py
 - tests/integration/test_interfaces.py
 - tests/unit/strata/test_selfconform.py
+- docs/modules/fleet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -98,6 +99,11 @@ scope_changes:
   reason: 'T-3003 Windows pytest failure triage: fix path-separator and fcntl portability
     bugs; broad scope for cross-file investigation, will narrow to actual touched
     files at close'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/fleet.md
+  reason: close scope for fleet doc anchors surfaced by scope-closure warning
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
