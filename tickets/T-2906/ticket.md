@@ -31,6 +31,7 @@ scope:
 - docs/guides/extending/capability-registry.md
 - src/frob/vet/_capability_core.py
 - src/frob/vet/_capability_scan.py
+- tests/test_vet.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -159,6 +160,11 @@ scope_changes:
   glob: src/frob/vet/_capability_scan.py
   reason: extension->language table and scan-file lang detection live here, needed
     for real bash/csharp reachability
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/test_vet.py
+  reason: capability scan positive/negative control tests for bash and csharp
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
