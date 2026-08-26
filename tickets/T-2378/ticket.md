@@ -18,6 +18,7 @@ scope:
 - src/frob/vet/_source.py
 - src/frob/vet/_ecosystem.py
 - src/frob/vet/_supplychain.py
+- docs/modules/vet.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: src/frob/vet/_supplychain.py
   reason: extract shared _read_text_or_empty (frob-dup exact-duplicate T-2378)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/vet.md
+  reason: 'closure: existing frob:doc edges in touched files point here'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
