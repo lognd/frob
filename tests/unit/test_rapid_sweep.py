@@ -788,6 +788,99 @@ class TestDeferredSweepRun:
         # error must not be re-filed by the next land.
         assert _read_baseline(tmp_path) == fresh
 
+    # frob:ticket T-2929
+    def test_stale_baseline_refuses_to_file_and_records_debt(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2929 must-fire case: `frob.verify.rapid_soft_warning` firing
+        (a stale verification-queue window) means a NEW finding is NOT
+        filed as a confident regression ticket -- the sweep refuses and
+        records the refusal as a distinct, durable debt kind instead."""
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
+        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
+        # test node id -- already at frob fmt's own canonical form (verified: `frob \
+        # fmt` reports it unchanged), same unwrappable shape as \
+        # src/frob/app/_json_guard.py's existing FMT001 waivers"
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
+        fresh = frozenset({("COV003", "a.py"), ("DOC006", "tickets/T-0002/ticket.md")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: fresh,
+        )
+        monkeypatch.setattr(
+            "frob.verify.rapid_soft_warning",
+            lambda root: (
+                "rapid profile verification debt is stale: 53 commits "
+                "since watermark (warn threshold 5)"
+            ),
+        )
+        filed: list[object] = []
+        monkeypatch.setattr(
+            _rapid_sweep, "_file_regression_ticket", lambda *a, **k: filed.append(a)
+        )
+        debts: list[tuple[str, str]] = []
+        monkeypatch.setattr(
+            "frob.tickets._evidence.record_rapid_debt",
+            lambda root, tid, what: debts.append((tid, what)),
+        )
+        monkeypatch.setattr(_rapid_sweep, "_commit_rapid_debt", lambda root, tid: None)
+
+        result = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+
+        assert result.is_ok
+        assert result.danger_ok is None
+        assert filed == []
+        assert debts == [
+            ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline")
+        ]
+        # Rebaselined regardless -- the next sweep should start from a
+        # fresh, current comparison point once the debt is drained.
+        assert _read_baseline(tmp_path) == fresh
+
+    # frob:ticket T-2929
+    def test_fresh_baseline_files_normally_no_new_noise(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2929 must-stay-quiet case: `rapid_soft_warning` returning
+        `None` (a fresh, current verification window) means the sweep
+        files exactly as it did before this change -- no new refusal, no
+        new debt line, identical behavior to `test_new_findings_file_a_
+        ticket_and_rebaseline`."""
+        # frob:tests \
+        # tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
+        # frob:waive FMT001 reason="single-line frob:tests directive naming a long \
+        # test node id -- already at frob fmt's own canonical form (verified: `frob \
+        # fmt` reports it unchanged), same unwrappable shape as \
+        # src/frob/app/_json_guard.py's existing FMT001 waivers"
+        _write_baseline(tmp_path, frozenset({("COV003", "a.py")}), "old")
+        fresh = frozenset({("COV003", "a.py"), ("DOC011", "b.md")})
+        monkeypatch.setattr(
+            "frob.app.ticket_runner._land_cmd._unscoped_error_findings",
+            lambda *a, **k: fresh,
+        )
+        monkeypatch.setattr("frob.verify.rapid_soft_warning", lambda root: None)
+        seen: list[frozenset[tuple[str, str]]] = []
+
+        def _fake_file(root, final_id, commit, new_findings):  # noqa: ANN001, ANN202
+            seen.append(new_findings)
+            return "T-9999"
+
+        monkeypatch.setattr(_rapid_sweep, "_file_regression_ticket", _fake_file)
+        debts: list[tuple[str, str]] = []
+        monkeypatch.setattr(
+            "frob.tickets._evidence.record_rapid_debt",
+            lambda root, tid, what: debts.append((tid, what)),
+        )
+
+        result = run_deferred_post_land_sweep(tmp_path, "T-0001", "abc123")
+
+        assert result.is_ok
+        assert result.danger_ok == "T-9999"
+        assert seen == [frozenset({("DOC011", "b.md")})]
+        assert debts == []
+        assert _read_baseline(tmp_path) == fresh
+
 
 class TestDeferredSweepSpawn:
     """The spawn records debt BEFORE spawning and never blocks."""

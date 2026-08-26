@@ -3103,38 +3103,96 @@ def _resolve_regression_attribution(
 
 # frob:doc \
 # docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
-# frob:ticket T-2077
-# frob:ticket T-1952
-# frob:ticket T-2595
-# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
+# frob:ticket T-2929
 # frob:tests \
-# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_no_new_findings_is_clean
-# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_new_findings_file_a_ticket_and_rebaseline  # noqa: E501
-# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace.test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline  # noqa: E501
-# frob:waive AFFECT001 reason="T-2595 only replaces the baseline write's internal \
-# mechanics (an unconditional unlocked write becomes a locked compare-and-swap) -- it \
-# does not change this function's own documented external contract (still: one check \
-# per sweep, file a ticket for new findings, record the fresh set as the next \
-# baseline). docs/modules/tickets-verify-sweep.md is a shared doc other in-flight \
-# tickets also touch; a prose note on the internal race-safety mechanism belongs in a \
-# follow-up doc pass, not blocking this bug fix, matching T-2521's identical posture \
-# on this same file just above"
-# frob:ticket T-1684
-def run_deferred_post_land_sweep(
-    root: Path, final_id: str, commit_sha: str
-) -> Result[str | None, RapidSweepError]:
-    """The detached child's whole job (`frob ticket sweep-async`): run one
-    unscoped `frob check` over `root`, diff it against the rolling
-    baseline, file a bug ticket for anything new, and record the fresh set
-    as the next baseline.
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+def _refuse_filing_for_stale_verification_queue(
+    root: Path,
+    final_id: str,
+    new_findings: frozenset[tuple[str, str]],
+    actual_head: str,
+) -> bool:
+    """T-2929 (ARCH001 split of `run_deferred_post_land_sweep`):
+    `True` iff this sweep must NOT file a regression ticket for
+    `new_findings` because `frob.verify.rapid_soft_warning` says the
+    verification queue's own window is stale.
 
-    Returns the filed ticket id, or `Ok(None)` when the sweep was clean or
-    had no baseline to compare against. `Err(Unmeasurable)` when the check
-    itself produced no parsable error set -- the baseline is left
-    untouched in that case, so an unmeasurable run degrades to "compare
-    against the last set we actually trust" rather than silently adopting
-    a guess as ground truth."""
+    Attribution's own TIER 2 (`frob.verify._attribution`) resolves "which
+    land caused this" from the durable `VerifyQueueEntry` batch the
+    `frob.verify` queue accumulated SINCE THE LAST WATERMARK ADVANCE --
+    the exact same window `rapid_soft_warning` already measures and warns
+    about (`frob verify status`). A stale watermark means that batch
+    spans far more history than "the one land that just happened", so a
+    doc-drift finding (DOC006 in particular, which flips as OTHER
+    tickets get archived, not as code changes) can look "new" against
+    the rolling baseline while being fully unrelated to `final_id` --
+    measured directly this drive: 3 of 4 sweep-filed regression tickets
+    (T-2868, T-2881, T-2882) were exactly this, dropped after
+    independent re-measurement showed them pre-existing. Refusing to
+    file here (rather than filing with a softened "unattributed source"
+    title, the previous behavior) is the chosen fix: a sweep that knows
+    its own attribution window is this stale should say so loudly and
+    let the next, clean-baseline sweep re-evaluate, not produce a
+    confidently wrong ticket. The rolling baseline write in the caller is
+    UNCHANGED by this -- only the filing decision is gated -- so the next
+    sweep still starts from a fresh, current comparison point."""
+    from frob.verify import rapid_soft_warning
+
+    stale_reason = rapid_soft_warning(root)
+    if stale_reason is None:
+        return False
+    _log.error(
+        "rapid sweep: %s deferred unscoped sweep found %d NEW (rule, "
+        "file) identit(ies) at %s but REFUSED to file a regression "
+        "ticket -- %s (a sweep whose verification-queue window is this "
+        "stale cannot reliably attribute a new finding to the land that "
+        "spawned it; filing here would be a confident wrong answer, not "
+        "an honest one -- drain the debt with `frob verify now` and "
+        "re-run this sweep by hand once it is current)",
+        final_id,
+        len(new_findings),
+        actual_head[:12],
+        stale_reason,
+    )
+    from frob.tickets._evidence import record_rapid_debt
+
+    record_rapid_debt(
+        root, final_id, "post-land-sweep-attribution-skipped-stale-baseline"
+    )
+    _commit_rapid_debt(root, final_id)
+    return True
+
+
+# frob:ticket T-1684
+# frob:ticket T-2009
+# frob:ticket T-2571
+# frob:ticket T-2595
+def _measure_fresh_and_write_baseline(
+    root: Path, final_id: str, commit_sha: str
+) -> Result[
+    tuple[
+        frozenset[tuple[str, str]], frozenset[tuple[str, str]] | None, str | None, str
+    ],
+    RapidSweepError,
+]:
+    """T-2929 (ARCH001 split of `run_deferred_post_land_sweep`):
+    the measure-and-persist half of the sweep -- run the unscoped check,
+    normalize/filter the fresh set, and CAS-write it as the new rolling
+    baseline. Returns `(fresh, prior_baseline, prev_baseline_commit,
+    actual_head)`, where `prior_baseline` is `None` on a first sweep (no
+    baseline existed yet -- the caller's own signal to record-and-file-
+    nothing) and `Err(Unmeasurable)` when the check itself produced no
+    parsable error set."""
     from frob.app.ticket_runner._land_cmd import _unscoped_error_findings
 
     _log.info(
@@ -3203,6 +3261,61 @@ def run_deferred_post_land_sweep(
             final_id,
             actual_head[:12],
         )
+    return Ok((fresh, baseline, prev_baseline_commit, actual_head))
+
+
+# frob:doc \
+# docs/modules/tickets-verify-sweep.md#deferred-post-land-sweep-rapid-only-t-1684
+# frob:ticket T-2077
+# frob:ticket T-1952
+# frob:ticket T-2595
+# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_unmeasurable_check_leaves_the_baseline_untouched  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_first_sweep_records_a_baseline_and_files_nothing  # noqa: E501
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_no_new_findings_is_clean
+# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_new_findings_file_a_ticket_and_rebaseline  # noqa: E501
+# frob:tests tests/unit/test_rapid_sweep.py::TestDeferredSweepBaselineCasRace.test_a_sweep_computed_against_a_stale_tree_does_not_clobber_a_fresher_ones_baseline  # noqa: E501
+# frob:waive AFFECT001 reason="T-2595 only replaces the baseline write's internal \
+# mechanics (an unconditional unlocked write becomes a locked compare-and-swap) -- it \
+# does not change this function's own documented external contract (still: one check \
+# per sweep, file a ticket for new findings, record the fresh set as the next \
+# baseline). docs/modules/tickets-verify-sweep.md is a shared doc other in-flight \
+# tickets also touch; a prose note on the internal race-safety mechanism belongs in a \
+# follow-up doc pass, not blocking this bug fix, matching T-2521's identical posture \
+# on this same file just above"
+# frob:ticket T-1684
+# frob:ticket T-2929
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_stale_baseline_refuses_to_file_and_records_debt  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+# frob:tests \
+# tests/unit/test_rapid_sweep.py::TestDeferredSweepRun.test_fresh_baseline_files_normally_no_new_noise  # noqa: E501
+# frob:waive FMT001 reason="single-line frob:tests directive naming a long test node \
+# id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
+# unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
+# waivers"
+def run_deferred_post_land_sweep(
+    root: Path, final_id: str, commit_sha: str
+) -> Result[str | None, RapidSweepError]:
+    """The detached child's whole job (`frob ticket sweep-async`): run one
+    unscoped `frob check` over `root`, diff it against the rolling
+    baseline, file a bug ticket for anything new, and record the fresh set
+    as the next baseline.
+
+    Returns the filed ticket id, or `Ok(None)` when the sweep was clean or
+    had no baseline to compare against. `Err(Unmeasurable)` when the check
+    itself produced no parsable error set -- the baseline is left
+    untouched in that case, so an unmeasurable run degrades to "compare
+    against the last set we actually trust" rather than silently adopting
+    a guess as ground truth."""
+    measured = _measure_fresh_and_write_baseline(root, final_id, commit_sha)
+    if measured.is_err:
+        return Err(measured.danger_err)
+    fresh, baseline, prev_baseline_commit, actual_head = measured.danger_ok
+
     if baseline is None:
         _log.warning(
             "rapid sweep: %s had no rolling baseline -- recorded %d "
@@ -3230,6 +3343,31 @@ def run_deferred_post_land_sweep(
         )
         return Ok(None)
 
+    if _refuse_filing_for_stale_verification_queue(
+        root, final_id, new_findings, actual_head
+    ):
+        return Ok(None)
+
+    return Ok(
+        _attribute_and_file_regression(
+            root, final_id, prev_baseline_commit, actual_head, new_findings
+        )
+    )
+
+
+# frob:ticket T-2009
+def _attribute_and_file_regression(
+    root: Path,
+    final_id: str,
+    prev_baseline_commit: str | None,
+    actual_head: str,
+    new_findings: frozenset[tuple[str, str]],
+) -> str | None:
+    """T-2929 (ARCH001 split of `run_deferred_post_land_sweep`):
+    the tail this function's caller reaches once `new_findings` is
+    non-empty and the stale-verification-queue refusal above did not
+    fire -- T-2009's multi-land attribution, `_file_regression_ticket`,
+    and the final log line naming what got filed."""
     # T-2009: only trust `final_id` as the sole attribution when the
     # window between the previous baseline and this sweep's actual HEAD
     # contains exactly one land -- otherwise name every land that
@@ -3255,7 +3393,7 @@ def run_deferred_post_land_sweep(
         actual_head[:12],
         filed or "UNFILED",
     )
-    return Ok(filed)
+    return filed
 
 
 # frob:ticket T-1684

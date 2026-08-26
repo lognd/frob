@@ -1484,6 +1484,42 @@
       "old_digest": null,
       "reason": "T-2610: removed the redundant WIRE001 waiver comment on GateRunReplay.age_s (superseded by T-2746's resolver fix); no behavior change, docs/modules/serve.md#whole-run-replay-t-2585's whole-run-replay description remains accurate",
       "ref": "src/frob/gates/_gate_cache.py::GateRunReplay"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-25",
+      "facet": "body",
+      "new_digest": "39e4dcee5978bb6caff4041d76493a4b707f1f3387d099fd0fac8988bb1bf06c",
+      "old_digest": "62d877f3f3ade6ac2302b34dd9107589ec28adb0cbc27fc55d9ca5abf6829863",
+      "reason": "T-2929: the stale-verification-queue refusal is a new early-return before the existing attribution/filing logic; the rest of the function's documented contract (one check per sweep, diff against the rolling baseline, file+rebaseline on new findings) is unchanged and re-verified against the touched-set test suite",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-25",
+      "facet": "sig",
+      "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "reason": "T-2929: the stale-verification-queue refusal is a new early-return before the existing attribution/filing logic; the rest of the function's documented contract (one check per sweep, diff against the rolling baseline, file+rebaseline on new findings) is unchanged and re-verified against the touched-set test suite",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-25",
+      "facet": "body",
+      "new_digest": "a0a43eff3c9eca92bbcebd25afb50e57d659638682599b131dce25ce7d06f860",
+      "old_digest": "39e4dcee5978bb6caff4041d76493a4b707f1f3387d099fd0fac8988bb1bf06c",
+      "reason": "T-2929: further ARCH001 split extracted _measure_fresh_and_write_baseline and _attribute_and_file_regression; run_deferred_post_land_sweep is now a thin orchestrator over both plus the stale-queue refusal, same documented contract as before",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-25",
+      "facet": "sig",
+      "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "reason": "T-2929: further ARCH001 split extracted _measure_fresh_and_write_baseline and _attribute_and_file_regression; run_deferred_post_land_sweep is now a thin orchestrator over both plus the stale-queue refusal, same documented contract as before",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     }
   ],
   "entries": [
@@ -1608,7 +1644,7 @@
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
     },
     {
-      "digest": "62d877f3f3ade6ac2302b34dd9107589ec28adb0cbc27fc55d9ca5abf6829863",
+      "digest": "a0a43eff3c9eca92bbcebd25afb50e57d659638682599b131dce25ce7d06f860",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     },

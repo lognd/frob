@@ -1,8 +1,8 @@
 ---
-id: T-draft-7de6fa5c
+id: T-2929
 title: rapid verification debt drifts silently and poisons attribution (post-land
   sweep files false regressions on a stale baseline)
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-25'
@@ -50,7 +50,10 @@ scope_changes:
   reason: frob ack writes doc-drift acknowledgements to frob.lock
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+evidence:
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_fresh_baseline_files_normally_no_new_noise
+designated_repro_test: tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
 threat: null
 component: null
 anchor: false

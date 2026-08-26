@@ -1342,6 +1342,31 @@ baseline. Semantics:
 - **Every sweep, red or green, rewrites the baseline.** An error already
   filed as a ticket must not be re-filed by the next land; from then on
   the filed ticket is the record.
+- **New pairs found, but the verification queue is stale (T-2929):**
+  refuse to file. Attribution's own TIER 2
+  (`frob.verify._attribution`) resolves "which land caused this" from
+  the durable `VerifyQueueEntry` batch the `frob.verify` queue
+  accumulated since the last watermark advance -- the exact window
+  `frob.verify.rapid_soft_warning` already measures and warns about
+  (`frob verify status`). A stale watermark means that batch spans far
+  more history than "the one land that just happened", so a new
+  `(rule_id, file)` pair can look like a regression while being fully
+  unrelated to the sweep that noticed it -- measured directly: 3 of 4
+  sweep-filed regression tickets in one drive (T-2868, T-2881, T-2882,
+  all DOC006 doc-drift findings that flip as OTHER tickets get
+  archived, not as code changes) were dropped after independent
+  re-measurement showed them pre-existing. `run_deferred_post_land_
+  sweep` now checks `frob.verify.rapid_soft_warning(root)` before
+  filing; when it fires, the sweep logs the refusal at ERROR (naming
+  the exact staleness reason) and records a NEW `rapid-debt.jsonl`
+  kind, `post-land-sweep-attribution-skipped-stale-baseline`, via the
+  same `record_rapid_debt`/`_commit_rapid_debt` idiom the deferred-
+  sweep-deferred line above already uses -- durable and reviewable,
+  not a log line that scrolls away. The baseline is still rewritten to
+  the freshly measured set regardless (unchanged), so the next sweep,
+  once the debt is drained (`frob verify now`), compares against a
+  clean, current baseline rather than compounding the stale window
+  further.
 
 **The debt line commits itself (T-1698).** `rapid-debt.jsonl` is tracked
 on purpose, and the deferred-sweep record is written AFTER the land
