@@ -76,9 +76,6 @@ acceptance:
   evidence:
   - tests/test_vet.py::TestEcosystemRules::test_python_setup_py_cmdclass_flagged
   - tests/test_vet.py::TestEcosystemRules::test_python_pth_file_flagged
-- text: given the family's gate module, when its severity is read, then it is ERROR
-    not WARNING
-  evidence: []
 acceptance_amendments:
 - op: replace
   index: 0
@@ -110,6 +107,30 @@ acceptance_amendments:
     children -- rewriting this criterion to match what this ticket itself
 
     delivers rather than leaving it permanently unbound.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: remove
+  index: 1
+  old_text: given the family's gate module, when its severity is read, then it is
+    ERROR not WARNING
+  new_text: null
+  reason: 'Promotion (WARN -> ERROR) is gated on the family reaching zero repo-wide;
+
+    this ticket only closes 1 of 557 findings before decomposing the rest into
+
+    sibling tickets. Promoting now would red the tree for every other agent
+
+    touching a file with an untriaged duplicate. Removing this criterion from
+
+    T-2378 -- promotion belongs to whichever future ticket actually drives the
+
+    last sibling''s cluster to zero (parent chain stays T-2378/T-0969, tracked
+
+    via the drafts filed this dispatch and whatever further children they
+
+    spawn).
 
     '
   actor: logan
