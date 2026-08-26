@@ -2,7 +2,7 @@
 id: T-2981
 title: windows-latest CI fails at Typecheck on main after passing native build, both
   cargo suites and lint
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
