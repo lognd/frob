@@ -117,16 +117,11 @@ def guarded_subprocess_run(
     return Ok(proc)
 
 
-# frob:tests \
-# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_utf8_replace_when_text_true_and_no_encoding
-# frob:tests \
-# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_when_universal_newlines_true
-# frob:tests \
-# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_encoding
-# frob:tests \
-# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_errors
-# frob:tests \
-# tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_no_op_without_text_mode
+# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_utf8_replace_when_text_true_and_no_encoding  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_injects_when_universal_newlines_true  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_encoding  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_never_overrides_explicit_errors  # noqa: E501
+# frob:tests tests/unit/test_process_guard.py::TestDefaultTextEncoding.test_no_op_without_text_mode  # noqa: E501
 def _default_text_encoding(kwargs: dict[str, object]) -> dict[str, object]:
     """T-2953: when a caller asks for text mode (`text=True` or the older
     `universal_newlines=True`) without naming an explicit `encoding=`,

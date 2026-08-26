@@ -140,7 +140,7 @@ class TestDefaultTextEncoding:
             [
                 "python3",
                 "-c",
-                "import sys; sys.stdout.buffer.write(bytes([0x8f])); sys.stdout.buffer.flush()",
+                "import sys; sys.stdout.buffer.write(bytes([0x8f]))",
             ],
             capture_output=True,
             text=True,
