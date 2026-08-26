@@ -20,7 +20,6 @@ from frob.vet._models import Dependency
 from frob.vet._source import _read_text_or_empty
 
 
-
 # frob:enforces CHK-GATE-VET-PY001
 def _setup_py_violation(
     dep: Dependency, source_dir: Path, lockfile_name: str
