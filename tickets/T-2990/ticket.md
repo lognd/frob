@@ -14,10 +14,42 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/refactor/**
+- docs/commands/refactor.md
+- docs/design/refactor-verb.md
+- tests/**/test_refactor*.py
+- tests/**/refactor/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/refactor/**
+  reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/commands/refactor.md
+  reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/design/refactor-verb.md
+  reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/**/test_refactor*.py
+  reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/**/refactor/**
+  reason: 'module-move verb: shared refactor engine, its CLI, docs, and tests'
+  actor: logan
+  at: '2026-08-26'
 body_changes:
 - mode: set
   reason: 'record the owner directives: reuse the existing move machinery where it
