@@ -151,9 +151,9 @@
       "ticket": "T-2923"
     },
     "stratamod::fs.write": {
-      "accepted_count": 4,
-      "reason": "T-2923: src/frob/strata/_shrink.py declares this grant (apply_shrink's real fs.write site, Path.write_text); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
-      "ticket": "T-2923"
+      "accepted_count": 5,
+      "reason": "T-2910: src/frob/strata/_bootstrap.py declares this grant (write_bootstrap_model's real fs.write site, Path.write_text -- frob sys init's one-time model write); confirmed genuine by reading the declaring code, not assumed from the ticket title alone.",
+      "ticket": "T-2910"
     },
     "stratamod::net.connect": {
       "accepted_count": 1,
@@ -186,9 +186,9 @@
       "ticket": "T-1628"
     },
     "testsuite::exec": {
-      "accepted_count": 197,
-      "reason": "T-2001 auto-baseline: this land's own diff grew exec on testsuite from 196 to 197 site(s) (fix_sys111_capability_ratchet_sync)",
-      "ticket": "T-2001"
+      "accepted_count": 198,
+      "reason": "T-2910: tests/unit/strata/test_bootstrap.py and tests/unit/test_app_runners_batch7.py's _git_init_and_track helpers declare a real subprocess.run([\"git\", ...]) exec site (frob sys init's own tests need a real git index for tracked_files); confirmed genuine by reading the declaring test file, not assumed from the ticket title alone.",
+      "ticket": "T-2910"
     },
     "testsuite::fetch_url": {
       "accepted_count": 3,

@@ -2051,3 +2051,74 @@ flow f1 : evil -> web
         with caplog.at_level("ERROR"), pytest.raises(SystemExit):
             sys_run(cfg)
         assert "is a file" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# sys init (T-2910, child of the T-2920 shrink-only ratchet epic)
+# ---------------------------------------------------------------------------
+
+
+def _git_init_and_track(root: Path) -> None:
+    """`git init` + `git add -A` -- `_run_init`'s own `tracked_files`
+    substrate reads `git ls-files`, which needs a real index."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=root, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+
+
+class TestSysInit:
+    """`frob sys init` CLI dispatch: writes a fresh model, refuses over an
+    existing one, and `--check` writes nothing."""
+
+    def test_writes_a_model_for_a_repo_with_none(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        (tmp_path / "src" / "pkg" / "alpha").mkdir(parents=True)
+        (tmp_path / "src" / "pkg" / "alpha" / "handler.py").write_text(
+            "x = 1\n", encoding="utf-8"
+        )
+        _git_init_and_track(tmp_path)
+        cfg = AppConfig(sys_command="init", sys_path=tmp_path)
+
+        with caplog.at_level("INFO"):
+            sys_run(cfg)
+
+        design_dir = tmp_path / "design"
+        written = list(design_dir.glob("*.strata"))
+        assert len(written) == 1
+        text = written[0].read_text(encoding="utf-8")
+        assert "node pkg_alpha" in text
+        assert 'may "' not in text
+
+    def test_check_prints_without_writing(self, tmp_path: Path, capsys) -> None:
+        (tmp_path / "src" / "pkg" / "alpha").mkdir(parents=True)
+        (tmp_path / "src" / "pkg" / "alpha" / "handler.py").write_text(
+            "x = 1\n", encoding="utf-8"
+        )
+        _git_init_and_track(tmp_path)
+        cfg = AppConfig(sys_command="init", sys_path=tmp_path, sys_init_check=True)
+
+        sys_run(cfg)
+
+        assert not (tmp_path / "design").exists()
+        out = capsys.readouterr().out
+        assert "node pkg_alpha" in out
+
+    def test_refuses_when_a_model_already_exists(
+        self, tmp_path: Path, caplog
+    ) -> None:
+        (tmp_path / "src" / "pkg").mkdir(parents=True)
+        (tmp_path / "src" / "pkg" / "a.py").write_text("x = 1\n", encoding="utf-8")
+        (tmp_path / "design").mkdir()
+        (tmp_path / "design" / "existing.strata").write_text(
+            "module existing\n", encoding="utf-8"
+        )
+        _git_init_and_track(tmp_path)
+        cfg = AppConfig(sys_command="init", sys_path=tmp_path)
+
+        with caplog.at_level("ERROR"), pytest.raises(SystemExit) as exc:
+            sys_run(cfg)
+
+        assert exc.value.code == 1
+        assert "refusing to overwrite" in caplog.text

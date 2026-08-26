@@ -2,7 +2,7 @@
 id: T-2910
 title: 'frob sys init: derive a starting strata model so a new repo gets value on
   day one'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-25'

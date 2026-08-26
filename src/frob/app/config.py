@@ -1089,7 +1089,7 @@ class AppConfig(BaseModel):
     # trace; T-1925 threats; T-1927 capacity; T-2923 shrink -- `check` was
     # deliberately dropped, T-1926)
     sys_command: str | None = None  # plan|doc|export|audit|trace|threats|capacity
-    # |shrink -- see the block comment above for verb-by-verb detail
+    # |shrink|init -- see the block comment above for verb-by-verb detail
     sys_path: Path | None = None
     sys_apply: bool = False
     sys_view: str = "owasp-top-10"  # T-0085: `frob sys doc`'s baseline view
@@ -1108,6 +1108,12 @@ class AppConfig(BaseModel):
     # This is the ONLY .strata-writing sys verb and the ONLY direction it
     # ever writes: shrink-only, never widening (T-2920 epic).
     sys_shrink_check: bool = False
+    # T-2910: `frob sys init [--check]` -- derive a starting node/code/
+    # flow skeleton from the repo's own package layout + import graph for
+    # a repo with NO existing .strata model. Refuses if one already
+    # exists (bootstrap, not sync -- see frob.strata._bootstrap module
+    # docstring). --check prints what would be written without writing.
+    sys_init_check: bool = False
 
     # deploy (T-0257: `frob deploy generate` -- install/status/uninstall
     # bash compiled from std.host HostManifest facts)

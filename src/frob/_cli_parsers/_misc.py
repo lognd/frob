@@ -679,21 +679,23 @@ def _add_serve_parser(sub) -> None:
 def _add_sys_parser(sub) -> None:
     """Register the `frob sys` subcommand group: `plan` (T-0084), `doc`
     (T-0085), `export` (T-0086), `trace` (T-1480), `threats` (T-1925),
-    `capacity` (T-1927), and `shrink` (T-2923) today -- every roadmap-
-    phase-5 verb (docs/strata/roadmap.md "CLI surface (target)") now
-    exists -- extend this parser with one more `sys_sub.add_parser` per
-    future verb, never replace it. `audit` (T-0115) is the checking
-    counterpart to `doc`; `check` was deliberately dropped from the
-    target list (T-1926) as a duplicate of `audit`. `shrink` is
-    DELIBERATELY the only verb in this group that ever WRITES a `.strata`
-    file's declared surface, and only ever in the shrink direction (T-2920
-    epic): dropping a `may` capability atom this repo's own scanner never
-    observes. It has no flag that widens anything."""
+    `capacity` (T-1927), `shrink` (T-2923), and `init` (T-2910) today --
+    every roadmap-phase-5 verb (docs/strata/roadmap.md "CLI surface
+    (target)") now exists -- extend this parser with one more `sys_sub.
+    add_parser` per future verb, never replace it. `audit` (T-0115) is
+    the checking counterpart to `doc`; `check` was deliberately dropped
+    from the target list (T-1926) as a duplicate of `audit`. `shrink` and
+    `init` are the only two verbs in this group that ever WRITE a
+    `.strata` file: `shrink` only ever narrows an EXISTING model's `may`
+    surface (T-2920 epic), and `init` only ever writes a brand-new model
+    for a repo with NONE yet (refuses otherwise) -- neither has a flag
+    that widens an existing declared surface."""
     # -- sys -------------------------------------------------------------------
     # frob:ticket T-0167
     # frob:ticket T-1925
     # frob:ticket T-1927
     # frob:ticket T-2923
+    # frob:ticket T-2910
     sys_p = sub.add_parser(
         "sys",
         help="strata design-model applications (plan, doc, export, ...)",
@@ -707,6 +709,7 @@ def _add_sys_parser(sub) -> None:
     _add_sys_threats_parser(sys_sub)
     _add_sys_capacity_parser(sys_sub)
     _add_sys_shrink_parser(sys_sub)
+    _add_sys_init_parser(sys_sub)
 
 
 _SYS_EPILOG = (
@@ -717,6 +720,8 @@ _SYS_EPILOG = (
     "  frob sys doc                     render the threat-catalog audit matrix\n"
     "  frob sys audit                   check per-family exhaustiveness\n"
     "  frob sys export --format seccomp design/frob.strata\n"
+    "  frob sys init                    bootstrap a starting model (no model yet)\n"
+    "  frob sys init --check            preview the bootstrap, write nothing\n"
     "\n"
     "convention: for plan/doc/audit, <path> (default '.') is the REPO\n"
     "ROOT -- the command appends the configured design dir itself\n"
@@ -865,6 +870,29 @@ def _add_sys_shrink_parser(sys_sub) -> None:
         dest="sys_shrink_check",
         action="store_true",
         help="report what would be dropped without writing any file",
+    )
+
+
+# frob:ticket T-2910
+def _add_sys_init_parser(sys_sub) -> None:
+    """Register `frob sys init [--check] [path]` (T-2910, child of the
+    T-2920 shrink-only ratchet epic): the ONE-TIME bootstrap verb that
+    derives a starting node/code/flow skeleton from a repo's own package
+    layout and Python import graph, for a repo with NO existing `.strata`
+    model at all. Refuses if one already exists -- `frob sys shrink` is
+    the ongoing-maintenance verb from that point on, never this one."""
+    sys_init_p = sys_sub.add_parser(
+        "init",
+        help="derive a starting node/code/flow skeleton for a repo with "
+        "no existing .strata model (T-2910) -- refuses if one exists; "
+        "never emits a may= capability line (see frob.strata._bootstrap)",
+    )
+    sys_init_p.add_argument("sys_path", metavar="path", nargs="?", default=".")
+    sys_init_p.add_argument(
+        "--check",
+        dest="sys_init_check",
+        action="store_true",
+        help="print the derived skeleton without writing any file",
     )
 
 

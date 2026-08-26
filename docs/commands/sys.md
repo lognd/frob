@@ -416,3 +416,59 @@ capability) -- T-1531/T-1545 policy that T-2920 explicitly reverses;
 T-2922 unwires that module's live caller. `shrink` shares no code with
 it beyond a read-only brace-depth text-scanning helper
 (`node_body_span`).
+
+
+## `frob sys init` (T-2910)
+
+<a id="frob-sys-init-t-2910"></a>
+
+Also part of the T-2920 epic, and the second (and last) verb in this
+group that writes a `.strata` file. `frob sys init` is a ONE-TIME
+BOOTSTRAP for a repo with NO existing design model at all -- it derives
+a starting skeleton from the repo's own package layout and Python import
+graph:
+
+- one `node` per component, each with a single `code=<glob>` matching a
+  real directory in the repo;
+- one `flow` per direction in which two components' files actually
+  import each other today (`frob.graph.imports`'s resolved-edge
+  substrate -- Python only, v0).
+
+It DELIBERATELY never emits a `may=` line, not even commented out. A
+`may=` capability list is a CEILING meant to SHRINK a node's declared
+interface below what its code happens to do; deriving that ceiling FROM
+observation would make it equal reality on day one -- a rubber stamp
+with no enforcement teeth, the exact mistake `frob.strata._sync_may`'s
+widening writer already made and T-2920 exists to stop repeating. Run
+`frob check --only sys` against the written model instead: SYS100/SYS103
+name exactly which `may=` atoms a human should declare, node by node,
+which is the intended next step, not something this bootstrap should
+shortcut.
+
+`frob sys init` REFUSES, writing nothing, if `path`'s design dir already
+contains any `.strata` file -- this is not a sync and never becomes one.
+Once a model exists, `frob sys shrink` (above) is the ongoing-maintenance
+verb; there is no "re-run init to update" mode.
+
+```
+frob sys init                  # bootstrap a model, write it
+frob sys init --check          # print the derived skeleton, write nothing
+frob sys init /path/to/repo    # a different (model-less) repo root
+```
+
+A repo with no trackable Python source produces a model with zero nodes
+and zero flows -- reported plainly as "nothing to derive," never a
+silent empty file. A repo whose Python source lives in exactly one
+top-level package (`src/pkg/**`, the common single-package-project
+shape) gets one node per SUBdirectory of that package instead of one
+useless whole-package node with no possible flow.
+
+### CLI wiring
+
+<!-- frob:describes src/frob/app/sys_runner.py::_run_init -->
+
+### See also
+
+`frob.strata._bootstrap` is the pure derive/render module this verb
+wraps; its own module docstring carries the full T-2920 design rationale
+in one place rather than duplicated here.

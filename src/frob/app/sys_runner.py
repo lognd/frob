@@ -93,6 +93,11 @@ from frob.strata import (
     render_audit_matrix,
     threat_violations_for_boundary,
 )
+from frob.strata._bootstrap import (
+    derive_bootstrap_model,
+    existing_design_files,
+    write_bootstrap_model,
+)
 from frob.strata._multifile import elaborate_merged
 from frob.strata._parse import parse_module
 from frob.strata._shrink import apply_shrink, shrink_report
@@ -1217,16 +1222,109 @@ def _run_shrink(cfg: AppConfig) -> None:
     _log.info("sys shrink: wrote %d file(s): %s", len(written), list(written))
 
 
+# ---------------------------------------------------------------------------
+# init (T-2910, child of the T-2920 shrink-only ratchet epic)
+# ---------------------------------------------------------------------------
+
+
+# frob:ticket T-2910
+def _refuse_if_model_exists(root: Path, design_dir: str) -> None:
+    """Exit 1 if `root/design_dir` already has ANY `.strata` file -- the
+    whole bootstrap-not-sync contract in one guard, split out of
+    `_run_init` so that function's own body stays a plain sequence
+    (ARCH103 decision-point budget)."""
+    existing = existing_design_files(root, design_dir)
+    if not existing:
+        return
+    _log.error(
+        "sys init: %s already has %d .strata file(s) under %s -- refusing "
+        "to overwrite an existing model (this is a one-time bootstrap, "
+        "not a sync); use `frob sys shrink` to tighten an existing "
+        "model's may= surface instead: %s",
+        root,
+        len(existing),
+        design_dir,
+        [str(p) for p in existing],
+    )
+    sys.exit(1)
+
+
+# frob:ticket T-2910
+def _log_bootstrap_model(model) -> None:  # noqa: ANN001
+    """Log every derived node/flow in `model` at INFO, matching
+    `_print_shrink_report`'s own per-item logging convention -- split out
+    of `_run_init` for the same ARCH103 reason `_refuse_if_model_exists`
+    is."""
+    _log.info(
+        "sys init: derived %d node(s), %d flow(s) from %d scanned file(s)",
+        len(model.components),
+        len(model.flows),
+        model.scanned_file_count,
+    )
+    for comp in model.components:
+        _log.info(
+            "sys init: node %s <- %s (%d file(s))",
+            comp.id,
+            list(comp.code_globs),
+            comp.file_count,
+        )
+    for flow in model.flows:
+        _log.info(
+            "sys init: flow %s -> %s (%d import edge(s))",
+            flow.src,
+            flow.dst,
+            flow.edge_count,
+        )
+
+
+# frob:ticket T-2910
+def _run_init(cfg: AppConfig) -> None:
+    """`frob sys init [--check] [path]`: the ONE-TIME bootstrap verb --
+    derives a starting node/`code=`/`flow` skeleton from `path`'s own
+    package layout and Python import graph (`frob.strata._bootstrap`;
+    see that module's docstring for the full design and why it never
+    emits a `may=` line). Refuses, writing nothing, if `path` already has
+    ANY `.strata` file under its design dir -- this is a bootstrap for a
+    model-less repo, never a sync; `frob sys shrink` is the ongoing-
+    maintenance verb once a model exists. `--check` prints the derived
+    text without writing it, mirroring `sys shrink --check`'s own
+    report-only posture."""
+    root = _resolve_design_root(cfg, "init")
+    design_dir = _design_dir(root)
+    _refuse_if_model_exists(root, design_dir)
+    result = derive_bootstrap_model(root, design_dir)
+    if result.is_err:
+        _log.error("sys init: %s", result.danger_err)
+        sys.exit(1)
+    model = result.danger_ok
+    if not model.components:
+        _log.warning(
+            "sys init: %s has no trackable Python source (%d file(s) scanned) "
+            "-- nothing to derive",
+            root,
+            model.scanned_file_count,
+        )
+        return
+    _log_bootstrap_model(model)
+    if cfg.sys_init_check:
+        Renderer.for_stream(sys.stdout).line(model.text)
+        _log.info("sys init --check: nothing written; run without --check to write")
+        return
+    out_path = write_bootstrap_model(root, model, design_dir)
+    _log.info("sys init: wrote %s", out_path)
+
+
 # frob:doc docs/modules/app.md#runners
 # frob:doc docs/strata/host.md#resource-contention-sys2xx-t-0699
 # frob:doc docs/strata/reliability.md#rel2xx-timeout-obligation-t-0640
 # frob:doc docs/commands/sys.md#frob-sys-shrink-t-2923
+# frob:doc docs/commands/sys.md#frob-sys-init-t-2910
 # frob:waive AFFECT001 reason="the host.md/reliability.md anchors document the SYS2xx \
 # resource-contention/REL2xx reliability CHECKS run() dispatches into (audit's own \
 # machinery), unchanged by this diff; docs/commands/sys.md's own PRE-EXISTING drift is \
 # tracked by a filed follow-up (draft T-draft-84b54204, out of this ticket's declared \
-# scope) rather than hand-patched here -- this diff's OWN new shrink dispatch is \
-# separately documented via the new frob:doc anchor just added above, not folded into \
+# scope) rather than hand-patched here -- this diff's OWN new shrink/init dispatch is \
+# separately documented via the new frob:doc anchors just added above, not folded into \
 # that pre-existing waiver"
 # frob:ticket T-0084
 # frob:ticket T-0085
@@ -1236,21 +1334,25 @@ def _run_shrink(cfg: AppConfig) -> None:
 # frob:ticket T-1925
 # frob:ticket T-1927
 # frob:ticket T-2923
+# frob:ticket T-2910
 # frob:tests tests/unit/test_app_runners_batch7.py::TestSysRunnerDispatch.test_unknown_command_exits_1  # noqa: E501
 def run(cfg: AppConfig) -> None:
     """Dispatch `frob sys <command>`: `plan` (T-0084), `doc` (T-0085),
     `export` (T-0086), `audit` (T-0115), `trace` (T-1480), `threats`
-    (T-1925), `capacity` (T-1927), and `shrink` (T-2923) all exist today
-    -- every roadmap-phase-5 verb (docs/strata/roadmap.md "CLI surface
-    (target)") is now wired; extend this dispatch with any future verb,
-    never replace it. `check` was deliberately dropped from the target
-    CLI surface rather than built (T-1926: it would duplicate `audit`).
-    T-1870: `sync-interface` (T-1150) used to be a branch here; deleted
-    along with its writer, per an explicit owner directive that no code
-    path may auto-update declared public-symbol surface -- `shrink`
-    (T-2923, T-2920 epic) is DIFFERENT: it only ever DROPS a declared-but-
-    never-observed `may` capability, the sole safe auto-tightening
-    direction, never widens anything."""
+    (T-1925), `capacity` (T-1927), `shrink` (T-2923), and `init` (T-2910)
+    all exist today -- every roadmap-phase-5 verb (docs/strata/roadmap.md
+    "CLI surface (target)") is now wired; extend this dispatch with any
+    future verb, never replace it. `check` was deliberately dropped from
+    the target CLI surface rather than built (T-1926: it would duplicate
+    `audit`). T-1870: `sync-interface` (T-1150) used to be a branch here;
+    deleted along with its writer, per an explicit owner directive that
+    no code path may auto-update declared public-symbol surface --
+    `shrink` (T-2923) and `init` (T-2910), both T-2920-epic verbs, are
+    DIFFERENT: `shrink` only ever DROPS a declared-but-never-observed
+    `may` capability from an EXISTING model, and `init` only ever writes
+    a BRAND-NEW model's node/code/flow skeleton for a repo with none yet
+    (refusing otherwise) -- neither ever widens an existing declared
+    surface, and `init` never emits a `may=` line at all."""
     if cfg.sys_command == "plan":
         _run_plan(cfg)
         return
@@ -1275,7 +1377,10 @@ def run(cfg: AppConfig) -> None:
     if cfg.sys_command == "shrink":
         _run_shrink(cfg)
         return
+    if cfg.sys_command == "init":
+        _run_init(cfg)
+        return
     _log.error(
-        "usage: frob sys <plan|doc|export|audit|trace|threats|capacity|shrink> ..."
+        "usage: frob sys <plan|doc|export|audit|trace|threats|capacity|shrink|init> ..."
     )
     sys.exit(1)
