@@ -14,10 +14,54 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/strata/_bootstrap.py
+- src/frob/app/sys_runner.py
+- src/frob/app/config.py
+- src/frob/_cli_parsers/_misc.py
+- docs/commands/sys.md
+- tests/unit/strata/test_bootstrap.py
+- tests/unit/test_app_runners_batch7.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/strata/_bootstrap.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/sys_runner.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/app/config.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: src/frob/_cli_parsers/_misc.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: docs/commands/sys.md
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/strata/test_bootstrap.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
+- op: add
+  glob: tests/unit/test_app_runners_batch7.py
+  reason: 'sys init bootstrap: new strata module + CLI wiring (T-2910)'
+  actor: logan
+  at: '2026-08-25'
 triage_changes:
 - field: parent
   old_value: null
