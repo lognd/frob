@@ -14,10 +14,30 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- strata-core/src/graph/**
+- strata-core/src/lib.rs
+- strata-core/Cargo.toml
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: strata-core/src/graph/**
+  reason: new graph kernel module beside parse, plus pyo3 wiring in lib.rs
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/src/lib.rs
+  reason: new graph kernel module beside parse, plus pyo3 wiring in lib.rs
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/Cargo.toml
+  reason: new graph kernel module beside parse, plus pyo3 wiring in lib.rs
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: parent
   old_value: null
