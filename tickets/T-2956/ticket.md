@@ -13,6 +13,20 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/gates/__init__.py
+- src/frob/gates/_arch_schema.py
+- src/frob/gates/_docblocks.py
+- src/frob/gates/_docblocks_schema.py
+- src/frob/gates/_flag_coverage.py
+- src/frob/gates/_gates_schema.py
+- src/frob/gates/_native_schema.py
+- src/frob/gates/_profile_schema.py
+- src/frob/gates/_refs_schema.py
+- src/frob/gates/_test_runner_schema.py
+- src/frob/gates/_testing_schema.py
+- src/frob/gates/_toplevel_scalar_schema.py
+- tickets/T-2956/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -26,6 +40,71 @@ scope_changes:
 - op: remove
   glob: src/frob/gates/**
   reason: narrowing to actually-touched files
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/__init__.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_arch_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_docblocks.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_docblocks_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_flag_coverage.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_gates_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_native_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_profile_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_refs_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_test_runner_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_testing_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_toplevel_scalar_schema.py
+  reason: schema-family frob:waive directives + ticket ledger
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-2956/**
+  reason: schema-family frob:waive directives + ticket ledger
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
