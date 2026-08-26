@@ -37,7 +37,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 4c5feadc6c5e12701c949970d4cff7b3a0f19cd3
 ---
 T-2645 landed a `frob:waive WIRE001` on `_unlanded.py::_remove_scratch_file`
 without a `follow_up="T-####"` attribute -- WIRE002 now flags it repo-wide
