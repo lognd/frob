@@ -17,6 +17,7 @@ runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_refs.py
 - tests/unit/gates/test_refs.py
+- tests/test_refs_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -37,6 +38,11 @@ scope_changes:
 - op: add
   glob: tests/unit/gates/test_refs.py
   reason: scope closure requires test edge for ref_gate
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_refs_gate.py
+  reason: scope closure requires test edge for _native_stub_pairs/ref_gate
   actor: logan
   at: '2026-08-26'
 triage_changes:
