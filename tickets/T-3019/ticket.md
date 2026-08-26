@@ -19,6 +19,7 @@ scope:
 - tests/unit/gates/test_refs.py
 - tests/test_refs_gate.py
 - src/frob/check/_python.py
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +52,11 @@ scope_changes:
   reason: 'root cause of PRE001/SCOPE001 spurious findings: uv run ruff invoked with
     the target project as implicit uv-run cwd creates an untracked uv.lock as a side
     effect, which the diff-driven gates then see as a real touched file'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_check.py
+  reason: test coverage for the cwd fix in _run_ruff/_ruff_format_result
   actor: logan
   at: '2026-08-26'
 triage_changes:
