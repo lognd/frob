@@ -22,6 +22,7 @@ scope:
 - tickets/T-2573/ticket.md
 - tickets/T-2916/ticket.md
 - tickets/archive/T-0450/ticket.md
+- tickets/T-draft-21102fcc/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -88,6 +89,11 @@ scope_changes:
   glob: tickets/archive/T-0450/ticket.md
   reason: 'T-0450 lives under tickets/archive/ (the ledger anomaly itself: archived
     while still queued)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-21102fcc/**
+  reason: the T-0450 archive-anomaly follow-up ticket this triage filed
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
