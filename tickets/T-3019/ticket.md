@@ -21,6 +21,10 @@ scope:
 - src/frob/check/_python.py
 - tests/unit/test_check.py
 - tests/system/test_cli_check.py
+- tickets/T-draft-9710ccb7/**
+- tickets/T-draft-e2994af6/**
+- tickets/T-draft-e8a72726/**
+- tickets/T-draft-f6954f52/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -66,6 +70,30 @@ scope_changes:
     requires editing the shared _make_project fixture
   actor: logan
   at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-9710ccb7/**
+  reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
+    files are otherwise flagged outside scope
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-e2994af6/**
+  reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
+    files are otherwise flagged outside scope
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-e8a72726/**
+  reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
+    files are otherwise flagged outside scope
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-f6954f52/**
+  reason: draft tickets filed as follow-ups while working T-3019; their own ticket.md
+    files are otherwise flagged outside scope
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: priority
   old_value: medium
@@ -75,6 +103,13 @@ triage_changes:
     machinery itself, where killing a live process corrupts a land in flight
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_root_pyproject_and_frob_toml_are_exempt_with_no_declaration
+- tests/test_refs_gate.py::TestDefaultRootManifestExempt::test_nested_pyproject_toml_still_subject_to_ref001
+- tests/unit/test_check.py::TestRunRuffRealPaths::test_invokes_bare_ruff_not_uv_run
+- tests/unit/test_check.py::TestRunRuffAutofix::test_success_runs_fix_then_format_via_bare_ruff
+- tests/system/test_cli_check.py::TestCheckCleanProject::test_clean_code_exits_zero
+- tests/system/test_cli_check.py::TestCheckGatesStage::test_only_gates_passes_once_bound_and_tested
 designated_repro_test: null
 threat: null
 component: null
