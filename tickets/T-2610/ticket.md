@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_wire.py
 - src/frob/gates/_gate_cache.py
 - tests/unit/test_wire001_property_attribute_access.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -38,7 +39,15 @@ scope_changes:
     own test file per its own precedent
   actor: logan
   at: '2026-08-25'
-designated_repro_test: null
+- op: add
+  glob: frob.lock
+  reason: 'T-2610: frob ack of GateRunReplay''s affects-closure doc after removing
+    the redundant WIRE001 waiver writes to frob.lock'
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_read_as_keyword_argument_value_is_not_flagged
+designated_repro_test: tests/unit/test_wire001_property_attribute_access.py::TestWire001PropertyAttributeAccess::test_property_read_as_keyword_argument_value_is_not_flagged
 threat: null
 component: null
 anchor: false
