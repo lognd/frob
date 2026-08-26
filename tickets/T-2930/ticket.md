@@ -41,6 +41,13 @@ body_changes:
   at: '2026-08-26'
   old_length: 2157
   new_length: 2992
+- mode: append
+  reason: 'T-2930: add frob:no-behavior-change directive so BUG002 checks the correct
+    direction for this test-only fix'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 2991
+  new_length: 3298
 evidence:
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_on_missed_reparent_race
 - tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_when_already_reparented_before_entry
@@ -98,3 +105,5 @@ test_returns_false_off_linux). BUG002's confirmatory-only concern
 (evidence that passes at both parent and fix, proving nothing) does
 not apply in the usual sense since there is no diff-touched production
 code for a mutant to touch at all.
+
+frob:no-behavior-change reason="T-2930's fix touches only tests/unit/test_process_reap.py (a sys.platform pin on two mocked tests); no production code in src/frob/process/_reap.py changed, so the designated evidence must PASS at the parent commit too -- there is no behavior change for a mutant to kill."
