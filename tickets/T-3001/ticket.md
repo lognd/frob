@@ -14,10 +14,54 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/verify/*.py
+- src/frob/app/_check_chunking.py
+- docs/modules/tickets-verify-sweep.md
+- tests/unit/verify/test_drain.py
+- tests/unit/verify/test_worker.py
+- tests/unit/verify/test_backpressure.py
+- tests/unit/app/test_check_chunking.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/verify/*.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/_check_chunking.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-verify-sweep.md
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/verify/test_drain.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/verify/test_worker.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/verify/test_backpressure.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/app/test_check_chunking.py
+  reason: 'drain must succeed under load: budget/backoff fix to the verify drain worker'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
