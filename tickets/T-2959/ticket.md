@@ -16,8 +16,11 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
-no_scope_declared: false
-no_scope_declared_reason: null
+no_scope_declared: true
+no_scope_declared_reason: T-2959 is pure ticket-hygiene/metadata work (a mis-parented
+  epic edge fix), no source files under this ticket's own control -- the changed files
+  are all tickets/*/ticket.md, mutated exclusively via frob ticket set-parent/frob
+  ticket new, never a direct edit.
 designated_repro_test: null
 threat: null
 component: null
