@@ -2,7 +2,7 @@
 id: T-2944
 title: PLATFORM001 misses sys.platform-string guards; /proc-only worktree-liveness
   scan is permissive on macOS/Windows
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -20,10 +20,33 @@ scope:
 - src/frob/tickets/_leases.py
 - tests/unit/test_process_reap.py
 - tests/unit/test_land_finish_guard.py
+- docs/modules/process.md
+evidence_scope:
+- tests/test_walk_lint_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: docs/modules/process.md
+  reason: 'AFFECT001 requires docs/modules/process.md''s forkserver-reaping-t-2443
+    section to move alongside arm_parent_death_signal''s body change (a WARNING log
+    added to the sys.platform guard, T-2944''s Part 1 fix); needed to satisfy the
+    affects()-closure gate.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+evidence:
+- tests/test_walk_lint_gate.py::TestPlatform001StringGuard::test_silent_string_guard_fires
+- tests/test_walk_lint_gate.py::TestPlatform001StringGuard::test_logged_string_guard_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001StringGuard::test_real_platform_branch_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001StringGuard::test_boolop_guard_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001StringGuard::test_gate_fires_end_to_end
+- tests/test_walk_lint_gate.py::TestPlatform001BareImport::test_bare_import_fires
+- tests/test_walk_lint_gate.py::TestPlatform001BareImport::test_guarded_import_is_quiet
+- tests/test_walk_lint_gate.py::TestPlatform001BareImport::test_gate_fires_end_to_end
 designated_repro_test: null
 threat: null
 component: null
