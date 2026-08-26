@@ -1,0 +1,52 @@
+---
+id: T-2946
+title: Burn TICK004/TICK007 to zero via real ticket-queue triage, then promote
+state: queued
+kind: bug
+origin: human
+created: '2026-08-26'
+priority: medium
+parent: null
+tier: ticket
+sprint: null
+runs_last: false
+milestone: null
+runs_last_parallel_safe: false
+runs_last_parallel_safe_reason: null
+scope_breadth_ack: false
+scope_breadth_ack_reason: null
+no_scope_declared: false
+no_scope_declared_reason: null
+designated_repro_test: null
+threat: null
+component: null
+anchor: false
+anchor_reason: null
+land_commit: null
+---
+T-2372 burned TICK011 to zero and promoted it to ERROR (fixed a bare-word
+false-positive pattern plus repaired two genuine unticketed disclosures).
+TICK004 (7 live findings) and TICK007 (1 live finding) remain at WARN,
+unburned -- both are DATA-DRIVEN checks over the live ticket queue's real
+state, not code defects, so burning them honestly requires real
+ticket-queue triage on other tickets, not a code fix:
+
+TICK004 (queue rot, 7 findings):
+- T-0450 (archived directory, but state=queued -- a real ledger anomaly
+  worth investigating on its own before triaging its rot)
+- T-0969, T-1273 (epics, already decomposed -- these may be structurally
+  expected to keep firing until every child closes; worth checking
+  whether TICK004's own "already decomposed" branch should eventually
+  go silent once ALL children are terminal, not just noted)
+- T-1382, T-2391, T-2501, T-2573 (standalone high-priority tickets,
+  8-25 days old, need an owner decision: work, re-prioritize, or drop)
+
+TICK007 (undispatched-stale, 1 finding):
+- T-2916 ("frob is Linux-only in practice", critical priority) needs
+  dispatch or re-prioritization.
+
+Do NOT promote TICK004/TICK007 severity until the count is genuinely
+zero (T-2372's own body explicitly forbids promoting before the burn --
+it reds the tree). Re-measure with `frob check --json --only tickets`
+before starting and before claiming done, per T-2372's own measurement
+discipline.
