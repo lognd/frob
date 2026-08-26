@@ -31,10 +31,21 @@ findings:
   - src/frob/lang (facet=docblock)
 - - LANG003
   - src/frob/lang (facet=dup)
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+body_changes:
+- mode: append
+  reason: measurement, fix summary, BUG002 waiver for doc-only fix
+  actor: logan
+  at: '2026-08-26'
+  old_length: 2377
+  new_length: 4473
+evidence:
+- tests/test_gates.py::TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass
 designated_repro_test: null
 threat: null
 component: null
@@ -65,3 +76,36 @@ Attribution (T-1690, symbolic reachability over the verify queue's touched-symbo
 - LANG003  src/frob/lang (facet=dup)  -> UNATTRIBUTED (no batch commit's touched symbols reach this finding); candidate commits: []
 
 Under the rapid profile the sweep runs detached and files this ticket rather than reverting an already-published commit. Fix the errors, or -- if they are pre-existing residue the rolling baseline simply had not recorded yet -- close this ticket with that finding stated explicitly.
+
+Measured on current main (worktree HEAD, merged from main) via `frob
+check --only docblocks` (DOC006/gates.md), `frob check --only doclink
+--only docanchor` (DOC008/check.md), and `frob check --only
+lang_project_conformance` (LANG003 x3).
+
+DOC006 docs/modules/gates.md: reproduces -- an inline backtick-quoted
+anchor reference to `docs/commands/check.md#tool-summary-pass--fail--
+unres-t-2891` was split across a hard line wrap in the markdown source
+(the anchor slug broke across two lines, producing a stray embedded
+space that does not match any real heading). FIXED: reflowed so the
+whole backtick span stays on one source line.
+
+DOC008 docs/commands/check.md: reproduces -- `[UNRESOLVED](gates.md#unresolved-t-1664)`
+resolves relative to docs/commands/, but the real file is
+docs/modules/gates.md. FIXED: corrected the relative path to
+`../modules/gates.md#unresolved-t-1664` (anchor itself was always
+correct -- `## Unresolved (T-1664)` in docs/modules/gates.md slugs to
+`unresolved-t-1664`).
+
+LANG003 src/frob/lang (facet=capability, facet=docblock, facet=dup):
+do NOT reproduce on current main. `frob check --only
+lang_project_conformance` today reports LANG003 only for facet=arch
+(bash/c/csharp/rust/typescript, T-0329, unrelated to this ticket).
+T-2906 ("wire bash+csharp into frob.vet/frob.dup/frob.gates._docblocks
+(capability/dup/docblock facets)", commit 0163ae2cf, landed 2026-08-25
+22:07:25) landed AFTER T-2902's blamed commit (e0431cc1,
+2026-08-25 19:25:38) and directly implements the capability/dup/
+docblock facets these 3 findings were about -- they are stale,
+already-fixed residue from before T-2906 landed, not a currently-live
+regression.
+
+frob:waive BUG002 reason="the DOC006/DOC008 fixes here are markdown formatting/link corrections with no code behavior change; there is no production code path to reproduce with a failing-at-parent test. Bound evidence (TestDoclinkGate::test_orphan_doc_is_error_and_linked_docs_pass) demonstrates the doclink_gate mechanism this fix relies on and is necessarily confirmatory, same as T-2893's BUG002 waiver for the same reason"
