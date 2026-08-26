@@ -19,6 +19,7 @@ scope:
 - docs/modules/process.md
 - src/frob/gates/__init__.py
 - tests/unit/test_process_reap.py
+- frob.lock
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -58,6 +59,11 @@ scope_changes:
 - op: add
   glob: docs/modules/process.md
   reason: affects doc
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: frob.lock
+  reason: frob ack writes here
   actor: logan
   at: '2026-08-26'
 evidence:
