@@ -41,7 +41,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5a10e85ff6c5fa50e39bc8a6d7ca91084f082f70
 ---
 T-2646's stranded-work analysis (docs/audits/branch-stranded-work-2026-08-25.md)
 used a bare regex over blob text for the "frob:ticket T-####" directive
