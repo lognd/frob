@@ -29,6 +29,7 @@ scope:
 - docs/guides/release.md
 - src/frob/gates/__init__.py
 - src/frob/gates/registry.yaml
+- tests/unit/test_release_workflow_gate.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -111,6 +112,12 @@ scope_changes:
 - op: add
   glob: src/frob/gates/registry.yaml
   reason: 'T-3011: wire new version-coupling gate into the check pipeline registry'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_release_workflow_gate.py
+  reason: 'T-3011: mechanical proof test that release.yml has no automatic trigger
+    and upload stays gated'
   actor: logan
   at: '2026-08-26'
 triage_changes:
