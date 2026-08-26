@@ -66,7 +66,7 @@ import threading
 import time
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Any, Callable
+from typing import IO, TYPE_CHECKING, Any, Callable, Protocol
 
 from pydantic import BaseModel
 from typani import Err, ErrorSet, Ok
@@ -96,6 +96,9 @@ try:
     msvcrt = importlib.import_module("msvcrt")
 except ImportError:  # pragma: no cover -- windows-only in this repo's CI
     msvcrt = None
+
+if TYPE_CHECKING:
+    from frob.serve._events import _EventBus
 
 _log = get_logger(__name__)
 
@@ -458,7 +461,7 @@ class _RequestHandler(socketserver.StreamRequestHandler):
     writer thread that pumps push event frames from the server's
     `event_bus` onto this same connection for as long as it stays open."""
 
-    server: _DaemonServer
+    server: _DaemonServerLike
 
     # T-1096: guards self.wfile between the main handle() loop's own
     # response writes and _pump_events' async event writes on the same
@@ -684,6 +687,42 @@ class _RequestHandler(socketserver.StreamRequestHandler):
             self.wfile.flush()
 
 
+# T-2981: the public attribute surface `_RequestHandler`/`_idle_monitor`
+# read off a live server (`root`, `idle_tracker`, `event_bus`,
+# `lease_manager`, `shutdown`) -- declared once, UNCONDITIONALLY, as a
+# structural `Protocol` so both the real POSIX `_DaemonServer` (below) and
+# the Windows placeholder can be checked against the SAME contract on
+# every `ty --python-platform` target. This is the fix for T-2961's own
+# regression: annotating call sites as `_DaemonServer` directly meant a
+# Windows-target check evaluated only the `else` branch's bare
+# placeholder, which carries none of these attributes, so every access
+# came back `unresolved-attribute` (14 diagnostics, none of them a real
+# runtime bug -- `run_socket_daemon` already refuses before ever
+# constructing a server on Windows). The real class needs no change: `ty`
+# verifies structural conformance from `__init__`'s own attribute
+# assignments, unconditionally-defined methods/attributes on a Protocol
+# subject are checked without regard to which platform branch defined the
+# concrete class.
+class _DaemonServerLike(Protocol):
+    """Structural contract for whatever `_DaemonServer` resolves to on the
+    running platform -- the attribute surface `_RequestHandler` and
+    `_idle_monitor` actually read/call, kept in one place so a type
+    checker can verify it identically on every `ty --python-platform`
+    target (T-2981)."""
+
+    root: Path
+    idle_tracker: _IdleTracker
+    event_bus: _EventBus
+    lease_manager: ResourceLeaseManager
+
+    # frob:doc docs/modules/serve.md#socket-daemon-t-1092
+    def shutdown(self) -> None:
+        """Stop `serve_forever()` -- inherited from `socketserver.BaseServer`
+        on the real POSIX class; declared here only so the Protocol
+        contract includes it."""
+        ...
+
+
 # T-2961: `socketserver.ThreadingUnixStreamServer` (the unix-domain-socket
 # server base this class needs) is POSIX-only -- no cross-platform
 # equivalent exists in the standard library. Unlike the fcntl/msvcrt
@@ -812,7 +851,7 @@ def _reap_multiprocessing_children() -> None:
 
 
 def _idle_monitor(
-    server: _DaemonServer, idle_timeout_s: float, stop: threading.Event
+    server: _DaemonServerLike, idle_timeout_s: float, stop: threading.Event
 ) -> None:
     """Background thread body: poll `server.idle_tracker` at an interval
     scaled to `idle_timeout_s` (never more than `_IDLE_POLL_INTERVAL_S`, so
