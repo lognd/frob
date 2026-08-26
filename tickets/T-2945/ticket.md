@@ -74,7 +74,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: ec8d7162987d72478f47e708e87a21091d839b46
 ---
 Measured on the real macOS runner (T-2917 PR#1 run 32920399634, job
 98032723003): 28 of 156 macOS pytest failures are in daemon/socket
