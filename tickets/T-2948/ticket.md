@@ -2,7 +2,7 @@
 id: T-2948
 title: DirtyMain owner classifier blames a sibling ticket that merely declares overlapping
   scope, blocking the ticket actually being landed
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
