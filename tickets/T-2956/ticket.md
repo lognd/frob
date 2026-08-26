@@ -1,7 +1,7 @@
 ---
 id: T-2956
 title: 'frob-dup: triage src/frob/gates renamed-duplicate cluster (20 groups)'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -27,6 +27,8 @@ scope:
 - src/frob/gates/_testing_schema.py
 - src/frob/gates/_toplevel_scalar_schema.py
 - tickets/T-2956/**
+evidence_scope:
+- tests/unit/test_check.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -107,12 +109,23 @@ scope_changes:
   reason: schema-family frob:waive directives + ticket ledger
   actor: logan
   at: '2026-08-26'
+body_changes:
+- mode: append
+  reason: 'BUG002 needs an explicit no-behavior-change declaration: this ticket applies
+    waiver directives (a disposition decision), not a defect fix'
+  actor: logan
+  at: '2026-08-26'
+  old_length: 1814
+  new_length: 2108
+evidence:
+- tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed
 designated_repro_test: null
 acceptance:
 - text: given the src/frob/gates frob-dup cluster measured in this ticket's body,
     when triaged, then every group is either extracted, waived with a reason, or covered
     by a documented detector-narrowing decision
-  evidence: []
+  evidence:
+  - tests/unit/test_check.py::TestDupArchWaiverAwareSummaries::test_dup001_waived_group_excluded_from_headline_but_listed
 threat: null
 component: null
 anchor: false
@@ -149,3 +162,5 @@ leasing.
 
 Re-measure via: uv run frob check --json --only static, filter
 tool=="frob-dup", filter messages containing "src/frob/gates".
+
+frob:no-behavior-change reason="this ticket's actual change is DUP001 frob:waive triage directives (documentation of a disposition decision), not a code-behavior fix; the designated repro test correctly PASSES at both parent and this commit since no defect-fixing behavior change is claimed"
