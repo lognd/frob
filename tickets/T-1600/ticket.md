@@ -191,7 +191,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 455c99fd6eb5291d1dcfe9daf49efac4aa721454
 ---
 Add C# to frob's supported languages, meeting the full adapter contract defined by the contract ticket -- not merely parsing.
 
