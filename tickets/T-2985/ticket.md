@@ -2,7 +2,7 @@
 id: T-2985
 title: 'gh_io part 3: CI result validity -- classify each outcome STILL VALID / STALE
   / UNKNOWN against the affects graph, never render stale as green'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -55,6 +55,16 @@ triage_changes:
   reason: 'T-2982 decomposition: seam, reporting, validity'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/test_ci_validity.py::TestClassifyTest::test_still_valid_when_nothing_relevant_changed
+- tests/test_ci_validity.py::TestClassifyTest::test_stale_when_reached_by_a_touched_symbol
+- tests/test_ci_validity.py::TestClassifyTest::test_stale_when_test_itself_touched
+- tests/test_ci_validity.py::TestClassifyTest::test_unknown_when_symbol_unresolvable
+- tests/test_ci_validity.py::TestClassifyTest::test_unknown_when_closure_truncated
+- tests/test_ci_validity.py::TestValidityForRunHeadSha::test_diff_failure_is_err
+- tests/test_ci_validity.py::TestValidityForRunHeadSha::test_classifies_every_failing_node
+- tests/test_ci_validity.py::TestJobAndRunValidity::test_job_validity_covers_named_failures
+- tests/test_ci_validity.py::TestJobAndRunValidity::test_run_validity_covers_every_job
 designated_repro_test: null
 threat: null
 component: null

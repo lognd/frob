@@ -405,6 +405,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2981: windows-latest CI fails at Typecheck on main after passing native build, both cargo suites and lint
 - T-2983: gh_io part 1: typed gh seam with named failure modes (no gh, no auth, no GitHub remote, rate limit, empty-log-on-failed-job)
 - T-2984: gh_io part 2: structured CI failure reporting -- typed run/job/step/test-node records, clustered by signature, no raw log grepping
+- T-2985: gh_io part 3: CI result validity -- classify each outcome STILL VALID / STALE / UNKNOWN against the affects graph, never render stale as green
 - T-2986: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id> vs recorded tickets/<id> path)
 
 ## [0.530.0] - unreleased
