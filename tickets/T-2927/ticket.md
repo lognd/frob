@@ -35,7 +35,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 5b9de4b423d931aa18baf9425c8873b2ec090157
 ---
 frob-suggest.py audit (T-2908) found these rules still lack a must-stay-quiet
 fixture in tests/test_hook_frob_suggest.py, with no demonstrated false
