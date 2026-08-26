@@ -741,6 +741,109 @@ class TestBash:
         assert COMMENT_TYPES == frozenset({"comment"})
 
 
+# frob:ticket T-1600
+class TestCSharp:
+    """C# walker (`frob.lang._walk_csharp`) -- publicness (literal `public`
+    keyword only, module docstring), properties/const-fields -> `CONST`,
+    interface members implicitly public."""
+
+    # frob:ticket T-1600
+    def test_parse_csharp_produces_a_tree(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_parse_csharp
+        from frob.lang._walk_csharp import _parse_csharp
+
+        tree = _parse_csharp(b"public class Greet {}\n")
+        assert tree.root_node.type == "compilation_unit"
+        assert any(c.type == "class_declaration" for c in tree.root_node.children)
+
+    # frob:ticket T-1600
+    def test_walks_class_and_method(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        assert pf.language == "csharp"
+        cls = _symbol(pf, "Frob.Sample.Widget")
+        assert cls.kind == SymbolKind.CLASS
+        assert cls.public is True
+        assert cls.doc_text == "<summary>Adds two numbers.</summary>"
+        method = _symbol(pf, "Frob.Sample.Widget.Render")
+        assert method.kind == SymbolKind.METHOD
+        assert method.public is True
+
+    # frob:ticket T-1600
+    def test_private_method_is_not_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_public
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        hidden = _symbol(pf, "Frob.Sample.Widget.Add")
+        assert hidden.kind == SymbolKind.METHOD
+        assert hidden.public is False
+
+    # frob:ticket T-1600
+    def test_property_is_a_const_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_property_symbol
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        prop = _symbol(pf, "Frob.Sample.Widget.Count")
+        assert prop.kind == SymbolKind.CONST
+        assert prop.public is True
+
+    # frob:ticket T-1600
+    def test_const_field_is_extracted_plain_field_is_not(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_const_field_symbol
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        const = _symbol(pf, "Frob.Sample.Widget.MaxWidgets")
+        assert const.kind == SymbolKind.CONST
+        names = {s.qualname for s in pf.symbols}
+        assert "Frob.Sample.Widget.hidden" not in names
+
+    # frob:ticket T-1600
+    def test_enum_is_a_type_symbol(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_enum_symbol
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        color = _symbol(pf, "Frob.Sample.Color")
+        assert color.kind == SymbolKind.TYPE
+        assert color.public is True
+
+    # frob:ticket T-1600
+    def test_namespace_is_a_transparent_qualname_container(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_dispatch
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "Frob.Sample.Widget" in names
+        assert "Widget" not in names
+
+    # frob:ticket T-1600
+    def test_interface_member_is_implicitly_public(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_public
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        do = _symbol(pf, "Frob.Sample.IThing.Do")
+        assert do.kind == SymbolKind.METHOD
+        assert do.public is True
+
+    # frob:ticket T-1600
+    def test_file_scoped_namespace_is_a_transparent_qualname_container(
+        self, tmp_path: Path
+    ) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_cs_visit
+        source = "namespace Foo.Bar;\n\npublic class Y {}\n"
+        path = _write(tmp_path, "filescoped.cs", source)
+        pf = parse_file(path).danger_ok
+        names = {s.qualname for s in pf.symbols}
+        assert "Foo.Bar.Y" in names
+
+    # frob:ticket T-1600
+    def test_leading_xml_doc_comment_binds_as_doc_text(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::_walk_csharp
+        pf = parse_file(_FIXTURES / "sample.cs").danger_ok
+        assert any("sum them" in c.text for c in pf.comments)
+
+    # frob:ticket T-1600
+    def test_csharp_no_block_comment_type_split(self) -> None:
+        # frob:tests src/frob/lang/_walk_csharp.py::COMMENT_TYPES
+        # //, /* */, and /// all collapse to one node type -- module docstring.
+        from frob.lang._walk_csharp import COMMENT_TYPES
+
+        assert COMMENT_TYPES == frozenset({"comment"})
+
+
 # frob:ticket T-2575
 class TestErrors:
     def test_unsupported_extension(self, tmp_path: Path) -> None:

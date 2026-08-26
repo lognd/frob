@@ -143,6 +143,11 @@ _EXTENSION_TABLE: dict[str, tuple[str, str]] = {
     # shape decisions.
     ".sh": ("bash", "bash"),
     ".bash": ("bash", "bash"),
+    # frob:ticket T-1600
+    # tree-sitter-language-pack bundles the "csharp" grammar under that
+    # name (tree-sitter-c-sharp) -- see `frob.lang._walk_csharp` for the
+    # walker and its publicness/property-vs-field decisions.
+    ".cs": ("csharp", "csharp"),
 }
 
 # `.strata` has no tree-sitter grammar (`_parse`/`_EXTENSION_TABLE` below

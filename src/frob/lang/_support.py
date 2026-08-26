@@ -421,6 +421,11 @@ KNOWN_GAP_TRACKING_TICKETS: dict[str, bool] = {
     # unrecognized by frob.graph.callgraph's shared token-adjacency call
     # detector -- cited by `_capability_call_graph_status`'s bash branch.
     "T-2901": True,
+    # T-1604/T-1600's own filed finding: bash/csharp are not yet wired
+    # into the capability/dup/docblock FACETS -- cited by
+    # `_capability_status`/`_dup_status`/`_docblock_status`'s shared
+    # `_NEW_ADAPTER_FACET_TRACKING_TICKET` constant.
+    "T-2906": True,
     # T-2409 (`_capability_test_discovery_status`'s prior kotlin
     # KNOWN_GAP) removed -- the gap is closed, T-2409 landed a real
     # `frob.testing.collect_kotlin_tests` collector and T-2499's
@@ -450,6 +455,20 @@ _ARCH_DISPATCHED_LANGUAGES = frozenset({"python", "cpp"})
 # derived here as a set so `_capability_status` never hand-copies the
 # `("c", "cpp")` pair a second time.
 _CAPABILITY_C_CPP_MEMBERS = frozenset({"c", "cpp"})
+
+# T-1604/T-1600: bash and csharp each registered a real frob.lang
+# grammar/walker but were not wired into the three OTHER FACETS-axis
+# subsystems (frob.vet._capability_registry, frob.dup._exhaustiveness,
+# frob.gates._docblocks) -- found post-land when LANG003 started firing
+# "unsound coverage" (an auto-generated KNOWN_GAP detail naming no
+# tracking ticket) the moment bash/csharp source files were actually
+# committed and tracked. Mirrors `_ARCH_DISPATCHED_LANGUAGES`'s own
+# shape: a small membership set naming exactly which NEW adapters this
+# citation covers, so a future language added here without going through
+# this same set stays a genuinely unreasoned (loud) gap, not silently
+# absorbed into this citation by accident.
+_NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING = frozenset({"bash", "csharp"})
+_NEW_ADAPTER_FACET_TRACKING_TICKET = "T-2906"
 
 
 def _docblock_languages() -> frozenset[str]:
@@ -507,6 +526,11 @@ def _capability_status(language: str) -> FacetStatus:
         return _known_gap("c-cpp bucket missing from capability LANGUAGES")
     if language in capability_languages:
         return _implemented("frob.vet._capability_registry.LANGUAGES entry")
+    if language in _NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} absent from frob.vet._capability_registry.LANGUAGES "
+            f"-- tracked by {_NEW_ADAPTER_FACET_TRACKING_TICKET}"
+        )
     return _known_gap(f"{language} absent from frob.vet._capability_registry.LANGUAGES")
 
 
@@ -523,6 +547,11 @@ def _dup_status(language: str) -> FacetStatus:
 
     if language in dup_languages:
         return _implemented("frob.dup._exhaustiveness.LANGUAGES entry")
+    if language in _NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} absent from frob.dup._exhaustiveness.LANGUAGES "
+            f"-- tracked by {_NEW_ADAPTER_FACET_TRACKING_TICKET}"
+        )
     return _known_gap(f"{language} absent from frob.dup._exhaustiveness.LANGUAGES")
 
 
@@ -556,6 +585,11 @@ def _docblock_status(language: str) -> FacetStatus:
         )
     if language in _docblock_languages():
         return _implemented("frob.gates._docblocks fenced-language bucket entry")
+    if language in _NEW_ADAPTER_LANGUAGES_PENDING_FACET_WIRING:
+        return _known_gap(
+            f"{language} has no DOC004 fenced-language bucket "
+            f"-- tracked by {_NEW_ADAPTER_FACET_TRACKING_TICKET}"
+        )
     return _known_gap(f"{language} has no DOC004 fenced-language bucket")
 
 

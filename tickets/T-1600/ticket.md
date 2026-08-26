@@ -1,7 +1,7 @@
 ---
 id: T-1600
 title: 'Language support: C#'
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-05'
@@ -27,8 +27,8 @@ scope:
 - src/frob/gates/_lang_conformance.py
 - src/frob/lang/_support.py
 - frob.toml
-- tickets/T-draft-1275562a/**
-- tickets/T-draft-65e38e53/**
+- tickets/T-2905/**
+- tickets/T-2906/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -156,7 +156,7 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-1275562a/**
+  glob: tickets/T-2905/**
   reason: two findings filed as part of this ticket's own work (wire-or-drop _parse_csharp
     follow-up, and the shared bash+csharp FACETS-wiring finding) are new tracked files
     in this branch's diff; SCOPE001 flags them the same way T-1604's own draft citation
@@ -164,13 +164,28 @@ scope_changes:
   actor: logan
   at: '2026-08-25'
 - op: add
-  glob: tickets/T-draft-65e38e53/**
+  glob: tickets/T-2906/**
   reason: two findings filed as part of this ticket's own work (wire-or-drop _parse_csharp
     follow-up, and the shared bash+csharp FACETS-wiring finding) are new tracked files
     in this branch's diff; SCOPE001 flags them the same way T-1604's own draft citation
     did
   actor: logan
   at: '2026-08-25'
+evidence:
+- tests/test_lang.py::TestCSharp::test_parse_csharp_produces_a_tree
+- tests/test_lang.py::TestCSharp::test_walks_class_and_method
+- tests/test_lang.py::TestCSharp::test_private_method_is_not_public
+- tests/test_lang.py::TestCSharp::test_property_is_a_const_symbol
+- tests/test_lang.py::TestCSharp::test_const_field_is_extracted_plain_field_is_not
+- tests/test_lang.py::TestCSharp::test_enum_is_a_type_symbol
+- tests/test_lang.py::TestCSharp::test_namespace_is_a_transparent_qualname_container
+- tests/test_lang.py::TestCSharp::test_interface_member_is_implicitly_public
+- tests/test_lang.py::TestCSharp::test_file_scoped_namespace_is_a_transparent_qualname_container
+- tests/test_lang.py::TestCSharp::test_leading_xml_doc_comment_binds_as_doc_text
+- tests/test_lang.py::TestCSharp::test_csharp_no_block_comment_type_split
+- tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::test_csharp_registered_capabilities_pass
+- tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::test_csharp_broken_continuation_fixture_is_caught_not_rubber_stamped
+- tests/test_lang_conformance_gate.py::TestCSharpCapabilityConformance::test_csharp_no_symbols_fixture_is_caught_not_rubber_stamped
 designated_repro_test: null
 threat: null
 component: null

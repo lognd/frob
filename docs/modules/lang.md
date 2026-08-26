@@ -106,6 +106,7 @@ the whole declaration and `body_tokens` is always `()`.
 | cpp | file-scope symbol without `static`; class members are public unless the nearest preceding `access_specifier` in the enclosing `field_declaration_list` is `private`/`protected` (default access is `private` for `class`, `public` for `struct`, matching the language) |
 | kotlin | absence of a `private`/`protected`/`internal` visibility modifier (kotlin's own default visibility is `public`) |
 | bash | `not name.startswith("_")` -- bash has no visibility keyword at all; this is a naming *convention* (shellcheck's own leading-underscore-is-private idiom), not something the language enforces (T-1604) |
+| csharp | the literal `public` keyword only -- both silent defaults (top-level `internal`, member `private`) and every other explicit modifier are NOT public; an interface member with no modifier of its own is implicitly public (the language's own rule), overridden only by an explicit non-public modifier (T-1600) |
 
 ## Comment extraction and binding
 
@@ -131,7 +132,8 @@ names the walker treats as comment-typed leaves.
 
 Each language has its own recursive-descent walker (`_walk_python.py`,
 `_walk_typescript.py`, `_walk_rust.py`, `_walk_c.py`'s `_walk_c_family`
-shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_strata.py`) built on the shared
+shared by c/cpp, `_walk_kotlin.py`, `_walk_bash.py`, `_walk_csharp.py`,
+`_walk_strata.py`) built on the shared
 `_common.py` primitives (`_leaf_tokens`, `_leading_doc_comment`,
 `_strip_comment_delims`, `_span_of`).
 Notable per-language handling:
@@ -171,6 +173,25 @@ Notable per-language handling:
   (identifier immediately followed by `(`) cannot recognize a bash call
   at all -- a real shared-layer gap, filed separately rather than special-
   cased into the shared detector (T-2901).
+- **csharp** (T-1600): `class`/`struct`/`interface` declarations are
+  transparent `CLASS`-shaped qualname containers (`tree-sitter-c-sharp`
+  exposes real named fields -- `name`/`body`/`type`/`returns`/
+  `parameters` -- unlike kotlin's almost-field-free grammar); a
+  `property_declaration` is mapped onto `SymbolKind.CONST` (the
+  "properties vs fields" decision the ticket named: a property is C#'s
+  real API-surface member shape, a plain non-`const` field is
+  implementation detail and not extracted at all, only a `const`-modified
+  field is). Publicness checks for the literal `public` modifier keyword
+  only -- neither silent default (top-level `internal`, member
+  `private`) counts -- except an interface member with NO modifier of
+  its own, which the language itself makes public by definition. A
+  `namespace Foo.Bar { ... }` block and a brace-less `namespace Foo.Bar;`
+  (C# 10's file-scoped form, which has no `body` field -- its "body" is
+  the rest of the compilation unit) both push a transparent qualname
+  segment. Nullable reference type annotations (`string?`) live inside a
+  declaration's TYPE subtree, never inside its `name` field, so they
+  cannot confuse name extraction. `///` XML doc comments, `//`, and
+  `/* */` all collapse to the same `comment` node type in this grammar.
 
 ## Data models
 

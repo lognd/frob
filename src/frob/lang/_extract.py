@@ -21,6 +21,7 @@ from frob.lang._common import _find_following_symbol as _find_following
 from frob.lang._models import RawComment, RawSymbol
 from frob.lang._walk_bash import _walk_bash
 from frob.lang._walk_c import _walk_c_family
+from frob.lang._walk_csharp import _walk_csharp
 from frob.lang._walk_kotlin import _walk_kotlin
 from frob.lang._walk_python import _walk_python, _walk_python_docstring_comments
 from frob.lang._walk_rust import _walk_rust
@@ -43,6 +44,11 @@ COMMENT_TYPES: dict[str, frozenset[str]] = {
     # Bash's one comment node type -- see `_walk_bash.COMMENT_TYPES`'s own
     # docstring for why no block-comment form exists in this grammar.
     "bash": frozenset({"comment"}),
+    # frob:ticket T-1600
+    # C#'s one comment node type -- `//`, `/* */`, and `///` XML-doc
+    # comments all collapse to the same `comment` node type in this
+    # grammar (see `_walk_csharp.COMMENT_TYPES`'s own docstring).
+    "csharp": frozenset({"comment"}),
 }
 
 
@@ -70,6 +76,7 @@ _WALKERS = {
     "cpp": _walk_cpp,
     "kotlin": _walk_kotlin,
     "bash": _walk_bash,
+    "csharp": _walk_csharp,
 }
 
 # frob:ticket T-0342
@@ -419,6 +426,41 @@ def _imports_bash(root: Node) -> tuple[str, ...]:
     return tuple(results)
 
 
+# frob:ticket T-1600
+_CSHARP_USING_TARGET_TYPES = frozenset({"identifier", "qualified_name", "generic_name"})
+
+
+# frob:ticket T-1600
+def _imports_csharp(root: Node) -> tuple[str, ...]:
+    """Every `using_directive`'s dotted target (T-1600) -- covers all four
+    forms (`using System;`, `using static System.Console;`, `using Alias
+    = System.Collections.Generic.List<int>;`, and a plain dotted `using
+    A.B.C;`) with one rule: the LAST named child whose type is
+    identifier/qualified_name/generic_name is always the real target,
+    regardless of form -- verified interactively before writing this
+    (module docstring's own exploration): the `static` keyword and an
+    alias's own local-binding `identifier` (which precedes `=`) both
+    always come BEFORE the target in this grammar's child order, never
+    after."""
+    results: list[str] = []
+
+    def visit(n: Node) -> None:
+        if n.type == "using_directive":
+            target = None
+            for c in n.named_children:
+                if c.type in _CSHARP_USING_TARGET_TYPES:
+                    target = c
+            if target is not None:
+                text = _child_text(target)
+                if text:
+                    results.append(text)
+        for child in n.children:
+            visit(child)
+
+    visit(root)
+    return tuple(results)
+
+
 _IMPORT_WALKERS = {
     "python": _imports_python,
     "c": _imports_c_family,
@@ -428,6 +470,7 @@ _IMPORT_WALKERS = {
     "rust": _imports_rust,
     "kotlin": _imports_kotlin,
     "bash": _imports_bash,
+    "csharp": _imports_csharp,
 }
 
 

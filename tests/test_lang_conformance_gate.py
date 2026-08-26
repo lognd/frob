@@ -460,6 +460,89 @@ class TestBashCapabilityConformance:
         assert not ok, f"empty bash fixture was wrongly reported as passing: {detail}"
 
 
+# frob:ticket T-1600
+class TestCSharpCapabilityConformance:
+    """C#-specific positive/negative controls (T-1600) -- mirrors the
+    bash controls above."""
+
+    # frob:ticket T-1600
+    # frob:waive DUP001 reason="deliberately mirrors TestBashCapabilityConformance:: \
+    # test_bash_registered_capabilities_pass's shape (T-1604) -- both are the SAME \
+    # per-language clean-control convention this file already established (one test \
+    # class, one such test, per new adapter language), and bash's own version carries \
+    # a real extra assertion (call_graph's reasoned exclusion) this one does not need; \
+    # extracting a shared helper would touch T-1604's own already-landed, \
+    # already-closed test class for a five-line loop, not a real reuse win"
+    def test_csharp_registered_capabilities_pass(self, tmp_path: Path) -> None:
+        """CLEAN CONTROL: every capability the live registry claims
+        IMPLEMENTED for csharp actually works against the real fixture."""
+        registry = derive_capability_registry()
+        support = registry["csharp"]
+        implemented = [
+            capability
+            for capability, status in support.capabilities.items()
+            if status.state is FacetState.IMPLEMENTED
+            and capability in _BEHAVIORALLY_CHECKED_CAPABILITIES
+        ]
+        assert set(implemented) >= {
+            "symbol_walk",
+            "publicness",
+            "doc_extract",
+            "directive_parse",
+            "call_graph",
+            "import_graph",
+        }
+        for capability in implemented:
+            ok, detail = _behavioral_capability_check("csharp", capability, tmp_path)
+            assert ok, f"csharp/{capability}: {detail}"
+
+    # frob:ticket T-1600
+    def test_csharp_broken_continuation_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """MUST-FAIL POSITIVE CONTROL: a C# fixture whose `frob:tests \\`
+        continuation's second physical line is DROPPED must make
+        `_behavioral_capability_check` report failure."""
+        import frob.gates._lang_conformance as module
+
+        broken_source = (
+            "// Capability fixture module doc.\n\n"
+            "using System;\n\n"
+            "public class CapabilityFixture\n"
+            "{\n"
+            "    public int PublicFn()\n"
+            "    {\n"
+            "        return PrivateFn();\n"
+            "    }\n\n"
+            "    // frob:tests \\\n"
+            "    private int PrivateFn()\n"
+            "    {\n"
+            "        return 2;\n"
+            "    }\n"
+            "}\n"
+        )
+        monkeypatch.setitem(module._CAPABILITY_FIXTURE_SOURCES, "csharp", broken_source)
+        ok, detail = _behavioral_capability_check("csharp", "directive_parse", tmp_path)
+        assert not ok, (
+            f"broken csharp fixture was wrongly reported as passing: {detail}"
+        )
+
+    # frob:ticket T-1600
+    def test_csharp_no_symbols_fixture_is_caught_not_rubber_stamped(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """A second, independent MUST-FAIL positive control: an empty C#
+        fixture (no classes/members at all) must fail `symbol_walk`'s
+        behavioral check."""
+        import frob.gates._lang_conformance as module
+
+        monkeypatch.setitem(
+            module._CAPABILITY_FIXTURE_SOURCES, "csharp", "// just a comment\n"
+        )
+        ok, detail = _behavioral_capability_check("csharp", "symbol_walk", tmp_path)
+        assert not ok, f"empty csharp fixture was wrongly reported as passing: {detail}"
+
+
 # frob:ticket T-2365
 class TestCapabilityConformanceGate:
     """LANG004 (T-2365): the behavioral half of the adapter-capability axis

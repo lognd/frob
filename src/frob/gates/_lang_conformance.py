@@ -100,6 +100,7 @@ _CAPABILITY_FIXTURE_EXTENSIONS: dict[str, str] = {
     "kotlin": ".kt",
     "strata": ".strata",
     "bash": ".sh",
+    "csharp": ".cs",
 }
 
 _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
@@ -203,6 +204,26 @@ _CAPABILITY_FIXTURE_SOURCES: dict[str, str] = {
         f"# {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
         "_private_fn() {\n"
         "    return 2\n"
+        "}\n"
+    ),
+    # T-1600: C# has no free-function concept -- the public/private pair
+    # lives inside one class, and `using System;` is the import/using
+    # statement.
+    "csharp": (
+        "// Capability fixture module doc.\n\n"
+        "using System;\n\n"
+        "public class CapabilityFixture\n"
+        "{\n"
+        "    public int PublicFn()\n"
+        "    {\n"
+        "        return PrivateFn();\n"
+        "    }\n\n"
+        "    // frob:tests \\\n"
+        f"    // {_CAPABILITY_FIXTURE_TESTS_TARGET}\n"
+        "    private int PrivateFn()\n"
+        "    {\n"
+        "        return 2;\n"
+        "    }\n"
         "}\n"
     ),
 }
@@ -546,12 +567,15 @@ def _behavioral_capability_check(
 # future repo/file tripped it). Removed rather than left as dead weight:
 # any language added to this set that later gains real `frob.lang`
 # registration must be pulled out the same way, or LANG002 lies.
+#
+# T-1600: `.cs` (csharp) removed for the identical T-1234 reason -- a
+# real `frob.lang` grammar registration now exists
+# (`frob.lang._walk_csharp`, `frob.lang.__init__._EXTENSION_TABLE`).
 _UNREGISTERED_CANDIDATE_LANGUAGES: dict[str, str] = {
     ".swift": "swift",
     ".go": "go",
     ".java": "java",
     ".rb": "ruby",
-    ".cs": "csharp",
 }
 
 # A `KNOWN_GAP`/`NOT_APPLICABLE` `detail` string's tracking-ticket

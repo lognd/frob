@@ -589,6 +589,18 @@ command = ["bash", "-c", "uv run pytest -q tests/test_lang.py tests/test_lang_co
 all_command = ["uv", "run", "pytest", "-q", "tests/test_lang.py", "tests/test_lang_conformance_gate.py"]
 cwd = "."
 
+[[test.runner]]
+# T-1600: identical shape to the bash entry immediately above --
+# `tests/fixtures/lang/sample.cs` is C# SOURCE DATA, not runnable test
+# code, and `frob.excludes.is_test_file`'s `tests/` path-component rule
+# self-selects its raw path the same way. Routed through `bash -c` the
+# same inert-positional-parameter way so `{files}` satisfies the one-
+# placeholder schema without ever reaching pytest's own argv.
+language = "csharp"
+command = ["bash", "-c", "uv run pytest -q tests/test_lang.py tests/test_lang_conformance_gate.py", "--", "{files}"]
+all_command = ["uv", "run", "pytest", "-q", "tests/test_lang.py", "tests/test_lang_conformance_gate.py"]
+cwd = "."
+
 # T-0333: compiled extension modules the pytest suite importorskip-gates on.
 # Declaring them lets `collect_python_tests` fingerprint their build state
 # (so `make core` invalidates the collection cache automatically instead of
