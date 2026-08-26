@@ -95,6 +95,10 @@ def load_baseline(root: Path) -> dict | None:
         return None
 
 
+# frob:waive DUP001 reason="deliberate parallel implementation: TEST006's \
+# coverage-stamp staleness check mirrors this baseline-staleness check on purpose \
+# (same content-hash-comparison shape for two different stamp kinds, per \
+# _coverage.py's own docstring)"
 # frob:doc docs/modules/gates.md#public-api
 def is_baseline_stale(root: Path, baseline: dict) -> bool:
     """Whether any file hash in `baseline` no longer matches the live tree.

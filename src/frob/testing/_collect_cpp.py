@@ -209,6 +209,10 @@ def _cpp_test_source(
     return next(iter(sources))
 
 
+# frob:waive DUP001 reason="coincidental short-function AST shape across 4 unrelated \
+# domains (deprecated-baseline file#count codec, gtest name normalization, \
+# next-ticket-id allocation, waiver identity key) -- no shared logic, independently \
+# evolving"
 def _cpp_node_id(source: str, name: str) -> str:
     """`source::name` with `name`'s dots (a gtest `TestSuite.TestCase` name)
     normalized to `::`, mirroring `frob.gates._symref_to_nodeid`'s own

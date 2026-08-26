@@ -240,6 +240,9 @@ def doclink_gate(root: Path, snapshot: GraphSnapshot) -> tuple[Violation, ...]:
     return tuple(violations)
 
 
+# frob:waive DUP001 reason="sibling small violation builders across meta-checks: \
+# DOC001 (orphan doc file) here, VET004/VET-missing-read builders in frob.vet -- \
+# coincidental short-function shape, unrelated rule domains"
 # frob:enforces CHK-GATE-DOC001
 def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     """DOC001: `orphan` is a doc file linked from nowhere."""
@@ -256,6 +259,9 @@ def _doc001_orphan(orphan: str, link_hint: str) -> Violation:
     )
 
 
+# frob:waive DUP001 reason="sibling DOC002/DOC008 violation builders in the same \
+# module: same 'every failure mode is the same shape' Violation(...) builder, \
+# independently-evolving rule ids"
 # frob:enforces CHK-GATE-DOC008
 def _doc008_violation(doc_rel: str, line: int, message: str) -> Violation:
     """Build one DOC008 error `Violation` (T-1231: a doc's own inline link
@@ -460,6 +466,9 @@ def _anchor_mismatch_message(
     )
 
 
+# frob:waive DUP001 reason="sibling DOC002/DOC008 violation builders in the same \
+# module: same 'every failure mode is the same shape' Violation(...) builder, \
+# independently-evolving rule ids"
 # frob:enforces CHK-GATE-DOC002
 def _docanchor_violation(rule_file: str, line: int, message: str) -> Violation:
     """Build one DOC002 error `Violation` -- every failure mode is the same shape."""

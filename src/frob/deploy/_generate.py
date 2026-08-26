@@ -190,6 +190,11 @@ def _distinct_runs_as(entries: tuple[ManifestEntry, ...]) -> tuple[str, ...]:
     return tuple(seen)
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _install_user_block(name: str) -> str:
     """Check-then-apply service-user creation for one distinct `runs_as`
     identity: `id -u` gates the `useradd`, so a re-run performs zero
@@ -266,6 +271,11 @@ def _install_unit_block(entry: ManifestEntry) -> str:
     ) + _unit_enable_start_block(unit_name)
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _unit_write_block(
     unit_path: str, unit_name: str, body_digest: str, body: str
 ) -> str:
@@ -289,6 +299,11 @@ def _unit_write_block(
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _unit_enable_start_block(unit_name: str) -> str:
     """Check-then-apply `systemctl enable`/`start` block for `unit_name`."""
     return (
@@ -450,6 +465,11 @@ def _uninstall_owns_block(manifest: HostManifest) -> str:
     return "".join(lines)
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _uninstall_user_block(name: str) -> str:
     """Remove exactly one distinct `runs_as` identity's service user --
     check-then-apply via `id -u` first, matching `_install_user_block`'s

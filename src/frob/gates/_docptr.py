@@ -182,6 +182,10 @@ def _nearby_waived(doc_lines: list[str], line_no: int) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# frob:waive DUP001 reason="cross-file sibling violation-builder cluster \
+# (DOC006/DOC007 in this module, AFFECT001/AFFECT002 in gates/__init__.py): each \
+# builds one Violation(...) for a structurally-similar but independently-evolving rule \
+# with its own message/severity"
 # frob:ticket T-2374
 # frob:enforces CHK-GATE-DOC006
 def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation:
@@ -208,6 +212,10 @@ def _doc006_violation(file: str, line: int, kind: str, detail: str) -> Violation
     )
 
 
+# frob:waive DUP001 reason="cross-file sibling violation-builder cluster \
+# (DOC006/DOC007 in this module, AFFECT001/AFFECT002 in gates/__init__.py): each \
+# builds one Violation(...) for a structurally-similar but independently-evolving rule \
+# with its own message/severity"
 # frob:enforces CHK-GATE-DOC007
 def _doc007_violation(file: str, line: int, detail: str) -> Violation:
     """Build one DOC007 violation (T-0986): a `frob:tests` target using
@@ -1322,6 +1330,10 @@ def _bare_identifier_violations(
 _DOUBLE_SEP_TESTS_TARGET_RE = re.compile(r"::[^:]*::")
 
 
+# frob:waive DUP001 reason="this function's own docstring states it is a narrow local \
+# copy of frob.gates.__init__._site_from_edge_origin (private to the package __init__, \
+# so this module cannot import it) -- same reasoning frob.gates._fix_engine's sibling \
+# copy carries"
 def _origin_site(origin: str) -> tuple[str, int]:
     """Best-effort `(file, line)` split of an edge's `path:line` origin
     string -- a narrow local copy of `frob.gates.__init__._site_from_edge_

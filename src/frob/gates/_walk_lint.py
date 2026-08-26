@@ -6,8 +6,8 @@
 # they are the same concern) -- a real split is the right fix, but a new module was \
 # outside T-2944's declared scope (src/frob/gates/_walk_lint.py, \
 # src/frob/process/_reap.py, src/frob/tickets/_leases.py, two test files); filed as \
-# its own scoped ticket (T-2962, renumbers on land) rather than expanding \
-# T-2944's scope or leaving this undocumented"
+# its own scoped ticket (T-2962, renumbers on land) rather than expanding T-2944's \
+# scope or leaving this undocumented"
 """WALK001: gate against unpruned filesystem traversals (T-0471,
 docs/modules/gates.md#walk001-unpruned-traversal-t-0471).
 
@@ -110,6 +110,10 @@ def _attr_name(node: ast.expr) -> str | None:
     return node.attr if isinstance(node, ast.Attribute) else None
 
 
+# frob:waive DUP001 reason="this module's own docstring states this local dotted-name \
+# unparse is the same small shape as frob.gates._render_lint's and \
+# frob.gates._pii_structural._env_access's siblings, kept local deliberately rather \
+# than sharing a private helper across modules"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.walk` ->
     `"os.walk"`), or `None` for anything else -- local unparse, same shape

@@ -177,6 +177,9 @@ _CHECK_COVERAGE_FILE = "check-coverage.yaml"
 # strings through that now-built T-0382 mechanism (REG011).
 
 
+# frob:waive DUP001 reason="sibling REG002/REG004 finding builders, both split out of \
+# _classify for ARCH001: same shape, independently-evolving rule ids for handled_by vs \
+# duplicate_of references"
 # frob:enforces CHK-GATE-REG002
 def _classify_handled_by(
     entry_id: str, rule: str, known_rules: frozenset[str]
@@ -216,6 +219,9 @@ def _classify_deferred(
     return None
 
 
+# frob:waive DUP001 reason="sibling REG002/REG004 finding builders, both split out of \
+# _classify for ARCH001: same shape, independently-evolving rule ids for handled_by vs \
+# duplicate_of references"
 def _classify_duplicate(
     entry_id: str, target: str, all_entry_ids: frozenset[str]
 ) -> tuple[str, str] | None:

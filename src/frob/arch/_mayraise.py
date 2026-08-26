@@ -258,6 +258,12 @@ class FunctionMayRaise(BaseModel):
     subscript_derived: frozenset[str] = frozenset()
 
 
+# frob:waive DUP001 reason="this module's own docstring on _qualname already states \
+# this is a narrow local duplicate of frob.arch._fallibility._qualname (that sibling \
+# module is out of this ticket's declared scope; duplicating this one small helper, \
+# not importing a private name across modules, is the intended shape here) -- \
+# frob.gates._exhaustive_handling and frob.arch._exceptions each carry the same \
+# documented pattern"
 # frob:ticket T-0686
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
@@ -334,6 +340,11 @@ def _catches(caught: str | None, raised: str) -> bool:
 
 
 # frob:ticket T-0686
+# frob:waive DUP001 reason="T-2966 triage: frob.gates._exhaustive_handling's own \
+# docstring on _nearest_preceding_catch already states this is a narrow local \
+# duplicate of this resolver's private helper (out of that gate's declared-scope \
+# carve-out; duplicating this one small helper, not importing a private name across \
+# modules, is the intended shape here)"
 def _nearest_preceding_catch(
     func: NormalizedFunction, line: int
 ) -> NormalizedCatch | None:

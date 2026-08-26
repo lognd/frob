@@ -273,6 +273,10 @@ def _all_current_waivers(root: Path) -> tuple[ScannedWaiver, ...]:
     return tuple(out)
 
 
+# frob:waive DUP001 reason="coincidental short-function AST shape across 4 unrelated \
+# domains (deprecated-baseline file#count codec, gtest name normalization, \
+# next-ticket-id allocation, waiver identity key) -- no shared logic, independently \
+# evolving"
 def _waiver_identity(waiver: ScannedWaiver) -> str:
     """T-2485: a `ScannedWaiver`'s stable identity across passes
     (`"file:line:rule"`) -- what `WaiveAuditWatermark.catchup_covered`

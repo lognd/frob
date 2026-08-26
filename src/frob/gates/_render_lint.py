@@ -101,6 +101,10 @@ class _PrintSite:
     call_desc: str
 
 
+# frob:waive DUP001 reason="this module's own docstring states this local dotted-name \
+# unparse uses the same shape as frob.gates._walk_lint._dotted_prefix and the \
+# _pii_structural._env_access sibling, kept local deliberately rather than sharing a \
+# private helper across modules"
 # frob:ticket T-0459
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`sys.stdout.write`

@@ -53,7 +53,10 @@ prefixes rather than re-invoking git itself."""
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Final
+
+from frob.gates._walk_lint import tracked_python_files_for_gate
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
 # frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_gates_vet_strata_check_are_members kind="unit"  # noqa: E501
@@ -85,4 +88,22 @@ def is_detector_package_file(rel_path: str) -> bool:
     return rel_path.startswith(DETECTOR_PACKAGE_ROOTS)
 
 
-__all__ = ["DETECTOR_PACKAGE_ROOTS", "is_detector_package_file"]
+# frob:doc docs/modules/gates.md#lexcheck001-t-2344
+# frob:tests tests/unit/gates/test_detector_scope.py::TestDetectorScope.test_tracked_gate_files_filters_to_detector_roots kind="unit"  # noqa: E501
+# frob:ticket T-2966
+def tracked_gate_files(root: Path, log_prefix: str) -> tuple[str, ...]:
+    """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`,
+    reusing `tracked_python_files_for_gate` (T-0861) and filtering to
+    `is_detector_package_file` -- the single home for the byte-identical
+    body PORT001 (`_port_selfcheck.py`) and LEXCHECK001
+    (`_lexical_selfcheck.py`) each carried as a private copy before
+    T-2966 extracted it (both modules' own docstrings called this
+    composition "expected to reuse rather than re-hardcode")."""
+    return tuple(
+        rel
+        for rel in tracked_python_files_for_gate(root, log_prefix=log_prefix)
+        if is_detector_package_file(rel)
+    )
+
+
+__all__ = ["DETECTOR_PACKAGE_ROOTS", "is_detector_package_file", "tracked_gate_files"]

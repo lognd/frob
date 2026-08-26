@@ -70,6 +70,10 @@ _RECOVERABLE_EXCEPTION_TYPES = frozenset(
 )
 
 
+# frob:waive DUP001 reason="this module's own docstring on _qualname already states \
+# this is a narrow local duplicate of frob.arch._mayraise._qualname, same reasoning as \
+# that module's own duplicate of _fallibility's helper: one small private helper, not \
+# a cross-module import"
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
 ) -> str:

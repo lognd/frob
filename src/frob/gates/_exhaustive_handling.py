@@ -135,6 +135,11 @@ _DIRECTIVE_PREFIX = "# frob:raises "
 _DIRECTIVE_LOOKBACK_LINES = 15
 
 
+# frob:waive DUP001 reason="this module's own docstring on _qualname already states \
+# this is a narrow local duplicate of frob.arch._mayraise._qualname (that module's \
+# private helper is out of this ticket's declared-scope carve-out; duplicating this \
+# one small helper, not importing a private name across modules, is the intended shape \
+# here)"
 def _qualname(
     module: NormalizedModule, cls_name: str | None, func: NormalizedFunction
 ) -> str:
@@ -191,6 +196,11 @@ def _has_catch_all(func: NormalizedFunction) -> bool:
     )
 
 
+# frob:waive DUP001 reason="this module's own docstring on _nearest_preceding_catch \
+# already states this is a narrow local duplicate of frob.arch._mayraise. \
+# _nearest_preceding_catch (that resolver's private helper is out of this ticket's \
+# declared-scope carve-out; duplicating this one small helper, not importing a private \
+# name across modules, is the intended shape here)"
 def _nearest_preceding_catch(
     func: NormalizedFunction, line: int
 ) -> NormalizedCatch | None:

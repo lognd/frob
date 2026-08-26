@@ -2190,6 +2190,11 @@ def _closest_by_line(waiver: Edge, violation: Violation) -> tuple[int, int]:
 _LARGE_DISTANCE = 1 << 30
 
 
+# frob:waive DUP001 reason="coincidental separator-normalization shape: this collapses \
+# a symref's scope-separator spellings to '.' for waiver comparison only; \
+# frob.lang._common's sibling rewrites a C++ display name's '::' to '.' for qualname \
+# joining -- unrelated domains (waiver matching vs C++ symbol naming), independently \
+# evolving, not shared logic"
 # frob:ticket T-2438
 def _canonical_symref(symref: str) -> str:
     """`symref` with every scope-separator spelling collapsed to `.` for

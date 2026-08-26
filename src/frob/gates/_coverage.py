@@ -1328,6 +1328,10 @@ def load_stamp(root: Path) -> dict | None:
 # T-1830 (draft successor T-1869): WIRE001's waiver here was
 # removed -- frob.gates.__init__._test006_stale now calls this function
 # directly, giving it a real, callgraph-traceable caller.
+# frob:waive DUP001 reason="deliberate parallel implementation: this module's own \
+# docstring says it mirrors frob.gates._baseline.is_baseline_stale's \
+# content-hash-comparison shape on purpose (TEST005/006 stamp-vs-tree staleness for \
+# two different stamp kinds)"
 def is_stamp_stale(root: Path, stamp: dict) -> bool:
     """Whether any file hash `stamp` recorded no longer matches the live
     tree -- the coverage-stamp twin of `frob.gates._baseline.is_baseline_

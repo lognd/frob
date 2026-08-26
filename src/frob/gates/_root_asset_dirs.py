@@ -154,6 +154,10 @@ def _external_reader_declared(root: Path, tracked: tuple[str, ...], name: str) -
     return False
 
 
+# frob:waive DUP001 reason="sibling UNRESOLVED-pkg-name-violation builders: this is \
+# ROOT001's own, _port_selfcheck.py's is PORT001's -- same fail-loudly \
+# log-then-UNRESOLVED-Violation shape (T-2391 convention), independently-evolving rule \
+# ids for two different gates"
 # frob:enforces CHK-GATE-ROOT001
 def _root001_unresolved_pkg_violation(root: Path) -> Violation:
     """T-2391 fail-loudly: `root`'s `pyproject.toml` `[project].name`

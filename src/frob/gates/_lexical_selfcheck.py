@@ -94,10 +94,10 @@ from pathlib import Path
 from frob.gates._detector_scope import (
     DETECTOR_PACKAGE_ROOTS,
     is_detector_package_file,
+    tracked_gate_files,
 )
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
-from frob.gates._walk_lint import tracked_python_files_for_gate
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -267,18 +267,6 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
-def _tracked_gate_files(root: Path) -> tuple[str, ...]:
-    """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`
-    (T-2466: widened past `src/frob/gates/` alone), reusing WALK001/
-    RENDER001's shared tracked-file helper (T-0861) rather than a third
-    private copy, filtered to this gate's own scope via the ONE shared
-    membership test (`is_detector_package_file`) PORT001's own widening
-    (T-2405) is expected to reuse rather than re-hardcode."""
-    return tuple(
-        rel
-        for rel in tracked_python_files_for_gate(root, log_prefix="lexcheck_gate")
-        if is_detector_package_file(rel)
-    )
 
 
 # frob:doc docs/modules/gates.md#lexcheck001-t-2344
@@ -308,7 +296,7 @@ def lexical_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
     scanned subset, never the whole repo."""
     root = Path(root)
     violations: list[Violation] = []
-    scanned_files = _tracked_gate_files(root)
+    scanned_files = tracked_gate_files(root, log_prefix="lexcheck_gate")
     for rel_path in scanned_files:
         if rel_path in _SELF_EXCLUDED_FILES:
             continue

@@ -200,6 +200,11 @@ def _is_ours(body: str) -> bool:
     return _OURS_MARKER in body or any(m in body for m in _LEGACY_OURS_MARKERS)
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _marker_begin(block_id: str) -> str:
     """The opening marker line for managed-block `block_id` -- content
     between this and `_marker_end(block_id)` is frob-owned and safe to

@@ -100,6 +100,11 @@ def _token_literal_assignment_target_ids(index: _NodeIndex) -> frozenset[int]:
     return frozenset(ids)
 
 
+# frob:waive DUP001 reason="sibling PII0xx violation-builder pair (_pii010_violation \
+# vs _pii012_violation): same builder shape (log + Violation(...) + message), but \
+# PII010 is a declared-surface finding and PII012 is an explicitly-documented \
+# advisory-only keyword-sweep suggestion -- independently-evolving rule \
+# codes/severities, not shared logic"
 def _pii012_violation(
     rel_path: str,
     lineno: int,

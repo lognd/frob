@@ -1183,6 +1183,10 @@ def _affect_ref_file(ref: str) -> str:
     return ref.split("::", 1)[0]
 
 
+# frob:waive DUP001 reason="cross-file sibling violation-builder cluster \
+# (DOC006/DOC007 in gates/_docptr.py, AFFECT001/AFFECT002 here): each builds one \
+# Violation(...) for a structurally-similar but independently-evolving rule with its \
+# own message/severity"
 def _affect001_violation(
     ref: str, file: str, line: int, stale_docs: list[str]
 ) -> Violation:
@@ -1202,6 +1206,10 @@ def _affect001_violation(
     )
 
 
+# frob:waive DUP001 reason="cross-file sibling violation-builder cluster \
+# (DOC006/DOC007 in gates/_docptr.py, AFFECT001/AFFECT002 here): each builds one \
+# Violation(...) for a structurally-similar but independently-evolving rule with its \
+# own message/severity"
 def _affect002_violation(
     ref: str, file: str, line: int, stale_deps: list[str]
 ) -> Violation:
@@ -1277,6 +1285,10 @@ def affect_drift_gate(snapshot: GraphSnapshot, diff: Diff) -> tuple[Violation, .
 # ---------------------------------------------------------------------------
 
 
+# frob:waive DUP001 reason="coincidental violation-builder shape: this builds a \
+# diff-failed-to-load blocking finding; gates/_dup_graph_schema.py's sibling builds an \
+# undeclared-schema-key ERROR finding -- unrelated domains, independently evolving, \
+# not shared logic"
 # frob:ticket T-0550
 def _diff_load_failed_violation(rule: str, base: str) -> Violation:
     """T-0550/B8: `rule`'s blocking violation for a diff that FAILED to
@@ -5580,6 +5592,9 @@ def _rel002_coherence_violations(root: Path, manifest) -> list[Violation]:  # no
 # frob:ticket T-0807
 # frob:tests \
 # tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_linked_worktree_no_ticket
+# frob:waive DUP001 reason="sibling REL001 note builders (_rel001_land_note vs the \
+# T-2462 changelog-fragment note): same WARN-note shape, independently-evolving \
+# message text per bump-vs-fragment case"
 # frob:tests tests/test_gates.py::TestDebtGate.test_rel001_land_owned_via_ticket_lease
 def _rel001_land_note(bump, manifest, current_version: str) -> list[Violation]:  # noqa: ANN001
     """REL001, land-owned case (T-0807): a `WARN`-severity note naming the
@@ -5637,6 +5652,9 @@ def _rel001_fragments_pending(root: Path) -> bool:
     return len(fragments.danger_ok) > 0
 
 
+# frob:waive DUP001 reason="sibling REL001 note builders (_rel001_land_note vs the \
+# T-2462 changelog-fragment note): same WARN-note shape, independently-evolving \
+# message text per bump-vs-fragment case"
 # frob:ticket T-2462
 # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_names_bump_and_fragment_mechanism  # noqa: E501
 # frob:tests tests/unit/gates/test_rel001_deferred_bump.py::TestRel001DeferredNote.test_empty_for_none_bump  # noqa: E501

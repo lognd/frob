@@ -159,6 +159,10 @@ def _raw_table(root: Path, table_name: str) -> dict | None:
     return table
 
 
+# frob:waive DUP001 reason="coincidental violation-builder shape: this builds an \
+# undeclared-schema-key ERROR finding; gates/__init__.py's sibling builds a \
+# diff-failed-to-load blocking finding -- unrelated domains, independently evolving, \
+# not shared logic"
 # frob:ticket T-2437
 def _unknown_key_violation(
     rule: str, table_name: str, reader: str, key: str
@@ -193,6 +197,9 @@ def _unknown_key_violation(
 # frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_dup_must_still\
 # _pass_this_repos_own_frob_toml kind="unit"
+# frob:waive DUP001 reason="sibling DUPSCHEMA001/GRAPHSCHEMA001 key-checking builders \
+# in the same module: same table-vs-declared-schema-keys shape, independently-evolving \
+# rule ids for different config tables ([dup] vs [graph])"
 # frob:ticket T-2437
 def dup_schema_gate(root: Path) -> tuple[Violation, ...]:
     """DUPSCHEMA001: the `[dup]` table's key set, checked against the
@@ -232,6 +239,9 @@ def dup_schema_gate(root: Path) -> tuple[Violation, ...]:
 # frob:tests \
 # tests/unit/test_dup_graph_table_schema.py::TestDupGraphSchemaGate.test_graph_must_sti\
 # ll_pass_this_repos_own_frob_toml kind="unit"
+# frob:waive DUP001 reason="sibling DUPSCHEMA001/GRAPHSCHEMA001 key-checking builders \
+# in the same module: same table-vs-declared-schema-keys shape, independently-evolving \
+# rule ids for different config tables ([dup] vs [graph])"
 # frob:ticket T-2437
 def graph_schema_gate(root: Path) -> tuple[Violation, ...]:
     """GRAPHSCHEMA001: the `[graph]` table's key set, checked against

@@ -13,7 +13,7 @@ required immediately), 22 for `'"src/frob/'` (opening quote plus
 matches). Both were correct; the epic body's prose just described the
 narrower pattern's shape while (unverified) carrying the broader
 pattern's number. This module's own AST-based count is a THIRD number,
-scoped to `src/frob/gates/**` only -- see `_tracked_gate_files` and the
+scoped to `src/frob/gates/**` only -- see `tracked_gate_files` and the
 `port_selfcheck_gate: scanned N ...` log line every run emits -- and is
 NOT a repo-wide denominator. `_env_var_docs.py`/`_root_asset_dirs.py`
 both silently matched NOTHING against a differently-named/laid-out
@@ -55,7 +55,7 @@ shipped `frob.gates._detector_scope.DETECTOR_PACKAGE_ROOTS` (`src/frob/
 {check,gates,strata,vet}/`) for LEXCHECK001's identical scope problem,
 derived by counting `Violation(`-constructing modules per package rather
 than guessing; `arch/` was measured and excluded on that same evidence.
-PORT001 reuses that SAME declaration (`_tracked_gate_files` now filters
+PORT001 reuses that SAME declaration (`tracked_gate_files` now filters
 with `is_detector_package_file` instead of its old `src/frob/gates/`-only
 prefix) rather than inventing a second, separately-drifting scope -- the
 exact two-copies-desync failure T-2466's own docstring warns against.
@@ -163,10 +163,13 @@ import ast
 import tomllib
 from pathlib import Path
 
-from frob.gates._detector_scope import DETECTOR_PACKAGE_ROOTS, is_detector_package_file
+from frob.gates._detector_scope import (
+    DETECTOR_PACKAGE_ROOTS,
+    is_detector_package_file,
+    tracked_gate_files,
+)
 from frob.gates._models import Severity, Violation
 from frob.gates._parse_failures import local_parse001_violation
-from frob.gates._walk_lint import tracked_python_files_for_gate
 from frob.logging import get_logger
 
 _log = get_logger(__name__)
@@ -208,42 +211,6 @@ def _project_package_name(root: Path) -> str | None:
     name = project_cfg.get("name") if isinstance(project_cfg, dict) else None
     return name if isinstance(name, str) and name else None
 
-
-def _tracked_gate_files(root: Path) -> tuple[str, ...]:
-    """Every git-tracked `.py` file under one of `DETECTOR_PACKAGE_ROOTS`
-    (`src/frob/{check,gates,strata,vet}/`, T-2466's shared, MEASURED
-    declaration of which packages can contain a gate-shaped detector),
-    reusing the same shared tracked-file helper LEXCHECK001/RENDER001/
-    WALK001 already use (T-0861), filtered by `is_detector_package_file`
-    -- the SAME membership test LEXCHECK001 uses (T-2466's own directive:
-    two meta-checks hardcoding separate scopes is this bug again; PORT001
-    was T-2466's named second consumer, filed as this widening).
-
-    T-2405: this used to be `rel.startswith("src/frob/gates/")`, PORT001's
-    own hardcoded, narrower-than-T-2466's-measurement prefix. Widening it
-    to `is_detector_package_file` is a strict superset of the old scan
-    (`src/frob/gates/` is itself one of `DETECTOR_PACKAGE_ROOTS`), so
-    every finding the narrower scan already reported still fires here.
-
-    DISCLOSED LIMITATION (unchanged from T-2388, still out of this
-    ticket's own declared scope): `tracked_python_files_for_gate` itself
-    hardcodes `git ls-files -- src/frob` (`_walk_lint.py`'s own
-    `run_argv` call) -- the SAME literal-package-path class T-2384 exists
-    to retarget, one layer below WALK001/RENDER001/PORT001 alike. Every
-    `DETECTOR_PACKAGE_ROOTS` prefix sits under `src/frob/`, so this
-    default pathspec already covers the full widened scope without
-    needing its own keyword argument -- LEXCHECK001 (T-2466) established
-    this same reuse pattern first. A genuine repo-rename would still need
-    that shared helper retargeted, a natural sibling for T-2389's own
-    retarget group. The pkg name PORT001 resolves from `pyproject.toml`
-    (see `_project_package_name`) is still real and load-bearing -- it is
-    the LITERAL PORT001 searches source text FOR, independent of which
-    directory gets walked to find that text."""
-    return tuple(
-        rel
-        for rel in tracked_python_files_for_gate(root, log_prefix="port_gate")
-        if is_detector_package_file(rel)
-    )
 
 
 def _path_prefix_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
@@ -302,6 +269,10 @@ def _identity_literal_hit(node: ast.AST, pkg: str) -> ast.Constant | None:
     return None
 
 
+# frob:waive DUP001 reason="sibling PORT001-PATH/PORT001-IDENT/PII010-unresolvable \
+# violation builders: this module's own docstring states PORT001-IDENT is deliberately \
+# a DIFFERENT, non-promoted rule id from PORT001-PATH -- same builder shape, \
+# independently-evolving message/severity per rule"
 # frob:enforces CHK-GATE-PORT001-PATH
 def _port001_path_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     """PORT001-PATH: a `.startswith("src/<pkg>/")`-shaped hardcode --
@@ -339,6 +310,10 @@ def _port001_path_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     )
 
 
+# frob:waive DUP001 reason="sibling PORT001-PATH/PORT001-IDENT/PII010-unresolvable \
+# violation builders: this module's own docstring states PORT001-IDENT is deliberately \
+# a DIFFERENT, non-promoted rule id from PORT001-PATH -- same builder shape, \
+# independently-evolving message/severity per rule"
 # frob:enforces CHK-GATE-PORT001-IDENT
 def _port001_ident_violation(rel_path: str, lineno: int, pkg: str) -> Violation:
     """PORT001-IDENT: a bare package-name literal used as a path segment
@@ -390,6 +365,10 @@ def _parse001_violation(rel_path: str, reason: str) -> Violation:
     )
 
 
+# frob:waive DUP001 reason="sibling UNRESOLVED-pkg-name-violation builders: this is \
+# PORT001's own, _root_asset_dirs.py's is ROOT001's -- same fail-loudly \
+# log-then-UNRESOLVED-Violation shape (T-2391 convention), independently-evolving rule \
+# ids for two different gates"
 # frob:enforces CHK-GATE-PORT001
 def _unresolved_project_name_violation(root: Path) -> Violation:
     """T-2391 fail-loudly: `root`'s `pyproject.toml` `[project].name`
@@ -442,7 +421,7 @@ def port_selfcheck_gate(root: Path) -> tuple[Violation, ...]:
         return (_unresolved_project_name_violation(root),)
 
     violations: list[Violation] = []
-    scanned_files = _tracked_gate_files(root)
+    scanned_files = tracked_gate_files(root, log_prefix="port_gate")
     for rel_path in scanned_files:
         if rel_path in _SELF_EXCLUDED_FILES or rel_path in _ALLOWLIST:
             continue

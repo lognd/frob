@@ -130,6 +130,10 @@ def _allocate_ticket_id(
     return _next_ticket_id_shared(root, merged)
 
 
+# frob:waive DUP001 reason="coincidental short-function AST shape across 4 unrelated \
+# domains (deprecated-baseline file#count codec, gtest name normalization, \
+# next-ticket-id allocation, waiver identity key) -- no shared logic, independently \
+# evolving"
 def _next_ticket_id(existing: dict[str, Ticket]) -> str:
     """The next sequential `T-####` id above the highest existing ticket number
     in `existing` -- callers must pass the id space they want ids kept clear

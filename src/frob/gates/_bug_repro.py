@@ -770,6 +770,11 @@ def _remove_bug_repro_worktree(root: Path, worktree: Path) -> None:
         _log.warning("BUG002: could not remove scratch worktree %s", worktree)
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _bug002_message(ticket_id: str, test_id: str, base_ref: str) -> str:
     """BUG002's refusal message: names the designated test, the parent ref
     it was re-run against, and both documented remedies -- fix the
@@ -795,6 +800,11 @@ def _bug002_message(ticket_id: str, test_id: str, base_ref: str) -> str:
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _no_behavior_change_message(ticket_id: str, test_id: str, base_ref: str) -> str:
     """T-1616's inverted BUG002 message: fires when a ticket claims `frob:
     no-behavior-change` but its own designated evidence test FAILED at the
@@ -943,6 +953,11 @@ def bug_repro_violations(
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _must_still_pass_broke_at_fix_message(ticket_id: str, test_id: str) -> str:
     """BUG003 (T-2193): the designated capability control genuinely
     FAILS at the ticket's own fix -- the exact silent-capability-loss
@@ -962,6 +977,11 @@ def _must_still_pass_broke_at_fix_message(ticket_id: str, test_id: str) -> str:
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _must_still_pass_never_passed_message(ticket_id: str, test_id: str) -> str:
     """BUG003: the designated control did not even PASS at the parent
     commit -- it cannot prove "the fix kept this working" because it was

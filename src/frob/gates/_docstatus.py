@@ -84,6 +84,9 @@ def _audit_docs(root: Path) -> set[str]:
 _DOC011_ID_MENTION_RE = re.compile(r"\bT-(?:\d{4}|draft-[0-9a-f]{8})\b")
 
 
+# frob:waive DUP001 reason="sibling DOC010/DOC011 violation builders: same \
+# Violation(...)-building shape, independently-evolving rule codes and messages \
+# (DOC011 unresolved ticket-id mention vs DOC010 unresolved make-target citation)"
 # frob:enforces CHK-GATE-DOC011
 # frob:ticket T-2843
 def _doc011_violation(doc_rel: str, line: int, ticket_id: str) -> Violation:
@@ -330,6 +333,9 @@ def _makefiles_for_doc(root: Path, doc_rel: str) -> list[Path]:
     return chain
 
 
+# frob:waive DUP001 reason="sibling DOC010/DOC011 violation builders: same \
+# Violation(...)-building shape, independently-evolving rule codes and messages \
+# (DOC011 unresolved ticket-id mention vs DOC010 unresolved make-target citation)"
 # frob:ticket T-2843
 def _doc010_violation(doc_rel: str, line: int, target: str) -> Violation:
     """Build one DOC010 error `Violation` -- a cited `make <target>` recipe

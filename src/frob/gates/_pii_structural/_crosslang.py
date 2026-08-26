@@ -48,6 +48,10 @@ from ._tracked import _tracked_files_by_pattern
 _log = get_logger(__name__)
 
 
+# frob:waive DUP001 reason="sibling PORT001-PATH/PORT001-IDENT/PII010-unresolvable \
+# violation builders: this module's own docstring states PORT001-IDENT is deliberately \
+# a DIFFERENT, non-promoted rule id from PORT001-PATH -- same builder shape, \
+# independently-evolving message/severity per rule"
 def _pii010_unresolvable_violation(
     rel_path: str, lineno: int, description: str
 ) -> Violation:

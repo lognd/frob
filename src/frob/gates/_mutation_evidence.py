@@ -175,6 +175,11 @@ def _test016_message(ticket_id: str, finding: ConfirmatoryFinding) -> str:
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 # frob:ticket T-1727
 def _test016_unmeasured_message(ticket_id: str, finding: ConfirmatoryFinding) -> str:
     """T-1727: the TEST016 message for a file the sweep's shared wall-

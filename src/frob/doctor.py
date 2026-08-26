@@ -586,6 +586,11 @@ def global_binary_skew(local_version: str) -> GlobalBinarySkew | None:
     )
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _global_binary_skew_remediation(skew: GlobalBinarySkew) -> str:
     """Remediation hint naming both versions and the exact reconcile
     command (T-1719) -- mirrors `frob-suggest.py`'s own nudge text so an

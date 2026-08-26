@@ -32,6 +32,10 @@ def _waiver_hint(rule: str) -> str:
     return f'waive with: frob:waive {rule} reason="..."'
 
 
+# frob:waive DUP001 reason="coincidental short-function AST shape: this is \
+# DUP001/002's own small pure formatting helper, unrelated to the \
+# frob.arch/_gates._qualname family's documented narrow-duplicate convention -- \
+# different domain, independently evolving"
 def _extraction_hint(template: CloneTemplate | None) -> str:
     """DUP001's message suffix naming the synthesized extraction, or "" if none.
 
@@ -45,6 +49,11 @@ def _extraction_hint(template: CloneTemplate | None) -> str:
     return f"; candidate extraction: {template.suggested_signature}"
 
 
+# frob:waive DUP001 reason="coincidental structural resemblance only: \
+# remediation/message-builder functions across 8 unrelated subsystems (doctor \
+# version-skew, BUG002 repro-evidence messages, mutation evidence, strata waive, \
+# deploy generate, scaffold managed, dup rules formatting, ticket close-cmd hints) -- \
+# no shared domain, independently evolving, spot-checked per T-2966"
 def _dup001_message(
     new_side: CloneRegion,
     old_side: CloneRegion,

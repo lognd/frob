@@ -64,6 +64,10 @@ def _subscript_key(node: ast.Subscript) -> ast.expr:
     return node.slice
 
 
+# frob:waive DUP001 reason="this module's own docstring states this local dotted-name \
+# unparse is a small, local, deliberately-kept-local sibling of \
+# frob.gates._walk_lint._dotted_prefix and frob.gates._render_lint's copy, not a \
+# shared private helper"
 def _dotted_prefix(node: ast.expr) -> str | None:
     """The dotted-name text of an `Attribute`/`Name` chain (`os.environ` ->
     `"os.environ"`), or `None` for anything else -- a small, local

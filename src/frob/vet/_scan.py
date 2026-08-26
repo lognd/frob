@@ -276,6 +276,10 @@ def _apply_npm_and_prehook_checks(
         signals.extend(pre_signals)
 
 
+# frob:waive DUP001 reason="sibling small violation builders across meta-checks: this \
+# dependency-never-read fail-closed finding, DOC001/other doclink builders in \
+# frob.gates._doclink_docanchor -- coincidental short-function shape, unrelated rule \
+# domains"
 # frob:enforces CHK-GATE-VET-SOURCE-UNAVAILABLE
 def _source_unavailable_violation(dep: Dependency, lockfile_name: str) -> Violation:
     """T-0400 audit finding #1: a dependency `frob vet` never read must

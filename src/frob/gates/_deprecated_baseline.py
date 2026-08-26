@@ -62,6 +62,10 @@ BASELINE_REL = Path("frob-deprecated-baseline.lock.json")
 _FILE_COUNT_SEP = "#"
 
 
+# frob:waive DUP001 reason="coincidental short-function AST shape across 4 unrelated \
+# domains (deprecated-baseline file#count codec, gtest name normalization, \
+# next-ticket-id allocation, waiver identity key) -- no shared logic, independently \
+# evolving"
 # frob:ticket T-1052
 def _encode_file_count(file: str, count: int) -> str:
     """Encode one baselined `(file, count)` pair into the single string

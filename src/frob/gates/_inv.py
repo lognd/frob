@@ -152,6 +152,8 @@ def _invariant_evidence_proves_anchor(
     return evidence.split("::", 1)[0] in anchor_files
 
 
+# frob:waive DUP001 reason="sibling INV001/INV002 violation builders in the same \
+# module: same tiny Violation(...)-building shape, independently-evolving rule codes"
 # frob:enforces CHK-GATE-INV001
 def _inv001(inv: Invariant) -> Violation:
     """INV001: an invariant with no standing evidence."""
@@ -168,6 +170,8 @@ def _inv001(inv: Invariant) -> Violation:
     )
 
 
+# frob:waive DUP001 reason="sibling INV001/INV002 violation builders in the same \
+# module: same tiny Violation(...)-building shape, independently-evolving rule codes"
 # frob:enforces CHK-GATE-INV002
 def _inv002(inv: Invariant) -> Violation:
     """INV002: an invariant with no code anchor."""

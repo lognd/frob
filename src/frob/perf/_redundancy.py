@@ -78,6 +78,9 @@ class _HeavyComputation:
     cached_by: tuple[str, ...]
 
 
+# frob:waive DUP001 reason="sibling best-effort TOML-load thin wrappers, one per \
+# subsystem (docblocks namespaces, perf redundancy config, perf sketch-store config): \
+# same None-on-any-failure fail-open shape, independently evolving per config surface"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed
     file -- a missing/absent `[[perf.heavy]]` table just means no PERF007

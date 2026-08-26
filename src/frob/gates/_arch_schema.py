@@ -201,6 +201,10 @@ def _resolve_known_keys(root: Path) -> tuple[frozenset[str] | None, Violation | 
 # in this same file (not flagged) -- the resolver's coverage gap is inherent ambiguity \
 # in resolving doc.get(...).get(...) chains on an untyped tomllib result, not a real \
 # unhandled-exception risk"
+# frob:waive DUP001 reason="sibling _table raw-toml-load helpers, one per schema \
+# family ([arch]/[profile]/[testing]): same tomllib.load/fail-open shape (already the \
+# pattern this file's own EXHAUST003 waiver above documents), independently-evolving \
+# per config table"
 def _arch_table(root: Path) -> dict | None:
     """The RAW `[arch]` table straight off `tomllib.load`. Returns `None`
     if frob.toml is missing/malformed, or the table is absent (same

@@ -33,6 +33,9 @@ class _ProjectNamespaces:
     rust_crate_dirs: dict[str, str] = field(default_factory=dict)
 
 
+# frob:waive DUP001 reason="sibling best-effort TOML-load thin wrappers, one per \
+# subsystem (docblocks namespaces, perf redundancy config, perf sketch-store config): \
+# same None-on-any-failure fail-open shape, independently evolving per config surface"
 def _read_toml(path: Path) -> dict | None:
     """Best-effort TOML load: `None` on any missing/unreadable/malformed file,
     never a crash -- a missing manifest just means that language contributes

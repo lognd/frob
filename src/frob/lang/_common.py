@@ -642,6 +642,11 @@ def _iter_cpp_functions(root: Node) -> tuple[tuple[Node, str], ...]:
     return tuple(out)
 
 
+# frob:waive DUP001 reason="coincidental separator-normalization shape: this rewrites \
+# a C++ display name's '::' to '.' for qualname joining; frob.gates._waive's sibling \
+# collapses a symref's scope-separator spellings to '.' for waiver comparison only -- \
+# unrelated domains (C++ symbol naming vs waiver matching), independently evolving, \
+# not shared logic"
 # frob:ticket T-2470
 def _cpp_symref_qualname(display_name: str) -> str:
     """`display_name` (this module's own `_iter_cpp_functions`/`_cpp_class_

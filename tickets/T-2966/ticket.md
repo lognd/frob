@@ -1,7 +1,7 @@
 ---
 id: T-2966
 title: 'frob-dup: finish src/frob/gates cluster triage (23 residue groups)'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -31,6 +31,8 @@ scope:
 - src/frob/vet/_scan_violations.py
 - src/frob/perf/_redundancy.py
 - src/frob/perf/_sketch_store.py
+evidence_scope:
+- tests/unit/gates/test_detector_scope.py
 scope_breadth_ack: true
 scope_breadth_ack_reason: genuine epic-scale triage across ~20 groups spanning most
   of src/frob/gates; package glob is the honest scope
@@ -149,12 +151,15 @@ scope_changes:
     scope-widened to the minimal sibling set
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_tracked_gate_files_filters_to_detector_roots
 designated_repro_test: null
 acceptance:
 - text: given the 23 residue groups this ticket's body lists, when triaged and dispositioned
     (extracted / waived with reason / narrowed), then re-measuring src/frob/gates
     frob-dup unaccounted groups shows 0 (or a further-decomposed residue with counts)
-  evidence: []
+  evidence:
+  - tests/unit/gates/test_detector_scope.py::TestDetectorScope::test_tracked_gate_files_filters_to_detector_roots
 threat: null
 component: null
 anchor: false

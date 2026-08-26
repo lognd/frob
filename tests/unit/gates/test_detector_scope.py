@@ -8,6 +8,7 @@ from __future__ import annotations
 from frob.gates._detector_scope import (
     DETECTOR_PACKAGE_ROOTS,
     is_detector_package_file,
+    tracked_gate_files,
 )
 
 
@@ -42,3 +43,16 @@ class TestDetectorScope:
         by bare string prefix) in deterministic sorted order."""
         assert list(DETECTOR_PACKAGE_ROOTS) == sorted(DETECTOR_PACKAGE_ROOTS)
         assert all(root.endswith("/") for root in DETECTOR_PACKAGE_ROOTS)
+
+    def test_tracked_gate_files_filters_to_detector_roots(self) -> None:
+        """T-2966: `tracked_gate_files` (extracted from the byte-identical
+        `_tracked_gate_files` PORT001/LEXCHECK001 each carried privately)
+        returns only files under `DETECTOR_PACKAGE_ROOTS`, sourced from
+        this repo's own tracked tree (no fixture repo needed -- every
+        result must satisfy `is_detector_package_file`)."""
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parents[3]
+        files = tracked_gate_files(root, log_prefix="test_tracked_gate_files")
+        assert files
+        assert all(is_detector_package_file(rel) for rel in files)

@@ -142,6 +142,10 @@ def _dotted_form(target: str) -> str:
     return file_part + sep + rest.replace("::", ".")
 
 
+# frob:waive DUP001 reason="this function's own docstring states it is a local copy of \
+# frob.gates.__init__._site_from_edge_origin (private to the package __init__, which \
+# imports this module, so importing back would cycle) -- same reasoning \
+# frob.gates._docptr's sibling copy carries"
 def _origin_site(origin: str) -> tuple[str, int]:
     """Best-effort `(file, line)` split of an edge's `path:line` origin
     string -- a local copy of `frob.gates.__init__._site_from_edge_origin`
