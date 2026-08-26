@@ -6,7 +6,7 @@ state: queued
 kind: bug
 origin: human
 created: '2026-08-26'
-priority: medium
+priority: high
 parent: null
 tier: ticket
 sprint: null
@@ -21,6 +21,15 @@ scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+triage_changes:
+- field: priority
+  old_value: medium
+  new_value: high
+  reason: 'spurious REF001/PRE001/SCOPE001 on any clean project directly undermines
+    the standing transferability goal: every adopter sees false findings on first
+    run, which is the give-up scenario frob status was built to prevent'
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
