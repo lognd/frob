@@ -14,8 +14,6 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
-scope:
-- src/frob/app/ticket_runner/_rapid_sweep.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -24,6 +22,11 @@ scope_changes:
 - op: add
   glob: src/frob/app/ticket_runner/_rapid_sweep.py
   reason: fcntl advisory lock degrade path
+  actor: logan
+  at: '2026-08-25'
+- op: remove
+  glob: src/frob/app/ticket_runner/_rapid_sweep.py
+  reason: 'starting over: narrow the sweep to exactly the touched fn/tests'
   actor: logan
   at: '2026-08-25'
 designated_repro_test: null
