@@ -380,6 +380,7 @@ matches `grep -oE 'T-[0-9]{4}' CHANGELOG.md | sort -u | wc -l` exactly.
 - T-2936: frob does not IMPORT on Windows: signal.SIGKILL evaluated as a default arg at module load crashes in 54s before any test runs
 - T-2937: frob ticket new blocks up to ~5min on an unrelated land, then strands an uncommitted ticket on timeout
 - T-2938: Move ClaimDivergence re-verification onto the deferred post-land queue instead of scoping it inline
+- T-2943: macOS: git subprocess returncode=128 in test fixtures - 100+ system/CLI test failures, root cause unconfirmed
 - T-2944: PLATFORM001 misses sys.platform-string guards; /proc-only worktree-liveness scan is permissive on macOS/Windows
 - T-2945: AF_UNIX socket path too long on macOS: relocate daemon.sock off deep project-root paths
 - T-2946: Burn TICK004/TICK007 to zero via real ticket-queue triage, then promote

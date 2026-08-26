@@ -4,32 +4,54 @@ End-to-end tests for `frob cycle`.
 
 import pytest
 
-from tests.system.conftest import run
+from tests.system.conftest import git, git_init_and_config, run
+
+
+def _commit_all(path):
+    """Stage and commit everything under `path` (T-2943: `frob cycle`'s
+    directory walk needs real, committed content -- an initialized-but-
+    empty repo still measures 0 nodes)."""
+    git("add", "-A", cwd=path)
+    git("commit", "-q", "-m", "init", cwd=path)
 
 
 @pytest.fixture
 def no_cycle_dir(tmp_path):
     # linear chain: a imports b, b imports c, no cycle
+    # T-2943: git-init tmp_path so `_resolve_project_root` (T-2588) has a
+    # repo boundary to resolve `frob cycle <tmp_path>` against -- without
+    # this, `git -C tmp_path rev-parse --show-toplevel` fails "not a git
+    # repository" (exit 128, unrelated to platform/safe.directory -- this
+    # reproduces identically on Linux and macOS) and `frob cycle` correctly
+    # refuses (exit 2) rather than silently measuring the wrong tree.
+    git_init_and_config(tmp_path)
     (tmp_path / "a.py").write_text("from b import something\n")
     (tmp_path / "b.py").write_text("from c import something\n")
     (tmp_path / "c.py").write_text("x = 1\n")
+    _commit_all(tmp_path)
     return tmp_path
 
 
 @pytest.fixture
 def cycle_dir(tmp_path):
     # a imports b, b imports a -> cycle
+    # T-2943: see no_cycle_dir's comment -- same git-init requirement.
+    git_init_and_config(tmp_path)
     (tmp_path / "a.py").write_text("from b import something\n")
     (tmp_path / "b.py").write_text("from a import something\n")
+    _commit_all(tmp_path)
     return tmp_path
 
 
 @pytest.fixture
 def deep_cycle_dir(tmp_path):
     # a -> b -> c -> a
+    # T-2943: see no_cycle_dir's comment -- same git-init requirement.
+    git_init_and_config(tmp_path)
     (tmp_path / "a.py").write_text("from b import something\n")
     (tmp_path / "b.py").write_text("from c import something\n")
     (tmp_path / "c.py").write_text("from a import something\n")
+    _commit_all(tmp_path)
     return tmp_path
 
 

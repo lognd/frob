@@ -2,7 +2,7 @@
 id: T-2943
 title: 'macOS: git subprocess returncode=128 in test fixtures - 100+ system/CLI test
   failures, root cause unconfirmed'
-state: in-progress
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -79,6 +79,16 @@ scope_changes:
     '
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/system/test_cli_cycle.py::test_no_cycle_exit_zero
+- tests/system/test_cli_cycle.py::test_no_cycle_says_no_cycles
+- tests/system/test_cli_cycle.py::test_no_cycle_does_not_say_cycle_detected
+- tests/system/test_cli_cycle.py::test_cycle_says_cycle
+- tests/system/test_cli_cycle.py::test_cycle_mentions_a_py
+- tests/system/test_cli_cycle.py::test_cycle_mentions_b_py
+- tests/system/test_cli_cycle.py::test_deep_cycle_mentions_all_three
+- tests/system/test_cli_cycle.py::test_suggest_output_contains_suggest
+- tests/system/test_cli_cycle.py::test_suggest_no_cycle_exit_zero
 designated_repro_test: null
 threat: null
 component: null
