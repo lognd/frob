@@ -17,6 +17,7 @@ scope:
 - src/frob/gates/_tickets_gate.py
 - tickets/archive/T-2556/done-report.md
 - tickets/archive/T-2653/done-report.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -39,6 +40,11 @@ scope_changes:
   reason: 'TICK011 remediation: repair the two archived Done reports whose disclosures
     needed a nearby citation/no-ticket-needed marker (see gate-code fix in the same
     ticket for why the other 7 were bare-word false positives, not real gaps)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: TICK011 rule-catalog comment needs the WARN->ERROR promotion note
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
