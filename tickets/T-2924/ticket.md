@@ -30,6 +30,8 @@ triage_changes:
 designated_repro_test: null
 threat: null
 component: null
+labels:
+- restores-dropped-guard
 anchor: false
 anchor_reason: null
 land_commit: null
