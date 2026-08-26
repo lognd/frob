@@ -2,7 +2,7 @@
 id: T-2980
 title: 'ubuntu-latest CI hangs in the Test step for 2+ hours: no green baseline exists
   on any platform'
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -88,6 +88,11 @@ scope_changes:
   reason: 'T-2980 fix: add regression test for run() default timeout'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout::test_run_default_timeout_is_bounded_not_none
+- tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout::test_run_expiry_raises_a_named_loud_error
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_strips_dispatch_agent_env_vars
+- tests/system/test_run_helper_env_leak.py::TestRunHelperEnvLeak::test_run_explicit_env_can_still_set_frob_agent
 designated_repro_test: null
 threat: null
 component: null

@@ -1,5 +1,5 @@
 ---
-id: T-draft-b28cab2a
+id: T-2992
 title: capture and triage the real test failures the ubuntu CI hang was hiding
 state: queued
 kind: bug

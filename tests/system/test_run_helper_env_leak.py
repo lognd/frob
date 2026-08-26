@@ -10,7 +10,9 @@ agent.
 
 from pathlib import Path
 
-from tests.system.conftest import git, git_init_and_config, run
+import pytest
+
+from tests.system.conftest import DEFAULT_RUN_TIMEOUT_S, git, git_init_and_config, run
 
 PY_SOURCE = "def add(x: int, y: int) -> int:\n    return x + y\n"
 
@@ -69,3 +71,32 @@ class TestRunHelperEnvLeak:
         out = r.stdout + r.stderr
         assert r.returncode == 1, out
         assert "FROB_AGENT" in out
+
+
+class TestRunHelperDefaultTimeout:
+    """T-2980: `run()` must never wait forever. `tests/system/conftest.py`'s
+    `run(*args, ..., timeout=timeout)` used to pass `timeout=None`
+    straight to `subprocess.run` whenever a caller omitted it, so any
+    call that spawned a frob subprocess which itself wedged (a `frob
+    check` invocation is the ubuntu-latest CI incident this ticket is
+    named for) blocked the whole worker indefinitely. Under
+    `--dist=loadgroup`, killing that worker at the outer
+    `--timeout=120` wall clock does not end the run either: xdist
+    redispatches the same wedging item to a fresh worker, which wedges
+    and dies the same way, consuming workers one at a time forever --
+    the exact mechanism reproduced locally for this ticket. Bounding
+    the wait INSIDE `run()` raises a normal Python exception instead,
+    so the test fails and the run moves on with no worker ever needing
+    to be killed."""
+
+    # frob:ticket T-2980
+    def test_run_default_timeout_is_bounded_not_none(self):
+        # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_default_timeout_is_bounded_not_none  # noqa: E501
+        assert DEFAULT_RUN_TIMEOUT_S is not None
+        assert DEFAULT_RUN_TIMEOUT_S > 0
+
+    # frob:ticket T-2980
+    def test_run_expiry_raises_a_named_loud_error(self):
+        # frob:tests tests/system/test_run_helper_env_leak.py::TestRunHelperDefaultTimeout.test_run_expiry_raises_a_named_loud_error  # noqa: E501
+        with pytest.raises(RuntimeError, match="timed out after"):
+            run("--help", timeout=0.01)
