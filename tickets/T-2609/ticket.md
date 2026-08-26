@@ -15,10 +15,18 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/app/ticket_runner/_land_cmd.py
+- tests/test_ticket_work_and_land_finish.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tests/test_ticket_work_and_land_finish.py
+  reason: T-2609 needs its designated repro/regression tests colocated with the existing
+    TestAssertNewPublicSymbolsHaveDocAndTestEdges class
+  actor: logan
+  at: '2026-08-25'
 designated_repro_test: null
 threat: null
 component: null
