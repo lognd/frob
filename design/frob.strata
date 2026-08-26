@@ -120,7 +120,7 @@ node cli : trusted {
     // utility misplaced in the entrypoint layer, not a genuine
     // architecture dependency on `cli`. Moved to `core` (this repo's
     // existing general-infra node, which already owns the same-shaped
-    // gitio.py) along with src/frob/yaml_io.py and src/frob/tomlio.py,
+    // gitio.py) along with src/frob/yamlio.py and src/frob/tomlio.py,
     // the two other top-level parsing helpers sharing the identical
     // many-importers/zero-imports shape.
     // T-1076: __main__.py's own _add_*_parser argparse builders split out
@@ -801,7 +801,7 @@ node core : trusted {
     clearance Internal;
     code "src/frob/dup/**" "src/frob/logging/**" "src/frob/process/**"
         "src/frob/gitlog/**" "src/frob/gitio.py" "src/frob/xref/**"
-        "src/frob/excludes.py" "src/frob/yaml_io.py" "src/frob/tomlio.py"
+        "src/frob/excludes.py" "src/frob/yamlio.py" "src/frob/tomlio.py"
         "src/frob/repo_meta.py" "src/frob/derived_state.py"
         "src/frob/outline/**" "src/frob/map/**" "src/frob/exports/**"
         "src/frob/perf/**" "src/frob/policy/**"
@@ -1782,7 +1782,7 @@ flow f_fleet_core : fleet -> core { label Internal; attr local; }
 // three real production cross-component dependencies had never been
 // declared -- refactor/registry_model/verify all import core-owned
 // helpers (frob.logging, frob.gitio, and post-reclassification
-// frob.excludes/frob.yaml_io/frob.tomlio) with no Flow admitting the
+// frob.excludes/frob.yamlio/frob.tomlio) with no Flow admitting the
 // edge. Declared here rather than silenced at the gate, matching every
 // other -> core edge above.
 // frob:doc docs/strata/roadmap.md#self-hosting-commitments-decision-d7

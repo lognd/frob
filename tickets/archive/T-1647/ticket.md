@@ -29,7 +29,7 @@ designated_repro_test: null
 threat: null
 component: null
 ---
-T-1204 closed having fixed the PERF010 family (a genuine rule false positive plus four real call sites moved onto the new shared src/frob/yaml_io.py). Its Done report honestly disclosed that the other PERF rules were not attempted. That remainder was never filed, so closing T-1204 dropped it from the queue -- 47 warnings with no owner.
+T-1204 closed having fixed the PERF010 family (a genuine rule false positive plus four real call sites moved onto the new shared src/frob/yamlio.py). Its Done report honestly disclosed that the other PERF rules were not attempted. That remainder was never filed, so closing T-1204 dropped it from the queue -- 47 warnings with no owner.
 
 Current unwaived breakdown on main:
 - PERF011 x62

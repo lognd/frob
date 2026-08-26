@@ -84,7 +84,7 @@ def _ancestor(package: str, levels_up: int) -> str:
 def _importing_package(repo_root: Path, file_path: Path) -> str:
     """The dotted package a `.py` file under `src/` (or `repo_root`)
     itself belongs to -- `src/frob/gates/decisions.py` ->
-    `"frob.gates"`, `src/frob/yaml_io.py` -> `"frob"`. Used to resolve
+    `"frob.gates"`, `src/frob/legacy_io.py` -> `"frob"`. Used to resolve
     that FILE's own relative imports to an absolute target, and to
     decide whether a rewritten import can stay relative."""
     src_root = repo_root / "src"
@@ -114,12 +114,12 @@ def _resolve_relative(importing_package: str, node: ast.ImportFrom) -> str | Non
 
 def _dotted_attribute_chain(node: ast.expr) -> list[str] | None:
     """Every segment of an `Attribute`/`Name` chain as a list (`['frob',
-    'yaml_io', 'fast_yaml_loader']`), or `None` if any link is not a
+    'legacy_io', 'fast_loader']`), or `None` if any link is not a
     plain `Name`/`Attribute` -- mirrors `_scan._dotted_attribute_chain`
     but returns the SEGMENT LIST (not a joined string) so a caller can
     do exact-length prefix comparison instead of string-prefix matching
-    (the prefix-collision guard: `['frob','yaml_io']` must never match
-    `['frob','yaml_io_extra']`, which a string `.startswith` check
+    (the prefix-collision guard: `['frob','legacy_io']` must never match
+    `['frob','legacy_io_extra']`, which a string `.startswith` check
     would risk if not paired with a boundary check -- a list compare has
     no such hazard)."""
     parts: list[str] = []
@@ -293,7 +293,7 @@ def _rewrite_from_module_import_names(
 def _relative_parent_value(importing_package: str, node: ast.ImportFrom) -> str:
     """The absolute dotted PACKAGE `node`'s relative `from X import ...`
     names, when `node` is itself relative (`node.level > 0`) -- e.g.
-    `from . import yaml_io` (level=1, module=None) resolves to
+    `from . import legacy_io` (level=1, module=None) resolves to
     `importing_package` itself; `from .sub import x` (level=1,
     module='sub') resolves to `importing_package.sub`. Distinct from
     `_resolve_relative`, which resolves the FULL target including

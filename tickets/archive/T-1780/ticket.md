@@ -83,7 +83,7 @@ scope:
 - src/frob/verify/_selection.py
 - src/frob/verify/_watermark.py
 - src/frob/verify/_worker.py
-- src/frob/yaml_io.py
+- src/frob/yamlio.py
 - tests/test_gates_tickets_hygiene.py
 - tests/test_ticket_merge_driver.py
 - tests/test_tickets_organization.py
@@ -559,7 +559,7 @@ scope_changes:
   actor: logan
   at: '2026-08-16'
 - op: add
-  glob: src/frob/yaml_io.py
+  glob: src/frob/yamlio.py
   reason: 'T-1780: mechanical frob:doc anchor repointing to the new split files, and
     split-file creation itself, necessarily follows from the docs/modules/tickets.md
     split -- same class as CLI-wiring-implicitly-in-scope for a FEATURE ticket'

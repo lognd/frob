@@ -116,7 +116,7 @@ those three, and a grep across `src/`, `docs/` and comments for
 rename_module|file-level refactor` finds no implementation and no recorded plan.
 The only mention anywhere is the note I left in T-2989.
 
-WHY IT IS NEEDED: T-2989 renames `frob.yaml_io` -> `frob.yamlio` for io-seam
+WHY IT IS NEEDED: T-2989 renames `frob.yamlio` -> `frob.yamlio` for io-seam
 naming consistency (`gitio`, `tomlio`, and the incoming `ghio` carry no
 underscore). With no module verb, that has to be expressed as a symbol move plus
 manual residue cleanup, or done by hand -- and hand-editing imports is exactly
@@ -129,8 +129,8 @@ parse and compare SYMBOLS, never substrings -- a lexical match is wrong in both
 directions (it matches inside comments and strings, and it misses aliases). The
 verb must handle at minimum:
 
-- `import frob.yaml_io`, `from frob import yaml_io`, `from frob.yaml_io import X`
-- aliased forms: `import frob.yaml_io as y`, `from frob import yaml_io as y`
+- `import frob.yamlio`, `from frob import yaml_io`, `from frob.yamlio import X`
+- aliased forms: `import frob.yamlio as y`, `from frob import yaml_io as y`
 - relative imports from within the same package
 - re-exports through `__init__.py` and `__all__` entries
 - the moved module's OWN intra-package relative imports, which may need
@@ -153,7 +153,7 @@ dotted string:
 - ticket `scope` entries, which are path globs.
 - docs prose and anchors.
 
-DYNAMIC AND STRING-FORM IMPORTS: `importlib.import_module("frob.yaml_io")`,
+DYNAMIC AND STRING-FORM IMPORTS: `importlib.import_module("frob.yamlio")`,
 `__import__`, and any dotted-path string resolved at runtime are invisible to an
 AST import rewrite. frob itself uses `importlib.import_module` (the guarded
 `fcntl`/`msvcrt` backends do). The verb must at minimum DETECT string-form
@@ -165,7 +165,7 @@ NOT:
 - rewrite a prose or string occurrence that merely contains the module name
   (a docstring discussing YAML I/O generally; a log message; a test fixture
   containing the literal text);
-- corrupt a DIFFERENT module sharing a prefix -- `frob.yaml_io` must not rewrite
+- corrupt a DIFFERENT module sharing a prefix -- `frob.yamlio` must not rewrite
   `frob.yaml_io_extra` or `frob.yaml_iomodel`. Substring-prefix collision is the
   classic failure here;
 - leave the tree half-moved. `src/frob/refactor/_transaction.py` already exists
@@ -192,7 +192,7 @@ ACCEPTANCE
 - A dynamic `importlib.import_module("<old path>")` is either rewritten or
   reported as an unhandled reference -- never silently left broken.
 - Failure mid-move rolls back to a clean tree.
-- Proven end-to-end by using the new verb to perform T-2989 (`frob.yaml_io` ->
+- Proven end-to-end by using the new verb to perform T-2989 (`frob.yamlio` ->
   `frob.yamlio`), with `git grep -c "yaml_io"` returning 0 afterwards.
 
 REUSE THE EXISTING `move` MACHINERY -- yes, and here is the shape.
@@ -214,7 +214,7 @@ Factor the shared core so both verbs call it. Do not fork it.
 
 DO NOT simply loop `move` over every symbol. A module move is not the sum of its
 symbol moves, and the gap is exactly where the bugs would live:
-  - `import frob.yaml_io` and `from frob import yaml_io` reference the MODULE,
+  - `import frob.yamlio` and `from frob import yaml_io` reference the MODULE,
     not any symbol in it. A symbol-by-symbol loop never sees them.
   - Module-private symbols (`_coverage_tracer_active` in the T-2989 case) are not
     part of a public-surface move but must travel with the file.

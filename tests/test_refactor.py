@@ -2246,18 +2246,18 @@ class TestModuleProse:
         _write(
             root,
             "frob.toml",
-            '[gates]\nknown_keys = "frob.yaml_io:fast_yaml_loader"\n',
+            '[gates]\nknown_keys = "frob.legacy_io:fast_loader"\n',
         )
         ops, unresolved = scan_module_path_citations(
             root,
-            "frob.yaml_io",
+            "frob.legacy_io",
             "frob.yamlio",
-            "src/frob/yaml_io.py",
+            "src/frob/legacy_io.py",
             "src/frob/yamlio.py",
         )
         assert unresolved == []
         assert len(ops) == 1
-        assert ops[0].new_text == 'known_keys = "frob.yamlio:fast_yaml_loader"'
+        assert ops[0].new_text == 'known_keys = "frob.yamlio:fast_loader"'
 
     def test_leaves_prefix_colliding_sibling_untouched(self, tmp_path):
         # frob:tests \
@@ -2266,13 +2266,13 @@ class TestModuleProse:
         _write(
             root,
             "frob.toml",
-            '[gates]\nsibling = "frob.yaml_io_extra:thing"\n',
+            '[gates]\nsibling = "frob.legacy_io_extra:thing"\n',
         )
         ops, _unresolved = scan_module_path_citations(
             root,
-            "frob.yaml_io",
+            "frob.legacy_io",
             "frob.yamlio",
-            "src/frob/yaml_io.py",
+            "src/frob/legacy_io.py",
             "src/frob/yamlio.py",
         )
         assert ops == []
@@ -2288,9 +2288,9 @@ class TestModuleProse:
         )
         ops, _unresolved = scan_module_path_citations(
             root,
-            "frob.yaml_io",
+            "frob.legacy_io",
             "frob.yamlio",
-            "src/frob/yaml_io.py",
+            "src/frob/legacy_io.py",
             "src/frob/yamlio.py",
         )
         assert ops == []

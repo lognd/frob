@@ -21,7 +21,7 @@ from typani.result import Err, Ok, Result
 
 from frob.graph import EdgeKind, GraphSnapshot
 from frob.logging import get_logger
-from frob.yaml_io import fast_yaml_loader
+from frob.yamlio import fast_yaml_loader
 
 _log = get_logger(__name__)
 

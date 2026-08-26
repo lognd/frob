@@ -41,7 +41,7 @@ from pydantic import BaseModel
 
 from frob.graph import fold_comment_runs
 from frob.logging import get_logger
-from frob.yaml_io import fast_yaml_loader
+from frob.yamlio import fast_yaml_loader
 
 _log = get_logger(__name__)
 

@@ -84,8 +84,8 @@ from frob.tickets._store_migrate import (
     migrate_to_ledger,  # noqa: F401 -- re-exported: _archive.py's own archive-to-ledger call
     migrate_v1_to_v2,  # noqa: F401 -- re-exported: _query.py's own `frob ticket migrate` CLI wiring
 )
-from frob.yaml_io import _coverage_tracer_active as _coverage_tracer_active_impl
-from frob.yaml_io import fast_yaml_loader
+from frob.yamlio import _coverage_tracer_active as _coverage_tracer_active_impl
+from frob.yamlio import fast_yaml_loader
 
 # T-0458/T-2934: `fcntl` is posix-only. `ledger_lock`/`_flock_path` used
 # to degrade to an unconditional, unbounded, logged-but-silent no-op on
@@ -158,7 +158,7 @@ _SLUG_RE = re.compile(r"[^a-z0-9]+")
 # frob:tests \
 # tests/unit/test_ticket_store.py::TestYamlLoader.test_no_active_tracer_is_not_coverage
 def _coverage_tracer_active() -> bool:
-    """Thin re-export of `frob.yaml_io._coverage_tracer_active` (T-1204:
+    """Thin re-export of `frob.yamlio._coverage_tracer_active` (T-1204:
     the T-1206/T-1333 loader-selection logic moved to a shared module so
     every YAML-parsing call site in the repo can reuse it, not just this
     one) -- kept here under its original name for this module's own
@@ -172,7 +172,7 @@ def _coverage_tracer_active() -> bool:
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_without_libyaml  # noqa: E501
 # frob:tests tests/unit/test_ticket_store.py::TestYamlLoader.test_falls_back_to_safeloader_under_active_coverage_tracer  # noqa: E501
 def _yaml_loader() -> type[yaml.SafeLoader]:
-    """Thin re-export of `frob.yaml_io.fast_yaml_loader` (T-1204: see that
+    """Thin re-export of `frob.yamlio.fast_yaml_loader` (T-1204: see that
     function's docstring for the full T-1206/T-1333 rationale) -- kept
     under this module's original name for its own direct-import test
     coverage and the `frob.gates.__init__` re-export

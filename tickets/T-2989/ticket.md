@@ -2,7 +2,7 @@
 id: T-2989
 title: Rename frob.yamlio to frob.yamlio for io-seam naming consistency (via frob
   refactor, not hand-edits)
-state: in-progress
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -251,6 +251,13 @@ scope_changes:
     by the tool own zero-surviving-references postcondition
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_prefers_csafeloader_when_libyaml_present
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_without_libyaml
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_detects_coverage_tracer_by_module_name
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_no_active_tracer_is_not_coverage
+- tests/unit/test_ticket_store.py::TestYamlLoader::test_falls_back_to_safeloader_under_active_coverage_tracer
+- tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader::test_does_not_fire_on_helper_loader_indirection
 designated_repro_test: null
 threat: null
 component: null

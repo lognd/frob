@@ -59,7 +59,7 @@ MEASURED 2026-08-09, coordinator, closing T-1644 on main.
 
 'frob ticket close T-1644 --evidence-cmd "grep -q ..."' recorded:
 
-  cmd:grep -q 'src/frob/yaml_io.py' design/frob.strata exit=0 sha256=e3b0c44298fc
+  cmd:grep -q 'src/frob/yamlio.py' design/frob.strata exit=0 sha256=e3b0c44298fc
 
 e3b0c44298fc is the SHA-256 of the EMPTY STRING. 'grep -q' is silent by design, so the recorded digest carries zero information about what was actually verified. The identical digest would be recorded for 'true', 'cd .', ': ', or any other silent zero-exit command. Re-running with 'grep -c' instead recorded a distinct digest (4355a46b19d3) -- i.e. the channel only has integrity when the command happens to be chatty.
 

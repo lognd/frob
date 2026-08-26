@@ -72,7 +72,7 @@ class TestPerf010YamlCLoader:
         # tests/unit/perf/test_hotpath_smells.py::TestPerf010YamlCLoader.test_does_not\
         # _fire_on_helper_loader_indirection  # noqa: E501
         """T-1204: a genuine PERF010 false positive -- calling a shared
-        `*_loader()` factory (`frob.yaml_io.fast_yaml_loader`'s own
+        `*_loader()` factory (`frob.yamlio.fast_yaml_loader`'s own
         established shape) that itself resolves to `yaml.CSafeLoader`
         used to still fire, because the rule's original bare-token scan
         can only ever see a LITERAL `CSafeLoader`/`CLoader` token inside
@@ -81,7 +81,7 @@ class TestPerf010YamlCLoader:
         src = (
             "import yaml\n"
             "\n"
-            "from frob.yaml_io import fast_yaml_loader\n"
+            "from frob.yamlio import fast_yaml_loader\n"
             "\n"
             "def load_ticket(text):\n"
             "    data = yaml.load(text, Loader=fast_yaml_loader())\n"

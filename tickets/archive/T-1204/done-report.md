@@ -36,7 +36,7 @@ real: plain `yaml.safe_load(text)` with no C-loader consideration at
 all. Rather than duplicate the T-1206/T-1333 loader-selection logic (C
 loader when libyaml is present, EXCEPT under an active coverage.py
 tracer -- T-1333's own documented corruption bug) a 5th time, extracted
-it out of `frob.tickets._store` into a new shared `frob.yaml_io.
+it out of `frob.tickets._store` into a new shared `frob.yamlio.
 fast_yaml_loader` (NO DUPLICATION principle) and wired all 4 real sites
 onto it. `frob.tickets._store` keeps `_yaml_loader`/
 `_coverage_tracer_active` as thin re-exports under their original
@@ -45,7 +45,7 @@ names, so its own direct-import tests
 __init__`'s existing `_tickets_yaml_loader` re-export needed no
 change. Added `frob:doc`/`frob:tests` directives on the new public
 `fast_yaml_loader` and a new "Shared YAML loader selection
-(frob.yaml_io)" doc subsection in docs/modules/tickets.md (the
+(frob.yamlio)" doc subsection in docs/modules/tickets.md (the
 _store.py-adjacent doc, since that is where this logic originated and
 where the re-exports still live).
 
@@ -96,7 +96,7 @@ test_vet.py -k pnpm`: 2 passed. `pytest tests/test_gates.py -k
  src/frob/vet/_capability_typescript.py           | 597 +----------------------
  src/frob/vet/_capability_typescript_bindtable.py | 593 ++++++++++++++++++++++
  src/frob/vet/_lockfile.py                        |   3 +-
- src/frob/yaml_io.py                              |  73 +++
+ src/frob/yamlio.py                              |  73 +++
  tests/unit/perf/test_hotpath_smells.py           |  24 +
  tickets.md                                       | 255 +++++++---
  12 files changed, 993 insertions(+), 727 deletions(-)

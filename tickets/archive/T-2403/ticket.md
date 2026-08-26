@@ -132,7 +132,7 @@ count from 4834 to 133 (measured via `uv run frob check --only sys
    would disable the guard for the whole direction, the T-1967 failure
    shape). Production -> testsuite and testsuite -> any undeclared
    component still fire.
-2. Reclassifying `src/frob/excludes.py`, `src/frob/yaml_io.py`,
+2. Reclassifying `src/frob/excludes.py`, `src/frob/yamlio.py`,
    `src/frob/tomlio.py` from node `cli` to node `core` in the same
    design file -- these were imported by 8+ unrelated components with
    zero imports of their own (the signature of a cross-cutting leaf

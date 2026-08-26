@@ -17,9 +17,9 @@ file's own comment/docstring text (deliberately OUTSIDE the AST scan in
 
 WORD-BOUNDARY MATCHING, NOT SUBSTRING: every occurrence check below
 requires the matched token be flanked by non-identifier characters (see
-`_token_spans`) -- `frob.yaml_io` never matches inside `frob.yaml_io_
+`_token_spans`) -- `frob.legacy_io` never matches inside `frob.legacy_io_
 extra` (the char right after the match, `_`, is a word character, so
-the boundary check rejects it) or `frob.yaml_iomodel` (`m` rejects it
+the boundary check rejects it) or `frob.legacyiomodel` (`m` rejects it
 the same way). This is the module-move verb's must-NOT-fire guard
 (T-2990 acceptance): a prefix-colliding sibling module's name is never
 touched, and neither is a prose mention that merely CONTAINS the token

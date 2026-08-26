@@ -18,7 +18,7 @@ architecturally sound, but `frob.doctor` (this repo's `cli`-node home
 for the `frob doctor` subcommand, T-0500) is the wrong place for a
 general derived-state health check to live -- this module has no
 argparse/CLI-dispatch surface of its own, exactly the misplaced-leaf-
-utility shape T-2380/T-2403 already relocated `excludes.py`/`yaml_io.py`
+utility shape T-2380/T-2403 already relocated `excludes.py`/`yamlio.py`
 /`tomlio.py`/`repo_meta.py` for. `frob.doctor` keeps its own drift-
 manifest tracking (`_detect_derived_state_drift` et al, doctor-only, no
 external caller) and imports `DerivedArtifactStatus`/`verify_derived_

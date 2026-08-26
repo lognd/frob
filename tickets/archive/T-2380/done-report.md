@@ -29,7 +29,7 @@ fires for a future 19th component with no Flow).
 ### 2. Verified shared-utility ownership BEFORE reclassifying
 
 Read design/frob.strata directly rather than trusting the T-0969 guess:
-`frob.excludes`/`frob.yaml_io`/`frob.tomlio` were declared under node
+`frob.excludes`/`frob.yamlio`/`frob.tomlio` were declared under node
 `cli` (T-0500's "loose top-level file needs SOME owner" rationale, an
 explicit historical decision, not an oversight). Confirmed via the
 production-only finding breakdown that 8+ unrelated components (gates,

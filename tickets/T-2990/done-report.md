@@ -30,7 +30,7 @@ Must-refuse fixtures (all six, T-2990 acceptance):
 
 Must-fire fixtures (module verb, T-2990 acceptance): plain import, aliased import, from-package-import-module, from-module-import-name, relative import, __init__ re-export, dynamic importlib.import_module -- all in TestModuleScanPython. frob.toml dotted-string -- TestModuleProse.test_rewrites_frob_toml_dotted_ref.
 
-Must-NOT-fire fixtures: prefix-colliding sibling (frob.yaml_io vs frob.yaml_io_extra) at both the Python AST layer (TestModuleScanPython.test_leaves_prefix_colliding_sibling_untouched) and the non-Python citation layer (TestModuleProse.test_leaves_prefix_colliding_sibling_untouched); unrelated prose (TestModuleProse.test_leaves_unrelated_prose_untouched). The move-module verb's own "no surviving references" Verify post-condition also uses `git grep -c -w` (word-boundary) so it never false-positives on a prefix-colliding sibling.
+Must-NOT-fire fixtures: prefix-colliding sibling (frob.yamlio vs frob.yaml_io_extra) at both the Python AST layer (TestModuleScanPython.test_leaves_prefix_colliding_sibling_untouched) and the non-Python citation layer (TestModuleProse.test_leaves_prefix_colliding_sibling_untouched); unrelated prose (TestModuleProse.test_leaves_unrelated_prose_untouched). The move-module verb's own "no surviving references" Verify post-condition also uses `git grep -c -w` (word-boundary) so it never false-positives on a prefix-colliding sibling.
 
 Rollback: TestRunMoveModule.test_move_module_rolls_back_on_verify_failure -- a dangling import elsewhere causes verify_import_resolution to fail post-apply, and the transaction resets --hard to pre_sha (old file restored, new file absent).
 

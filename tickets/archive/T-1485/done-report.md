@@ -74,7 +74,7 @@ entry point's other caller is unaffected). `pytest tests/test_gates.py
  src/frob/vet/_capability_typescript.py           | 597 +----------------------
  src/frob/vet/_capability_typescript_bindtable.py | 593 ++++++++++++++++++++++
  src/frob/vet/_lockfile.py                        |   3 +-
- src/frob/yaml_io.py                              |  73 +++
+ src/frob/yamlio.py                              |  73 +++
  tests/unit/perf/test_hotpath_smells.py           |  24 +
  tickets.md                                       | 281 ++++++++---
  14 files changed, 1080 insertions(+), 744 deletions(-)

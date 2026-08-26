@@ -84,7 +84,7 @@ from frob.repo_meta import (
     stale_install_warning,
 )
 from frob.tomlio import read_toml_lenient
-from frob.yaml_io import fast_yaml_loader
+from frob.yamlio import fast_yaml_loader
 
 __all__ = [
     "DerivedArtifactStatus",

@@ -63,12 +63,12 @@ frob refactor move-module SOURCE_MODULE DEST_MODULE [--allow-existing-destinatio
 
 Moves or renames a whole MODULE (a `.py` FILE), as opposed to `move`/
 `rename`'s single-symbol scope. Operands here are bare dotted module
-paths (`frob.yaml_io`, no `:`) -- distinct from `move`/`rename`'s
+paths (`frob.legacy_io`, no `:`) -- distinct from `move`/`rename`'s
 `MODULE:QUALNAME` symbol operands; see "Typed operands" below for why
 that distinction is enforced structurally, not just documented.
 
 `move-module` exists because a module rename is NOT the sum of N symbol
-moves: `import frob.yaml_io`/`from frob import yaml_io` reference the
+moves: `import frob.legacy_io`/`from frob import legacy_io` reference the
 MODULE, which no symbol-scoped scan ever sees; a module-private symbol
 or `__all__` has no qualname to hang a symbol-move off; and N separate
 symbol moves leave an empty husk file that then has to be deleted by
@@ -164,8 +164,8 @@ language-specific import syntax).
 
 Every match in `_module_scan_python.py` compares a FULL dotted-name
 SEGMENT LIST for exact equality (`_dotted_attribute_chain`/
-`_prefix_node`), never a string prefix -- `frob.yaml_io` never matches
-`frob.yaml_io_extra` or `frob.yaml_iomodel`. `_module_prose.py`'s text
+`_prefix_node`), never a string prefix -- `frob.legacy_io` never matches
+`frob.legacy_io_extra` or `frob.legacyiomodel`. `_module_prose.py`'s text
 scan enforces the same guarantee via an explicit word-boundary check
 (`_token_spans`): the character immediately before and after a literal
 match must not be an identifier character (or, for a file-path token,

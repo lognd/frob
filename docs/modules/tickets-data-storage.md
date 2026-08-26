@@ -1087,7 +1087,7 @@ def load_archive(root: Path) -> Result[dict[str, Ticket], TicketError]
     # archive file's own sha256 content hash (never mtime) -- an unchanged
     # archive is never reparsed; any byte change invalidates the cache.
 def _coverage_tracer_active() -> bool
-    # T-1204: thin re-export of frob.yaml_io._coverage_tracer_active,
+    # T-1204: thin re-export of frob.yamlio._coverage_tracer_active,
     # kept under this name for this module's own direct-import test
     # coverage. T-1333: True when sys.gettrace() is a coverage.py tracer
     # (detected by the active tracer callable's __module__ starting with
@@ -1095,11 +1095,11 @@ def _coverage_tracer_active() -> bool
     # their tracer this same way. Used by _yaml_loader to avoid a known-
     # bad CSafeLoader/coverage.py interaction (see below).
 def _yaml_loader() -> type[yaml.SafeLoader]
-    # T-1204: thin re-export of frob.yaml_io.fast_yaml_loader, kept under
+    # T-1204: thin re-export of frob.yamlio.fast_yaml_loader, kept under
     # this name for this module's own direct-import test coverage and
     # the frob.gates.__init__ re-export (_tickets_yaml_loader) that
     # already depends on this import path. See "Shared YAML loader
-    # selection (frob.yaml_io)" below for the full T-1206/T-1333
+    # selection (frob.yamlio)" below for the full T-1206/T-1333
     # rationale, now the single home for it -- every OTHER per-document
     # YAML parse site in the repo (frob.registry._models, frob.gates.
     # decisions, frob.gates.invariants, frob.vet._lockfile) was left on
@@ -1175,20 +1175,20 @@ def iter_raw_ledger_frontmatter(text: str) -> list[tuple[str, dict]]
     # a single bad edge exists anywhere in it.
 ```
 
-## Shared YAML loader selection (frob.yaml_io)
+## Shared YAML loader selection (frob.yamlio)
 
-<!-- frob:describes src/frob/yaml_io.py::fast_yaml_loader -->
+<!-- frob:describes src/frob/yamlio.py::fast_yaml_loader -->
 
 T-1204's PERF010 burn-down moved the T-1206/T-1333 fast-loader-selection
 logic above (`_yaml_loader`/`_coverage_tracer_active`) out of this module
-into `frob.yaml_io`, the single shared home for "pick the fastest SAFE
+into `frob.yamlio`, the single shared home for "pick the fastest SAFE
 YAML loader available, correctly, once" -- this module keeps thin
 re-exports under their original names (see the docstrings above) so its
 own direct-import tests and `frob.gates.__init__`'s existing
 `_tickets_yaml_loader` re-export keep working unchanged.
 
 ```python
-# frob/yaml_io.py
+# frob/yamlio.py
 def fast_yaml_loader() -> type[yaml.SafeLoader]
     # yaml.CSafeLoader (libyaml) when installed, else the pure-Python
     # yaml.SafeLoader -- falls back to SafeLoader regardless of
