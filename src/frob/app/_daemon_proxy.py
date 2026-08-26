@@ -527,6 +527,7 @@ def query(
     return Ok(result.danger_ok)
 
 
+# frob:ticket T-2981
 class _LeaseConnection:
     """A persistent raw JSON-RPC connection to `root`'s daemon (T-1126),
     used ONLY for holding a `frob_lease_acquire`/`frob_lease_release` pair

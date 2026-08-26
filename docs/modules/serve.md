@@ -406,6 +406,7 @@ the thread does not outlive the stdio transport.
 <!-- frob:describes src/frob/serve/_socketd.py::run_socket_daemon -->
 <!-- frob:describes src/frob/serve/_socketd.py::send_request -->
 <!-- frob:describes src/frob/serve/_socketd.py::daemon_version -->
+<!-- frob:describes src/frob/serve/_socketd.py::_DaemonServerLike -->
 
 `frob.serve._socketd` (T-1092, splitting off T-0321's daemon epic) stands up
 a SECOND frontend over the exact same `frob.serve._tools` core the MCP stdio
@@ -459,11 +460,27 @@ whose body can branch at runtime, a module-level class statement
 referencing a missing base attribute raises `AttributeError` the instant
 the module is IMPORTED, the same bug class as T-2952's bare `import
 fcntl`, just at class-definition time. A Windows placeholder class keeps
-the name `_DaemonServer` bound (so every type annotation elsewhere in
-this module still resolves, and `ty check` stays clean on every
-platform) but is never actually constructed: `run_socket_daemon` checks
-`sys.platform == "win32"` FIRST and returns
+the name `_DaemonServer` bound but is never actually constructed:
+`run_socket_daemon` checks `sys.platform == "win32"` FIRST and returns
 `Err(DaemonError.PlatformUnsupported)` before ever reaching it.
+
+Binding both platforms' classes to the same name is NOT enough to keep
+`ty check` clean on a Windows target, though (T-2981): a type checker
+evaluates `sys.platform` conditionals per TARGET platform, so on a
+Windows target it analyses only the placeholder branch, which carries
+none of the real class's attributes (`root`, `idle_tracker`, `event_bus`,
+`lease_manager`, `shutdown`) -- and a local Linux `ty check` cannot catch
+this, because on a Linux target the checker takes the POSIX branch and
+never analyses the Windows one at all (`ty check --python-platform
+win32` does). `_DaemonServerLike`, a `Protocol` declaring that attribute
+surface once, unconditionally, is what every call site (`_RequestHandler.
+server`, `_idle_monitor`'s `server` parameter) is now annotated against
+instead of the concrete `_DaemonServer` name, so both platforms' classes
+are checked against the identical structural contract regardless of
+which one a given target's `sys.platform` branch resolves to. The real
+POSIX class needs no other change -- `ty` verifies it structurally, from
+`__init__`'s own attribute assignments.
+
 `send_request` (the client half) carries the identical guard, returning
 `Err(DaemonError.Unreachable)` -- the pre-existing, already-documented
 "cannot be reached" outcome -- before its own `socket.AF_UNIX` call. The

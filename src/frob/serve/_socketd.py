@@ -715,6 +715,7 @@ class _DaemonServerLike(Protocol):
     event_bus: _EventBus
     lease_manager: ResourceLeaseManager
 
+    # frob:doc docs/modules/serve.md#socket-daemon-t-1092
     def shutdown(self) -> None:
         """Stop `serve_forever()` -- inherited from `socketserver.BaseServer`
         on the real POSIX class; declared here only so the Protocol
