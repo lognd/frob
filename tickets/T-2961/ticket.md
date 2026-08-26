@@ -27,6 +27,8 @@ scope:
 - tests/unit/verify/test_worker.py
 - tests/test_serve_daemon.py
 - src/frob/serve/_daemon.py
+- docs/modules/serve.md
+- docs/modules/testing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -132,6 +134,36 @@ scope_changes:
     src/frob/serve/_daemon.py (a probable-under-capture dependency
 
     run_socket_daemon calls into via _get_verify_worker).
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001 closure for the 9 changed public symbols (DaemonLiveness,
+
+    ProxyReason, probe_daemon, ensure_daemon, query, try_daemon_lease in
+
+    _daemon_proxy.py; DaemonError, run_socket_daemon, send_request in
+
+    _socketd.py) -- each gained a Windows platform-refusal branch and
+
+    needs its describing doc touched.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/testing.md
+  reason: 'AFFECT001 closure for the 9 changed public symbols (DaemonLiveness,
+
+    ProxyReason, probe_daemon, ensure_daemon, query, try_daemon_lease in
+
+    _daemon_proxy.py; DaemonError, run_socket_daemon, send_request in
+
+    _socketd.py) -- each gained a Windows platform-refusal branch and
+
+    needs its describing doc touched.
 
     '
   actor: logan
