@@ -13,10 +13,19 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- tickets/T-2955/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: tickets/T-2955/**
+  reason: documenting the detector-narrowing triage decision; no production code change
+    in this ticket
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 acceptance:
 - text: given the tests/ frob-dup cluster measured in this ticket's body, when triaged,
