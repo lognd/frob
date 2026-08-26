@@ -14,10 +14,75 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- .github/workflows/*.yml
+- frob-core/pyproject.toml
+- strata-core/pyproject.toml
+- pyproject.toml
+- src/frob/doctor.py
+- src/frob/natives/*.py
+- src/frob/gates/_version_coupling.py
+- tests/unit/gates/test_version_coupling.py
+- tests/unit/test_doctor.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: .github/workflows/*.yml
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: frob-core/pyproject.toml
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: strata-core/pyproject.toml
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: pyproject.toml
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/doctor.py
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/natives/*.py
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_version_coupling.py
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/gates/test_version_coupling.py
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_doctor.py
+  reason: 'T-3011: PyPI release workflow, build/upload job split, version-coupling
+    gate, loud-degrade fixture'
+  actor: logan
+  at: '2026-08-26'
 triage_changes:
 - field: tier
   old_value: ticket
