@@ -14,10 +14,103 @@ runs_last: false
 milestone: null
 runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
+scope:
+- src/frob/yaml_io.py
+- src/frob/yamlio.py
+- src/frob/__init__.py
+- src/frob/gates/_fmt_directives.py
+- src/frob/gates/decisions.py
+- src/frob/gates/invariants.py
+- src/frob/registry/_models.py
+- src/frob/tickets/_store.py
+- src/frob/vet/_lockfile.py
+- src/frob/derived_state.py
+- tests/unit/perf/test_hotpath_smells.py
+- tests/unit/test_ticket_store.py
+- docs/modules/tickets-data-storage.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
 no_scope_declared_reason: null
+scope_changes:
+- op: add
+  glob: src/frob/yaml_io.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/yamlio.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/__init__.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_fmt_directives.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/decisions.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/invariants.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/registry/_models.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/tickets/_store.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/vet/_lockfile.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/derived_state.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/perf/test_hotpath_smells.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/unit/test_ticket_store.py
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-data-storage.md
+  reason: rename frob.yaml_io -> frob.yamlio via frob refactor move-module; 21 references
+    across 11 files plus new module path
+  actor: logan
+  at: '2026-08-26'
 designated_repro_test: null
 threat: null
 component: null
