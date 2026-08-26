@@ -23,6 +23,10 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 mod parse;
 
+/// Generic typed-graph kernel (docs/strata/graph.md, T-3004 section 4).
+/// See `graph::mod` for the module-level design note.
+pub mod graph;
+
 /// One directed edge of the influence graph, flattened for the boundary:
 /// (flow_id, src, dst, barrier, transitive) where `barrier` marks a flow
 /// carrying any endorse/declassify boundary (a declared trust/label change

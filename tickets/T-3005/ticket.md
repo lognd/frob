@@ -2,7 +2,7 @@
 id: T-3005
 title: 'strata-core graph kernel: generic typed nodes, typed edges, closure, level
   constraints, cycle detection (see T-3004 section 4)'
-state: queued
+state: done
 kind: feature
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,8 @@ scope:
 - strata-core/src/lib.rs
 - strata-core/Cargo.toml
 - docs/strata/graph.md
+evidence_scope:
+- tests/unit/strata/test_parse.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -51,6 +53,9 @@ triage_changes:
   reason: T-3004 decomposition per the owner design decision
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/strata/test_parse.py::TestParseModule::test_parses_bare_module
+- tests/unit/strata/test_parse.py::TestParseModule::test_round_trip_small_design
 designated_repro_test: null
 threat: null
 component: null
