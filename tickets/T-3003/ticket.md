@@ -2,7 +2,7 @@
 id: T-3003
 title: 'Windows now reaches the Test stage: 19 failures across 7 files, clustered
   in test_cli_check and test_rule_id_scan_branches'
-state: queued
+state: in-progress
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -26,6 +26,7 @@ scope:
 - tests/integration/test_interfaces.py
 - tests/unit/strata/test_selfconform.py
 - docs/modules/fleet.md
+- src/frob/mutate/_journal.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -104,6 +105,18 @@ scope_changes:
 - op: add
   glob: docs/modules/fleet.md
   reason: close scope for fleet doc anchors surfaced by scope-closure warning
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/mutate/_journal.py
+  reason: windows os.kill(pid,0) liveness-probe fix for the mutate-journal doctor
+    check (real portability+safety defect found during T-3003 triage)
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/system/test_cli_doctor.py
+  reason: windows os.kill(pid,0) liveness-probe fix for the mutate-journal doctor
+    check (real portability+safety defect found during T-3003 triage)
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
