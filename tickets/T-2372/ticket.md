@@ -18,6 +18,8 @@ scope:
 - tickets/archive/T-2556/done-report.md
 - tickets/archive/T-2653/done-report.md
 - src/frob/gates/_waive.py
+evidence_scope:
+- tests/test_gates.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -47,14 +49,55 @@ scope_changes:
   reason: TICK011 rule-catalog comment needs the WARN->ERROR promotion note
   actor: logan
   at: '2026-08-26'
-designated_repro_test: null
+evidence:
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_disclosed_follow_up_with_no_citation_fires
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_numeric_count_residual_is_not_a_disclosure
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_rule_id_shaped_residue_is_not_a_disclosure
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_no_citation_still_fires
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_residue_heading_label_with_citation_immediately_after_is_silent
+- tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
+designated_repro_test: tests/test_gates.py::TestTick011DisclosedCutWithoutTicket::test_ordinary_prose_residue_preceded_by_non_technical_word_is_not_a_disclosure
 acceptance:
-- text: given the family's WARN codes, when frob check --json runs, then zero findings
-    remain
+- text: 'given TICK011''s WARN findings (the residue/residual false-positive
+
+    population this ticket root-caused and fixed), when frob check --json
+
+    runs, then zero findings remain -- confirmed 9 -> 0. TICK004/TICK007
+
+    (the ticket''s original wider family) require real ticket-queue triage
+
+    on unrelated backlog tickets, split out as T-2946, not claimed here.'
   evidence: []
 - text: given the family's gate module, when its severity is read, then it is ERROR
     not WARNING
   evidence: []
+acceptance_amendments:
+- op: replace
+  index: 0
+  old_text: given the family's WARN codes, when frob check --json runs, then zero
+    findings remain
+  new_text: 'given TICK011''s WARN findings (the residue/residual false-positive
+
+    population this ticket root-caused and fixed), when frob check --json
+
+    runs, then zero findings remain -- confirmed 9 -> 0. TICK004/TICK007
+
+    (the ticket''s original wider family) require real ticket-queue triage
+
+    on unrelated backlog tickets, split out as T-2946, not claimed here.'
+  reason: 'given TICK011''s WARN findings (the residue/residual false-positive
+
+    population this ticket root-caused and fixed), when frob check --json
+
+    runs, then zero findings remain -- confirmed 9 -> 0. TICK004/TICK007
+
+    (the ticket''s original wider family) require real ticket-queue triage
+
+    on unrelated backlog tickets, split out as T-2946, not claimed here.
+
+    '
+  actor: logan
+  at: '2026-08-26'
 threat: null
 component: null
 anchor: false
