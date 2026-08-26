@@ -3245,6 +3245,286 @@ def _refuse_filing_for_stale_verification_queue(
     return True
 
 
+# frob:ticket T-2938
+def _claim_divergence_finding_pairs(
+    claims, fresh: frozenset[tuple[str, str]], ticket_scope: Sequence[str]
+) -> tuple[tuple[str, str], ...]:
+    """T-2938: reporting-only helper for `_check_claim_divergence_post_
+    land` -- given the SAME `claims`/`fresh` pair `_reverify_gate_state_
+    claim` (`frob.tickets._land_verify`, this repo's one audited
+    ClaimDivergence comparator, called verbatim by the caller below) has
+    ALREADY decided diverges, pick out which `(rule, file)` pairs to name
+    in the filed ticket/quarantine record. Never used to DECIDE
+    divergence -- only to describe one after the decision already ran --
+    so this cannot become a second copy of the comparison policy the
+    T-2924 investigation warned against. Mirrors `_reverify_gate_findings_
+    by_identity`'s own `fresh - claims.error_findings`, scoped to `ticket_
+    scope` computation exactly (same identity-set/scope-filter shape,
+    duplicated here only because that function returns a bare `Result`
+    with no way to hand its intermediate list back to a caller that does
+    not itself refuse a land). Falls back to a single synthetic
+    `("ClaimDivergence", "tickets.md")` identity when no per-finding
+    identity set was captured at either done-report or sweep time (the
+    count-only comparison path) -- this repo's standing "cannot name it
+    precisely is never nothing to report" convention, not an empty
+    result."""
+    from frob.tickets._models import scope_matches
+
+    if claims.error_findings is not None and fresh:
+        scoped_new = tuple(
+            sorted(
+                (rule, file)
+                for rule, file in (fresh - claims.error_findings)
+                if scope_matches(file, ticket_scope)
+            )
+        )
+        if scoped_new:
+            return scoped_new
+    return (("ClaimDivergence", "tickets.md"),)
+
+
+# frob:ticket T-2938
+# frob:doc docs/modules/tickets-verify-sweep.md#deferred-claim-divergence-check-t-2938
+def _file_claim_divergence_ticket(
+    root: Path,
+    final_id: str,
+    actual_head: str,
+    pairs: tuple[tuple[str, str], ...],
+) -> str | None:
+    """T-2938: file one `bug` ticket recording that `final_id`'s own Done
+    report claim (T-0754's captured gate-state claim) no longer holds
+    against the post-merge tree this sweep measured at `actual_head` --
+    the deferred-queue replacement for the inline `ClaimDivergence`
+    refusal T-2913 removed from the rapid land critical path (see
+    `_land_should_skip_inline_claims_reverify`'s own docstring for why:
+    the inline `check_gates`/`check_gate_findings` spawn this comparison
+    used to require was measured at 144-209s and was the single largest
+    line item on a typical rapid land).
+
+    Attribution here is exact by construction -- `final_id` IS the ticket
+    whose own Done report diverged, so unlike `_file_regression_ticket`
+    this needs none of T-1690's symbolic-reachability machinery to
+    resolve "which land caused this." Mirrors that function's commit
+    shape instead: `new_ticket(..., no_commit=True)` plus an explicit
+    retry-then-discard commit (`_commit_or_discard_ledger_write`, the
+    SAME shared primitive, so a claim-divergence write can never leave
+    `root` dirty any more than a regression write can, T-2034/T-1841)."""
+    from frob.tickets import TicketSpec, new_ticket
+    from frob.tickets._models import Origin, Priority, TicketKind
+
+    scope = tuple(
+        sorted({_relativize_regression_scope_file(root, file) for _, file in pairs})
+    )
+    body = (
+        f"Deferred post-land claim-divergence check (T-2938) found that "
+        f"{final_id}'s Done report's captured gate-state claim (T-0754) "
+        f"no longer holds against the tree this sweep measured at "
+        f"{actual_head[:12]} -- reusing this sweep's own unscoped `frob "
+        f"check` result as both the count and the per-finding identity "
+        f"source, no second spawn.\n\n"
+        "Diverging (rule, file) identit(ies):\n"
+        + "\n".join(f"- {rule}: {file}" for rule, file in pairs)
+        + "\n\nThis is a report-honesty finding, not necessarily bad "
+        "content on main -- the land already published; the tree itself "
+        "was already covered by this land's own pre-land check plus this "
+        "sweep's unscoped post-land measurement. Determine whether the "
+        "claim was a stale/incorrect capture or a real self-introduced "
+        "regression, fix or refresh accordingly, then dispose the "
+        "quarantine entry this ticket raised."
+    )
+    spec = TicketSpec(
+        title=(
+            f"claim divergence from {final_id}'s Done report "
+            f"({len(pairs)} identit(ies))"
+        ),
+        kind=TicketKind.BUG,
+        origin=Origin.AGENT,
+        priority=Priority.HIGH,
+        scope=scope,
+        findings=pairs,
+        body=body,
+    )
+    filed = new_ticket(root, spec, no_commit=True)
+    if filed.is_err:
+        _log.error(
+            "rapid sweep: %s: failed to file the claim-divergence ticket "
+            "(%s) -- quarantine will still be raised, with no filed "
+            "ticket id to track disposition against",
+            final_id,
+            filed.danger_err,
+        )
+        return None
+    filed_id = filed.danger_ok.id
+    message = (
+        f"chore(tickets): file {filed_id} "
+        f"(post-land claim divergence from {final_id})"
+    )
+    committed = _commit_or_discard_ledger_write(
+        root,
+        filed_id,
+        message,
+        max_attempts=_REGRESSION_TICKET_COMMIT_MAX_ATTEMPTS,
+        retry_delay_s=_REGRESSION_TICKET_COMMIT_RETRY_DELAY_S,
+        discard=lambda: _discard_uncommitted_regression_ticket(root, filed_id),
+        label="claim-divergence ticket",
+    )
+    if not committed:
+        _log.error(
+            "rapid sweep: %s: claim-divergence ticket write could not be "
+            "committed (root stayed dirty through every retry) -- "
+            "discarded rather than left uncommitted; quarantine will be "
+            "raised with no filed ticket id",
+            final_id,
+        )
+        return None
+    return filed_id
+
+
+# frob:doc docs/modules/tickets-verify-sweep.md#deferred-claim-divergence-check-t-2938
+# frob:ticket T-2938
+def _check_claim_divergence_post_land(
+    root: Path,
+    final_id: str,
+    actual_head: str,
+    fresh: frozenset[tuple[str, str]],
+) -> None:
+    """T-2938: the deferred-queue replacement for the inline
+    `ClaimDivergence` re-verification T-2913 removed from the rapid land
+    critical path. Runs unconditionally from `run_deferred_post_land_
+    sweep` (independent of whether `fresh` contains any NEW findings --
+    a stale-but-matching-reality claim and a fresh regression are
+    different questions) reusing `fresh`, the exact unscoped check result
+    that sweep already paid for -- no second `frob check` spawn.
+
+    Reuses `frob.tickets._land_verify._reverify_gate_state_claim`
+    VERBATIM as the comparison decision -- the same identity-based
+    scope-filtered comparison, then count-only-refuse-on-increase
+    fallback, the inline land path itself uses -- via two callables that
+    hand back this sweep's already-measured `fresh` instead of spawning a
+    second `frob check`. This is deliberate: T-2924's own investigation
+    established that a cheap, `--only`-scoped reproduction of this
+    comparison is UNSOUND (`--only` narrows what is compared; the T-0754
+    comparator counts errors from ANY tool result) -- reusing the exact
+    unscoped comparator, fed this sweep's own unscoped measurement,
+    sidesteps that problem entirely rather than reintroducing a second,
+    narrower copy of it here.
+
+    Reuses `_refuse_filing_for_stale_verification_queue`'s underlying
+    staleness policy (`frob.verify.rapid_soft_warning`) directly -- the
+    SAME policy function, not a second one -- per T-2929's standing rule
+    that a stale verification-queue window must refuse to attribute
+    rather than report a confident wrong answer; a stale window here
+    records the SAME `post-land-sweep-attribution-skipped-stale-baseline`
+    debt reason T-2929 already established (one debt reason per policy,
+    not one per caller).
+
+    A ticket with no captured claim (a Done report written before T-0754,
+    or one whose capture was itself skipped) is a no-op here, matching
+    `_reverify_gate_state_claim`'s own permissive-by-default posture: an
+    unmeasured claim was already disclosed loudly at done-report/land
+    time, and re-disclosing "nothing to compare" on every single sweep
+    thereafter would just be noise."""
+    from frob.tickets import _load_one
+    from frob.tickets._land_verify import _reverify_gate_state_claim
+    from frob.tickets._models import parse_claims_from_done_report
+    from frob.verify import rapid_soft_warning
+    from frob.verify._quarantine import QuarantinedFinding, raise_quarantine
+
+    stale_reason = rapid_soft_warning(root)
+    if stale_reason is not None:
+        _log.error(
+            "rapid sweep: %s deferred claim-divergence check REFUSED to "
+            "attribute -- %s (same T-2929 staleness policy the new-"
+            "findings filing path already reuses; drain the debt with "
+            "`frob verify now` and re-run this sweep by hand once it is "
+            "current)",
+            final_id,
+            stale_reason,
+        )
+        from frob.tickets._evidence import record_rapid_debt
+
+        record_rapid_debt(
+            root, final_id, "post-land-sweep-attribution-skipped-stale-baseline"
+        )
+        _commit_rapid_debt(root, final_id)
+        return
+
+    loaded = _load_one(root, final_id)
+    if loaded.is_err:
+        _log.warning(
+            "rapid sweep: %s not found at %s -- cannot re-verify its Done "
+            "report's captured claim (already archived, or the ledger "
+            "moved on)",
+            final_id,
+            root,
+        )
+        return
+    ticket = loaded.danger_ok
+    claims = parse_claims_from_done_report(ticket.body)
+    if claims is None:
+        _log.info(
+            "rapid sweep: %s carries no Captured claims section -- "
+            "deferred claim-divergence check has nothing to compare, "
+            "skipping (matches the inline land path's own permissive-by-"
+            "default posture for a ticket that never captured one)",
+            final_id,
+        )
+        return
+
+    outcome = _reverify_gate_state_claim(
+        ticket,
+        claims,
+        final_id,
+        check_gates=lambda: (len(fresh), None, None),
+        check_gate_findings=lambda: fresh,
+    )
+    if outcome.is_ok:
+        _log.info(
+            "rapid sweep: %s deferred claim-divergence check: claim still "
+            "holds (or was not re-verifiable this sweep) against %s -- no "
+            "quarantine raised",
+            final_id,
+            actual_head[:12],
+        )
+        return
+
+    pairs = _claim_divergence_finding_pairs(claims, fresh, ticket.scope)
+    _log.error(
+        "rapid sweep: %s deferred claim-divergence check: Done report "
+        "claim DIVERGED from the tree measured at %s -- %d identit(ies) "
+        "(%s)",
+        final_id,
+        actual_head[:12],
+        len(pairs),
+        sorted(pairs),
+    )
+    filed_id = _file_claim_divergence_ticket(root, final_id, actual_head, pairs)
+    raised = raise_quarantine(
+        root,
+        batch_commit_shas=(actual_head,),
+        findings=tuple(
+            QuarantinedFinding(
+                rule_id=rule,
+                file=file,
+                commit_sha=actual_head,
+                ticket_id=filed_id if filed_id is not None else final_id,
+            )
+            for rule, file in pairs
+        ),
+    )
+    if raised.is_err:
+        _log.error(
+            "rapid sweep: %s: raise_quarantine failed (%s) for the claim-"
+            "divergence batch at %s -- the filed ticket (%s) is still the "
+            "durable record; quarantine flag may be stale until the next "
+            "red batch re-raises it",
+            final_id,
+            raised.danger_err,
+            actual_head[:12],
+            filed_id or "UNFILED",
+        )
+
+
 # frob:ticket T-1684
 # frob:ticket T-2009
 # frob:ticket T-2571
@@ -3369,6 +3649,7 @@ def _measure_fresh_and_write_baseline(
 # id -- already at frob fmt's own canonical form (verified: `frob fmt` reports it \
 # unchanged), same unwrappable shape as src/frob/app/_json_guard.py's existing FMT001 \
 # waivers"
+# frob:ticket T-2938
 def run_deferred_post_land_sweep(
     root: Path, final_id: str, commit_sha: str
 ) -> Result[str | None, RapidSweepError]:
@@ -3382,11 +3663,24 @@ def run_deferred_post_land_sweep(
     itself produced no parsable error set -- the baseline is left
     untouched in that case, so an unmeasurable run degrades to "compare
     against the last set we actually trust" rather than silently adopting
-    a guess as ground truth."""
+    a guess as ground truth.
+
+    T-2938: also runs `_check_claim_divergence_post_land`, unconditionally,
+    against the SAME `fresh` this function already measured -- a Done
+    report claim divergence is independent of whether this sweep also
+    found a NEW regression finding, so it is checked regardless of the
+    `baseline is None`/`not new_findings` early-outs below. Its own
+    outcome (quarantine raised or not) is not reflected in this
+    function's return value -- that stays exactly what it was before
+    (the filed regression ticket id, if any) -- a caller that wants to
+    know whether claim divergence specifically fired reads the quarantine
+    record or the log."""
     measured = _measure_fresh_and_write_baseline(root, final_id, commit_sha)
     if measured.is_err:
         return Err(measured.danger_err)
     fresh, baseline, prev_baseline_commit, actual_head = measured.danger_ok
+
+    _check_claim_divergence_post_land(root, final_id, actual_head, fresh)
 
     if baseline is None:
         _log.warning(

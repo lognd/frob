@@ -1520,6 +1520,24 @@
       "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
       "reason": "T-2929: further ARCH001 split extracted _measure_fresh_and_write_baseline and _attribute_and_file_regression; run_deferred_post_land_sweep is now a thin orchestrator over both plus the stale-queue refusal, same documented contract as before",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "body",
+      "new_digest": "37ea62f44deaf228782e91d42cda4639f966e927b4c22415136752b3d0fa715b",
+      "old_digest": "a0a43eff3c9eca92bbcebd25afb50e57d659638682599b131dce25ce7d06f860",
+      "reason": "T-2938: docstring/body updated to describe the new unconditional _check_claim_divergence_post_land call; behavior of the rest of the function (baseline compare/file/rebaseline) is unchanged, re-verified by the existing + new unit tests in this same change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
+    },
+    {
+      "actor": "logan",
+      "at": "2026-08-26",
+      "facet": "sig",
+      "new_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "old_digest": "34c19ca2b2b6586c5d8e1ea948e9b9e7563d35bba93bccc058c6dddc089718a1",
+      "reason": "T-2938: docstring/body updated to describe the new unconditional _check_claim_divergence_post_land call; behavior of the rest of the function (baseline compare/file/rebaseline) is unchanged, re-verified by the existing + new unit tests in this same change",
+      "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     }
   ],
   "entries": [
@@ -1644,7 +1662,7 @@
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::_reproducing_identities_cached"
     },
     {
-      "digest": "a0a43eff3c9eca92bbcebd25afb50e57d659638682599b131dce25ce7d06f860",
+      "digest": "37ea62f44deaf228782e91d42cda4639f966e927b4c22415136752b3d0fa715b",
       "facet": "body",
       "ref": "src/frob/app/ticket_runner/_rapid_sweep.py::run_deferred_post_land_sweep"
     },

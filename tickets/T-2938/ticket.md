@@ -2,7 +2,7 @@
 id: T-2938
 title: Move ClaimDivergence re-verification onto the deferred post-land queue instead
   of scoping it inline
-state: queued
+state: done
 kind: bug
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,8 @@ scope:
 - src/frob/tickets/_land_verify.py
 - docs/modules/tickets-verify-sweep.md
 - tests/unit/test_rapid_sweep.py
+evidence_scope:
+- tests/test_ticket_land.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -46,6 +48,13 @@ scope_changes:
   reason: 'T-2938: doc for the moved check + its unit test coverage'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_matching_claim_raises_nothing
+- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_divergent_claim_raises_quarantine_attributed_to_landing_ticket
+- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_stale_baseline_refuses_to_attribute
+- tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand::test_no_captured_claims_section_is_a_noop
+- tests/unit/test_rapid_sweep.py::TestDeferredSweepRun::test_stale_baseline_refuses_to_file_and_records_debt
+- tests/test_ticket_land.py::TestSkipInlineClaimsReverifyUnderRapid::test_non_rapid_profile_still_runs_inline_check_gates_spawn
 designated_repro_test: null
 threat: null
 component: null

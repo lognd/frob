@@ -1793,3 +1793,72 @@ watermark drain from one detached-spawn call site, neither gating the
 other. `frob verify drain-async` remains fully usable standalone (by
 hand, or on any schedule) independent of this automatic trigger.
 
+## Deferred claim-divergence check (T-2938)
+
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_check_claim_divergence_post_land -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_claim_divergence_finding_pairs -->
+<!-- frob:describes src/frob/app/ticket_runner/_rapid_sweep.py::_file_claim_divergence_ticket -->
+
+T-2913 removed the inline `ClaimDivergence` re-verification (a fresh,
+full `frob check --ticket <id>` spawn against the post-merge tree,
+`_land.py`'s `_reverify_done_report_claims_post_merge`) from the rapid
+land critical path -- it was measured at 144-209s and was the single
+largest line item on a typical rapid land. `_land_should_skip_inline_
+claims_reverify` (`frob.tickets._land`) is what actually skips it, under
+rapid only; **non-rapid keeps the inline refusal exactly as it was**.
+
+Removing the inline check without replacing it would have silently
+dropped a real property: a Done report's captured `### Captured claims`
+gate-state claim (T-0754) can diverge from reality, and nothing else on
+the rapid path re-checks that after a land. T-2924 investigated making
+the inline check itself cheap (scoping it to the merge delta via
+`--only`) and rejected it as unsound -- `--only` is a strict run-
+selector (a family runs in full or is entirely absent), while the T-0754
+comparator counts an error-severity finding from ANY tool result, so
+narrowing the spawn silently drops coverage from the comparison itself.
+
+T-2938 moves the comparison onto this file's own deferred post-land
+sweep instead, at zero extra `frob check` cost: `_check_claim_
+divergence_post_land` runs unconditionally from `run_deferred_post_
+land_sweep`, fed the SAME unscoped `fresh` set that function already
+measured for the new-findings/rolling-baseline comparison above. It:
+
+1. Refuses to attribute under the SAME staleness policy `_refuse_
+   filing_for_stale_verification_queue` already uses
+   (`frob.verify.rapid_soft_warning`, T-2929) -- one shared policy
+   function, not a second copy, and the SAME `post-land-sweep-
+   attribution-skipped-stale-baseline` debt reason on refusal.
+2. Loads `final_id` post-land and recovers its Done report's `### 
+   Captured claims` section (`parse_claims_from_done_report`). No
+   section (an old Done report, or a capture that itself never ran) is
+   a no-op -- nothing to compare, matching the inline path's own
+   permissive-by-default posture.
+3. Calls `frob.tickets._land_verify._reverify_gate_state_claim`
+   **verbatim** as the sole comparison decision -- the exact identity-
+   based (scope-filtered) then count-only-refuse-on-increase logic the
+   inline land path itself uses -- via `check_gates`/`check_gate_
+   findings` callables that hand back `fresh` instead of spawning a
+   second `frob check`. This is why the T-2924 unsoundness does not
+   reapply here: the comparator is fed the SAME unscoped set that
+   already covers every family, never an `--only`-narrowed one.
+4. On divergence (`Err(LandError.ClaimDivergence)`), `_claim_
+   divergence_finding_pairs` picks out which `(rule, file)` identit(ies)
+   to name (reporting only -- it does not re-decide the divergence),
+   `_file_claim_divergence_ticket` files a `bug` ticket (mirroring
+   `_file_regression_ticket`'s commit shape, `_commit_or_discard_
+   ledger_write`, without T-1690's attribution machinery -- attribution
+   here is exact by construction: `final_id` IS the ticket whose own
+   claim diverged), and `frob.verify._quarantine.raise_quarantine` is
+   called with every finding's `ticket_id` set to the filed ticket (or
+   `final_id` itself if filing failed), so the divergence is both
+   attributed and gated the same way a red unscoped batch already is.
+5. On a match (or an unmeasurable/unmeasured comparison), nothing is
+   raised and nothing is filed -- silent, matching the must-stay-quiet
+   half of this check's own acceptance criteria.
+
+The land wall-clock characteristics T-2913 established are unchanged:
+this check costs nothing extra on the land path itself (it runs inside
+the ALREADY-spawned detached sweep, against a check that sweep was
+always going to run) and it never blocks a land -- a divergence is
+detected and quarantined behind the land, never ahead of it.
+

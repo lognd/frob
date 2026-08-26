@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import date
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -15,6 +17,7 @@ from frob.app.ticket_runner._rapid_sweep import (
     _attribute_new_findings,
     _baseline_write_survived,
     _build_regression_body,
+    _check_claim_divergence_post_land,
     _close_resolved_sweep_tickets,
     _file_regression_ticket,
     _files_deleted_between,
@@ -890,8 +893,14 @@ class TestDeferredSweepRun:
         assert result.is_ok
         assert result.danger_ok is None
         assert filed == []
+        # T-2938: the deferred claim-divergence check reuses this SAME
+        # staleness policy (`frob.verify.rapid_soft_warning`) independently
+        # of the new-findings filing path above, and records the SAME debt
+        # reason when it refuses too -- two refusals, one shared reason,
+        # not a second policy.
         assert debts == [
-            ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline")
+            ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline"),
+            ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline"),
         ]
         # Rebaselined regardless -- the next sweep should start from a
         # fresh, current comparison point once the debt is drained.
@@ -939,6 +948,189 @@ class TestDeferredSweepRun:
         assert seen == [frozenset({("DOC011", "b.md")})]
         assert debts == []
         assert _read_baseline(tmp_path) == fresh
+
+
+# frob:ticket T-2938
+class TestClaimDivergencePostLand:
+    """T-2938: `_check_claim_divergence_post_land` -- the deferred-queue
+    replacement for the inline `ClaimDivergence` re-verification T-2913
+    moved off the rapid land critical path. Reuses `frob.tickets.
+    _land_verify._reverify_gate_state_claim` VERBATIM (via callables that
+    hand back this sweep's own already-measured `fresh` set instead of
+    spawning a second `frob check`) as the sole comparison DECISION, and
+    `frob.verify.rapid_soft_warning` (T-2929's existing policy) as the
+    sole staleness DECISION -- these tests exercise the wiring, not a
+    second copy of either policy."""
+
+    def _claims_ticket(
+        self,
+        *,
+        gate_errors: int,
+        error_findings: frozenset[tuple[str, str]] | None,
+        scope: tuple[str, ...] = ("src/a.py",),
+    ):
+        from frob.tickets._models import (
+            DoneReportClaims,
+            Origin,
+            Ticket,
+            TicketKind,
+            TicketState,
+            render_claims_block,
+        )
+
+        claims = DoneReportClaims(
+            test_count=1,
+            evidence_count=1,
+            gate_errors=gate_errors,
+            gate_warnings=0,
+            gate_waived=0,
+            error_findings=error_findings,
+        )
+        body = "## Done report\n\nlanded cleanly.\n\n" + render_claims_block(claims)
+        return Ticket(
+            id="T-0001",
+            title="a ticket with a captured claim",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date(2026, 1, 1),
+            body=body,
+            scope=scope,
+        )
+
+    def _patch_common(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        ticket,
+        *,
+        stale_reason: str | None,
+    ) -> tuple[list[dict[str, object]], list[tuple[str, str]]]:
+        from typani.result import Ok
+
+        monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Ok(ticket))
+        monkeypatch.setattr(
+            "frob.verify.rapid_soft_warning", lambda root: stale_reason
+        )
+        raised: list[dict[str, object]] = []
+        monkeypatch.setattr(
+            "frob.verify._quarantine.raise_quarantine",
+            lambda root, **kw: raised.append(kw) or Ok(object()),
+        )
+        debts: list[tuple[str, str]] = []
+        monkeypatch.setattr(
+            "frob.tickets._evidence.record_rapid_debt",
+            lambda root, tid, what: debts.append((tid, what)),
+        )
+        monkeypatch.setattr(_rapid_sweep, "_commit_rapid_debt", lambda root, tid: None)
+        monkeypatch.setattr(
+            _rapid_sweep,
+            "_file_claim_divergence_ticket",
+            lambda root, final_id, actual_head, pairs: "T-9999",
+        )
+        return raised, debts
+
+    def test_matching_claim_raises_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-stay-quiet: a Done report claim that still matches the
+        fresh post-merge measurement raises no quarantine and records no
+        new debt."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand.test_matching_claim_raises_nothing  # noqa: E501
+        ticket = self._claims_ticket(
+            gate_errors=1, error_findings=frozenset({("COV003", "src/a.py")})
+        )
+        raised, debts = self._patch_common(monkeypatch, ticket, stale_reason=None)
+
+        _check_claim_divergence_post_land(
+            tmp_path, "T-0001", "deadbeef", frozenset({("COV003", "src/a.py")})
+        )
+
+        assert raised == []
+        assert debts == []
+
+    def test_divergent_claim_raises_quarantine_attributed_to_landing_ticket(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Must-fire: a Done report claiming 0 errors against a fresh
+        measurement showing a NEW in-scope error raises quarantine, and
+        every raised finding is attributed to the landing ticket id."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand.test_divergent_claim_raises_quarantine_attributed_to_landing_ticket  # noqa: E501
+        ticket = self._claims_ticket(gate_errors=0, error_findings=frozenset())
+        raised, debts = self._patch_common(monkeypatch, ticket, stale_reason=None)
+
+        _check_claim_divergence_post_land(
+            tmp_path, "T-0001", "deadbeef", frozenset({("COV003", "src/a.py")})
+        )
+
+        from frob.verify._quarantine import QuarantinedFinding
+
+        assert debts == []
+        assert len(raised) == 1
+        findings = cast("tuple[QuarantinedFinding, ...]", raised[0]["findings"])
+        assert len(findings) == 1
+        assert findings[0].rule_id == "COV003"
+        assert findings[0].file == "src/a.py"
+        assert findings[0].commit_sha == "deadbeef"
+        assert findings[0].ticket_id == "T-9999"
+        assert raised[0]["batch_commit_shas"] == ("deadbeef",)
+
+    def test_stale_baseline_refuses_to_attribute(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A stale verification-queue window (T-2929's shared policy)
+        refuses to attribute a claim divergence too, recording the SAME
+        debt reason `_refuse_filing_for_stale_verification_queue` already
+        uses -- never a second staleness policy."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand.test_stale_baseline_refuses_to_attribute  # noqa: E501
+        ticket = self._claims_ticket(gate_errors=0, error_findings=frozenset())
+        raised, debts = self._patch_common(
+            monkeypatch, ticket, stale_reason="rapid profile verification debt is stale"
+        )
+
+        _check_claim_divergence_post_land(
+            tmp_path, "T-0001", "deadbeef", frozenset({("COV003", "src/a.py")})
+        )
+
+        assert raised == []
+        assert debts == [
+            ("T-0001", "post-land-sweep-attribution-skipped-stale-baseline")
+        ]
+
+    def test_no_captured_claims_section_is_a_noop(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A Done report with no `### Captured claims` section (predates
+        T-0754, or never captured one) has nothing to compare -- no
+        quarantine, no debt, matching the inline land path's own
+        permissive-by-default posture."""
+        # frob:tests tests/unit/test_rapid_sweep.py::TestClaimDivergencePostLand.test_no_captured_claims_section_is_a_noop  # noqa: E501
+        from typani.result import Ok
+
+        from frob.tickets._models import Origin, Ticket, TicketKind, TicketState
+
+        ticket = Ticket(
+            id="T-0001",
+            title="a ticket with no captured claim",
+            state=TicketState.DONE,
+            kind=TicketKind.BUG,
+            origin=Origin.AGENT,
+            created=date(2026, 1, 1),
+            body="## Done report\n\nlanded cleanly, no claims captured.\n",
+        )
+        monkeypatch.setattr("frob.tickets._load_one", lambda root, tid: Ok(ticket))
+        raised: list[dict[str, object]] = []
+        monkeypatch.setattr(
+            "frob.verify._quarantine.raise_quarantine",
+            lambda root, **kw: raised.append(kw) or Ok(object()),
+        )
+        # rapid_soft_warning left un-mocked: a tmp_path with no watermark
+        # returns None (no debt), same as the pre-existing tests above.
+
+        _check_claim_divergence_post_land(
+            tmp_path, "T-0001", "deadbeef", frozenset({("COV003", "src/a.py")})
+        )
+
+        assert raised == []
 
 
 class TestDeferredSweepSpawn:
