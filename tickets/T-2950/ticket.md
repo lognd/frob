@@ -2,7 +2,7 @@
 id: T-2950
 title: 'frob status takes 5m41s: an adoption surface nobody will wait for, and it
   exceeds the 200s foreground budget'
-state: queued
+state: in-progress
 kind: ux
 origin: human
 created: '2026-08-26'
@@ -19,6 +19,8 @@ scope:
 - src/frob/tickets/*ticket_flow*
 - tests/test_status.py
 - docs/modules/cli.md
+- src/frob/app/config.py
+- src/frob/app/_config_external.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -62,6 +64,18 @@ scope_changes:
 - op: add
   glob: docs/modules/cli.md
   reason: narrow to frob status hot path per T-2950
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/config.py
+  reason: CLI-flag forwarding for --tickets/status_tickets requires touching AppConfig
+    and its external-forwarding field list
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/app/_config_external.py
+  reason: CLI-flag forwarding for --tickets/status_tickets requires touching AppConfig
+    and its external-forwarding field list
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
