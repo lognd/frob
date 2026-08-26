@@ -1,7 +1,7 @@
 ---
 id: T-2372
 title: Burn TICK004/TICK007/TICK011 WARN gates to zero, then promote to error
-state: queued
+state: in-progress
 kind: bug
 origin: agent
 created: '2026-08-17'
@@ -15,6 +15,8 @@ runs_last_parallel_safe: false
 runs_last_parallel_safe_reason: null
 scope:
 - src/frob/gates/_tickets_gate.py
+- tickets/archive/T-2556/done-report.md
+- tickets/archive/T-2653/done-report.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -23,6 +25,20 @@ scope_changes:
 - op: add
   glob: src/frob/gates/_tickets_gate.py
   reason: TICK004/TICK007/TICK011 severity promotion lives in this gate module
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2556/done-report.md
+  reason: 'TICK011 remediation: repair the two archived Done reports whose disclosures
+    needed a nearby citation/no-ticket-needed marker (see gate-code fix in the same
+    ticket for why the other 7 were bare-word false positives, not real gaps)'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/archive/T-2653/done-report.md
+  reason: 'TICK011 remediation: repair the two archived Done reports whose disclosures
+    needed a nearby citation/no-ticket-needed marker (see gate-code fix in the same
+    ticket for why the other 7 were bare-word false positives, not real gaps)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
