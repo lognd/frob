@@ -33,6 +33,9 @@ scope_changes:
     a sys.platform pin'
   actor: logan
   at: '2026-08-26'
+evidence:
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_on_missed_reparent_race
+- tests/unit/test_process_reap.py::TestArmParentDeathSignal::test_self_kills_when_already_reparented_before_entry
 designated_repro_test: null
 threat: null
 component: null
