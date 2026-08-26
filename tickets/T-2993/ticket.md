@@ -125,7 +125,7 @@ threat: null
 component: null
 anchor: false
 anchor_reason: null
-land_commit: null
+land_commit: 084ef643981fce353c2bcc988749bb106ba344a4
 ---
 Third form of the same doctrine as T-2987 (waiver-reason bloat) and T-2988
 (docstring archaeology): free-standing `# T-####: <narrative>` comment blocks
