@@ -20,6 +20,9 @@ scope:
 - src/frob/tickets/_store.py
 - src/frob/gates/_walk_lint.py
 - tests/test_walk_lint_gate.py
+- docs/modules/process.md
+- docs/modules/gates.md
+- docs/modules/tickets-landing.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -35,6 +38,21 @@ scope_changes:
   glob: tests/test_walk_lint_gate.py
   reason: 'narrow PLATFORM001 false positive: return Ok()/Err() (typani) is a declared
     refusal, not silent warn-and-continue'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/process.md
+  reason: doc anchors for touched public symbols
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/gates.md
+  reason: doc anchors for touched public symbols
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/tickets-landing.md
+  reason: doc anchors for touched public symbols
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
