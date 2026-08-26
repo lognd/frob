@@ -365,6 +365,24 @@ there is no destination FILE being rewritten -- only a rename, which git
 handles atomically per path with zero collision surface across different
 ids.
 
+T-2986: one field IS content, not just path, and does need rewriting on
+archive -- `attachments[].path`. `_record_attachment` stores an
+attachment's path relative to `tickets_dir(root)`, so a v2 ticket's own
+self-contained attachment dir naturally comes out `<id>/attachments/
+NN-x.ext` (design section 8). COV004 always resolves an attachment as
+the fixed `Path("tickets") / attachment.path`, so once `git mv` moves
+the directory to `tickets/archive/<id>/`, a path still reading `<id>/
+attachments/...` silently stops resolving -- the file exists, but not
+where the recorded path says. `_archive_v2_move_tickets`
+(`src/frob/tickets/_archive.py`) rewrites this one field to the `archive/
+<id>/attachments/...` shape immediately after each `git_mv_dir`, via a
+targeted text substitution on the just-moved `ticket.md` (not a
+`write_ticket` re-serialize, which would resolve the ACTIVE directory
+and recreate the path `git_mv_dir` just vacated). Every other field is
+still untouched byte-for-byte; this is the one narrow exception to "no
+file's CONTENT changes" above, scoped to the one field whose resolution
+is location-dependent.
+
 ### 4.4 Flow / velocity mining
 
 Because every state transition is a real, timestamped git commit against

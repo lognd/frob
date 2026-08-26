@@ -256,14 +256,14 @@
       "ticket": "T-1628"
     },
     "tickets_ledger::fs.read": {
-      "accepted_count": 23,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 24,
+      "reason": "T-2986: added src/frob/tickets/_archive.py to the fs.read via-list -- _rewrite_moved_attachment_paths reads the just-moved ticket.md directly (a targeted text substitution, not a write_ticket round trip, since write_ticket's v2 path would resolve the ACTIVE directory git_mv_dir just vacated) to fix stale attachments[].path entries after archive moves a ticket directory.",
+      "ticket": "T-2986"
     },
     "tickets_ledger::fs.write": {
-      "accepted_count": 19,
-      "reason": "T-2743 sweep: SYS111 measured this (node, capability) pair above its committed ceiling with no reachable single-land attribution -- the deferred verification budget repair (T-2713/T-2715) surfaced this as pre-existing accumulated growth across many already-authorized lands, not a fresh justification for any individual grant. Every contributing file is already a declared via-source for this pair; bumping the ceiling to the current measured count rather than re-justifying each site individually, mirroring T-2407's own precedent for this same class of finding.",
-      "ticket": "T-2743"
+      "accepted_count": 20,
+      "reason": "T-2986: added src/frob/tickets/_archive.py to the fs.write via-list -- _rewrite_moved_attachment_paths writes the rewritten ticket.md back in place after the archive-time attachment path rewrite (see the paired fs.read entry above for the full rationale).",
+      "ticket": "T-2986"
     },
     "verify::exec": {
       "accepted_count": 2,

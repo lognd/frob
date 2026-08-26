@@ -9556,6 +9556,7 @@ class TestNewerWinnerQualifiedPreferenceProperty:
 
 
 # frob:ticket T-1256
+# frob:ticket T-2986
 class TestArchiveV2:
     """Ledger v2 design section 4.3: `archive` on a v2-mode tree does a
     plain `git mv tickets/T-#### tickets/archive/T-####` per done/dropped
@@ -9630,6 +9631,76 @@ class TestArchiveV2:
         # A second call is idempotent -- nothing left to archive.
         again = archive(root)
         assert again.is_ok and again.danger_ok == 0
+
+    # frob:ticket T-2986
+    # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv
+    def test_archived_ticket_attachment_still_resolves_for_cov004(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """T-2986 regression: archiving a v2 ticket that carries an
+        `attachments[].path` in the self-contained `<id>/attachments/...`
+        shape (`frob.tickets._reporting_attachments._record_attachment`'s
+        convention) must rewrite that path to the post-move `archive/<id>/
+        attachments/...` shape, so COV004 (`coverage_gate`, resolved via
+        the fixed `Path("tickets") / attachment.path` `_cov004` uses) never
+        fires on it afterward. Before the T-2986 fix, `archive_v2` moved
+        the directory via `git_mv_dir` but left the recorded path pointing
+        at the pre-move location, and COV004 read that as a missing/
+        mismatched attachment on every archived ticket that ever had one
+        (10 such findings measured live on main)."""
+        # frob:tests src/frob/tickets/_archive.py::_rewrite_moved_attachment_paths kind="unit"  # noqa: E501
+        import hashlib
+
+        from frob.gates import CollectedTests, coverage_gate
+        from frob.gitio import Diff
+        from frob.tickets import Attachment, archive, load_queue
+        from frob.tickets._store import v2_attachments_dir
+
+        root = tmp_path / "repo"
+        _git_init(root)
+        ticket_path = self._v2_ticket(root, "T-0042")
+
+        payload = b"evidence text\n"
+        att_dir = v2_attachments_dir(root, "T-0042")
+        att_dir.mkdir(parents=True)
+        (att_dir / "01-x.txt").write_bytes(payload)
+        sha256 = hashlib.sha256(payload).hexdigest()
+
+        from frob.tickets._store import _serialize_ticket, v2_ticket_path
+
+        ticket = load_queue(root).danger_ok.tickets["T-0042"]
+        attachment = Attachment(
+            path="T-0042/attachments/01-x.txt", caption="x", sha256=sha256
+        )
+        updated = ticket.model_copy(update={"attachments": (attachment,)})
+        v2_ticket_path(root, "T-0042").write_text(
+            _serialize_ticket(updated), encoding="utf-8"
+        )
+        assert ticket_path.exists()
+        _commit_all(root, "seed v2 ticket with attachment")
+
+        result = archive(root)
+        assert result.is_ok, result.err
+        assert result.danger_ok == 1
+
+        reloaded = load_queue(root)
+        assert reloaded.is_ok, reloaded.err
+        archived_ticket = reloaded.danger_ok.tickets["T-0042"]
+        assert len(archived_ticket.attachments) == 1
+        rewritten_path = archived_ticket.attachments[0].path
+        assert rewritten_path == "archive/T-0042/attachments/01-x.txt", rewritten_path
+        # The fixed COV004 resolution shape (`_cov004`'s own convention).
+        assert (root / "tickets" / rewritten_path).exists()
+
+        snapshot = build_graph(root, root / ".frob" / "cache.db").danger_ok
+        diff = Diff(base="x", hunks=())
+        tests = CollectedTests(node_ids=frozenset())
+        # _cov004 resolves `Path("tickets") / attachment.path` against the
+        # process CWD, not `root` (matches `test_cov004_matching_sha_is_
+        # clean`'s own precedent in tests/test_gates.py).
+        monkeypatch.chdir(root)
+        violations = coverage_gate(root, snapshot, reloaded.danger_ok, diff, tests)
+        assert not any(v.rule == "COV004" for v in violations), violations
 
     # frob:ticket T-1258
     # frob:doc docs/design/ledger-v2.md#43-archive-as-git-mv

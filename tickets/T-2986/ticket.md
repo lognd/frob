@@ -2,7 +2,7 @@
 id: T-2986
 title: Archive move breaks COV004 attachment path resolution repo-wide (tickets/archive/<id>
   vs recorded tickets/<id> path)
-state: in-progress
+state: done
 kind: bug
 origin: agent
 created: '2026-08-26'

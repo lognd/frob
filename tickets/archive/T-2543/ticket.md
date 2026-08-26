@@ -94,7 +94,7 @@ designated_repro_changes:
   actor: logan
   at: '2026-08-18'
 attachments:
-- path: T-2543/attachments/01-class-a-options-and-measured-costs-t-2377-survey.md
+- path: archive/T-2543/attachments/01-class-a-options-and-measured-costs-t-2377-survey.md
   caption: Class A options and measured costs (T-2377 survey)
   sha256: 5d4cb8185f3b1f412139a81355d1233321ce5055838014acafa1ef6fdb996bc4
 acceptance:

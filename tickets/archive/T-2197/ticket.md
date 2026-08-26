@@ -45,7 +45,7 @@ evidence:
 - tests/test_tickets_ledger_concurrency.py::TestPromoteVsLandFinalizeAllocationRace::test_promote_and_land_finalize_never_allocate_the_same_id
 designated_repro_test: tests/test_tickets_collision.py::TestPromoteFromWorktreeCommitsAndWarns::test_finalize_draft_commits_the_full_rename_in_a_worktree
 attachments:
-- path: T-2197/attachments/01-self-referential-confirmation-two-folded-in-incidents-silent-downstream-success-t-2196-measured-then-discarded-verdict-cross-referenced.md
+- path: archive/T-2197/attachments/01-self-referential-confirmation-two-folded-in-incidents-silent-downstream-success-t-2196-measured-then-discarded-verdict-cross-referenced.md
   caption: self-referential confirmation + two folded-in incidents (silent downstream
     success, T-2196 measured-then-discarded verdict) cross-referenced
   sha256: f5f7da4aa20413df65fb47f85e856abe5a63dbb1e0ff584badbc32f941995e2d

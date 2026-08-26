@@ -50,15 +50,15 @@ evidence:
 - tests/test_lang.py::TestResolveLocalImportConsumers::test_layering_detects_a_real_violation
 designated_repro_test: tests/unit/test_lang_primitives.py::test_resolve_local_import_src_layout_absolute
 attachments:
-- path: T-2195/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
+- path: archive/T-2195/attachments/01-widened-to-critical-relative-imports-fail-too-zero-cross-file-resolution-repo-wide-t-2156-re-verification-needed.md
   caption: 'widened to CRITICAL: relative imports fail too, zero cross-file resolution
     repo-wide, T-2156 re-verification needed'
   sha256: 52c8a76d9827cda441c2e95fe3f97685dca9e7dd5405bda6ca19cdb510165dc6
-- path: T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
+- path: archive/T-2195/attachments/02-independently-confirmed-frob-cycle-vacuous-on-src-layout-widened-acceptance-criteria-and-fix-guidance-no-src-lexical-special-case.md
   caption: independently confirmed frob cycle vacuous on src-layout; widened acceptance
     criteria and fix-guidance (no src/ lexical special-case)
   sha256: 67a97f6b18ee8dba2b34fe2fb9d414f21a5de1707242258ec818ef22d70eac16
-- path: T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
+- path: archive/T-2195/attachments/03-three-confirmed-vacuous-consumers-attribution-cycle-arch-layering-per-consumer-must-still-pass-acceptance-criteria.md
   caption: three confirmed vacuous consumers (attribution, cycle, arch layering);
     per-consumer must-still-pass acceptance criteria
   sha256: e1de499843567281d791d0c15f96ef5ce65d56dd2f2db7679543675311449bc4

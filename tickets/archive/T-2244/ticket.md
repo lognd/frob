@@ -45,7 +45,7 @@ evidence:
 - tests/unit/test_makefile_coverage.py::TestRepointedTargetsStillFailNonzeroOnRealViolations::test_frob_check_ty_exits_nonzero_on_a_real_type_error
 designated_repro_test: null
 attachments:
-- path: T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
+- path: archive/T-2244/attachments/01-t-2244-audit-safe-to-repoint-split-test-typecheck-safe-now-lint-blocked-by-newly-found-t-2387-not-t-2359-format-lint-fix-blocked-by-both-test-fast-stays-raw.md
   caption: 'T-2244 audit: safe-to-repoint split (test:/typecheck: safe now; lint:
     blocked by newly-found T-2387, not T-2359; format:/lint-fix: blocked by both;
     test-fast: stays raw)'

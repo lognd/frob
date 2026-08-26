@@ -7,6 +7,7 @@ live-lease-refusal directives intact).
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from typani.result import Err, Ok, Result
@@ -373,10 +374,86 @@ def _archive_v2_move_tickets(
             move_result = git_mv_dir(root, old_dir, new_dir)
             if move_result.is_err:
                 return Err(move_result.danger_err)
+            rewrite_result = _rewrite_moved_attachment_paths(
+                new_dir, ticket_id, to_archive[ticket_id]
+            )
+            if rewrite_result.is_err:
+                return Err(rewrite_result.danger_err)
             moved += 1
 
     _log.info("tickets: archived %d ticket(s) (v2, git mv)", moved)
     return Ok(moved)
+
+
+# frob:ticket T-2986
+def _rewrite_moved_attachment_paths(
+    new_dir: Path, ticket_id: str, ticket: Ticket
+) -> Result[None, TicketError]:
+    """After `git_mv_dir` has relocated `ticket_id`'s directory to
+    `new_dir` (`tickets/archive/<id>/`), rewrite any `attachments[].path`
+    entry in the just-moved `ticket.md` that is still v2-self-contained-
+    shaped (`_record_attachment`'s convention: `<id>/attachments/NN-x.ext`,
+    relative to `tickets_dir(root)`) so it reads `archive/<id>/
+    attachments/NN-x.ext` instead -- COV004 (`src/frob/gates/__init__.py`)
+    resolves every attachment as the fixed `Path("tickets") /
+    attachment.path`, so a path left pointing at the pre-move location
+    silently stops resolving the moment `git mv` relocates the file out
+    from under it (T-2986: the root cause of 10 archived-ticket COV004
+    findings on main, `chore(tickets): archive 886 ticket(s)`).
+
+    A plain text substitution on the moved `ticket.md`, not a re-
+    serialize through `write_ticket` -- `write_ticket`'s v2 path resolves
+    `ticket_id`'s directory via `v2_ticket_dir` (always the ACTIVE
+    location), so writing through it here would recreate `tickets/<id>/`
+    at the very path `git_mv_dir` just vacated. A legacy-shared-dir
+    attachment path (`attachments/<id>/...`, predating the v2 self-
+    contained layout, never itself moved by archive) is left untouched by
+    the `f"{ticket_id}/"`-prefix match -- only the id-prefixed v2 shape
+    this archive call could have broken is rewritten. No-op (`Ok(None)`,
+    no write) when `ticket` has no attachment in that shape, so a ticket
+    with zero or only-legacy attachments never takes an unnecessary
+    write."""
+    prefix = f"{ticket_id}/"
+    if not any(a.path.startswith(prefix) for a in ticket.attachments):
+        return Ok(None)
+    ticket_md = new_dir / "ticket.md"
+    try:
+        text = ticket_md.read_text(encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "tickets: archive_v2: failed to read moved %s for attachment "
+            "path rewrite: %s",
+            ticket_md,
+            exc,
+        )
+        return Err(TicketError.WriteFailed)
+    rewritten = re.sub(
+        rf"^(- path: ){re.escape(ticket_id)}/",
+        rf"\1archive/{ticket_id}/",
+        text,
+        flags=re.M,
+    )
+    if rewritten == text:
+        _log.warning(
+            "tickets: archive_v2: %s attachments claimed id-prefixed paths "
+            "but no line matched the rewrite pattern in %s -- leaving as is",
+            ticket_id,
+            ticket_md,
+        )
+        return Ok(None)
+    try:
+        ticket_md.write_text(rewritten, encoding="utf-8")
+    except OSError as exc:
+        _log.error(
+            "tickets: archive_v2: failed to write rewritten %s: %s", ticket_md, exc
+        )
+        return Err(TicketError.WriteFailed)
+    _log.info(
+        "tickets: archive_v2: rewrote attachment path(s) for %s to archive/ "
+        "prefix (T-2986)",
+        ticket_id,
+    )
+    return Ok(None)
 
 
 # frob:ticket T-0889

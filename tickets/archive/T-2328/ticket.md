@@ -75,14 +75,14 @@ evidence:
 - tests/test_gates.py::TestFixEngineScopeLease::test_in_scope_fix_is_kept_unchanged
 designated_repro_test: null
 attachments:
-- path: T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md
+- path: archive/T-2328/attachments/01-second-live-reproduction-t-2329-s-own-land-root-cause-narrowing.md
   caption: second live reproduction (T-2329's own land) + root-cause narrowing
   sha256: e40acecf7b55bdb7a3d26728a957eb6e1f7dcab1a73b45e03511fefef0c8c689
-- path: T-2328/attachments/02-third-reproduction-t-2323-confirmed-workaround-pre-commit-the-file-yourself-before-land.md
+- path: archive/T-2328/attachments/02-third-reproduction-t-2323-confirmed-workaround-pre-commit-the-file-yourself-before-land.md
   caption: 'third reproduction (T-2323) + confirmed workaround: pre-commit the file
     yourself before land'
   sha256: a9e172f79a71d994d2e3200c0b340cf406eb4e55589a94f964a298bd6fb956ac
-- path: T-2328/attachments/03-clarification-titled-work-loss-defect-remains-open-carried-by-t-2351.txt
+- path: archive/T-2328/attachments/03-clarification-titled-work-loss-defect-remains-open-carried-by-t-2351.txt
   caption: 'clarification: titled work-loss defect remains open, carried by T-2351'
   sha256: 9191aa0dc68bd7bdda5e87ab8704d95e2edcc9d74ac0e030d99394c543159b73
 threat: null
