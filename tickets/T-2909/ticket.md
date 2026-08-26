@@ -2,7 +2,7 @@
 id: T-2909
 title: 'Agent cold-start: split agent-playbook.md into a hot-path checklist plus an
   appendix'
-state: in-progress
+state: done
 kind: docs
 origin: human
 created: '2026-08-25'
@@ -18,6 +18,9 @@ scope:
 - docs/guides/agent-playbook.md
 - docs/guides/agent-playbook-appendix.md
 - docs/audits/test005-zero-classification-t1418.md
+- docs/index.md
+evidence_scope:
+- tests/integration/test_interfaces.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -98,6 +101,13 @@ scope_changes:
   reason: not touched; narrowing to actually-modified files
   actor: logan
   at: '2026-08-25'
+- op: add
+  glob: docs/index.md
+  reason: add index entry for the new appendix as a genuine second consumer (REF002)
+  actor: logan
+  at: '2026-08-25'
+evidence:
+- tests/integration/test_interfaces.py::TestInterfaces::test_main_cli_dispatches
 designated_repro_test: null
 threat: null
 component: null

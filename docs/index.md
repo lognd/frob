@@ -25,6 +25,11 @@ real.
   warm-up, scope/evidence/gate discipline, the deletion-filter land rule,
   and ledger-conflict splice guidance. Every worktree agent should read
   this before starting a ticket.
+- `docs/guides/agent-playbook-appendix.md` -- the full narrative and
+  incident record behind the checklist above (T-2909): every WHY, every
+  measurement, and the historical/rarely-needed recipes the hot-path split
+  moved out of per-ticket reading. Read a section here when the checklist
+  points to it, or when you want the full story behind a rule.
 - `docs/guides/editors.md` -- syntax highlighting for `.strata` in VSCode
   and JetBrains IDEs via one drift-locked TextMate grammar.
 - `docs/guides/exhaustive-research.md` -- the frontier-loop for total-coverage
