@@ -23,6 +23,9 @@ scope:
 - src/frob/app/ticket_runner/_close_cmd.py
 - src/frob/app/ticket_runner/_rapid_sweep.py
 - tests/unit/test_process_guard.py
+- docs/modules/process.md
+- docs/modules/serve.md
+- tickets/T-draft-b211c944/**
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -114,6 +117,45 @@ scope_changes:
     directive, not just the one call site in the traceback) requires
 
     touching all of them plus their regression test file.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/process.md
+  reason: 'AFFECT001 closure for guarded_subprocess_run (docs/modules/process.md)
+
+    and _source_head_sha (docs/modules/serve.md), plus the T-draft ticket
+
+    filed for the ty-check POSIX-only-stdlib-attrs defect discovered while
+
+    getting a real windows-latest CI run past the subprocess decode class.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/serve.md
+  reason: 'AFFECT001 closure for guarded_subprocess_run (docs/modules/process.md)
+
+    and _source_head_sha (docs/modules/serve.md), plus the T-draft ticket
+
+    filed for the ty-check POSIX-only-stdlib-attrs defect discovered while
+
+    getting a real windows-latest CI run past the subprocess decode class.
+
+    '
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tickets/T-draft-b211c944/**
+  reason: 'AFFECT001 closure for guarded_subprocess_run (docs/modules/process.md)
+
+    and _source_head_sha (docs/modules/serve.md), plus the T-draft ticket
+
+    filed for the ty-check POSIX-only-stdlib-attrs defect discovered while
+
+    getting a real windows-latest CI run past the subprocess decode class.
 
     '
   actor: logan
