@@ -21,6 +21,8 @@ scope:
 - docs/guides/agentic-time-profiling.md
 - tests/test_hook_tool_call_telemetry.py
 - tests/test_stats_agentic.py
+- docs/modules/stats.md
+- docs/modules/app.md
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -59,6 +61,16 @@ scope_changes:
 - op: add
   glob: tests/test_stats_agentic.py
   reason: 'T-2912: instrument per-tool-call telemetry hook and histogram reporting'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/stats.md
+  reason: 'T-2912: doc anchors for new histogram fields'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: docs/modules/app.md
+  reason: 'T-2912: doc anchors for new histogram fields'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
