@@ -21,6 +21,7 @@ scope:
 - docs/modules/testing.md
 evidence_scope:
 - tests/test_serve_socket.py
+- tests/unit/test_daemon_proxy_lease_t1276.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -57,6 +58,7 @@ body_changes:
   new_length: 4219
 evidence:
 - tests/test_serve_socket.py::TestRunSocketDaemon::test_serves_one_request_then_idle_exits
+- tests/unit/test_daemon_proxy_lease_t1276.py::TestDaemonLease::test_round_trip_acquire_call_release_close
 designated_repro_test: null
 threat: null
 component: null
