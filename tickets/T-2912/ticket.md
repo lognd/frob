@@ -23,6 +23,7 @@ scope:
 - tests/test_stats_agentic.py
 - docs/modules/stats.md
 - src/frob/stats/__init__.py
+- tests/test_hook_dispatch_telemetry.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -81,6 +82,12 @@ scope_changes:
 - op: remove
   glob: docs/modules/app.md
   reason: 'T-2912: unused, no edit needed to app.md'
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: tests/test_hook_dispatch_telemetry.py
+  reason: 'T-2912: fold tool-call-telemetry hook tests into an already exec-allowlisted
+    test file (design/frob.strata is locked by T-2911)'
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
