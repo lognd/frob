@@ -18,6 +18,7 @@ scope:
 - src/frob/gates/_walk_lint.py
 - tests/test_walk_lint_gate.py
 - docs/modules/gates.md
+- src/frob/gates/_waive.py
 scope_breadth_ack: false
 scope_breadth_ack_reason: null
 no_scope_declared: false
@@ -36,6 +37,11 @@ scope_changes:
 - op: add
   glob: docs/modules/gates.md
   reason: PLATFORM001 tests + doc section
+  actor: logan
+  at: '2026-08-26'
+- op: add
+  glob: src/frob/gates/_waive.py
+  reason: register PLATFORM001 in _KNOWN_GATE_RULES
   actor: logan
   at: '2026-08-26'
 designated_repro_test: null
